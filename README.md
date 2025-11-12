@@ -60,34 +60,36 @@ This project was built to demonstrate proficiency across the entire stack, as de
 
 ### 1. Clone the Repository
 
-git clone https://github.com/YourUsername/your-repo-name.git cd your-repo-name
+`git clone https://github.com/YourUsername/your-repo-name.git cd your-repo-name`
 
 ### 2. Install Dependencies
 
-npm install
+`npm install`
 
 ### 3. Set Up Environment Variables
 
 Create a `.env.local` file in the root of the project and add your database URL and API key:
 
+```
 .env.local
-DATABASE_URL="postgresql://user:password@localhost:5432/your-db-name" GEMINI_API_KEY="YOUR_GOOGLE_AI_API_KEY"
+DATABASE_URL="postgresql://user:password@localhost:5432/#our-db-name" GEMINI_API_KEY="YOUR_GOOGLE_AI_API_KEY"
+```
 
 ### 4. Run the Database (via Docker)
 
 This will start a PostgreSQL database in a Docker container.
 
-docker compose up -d
+`docker compose up -d`
 
 ### 5. Run Database Migrations
 
 This will sync your Prisma schema with the running database.
 
-npx prisma migrate dev
+`npx prisma migrate dev`
 
 ### 6. Run the Development Server
 
-npm run dev
+`npm run dev`
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
