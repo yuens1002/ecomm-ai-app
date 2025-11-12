@@ -28,6 +28,8 @@ This project was built to demonstrate proficiency across the entire stack, as de
 
 - **Styling:** **Tailwind CSS** (with a custom, theme-able design system built on CSS Variables)
 
+- **Component Library:** **shadcn/ui** (for accessible, theme-able, and unstyled components)
+
 - **State Management:** React Hooks (`useState`, `useContext`) & **Zustand** (for lightweight global state)
 
 ### 2. Fullstack & Data Layer
@@ -54,7 +56,7 @@ This project was built to demonstrate proficiency across the entire stack, as de
 
 - **E2E:** **Playwright** for end-to-end testing of user flows (e.g., adding to cart, using the AI helper).
 
-- **Accessibility:** Adherence to **WCAG** standards for all interactive components.
+- **Accessibility:** Adherence to **WCAG** standards (supported by shadcn/ui).
 
 ## Getting Started
 
