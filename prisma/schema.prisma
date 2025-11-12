@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// 1. Define the database provider and URL
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // This pulls from your .env.local file or Vercel
+}
+
+// 2. Define the generator for Prisma Client (TypeScript)
+generator client {
+  provider        = "prisma-client-js"
+}
+
+// --- Product & Related Models ---
+
+// This is the main Product table
+model Product {
+  id            String  @id @default(cuid())
+  name          String
+  slug          String  @unique // For clean URLs like /products/hayes-valley-espresso
+  description   String? @db.Text // Can store long text/HTML/Markdown
+  tastingNotes  String[] // PostgreSQL arrays are great for this
+  isOrganic     Boolean @default(false)
+
+  // --- FIELDS FOR HOMEPAGE ---
+  isFeatured    Boolean @default(false) // Use model-level index for faster queries
+  featuredOrder Int?    // Optional integer to control sort order
+
+  // --- Relations ---
+  images        ProductImage[] // A product can have many images
+  variants      ProductVariant[] // A product can have many variants (e.g., 12oz, 5lb)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isFeatured])
+}
+
+// This table holds all images for a product
+model ProductImage {
+  id        String @id @default(cuid())
+  url       String // The URL to the image (e.g., in an S3 bucket or Cloudinary)
+  altText   String // Important for accessibility (a11y)
+  order     Int    @default(0) // To control the order of images in a gallery
+
+  // Relation back to the Product
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+// This table holds product variants (e.g., "12oz Bag")
+model ProductVariant {
+  id            String @id @default(cuid())
+  name          String // e.g., "12oz Bag", "5lb Bag"
+  weightInGrams Int    // e.g., 340
+
+  // Relation back to the Product
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Relation to purchase options
+  purchaseOptions PurchaseOption[] // A product can have many multiple purchase options
+
+  @@index([productId])
+}
+
+// This table holds the different ways to buy a variant
+// e.g., "One Time" for $25 or "Subscribe" for $22
+model PurchaseOption {
+  id              String @id @default(cuid())
+  type            PurchaseType @default(ONE_TIME)
+  priceInCents    Int    // Store money in cents to avoid floating point errors ($22.50 = 2250)
+
+  // Optional fields from the image
+  discountMessage   String? // e.g., "Up to 17% Savings"
+  deliverySchedule  String? // e.g., "EVERY WEEK"
+
+  // Relation back to the Variant
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([variantId])
+}
+
+// Enum for the purchase type
+enum PurchaseType {
+  ONE_TIME
+  SUBSCRIPTION
+}
