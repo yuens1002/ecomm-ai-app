@@ -1,4 +1,8 @@
+"use client";
+
 import Image from "next/image";
+import Link from "next/link";
+import clsx from "clsx";
 import { ProductCardProps } from "@/lib/types"; // lib path stays the same
 
 // Import shadcn/ui components
@@ -17,6 +21,7 @@ export default function ProductCard({
   product,
   onAddToCart,
   showPurchaseOptions = true,
+  disableCardEffects = false,
 }: ProductCardProps) {
   // --- Find price and image ---
   const displayVariant = product.variants[0];
@@ -27,48 +32,65 @@ export default function ProductCard({
     ? (oneTimePrice.priceInCents / 100).toFixed(2)
     : "N/A";
 
+  // Note: Image URLs are fixed to return .png for optimization
   const displayImage =
     product.images[0]?.url ||
     "https://placehold.co/600x400/CCCCCC/FFFFFF.png?text=Image+Not+Found";
   const altText =
     product.images[0]?.altText || `A bag of ${product.name} coffee`;
 
+  // Define the destination URL using the product's slug
+  const productUrl = `/products/${product.slug}`;
+
   return (
-    // UPDATED: Added 'p-0' to the <Card> component.
-    // This overrides the 'py-6' and 'gap-6' from your shadcn/ui
-    // card.tsx file, making the image flush with the top.
-    <Card className="w-full overflow-hidden rounded-lg transition-transform duration-300 hover:scale-105 bg-card-bg shadow-lg flex flex-col justify-between p-0">
-      {/* 1. Image container. The parent <Card> clips its top corners. */}
-      <CardHeader className="relative w-full aspect-16/10">
-        <Image
-          src={displayImage}
-          alt={altText}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          priority={product.isFeatured}
-        />
-      </CardHeader>
+    <Card
+      className={clsx(
+        "w-full overflow-hidden rounded-lg bg-card-bg flex flex-col justify-between p-0",
+        !disableCardEffects &&
+          "cursor-pointer transition-transform duration-300 hover:scale-105 shadow-lg"
+      )}
+    >
+      {/* Wrap only the card content in the native Link so browsers show the
+          link preview when hovering the card, but keep the footer/button
+          outside the Link so hovering the button won't show the preview. */}
+      <Link href={productUrl} className="contents">
+        {/* 1. Image container. The parent <Card> clips its top corners. */}
+        <CardHeader className="relative w-full aspect-16/10">
+          <Image
+            src={displayImage}
+            alt={altText}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            priority={product.isFeatured}
+          />
+        </CardHeader>
 
-      {/* 2. CardContent holds all text content. */}
-      {/* Added the 'grow' class to push the footer down. */}
-      <CardContent className="pb-3 grow">
-        <CardTitle className="text-xl font-semibold text-text-base mb-1">
-          {product.name}
-        </CardTitle>
-        <CardDescription className="text-sm text-text-muted italic mb-4">
-          {product.tastingNotes.join(", ")}
-        </CardDescription>
+        {/* 2. CardContent holds all text content. */}
+        {/* Added the 'grow' class to push the footer down. */}
+        <CardContent className="pb-3 grow">
+          <CardTitle className="text-xl font-semibold text-text-base mb-1">
+            {product.name}
+          </CardTitle>
+          <CardDescription className="text-sm text-text-muted italic mb-4">
+            {product.tastingNotes.join(", ")}
+          </CardDescription>
 
-        {showPurchaseOptions && (
-          <p className="text-lg font-bold text-primary">${displayPrice}</p>
-        )}
-      </CardContent>
+          {showPurchaseOptions && (
+            <p className="text-lg font-bold text-primary">${displayPrice}</p>
+          )}
+        </CardContent>
+      </Link>
 
       {/* 3. CardFooter (only shows if purchase options are enabled) */}
       {showPurchaseOptions && (
         <CardFooter className="p-6 pt-0">
-          <Button onClick={() => onAddToCart(product.id)} className="w-full">
+          <Button
+            onClick={(e) => {
+              onAddToCart(product.id);
+            }}
+            className="w-full cursor-pointer"
+          >
             Add to Cart
           </Button>
         </CardFooter>

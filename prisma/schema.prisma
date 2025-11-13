@@ -20,8 +20,14 @@ model Product {
   name          String
   slug          String  @unique // For clean URLs like /products/hayes-valley-espresso
   description   String? @db.Text // Can store long text/HTML/Markdown
+  
+  // --- UPDATED: Changed to String[] ---
+  origin        String[]  // e.g., ["Ethiopia", "Colombia"]
+  
   tastingNotes  String[] // PostgreSQL arrays are great for this
+  roastLevel    RoastLevel @default(MEDIUM) // Kept this as an enum for data integrity
   isOrganic     Boolean @default(false)
+
 
   // --- FIELDS FOR HOMEPAGE ---
   isFeatured    Boolean @default(false)
@@ -199,7 +205,6 @@ model Order {
   shippingAddressId String?
   shippingAddress   Address?  @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
   
-
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -230,8 +235,8 @@ model OrderItem {
 
 enum OrderStatus {
   PENDING
-  SHIPPED   // Corrected typo and removed COMPLETED
-  PICKED_UP // Added new status for store pickup
+  SHIPPED
+  PICKED_UP
   CANCELLED
 }
 
@@ -239,4 +244,11 @@ enum OrderStatus {
 enum DeliveryMethod {
   DELIVERY
   PICKUP
+}
+
+// Enum for roast level
+enum RoastLevel {
+  LIGHT
+  MEDIUM
+  DARK
 }

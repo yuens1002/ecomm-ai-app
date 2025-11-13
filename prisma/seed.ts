@@ -1,27 +1,26 @@
-import { PrismaClient, PurchaseType } from "@prisma/client";
+import { PrismaClient, PurchaseType, RoastLevel } from "@prisma/client";
 
-// Initialize Prisma Client
 const prisma = new PrismaClient();
 
-// Define your 10 mock coffee products
 const coffeeData = [
   {
-    name: "Hayes Valley Espresso",
-    slug: "hayes-valley-espresso",
+    name: "Death Valley Espresso",
+    slug: "death-valley-espresso",
     description:
       "A rich, full-bodied espresso blend. Sweet and chocolaty, with notes of baking chocolate, orange zest, and brown sugar. The foundation of our cafe drinks.",
+    origin: ["Ethiopia", "Colombia", "Indonesia"],
     tastingNotes: ["Baking Chocolate", "Orange Zest", "Brown Sugar"],
     isOrganic: true,
+    roastLevel: RoastLevel.DARK,
     isFeatured: true,
     featuredOrder: 1,
     images: {
       create: [
-        // UPDATED: Added .png to the URL
         {
-          url: "https://placehold.co/600x400/3D2C1D/FFFFFF.png?text=Hayes+Valley",
-          altText: "Hayes Valley Espresso bag",
+          url: "https://placehold.co/600x400/3D2C1D/FFFFFF.png?text=Death+Valley",
+          altText: "Death Valley Espresso bag",
           order: 1,
-        },
+        }, // <-- UPDATED
       ],
     },
     variants: {
@@ -50,13 +49,14 @@ const coffeeData = [
     slug: "vietnam-lam-dong-peaberry",
     description:
       "A bright, clean peaberry from the highlands of Vietnam. Features a smooth body with hints of bright citrus and spice.",
+    origin: ["Vietnam"],
     tastingNotes: ["Bright Citrus", "Smooth Body", "Hint of Spice"],
     isOrganic: false,
+    roastLevel: RoastLevel.LIGHT,
     isFeatured: true,
     featuredOrder: 2,
     images: {
       create: [
-        // UPDATED: Added .png to the URL
         {
           url: "https://placehold.co/600x400/8B4513/FFFFFF.png?text=Vietnam+Peaberry",
           altText: "Vietnam Peaberry bag",
@@ -82,13 +82,14 @@ const coffeeData = [
     slug: "ethiopian-yirgacheffe",
     description:
       "A classic from Ethiopia, known for its delicate, tea-like body and bright, floral and lemon notes. A favorite for pour-over lovers.",
+    origin: ["Ethiopia"],
     tastingNotes: ["Floral", "Lemon", "Black Tea"],
     isOrganic: true,
+    roastLevel: RoastLevel.LIGHT,
     isFeatured: true,
     featuredOrder: 3,
     images: {
       create: [
-        // UPDATED: Added .png to the URL
         {
           url: "https://placehold.co/600x400/A0522D/FFFFFF.png?text=Yirgacheffe",
           altText: "Ethiopian Yirgacheffe bag",
@@ -122,12 +123,13 @@ const coffeeData = [
     slug: "colombian-supremo",
     description:
       "A well-balanced and smooth coffee, perfect for any time of day. Features notes of caramel, nutty undertones, and a mild, pleasant acidity.",
+    origin: ["Colombia"],
     tastingNotes: ["Caramel", "Nutty", "Mild Acidity"],
     isOrganic: false,
+    roastLevel: RoastLevel.MEDIUM,
     isFeatured: false,
     images: {
       create: [
-        // UPDATED: Added .png to the URL
         {
           url: "https://placehold.co/600x400/D2691E/FFFFFF.png?text=Colombian+Supremo",
           altText: "Colombian Supremo bag",
@@ -161,12 +163,13 @@ const coffeeData = [
     slug: "sumatra-mandheling",
     description:
       "A classic Indonesian coffee. Full-bodied, earthy, and low in acidity, with notes of dark chocolate and cedar.",
+    origin: ["Indonesia"],
     tastingNotes: ["Earthy", "Dark Chocolate", "Cedar"],
     isOrganic: true,
+    roastLevel: RoastLevel.DARK,
     isFeatured: false,
     images: {
       create: [
-        // UPDATED: Added .png to the URL
         {
           url: "https://placehold.co/600x400/5B3A29/FFFFFF.png?text=Sumatra",
           altText: "Sumatra Mandheling bag",
@@ -192,13 +195,14 @@ const coffeeData = [
     slug: "guatemalan-antigua",
     description:
       "A rich, complex coffee with a velvety body. Notes of milk chocolate, bright citrus, and a hint of spice.",
+    origin: ["Guatemala"],
     tastingNotes: ["Milk Chocolate", "Citrus", "Spice"],
     isOrganic: false,
+    roastLevel: RoastLevel.MEDIUM,
     isFeatured: true,
     featuredOrder: 4,
     images: {
       create: [
-        // UPDATED: Added .png to the URL
         {
           url: "https://placehold.co/600x400/6F4E37/FFFFFF.png?text=Guatemala",
           altText: "Guatemalan Antigua bag",
@@ -232,12 +236,13 @@ const coffeeData = [
     slug: "kenya-aa",
     description:
       "Incredibly bright and vibrant, with a wine-like acidity. Expect bold notes of blackcurrant, grapefruit, and a syrupy body.",
+    origin: ["Kenya"],
     tastingNotes: ["Blackcurrant", "Grapefruit", "Wine-like"],
     isOrganic: false,
+    roastLevel: RoastLevel.LIGHT,
     isFeatured: false,
     images: {
       create: [
-        // UPDATED: Added .png to the URL
         {
           url: "https://placehold.co/600x400/4A2C2A/FFFFFF.png?text=Kenya+AA",
           altText: "Kenya AA bag",
@@ -263,12 +268,13 @@ const coffeeData = [
     slug: "costa-rica-tarrazu",
     description:
       "A classic Costa Rican coffee, well-balanced and clean. Features notes of brown sugar, dried fruit, and a bright, crisp finish.",
+    origin: ["Costa Rica"],
     tastingNotes: ["Brown Sugar", "Dried Fruit", "Crisp Finish"],
     isOrganic: false,
+    roastLevel: RoastLevel.MEDIUM,
     isFeatured: false,
     images: {
       create: [
-        // UPDATED: Added .png to the URL
         {
           url: "https://placehold.co/600x400/7B5E49/FFFFFF.png?text=Costa+Rica",
           altText: "Costa Rica Tarrazú bag",
@@ -294,12 +300,13 @@ const coffeeData = [
     slug: "brazil-santos",
     description:
       "A smooth, mild, and nutty coffee. Very low acidity, making it a crowd-pleaser and a great base for espresso blends.",
+    origin: ["Brazil"],
     tastingNotes: ["Nutty", "Mild", "Low Acidity"],
     isOrganic: false,
+    roastLevel: RoastLevel.MEDIUM,
     isFeatured: false,
     images: {
       create: [
-        // UPDATED: Added .png to the URL
         {
           url: "https://placehold.co/600x400/967259/FFFFFF.png?text=Brazil+Santos",
           altText: "Brazil Santos bag",
@@ -325,13 +332,14 @@ const coffeeData = [
     slug: "vietnam-dalat-anaerobic",
     description:
       "An experimental, modern coffee from Vietnam. This anaerobic processed bean has unique, wine-like fruit notes and a complex profile.",
+    origin: ["Vietnam"],
     tastingNotes: ["Red Wine", "Funky Fruit", "Complex"],
     isOrganic: true,
+    roastLevel: RoastLevel.LIGHT,
     isFeatured: true,
     featuredOrder: 5, // Showcasing a second Vietnamese coffee
     images: {
       create: [
-        // UPDATED: Added .png to the URL
         {
           url: "https://placehold.co/600x400/6B2B3A/FFFFFF.png?text=Vietnam+Dalat",
           altText: "Vietnam Dalat Anaerobic bag",
@@ -357,18 +365,26 @@ const coffeeData = [
 async function main() {
   console.log(`Start seeding ...`);
 
-  // We use `upsert` to avoid creating duplicate entries if the script is run again.
-  // It finds a product by its unique 'slug'.
-  // If it exists (`where`), it does `update`.
-  // If it doesn't exist, it does `create`.
   for (const p of coffeeData) {
     const product = await prisma.product.upsert({
       where: { slug: p.slug },
-      update: {}, // We'll just skip updating if it exists
-      create: p, // The 'p' object includes all the nested 'create' for images/variants
+      update: {
+        ...p, // Update all top-level fields
+        // We need to delete existing relations before updating
+        // This is a simple way to handle upserting relations
+        images: {
+          deleteMany: {}, // Delete all existing images for this product
+          create: p.images.create, // Create the new ones
+        },
+        variants: {
+          deleteMany: {}, // Delete all existing variants
+          create: p.variants.create, // Create the new ones
+        },
+      },
+      create: p, // The 'p' object includes all the nested 'create'
     });
     console.log(
-      `Created or found product with id: ${product.id} (${product.name})`
+      `Created or updated product with id: ${product.id} (${product.name})`
     );
   }
   console.log(`Seeding finished.`);
