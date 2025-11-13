@@ -1,13 +1,17 @@
-import { ThemeProvider } from "@/components/theme-provider";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "./globals.css"; // Your global styles with CSS variables
 
-// Import the 'Inter' font and configure it
+// Import the new layout components
+import { ThemeProvider } from "@components/app-components/ThemeProvider";
+import SiteHeader from "@/components/app-components/SiteHeader";
+import SiteFooter from "@components/app-components/SiteFooter";
+
+// Setup the Inter font with a CSS variable
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter", // Define a CSS variable for the font
+  variable: "--font-inter", // We link this in tailwind.config.js
 });
 
 export const metadata: Metadata = {
@@ -15,23 +19,41 @@ export const metadata: Metadata = {
   description: "Specialty coffee sourced from the world's finest origins.",
 };
 
+/**
+ * This is the root layout (a Server Component).
+ * It wraps every page in the ThemeProvider, Header, Main, and Footer.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
+    // We add 'suppressHydrationWarning' as required by next-themes
     <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
-      <body>
+      <body className="min-h-screen bg-background font-sans antialiased">
+        {/* ThemeProvider is a Client Component wrapper.
+          It must wrap all content, including the header/footer,
+          to allow them to react to theme changes.
+        */}
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <header>Artisan Roast</header>
-          <main>{children}</main>
-          <footer>© 2024 Artisan Roast. All rights reserved.</footer>
+          <div className="relative flex min-h-screen flex-col">
+            {/* Our site header (Client Component) */}
+            <SiteHeader />
+
+            {/* The <main> tag holds the unique page content (our {children}).
+              'flex-1' ensures it grows to push the footer to the bottom.
+            */}
+            <main className="flex-1">{children}</main>
+
+            {/* Our site footer (Server Component) */}
+            <SiteFooter />
+          </div>
         </ThemeProvider>
       </body>
     </html>
