@@ -23,11 +23,6 @@ export default function CategoryClientPage({
   categorySlug,
   products,
 }: CategoryClientPageProps) {
-  const handleAddToCart = (productId: string) => {
-    // Mock implementation for now
-    console.log(`(CategoryPage) Add to cart: ${productId}`);
-  };
-
   return (
     <div className="container mx-auto px-4 md:px-8 py-8">
       {/* 1. Breadcrumb (Home > Category) */}
@@ -57,7 +52,6 @@ export default function CategoryClientPage({
             <ProductCard
               key={product.id}
               product={product as any} // Cast as 'any' because getProductsByCategorySlug is partial
-              onAddToCart={handleAddToCart}
               showPurchaseOptions={true} // Show button on category page
               categorySlug={categorySlug}
             />
