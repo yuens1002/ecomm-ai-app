@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { ThemeSwitcher } from "@components/app-components/ThemeSwitcher";
+import { ShoppingCart } from "@components/app-components/ShoppingCart";
 import { Category } from "@/lib/types";
-import { ShoppingCart, ChevronDown, Menu, Home } from "lucide-react";
+import { ChevronDown, Menu, Home } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,17 +25,13 @@ import { Button } from "@/components/ui/button";
 
 interface SiteHeaderProps {
   categories: Category[];
-  cartItemCount?: number; // Make cart count optional for now
 }
 
 /**
  * The site-wide header. This is a Client Component because
  * it uses the ThemeSwitcher, which is a Client Component.
  */
-export default function SiteHeader({
-  categories,
-  cartItemCount = 0,
-}: SiteHeaderProps) {
+export default function SiteHeader({ categories }: SiteHeaderProps) {
   return (
     <header className="bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md">
       <div className="container mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
@@ -82,17 +79,7 @@ export default function SiteHeader({
         {/* Right Side Controls */}
         <div className="flex items-center space-x-4">
           <ThemeSwitcher />
-          <button
-            className="relative text-text-muted hover:text-primary transition-colors"
-            aria-label="Open cart"
-          >
-            <ShoppingCart className="w-6 h-6" />
-            {cartItemCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                {cartItemCount}
-              </span>
-            )}
-          </button>
+          <ShoppingCart />
           {/* --- MOBILE MENU IMPLEMENTATION --- */}
           <Sheet>
             <SheetTrigger asChild className="md:hidden">

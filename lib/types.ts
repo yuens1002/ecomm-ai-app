@@ -53,10 +53,10 @@ export type Category = Prisma.PromiseReturnType<
 /**
  * Props for the <ProductCard> component.
  * It takes a single 'product' object that can come from any of the product lists.
+ * Uses Zustand cart store for add-to-cart functionality.
  */
 export interface ProductCardProps {
   product: FeaturedProduct | CategoryProduct | RelatedProduct;
-  onAddToCart: (productId: string) => void;
   showPurchaseOptions?: boolean;
   disableCardEffects?: boolean;
 }

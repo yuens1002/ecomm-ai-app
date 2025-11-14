@@ -31,6 +31,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label"; // <-- ADDED THIS IMPORT
 import ProductCard from "@components/app-components/ProductCard"; // Re-use our card
+import { useCartStore } from "@/lib/store/cart-store";
 
 // Prop interface for this component
 interface ProductClientPageProps {
@@ -49,6 +50,8 @@ export default function ProductClientPage({
   relatedProducts,
   category,
 }: ProductClientPageProps) {
+  const addItem = useCartStore((state) => state.addItem);
+
   // --- State Management ---
   // Find the first variant and purchase option to set as default
   const [selectedVariant, setSelectedVariant] = useState(product.variants[0]);
@@ -84,23 +87,28 @@ export default function ProductClientPage({
   };
 
   const handleAddToCart = () => {
-    // In a real app, this would add to a global cart (Zustand/Context)
-    console.log({
+    addItem({
       productId: product.id,
+      productName: product.name,
+      productSlug: product.slug,
       variantId: selectedVariant.id,
+      variantName: selectedVariant.name,
       purchaseOptionId: selectedPurchaseOption.id,
-      quantity: quantity,
-      schedule:
+      purchaseType: selectedPurchaseOption.type,
+      priceInCents: selectedPurchaseOption.priceInCents,
+      imageUrl: displayImage,
+      deliverySchedule:
         selectedPurchaseOption.type === "SUBSCRIPTION"
           ? selectedSchedule
-          : null,
+          : undefined,
+      quantity: quantity,
     });
-    setQuantity(() => quantity + 1); // Just a mock update for demo purposes
+
+    // Optional: Show feedback or reset quantity
+    // For now, keep quantity at 1 after adding
   };
 
-  const handleAddToCartMock = (productId: string) => {
-    console.log(`(Related) Add to cart: ${productId}`);
-  };
+  // ProductCard now uses cart store directly, no callback needed
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-8">
@@ -307,7 +315,6 @@ export default function ProductClientPage({
                   {/* We re-use our existing ProductCard component! */}
                   <ProductCard
                     product={relatedProduct} // Cast as 'any' to satisfy prop type, since we're passing a partial product
-                    onAddToCart={handleAddToCartMock}
                     disableCardEffects={true}
                   />
                 </div>

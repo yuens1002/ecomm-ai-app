@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import clsx from "clsx";
 import { ProductCardProps } from "@/lib/types"; // lib path stays the same
+import { useCartStore } from "@/lib/store/cart-store";
 
 // Import shadcn/ui components
 import {
@@ -19,11 +20,12 @@ import { Button } from "@/components/ui/button"; // shadcn/ui path remains the s
 // --- Product Card Component ---
 export default function ProductCard({
   product,
-  onAddToCart,
   showPurchaseOptions = true,
   disableCardEffects = false,
   categorySlug,
-}: ProductCardProps & { categorySlug?: string }) {
+}: Omit<ProductCardProps, "onAddToCart"> & { categorySlug?: string }) {
+  const addItem = useCartStore((state) => state.addItem);
+
   // --- Find price and image ---
   const displayVariant = product.variants[0];
   const oneTimePrice = displayVariant?.purchaseOptions.find(
@@ -93,7 +95,21 @@ export default function ProductCard({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                onAddToCart(product.id);
+
+                // Add to cart with default variant and one-time purchase
+                if (displayVariant && oneTimePrice) {
+                  addItem({
+                    productId: product.id,
+                    productName: product.name,
+                    productSlug: product.slug,
+                    variantId: displayVariant.id,
+                    variantName: displayVariant.name,
+                    purchaseOptionId: oneTimePrice.id,
+                    purchaseType: "ONE_TIME",
+                    priceInCents: oneTimePrice.priceInCents,
+                    imageUrl: displayImage,
+                  });
+                }
               }}
               className="w-full cursor-pointer"
             >

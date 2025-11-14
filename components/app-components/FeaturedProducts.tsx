@@ -32,12 +32,6 @@ export default function FeaturedProducts() {
     fetchProducts();
   }, []); // Empty dependency array means this runs once on mount
 
-  const handleAddToCart = (productId: string) => {
-    // This is a mock implementation for now.
-    // In a real app, this would update a global cart state (e.g., Zustand or Context)
-    console.log(`(FeaturedProducts) Add to cart: ${productId}`);
-  };
-
   return (
     <section className="container mx-auto px-4 md:px-8 py-16">
       <h2 className="text-3xl font-bold text-center text-text-base mb-12">
@@ -52,7 +46,6 @@ export default function FeaturedProducts() {
             <ProductCard
               key={product.id}
               product={product}
-              onAddToCart={handleAddToCart}
               showPurchaseOptions={false} // <-- Prop to hide price/button
             />
           ))}

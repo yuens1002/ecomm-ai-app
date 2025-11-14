@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.0 - 2025-11-14
+
+- **Shopping Cart (Phase 1)**: Implemented full shopping cart functionality with Zustand state management and localStorage persistence
+  - Created cart store with add/remove/update/clear operations and computed totals
+  - Special handling for subscriptions (replace instead of increment quantity)
+  - Cart drawer UI with product images, variant details, quantity controls, and subtotal
+  - Hydration-safe cart badge in header
+  - Client-side persistence (survives page refresh, lost on localStorage clear)
+- Architecture: Refactored cart logic into dedicated `ShoppingCart` component (separation of concerns from `SiteHeader`)
+- Integration: Wired `ProductCard`, `ProductClientPage`, and `FeaturedProducts` to use cart store
+- Checkout button placeholder (disabled, ready for Phase 2 Stripe integration)
+
 ## 0.5.3 - 2025-11-14
 
 - Security: patched moderate vulnerability by upgrading transitive `js-yaml` (npm audit fix). No breaking changes.
