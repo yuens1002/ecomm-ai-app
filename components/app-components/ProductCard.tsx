@@ -22,7 +22,8 @@ export default function ProductCard({
   onAddToCart,
   showPurchaseOptions = true,
   disableCardEffects = false,
-}: ProductCardProps) {
+  categorySlug,
+}: ProductCardProps & { categorySlug?: string }) {
   // --- Find price and image ---
   const displayVariant = product.variants[0];
   const oneTimePrice = displayVariant?.purchaseOptions.find(
@@ -40,20 +41,24 @@ export default function ProductCard({
     product.images[0]?.altText || `A bag of ${product.name} coffee`;
 
   // Define the destination URL using the product's slug
-  const productUrl = `/products/${product.slug}`;
+  // If categorySlug is provided, include it as a query parameter
+  const productUrl = categorySlug
+    ? `/products/${product.slug}?from=${encodeURIComponent(categorySlug)}`
+    : `/products/${product.slug}`;
 
   return (
-    <Card
-      className={clsx(
-        "w-full overflow-hidden rounded-lg bg-card-bg flex flex-col justify-between p-0",
-        !disableCardEffects &&
-          "cursor-pointer transition-transform duration-300 hover:scale-105 shadow-lg"
-      )}
+    <Link
+      href={productUrl}
+      className="rounded-lg"
+      aria-label={`View ${product.name} product page`}
     >
-      {/* Wrap only the card content in the native Link so browsers show the
-          link preview when hovering the card, but keep the footer/button
-          outside the Link so hovering the button won't show the preview. */}
-      <Link href={productUrl} className="contents">
+      <Card
+        className={clsx(
+          "w-full overflow-hidden rounded-lg bg-card-bg flex flex-col justify-between p-0",
+          !disableCardEffects &&
+            "cursor-pointer transition-transform duration-300 group-hover:scale-105 shadow-lg"
+        )}
+      >
         {/* 1. Image container. The parent <Card> clips its top corners. */}
         <CardHeader className="relative w-full aspect-16/10">
           <Image
@@ -80,21 +85,23 @@ export default function ProductCard({
             <p className="text-lg font-bold text-primary">${displayPrice}</p>
           )}
         </CardContent>
-      </Link>
 
-      {/* 3. CardFooter (only shows if purchase options are enabled) */}
-      {showPurchaseOptions && (
-        <CardFooter className="p-6 pt-0">
-          <Button
-            onClick={(e) => {
-              onAddToCart(product.id);
-            }}
-            className="w-full cursor-pointer"
-          >
-            Add to Cart
-          </Button>
-        </CardFooter>
-      )}
-    </Card>
+        {/* 3. CardFooter (only shows if purchase options are enabled) */}
+        {showPurchaseOptions && (
+          <CardFooter className="p-6 pt-0">
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onAddToCart(product.id);
+              }}
+              className="w-full cursor-pointer"
+            >
+              Add to Cart
+            </Button>
+          </CardFooter>
+        )}
+      </Card>
+    </Link>
   );
 }

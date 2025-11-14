@@ -9,7 +9,7 @@ datasource db {
 
 // 2. Define the generator for Prisma Client (TypeScript)
 generator client {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 // --- Product & Related Models ---
@@ -21,11 +21,9 @@ model Product {
   slug          String  @unique // For clean URLs like /products/hayes-valley-espresso
   description   String? @db.Text // Can store long text/HTML/Markdown
   
-  // --- UPDATED: Changed to String[] ---
-  origin        String[]  // e.g., ["Ethiopia", "Colombia"]
-  
+  origin        String[] // e.g., "Ethiopia", "Colombia", "Blend"
   tastingNotes  String[] // PostgreSQL arrays are great for this
-  roastLevel    RoastLevel @default(MEDIUM) // Kept this as an enum for data integrity
+  roastLevel    RoastLevel @default(MEDIUM) 
   isOrganic     Boolean @default(false)
 
 
@@ -36,12 +34,35 @@ model Product {
   // --- Relations ---
   images        ProductImage[] // A product can have many images
   variants      ProductVariant[] // A product can have many variants (e.g., 12oz, 5lb)
+  
+  // UPDATED: This is now a many-to-many relation
+  categories    CategoriesOnProducts[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@index([isFeatured])
 }
+
+// NEW: This is the explicit join table for Many-to-Many
+model CategoriesOnProducts {
+  product     Product   @relation(fields: [productId], references: [id])
+  productId   String
+  category    Category  @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  isPrimary   Boolean   @default(false) // Use this to define the "main" category for breadcrumbs
+
+  @@id([productId, categoryId]) // Composite primary key
+}
+
+// NEW: Category table, now linked via the join table
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  products  CategoriesOnProducts[] // Relation back to the join table
+}
+
 
 // This table holds all images for a product
 model ProductImage {
@@ -62,8 +83,6 @@ model ProductVariant {
   id            String @id @default(cuid())
   name          String // e.g., "12oz Bag", "5lb Bag"
   weightInGrams Int    // e.g., 340
-  
-  // NEW: Stock level for the *one* store location
   stockQuantity Int @default(0) 
 
   // Relation back to the Product
@@ -71,62 +90,52 @@ model ProductVariant {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   // Relation to purchase options
-  purchaseOptions PurchaseOption[] // A product can have many multiple purchase options
+  purchaseOptions PurchaseOption[] 
 
   @@index([productId])
 }
 
 // This table holds the different ways to buy a variant
-// e.g., "One Time" for $25 or "Subscribe" for $22
 model PurchaseOption {
   id              String @id @default(cuid())
   type            PurchaseType @default(ONE_TIME)
-  priceInCents    Int    // Store money in cents to avoid floating point errors ($22.50 = 2250)
-
-  // Optional fields from the image
-  discountMessage   String? // e.g., "Up to 17% Savings"
-  deliverySchedule  String? // e.g., "EVERY WEEK"
+  priceInCents    Int    
+  discountMessage   String?
+  deliverySchedule  String?
 
   // Relation back to the Variant
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
-
-  // Relation to OrderItems (what was actually bought)
   orderItems OrderItem[]
-
   @@index([variantId])
 }
 
-// Enum for the purchase type
 enum PurchaseType {
   ONE_TIME
   SUBSCRIPTION
 }
 
-
 // --- User & Order Models ---
-
-// This is your Customer/User table.
-// Designed to be compatible with Auth.js (NextAuth)
+// (User, Account, Session, VerificationToken, Address, Order, OrderItem models
+// remain exactly the same as the previous file)
+// ...
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
   emailVerified DateTime?
-  image         String?   // URL to profile picture
-  passwordHash  String?   // For storing the hashed password if using credentials
+  image         String?   
+  passwordHash  String?   
   
-  // Relations
-  accounts      Account[] // For OAuth providers (Google, GitHub, etc.)
-  sessions      Session[] // For Auth.js sessions
-  addresses     Address[] // A user can have multiple addresses
-  orders        Order[]   // A user can have many orders
+  accounts      Account[] 
+  sessions      Session[] 
+  addresses     Address[] 
+  orders        Order[]   
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
 
-// Auth.js model for OAuth accounts
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -146,7 +155,6 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
-// Auth.js model for sessions
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
@@ -155,7 +163,6 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// Auth.js model for email verification
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -164,7 +171,6 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// Stores user addresses (Billing or Shipping)
 model Address {
   id          String  @id @default(cuid())
   street      String
@@ -174,34 +180,23 @@ model Address {
   country     String
   isDefault   Boolean @default(false)
 
-  // Relation back to the User
   userId      String
   user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Relation to Orders (as a shipping address)
   ordersAsShippingAddress Order[] @relation("ShippingAddress")
 
   @@index([userId])
 }
 
-// The main Order table
 model Order {
   id           String      @id @default(cuid())
   totalInCents Int
   status       OrderStatus @default(PENDING)
-  
-  // Delivery method
   deliveryMethod DeliveryMethod @default(DELIVERY)
 
-  // Relation to the User who made the order
   userId       String
   user         User        @relation(fields: [userId], references: [id], onDelete: Restrict)
-
-  // Relation to the items in this order
   items        OrderItem[]
   
-  // Relation to a *shipping* address (nullable)
-  // This will be null if deliveryMethod is PICKUP
   shippingAddressId String?
   shippingAddress   Address?  @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
   
@@ -212,24 +207,18 @@ model Order {
   @@index([shippingAddressId])
 }
 
-// The "join table" for what's in an order
 model OrderItem {
   id            String @id @default(cuid())
   quantity      Int
-  priceInCents  Int // Price of the item *at the time of purchase*
-
-  // Relation to the Order
+  priceInCents  Int 
   orderId       String
   order         Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  // Relation to the *specific* purchase option that was bought
   purchaseOptionId String
   purchaseOption   PurchaseOption @relation(fields: [purchaseOptionId], references: [id], onDelete: Restrict)
 
   @@index([orderId])
   @@index([purchaseOptionId])
 }
-
 
 // --- Enums ---
 
@@ -240,13 +229,11 @@ enum OrderStatus {
   CANCELLED
 }
 
-// Enum for delivery type
 enum DeliveryMethod {
   DELIVERY
   PICKUP
 }
 
-// Enum for roast level
 enum RoastLevel {
   LIGHT
   MEDIUM

@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -23,8 +24,6 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
   const [brewMethod, setBrewMethod] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [recommendation, setRecommendation] = useState<string>("");
-
-  // --- REMOVED: modalProducts state and useEffect to fetch products ---
 
   // Reset all state when the modal is closed
   const handleClose = () => {
@@ -88,6 +87,10 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
           <DialogTitle className="text-2xl font-bold text-text-base">
             {step === 3 ? "Your Recommendation" : "Find Your Perfect Coffee"}
           </DialogTitle>
+          <DialogDescription>
+            Answer a few quick questions to find the perfect roast for your
+            brewing style.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Step 1: Taste */}
@@ -181,9 +184,11 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
               {recommendation}
             </p>
             <DialogFooter>
-              <Button onClick={handleClose} className="w-full">
-                Start Over
-              </Button>
+              <DialogClose asChild>
+                <Button onClick={handleClose} className="w-full">
+                  Start Over
+                </Button>
+              </DialogClose>
             </DialogFooter>
           </div>
         )}

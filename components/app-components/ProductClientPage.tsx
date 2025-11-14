@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FullProductPayload, RelatedProductPayload } from "@/lib/types";
+import { FullProductPayload, RelatedProduct, Category } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -34,10 +34,11 @@ import ProductCard from "@components/app-components/ProductCard"; // Re-use our 
 
 // Prop interface for this component
 interface ProductClientPageProps {
-  product: NonNullable<FullProductPayload>; // Use NonNullable to ensure product is not null
-  relatedProducts: NonNullable<RelatedProductPayload>;
+  product: NonNullable<FullProductPayload>;
+  relatedProducts: RelatedProduct[];
+  category: Pick<Category, "name" | "slug">; // We only need name and slug
 }
-// ... (rest of the file is identical) ...
+
 // Helper to format cents to dollars
 function formatPrice(priceInCents: number) {
   return (priceInCents / 100).toFixed(2);
@@ -46,6 +47,7 @@ function formatPrice(priceInCents: number) {
 export default function ProductClientPage({
   product,
   relatedProducts,
+  category,
 }: ProductClientPageProps) {
   // --- State Management ---
   // Find the first variant and purchase option to set as default
@@ -93,7 +95,7 @@ export default function ProductClientPage({
           ? selectedSchedule
           : null,
     });
-    // Add a user-friendly "Added to Cart" toast notification here
+    setQuantity(() => quantity + 1); // Just a mock update for demo purposes
   };
 
   const handleAddToCartMock = (productId: string) => {
@@ -102,7 +104,7 @@ export default function ProductClientPage({
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-8">
-      {/* 1. Breadcrumb */}
+      {/* 1. Breadcrumb (Home > Category > Product) */}
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -111,13 +113,16 @@ export default function ProductClientPage({
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
+
+          {/* Category link: Uses the category slug and name */}
           <BreadcrumbItem>
-            {/* We'll hardcode "Blends" for now. In a real app, this would be a category. */}
             <BreadcrumbLink asChild>
-              <Link href="/products">Blends</Link>
+              <Link href={`/categories/${category.slug}`}>{category.name}</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
+
+          {/* Current Page: Product Name */}
           <BreadcrumbItem>
             <BreadcrumbPage>{product.name}</BreadcrumbPage>
           </BreadcrumbItem>
@@ -135,7 +140,7 @@ export default function ProductClientPage({
               fill
               className="object-cover"
               sizes="(max-width: 768px) 90vw, 45vw"
-              priority
+              loading="eager"
             />
           </div>
           {/* In a real app, a thumbnail gallery would go here */}
@@ -301,7 +306,7 @@ export default function ProductClientPage({
                 <div className="p-1">
                   {/* We re-use our existing ProductCard component! */}
                   <ProductCard
-                    product={relatedProduct as any} // Cast as 'any' to satisfy prop type, since we're passing a partial product
+                    product={relatedProduct} // Cast as 'any' to satisfy prop type, since we're passing a partial product
                     onAddToCart={handleAddToCartMock}
                     disableCardEffects={true}
                   />

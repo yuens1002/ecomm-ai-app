@@ -4,13 +4,14 @@ import "./globals.css"; // Your global styles with CSS variables
 
 // Import the new layout components
 import { ThemeProvider } from "@components/app-components/ThemeProvider";
-import SiteHeader from "@/components/app-components/SiteHeader";
+import SiteHeaderWrapper from "@/components/app-components/SiteHeaderWrapper";
 import SiteFooter from "@components/app-components/SiteFooter";
 
 // Setup the Inter font with a CSS variable
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
+  preload: true,
   variable: "--font-inter", // We link this in tailwind.config.js
 });
 
@@ -44,12 +45,12 @@ export default function RootLayout({
         >
           <div className="relative flex min-h-screen flex-col">
             {/* Our site header (Client Component) */}
-            <SiteHeader />
+            <SiteHeaderWrapper />
 
             {/* The <main> tag holds the unique page content (our {children}).
               'flex-1' ensures it grows to push the footer to the bottom.
             */}
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 w-full">{children}</main>
 
             {/* Our site footer (Server Component) */}
             <SiteFooter />

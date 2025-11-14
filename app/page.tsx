@@ -23,8 +23,8 @@ export default function Home() {
           </p>
           <Button
             onClick={() => setIsAiModalOpen(true)}
-            size="lg" // Use shadcn size prop
-            className="bg-white text-primary font-bold py-3 px-8 rounded-lg text-lg hover:bg-opacity-90 transition-colors shadow-md"
+            size="lg"
+            className="font-bold text-lg shadow-md"
           >
             Get an AI Recommendation
           </Button>

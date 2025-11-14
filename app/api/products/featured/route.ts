@@ -4,7 +4,7 @@ import { getFeaturedProducts } from "@/lib/data"; // Use '@/' for absolute impor
 /**
  * API route to get all featured products.
  */
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const products = await getFeaturedProducts();
     return NextResponse.json(products);
