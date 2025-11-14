@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Product } from "@/lib/types"; // Import shared types
+import { FeaturedProduct } from "@/lib/types"; // Import shared types
 import ProductCard from "@components/app-components/ProductCard";
 
 // This component is now self-contained. It fetches its own data.
 // Changed from arrow function to function declaration
 export default function FeaturedProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<FeaturedProduct[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Fetch data from our API on component mount
@@ -19,7 +19,7 @@ export default function FeaturedProducts() {
         if (!response.ok) {
           throw new Error("Failed to fetch products");
         }
-        const data: Product[] = await response.json();
+        const data: FeaturedProduct[] = await response.json();
         setProducts(data);
       } catch (error) {
         console.error(error);
