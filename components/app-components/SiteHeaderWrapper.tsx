@@ -14,9 +14,9 @@ export default async function SiteHeaderWrapper() {
   // Handle case where no categories are found (e.g., first deployment/empty DB)
   if (!categories) {
     // Return an empty array to prevent map errors in SiteHeader
-    return <SiteHeader categories={[]} cartItemCount={0} />;
+    return <SiteHeader categories={[]} />;
   }
 
   // Pass the fetched, non-stale categories down to the client component
-  return <SiteHeader categories={categories} cartItemCount={0} />;
+  return <SiteHeader categories={categories} />;
 }
