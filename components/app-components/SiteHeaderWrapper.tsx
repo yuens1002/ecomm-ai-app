@@ -11,7 +11,7 @@ import SiteHeader from "@components/app-components/SiteHeader";
 export default async function SiteHeaderWrapper() {
   // Fetch all categories for the navigation menu
   const categories = await getAllCategories();
-  
+
   // Get current user session
   const session = await auth();
 

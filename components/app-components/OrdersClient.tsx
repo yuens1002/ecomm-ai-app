@@ -104,7 +104,9 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                       </p>
                     </div>
                     <div className="text-right font-medium">
-                      {formatPrice(item.purchaseOption.priceInCents * item.quantity)}
+                      {formatPrice(
+                        item.purchaseOption.priceInCents * item.quantity
+                      )}
                     </div>
                   </div>
                 ))}

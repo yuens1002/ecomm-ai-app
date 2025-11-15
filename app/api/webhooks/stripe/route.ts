@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
         // Find user by email if they're signed in
         const customerEmail = session.customer_details?.email;
         let userId: string | null = null;
-        
+
         if (customerEmail) {
           const user = await prisma.user.findUnique({
             where: { email: customerEmail },
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
           });
 
           console.log("📦 Order created:", order.id);
-          
+
           // TODO Phase 4:
           // - Send confirmation email
           // - Update inventory

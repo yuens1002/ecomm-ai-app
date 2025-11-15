@@ -3,8 +3,9 @@
 
 // 1. Define the database provider and URL
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL") // This pulls from your .env.local file or Vercel
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Pooled connection for app runtime
+  directUrl = env("DIRECT_URL")   // Direct connection for migrations (non-pooled)
 }
 
 // 2. Define the generator for Prisma Client (TypeScript)
