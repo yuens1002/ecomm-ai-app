@@ -7,10 +7,7 @@ export async function POST(req: NextRequest) {
     const { items } = await req.json();
 
     if (!items || items.length === 0) {
-      return NextResponse.json(
-        { error: "Cart is empty" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
     // Transform cart items into Stripe line items
@@ -20,9 +17,10 @@ export async function POST(req: NextRequest) {
           currency: "usd",
           product_data: {
             name: `${item.productName} - ${item.variantName}`,
-            description: item.purchaseType === "SUBSCRIPTION" 
-              ? `Subscription: ${item.deliverySchedule || "Regular delivery"}`
-              : "One-time purchase",
+            description:
+              item.purchaseType === "SUBSCRIPTION"
+                ? `Subscription: ${item.deliverySchedule || "Regular delivery"}`
+                : "One-time purchase",
             images: item.imageUrl ? [item.imageUrl] : undefined,
           },
           unit_amount: item.priceInCents,

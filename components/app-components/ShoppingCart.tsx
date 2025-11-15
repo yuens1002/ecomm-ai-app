@@ -261,9 +261,9 @@ export function ShoppingCart() {
               </div>
 
               {/* Checkout Button */}
-              <Button 
-                className="w-full" 
-                size="lg" 
+              <Button
+                className="w-full"
+                size="lg"
                 onClick={handleCheckout}
                 disabled={isCheckingOut}
               >

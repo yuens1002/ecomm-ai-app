@@ -188,13 +188,19 @@ model Address {
 }
 
 model Order {
-  id           String      @id @default(cuid())
-  totalInCents Int
-  status       OrderStatus @default(PENDING)
-  deliveryMethod DeliveryMethod @default(DELIVERY)
+  id               String      @id @default(cuid())
+  totalInCents     Int
+  status           OrderStatus @default(PENDING)
+  deliveryMethod   DeliveryMethod @default(DELIVERY)
 
-  userId       String
-  user         User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  // Stripe fields
+  stripeSessionId       String? @unique // Stripe Checkout Session ID
+  stripePaymentIntentId String? // Stripe Payment Intent ID
+  stripeCustomerId      String? // Stripe Customer ID
+  customerEmail         String? // Email from checkout
+
+  userId       String?
+  user         User?        @relation(fields: [userId], references: [id], onDelete: Restrict)
   items        OrderItem[]
   
   shippingAddressId String?
@@ -205,6 +211,8 @@ model Order {
 
   @@index([userId])
   @@index([shippingAddressId])
+  @@index([stripeSessionId])
+  @@index([customerEmail])
 }
 
 model OrderItem {

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.0 - 2025-11-14 (In Progress)
+
+- **Auth.js Integration (Phase 3 - Partial)**: Started authentication implementation
+  - Installed `next-auth@beta` and `@auth/prisma-adapter`
+  - Updated Prisma schema with Stripe fields for Order model (sessionId, paymentIntentId, customerId, customerEmail)
+  - Configured Auth.js with Google and GitHub OAuth providers
+  - Created sign-in page with OAuth buttons
+  - Database migration for order tracking preparation
+  - Updated `.env.example` with Auth.js variables
+- **Note**: Auth UI in header, order history, and webhook order saving still pending
+
 ## 0.7.0 - 2025-11-14
 
 - **Stripe Checkout (Phase 2)**: Integrated Stripe payment processing for one-time purchases and subscriptions

@@ -45,18 +45,18 @@ export async function POST(req: NextRequest) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log("✅ Checkout completed:", session.id);
-        
+
         // TODO: When Phase 3 (Auth) is implemented:
         // - Link order to user account
         // - Store order in database
         // - Send confirmation email
         // - Update inventory
-        
+
         // For now, just log the order details
-        const cartItems = session.metadata?.cartItems 
+        const cartItems = session.metadata?.cartItems
           ? JSON.parse(session.metadata.cartItems)
           : [];
-        
+
         console.log("Order details:", {
           sessionId: session.id,
           customerEmail: session.customer_details?.email,
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
           paymentStatus: session.payment_status,
           items: cartItems,
         });
-        
+
         break;
       }
 
