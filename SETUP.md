@@ -368,9 +368,38 @@ Your app will be deployed at `https://your-app.vercel.app`. Now create productio
 5. Copy the **Signing secret** (starts with `whsec_`)
 6. Update `STRIPE_WEBHOOK_SECRET` in Vercel **Production** environment
 
-### 6. Redeploy
+### 6. Apply Database Migrations (One-Time)
 
-After updating environment variables, trigger a new deployment from Vercel dashboard or push a new commit.
+**Important:** Migrations are NOT automatically applied during Vercel builds to avoid connection timeouts. You need to run them manually once after initial deployment.
+
+**Option A: Using Vercel CLI (Recommended)**
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Login to Vercel
+vercel login
+
+# Run migration in production environment
+vercel env pull .env.production  # Download production env vars
+npx prisma migrate deploy
+```
+
+**Option B: Using a temporary build command**
+
+1. Temporarily change the build command in Vercel to: `prisma generate && prisma migrate deploy && next build`
+2. Trigger a deployment
+3. Once successful, change it back to: `prisma generate && next build`
+
+**When to run migrations:**
+- After initial deployment
+- After making schema changes (new migrations created)
+- Never needed for regular code deployments
+
+### 7. Redeploy
+
+After updating environment variables or applying migrations, trigger a new deployment from Vercel dashboard or push a new commit.
 
 ---
 
@@ -411,6 +440,14 @@ After updating environment variables, trigger a new deployment from Vercel dashb
 npx prisma generate
 npm run dev
 ```
+
+### Database Migrations on Vercel
+
+**Problem:** Build fails with database connection timeout
+
+**Why:** Neon's direct connection can be slow during cold starts. Migrations are removed from the build script to prevent timeouts.
+
+**Solution:** Migrations should be run manually (see deployment step 6). Regular builds only need `prisma generate` which doesn't require a database connection.
 
 ---
 
