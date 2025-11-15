@@ -199,6 +199,7 @@ model Order {
   stripePaymentIntentId String? // Stripe Payment Intent ID
   stripeCustomerId      String? // Stripe Customer ID
   customerEmail         String? // Email from checkout
+  paymentCardLast4      String? // Last 4 digits of payment card
 
   userId       String?
   user         User?        @relation(fields: [userId], references: [id], onDelete: Restrict)

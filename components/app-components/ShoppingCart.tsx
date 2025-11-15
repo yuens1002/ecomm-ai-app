@@ -9,8 +9,21 @@ import {
   Plus,
   Minus,
   Loader2,
+  Truck,
+  Store,
+  MapPin,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useCartStore, CartItem } from "@/lib/store/cart-store";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -28,9 +41,21 @@ import { Separator } from "@/components/ui/separator";
  * Renders a cart button with badge + drawer showing cart contents
  */
 export function ShoppingCart() {
+  const { data: session } = useSession();
   const [cartItemCount, setCartItemCount] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Delivery preferences
+  const [deliveryMethod, setDeliveryMethod] = useState<"DELIVERY" | "PICKUP">(
+    "DELIVERY"
+  );
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null
+  );
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [loadingPreferences, setLoadingPreferences] = useState(true);
 
   const items = useCartStore((state) => state.items);
   const getTotalItems = useCartStore((state) => state.getTotalItems);
@@ -52,6 +77,56 @@ export function ShoppingCart() {
     });
     return unsubscribe;
   }, []);
+
+  // Listen for custom event to open cart
+  useEffect(() => {
+    const handleOpenCart = () => setIsOpen(true);
+    window.addEventListener("openCart", handleOpenCart);
+    return () => window.removeEventListener("openCart", handleOpenCart);
+  }, []);
+
+  // Fetch user's addresses and last order delivery preferences
+  useEffect(() => {
+    const fetchDeliveryPreferences = async () => {
+      if (!session?.user?.id) {
+        setLoadingPreferences(false);
+        return;
+      }
+
+      try {
+        // Fetch user's addresses
+        const addressResponse = await fetch("/api/user/addresses");
+        if (addressResponse.ok) {
+          const data = await addressResponse.json();
+          setAddresses(data.addresses || []);
+
+          // Set default address as selected
+          const defaultAddr = data.addresses?.find((a: any) => a.isDefault);
+          if (defaultAddr) {
+            setSelectedAddressId(defaultAddr.id);
+          }
+        }
+
+        // Fetch last order to get preferred delivery method
+        const ordersResponse = await fetch("/api/user/orders?limit=1");
+        if (ordersResponse.ok) {
+          const ordersData = await ordersResponse.json();
+          if (ordersData.orders && ordersData.orders.length > 0) {
+            const lastOrder = ordersData.orders[0];
+            setDeliveryMethod(lastOrder.deliveryMethod || "DELIVERY");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch delivery preferences:", error);
+      } finally {
+        setLoadingPreferences(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchDeliveryPreferences();
+    }
+  }, [isOpen, session]);
 
   const formatPrice = (priceInCents: number) => {
     return `$${(priceInCents / 100).toFixed(2)}`;
@@ -81,7 +156,13 @@ export function ShoppingCart() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({
+          items,
+          userId: session?.user?.id,
+          deliveryMethod,
+          selectedAddressId:
+            deliveryMethod === "DELIVERY" ? selectedAddressId : null,
+        }),
       });
 
       const data = await response.json();
@@ -105,7 +186,7 @@ export function ShoppingCart() {
   const displayCount = mounted ? cartItemCount : 0;
 
   return (
-    <Sheet>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button
           variant="ghost"
@@ -254,6 +335,105 @@ export function ShoppingCart() {
         {items.length > 0 && (
           <div className="border-t px-6 py-4 mt-auto">
             <div className="space-y-4">
+              {/* Delivery Method Selection */}
+              {session?.user && !loadingPreferences && (
+                <div className="space-y-3 pb-4 border-b">
+                  <Label className="text-sm font-semibold">
+                    Delivery Method
+                  </Label>
+                  <RadioGroup
+                    value={deliveryMethod}
+                    onValueChange={(value) =>
+                      setDeliveryMethod(value as "DELIVERY" | "PICKUP")
+                    }
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="DELIVERY" id="delivery" />
+                      <Label
+                        htmlFor="delivery"
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <Truck className="w-4 h-4" />
+                        <span>Delivery</span>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="PICKUP" id="pickup" />
+                      <Label
+                        htmlFor="pickup"
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <Store className="w-4 h-4" />
+                        <span>Store Pickup</span>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+
+                  {/* Address Selection - Only show for Delivery */}
+                  {deliveryMethod === "DELIVERY" && (
+                    <div className="space-y-2 mt-3">
+                      {addresses.length > 0 ? (
+                        <>
+                          <Label className="text-sm">Shipping Address</Label>
+                          <div className="flex items-start gap-2">
+                            <MapPin className="w-5 h-5 mt-2 shrink-0 text-muted-foreground" />
+                            <Select
+                              value={selectedAddressId || "new"}
+                              onValueChange={(value) =>
+                                setSelectedAddressId(
+                                  value === "new" ? null : value
+                                )
+                              }
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select an address" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="new">
+                                  <span className="font-medium">
+                                    Enter new address at checkout
+                                  </span>
+                                </SelectItem>
+                                {addresses.map((address) => (
+                                  <SelectItem
+                                    key={address.id}
+                                    value={address.id}
+                                  >
+                                    {address.street}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded text-sm">
+                          <p className="text-blue-800 dark:text-blue-200">
+                            You'll be able to enter your shipping address during
+                            checkout.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Pickup Location Info */}
+                  {deliveryMethod === "PICKUP" && (
+                    <div className="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded text-sm">
+                      <p className="font-medium text-green-800 dark:text-green-200 mb-1">
+                        Pickup Location
+                      </p>
+                      <p className="text-green-700 dark:text-green-300 text-xs">
+                        123 Coffee Street, San Francisco, CA 94102
+                      </p>
+                      <p className="text-green-700 dark:text-green-300 text-xs mt-1">
+                        Mon-Fri: 8AM-6PM, Sat-Sun: 9AM-5PM
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Subtotal */}
               <div className="flex items-center justify-between text-lg font-semibold">
                 <span>Subtotal</span>

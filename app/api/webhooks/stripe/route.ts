@@ -44,23 +44,121 @@ export async function POST(req: NextRequest) {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
+        let session = event.data.object as Stripe.Checkout.Session;
+
+        console.log(
+          "📥 Processing checkout.session.completed event:",
+          session.id
+        );
+
+        // Retrieve the full session with shipping and customer details
+        try {
+          session = await stripe.checkout.sessions.retrieve(session.id, {
+            expand: ["line_items", "customer_details"],
+          });
+        } catch (retrieveError: any) {
+          console.error("Failed to retrieve session:", retrieveError);
+          throw retrieveError;
+        }
+
         console.log("✅ Checkout completed:", session.id);
 
         const cartItems = session.metadata?.cartItems
-          ? JSON.parse(session.metadata.cartItems)
+          ? JSON.parse(session.metadata.cartItems).map((item: any) => ({
+              purchaseOptionId: item.po, // Map shortened key back
+              quantity: item.qty, // Map shortened key back
+            }))
           : [];
+
+        const deliveryMethod = session.metadata?.deliveryMethod || "DELIVERY";
+        const preferredAddressId =
+          session.metadata?.selectedAddressId &&
+          session.metadata.selectedAddressId !== ""
+            ? session.metadata.selectedAddressId
+            : null;
 
         // Find user by email if they're signed in
         const customerEmail = session.customer_details?.email;
         let userId: string | null = null;
+        let shippingAddressId: string | null = null;
 
         if (customerEmail) {
           const user = await prisma.user.findUnique({
             where: { email: customerEmail },
-            select: { id: true },
+            select: { id: true, name: true },
           });
           userId = user?.id || null;
+
+          // Extract shipping address from Stripe session
+          // When shipping_address_collection is enabled, the address goes into customer_details.address
+          const shippingAddress = session.customer_details?.address;
+          const shippingName = session.customer_details?.name;
+
+          // Update user's name if they don't have one and Stripe collected it
+          if (userId && shippingName && !user?.name) {
+            await prisma.user.update({
+              where: { id: userId },
+              data: { name: shippingName },
+            });
+          }
+
+          if (shippingAddress && userId) {
+            const stripeAddress = shippingAddress;
+
+            // Check if this exact address already exists for the user
+            const existingAddress = await prisma.address.findFirst({
+              where: {
+                userId: userId,
+                street: stripeAddress.line1 || "",
+                city: stripeAddress.city || "",
+                state: stripeAddress.state || "",
+                postalCode: stripeAddress.postal_code || "",
+                country: stripeAddress.country || "",
+              },
+            });
+
+            if (existingAddress) {
+              shippingAddressId = existingAddress.id;
+            } else {
+              // Create new address for the user
+              const newAddress = await prisma.address.create({
+                data: {
+                  userId: userId,
+                  street: stripeAddress.line1 || "",
+                  city: stripeAddress.city || "",
+                  state: stripeAddress.state || "",
+                  postalCode: stripeAddress.postal_code || "",
+                  country: stripeAddress.country || "",
+                  isDefault: false, // Don't auto-set as default
+                },
+              });
+              shippingAddressId = newAddress.id;
+              console.log("📍 Saved shipping address:", newAddress.id);
+            }
+          }
+        }
+
+        // Get payment card last 4 digits
+        let paymentCardLast4: string | undefined;
+        if (session.payment_intent) {
+          try {
+            const paymentIntent = await stripe.paymentIntents.retrieve(
+              session.payment_intent as string,
+              {
+                expand: ["payment_method"],
+              }
+            );
+            const paymentMethod = paymentIntent.payment_method as any;
+            if (paymentMethod?.card?.last4) {
+              // Format as "Visa ****1234"
+              const brand =
+                paymentMethod.card.brand.charAt(0).toUpperCase() +
+                paymentMethod.card.brand.slice(1);
+              paymentCardLast4 = `${brand} ****${paymentMethod.card.last4}`;
+            }
+          } catch (error) {
+            console.error("Failed to retrieve payment method:", error);
+          }
         }
 
         // Create order in database
@@ -73,7 +171,14 @@ export async function POST(req: NextRequest) {
               customerEmail: customerEmail || null,
               totalInCents: session.amount_total || 0,
               status: "PENDING",
+              deliveryMethod: deliveryMethod as "DELIVERY" | "PICKUP",
+              paymentCardLast4: paymentCardLast4,
               userId: userId || undefined,
+              shippingAddressId:
+                deliveryMethod === "DELIVERY" &&
+                (shippingAddressId || preferredAddressId)
+                  ? shippingAddressId || preferredAddressId
+                  : undefined,
               items: {
                 create: cartItems.map((item: any) => ({
                   quantity: item.quantity,

@@ -1,44 +1,25 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import { OrdersClient } from "@/components/app-components/OrdersClient";
+import OrdersPageClient from "./OrdersPageClient";
 
-export default async function OrdersPage() {
+/**
+ * Orders Page (Server Component)
+ *
+ * Protected route - requires authentication
+ * Lists all orders for logged-in user with filtering
+ */
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
   const session = await auth();
 
-  if (!session?.user) {
-    redirect("/auth/signin");
+  if (!session?.user?.id) {
+    redirect("/api/auth/signin?callbackUrl=/orders");
   }
 
-  // Fetch user's orders with items and purchase options
-  const orders = await prisma.order.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    include: {
-      items: {
-        include: {
-          purchaseOption: {
-            include: {
-              variant: {
-                include: {
-                  product: {
-                    select: {
-                      name: true,
-                      slug: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const { status } = await searchParams;
 
-  return <OrdersClient orders={orders} />;
+  return <OrdersPageClient userId={session.user.id} statusFilter={status} />;
 }

@@ -4,6 +4,7 @@ import "./globals.css"; // Your global styles with CSS variables
 
 // Import the new layout components
 import { ThemeProvider } from "@components/app-components/ThemeProvider";
+import { SessionProvider } from "@components/app-components/SessionProvider";
 import SiteHeaderWrapper from "@/components/app-components/SiteHeaderWrapper";
 import SiteFooter from "@components/app-components/SiteFooter";
 
@@ -37,25 +38,27 @@ export default function RootLayout({
           It must wrap all content, including the header/footer,
           to allow them to react to theme changes.
         */}
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className="relative flex min-h-screen flex-col">
-            {/* Our site header (Client Component) */}
-            <SiteHeaderWrapper />
+        <SessionProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="relative flex min-h-screen flex-col">
+              {/* Our site header (Client Component) */}
+              <SiteHeaderWrapper />
 
-            {/* The <main> tag holds the unique page content (our {children}).
-              'flex-1' ensures it grows to push the footer to the bottom.
-            */}
-            <main className="flex-1 w-full">{children}</main>
+              {/* The <main> tag holds the unique page content (our {children}).
+                'flex-1' ensures it grows to push the footer to the bottom.
+              */}
+              <main className="flex-1 w-full">{children}</main>
 
-            {/* Our site footer (Server Component) */}
-            <SiteFooter />
-          </div>
-        </ThemeProvider>
+              {/* Our site footer (Server Component) */}
+              <SiteFooter />
+            </div>
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   );

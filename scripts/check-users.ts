@@ -30,7 +30,11 @@ async function main() {
     console.log(`  ID: ${user.id}`);
     console.log(`  Email: ${user.email}`);
     console.log(`  Name: ${user.name || "(not set)"}`);
-    console.log(`  Has Password: ${user.passwordHash ? "Yes (encrypted)" : "No (OAuth only)"}`);
+    console.log(
+      `  Has Password: ${
+        user.passwordHash ? "Yes (encrypted)" : "No (OAuth only)"
+      }`
+    );
     console.log(`  Email Verified: ${user.emailVerified || "Not verified"}`);
     console.log(`  Created: ${user.createdAt.toLocaleString()}`);
     console.log("");

@@ -1,10 +1,23 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function CheckoutCancelPage() {
+  const router = useRouter();
+
+  const handleViewCart = () => {
+    // Navigate to home and trigger cart open via URL hash
+    router.push("/#cart");
+    // Small delay to ensure navigation completes
+    setTimeout(() => {
+      // Trigger a custom event that ShoppingCart can listen to
+      window.dispatchEvent(new CustomEvent("openCart"));
+    }, 100);
+  };
+
   return (
     <div className="container mx-auto px-4 py-16">
       <div className="max-w-2xl mx-auto text-center">
@@ -28,8 +41,8 @@ export default function CheckoutCancelPage() {
           <Button asChild size="lg">
             <Link href="/">Continue Shopping</Link>
           </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/">View Cart</Link>
+          <Button onClick={handleViewCart} variant="outline" size="lg">
+            View Cart
           </Button>
         </div>
 
