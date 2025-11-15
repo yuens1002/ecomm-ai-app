@@ -393,6 +393,7 @@ npx prisma migrate deploy
 3. Once successful, change it back to: `prisma generate && next build`
 
 **When to run migrations:**
+
 - After initial deployment
 - After making schema changes (new migrations created)
 - Never needed for regular code deployments
