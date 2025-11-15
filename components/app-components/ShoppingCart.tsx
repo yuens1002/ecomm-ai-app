@@ -8,6 +8,7 @@ import {
   Trash2,
   Plus,
   Minus,
+  Loader2,
 } from "lucide-react";
 import { useCartStore, CartItem } from "@/lib/store/cart-store";
 import {
@@ -29,6 +30,7 @@ import { Separator } from "@/components/ui/separator";
 export function ShoppingCart() {
   const [cartItemCount, setCartItemCount] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const items = useCartStore((state) => state.items);
   const getTotalItems = useCartStore((state) => state.getTotalItems);
@@ -69,6 +71,34 @@ export function ShoppingCart() {
 
   const handleRemoveItem = (item: CartItem) => {
     removeItem(item.productId, item.variantId, item.purchaseOptionId);
+  };
+
+  const handleCheckout = async () => {
+    setIsCheckingOut(true);
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ items }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create checkout session");
+      }
+
+      // Redirect to Stripe Checkout
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+      alert("Failed to start checkout. Please try again.");
+      setIsCheckingOut(false);
+    }
   };
 
   // Don't render count until mounted (avoid hydration mismatch)
@@ -231,9 +261,20 @@ export function ShoppingCart() {
               </div>
 
               {/* Checkout Button */}
-              <Button className="w-full" size="lg" disabled>
-                Proceed to Checkout
-                <span className="ml-2 text-xs opacity-70">(Coming Soon)</span>
+              <Button 
+                className="w-full" 
+                size="lg" 
+                onClick={handleCheckout}
+                disabled={isCheckingOut}
+              >
+                {isCheckingOut ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Proceed to Checkout"
+                )}
               </Button>
 
               {/* Clear Cart */}

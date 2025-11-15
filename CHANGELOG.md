@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.7.0 - 2025-11-14
+
+- **Stripe Checkout (Phase 2)**: Integrated Stripe payment processing for one-time purchases and subscriptions
+  - Checkout API endpoint creates Stripe Checkout Sessions with cart items
+  - Support for both one-time purchases and subscription products
+  - Product images and metadata passed to Stripe
+  - Success page with order confirmation and cart clearing
+  - Cancel page with cart preservation
+  - Webhook handler for payment events and subscription lifecycle
+  - Secure signature verification for webhooks
+  - Loading states and error handling in checkout flow
+- Documentation: Complete Stripe setup guide with test card numbers and webhook configuration
+- Environment: Added `.env.example` with required Stripe keys
+- Dependencies: Installed `stripe` and `@stripe/stripe-js` packages
+
 ## 0.6.0 - 2025-11-14
 
 - **Shopping Cart (Phase 1)**: Implemented full shopping cart functionality with Zustand state management and localStorage persistence
