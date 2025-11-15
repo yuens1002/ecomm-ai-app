@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { ThemeSwitcher } from "@components/app-components/ThemeSwitcher";
 import { ShoppingCart } from "@components/app-components/ShoppingCart";
+import { UserMenu } from "@components/app-components/UserMenu";
 import { Category } from "@/lib/types";
-import { ChevronDown, Menu, Home } from "lucide-react";
+import { ChevronDown, Menu, Home, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,13 +26,18 @@ import { Button } from "@/components/ui/button";
 
 interface SiteHeaderProps {
   categories: Category[];
+  user: {
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  } | null;
 }
 
 /**
  * The site-wide header. This is a Client Component because
  * it uses the ThemeSwitcher, which is a Client Component.
  */
-export default function SiteHeader({ categories }: SiteHeaderProps) {
+export default function SiteHeader({ categories, user }: SiteHeaderProps) {
   return (
     <header className="bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md">
       <div className="container mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
@@ -80,6 +86,16 @@ export default function SiteHeader({ categories }: SiteHeaderProps) {
         <div className="flex items-center space-x-4">
           <ThemeSwitcher />
           <ShoppingCart />
+          {user ? (
+            <UserMenu user={user} />
+          ) : (
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/auth/signin">
+                <User className="w-4 h-4 mr-2" />
+                Sign In
+              </Link>
+            </Button>
+          )}
           {/* --- MOBILE MENU IMPLEMENTATION --- */}
           <Sheet>
             <SheetTrigger asChild className="md:hidden">

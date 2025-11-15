@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
+import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
 
 export async function POST(req: NextRequest) {
@@ -46,25 +47,56 @@ export async function POST(req: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log("✅ Checkout completed:", session.id);
 
-        // TODO: When Phase 3 (Auth) is implemented:
-        // - Link order to user account
-        // - Store order in database
-        // - Send confirmation email
-        // - Update inventory
-
-        // For now, just log the order details
         const cartItems = session.metadata?.cartItems
           ? JSON.parse(session.metadata.cartItems)
           : [];
 
-        console.log("Order details:", {
-          sessionId: session.id,
-          customerEmail: session.customer_details?.email,
-          amountTotal: session.amount_total,
-          currency: session.currency,
-          paymentStatus: session.payment_status,
-          items: cartItems,
-        });
+        // Find user by email if they're signed in
+        const customerEmail = session.customer_details?.email;
+        let userId: string | null = null;
+        
+        if (customerEmail) {
+          const user = await prisma.user.findUnique({
+            where: { email: customerEmail },
+            select: { id: true },
+          });
+          userId = user?.id || null;
+        }
+
+        // Create order in database
+        try {
+          const order = await prisma.order.create({
+            data: {
+              stripeSessionId: session.id,
+              stripePaymentIntentId: session.payment_intent as string,
+              stripeCustomerId: session.customer as string,
+              customerEmail: customerEmail || null,
+              totalInCents: session.amount_total || 0,
+              status: "PENDING",
+              userId: userId || undefined,
+              items: {
+                create: cartItems.map((item: any) => ({
+                  quantity: item.quantity,
+                  priceInCents: 0, // Will be fetched from purchase option
+                  purchaseOptionId: item.purchaseOptionId,
+                })),
+              },
+            },
+            include: {
+              items: true,
+            },
+          });
+
+          console.log("📦 Order created:", order.id);
+          
+          // TODO Phase 4:
+          // - Send confirmation email
+          // - Update inventory
+          // - Handle subscriptions differently
+        } catch (dbError: any) {
+          console.error("Failed to create order:", dbError);
+          // Don't fail the webhook - Stripe already processed payment
+        }
 
         break;
       }

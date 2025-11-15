@@ -1,15 +1,27 @@
 # Changelog
 
-## 0.8.0 - 2025-11-14 (In Progress)
+## 0.9.0 - 2025-11-14
+
+- **Auth.js Integration Complete (Phase 3)**: Full authentication and order tracking implementation
+  - User authentication with Google and GitHub OAuth providers
+  - Sign-in page with OAuth buttons and guest checkout option
+  - User menu in header with account settings and sign out
+  - Order tracking: webhook automatically saves orders to database
+  - Orders linked to authenticated users (guest orders saved with email only)
+  - Order history page showing all user orders with status and details
+  - Protected routes (orders page requires authentication)
+  - Database schema with Stripe integration fields (sessionId, paymentIntentId, customerId, customerEmail)
+- Dependencies: Added `date-fns` for date formatting
+- **Next Steps (Phase 4)**: Email notifications, inventory management, subscription management portal
+
+## 0.8.0 - 2025-11-14
 
 - **Auth.js Integration (Phase 3 - Partial)**: Started authentication implementation
   - Installed `next-auth@beta` and `@auth/prisma-adapter`
-  - Updated Prisma schema with Stripe fields for Order model (sessionId, paymentIntentId, customerId, customerEmail)
+  - Updated Prisma schema with Stripe fields for Order model
   - Configured Auth.js with Google and GitHub OAuth providers
   - Created sign-in page with OAuth buttons
   - Database migration for order tracking preparation
-  - Updated `.env.example` with Auth.js variables
-- **Note**: Auth UI in header, order history, and webhook order saving still pending
 
 ## 0.7.0 - 2025-11-14
 
