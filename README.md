@@ -6,15 +6,15 @@ It features a minimal, high-quality product list and an AI-powered assistant to 
 
 ## Core Features
 
-- **Theme-able UI:** Switch between Light and Dark modes. (Implemented with Tailwind CSS & CSS Variables).
-
-- **Fully Responsive Design:** A clean, mobile-first layout that scales to all devices.
-
-- **AI Coffee Helper:** A chat-based modal that uses the Google Gemini API to ask users questions and provide personalized coffee recommendations.
-
-- **Open-Source:** The project is fully open-source with a clear code structure and MIT License.
-
-- **(In-Progress):** Full cart and checkout functionality.
+- **🛒 Shopping Cart:** Zustand-powered cart with localStorage persistence, supports one-time purchases and subscriptions
+- **💳 Stripe Checkout:** Full payment integration with webhook processing for order fulfillment
+- **🔐 Authentication:** Auth.js with OAuth (GitHub/Google) and database sessions
+- **📦 Order Tracking:** Complete order history with status tracking and customer details
+- **🎨 Theme-able UI:** Switch between Light and Dark modes (Tailwind CSS & CSS Variables)
+- **📱 Fully Responsive:** Clean, mobile-first layout that scales to all devices
+- **🤖 AI Coffee Helper:** Chat-based modal using Google Gemini API for personalized recommendations
+- **⚡ Type-Safe:** End-to-end TypeScript with Prisma for database type safety
+- **🚀 Production Ready:** Deployed on Vercel with PostgreSQL (Neon) backend
 
 ## Tech Stack & Skills Showcased
 
@@ -58,42 +58,35 @@ This project was built to demonstrate proficiency across the entire stack, as de
 
 - **Accessibility:** Adherence to **WCAG** standards (supported by shadcn/ui).
 
-## Getting Started
+## Quick Start
 
-### 1. Clone the Repository
+Want to run this locally? See the **[📖 Complete Setup Guide](./SETUP.md)** for detailed instructions.
 
-`git clone https://github.com/YourUsername/your-repo-name.git cd your-repo-name`
+### TL;DR
 
-### 2. Install Dependencies
+```bash
+# 1. Clone and install
+git clone https://github.com/yuens1002/ecomm-ai-app.git
+cd artisan-roast
+npm install
 
-`npm install`
+# 2. Copy environment template
+cp .env.example .env.local
+# Edit .env.local with your credentials (see SETUP.md)
 
-### 3. Set Up Environment Variables
+# 3. Set up database
+npx prisma generate
+npx prisma migrate deploy
+npm run seed
 
-Create a `.env.local` file in the root of the project and add your database URL and API key:
-
+# 4. Start development (requires 2 terminals)
+npm run dev                                                    # Terminal 1
+stripe listen --forward-to localhost:3000/api/webhooks/stripe # Terminal 2
 ```
-.env.local
-DATABASE_URL="postgresql://user:password@localhost:5432/#our-db-name" GEMINI_API_KEY="YOUR_GOOGLE_AI_API_KEY"
-```
 
-### 4. Run the Database (via Docker)
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-This will start a PostgreSQL database in a Docker container.
-
-`docker compose up -d`
-
-### 5. Run Database Migrations
-
-This will sync your Prisma schema with the running database.
-
-`npx prisma migrate dev`
-
-### 6. Run the Development Server
-
-`npm run dev`
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Important:** You'll need accounts for Neon (database), Stripe (payments), and OAuth providers (GitHub/Google). See [SETUP.md](./SETUP.md) for complete instructions.
 
 ## License
 
