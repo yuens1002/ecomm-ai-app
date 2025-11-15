@@ -3,6 +3,7 @@
 Complete setup instructions for running Artisan Roast locally and deploying to production.
 
 ## Table of Contents
+
 - [Prerequisites](#prerequisites)
 - [Local Development Setup](#local-development-setup)
 - [Database Setup (Neon PostgreSQL)](#database-setup-neon-postgresql)
@@ -24,6 +25,7 @@ Before you begin, ensure you have the following installed:
 - **Stripe CLI** (for local webhook testing) - [Installation Guide](https://stripe.com/docs/stripe-cli)
 
 You'll also need accounts for:
+
 - [Neon](https://neon.tech/) (PostgreSQL database)
 - [Stripe](https://stripe.com/) (payment processing)
 - [Google Cloud Console](https://console.cloud.google.com/) (OAuth)
@@ -73,11 +75,13 @@ Now let's fill in each section...
 Neon provides two types of connection strings:
 
 **Pooled Connection** (for app runtime):
+
 ```
 postgresql://user:password@host-pooler.region.neon.tech/dbname?sslmode=require
 ```
 
 **Direct Connection** (for migrations - remove `-pooler` from hostname):
+
 ```
 postgresql://user:password@host.region.neon.tech/dbname?sslmode=require
 ```
@@ -135,17 +139,20 @@ For local development, you need the Stripe CLI to forward webhook events:
 #### Install Stripe CLI
 
 **macOS (Homebrew):**
+
 ```bash
 brew install stripe/stripe-cli/stripe
 ```
 
 **Windows (Scoop):**
+
 ```bash
 scoop bucket add stripe https://github.com/stripe/scoop-stripe-cli.git
 scoop install stripe
 ```
 
 **Linux:**
+
 ```bash
 # Download the latest release from GitHub
 wget https://github.com/stripe/stripe-cli/releases/download/v1.19.4/stripe_1.19.4_linux_x86_64.tar.gz
@@ -186,11 +193,13 @@ STRIPE_WEBHOOK_SECRET="whsec_..."
 #### 2. Configure URLs
 
 **Authorized JavaScript origins:**
+
 ```
 http://localhost:3000
 ```
 
 **Authorized redirect URIs:**
+
 ```
 http://localhost:3000/api/auth/callback/google
 ```
@@ -300,15 +309,18 @@ git push origin main
 Go to **Project Settings → Environment Variables** and add ALL variables from `.env.local`:
 
 **Database:**
+
 - `DATABASE_URL` (use pooled connection)
 - `DIRECT_URL` (use direct connection - remove `-pooler`)
 
 **Stripe:**
+
 - `STRIPE_SECRET_KEY`
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 - `STRIPE_WEBHOOK_SECRET` (temporary - see production webhooks below)
 
 **Auth:**
+
 - `AUTH_SECRET`
 - `AUTH_GOOGLE_ID` (temporary - need production OAuth)
 - `AUTH_GOOGLE_SECRET` (temporary)
@@ -316,6 +328,7 @@ Go to **Project Settings → Environment Variables** and add ALL variables from 
 - `AUTH_GITHUB_SECRET` (temporary)
 
 **AI:**
+
 - `GEMINI_API_KEY`
 
 ### 4. Set Up Production OAuth (After First Deploy)
@@ -374,6 +387,7 @@ After updating environment variables, trigger a new deployment from Vercel dashb
 **Problem:** Orders not saving after checkout
 
 **Solution:**
+
 1. Verify Stripe CLI is running: `stripe listen --forward-to localhost:3000/api/webhooks/stripe`
 2. Check `STRIPE_WEBHOOK_SECRET` matches the CLI output
 3. Restart dev server after updating `.env.local`
@@ -383,6 +397,7 @@ After updating environment variables, trigger a new deployment from Vercel dashb
 **Error:** `redirect_uri_mismatch`
 
 **Solution:** Verify callback URLs exactly match:
+
 - **Local:** `http://localhost:3000/api/auth/callback/{provider}`
 - **Production:** `https://your-domain.vercel.app/api/auth/callback/{provider}`
 
@@ -391,6 +406,7 @@ After updating environment variables, trigger a new deployment from Vercel dashb
 **Error:** `EPERM: operation not permitted`
 
 **Solution:** Stop the dev server, then run:
+
 ```bash
 npx prisma generate
 npm run dev
@@ -408,6 +424,7 @@ npm run dev
 ## Next Steps
 
 Once everything is running:
+
 - [ ] Customize product data in `prisma/seed.ts`
 - [ ] Update branding/colors in `tailwind.config.ts`
 - [ ] Add more product categories
