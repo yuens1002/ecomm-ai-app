@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.11.3 - 2025-11-16
+
+- **Admin Order Fulfillment Interface**: Complete admin dashboard for order management
+  - Added `isAdmin` boolean field to User model with database migration
+  - Created admin authentication helpers (`lib/admin.ts`) with `isAdmin()` and `requireAdmin()` functions
+  - Built `/admin/orders` page with comprehensive table layout showing order #, date, customer, items, shipping address, total, status, and actions
+  - Order filtering: All, Pending, Completed (shipped or picked up), Canceled (US spelling)
+  - Mark as shipped workflow: dialog with carrier selection (USPS, UPS, FedEx, DHL) and tracking number input
+  - Mark as pickup ready workflow: confirmation dialog for store pickup orders
+  - Track button for shipped orders: generates carrier-specific tracking URLs
+  - Copy-to-clipboard feature for tracking numbers to save horizontal space
+  - Real-time toast notifications for success/error feedback using @radix-ui/react-toast
+  - Admin navigation: "Admin: Manage Orders" link in user menu (visible only to admin users)
+- **Email Notifications**:
+  - Shipment confirmation email: sent automatically when order marked as shipped, includes tracking info, carrier, estimated delivery, and tracking URL
+  - Pickup ready email: sent automatically when order ready for pickup, includes store address, hours, and ID reminder
+  - Updated order confirmation email to use `orderId` instead of `orderNumber` for correct URL generation
+  - Updated merchant notification email to link to admin orders dashboard instead of non-existent order detail page
+  - Fixed email template styling: added `box-sizing: border-box` to prevent content overflow in email clients
+- **API Routes**:
+  - `GET /api/admin/orders` - Fetch all orders with filtering by status
+  - `PATCH /api/admin/orders/[orderId]/ship` - Mark order as shipped with tracking info
+  - `PATCH /api/admin/orders/[orderId]/pickup` - Mark order as picked up / ready for pickup
+  - All routes protected with `requireAdmin()` middleware
+- **Database Updates**:
+  - Added proper null checks for `customerEmail` field in order API routes
+  - Fixed TypeScript errors with proper type narrowing for nullable fields
+  - Ensured all tracking and fulfillment fields properly handled
+- **UI/UX Improvements**:
+  - Status badges with color coding: Pending (yellow), Shipped (green), Picked Up (purple), Canceled (red)
+  - Applied US spelling "Canceled" consistently across customer and admin interfaces
+  - Shipping address display in admin table: full address for delivery orders, "Store Pickup" label for pickup orders
+  - Responsive table design with proper spacing and hover states
+  - Toast notifications positioned at bottom-right on desktop, top on mobile
+- **Bug Fixes**:
+  - Fixed order number handling: use `order.id.slice(-8)` since `orderNumber` field doesn't exist in schema
+  - Added `await` for `render()` calls in email generation (returns Promise)
+  - Fixed tracking URL TypeScript errors by storing result in variable for proper type narrowing
+  - Resolved naming conflict between `trackingNumber` prop and style object in ShipmentConfirmationEmail
+  - Fixed email link 404 errors by using `orderId` parameter instead of `orderNumber`
+- Dependencies: Added `@radix-ui/react-toast` for toast notifications
+- Scripts: Added `scripts/set-admin.ts` and `scripts/make-admin.ts` for admin user management
+- Note: Temporary `/api/make-me-admin` route exists for development (should be removed before production)
+
 ## 0.11.2 - 2025-11-15
 
 - **Email Notifications & Order Management (Phase 6 - Partial)**:
