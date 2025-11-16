@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.11.2 - 2025-11-15
+
+- **Email Notifications & Order Management (Phase 6 - Partial)**:
+  - Integrated Resend for transactional email delivery (free tier: 3,000 emails/month)
+  - Created React Email templates: OrderConfirmationEmail (customer) and MerchantOrderNotification (admin)
+  - Automatic order confirmation emails sent to customers with order details, items, shipping info
+  - Merchant notification emails sent to admin for new orders requiring fulfillment
+  - Added tracking fields to Order model: `trackingNumber`, `carrier`, `shippedAt`
+  - Inventory management: automatically decrement stock quantity when orders are placed
+  - Environment configuration for email service with development-friendly defaults (onboarding@resend.dev)
+
 ## 0.11.1 - 2025-11-15
 
 - **Guest Order Fulfillment Fix**: Complete restructure of order shipping data storage
