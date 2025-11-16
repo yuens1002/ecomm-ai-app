@@ -37,6 +37,9 @@ export default async function AccountPage() {
           providerAccountId: true,
         },
       },
+      subscriptions: {
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 

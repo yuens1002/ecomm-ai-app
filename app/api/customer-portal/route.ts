@@ -1,0 +1,44 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-12-18.acacia",
+});
+
+/**
+ * POST /api/customer-portal
+ * Creates a Stripe Customer Portal session for subscription management
+ */
+export async function POST(req: NextRequest) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { stripeCustomerId, returnUrl } = await req.json();
+
+    if (!stripeCustomerId) {
+      return NextResponse.json(
+        { error: "Stripe customer ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Create portal session
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: returnUrl || `${process.env.NEXT_PUBLIC_BASE_URL}/account`,
+    });
+
+    return NextResponse.json({ url: portalSession.url });
+  } catch (error: any) {
+    console.error("Error creating portal session:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to create portal session" },
+      { status: 500 }
+    );
+  }
+}

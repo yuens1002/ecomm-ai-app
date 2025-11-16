@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.11.4 - 2025-11-16
+
+- **Subscription Management System**: Complete subscription lifecycle management with Stripe integration
+  - Added `Subscription` model to Prisma schema with fields: `stripeSubscriptionId`, `stripeCustomerId`, `status`, product details, billing cycle, shipping address
+  - Added `SubscriptionStatus` enum: ACTIVE, PAUSED, CANCELED, PAST_DUE
+  - Webhook handlers for subscription lifecycle:
+    - `customer.subscription.created`: Create subscription record when customer subscribes
+    - `customer.subscription.updated`: Sync subscription status, billing period, and details
+    - `customer.subscription.deleted`: Mark subscription as canceled in database
+  - Subscription webhooks automatically find user from Stripe customer ID and upsert subscription data
+  - Parse subscription item details including product name, variant, quantity, price, and delivery schedule
+  - Store shipping address from subscription metadata for fulfillment
+- **Stripe Customer Portal Integration**:
+  - Created `/api/customer-portal` endpoint to generate Stripe Billing Portal sessions
+  - Portal allows customers to: update payment method, view invoices, manage subscriptions, cancel subscriptions
+  - Protected with authentication - only logged-in users can access portal
+  - Automatic redirect back to account page after portal session
+- **Subscriptions Tab in Account Settings**:
+  - New "Subscriptions" tab in `/account` page showing all customer subscriptions
+  - Display subscription status with color-coded badges: Active (green), Paused (yellow), Canceled (gray), Past Due (red)
+  - Show product details: name, variant, quantity, price per billing cycle
+  - Display delivery schedule (e.g., "Every 2 weeks", "Monthly")
+  - Current billing period dates with calendar icon
+  - Shipping address display for delivery subscriptions
+  - "Manage Subscription" button opens Stripe Customer Portal in new window
+  - Cancel notice for subscriptions scheduled to end at period end
+  - Empty state with call-to-action to browse products
+  - Loading states with spinner during portal session creation
+- **Database Migration**:
+  - Created migration `20251116061845_add_subscription_model` with Subscription table and SubscriptionStatus enum
+  - Added `subscriptions` relation to User model
+  - Indexed fields: `userId`, `stripeSubscriptionId`, `stripeCustomerId` for efficient queries
+- **UI/UX Enhancements**:
+  - Updated account page tab grid from 5 to 6 columns to accommodate Subscriptions tab
+  - Toast notifications for subscription portal errors
+  - Responsive subscription cards with proper spacing
+  - Format dates with `date-fns` (e.g., "Nov 16, 2025")
+  - Format prices with proper currency symbol and cents
+  - Package icon for empty subscriptions state
+  - External link icon on "Manage Subscription" button
+- **Dependencies**:
+  - Leveraged existing `resend` and `@react-email/components` packages (added in 0.11.3 hotfix)
+  - Stripe API version `2024-12-18.acacia` for subscription management
+
 ## 0.11.3 - 2025-11-16
 
 - **Admin Order Fulfillment Interface**: Complete admin dashboard for order management

@@ -132,7 +132,8 @@ model User {
   accounts      Account[] 
   sessions      Session[] 
   addresses     Address[] 
-  orders        Order[]   
+  orders        Order[]
+  subscriptions Subscription[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -241,6 +242,44 @@ model OrderItem {
   @@index([purchaseOptionId])
 }
 
+model Subscription {
+  id                    String             @id @default(cuid())
+  stripeSubscriptionId  String             @unique // Stripe Subscription ID
+  stripeCustomerId      String             // Stripe Customer ID
+  status                SubscriptionStatus @default(ACTIVE)
+  
+  // Product details
+  productName           String             // Product name at time of subscription
+  variantName           String             // Variant name (e.g., "12oz Bag")
+  quantity              Int                @default(1)
+  priceInCents          Int                // Price per billing cycle
+  deliverySchedule      String?            // e.g., "Every 2 weeks", "Monthly"
+  
+  // Billing cycle
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  cancelAtPeriodEnd     Boolean            @default(false)
+  canceledAt            DateTime?
+  
+  // Shipping address
+  recipientName         String?
+  shippingStreet        String?
+  shippingCity          String?
+  shippingState         String?
+  shippingPostalCode    String?
+  shippingCountry       String?
+  
+  userId                String
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([stripeSubscriptionId])
+  @@index([stripeCustomerId])
+}
+
 // --- Enums ---
 
 enum OrderStatus {
@@ -259,4 +298,11 @@ enum RoastLevel {
   LIGHT
   MEDIUM
   DARK
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELED
+  PAST_DUE
 }

@@ -359,15 +359,98 @@ export async function POST(req: NextRequest) {
       case "customer.subscription.created":
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        console.log("🔄 Subscription updated:", subscription.id);
-        // TODO: Update subscription status in database
+        console.log("🔄 Subscription event:", subscription.id, subscription.status);
+
+        // Get user from customer ID
+        const user = await prisma.user.findFirst({
+          where: { 
+            orders: {
+              some: {
+                stripeCustomerId: subscription.customer as string
+              }
+            }
+          },
+        });
+
+        if (!user) {
+          console.log("⚠️ User not found for subscription:", subscription.id);
+          break;
+        }
+
+        // Get subscription item details
+        const subscriptionItem = subscription.items.data[0];
+        const price = subscriptionItem.price;
+        
+        // Extract product/variant info from metadata or price nickname
+        const productName = price.nickname || "Coffee Subscription";
+        const variantName = price.product?.toString() || "";
+
+        // Map Stripe status to our enum
+        let status: "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE" = "ACTIVE";
+        if (subscription.status === "canceled") status = "CANCELED";
+        else if (subscription.status === "paused") status = "PAUSED";
+        else if (subscription.status === "past_due") status = "PAST_DUE";
+
+        // Get shipping address from subscription metadata or latest invoice
+        const shipping = subscription.metadata.shipping_address 
+          ? JSON.parse(subscription.metadata.shipping_address)
+          : null;
+
+        // Upsert subscription
+        await prisma.subscription.upsert({
+          where: { stripeSubscriptionId: subscription.id },
+          create: {
+            stripeSubscriptionId: subscription.id,
+            stripeCustomerId: subscription.customer as string,
+            userId: user.id,
+            status,
+            productName,
+            variantName,
+            quantity: subscriptionItem.quantity || 1,
+            priceInCents: price.unit_amount || 0,
+            deliverySchedule: price.recurring?.interval 
+              ? `Every ${price.recurring.interval_count || 1} ${price.recurring.interval}${(price.recurring.interval_count || 1) > 1 ? 's' : ''}`
+              : null,
+            currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
+            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+            canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at * 1000) : null,
+            recipientName: shipping?.name || null,
+            shippingStreet: shipping?.line1 || null,
+            shippingCity: shipping?.city || null,
+            shippingState: shipping?.state || null,
+            shippingPostalCode: shipping?.postal_code || null,
+            shippingCountry: shipping?.country || null,
+          },
+          update: {
+            status,
+            quantity: subscriptionItem.quantity || 1,
+            priceInCents: price.unit_amount || 0,
+            currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
+            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+            canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at * 1000) : null,
+          },
+        });
+
+        console.log("✅ Subscription synced to database:", subscription.id);
         break;
       }
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        console.log("🗑️ Subscription cancelled:", subscription.id);
-        // TODO: Handle subscription cancellation
+        console.log("🗑️ Subscription deleted:", subscription.id);
+
+        // Update subscription to CANCELED
+        await prisma.subscription.update({
+          where: { stripeSubscriptionId: subscription.id },
+          data: {
+            status: "CANCELED",
+            canceledAt: new Date(),
+          },
+        });
+
+        console.log("✅ Subscription marked as canceled in database");
         break;
       }
 
