@@ -1,5 +1,6 @@
 import { getAllCategories } from "@/lib/data";
 import { auth } from "@/auth";
+import { isAdmin } from "@/lib/admin";
 import SiteHeader from "@components/app-components/SiteHeader";
 
 /**
@@ -15,12 +16,27 @@ export default async function SiteHeaderWrapper() {
   // Get current user session
   const session = await auth();
 
+  // Check if user is admin
+  const userIsAdmin = await isAdmin();
+
   // Handle case where no categories are found (e.g., first deployment/empty DB)
   if (!categories) {
     // Return an empty array to prevent map errors in SiteHeader
-    return <SiteHeader categories={[]} user={session?.user || null} />;
+    return (
+      <SiteHeader
+        categories={[]}
+        user={session?.user || null}
+        isAdmin={userIsAdmin}
+      />
+    );
   }
 
   // Pass the fetched, non-stale categories and user down to the client component
-  return <SiteHeader categories={categories} user={session?.user || null} />;
+  return (
+    <SiteHeader
+      categories={categories}
+      user={session?.user || null}
+      isAdmin={userIsAdmin}
+    />
+  );
 }

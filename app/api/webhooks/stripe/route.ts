@@ -246,7 +246,8 @@ export async function POST(req: NextRequest) {
             }));
 
             const subtotalInCents = completeOrder.items.reduce(
-              (sum, item) => sum + item.quantity * item.purchaseOption.priceInCents,
+              (sum, item) =>
+                sum + item.quantity * item.purchaseOption.priceInCents,
               0
             );
             const shippingInCents =
@@ -268,10 +269,12 @@ export async function POST(req: NextRequest) {
             // Send customer confirmation email
             try {
               await resend.emails.send({
-                from: process.env.RESEND_FROM_EMAIL || "orders@artisan-roast.com",
+                from:
+                  process.env.RESEND_FROM_EMAIL || "orders@artisan-roast.com",
                 to: completeOrder.customerEmail || "",
                 subject: `Order Confirmation - #${completeOrder.id.slice(-8)}`,
                 react: OrderConfirmationEmail({
+                  orderId: completeOrder.id,
                   orderNumber: completeOrder.id.slice(-8),
                   customerName: completeOrder.recipientName || "Customer",
                   customerEmail: completeOrder.customerEmail || "",
@@ -281,7 +284,9 @@ export async function POST(req: NextRequest) {
                   totalInCents: completeOrder.totalInCents,
                   deliveryMethod: completeOrder.deliveryMethod,
                   shippingAddress: shippingAddressData,
-                  orderDate: new Date(completeOrder.createdAt).toLocaleDateString("en-US", {
+                  orderDate: new Date(
+                    completeOrder.createdAt
+                  ).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
@@ -297,10 +302,14 @@ export async function POST(req: NextRequest) {
             // Send merchant notification email
             try {
               await resend.emails.send({
-                from: process.env.RESEND_FROM_EMAIL || "orders@artisan-roast.com",
-                to: process.env.RESEND_MERCHANT_EMAIL || "merchant@artisan-roast.com",
+                from:
+                  process.env.RESEND_FROM_EMAIL || "orders@artisan-roast.com",
+                to:
+                  process.env.RESEND_MERCHANT_EMAIL ||
+                  "merchant@artisan-roast.com",
                 subject: `New Order #${completeOrder.id.slice(-8)} - Action Required`,
                 react: MerchantOrderNotification({
+                  orderId: completeOrder.id,
                   orderNumber: completeOrder.id.slice(-8),
                   customerName: completeOrder.recipientName || "Customer",
                   customerEmail: completeOrder.customerEmail || "",
@@ -308,7 +317,9 @@ export async function POST(req: NextRequest) {
                   totalInCents: completeOrder.totalInCents,
                   deliveryMethod: completeOrder.deliveryMethod,
                   shippingAddress: shippingAddressData,
-                  orderDate: new Date(completeOrder.createdAt).toLocaleDateString("en-US", {
+                  orderDate: new Date(
+                    completeOrder.createdAt
+                  ).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",

@@ -15,6 +15,20 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
     return `$${(priceInCents / 100).toFixed(2)}`;
   };
 
+  const getTrackingUrl = (
+    carrier: string,
+    trackingNumber: string
+  ): string | null => {
+    const carriers: Record<string, string> = {
+      USPS: `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`,
+      UPS: `https://www.ups.com/track?tracknum=${trackingNumber}`,
+      FedEx: `https://www.fedex.com/fedextrack/?tracknumbers=${trackingNumber}`,
+      DHL: `https://www.dhl.com/en/express/tracking.html?AWB=${trackingNumber}`,
+    };
+
+    return carriers[carrier] || null;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING":
@@ -33,6 +47,8 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
     switch (status) {
       case "PICKED_UP":
         return "Picked Up";
+      case "CANCELLED":
+        return "Canceled";
       default:
         return status.charAt(0) + status.slice(1).toLowerCase();
     }
@@ -193,23 +209,51 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                   </address>
                 </div>
 
-                {/* Tracking information placeholder */}
-                {order.status === "SHIPPED" && (
+                {/* Tracking information */}
+                {order.status === "SHIPPED" && order.trackingNumber && (
                   <div>
                     <h3 className="font-semibold text-sm text-text-muted mb-2">
-                      Tracking
+                      Tracking Information
                     </h3>
-                    <div className="flex items-center gap-2">
-                      <Package className="w-4 h-4 text-text-muted" />
-                      <span className="text-sm">
-                        Fulfilled{" "}
-                        {format(new Date(order.updatedAt), "MMMM d, yyyy")}
-                      </span>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-4 h-4 text-text-muted" />
+                        <span className="text-sm">
+                          Shipped{" "}
+                          {order.shippedAt &&
+                            format(
+                              new Date(order.shippedAt),
+                              "MMMM d, yyyy 'at' h:mm a"
+                            )}
+                        </span>
+                      </div>
+                      <div className="bg-muted p-3 rounded-md">
+                        <p className="text-xs text-muted-foreground mb-1">
+                          Carrier
+                        </p>
+                        <p className="text-sm font-medium">{order.carrier}</p>
+                        <p className="text-xs text-muted-foreground mt-2 mb-1">
+                          Tracking Number
+                        </p>
+                        <p className="text-sm font-mono">
+                          {order.trackingNumber}
+                        </p>
+                      </div>
+                      {(() => {
+                        const trackingUrl = getTrackingUrl(order.carrier, order.trackingNumber);
+                        return trackingUrl ? (
+                          <Button variant="outline" size="sm" asChild>
+                            <a
+                              href={trackingUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Track Shipment →
+                            </a>
+                          </Button>
+                        ) : null;
+                      })()}
                     </div>
-                    {/* Future: Add actual tracking number and link */}
-                    {/* <Link href="#" className="text-primary text-sm hover:underline mt-2 inline-block">
-                      Track shipment
-                    </Link> */}
                   </div>
                 )}
               </div>

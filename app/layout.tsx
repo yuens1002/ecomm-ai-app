@@ -7,6 +7,7 @@ import { ThemeProvider } from "@components/app-components/ThemeProvider";
 import { SessionProvider } from "@components/app-components/SessionProvider";
 import SiteHeaderWrapper from "@/components/app-components/SiteHeaderWrapper";
 import SiteFooter from "@components/app-components/SiteFooter";
+import { Toaster } from "@/components/ui/toaster";
 
 // Setup the Inter font with a CSS variable
 const inter = Inter({
@@ -57,6 +58,7 @@ export default function RootLayout({
               {/* Our site footer (Server Component) */}
               <SiteFooter />
             </div>
+            <Toaster />
           </ThemeProvider>
         </SessionProvider>
       </body>

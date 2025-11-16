@@ -120,6 +120,8 @@ export default function OrdersPageClient({
     switch (status) {
       case "PICKED_UP":
         return "Picked Up";
+      case "CANCELLED":
+        return "Canceled";
       default:
         return status.charAt(0) + status.slice(1).toLowerCase();
     }
@@ -168,7 +170,7 @@ export default function OrdersPageClient({
               Completed ({getOrderCount("completed")})
             </SelectItem>
             <SelectItem value="cancelled">
-              Cancelled ({getOrderCount("cancelled")})
+              Canceled ({getOrderCount("cancelled")})
             </SelectItem>
           </SelectContent>
         </Select>

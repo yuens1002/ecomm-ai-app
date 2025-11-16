@@ -13,6 +13,7 @@ import {
 } from "@react-email/components";
 
 interface OrderConfirmationEmailProps {
+  orderId: string;
   orderNumber: string;
   customerName: string;
   customerEmail: string;
@@ -38,6 +39,7 @@ interface OrderConfirmationEmailProps {
 }
 
 export default function OrderConfirmationEmail({
+  orderId,
   orderNumber,
   customerName,
   customerEmail,
@@ -60,11 +62,12 @@ export default function OrderConfirmationEmail({
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Thank you for your order!</Heading>
-          
+
           <Text style={text}>Hi {customerName},</Text>
-          
+
           <Text style={text}>
-            We've received your order and will process it shortly. Here are the details:
+            We've received your order and will process it shortly. Here are the
+            details:
           </Text>
 
           <Section style={orderInfoSection}>
@@ -89,7 +92,8 @@ export default function OrderConfirmationEmail({
                 <strong>{item.productName}</strong> - {item.variantName}
               </Text>
               <Text style={itemText}>
-                Quantity: {item.quantity} × {formatPrice(item.priceInCents)} = {formatPrice(item.quantity * item.priceInCents)}
+                Quantity: {item.quantity} × {formatPrice(item.priceInCents)} ={" "}
+                {formatPrice(item.quantity * item.priceInCents)}
               </Text>
             </Section>
           ))}
@@ -113,7 +117,9 @@ export default function OrderConfirmationEmail({
           <Hr style={hr} />
 
           <Heading as="h2" style={h2}>
-            {deliveryMethod === "DELIVERY" ? "Shipping Address" : "Pickup Location"}
+            {deliveryMethod === "DELIVERY"
+              ? "Shipping Address"
+              : "Pickup Location"}
           </Heading>
 
           {deliveryMethod === "DELIVERY" && shippingAddress ? (
@@ -121,7 +127,8 @@ export default function OrderConfirmationEmail({
               <Text style={addressText}>{shippingAddress.recipientName}</Text>
               <Text style={addressText}>{shippingAddress.street}</Text>
               <Text style={addressText}>
-                {shippingAddress.city}, {shippingAddress.state} {shippingAddress.postalCode}
+                {shippingAddress.city}, {shippingAddress.state}{" "}
+                {shippingAddress.postalCode}
               </Text>
               <Text style={addressText}>{shippingAddress.country}</Text>
             </Section>
@@ -141,17 +148,22 @@ export default function OrderConfirmationEmail({
           <Hr style={hr} />
 
           <Text style={text}>
-            You can track your order status at any time by visiting your order history.
+            You can track your order status at any time by visiting your order
+            history.
           </Text>
 
           <Section style={buttonSection}>
-            <Link href={`${process.env.NEXT_PUBLIC_APP_URL}/orders/${orderNumber}`} style={button}>
+            <Link
+              href={`${process.env.NEXT_PUBLIC_APP_URL}/orders/${orderId}`}
+              style={button}
+            >
               View Order Details
             </Link>
           </Section>
 
           <Text style={footerText}>
-            If you have any questions, please contact us at support@artisan-roast.com
+            If you have any questions, please contact us at
+            support@artisan-roast.com
           </Text>
 
           <Text style={footerText}>
@@ -166,7 +178,8 @@ export default function OrderConfirmationEmail({
 // Styles
 const main = {
   backgroundColor: "#f6f9fc",
-  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+  fontFamily:
+    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
 };
 
 const container = {

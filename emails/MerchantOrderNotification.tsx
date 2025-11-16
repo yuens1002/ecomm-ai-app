@@ -12,6 +12,7 @@ import {
 } from "@react-email/components";
 
 interface MerchantOrderNotificationProps {
+  orderId: string;
   orderNumber: string;
   customerName: string;
   customerEmail: string;
@@ -35,6 +36,7 @@ interface MerchantOrderNotificationProps {
 }
 
 export default function MerchantOrderNotification({
+  orderId,
   orderNumber,
   customerName,
   customerEmail,
@@ -55,7 +57,7 @@ export default function MerchantOrderNotification({
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>🎉 New Order Received!</Heading>
-          
+
           <Text style={text}>
             A new order has been placed and requires your attention.
           </Text>
@@ -71,14 +73,17 @@ export default function MerchantOrderNotification({
               <strong>Total:</strong> {formatPrice(totalInCents)}
             </Text>
             <Text style={alertText}>
-              <strong>Delivery Method:</strong> {deliveryMethod === "DELIVERY" ? "🚚 Shipping" : "🏪 Store Pickup"}
+              <strong>Delivery Method:</strong>{" "}
+              {deliveryMethod === "DELIVERY"
+                ? "🚚 Shipping"
+                : "🏪 Store Pickup"}
             </Text>
           </Section>
 
           <Heading as="h2" style={h2}>
             Customer Information
           </Heading>
-          
+
           <Section style={infoSection}>
             <Text style={infoText}>
               <strong>Name:</strong> {customerName}
@@ -114,7 +119,8 @@ export default function MerchantOrderNotification({
                 <Text style={addressText}>{shippingAddress.recipientName}</Text>
                 <Text style={addressText}>{shippingAddress.street}</Text>
                 <Text style={addressText}>
-                  {shippingAddress.city}, {shippingAddress.state} {shippingAddress.postalCode}
+                  {shippingAddress.city}, {shippingAddress.state}{" "}
+                  {shippingAddress.postalCode}
                 </Text>
                 <Text style={addressText}>{shippingAddress.country}</Text>
               </Section>
@@ -125,7 +131,8 @@ export default function MerchantOrderNotification({
                 Pickup Order
               </Heading>
               <Text style={text}>
-                Customer will pick up this order at your store location. Please prepare the order and notify the customer when ready.
+                Customer will pick up this order at your store location. Please
+                prepare the order and notify the customer when ready.
               </Text>
             </>
           )}
@@ -133,7 +140,10 @@ export default function MerchantOrderNotification({
           <Hr style={hr} />
 
           <Section style={buttonSection}>
-            <Link href={`${process.env.NEXT_PUBLIC_APP_URL}/admin/orders/${orderNumber}`} style={button}>
+            <Link
+              href={`${process.env.NEXT_PUBLIC_APP_URL}/admin/orders`}
+              style={button}
+            >
               Manage Order
             </Link>
           </Section>
@@ -150,7 +160,8 @@ export default function MerchantOrderNotification({
 // Styles
 const main = {
   backgroundColor: "#f6f9fc",
-  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+  fontFamily:
+    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
 };
 
 const container = {

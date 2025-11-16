@@ -31,13 +31,18 @@ interface SiteHeaderProps {
     email?: string | null;
     image?: string | null;
   } | null;
+  isAdmin: boolean;
 }
 
 /**
  * The site-wide header. This is a Client Component because
  * it uses the ThemeSwitcher, which is a Client Component.
  */
-export default function SiteHeader({ categories, user }: SiteHeaderProps) {
+export default function SiteHeader({
+  categories,
+  user,
+  isAdmin,
+}: SiteHeaderProps) {
   return (
     <header className="bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md">
       <div className="container mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
@@ -87,7 +92,7 @@ export default function SiteHeader({ categories, user }: SiteHeaderProps) {
           <ThemeSwitcher />
           <ShoppingCart />
           {user ? (
-            <UserMenu user={user} />
+            <UserMenu user={user} isAdmin={isAdmin} />
           ) : (
             <Button asChild variant="ghost" size="sm">
               <Link href="/auth/signin">
