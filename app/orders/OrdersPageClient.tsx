@@ -4,12 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Eye, X, Loader2 } from "lucide-react";
 import {
@@ -151,10 +146,10 @@ export default function OrdersPageClient({
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-text-base mb-2">Order History</h1>
-        <p className="text-text-muted">
-          View and manage your past orders
-        </p>
+        <h1 className="text-3xl font-bold text-text-base mb-2">
+          Order History
+        </h1>
+        <p className="text-text-muted">View and manage your past orders</p>
       </div>
 
       <div className="mb-6">
@@ -214,7 +209,7 @@ export default function OrdersPageClient({
                 <div
                   key={order.id}
                   className={`grid grid-cols-1 md:grid-cols-12 gap-4 hover:bg-muted/50 transition-colors md:items-center ${
-                    index === 0 ? 'pt-0 md:p-4 pb-4 px-4' : 'p-4'
+                    index === 0 ? "pt-0 md:p-4 pb-4 px-4" : "p-4"
                   }`}
                 >
                   {/* Status - Mobile First */}
@@ -231,7 +226,10 @@ export default function OrdersPageClient({
                   {/* Order Number - Mobile Second */}
                   <div className="col-span-1 md:col-span-2 md:order-1">
                     <h2 className="md:hidden text-lg font-semibold">
-                      <Link href={`/orders/${order.id}`} className="text-primary hover:underline">
+                      <Link
+                        href={`/orders/${order.id}`}
+                        className="text-primary hover:underline"
+                      >
                         #{order.id.slice(-8)}
                       </Link>
                     </h2>
@@ -313,9 +311,9 @@ export default function OrdersPageClient({
                               Cancel Order #{order.id.slice(-8)}?
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will immediately cancel your order and process
-                              a full refund to your original payment method. This
-                              action cannot be undone.
+                              This will immediately cancel your order and
+                              process a full refund to your original payment
+                              method. This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

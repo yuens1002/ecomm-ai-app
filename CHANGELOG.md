@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.11.1 - 2025-11-15
+
+- **Guest Order Fulfillment Fix**: Complete restructure of order shipping data storage
+  - Added shipping fields directly to Order model: `recipientName`, `shippingStreet`, `shippingCity`, `shippingState`, `shippingPostalCode`, `shippingCountry`
+  - Removed `shippingAddressId` relation - shipping data now stored denormalized on Order table
+  - Fixed critical issue: guest orders now properly save shipping addresses for fulfillment
+  - Webhook updated to populate shipping fields for ALL orders (guests and logged-in users)
+  - Order detail pages updated to display shipping from Order model fields
+  - Benefits: enables merchant fulfillment queries, marketing campaigns (e.g., 15-30 day discount emails), complete order data without Stripe dashboard dependency
+  - Logged-in users still get addresses saved to Address table for future reuse
+- **Code Cleanup**:
+  - Removed unused `OrdersTab.tsx` component (order management now uses dedicated `/orders` pages)
+  - Simplified order queries by removing unnecessary relation includes
+
 ## 0.11.0 - 2025-11-15
 
 - **Account Settings & Order Management (Phase 5)**: Complete user account management and order tracking system
@@ -9,12 +23,10 @@
   - OAuth providers display showing connected accounts (Google, GitHub)
   - Address book: full CRUD operations with default address selection
   - Account deletion with confirmation dialog and cascading cleanup
-  
 - **Shopping Cart Enhancements**:
   - Delivery method selection: DELIVERY (shipping) or PICKUP (store pickup)
   - Address picker with saved addresses or "Enter new address at checkout" option
   - Visual delivery method UI with icons (truck for delivery, store for pickup)
-  
 - **Stripe Integration Enhancements**:
   - Shipping rates: Standard ($5.99), Express ($12.99), Overnight ($24.99)
   - Automatic address saving from Stripe checkout via webhook
@@ -22,7 +34,6 @@
   - Auto-update user name from Stripe checkout data
   - Duplicate address detection before saving
   - Payment card last 4 digits capture and display
-  
 - **Order Management System**:
   - New `/orders` page with responsive table layout
   - Status filtering: All Orders, Pending, Completed, Cancelled dropdown
@@ -30,23 +41,19 @@
   - Order cancellation with immediate Stripe refund for PENDING orders
   - Mobile-optimized layout with vertical card design
   - Order display: Order #, Date, Items, Status, Total, Actions
-  
 - **Security & Data Integrity**:
   - Server-side price validation in checkout (prevents client-side price manipulation)
   - Optimized Stripe metadata to stay under 500 character limit
   - Session provider integration throughout app for auth state management
-  
 - **Database Schema Updates**:
   - Added `paymentCardLast4` field to Order model
   - Order status enum: PENDING, SHIPPED, PICKED_UP, CANCELLED
   - Shipping address relation on orders (only for delivery orders)
   - Delivery method field (DELIVERY/PICKUP)
-  
 - **Documentation**:
   - Documented Stripe Link test mode address mismatch issue
   - Setup guide for shipping rates creation
   - Guest checkout decision: email-only, no order history access
-  
 - **API Routes**:
   - `/api/user/profile` - Update user profile (name, email)
   - `/api/user/password` - Change password
@@ -54,7 +61,6 @@
   - `/api/user/orders` - Fetch orders with status filtering
   - `/api/user/orders/[orderId]/cancel` - Cancel order with refund
   - `/api/user/account` - Delete user account
-  
 - Dependencies: Added shadcn/ui components (alert-dialog, input, tabs, textarea, select)
 - UI/UX: Fully responsive design with mobile-first approach, optimized table layouts
 

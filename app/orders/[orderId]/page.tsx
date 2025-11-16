@@ -37,7 +37,6 @@ export default async function OrderDetailPage({
           },
         },
       },
-      shippingAddress: true,
     },
   });
 

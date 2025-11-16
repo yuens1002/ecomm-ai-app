@@ -80,7 +80,10 @@ export async function POST(req: NextRequest) {
         // Find user by email if they're signed in
         const customerEmail = session.customer_details?.email;
         let userId: string | null = null;
-        let shippingAddressId: string | null = null;
+
+        // Extract shipping info from Stripe session
+        const shippingAddress = session.customer_details?.address;
+        const shippingName = session.customer_details?.name;
 
         if (customerEmail) {
           const user = await prisma.user.findUnique({
@@ -88,11 +91,6 @@ export async function POST(req: NextRequest) {
             select: { id: true, name: true },
           });
           userId = user?.id || null;
-
-          // Extract shipping address from Stripe session
-          // When shipping_address_collection is enabled, the address goes into customer_details.address
-          const shippingAddress = session.customer_details?.address;
-          const shippingName = session.customer_details?.name;
 
           // Update user's name if they don't have one and Stripe collected it
           if (userId && shippingName && !user?.name) {
@@ -102,10 +100,11 @@ export async function POST(req: NextRequest) {
             });
           }
 
+          // For logged-in users, optionally save address to Address table for reuse
           if (shippingAddress && userId) {
             const stripeAddress = shippingAddress;
 
-            // Check if this exact address already exists for the user
+            // Check if this exact address already exists
             const existingAddress = await prisma.address.findFirst({
               where: {
                 userId: userId,
@@ -117,11 +116,9 @@ export async function POST(req: NextRequest) {
               },
             });
 
-            if (existingAddress) {
-              shippingAddressId = existingAddress.id;
-            } else {
-              // Create new address for the user
-              const newAddress = await prisma.address.create({
+            if (!existingAddress) {
+              // Create new address for future reuse
+              await prisma.address.create({
                 data: {
                   userId: userId,
                   street: stripeAddress.line1 || "",
@@ -129,11 +126,10 @@ export async function POST(req: NextRequest) {
                   state: stripeAddress.state || "",
                   postalCode: stripeAddress.postal_code || "",
                   country: stripeAddress.country || "",
-                  isDefault: false, // Don't auto-set as default
+                  isDefault: false,
                 },
               });
-              shippingAddressId = newAddress.id;
-              console.log("📍 Saved shipping address:", newAddress.id);
+              console.log("📍 Saved address for future reuse");
             }
           }
         }
@@ -174,11 +170,13 @@ export async function POST(req: NextRequest) {
               deliveryMethod: deliveryMethod as "DELIVERY" | "PICKUP",
               paymentCardLast4: paymentCardLast4,
               userId: userId || undefined,
-              shippingAddressId:
-                deliveryMethod === "DELIVERY" &&
-                (shippingAddressId || preferredAddressId)
-                  ? shippingAddressId || preferredAddressId
-                  : undefined,
+              // Store shipping fields directly on order (for both guests and logged-in users)
+              recipientName: shippingName || null,
+              shippingStreet: shippingAddress?.line1 || null,
+              shippingCity: shippingAddress?.city || null,
+              shippingState: shippingAddress?.state || null,
+              shippingPostalCode: shippingAddress?.postal_code || null,
+              shippingCountry: shippingAddress?.country || null,
               items: {
                 create: cartItems.map((item: any) => ({
                   quantity: item.quantity,

@@ -183,7 +183,6 @@ model Address {
 
   userId      String
   user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ordersAsShippingAddress Order[] @relation("ShippingAddress")
 
   @@index([userId])
 }
@@ -201,18 +200,24 @@ model Order {
   customerEmail         String? // Email from checkout
   paymentCardLast4      String? // Last 4 digits of payment card
 
+  // Shipping fields for all orders
+  // For DELIVERY orders: populated from checkout form or saved address
+  // For PICKUP orders: can be left null/empty since customer collects in-store
+  recipientName       String? // Recipient name for shipping
+  shippingStreet      String? // Street address
+  shippingCity        String? // City
+  shippingState       String? // State/Province
+  shippingPostalCode  String? // Postal/ZIP code
+  shippingCountry     String? // Country
+
   userId       String?
   user         User?        @relation(fields: [userId], references: [id], onDelete: Restrict)
   items        OrderItem[]
-  
-  shippingAddressId String?
-  shippingAddress   Address?  @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
   
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
   @@index([userId])
-  @@index([shippingAddressId])
   @@index([stripeSessionId])
   @@index([customerEmail])
 }

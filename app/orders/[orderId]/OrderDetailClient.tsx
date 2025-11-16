@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package } from "lucide-react";
 
@@ -69,7 +64,8 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
               Order #{order.id.slice(-8)}
             </h1>
             <p className="text-text-muted mt-1">
-              Placed on {format(new Date(order.createdAt), "MMMM d, yyyy 'at' h:mm a")}
+              Placed on{" "}
+              {format(new Date(order.createdAt), "MMMM d, yyyy 'at' h:mm a")}
             </p>
           </div>
           <span
@@ -133,9 +129,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                       <td className="py-4 px-4 text-right">
                         {formatPrice(item.purchaseOption.priceInCents)}
                       </td>
-                      <td className="py-4 px-4 text-center">
-                        {item.quantity}
-                      </td>
+                      <td className="py-4 px-4 text-center">{item.quantity}</td>
                       <td className="py-4 px-4 text-right font-semibold">
                         {formatPrice(
                           item.purchaseOption.priceInCents * item.quantity
@@ -155,7 +149,11 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-text-muted">
-                  Shipping ({order.deliveryMethod === "DELIVERY" ? "Standard" : "Store Pickup"})
+                  Shipping (
+                  {order.deliveryMethod === "DELIVERY"
+                    ? "Standard"
+                    : "Store Pickup"}
+                  )
                 </span>
                 <span className="font-medium">{formatPrice(shipping)}</span>
               </div>
@@ -168,7 +166,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
         </Card>
 
         {/* Shipping Information */}
-        {order.deliveryMethod === "DELIVERY" && order.shippingAddress && (
+        {order.deliveryMethod === "DELIVERY" && order.shippingStreet && (
           <Card>
             <CardHeader>
               <CardTitle>Shipping Information</CardTitle>
@@ -180,12 +178,18 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                     Shipping Address
                   </h3>
                   <address className="not-italic text-sm">
-                    {order.shippingAddress.street}
+                    {order.recipientName && (
+                      <>
+                        {order.recipientName}
+                        <br />
+                      </>
+                    )}
+                    {order.shippingStreet}
                     <br />
-                    {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
-                    {order.shippingAddress.postalCode}
+                    {order.shippingCity}, {order.shippingState}{" "}
+                    {order.shippingPostalCode}
                     <br />
-                    {order.shippingAddress.country}
+                    {order.shippingCountry}
                   </address>
                 </div>
 
@@ -198,7 +202,8 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-text-muted" />
                       <span className="text-sm">
-                        Fulfilled {format(new Date(order.updatedAt), "MMMM d, yyyy")}
+                        Fulfilled{" "}
+                        {format(new Date(order.updatedAt), "MMMM d, yyyy")}
                       </span>
                     </div>
                     {/* Future: Add actual tracking number and link */}

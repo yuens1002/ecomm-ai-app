@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
     // SECURITY: Validate prices against database server-side
     const { prisma } = await import("@/lib/prisma");
-    
+
     const purchaseOptionIds = items.map((item: any) => item.purchaseOptionId);
     const dbPurchaseOptions = await prisma.purchaseOption.findMany({
       where: {
@@ -34,15 +34,13 @@ export async function POST(req: NextRequest) {
     });
 
     // Create a map for quick lookup
-    const priceMap = new Map(
-      dbPurchaseOptions.map((po) => [po.id, po])
-    );
+    const priceMap = new Map(dbPurchaseOptions.map((po) => [po.id, po]));
 
     // Validate all items exist and build line items with DB prices
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map(
       (item: any) => {
         const dbOption = priceMap.get(item.purchaseOptionId);
-        
+
         if (!dbOption) {
           throw new Error(`Invalid purchase option: ${item.purchaseOptionId}`);
         }
@@ -60,7 +58,9 @@ export async function POST(req: NextRequest) {
               name: `${productName} - ${variantName}`,
               description:
                 dbOption.type === "SUBSCRIPTION"
-                  ? `Subscription: ${dbOption.deliverySchedule || "Regular delivery"}`
+                  ? `Subscription: ${
+                      dbOption.deliverySchedule || "Regular delivery"
+                    }`
                   : "One-time purchase",
               images: imageUrl ? [imageUrl] : undefined,
             },

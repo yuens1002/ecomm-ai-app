@@ -66,7 +66,6 @@ export async function GET(request: Request) {
             },
           },
         },
-        shippingAddress: true,
       },
       orderBy: {
         createdAt: "desc",
