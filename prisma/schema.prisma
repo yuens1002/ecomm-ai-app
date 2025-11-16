@@ -210,6 +210,11 @@ model Order {
   shippingPostalCode  String? // Postal/ZIP code
   shippingCountry     String? // Country
 
+  // Fulfillment tracking
+  trackingNumber String? // Shipping tracking number
+  carrier        String? // Shipping carrier (USPS, FedEx, UPS, etc.)
+  shippedAt      DateTime? // When order was shipped
+
   userId       String?
   user         User?        @relation(fields: [userId], references: [id], onDelete: Restrict)
   items        OrderItem[]

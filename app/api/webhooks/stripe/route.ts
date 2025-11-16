@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import { resend } from "@/lib/resend";
 import Stripe from "stripe";
+import { render } from "@react-email/components";
+import OrderConfirmationEmail from "@/emails/OrderConfirmationEmail";
+import MerchantOrderNotification from "@/emails/MerchantOrderNotification";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -192,9 +196,133 @@ export async function POST(req: NextRequest) {
 
           console.log("📦 Order created:", order.id);
 
-          // TODO Phase 4:
-          // - Send confirmation email
-          // - Update inventory
+          // Fetch complete order details with product info for emails
+          const completeOrder = await prisma.order.findUnique({
+            where: { id: order.id },
+            include: {
+              items: {
+                include: {
+                  purchaseOption: {
+                    include: {
+                      variant: {
+                        include: {
+                          product: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          });
+
+          if (completeOrder) {
+            // Decrement inventory for each item
+            for (const item of completeOrder.items) {
+              try {
+                await prisma.productVariant.update({
+                  where: { id: item.purchaseOption.variant.id },
+                  data: {
+                    stockQuantity: {
+                      decrement: item.quantity,
+                    },
+                  },
+                });
+                console.log(
+                  `📉 Decremented stock for ${item.purchaseOption.variant.product.name} - ${item.purchaseOption.variant.name}`
+                );
+              } catch (inventoryError) {
+                console.error("Failed to update inventory:", inventoryError);
+                // Continue processing even if inventory update fails
+              }
+            }
+
+            // Prepare email data
+            const emailItems = completeOrder.items.map((item) => ({
+              productName: item.purchaseOption.variant.product.name,
+              variantName: item.purchaseOption.variant.name,
+              quantity: item.quantity,
+              priceInCents: item.purchaseOption.priceInCents,
+            }));
+
+            const subtotalInCents = completeOrder.items.reduce(
+              (sum, item) => sum + item.quantity * item.purchaseOption.priceInCents,
+              0
+            );
+            const shippingInCents =
+              completeOrder.totalInCents - subtotalInCents;
+
+            const shippingAddressData =
+              completeOrder.deliveryMethod === "DELIVERY" &&
+              completeOrder.shippingStreet
+                ? {
+                    recipientName: completeOrder.recipientName || "Customer",
+                    street: completeOrder.shippingStreet,
+                    city: completeOrder.shippingCity || "",
+                    state: completeOrder.shippingState || "",
+                    postalCode: completeOrder.shippingPostalCode || "",
+                    country: completeOrder.shippingCountry || "",
+                  }
+                : undefined;
+
+            // Send customer confirmation email
+            try {
+              await resend.emails.send({
+                from: process.env.RESEND_FROM_EMAIL || "orders@artisan-roast.com",
+                to: completeOrder.customerEmail || "",
+                subject: `Order Confirmation - #${completeOrder.id.slice(-8)}`,
+                react: OrderConfirmationEmail({
+                  orderNumber: completeOrder.id.slice(-8),
+                  customerName: completeOrder.recipientName || "Customer",
+                  customerEmail: completeOrder.customerEmail || "",
+                  items: emailItems,
+                  subtotalInCents,
+                  shippingInCents,
+                  totalInCents: completeOrder.totalInCents,
+                  deliveryMethod: completeOrder.deliveryMethod,
+                  shippingAddress: shippingAddressData,
+                  orderDate: new Date(completeOrder.createdAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  }),
+                }),
+              });
+              console.log("📧 Customer confirmation email sent");
+            } catch (emailError) {
+              console.error("Failed to send customer email:", emailError);
+              // Don't fail webhook - order is already created
+            }
+
+            // Send merchant notification email
+            try {
+              await resend.emails.send({
+                from: process.env.RESEND_FROM_EMAIL || "orders@artisan-roast.com",
+                to: process.env.RESEND_MERCHANT_EMAIL || "merchant@artisan-roast.com",
+                subject: `New Order #${completeOrder.id.slice(-8)} - Action Required`,
+                react: MerchantOrderNotification({
+                  orderNumber: completeOrder.id.slice(-8),
+                  customerName: completeOrder.recipientName || "Customer",
+                  customerEmail: completeOrder.customerEmail || "",
+                  items: emailItems,
+                  totalInCents: completeOrder.totalInCents,
+                  deliveryMethod: completeOrder.deliveryMethod,
+                  shippingAddress: shippingAddressData,
+                  orderDate: new Date(completeOrder.createdAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  }),
+                }),
+              });
+              console.log("📧 Merchant notification email sent");
+            } catch (emailError) {
+              console.error("Failed to send merchant email:", emailError);
+              // Don't fail webhook
+            }
+          }
+
+          // TODO Phase 7:
           // - Handle subscriptions differently
         } catch (dbError: any) {
           console.error("Failed to create order:", dbError);
