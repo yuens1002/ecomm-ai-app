@@ -113,7 +113,10 @@ export default function AccountPageClient({ user }: AccountPageClientProps) {
             <MapPin className="w-4 h-4" />
             <span className="hidden sm:inline">Addresses</span>
           </TabsTrigger>
-          <TabsTrigger value="subscriptions" className="flex items-center gap-2">
+          <TabsTrigger
+            value="subscriptions"
+            className="flex items-center gap-2"
+          >
             <Package className="w-4 h-4" />
             <span className="hidden sm:inline">Subscriptions</span>
           </TabsTrigger>

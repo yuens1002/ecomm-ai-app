@@ -15,12 +15,19 @@ export async function POST(req: NextRequest) {
     const session = await auth();
 
     if (!session?.user?.email) {
+      console.log("❌ Customer portal: Unauthorized access attempt");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { stripeCustomerId, returnUrl } = await req.json();
 
+    console.log("\n=== CUSTOMER PORTAL REQUEST ===");
+    console.log("User:", session.user.email);
+    console.log("Customer ID:", stripeCustomerId);
+    console.log("Return URL:", returnUrl);
+
     if (!stripeCustomerId) {
+      console.log("❌ Missing Stripe customer ID");
       return NextResponse.json(
         { error: "Stripe customer ID is required" },
         { status: 400 }
@@ -32,6 +39,10 @@ export async function POST(req: NextRequest) {
       customer: stripeCustomerId,
       return_url: returnUrl || `${process.env.NEXT_PUBLIC_BASE_URL}/account`,
     });
+
+    console.log("✅ Portal session created:", portalSession.id);
+    console.log("Portal URL:", portalSession.url);
+    console.log("=======================\n");
 
     return NextResponse.json({ url: portalSession.url });
   } catch (error: any) {

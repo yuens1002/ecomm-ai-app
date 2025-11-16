@@ -21,6 +21,7 @@ interface Subscription {
   stripeCustomerId: string;
   status: SubscriptionStatus;
   productName: string;
+  productDescription?: string | null;
   variantName: string;
   quantity: number;
   priceInCents: number;
@@ -45,11 +46,11 @@ interface SubscriptionsTabProps {
 export default function SubscriptionsTab({
   subscriptions,
 }: SubscriptionsTabProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleManageSubscription = async (stripeCustomerId: string) => {
-    setIsLoading(true);
+  const handleManageSubscription = async (stripeCustomerId: string, subId: string) => {
+    setLoadingId(subId);
     try {
       const response = await fetch("/api/customer-portal", {
         method: "POST",
@@ -74,7 +75,7 @@ export default function SubscriptionsTab({
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoadingId(null);
     }
   };
 
@@ -134,9 +135,13 @@ export default function SubscriptionsTab({
                 <CardTitle className="text-xl">
                   {subscription.productName}
                 </CardTitle>
-                <CardDescription className="mt-1">
-                  {subscription.variantName}
-                  {subscription.quantity > 1 && ` × ${subscription.quantity}`}
+                <CardDescription className="mt-1 space-y-0">
+                  <span>{subscription.variantName}{subscription.quantity > 1 && ` × ${subscription.quantity}`}</span>
+                  {subscription.productDescription && (
+                    <span className="block text-xs text-muted-foreground mt-0.5">
+                      {subscription.productDescription}
+                    </span>
+                  )}
                 </CardDescription>
               </div>
               <span
@@ -154,7 +159,9 @@ export default function SubscriptionsTab({
               <div>
                 <p className="text-sm text-muted-foreground">Price</p>
                 <p className="font-semibold">
-                  {formatPrice(subscription.priceInCents * subscription.quantity)}
+                  {formatPrice(
+                    subscription.priceInCents * subscription.quantity
+                  )}
                   {subscription.deliverySchedule && (
                     <span className="text-sm text-muted-foreground font-normal ml-1">
                       / {subscription.deliverySchedule.toLowerCase()}
@@ -165,7 +172,9 @@ export default function SubscriptionsTab({
               {subscription.deliverySchedule && (
                 <div>
                   <p className="text-sm text-muted-foreground">Delivery</p>
-                  <p className="font-semibold">{subscription.deliverySchedule}</p>
+                  <p className="font-semibold">
+                    {subscription.deliverySchedule}
+                  </p>
                 </div>
               )}
             </div>
@@ -176,9 +185,15 @@ export default function SubscriptionsTab({
               <span className="text-muted-foreground">
                 Current period:{" "}
                 <span className="text-foreground">
-                  {format(new Date(subscription.currentPeriodStart), "MMM d, yyyy")} 
+                  {format(
+                    new Date(subscription.currentPeriodStart),
+                    "MMM d, yyyy"
+                  )}
                   {" - "}
-                  {format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}
+                  {format(
+                    new Date(subscription.currentPeriodEnd),
+                    "MMM d, yyyy"
+                  )}
                 </span>
               </span>
             </div>
@@ -186,7 +201,9 @@ export default function SubscriptionsTab({
             {/* Shipping Address */}
             {subscription.shippingStreet && (
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Shipping to</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Shipping to
+                </p>
                 <div className="text-sm">
                   {subscription.recipientName && (
                     <p className="font-medium">{subscription.recipientName}</p>
@@ -208,7 +225,10 @@ export default function SubscriptionsTab({
               <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
                 <p className="text-sm text-yellow-800 dark:text-yellow-300">
                   ⚠️ This subscription will be canceled on{" "}
-                  {format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}
+                  {format(
+                    new Date(subscription.currentPeriodEnd),
+                    "MMM d, yyyy"
+                  )}
                 </p>
               </div>
             )}
@@ -217,12 +237,15 @@ export default function SubscriptionsTab({
             {subscription.status !== "CANCELED" && (
               <Button
                 onClick={() =>
-                  handleManageSubscription(subscription.stripeCustomerId)
+                  handleManageSubscription(
+                    subscription.stripeCustomerId,
+                    subscription.id
+                  )
                 }
-                disabled={isLoading}
+                disabled={loadingId === subscription.id}
                 className="w-full"
               >
-                {isLoading ? (
+                {loadingId === subscription.id ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Opening Portal...
@@ -239,7 +262,8 @@ export default function SubscriptionsTab({
             {/* Canceled Date */}
             {subscription.canceledAt && (
               <p className="text-sm text-muted-foreground text-center">
-                Canceled on {format(new Date(subscription.canceledAt), "MMM d, yyyy")}
+                Canceled on{" "}
+                {format(new Date(subscription.canceledAt), "MMM d, yyyy")}
               </p>
             )}
           </CardContent>

@@ -102,7 +102,12 @@ model PurchaseOption {
   type            PurchaseType @default(ONE_TIME)
   priceInCents    Int    
   discountMessage   String?
+  // Deprecated: use billingInterval + billingIntervalCount instead
   deliverySchedule  String?
+
+  // Stripe-style recurring config for subscriptions
+  billingInterval      BillingInterval? // DAY, WEEK, MONTH, YEAR
+  billingIntervalCount Int?             // e.g. 1, 2, 3, 4
 
   // Relation back to the Variant
   variantId String
@@ -114,6 +119,13 @@ model PurchaseOption {
 enum PurchaseType {
   ONE_TIME
   SUBSCRIPTION
+}
+
+enum BillingInterval {
+  DAY
+  WEEK
+  MONTH
+  YEAR
 }
 
 // --- User & Order Models ---
@@ -249,8 +261,11 @@ model Subscription {
   status                SubscriptionStatus @default(ACTIVE)
   
   // Product details
-  productName           String             // Product name at time of subscription
-  variantName           String             // Variant name (e.g., "12oz Bag")
+  productName           String             // Product name at time of subscription (from Stripe Product name)
+  variantName           String             // Variant nickname (Stripe Price nickname or line item description)
+  stripeProductId       String             // Stripe Product ID for uniqueness enforcement per user
+  stripePriceId         String?            // Stripe Price ID for mapping to internal PurchaseOption
+  productDescription    String?            // Full product description (from Stripe product)
   quantity              Int                @default(1)
   priceInCents          Int                // Price per billing cycle
   deliverySchedule      String?            // e.g., "Every 2 weeks", "Monthly"
@@ -278,6 +293,8 @@ model Subscription {
   @@index([userId])
   @@index([stripeSubscriptionId])
   @@index([stripeCustomerId])
+  @@index([stripePriceId])
+  @@unique([userId, stripeProductId], name: "subscription_user_product")
 }
 
 // --- Enums ---

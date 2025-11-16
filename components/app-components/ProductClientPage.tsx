@@ -58,9 +58,6 @@ export default function ProductClientPage({
   const [selectedPurchaseOption, setSelectedPurchaseOption] = useState(
     selectedVariant.purchaseOptions[0]
   );
-  const [selectedSchedule, setSelectedSchedule] = useState(
-    selectedPurchaseOption.deliverySchedule || "EVERY_WEEK"
-  );
   const [quantity, setQuantity] = useState(1);
 
   // --- Derived State ---
@@ -97,10 +94,9 @@ export default function ProductClientPage({
       purchaseType: selectedPurchaseOption.type,
       priceInCents: selectedPurchaseOption.priceInCents,
       imageUrl: displayImage,
-      deliverySchedule:
-        selectedPurchaseOption.type === "SUBSCRIPTION"
-          ? selectedSchedule
-          : undefined,
+      // deliverySchedule is deprecated; keep undefined and rely on
+      // the chosen PurchaseOption's billingInterval fields instead.
+      deliverySchedule: undefined,
       quantity: quantity,
     });
 
@@ -254,30 +250,7 @@ export default function ProductClientPage({
           </div>
 
           {/* Delivery Schedule (Conditional) */}
-          {selectedPurchaseOption.type === "SUBSCRIPTION" && (
-            <div>
-              <Label
-                htmlFor="schedule"
-                className="text-base font-semibold text-text-base mb-3 block"
-              >
-                Delivery Schedule
-              </Label>
-              <Select
-                value={selectedSchedule}
-                onValueChange={setSelectedSchedule}
-              >
-                <SelectTrigger id="schedule" className="w-full">
-                  <SelectValue placeholder="Select schedule" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EVERY_WEEK">Every Week</SelectItem>
-                  <SelectItem value="EVERY_2_WEEKS">Every 2 Weeks</SelectItem>
-                  <SelectItem value="EVERY_3_WEEKS">Every 3 Weeks</SelectItem>
-                  <SelectItem value="EVERY_4_WEEKS">Every 4 Weeks</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {/* Subscription cadence is now encoded directly on PurchaseOption via billingInterval fields. */}
 
           {/* Add to Cart Button */}
           <Button

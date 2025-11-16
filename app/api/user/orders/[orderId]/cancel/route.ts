@@ -19,9 +19,24 @@ export async function POST(
 
     const { orderId } = await params;
 
-    // Fetch the order
+    // Fetch the order with items to restore inventory
     const order = await prisma.order.findUnique({
       where: { id: orderId },
+      include: {
+        items: {
+          include: {
+            purchaseOption: {
+              include: {
+                variant: {
+                  include: {
+                    product: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!order) {
@@ -56,6 +71,27 @@ export async function POST(
           },
           { status: 500 }
         );
+      }
+    }
+
+    // Restore inventory for each item
+    console.log("📈 Restoring inventory for canceled order:", orderId);
+    for (const item of order.items) {
+      try {
+        await prisma.productVariant.update({
+          where: { id: item.purchaseOption.variant.id },
+          data: {
+            stockQuantity: {
+              increment: item.quantity,
+            },
+          },
+        });
+        console.log(
+          `📈 Restored stock for ${item.purchaseOption.variant.product.name} - ${item.purchaseOption.variant.name}: +${item.quantity}`
+        );
+      } catch (inventoryError) {
+        console.error("Failed to restore inventory:", inventoryError);
+        // Continue processing even if inventory restore fails
       }
     }
 

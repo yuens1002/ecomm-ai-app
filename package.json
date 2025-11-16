@@ -8,7 +8,8 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
-    "seed": "npx prisma db seed"
+    "seed": "npx prisma db seed",
+    "dedupe:subs": "tsx scripts/dedupe-subscriptions.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
