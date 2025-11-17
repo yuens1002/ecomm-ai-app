@@ -366,6 +366,9 @@ export async function POST(req: NextRequest) {
               console.log("📋 Subscription retrieved:", subscription.id);
               console.log("Status:", subscription.status);
 
+              // Store original status before type narrowing
+              const originalStripeStatus = subscription.status;
+
               // Double-check subscription is active before creating record
               if (subscription.status !== "active" && subscription.status !== "trialing") {
                 console.log(`⏭️ Subscription status is ${subscription.status}, will handle via invoice.payment_succeeded`);
@@ -418,10 +421,9 @@ export async function POST(req: NextRequest) {
 
               // Map Stripe status
               let status: "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE" = "ACTIVE";
-              const stripeStatus = subscription.status;
-              if (stripeStatus === "canceled") status = "CANCELED";
-              else if (stripeStatus === "paused") status = "PAUSED";
-              else if (stripeStatus === "past_due") status = "PAST_DUE";
+              if (originalStripeStatus === "canceled") status = "CANCELED";
+              else if (originalStripeStatus === "paused") status = "PAUSED";
+              else if (originalStripeStatus === "past_due") status = "PAST_DUE";
 
               // Get shipping address from session
               const shipping = shippingAddress;
