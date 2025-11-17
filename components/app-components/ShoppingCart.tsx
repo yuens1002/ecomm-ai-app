@@ -221,11 +221,20 @@ export function ShoppingCart() {
 
         // Handle duplicate subscription error
         if (data?.code === "SUBSCRIPTION_EXISTS") {
+          const duplicates = data.duplicates || [];
+          const count = duplicates.length;
+          const subscriptionText = count === 1 ? "Subscription" : "Subscriptions";
+          const existsText = count === 1 ? "exists" : "exist";
+          
+          const productList = duplicates.map((name: string) => 
+            `• ${name}`
+          ).join('\n');
+          
           toast({
-            title: "Subscription exists",
-            description: "You already have a subscription for this product variant.",
+            title: `${subscriptionText} ${existsText}`,
+            description: `You already have a subscription for:\n${productList}`,
             variant: undefined,
-            className: "!bg-foreground !text-background !border-foreground",
+            className: "!bg-foreground !text-background !border-foreground whitespace-pre-line",
           });
           setIsCheckingOut(false);
           return;

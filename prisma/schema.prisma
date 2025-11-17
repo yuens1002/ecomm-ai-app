@@ -301,6 +301,7 @@ enum OrderStatus {
   SHIPPED
   PICKED_UP
   CANCELLED
+  FAILED
 }
 
 enum DeliveryMethod {

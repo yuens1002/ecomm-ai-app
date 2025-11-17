@@ -2,6 +2,14 @@
 
 ## 0.11.5 - 2025-11-17
 
+- **Webhook Event Refactor**: Hybrid approach for subscription creation using both `checkout.session.completed` and `invoice.payment_succeeded`
+  - **Immediate payment methods (cards)**: Subscription created in `checkout.session.completed` when `payment_status === "paid"` and `subscription.status` is `"active"` or `"trialing"` - provides instant UX feedback
+  - **Async payment methods (ACH, SEPA, etc.)**: Subscription created in `invoice.payment_succeeded` when payment confirms later - ensures data integrity
+  - Renewal payments: Handled by `invoice.payment_succeeded` for all billing cycles
+  - Status changes: Handled by `customer.subscription.updated` event
+  - Prevents orphaned subscription records from failed or incomplete payments
+  - **Bug Fix**: Exclude CANCELED subscriptions from duplicate check to allow re-subscription to previously canceled products
+  - Safety checks: Verify `payment_status === "paid"` and valid subscription status before creating records
 - **Subscription Schema Refactor**: Removed `variantName` field from Subscription model since `productName` already contains the full product+variant combination (e.g., "Death Valley Espresso - 12oz Bag")
   - Simplified webhook handler to only use `productName` from Stripe
   - Updated all UI components (AccountPageClient, SubscriptionsTab) to display `productName` only
@@ -26,6 +34,11 @@
   - Auto-switch to one-time purchase after adding subscription to cart
   - Dynamic delivery schedule dropdown generated from available subscription options
   - Checkout requires authentication for subscription purchases with helpful redirect notice
+  - Improved duplicate subscription error messages with proper singular/plural grammar and bullet-point lists
+- **Order Confirmation Emails**: Enhanced to distinguish between one-time and subscription items
+  - Display purchase type inline with product name (e.g., "• One-time" or "• Subscription - Every week")
+  - Shows delivery schedule for subscription items using `formatBillingInterval()` utility
+  - Applied to both customer and merchant order notification emails
 - **Toast Notification System**: Replaced browser alerts with styled toast notifications
   - Custom inverted theme colors (`bg-foreground`, `text-background`)
   - Positioned in upper right corner

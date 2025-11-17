@@ -238,11 +238,21 @@ export async function POST(req: NextRequest) {
             }
 
             // Prepare email data
+            const { formatBillingInterval } = await import("@/lib/utils");
             const emailItems = completeOrder.items.map((item) => ({
               productName: item.purchaseOption.variant.product.name,
               variantName: item.purchaseOption.variant.name,
               quantity: item.quantity,
               priceInCents: item.purchaseOption.priceInCents,
+              purchaseType: item.purchaseOption.type, // ONE_TIME or SUBSCRIPTION
+              deliverySchedule:
+                item.purchaseOption.type === "SUBSCRIPTION" &&
+                item.purchaseOption.billingInterval
+                  ? formatBillingInterval(
+                      item.purchaseOption.billingInterval,
+                      item.purchaseOption.billingIntervalCount || 1
+                    )
+                  : null,
             }));
 
             const subtotalInCents = completeOrder.items.reduce(
@@ -333,8 +343,172 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          // TODO Phase 7:
-          // - Handle subscriptions differently
+          // Handle subscription creation for subscription checkouts
+          if (session.mode === "subscription" && session.subscription && userId) {
+            console.log("\n🔄 Processing subscription from checkout session...");
+            console.log("Session payment_status:", session.payment_status);
+            
+            // Only create subscription if payment is confirmed
+            if (session.payment_status !== "paid") {
+              console.log("⏭️ Skipping subscription creation - payment not confirmed yet");
+              console.log("   Will be created via invoice.payment_succeeded event");
+              break;
+            }
+
+            try {
+              const subscription = await stripe.subscriptions.retrieve(
+                session.subscription as string,
+                {
+                  expand: ['latest_invoice', 'default_payment_method']
+                }
+              );
+
+              console.log("📋 Subscription retrieved:", subscription.id);
+              console.log("Status:", subscription.status);
+
+              // Double-check subscription is active before creating record
+              if (subscription.status !== "active" && subscription.status !== "trialing") {
+                console.log(`⏭️ Subscription status is ${subscription.status}, will handle via invoice.payment_succeeded`);
+                break;
+              }
+
+              // Calculate current billing period - get from subscription items
+              const subscriptionItem = subscription.items.data[0];
+              const currentPeriodStart = subscriptionItem.current_period_start;
+              const currentPeriodEnd = subscriptionItem.current_period_end;
+
+              if (!currentPeriodStart || !currentPeriodEnd) {
+                console.error("❌ Missing billing period dates from subscription items");
+                throw new Error("Subscription items missing current_period_start or current_period_end");
+              }
+
+              // Extract Product details from subscription items (already extracted above)
+              const price = subscriptionItem.price;
+              const stripeProductId =
+                typeof price.product === "string"
+                  ? price.product
+                  : (price.product as Stripe.Product).id;
+              const stripePriceId = price.id;
+
+              let productName: string = "Coffee Subscription";
+              let productDescription: string | null = null;
+              try {
+                const product = await stripe.products.retrieve(stripeProductId);
+                productName = product.name || productName;
+                productDescription = (product.description as string) || null;
+              } catch (prodErr) {
+                console.warn("⚠️ Failed to retrieve Stripe product", prodErr);
+              }
+
+              // Derive delivery schedule
+              let deliverySchedule: string | null = null;
+              if (subscription.metadata.deliverySchedule) {
+                deliverySchedule = subscription.metadata.deliverySchedule;
+              } else if (price.nickname) {
+                const scheduleMatch = price.nickname.match(/Every\s+[^-()]+/i);
+                if (scheduleMatch) deliverySchedule = scheduleMatch[0].trim();
+              }
+              if (!deliverySchedule && price.recurring?.interval) {
+                const { formatBillingInterval } = await import("@/lib/utils");
+                deliverySchedule = formatBillingInterval(
+                  price.recurring.interval,
+                  price.recurring.interval_count || 1
+                );
+              }
+
+              // Map Stripe status
+              let status: "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE" = "ACTIVE";
+              const stripeStatus = subscription.status;
+              if (stripeStatus === "canceled") status = "CANCELED";
+              else if (stripeStatus === "paused") status = "PAUSED";
+              else if (stripeStatus === "past_due") status = "PAST_DUE";
+
+              // Get shipping address from session
+              const shipping = shippingAddress;
+
+              // Check for existing subscription for this product
+              const existingForProduct = await prisma.subscription.findFirst({
+                where: {
+                  userId: userId,
+                  stripeProductId: stripeProductId,
+                  status: {
+                    not: "CANCELED",
+                  },
+                },
+              });
+
+              if (
+                existingForProduct &&
+                existingForProduct.stripeSubscriptionId !== subscription.id
+              ) {
+                console.log("♻️ Updating existing subscription record");
+                await prisma.subscription.update({
+                  where: { id: existingForProduct.id },
+                  data: {
+                    stripeSubscriptionId: subscription.id,
+                    stripeCustomerId: subscription.customer as string,
+                    status,
+                    productName,
+                    productDescription,
+                    stripeProductId: stripeProductId,
+                    stripePriceId: stripePriceId,
+                    quantity: subscriptionItem.quantity || 1,
+                    priceInCents: price.unit_amount || 0,
+                    deliverySchedule,
+                    currentPeriodStart: new Date(currentPeriodStart * 1000),
+                    currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+                    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+                    recipientName: shippingName || null,
+                    shippingStreet: shipping?.line1 || null,
+                    shippingCity: shipping?.city || null,
+                    shippingState: shipping?.state || null,
+                    shippingPostalCode: shipping?.postal_code || null,
+                    shippingCountry: shipping?.country || null,
+                  },
+                });
+              } else {
+                // Create new subscription record
+                await prisma.subscription.upsert({
+                  where: { stripeSubscriptionId: subscription.id },
+                  create: {
+                    stripeSubscriptionId: subscription.id,
+                    stripeCustomerId: subscription.customer as string,
+                    userId: userId,
+                    status,
+                    productName,
+                    productDescription,
+                    stripeProductId: stripeProductId,
+                    stripePriceId: stripePriceId,
+                    quantity: subscriptionItem.quantity || 1,
+                    priceInCents: price.unit_amount || 0,
+                    deliverySchedule,
+                    currentPeriodStart: new Date(currentPeriodStart * 1000),
+                    currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+                    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+                    recipientName: shippingName || null,
+                    shippingStreet: shipping?.line1 || null,
+                    shippingCity: shipping?.city || null,
+                    shippingState: shipping?.state || null,
+                    shippingPostalCode: shipping?.postal_code || null,
+                    shippingCountry: shipping?.country || null,
+                  },
+                  update: {
+                    status,
+                    quantity: subscriptionItem.quantity || 1,
+                    priceInCents: price.unit_amount || 0,
+                    deliverySchedule,
+                    currentPeriodStart: new Date(currentPeriodStart * 1000),
+                    currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+                  },
+                });
+              }
+
+              console.log("✅ Subscription record created/updated");
+            } catch (subError) {
+              console.error("Failed to create subscription record:", subError);
+              // Don't fail webhook - order is already created
+            }
+          }
         } catch (dbError: any) {
           console.error("Failed to create order:", dbError);
           // Don't fail the webhook - Stripe already processed payment
@@ -356,52 +530,39 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      case "customer.subscription.created":
-      case "customer.subscription.updated": {
-        console.log("\n=== SUBSCRIPTION EVENT ===");
-        console.log("Event Type:", event.type);
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        console.log("\n=== INVOICE PAYMENT SUCCEEDED ===");
+        console.log("Invoice ID:", invoice.id);
+        console.log("Customer ID:", invoice.customer);
+        console.log("Subscription ID:", invoice.subscription);
 
-        // Fetch full subscription object from Stripe API (webhook data is incomplete)
-        const subscription = await stripe.subscriptions.retrieve(
-          (event.data.object as Stripe.Subscription).id
-        );
-
-        console.log("Subscription ID:", subscription.id);
-        console.log("Customer ID:", subscription.customer);
-        console.log("Status:", subscription.status);
-
-        // Calculate current billing period
-        // Use billing_cycle_anchor as start, calculate end based on interval
-        const currentPeriodStart = subscription.billing_cycle_anchor;
-
-        // Get the interval from the price
-        const subscriptionItem = subscription.items.data[0];
-        const price = subscriptionItem.price;
-        const interval = price.recurring?.interval || "month";
-        const intervalCount = price.recurring?.interval_count || 1;
-
-        // Calculate period end based on interval
-        const startDate = new Date(currentPeriodStart * 1000);
-        const endDate = new Date(startDate);
-
-        if (interval === "day") {
-          endDate.setDate(endDate.getDate() + intervalCount);
-        } else if (interval === "week") {
-          endDate.setDate(endDate.getDate() + intervalCount * 7);
-        } else if (interval === "month") {
-          endDate.setMonth(endDate.getMonth() + intervalCount);
-        } else if (interval === "year") {
-          endDate.setFullYear(endDate.getFullYear() + intervalCount);
+        // Only process invoices that are for subscriptions
+        if (!invoice.subscription) {
+          console.log("⏭️ Skipping non-subscription invoice");
+          break;
         }
 
-        const currentPeriodEnd = Math.floor(endDate.getTime() / 1000);
+        // Fetch full subscription object from Stripe API
+        const subscription = await stripe.subscriptions.retrieve(
+          invoice.subscription as string
+        );
+
+        console.log("Processing subscription:", subscription.id);
+        console.log("Subscription Status:", subscription.status);
+
+        // Calculate current billing period
+        const currentPeriodStart = subscription.current_period_start;
+        const currentPeriodEnd = subscription.current_period_end;
 
         console.log(
           "Current Period:",
           new Date(currentPeriodStart * 1000),
           "to",
           new Date(currentPeriodEnd * 1000)
-        ); // Get user from customer ID - try order lookup first, then direct customer lookup
+        );
+
+        // Get user from customer ID - try order lookup first, then direct customer lookup
         let user = await prisma.user.findFirst({
           where: {
             orders: {
@@ -438,12 +599,15 @@ export async function POST(req: NextRequest) {
 
         console.log("✅ Found user:", user.email, "(ID:", user.id, ")");
 
-        // Extract Product details (retrieve full product for name & description)
+        // Extract Product details from subscription items
+        const subscriptionItem = subscription.items.data[0];
+        const price = subscriptionItem.price;
         const stripeProductId =
           typeof price.product === "string"
             ? price.product
             : (price.product as Stripe.Product).id;
-        const stripePriceId = price.id; // Stripe Price ID for mapping to PurchaseOption later
+        const stripePriceId = price.id;
+
         let productName: string = "Coffee Subscription";
         let productDescription: string | null = null;
         try {
@@ -470,7 +634,7 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        console.log("📦 Subscription Item:");
+        console.log("📦 Subscription Item (Payment Confirmed):");
         console.log("  - Product Name:", productName);
         console.log("  - Quantity:", subscriptionItem.quantity);
         console.log("  - Price:", price.unit_amount, "cents");
@@ -478,43 +642,57 @@ export async function POST(req: NextRequest) {
         console.log("  - Stripe Product ID:", stripeProductId);
         console.log("  - Stripe Price ID:", stripePriceId);
 
-        // Map Stripe status + cancel_at_period_end
+        // Map Stripe status
         let status: "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE" = "ACTIVE";
         const stripeStatus = subscription.status;
         const willCancel = subscription.cancel_at_period_end;
         if (stripeStatus === "canceled") status = "CANCELED";
         else if (stripeStatus === "paused") status = "PAUSED";
         else if (stripeStatus === "past_due") status = "PAST_DUE";
-        // If will cancel at period end keep ACTIVE but mark flag
-        console.log("📊 Mapped Status:", stripeStatus, "->", status, "cancel_at_period_end=", willCancel);
 
-        // Get shipping address from subscription metadata or latest invoice
+        console.log(
+          "📊 Mapped Status:",
+          stripeStatus,
+          "->",
+          status,
+          "cancel_at_period_end=",
+          willCancel
+        );
+
+        // Get shipping address from subscription metadata
         const shipping = subscription.metadata.shipping_address
           ? JSON.parse(subscription.metadata.shipping_address)
           : null;
 
-        // Business rule: one subscription per product per user.
-        // If a different Stripe subscription exists for same product, merge into existing record.
+        // Business rule: one subscription per product per user
+        // Exclude canceled subscriptions to allow re-subscription
         const existingForProduct = await prisma.subscription.findFirst({
           where: {
             userId: user.id,
             stripeProductId: stripeProductId,
+            status: {
+              not: "CANCELED",
+            },
           },
         });
 
-        if (existingForProduct && existingForProduct.stripeSubscriptionId !== subscription.id) {
+        if (
+          existingForProduct &&
+          existingForProduct.stripeSubscriptionId !== subscription.id
+        ) {
           console.log(
             "♻️ Merging new Stripe subscription into existing product subscription record",
             {
               existingId: existingForProduct.id,
-              oldStripeSubscriptionId: existingForProduct.stripeSubscriptionId,
+              oldStripeSubscriptionId:
+                existingForProduct.stripeSubscriptionId,
               newStripeSubscriptionId: subscription.id,
             }
           );
           await prisma.subscription.update({
             where: { id: existingForProduct.id },
             data: {
-              stripeSubscriptionId: subscription.id, // keep latest Stripe subscription reference
+              stripeSubscriptionId: subscription.id,
               stripeCustomerId: subscription.customer as string,
               status,
               productName,
@@ -527,9 +705,13 @@ export async function POST(req: NextRequest) {
               currentPeriodStart: new Date(currentPeriodStart * 1000),
               currentPeriodEnd: new Date(currentPeriodEnd * 1000),
               cancelAtPeriodEnd: willCancel,
-              canceledAt: stripeStatus === "canceled" || subscription.canceled_at
-                ? new Date((subscription.canceled_at || Math.floor(Date.now()/1000)) * 1000)
-                : null,
+              canceledAt:
+                stripeStatus === "canceled" || subscription.canceled_at
+                  ? new Date(
+                      (subscription.canceled_at ||
+                        Math.floor(Date.now() / 1000)) * 1000
+                    )
+                  : null,
               recipientName: shipping?.name || null,
               shippingStreet: shipping?.line1 || null,
               shippingCity: shipping?.city || null,
@@ -557,9 +739,13 @@ export async function POST(req: NextRequest) {
               currentPeriodStart: new Date(currentPeriodStart * 1000),
               currentPeriodEnd: new Date(currentPeriodEnd * 1000),
               cancelAtPeriodEnd: willCancel,
-              canceledAt: stripeStatus === "canceled" || subscription.canceled_at
-                ? new Date((subscription.canceled_at || Math.floor(Date.now()/1000)) * 1000)
-                : null,
+              canceledAt:
+                stripeStatus === "canceled" || subscription.canceled_at
+                  ? new Date(
+                      (subscription.canceled_at ||
+                        Math.floor(Date.now() / 1000)) * 1000
+                    )
+                  : null,
               recipientName: shipping?.name || null,
               shippingStreet: shipping?.line1 || null,
               shippingCity: shipping?.city || null,
@@ -574,9 +760,13 @@ export async function POST(req: NextRequest) {
               currentPeriodStart: new Date(currentPeriodStart * 1000),
               currentPeriodEnd: new Date(currentPeriodEnd * 1000),
               cancelAtPeriodEnd: willCancel,
-              canceledAt: stripeStatus === "canceled" || subscription.canceled_at
-                ? new Date((subscription.canceled_at || Math.floor(Date.now()/1000)) * 1000)
-                : null,
+              canceledAt:
+                stripeStatus === "canceled" || subscription.canceled_at
+                  ? new Date(
+                      (subscription.canceled_at ||
+                        Math.floor(Date.now() / 1000)) * 1000
+                    )
+                  : null,
               deliverySchedule,
               stripeProductId: stripeProductId,
               stripePriceId: stripePriceId,
@@ -586,7 +776,10 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        console.log("✅ Subscription synced to database:", subscription.id);
+        console.log(
+          "✅ Subscription activated/renewed in database (payment confirmed):",
+          subscription.id
+        );
         console.log("Database Record:", {
           stripeSubscriptionId: subscription.id,
           userId: user.id,
@@ -595,6 +788,128 @@ export async function POST(req: NextRequest) {
           stripeProductId,
           priceInCents: price.unit_amount,
         });
+        console.log("=======================\n");
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        console.log("\n=== SUBSCRIPTION UPDATED ===");
+        console.log("Event Type:", event.type);
+
+        // Fetch full subscription object from Stripe API
+        const subscription = await stripe.subscriptions.retrieve(
+          (event.data.object as Stripe.Subscription).id
+        );
+
+        console.log("Subscription ID:", subscription.id);
+        console.log("Customer ID:", subscription.customer);
+        console.log("Status:", subscription.status);
+
+        // Only update existing subscriptions - don't create new ones here
+        const existingSub = await prisma.subscription.findUnique({
+          where: { stripeSubscriptionId: subscription.id },
+        });
+
+        if (!existingSub) {
+          console.log(
+            "⏭️ Skipping update - subscription not yet created (waiting for payment)"
+          );
+          break;
+        }
+
+        // Calculate current billing period
+        const currentPeriodStart = subscription.current_period_start;
+        const currentPeriodEnd = subscription.current_period_end;
+
+        // Extract Product details from subscription items
+        const subscriptionItem = subscription.items.data[0];
+        const price = subscriptionItem.price;
+        const stripeProductId =
+          typeof price.product === "string"
+            ? price.product
+            : (price.product as Stripe.Product).id;
+        const stripePriceId = price.id;
+
+        let productName: string = existingSub.productName;
+        let productDescription: string | null = existingSub.productDescription;
+        try {
+          const product = await stripe.products.retrieve(stripeProductId);
+          productName = product.name || productName;
+          productDescription = (product.description as string) || null;
+        } catch (prodErr) {
+          console.warn("⚠️ Failed to retrieve Stripe product", prodErr);
+        }
+
+        // Derive delivery schedule
+        let deliverySchedule: string | null = null;
+        if (subscription.metadata.deliverySchedule) {
+          deliverySchedule = subscription.metadata.deliverySchedule;
+        } else if (price.nickname) {
+          const scheduleMatch = price.nickname.match(/Every\s+[^-()]+/i);
+          if (scheduleMatch) deliverySchedule = scheduleMatch[0].trim();
+        }
+        if (!deliverySchedule && price.recurring?.interval) {
+          const { formatBillingInterval } = await import("@/lib/utils");
+          deliverySchedule = formatBillingInterval(
+            price.recurring.interval,
+            price.recurring.interval_count || 1
+          );
+        }
+
+        // Map Stripe status
+        let status: "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE" = "ACTIVE";
+        const stripeStatus = subscription.status;
+        const willCancel = subscription.cancel_at_period_end;
+        if (stripeStatus === "canceled") status = "CANCELED";
+        else if (stripeStatus === "paused") status = "PAUSED";
+        else if (stripeStatus === "past_due") status = "PAST_DUE";
+
+        console.log(
+          "📊 Updated Status:",
+          stripeStatus,
+          "->",
+          status,
+          "cancel_at_period_end=",
+          willCancel
+        );
+
+        // Get shipping address from subscription metadata
+        const shipping = subscription.metadata.shipping_address
+          ? JSON.parse(subscription.metadata.shipping_address)
+          : null;
+
+        await prisma.subscription.update({
+          where: { stripeSubscriptionId: subscription.id },
+          data: {
+            status,
+            quantity: subscriptionItem.quantity || 1,
+            priceInCents: price.unit_amount || 0,
+            currentPeriodStart: new Date(currentPeriodStart * 1000),
+            currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+            cancelAtPeriodEnd: willCancel,
+            canceledAt:
+              stripeStatus === "canceled" || subscription.canceled_at
+                ? new Date(
+                    (subscription.canceled_at ||
+                      Math.floor(Date.now() / 1000)) * 1000
+                  )
+                : null,
+            deliverySchedule,
+            stripeProductId: stripeProductId,
+            stripePriceId: stripePriceId,
+            productName,
+            productDescription,
+            recipientName: shipping?.name || existingSub.recipientName,
+            shippingStreet: shipping?.line1 || existingSub.shippingStreet,
+            shippingCity: shipping?.city || existingSub.shippingCity,
+            shippingState: shipping?.state || existingSub.shippingState,
+            shippingPostalCode:
+              shipping?.postal_code || existingSub.shippingPostalCode,
+            shippingCountry: shipping?.country || existingSub.shippingCountry,
+          },
+        });
+
+        console.log("✅ Subscription updated in database:", subscription.id);
         console.log("=======================\n");
         break;
       }

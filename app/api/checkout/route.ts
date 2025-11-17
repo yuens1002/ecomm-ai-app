@@ -211,7 +211,8 @@ export async function POST(req: NextRequest) {
       if (attemptedDuplicates.length > 0) {
         return NextResponse.json({
           error: `You already have an active subscription for: ${attemptedDuplicates.join(', ')}. Each product variant can only have one active subscription.`,
-          code: 'SUBSCRIPTION_EXISTS'
+          code: 'SUBSCRIPTION_EXISTS',
+          duplicates: attemptedDuplicates
         }, { status: 409 });
       }
     }

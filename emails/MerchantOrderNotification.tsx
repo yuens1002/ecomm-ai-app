@@ -21,6 +21,8 @@ interface MerchantOrderNotificationProps {
     variantName: string;
     quantity: number;
     priceInCents: number;
+    purchaseType: string;
+    deliverySchedule: string | null;
   }>;
   totalInCents: number;
   deliveryMethod: "DELIVERY" | "PICKUP";
@@ -101,6 +103,12 @@ export default function MerchantOrderNotification({
             <Section key={index} style={itemSection}>
               <Text style={itemText}>
                 <strong>{item.productName}</strong> - {item.variantName}
+                {item.purchaseType === "SUBSCRIPTION" && item.deliverySchedule && (
+                  <span> • Subscription - {item.deliverySchedule}</span>
+                )}
+                {item.purchaseType === "ONE_TIME" && (
+                  <span> • One-time</span>
+                )}
               </Text>
               <Text style={itemText}>
                 Quantity: {item.quantity} × {formatPrice(item.priceInCents)}
