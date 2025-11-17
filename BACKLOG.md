@@ -2,6 +2,63 @@
 
 ## High Priority
 
+### Subscription Renewal Order Creation
+**Status**: Planned  
+**Priority**: High  
+**Description**: Automatically create Order records for each subscription billing cycle to enable fulfillment tracking.
+
+**Current Behavior**:
+- Subscription renews → Stripe charges customer → `invoice.payment_succeeded` webhook fires
+- ❌ No Order record created for merchant fulfillment
+- ❌ No inventory decrement for recurring deliveries
+- ❌ No visibility in order management dashboard
+
+**Desired Behavior**:
+- Each billing cycle creates a new Order record
+- Merchant receives notification email for fulfillment
+- Customer can view renewal orders in order history
+- Inventory properly tracked across subscription lifecycle
+
+**Tasks**:
+- [ ] Enhance `invoice.payment_succeeded` webhook handler
+  - Detect subscription renewal vs initial payment
+  - Create Order record for subscription renewals
+  - Link order to Subscription via `subscriptionId` field
+  - Extract product details from subscription items
+  - Use subscription shipping address
+- [ ] Handle inventory management
+  - Decrement stock for each renewal order
+  - Check stock availability before creating order
+  - Handle out-of-stock scenarios (pause/notify)
+- [ ] Create merchant notification system
+  - Send `MerchantOrderNotification` email for renewals
+  - Include subscription context ("Subscription Renewal")
+  - Add fulfillment priority indicators
+- [ ] Update order history UI
+  - Display renewal orders with "Subscription Renewal" badge
+  - Link to parent subscription from order details
+  - Show renewal number/cycle (1st, 2nd, 3rd delivery)
+- [ ] Handle edge cases
+  - Failed payment → Don't create order
+  - Subscription paused → Skip order creation
+  - Address change between renewals → Use updated address
+  - Product discontinued → Notify customer, pause subscription
+
+**Acceptance Criteria**:
+- Each successful billing cycle creates a new Order record
+- Renewal orders visible in admin order management dashboard
+- Inventory properly decremented for each renewal
+- Merchant receives email notification for fulfillment
+- Customer can see renewal orders in order history
+- Failed renewals don't create orders
+
+**Notes**:
+- Initial subscription order already created at checkout
+- This feature handles all subsequent billing cycles (2nd, 3rd, 4th... deliveries)
+- Critical for fulfillment operations and inventory tracking
+
+---
+
 ### Failed Order Handling System
 **Status**: Planned  
 **Description**: Implement comprehensive failed order handling to notify customers and track fulfillment issues.
@@ -35,7 +92,6 @@
 
 ### Split Mixed Cart into Separate Orders
 **Status**: Planned  
-**Priority**: High  
 **Description**: Separate one-time and subscription items into distinct orders for clearer fulfillment and cancellation workflows.
 
 **Business Logic:**
@@ -93,25 +149,6 @@
 - Canceling subscription cancels pending order (if not shipped)
 - Once order ships, subscription managed independently
 - Clear UI indicators showing order ↔ subscription relationship
-
----
-
-### Subscription Renewal Order Creation
-**Status**: Planned  
-**Description**: Automatically create Order records for each subscription billing cycle.
-
-**Tasks**:
-- [ ] Enhance `invoice.payment_succeeded` webhook to create Order for subscription renewals
-- [ ] Link renewal orders to Subscription records
-- [ ] Handle inventory decrement for recurring orders
-- [ ] Manage shipping address for subscription deliveries
-- [ ] Create merchant notification for subscription renewals
-
-**Acceptance Criteria**:
-- Each billing cycle creates a new Order record
-- Inventory properly decremented for renewals
-- Merchant receives notification for fulfillment
-- Customer can see renewal orders in order history
 
 ---
 
