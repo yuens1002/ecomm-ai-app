@@ -102,8 +102,6 @@ model PurchaseOption {
   type            PurchaseType @default(ONE_TIME)
   priceInCents    Int    
   discountMessage   String?
-  // Deprecated: use billingInterval + billingIntervalCount instead
-  deliverySchedule  String?
 
   // Stripe-style recurring config for subscriptions
   billingInterval      BillingInterval? // DAY, WEEK, MONTH, YEAR
@@ -261,8 +259,7 @@ model Subscription {
   status                SubscriptionStatus @default(ACTIVE)
   
   // Product details
-  productName           String             // Product name at time of subscription (from Stripe Product name)
-  variantName           String             // Variant nickname (Stripe Price nickname or line item description)
+  productName           String             // Product name at time of subscription (from Stripe Product name, includes variant)
   stripeProductId       String             // Stripe Product ID for uniqueness enforcement per user
   stripePriceId         String?            // Stripe Price ID for mapping to internal PurchaseOption
   productDescription    String?            // Full product description (from Stripe product)

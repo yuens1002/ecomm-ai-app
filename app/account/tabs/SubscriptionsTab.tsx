@@ -22,7 +22,6 @@ interface Subscription {
   status: SubscriptionStatus;
   productName: string;
   productDescription?: string | null;
-  variantName: string;
   quantity: number;
   priceInCents: number;
   deliverySchedule: string | null;
@@ -136,7 +135,7 @@ export default function SubscriptionsTab({
                   {subscription.productName}
                 </CardTitle>
                 <CardDescription className="mt-1 space-y-0">
-                  <span>{subscription.variantName}{subscription.quantity > 1 && ` × ${subscription.quantity}`}</span>
+                  <span>{subscription.productName}{subscription.quantity > 1 && ` × ${subscription.quantity}`}</span>
                   {subscription.productDescription && (
                     <span className="block text-xs text-muted-foreground mt-0.5">
                       {subscription.productDescription}

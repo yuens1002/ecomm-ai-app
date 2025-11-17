@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,20 @@ export default function SignInPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [checkoutNotice, setCheckoutNotice] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // Show a notice when user was redirected here from checkout
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(
+      "artisan-roast-checkout-notice"
+    );
+    if (stored) {
+      setCheckoutNotice(stored);
+      window.localStorage.removeItem("artisan-roast-checkout-notice");
+    }
+  }, []);
 
   const handleEmailSignIn = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -66,6 +79,12 @@ export default function SignInPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {checkoutNotice && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 text-sm text-amber-900 dark:text-amber-100">
+              {checkoutNotice}
+            </div>
+          )}
+
           {/* Email/Password Sign In Form */}
           <form onSubmit={handleEmailSignIn} className="space-y-4">
             {error && (

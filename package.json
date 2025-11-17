@@ -1,6 +1,6 @@
 {
   "name": "artisan-roast",
-  "version": "0.11.4",
+  "version": "0.11.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,8 +8,11 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
-    "seed": "npx prisma db seed",
+    "seed": "tsx prisma/seed.ts",
     "dedupe:subs": "tsx scripts/dedupe-subscriptions.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

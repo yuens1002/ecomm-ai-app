@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
           include: {
             product: {
               select: {
+                id: true,
                 name: true,
                 images: true,
               },
@@ -49,10 +50,12 @@ export async function POST(req: NextRequest) {
         const variantName = dbOption.variant.name;
         const imageUrl = dbOption.variant.product.images[0]?.url;
 
-        // Derive Stripe recurring config directly from billingInterval fields
+        // Derive Stripe recurring config directly from PurchaseOption billingInterval fields
         let recurring: Stripe.Checkout.SessionCreateParams.LineItem.PriceData.Recurring | undefined = undefined;
+        let subscriptionDescription = 'One-time purchase';
+        
         if (dbOption.type === 'SUBSCRIPTION') {
-          const interval = (dbOption.billingInterval || 'MONTH').toLowerCase() as
+          const interval = (dbOption.billingInterval || 'WEEK').toLowerCase() as
             | 'day'
             | 'week'
             | 'month'
@@ -63,6 +66,11 @@ export async function POST(req: NextRequest) {
             interval,
             interval_count: intervalCount,
           };
+          
+          const intervalLabel = intervalCount === 1 
+            ? `Every ${interval}`
+            : `Every ${intervalCount} ${interval}s`;
+          subscriptionDescription = `Subscription: ${intervalLabel}`;
 
           console.log("🧮 Subscription line item recurring config", {
             productName,
@@ -79,11 +87,7 @@ export async function POST(req: NextRequest) {
             currency: 'usd',
             product_data: {
               name: `${productName} - ${variantName}`,
-              description: dbOption.type === 'SUBSCRIPTION'
-                ? `Subscription: Every ${dbOption.billingIntervalCount || 1} ${
-                    (dbOption.billingInterval || 'MONTH').toLowerCase()
-                  }${(dbOption.billingIntervalCount || 1) > 1 ? 's' : ''}`
-                : 'One-time purchase',
+              description: subscriptionDescription,
               images: imageUrl ? [imageUrl] : undefined,
             },
             unit_amount: actualPriceInCents,
@@ -136,7 +140,42 @@ export async function POST(req: NextRequest) {
     const subscriptionItems = items.filter((item: any) => item.purchaseType === 'SUBSCRIPTION');
     const isSubscription = subscriptionItems.length > 0;
 
-    // Duplicate subscription enforcement (one per product for user)
+    // Validate that all subscriptions have the same billing interval
+    if (isSubscription && subscriptionItems.length > 1) {
+      const intervals = new Set();
+      subscriptionItems.forEach((item: any) => {
+        const dbOption = priceMap.get(item.purchaseOptionId);
+        if (dbOption) {
+          const key = `${dbOption.billingInterval}-${dbOption.billingIntervalCount}`;
+          intervals.add(key);
+        }
+      });
+      
+      if (intervals.size > 1) {
+        return NextResponse.json(
+          {
+            error: "Cannot checkout with subscriptions of different billing intervals. Please purchase them separately.",
+            code: "MIXED_BILLING_INTERVALS",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Require authentication for any subscription checkout
+    if (isSubscription && !userId) {
+      return NextResponse.json(
+        {
+          error:
+            "To purchase a subscription, please sign in or create an account.",
+          code: "SUBSCRIPTION_REQUIRES_AUTH",
+        },
+        { status: 401 }
+      );
+    }
+
+    // Duplicate subscription enforcement (one subscription per product variant per user)
+    // Note: We use stripeProductId for uniqueness since it's tied to the product+variant combination
     if (isSubscription && userId) {
       const activeSubs = await prisma.subscription.findMany({
         where: {
@@ -144,19 +183,34 @@ export async function POST(req: NextRequest) {
           status: { in: ['ACTIVE', 'PAUSED', 'PAST_DUE'] },
         },
       });
-      const subscribedProductNames = new Set(activeSubs.map(s => s.productName));
+      
+      // Create a set of existing stripe product IDs (which represent unique product+variant combos)
+      const existingStripeProductIds = new Set(
+        activeSubs.map(s => s.stripeProductId)
+      );
+      
       const attemptedDuplicates: string[] = [];
       for (const item of subscriptionItems) {
         const dbOption = priceMap.get(item.purchaseOptionId);
         if (!dbOption) continue;
+        
         const productName = dbOption.variant.product.name;
-        if (subscribedProductNames.has(productName)) {
-          attemptedDuplicates.push(productName);
+        const variantName = dbOption.variant.name;
+        // Stripe product will be created with this combined name
+        const stripeProductKey = `${productName} - ${variantName}`;
+        
+        // Check if we already have a subscription for this product+variant combo
+        // Note: For new subscriptions, we won't have a stripeProductId yet, so we check by productName match
+        const existingForProductVariant = activeSubs.find(s => s.productName === stripeProductKey);
+        
+        if (existingForProductVariant) {
+          attemptedDuplicates.push(stripeProductKey);
         }
       }
+      
       if (attemptedDuplicates.length > 0) {
         return NextResponse.json({
-          error: `You already have an active subscription for: ${attemptedDuplicates.join(', ')}`,
+          error: `You already have an active subscription for: ${attemptedDuplicates.join(', ')}. Each product variant can only have one active subscription.`,
           code: 'SUBSCRIPTION_EXISTS'
         }, { status: 409 });
       }

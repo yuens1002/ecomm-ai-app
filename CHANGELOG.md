@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.11.5 - 2025-11-17
+
+- **Subscription Schema Refactor**: Removed `variantName` field from Subscription model since `productName` already contains the full product+variant combination (e.g., "Death Valley Espresso - 12oz Bag")
+  - Simplified webhook handler to only use `productName` from Stripe
+  - Updated all UI components (AccountPageClient, SubscriptionsTab) to display `productName` only
+  - Database migration: `20251117061523_remove_variant_name_from_subscription`
+- **Mixed Billing Interval Validation**: Added comprehensive validation to prevent checkout with subscriptions of different billing intervals (Stripe limitation)
+  - Client-side validation in cart store with custom event error handling
+  - Server-side validation in checkout API with specific error code (`MIXED_BILLING_INTERVALS`)
+  - Toast notifications for all validation errors
+- **Duplicate Subscription Prevention**: Fixed duplicate subscription check to be per-variant instead of per-product
+  - Changed uniqueness logic from `productName` to `productName::variantName` combination
+  - Updated checkout route to check by `stripeProductId` or exact productName match
+  - Users can now have multiple subscriptions for different variants of the same product
+- **Subscription Purchase Option Schema Cleanup**: Removed deprecated `deliverySchedule` string field from PurchaseOption model
+  - All subscription scheduling now uses structured `billingInterval` (enum) and `billingIntervalCount` (number)
+  - Database migration: `20251117031833_remove_delivery_schedule_from_purchase_option`
+  - Updated seed data to use structured interval fields consistently
+- **Cart Store Refactor**: Replaced deprecated `deliverySchedule` with `billingInterval` and `billingIntervalCount` fields
+  - Added `formatBillingInterval()` utility for consistent schedule display across app
+  - Cart items now show subscription cadence labels (e.g., "Subscription - Every week")
+- **Enhanced Subscription UX**:
+  - Hide "Subscribe & Save" option when variant already has subscription in cart
+  - Auto-switch to one-time purchase after adding subscription to cart
+  - Dynamic delivery schedule dropdown generated from available subscription options
+  - Checkout requires authentication for subscription purchases with helpful redirect notice
+- **Toast Notification System**: Replaced browser alerts with styled toast notifications
+  - Custom inverted theme colors (`bg-foreground`, `text-background`)
+  - Positioned in upper right corner
+  - Visible close button with proper contrast
+  - User-friendly error messages for cart/checkout issues
+
 ## 0.11.4 - 2025-11-16
 
 - **Subscription Management System**: Complete subscription lifecycle management with Stripe integration

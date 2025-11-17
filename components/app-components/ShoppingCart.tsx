@@ -14,9 +14,12 @@ import {
   MapPin,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useCartStore, CartItem } from "@/lib/store/cart-store";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { formatBillingInterval } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -42,6 +45,8 @@ import { Separator } from "@/components/ui/separator";
  */
 export function ShoppingCart() {
   const { data: session } = useSession();
+  const router = useRouter();
+  const { toast } = useToast();
   const [cartItemCount, setCartItemCount] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -84,6 +89,28 @@ export function ShoppingCart() {
     window.addEventListener("openCart", handleOpenCart);
     return () => window.removeEventListener("openCart", handleOpenCart);
   }, []);
+
+  // Reset checkout processing state when cart is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setIsCheckingOut(false);
+    }
+  }, [isOpen]);
+
+  // Listen for cart errors (e.g., mixed billing intervals)
+  useEffect(() => {
+    const handleCartError = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      toast({
+        title: "Ooops!",
+        description: "Shopping cart can't handle mixed delivery schedule intervals",
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
+    };
+    window.addEventListener("cartError", handleCartError);
+    return () => window.removeEventListener("cartError", handleCartError);
+  }, [toast]);
 
   // Fetch user's addresses and last order delivery preferences
   useEffect(() => {
@@ -168,6 +195,42 @@ export function ShoppingCart() {
       const data = await response.json();
 
       if (!response.ok) {
+        // If subscription requires auth, redirect to sign-in and show notice
+        if (data?.code === "SUBSCRIPTION_REQUIRES_AUTH") {
+          localStorage.setItem(
+            "artisan-roast-checkout-notice",
+            "To purchase a subscription, please sign in or create an account. Your cart will be saved."
+          );
+          setIsCheckingOut(false);
+          setIsOpen(false);
+          router.push("/auth/signin");
+          return;
+        }
+
+        // Handle mixed billing intervals error
+        if (data?.code === "MIXED_BILLING_INTERVALS") {
+          toast({
+            title: "Ooops!",
+            description: "Shopping cart can't handle mixed delivery schedule intervals",
+            variant: undefined,
+            className: "!bg-foreground !text-background !border-foreground",
+          });
+          setIsCheckingOut(false);
+          return;
+        }
+
+        // Handle duplicate subscription error
+        if (data?.code === "SUBSCRIPTION_EXISTS") {
+          toast({
+            title: "Subscription exists",
+            description: "You already have a subscription for this product variant.",
+            variant: undefined,
+            className: "!bg-foreground !text-background !border-foreground",
+          });
+          setIsCheckingOut(false);
+          return;
+        }
+
         throw new Error(data.error || "Failed to create checkout session");
       }
 
@@ -177,9 +240,19 @@ export function ShoppingCart() {
       }
     } catch (error) {
       console.error("Checkout error:", error);
-      alert("Failed to start checkout. Please try again.");
+      toast({
+        title: "Checkout failed",
+        description: "Failed to start checkout. Please try again.",
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
       setIsCheckingOut(false);
     }
+  };
+
+  const handleClearCart = () => {
+    clearCart();
+    setIsCheckingOut(false); // Reset processing state when cart is cleared
   };
 
   // Don't render count until mounted (avoid hydration mismatch)
@@ -272,9 +345,12 @@ export function ShoppingCart() {
                       <p>{item.variantName}</p>
                       <p className="capitalize">
                         {item.purchaseType === "SUBSCRIPTION"
-                          ? `Subscription ${
-                              item.deliverySchedule
-                                ? `• ${item.deliverySchedule}`
+                          ? `Subscription${
+                              item.billingInterval
+                                ? ` - ${formatBillingInterval(
+                                    item.billingInterval,
+                                    item.billingIntervalCount
+                                  )}`
                                 : ""
                             }`
                           : "One-time purchase"}
@@ -458,7 +534,7 @@ export function ShoppingCart() {
               </Button>
 
               {/* Clear Cart */}
-              <Button variant="outline" className="w-full" onClick={clearCart}>
+              <Button variant="outline" className="w-full" onClick={handleClearCart}>
                 Clear Cart
               </Button>
             </div>

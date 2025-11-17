@@ -38,7 +38,6 @@ interface Subscription {
   stripeCustomerId: string;
   status: "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE";
   productName: string;
-  variantName: string;
   quantity: number;
   priceInCents: number;
   deliverySchedule: string | null;

@@ -1,4 +1,7 @@
-import { PrismaClient, PurchaseType, RoastLevel } from "@prisma/client";
+import { config } from "dotenv";
+config({ path: ".env.local" });
+
+import { PrismaClient, PurchaseType, RoastLevel, BillingInterval } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -8,7 +11,7 @@ async function main() {
   // --- 1. Create Categories ---
   // We use upsert to avoid creating duplicates
   const catBlends = await prisma.category.upsert({
-    where: { slug: "espresso-blends" },
+    where: { slug: "blends" },
     update: {},
     create: { name: "Blends", slug: "blends" },
   });
@@ -88,10 +91,48 @@ async function main() {
                   { type: PurchaseType.ONE_TIME, priceInCents: 2200 },
                   {
                     type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 2090,
+                    discountMessage: "Save 5%",
+                    billingInterval: BillingInterval.WEEK,
+                    billingIntervalCount: 1,
+                  },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 1980,
                     discountMessage: "Save 10%",
                     billingInterval: BillingInterval.WEEK,
                     billingIntervalCount: 2,
+                  },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 1980,
+                    discountMessage: "Save 10%",
+                    billingInterval: BillingInterval.MONTH,
+                    billingIntervalCount: 1,
+                  },
+                ],
+              },
+            },
+            {
+              name: "2lb Bag",
+              weightInGrams: 907,
+              stockQuantity: 50,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 5800 },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 5510,
+                    discountMessage: "Save 5%",
+                    billingInterval: BillingInterval.WEEK,
+                    billingIntervalCount: 1,
+                  },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 5220,
+                    discountMessage: "Save 10%",
+                    billingInterval: BillingInterval.MONTH,
+                    billingIntervalCount: 1,
                   },
                 ],
               },
@@ -181,10 +222,24 @@ async function main() {
                   { type: PurchaseType.ONE_TIME, priceInCents: 2350 },
                   {
                     type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 2230,
+                    discountMessage: "Save 5%",
+                    billingInterval: BillingInterval.WEEK,
+                    billingIntervalCount: 1,
+                  },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 2115,
                     discountMessage: "Save 10%",
                     billingInterval: BillingInterval.WEEK,
-                    billingIntervalCount: 4,
+                    billingIntervalCount: 2,
+                  },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 2115,
+                    discountMessage: "Save 10%",
+                    billingInterval: BillingInterval.MONTH,
+                    billingIntervalCount: 1,
                   },
                 ],
               },
@@ -319,10 +374,24 @@ async function main() {
                   { type: PurchaseType.ONE_TIME, priceInCents: 2300 },
                   {
                     type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 2185,
+                    discountMessage: "Save 5%",
+                    billingInterval: BillingInterval.WEEK,
+                    billingIntervalCount: 1,
+                  },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 2070,
                     discountMessage: "Save 10%",
                     billingInterval: BillingInterval.WEEK,
-                    billingIntervalCount: 3,
+                    billingIntervalCount: 2,
+                  },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 2070,
+                    discountMessage: "Save 10%",
+                    billingInterval: BillingInterval.MONTH,
+                    billingIntervalCount: 1,
                   },
                 ],
               },

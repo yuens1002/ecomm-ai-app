@@ -13,8 +13,8 @@ export interface CartItem {
   priceInCents: number;
   quantity: number;
   imageUrl?: string;
-  // For subscriptions
-  deliverySchedule?: string;
+  billingInterval?: string; // e.g., "WEEK", "MONTH"
+  billingIntervalCount?: number; // e.g., 1, 2
 }
 
 // --- Cart State Interface ---
@@ -47,6 +47,35 @@ export const useCartStore = create<CartState>()(
 
       addItem: (newItem) => {
         set((state) => {
+          // Check for mixed subscription billing intervals
+          if (newItem.purchaseType === "SUBSCRIPTION") {
+            const existingSubscriptions = state.items.filter(
+              (item) => item.purchaseType === "SUBSCRIPTION"
+            );
+            
+            if (existingSubscriptions.length > 0) {
+              // Check if any existing subscription has a different billing interval
+              const hasDifferentInterval = existingSubscriptions.some(
+                (item) =>
+                  item.billingInterval !== newItem.billingInterval ||
+                  item.billingIntervalCount !== newItem.billingIntervalCount
+              );
+              
+              if (hasDifferentInterval) {
+                // Show error to user
+                window.dispatchEvent(
+                  new CustomEvent("cartError", {
+                    detail: {
+                      message:
+                        "Cannot mix subscriptions with different billing intervals. Please purchase them separately or remove other subscriptions first.",
+                    },
+                  })
+                );
+                return state; // Don't add the item
+              }
+            }
+          }
+
           // Check if item already exists in cart
           const existingIndex = state.items.findIndex(
             (item) =>

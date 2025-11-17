@@ -454,7 +454,7 @@ export async function POST(req: NextRequest) {
           console.warn("⚠️ Failed to retrieve Stripe product", prodErr);
         }
 
-        // Derive delivery schedule & variantName
+        // Derive delivery schedule
         let deliverySchedule: string | null = null;
         if (subscription.metadata.deliverySchedule) {
           deliverySchedule = subscription.metadata.deliverySchedule;
@@ -463,18 +463,15 @@ export async function POST(req: NextRequest) {
           if (scheduleMatch) deliverySchedule = scheduleMatch[0].trim();
         }
         if (!deliverySchedule && price.recurring?.interval) {
-          deliverySchedule = `Every ${price.recurring.interval_count || 1} ${price.recurring.interval}${(price.recurring.interval_count || 1) > 1 ? "s" : ""}`;
-        }
-
-        // Stripe SubscriptionItem does not include a description; fall back to price nickname then product name
-        let variantName = price.nickname || productName;
-        if (deliverySchedule && variantName.toLowerCase().includes(deliverySchedule.toLowerCase())) {
-          variantName = variantName.replace(deliverySchedule, "").replace(/\s{2,}/g, " ").trim();
+          const { formatBillingInterval } = await import("@/lib/utils");
+          deliverySchedule = formatBillingInterval(
+            price.recurring.interval,
+            price.recurring.interval_count || 1
+          );
         }
 
         console.log("📦 Subscription Item:");
         console.log("  - Product Name:", productName);
-        console.log("  - Variant:", variantName);
         console.log("  - Quantity:", subscriptionItem.quantity);
         console.log("  - Price:", price.unit_amount, "cents");
         console.log("  - Schedule (derived):", deliverySchedule);
@@ -522,7 +519,6 @@ export async function POST(req: NextRequest) {
               status,
               productName,
               productDescription,
-              variantName,
               stripeProductId: stripeProductId,
               stripePriceId: stripePriceId,
               quantity: subscriptionItem.quantity || 1,
@@ -553,7 +549,6 @@ export async function POST(req: NextRequest) {
               status,
               productName,
               productDescription,
-              variantName,
               stripeProductId: stripeProductId,
               stripePriceId: stripePriceId,
               quantity: subscriptionItem.quantity || 1,
@@ -587,7 +582,6 @@ export async function POST(req: NextRequest) {
               stripePriceId: stripePriceId,
               productName,
               productDescription,
-              variantName,
             },
           });
         }
@@ -598,7 +592,6 @@ export async function POST(req: NextRequest) {
           userId: user.id,
           status,
           productName,
-          variantName,
           stripeProductId,
           priceInCents: price.unit_amount,
         });

@@ -32,6 +32,7 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label"; // <-- ADDED THIS IMPORT
 import ProductCard from "@components/app-components/ProductCard"; // Re-use our card
 import { useCartStore } from "@/lib/store/cart-store";
+import { formatBillingInterval } from "@/lib/utils";
 
 // Prop interface for this component
 interface ProductClientPageProps {
@@ -51,6 +52,7 @@ export default function ProductClientPage({
   category,
 }: ProductClientPageProps) {
   const addItem = useCartStore((state) => state.addItem);
+  const cartItems = useCartStore((state) => state.items);
 
   // --- State Management ---
   // Find the first variant and purchase option to set as default
@@ -59,6 +61,16 @@ export default function ProductClientPage({
     selectedVariant.purchaseOptions[0]
   );
   const [quantity, setQuantity] = useState(1);
+  // Track which subscription cadence is selected (purchaseOptionId)
+  const [selectedSubscriptionOptionId, setSelectedSubscriptionOptionId] = useState<string | null>(null);
+
+  // Check if selected variant already has a subscription in cart
+  const hasSubscriptionInCart = cartItems.some(
+    (item) =>
+      item.productId === product.id &&
+      item.variantId === selectedVariant.id &&
+      item.purchaseType === "SUBSCRIPTION"
+  );
 
   // --- Derived State ---
   // Calculate the price to display based on state
@@ -72,18 +84,65 @@ export default function ProductClientPage({
   const handleVariantChange = (variantId: string) => {
     const newVariant = product.variants.find((v) => v.id === variantId)!;
     setSelectedVariant(newVariant);
-    // Default to the first purchase option of the new variant
-    setSelectedPurchaseOption(newVariant.purchaseOptions[0]);
+    
+    // Check if new variant has subscription in cart
+    const newVariantHasSubscription = cartItems.some(
+      (item) =>
+        item.productId === product.id &&
+        item.variantId === newVariant.id &&
+        item.purchaseType === "SUBSCRIPTION"
+    );
+    
+    // If subscription exists, default to one-time purchase
+    if (newVariantHasSubscription) {
+      const oneTimeOption = newVariant.purchaseOptions.find((p) => p.type === 'ONE_TIME');
+      if (oneTimeOption) {
+        setSelectedPurchaseOption(oneTimeOption);
+      } else {
+        setSelectedPurchaseOption(newVariant.purchaseOptions[0]);
+      }
+    } else {
+      // Default to the first purchase option of the new variant
+      setSelectedPurchaseOption(newVariant.purchaseOptions[0]);
+    }
+    setSelectedSubscriptionOptionId(null);
   };
 
-  const handlePurchaseTypeChange = (optionId: string) => {
-    const newOption = selectedVariant.purchaseOptions.find(
-      (p) => p.id === optionId
-    )!;
-    setSelectedPurchaseOption(newOption);
+  const handlePurchaseTypeChange = (value: string) => {
+    if (value === 'SUBSCRIPTION') {
+      // Don't allow switching to subscription if already in cart
+      if (hasSubscriptionInCart) {
+        return;
+      }
+      // User selected subscription group - pick first subscription option as default
+      const subscriptionOptions = selectedVariant.purchaseOptions.filter(
+        (p) => p.type === 'SUBSCRIPTION'
+      );
+      if (subscriptionOptions.length > 0) {
+        setSelectedPurchaseOption(subscriptionOptions[0]);
+        setSelectedSubscriptionOptionId(subscriptionOptions[0].id);
+      }
+    } else {
+      // User selected one-time
+      const oneTimeOption = selectedVariant.purchaseOptions.find(
+        (p) => p.type === 'ONE_TIME'
+      );
+      if (oneTimeOption) {
+        setSelectedPurchaseOption(oneTimeOption);
+        setSelectedSubscriptionOptionId(null);
+      }
+    }
+  };
+
+  const handleSubscriptionCadenceChange = (optionId: string) => {
+    const option = selectedVariant.purchaseOptions.find((p) => p.id === optionId)!;
+    setSelectedPurchaseOption(option);
+    setSelectedSubscriptionOptionId(optionId);
   };
 
   const handleAddToCart = () => {
+    const isAddingSubscription = selectedPurchaseOption.type === 'SUBSCRIPTION';
+    
     addItem({
       productId: product.id,
       productName: product.name,
@@ -94,11 +153,21 @@ export default function ProductClientPage({
       purchaseType: selectedPurchaseOption.type,
       priceInCents: selectedPurchaseOption.priceInCents,
       imageUrl: displayImage,
-      // deliverySchedule is deprecated; keep undefined and rely on
-      // the chosen PurchaseOption's billingInterval fields instead.
-      deliverySchedule: undefined,
       quantity: quantity,
+      billingInterval: selectedPurchaseOption.billingInterval || undefined,
+      billingIntervalCount: selectedPurchaseOption.billingIntervalCount || undefined,
     });
+
+    // If a subscription was added, switch to one-time purchase option
+    if (isAddingSubscription) {
+      const oneTimeOption = selectedVariant.purchaseOptions.find(
+        (p) => p.type === 'ONE_TIME'
+      );
+      if (oneTimeOption) {
+        setSelectedPurchaseOption(oneTimeOption);
+        setSelectedSubscriptionOptionId(null);
+      }
+    }
 
     // Optional: Show feedback or reset quantity
     // For now, keep quantity at 1 after adding
@@ -215,42 +284,94 @@ export default function ProductClientPage({
               Purchase Option
             </Label>
             <RadioGroup
-              value={selectedPurchaseOption.id}
+              value={selectedPurchaseOption.type}
               onValueChange={handlePurchaseTypeChange}
               className="space-y-3"
             >
-              {selectedVariant.purchaseOptions.map((option) => (
+              {/* One-Time Purchase Option */}
+              {selectedVariant.purchaseOptions.some((o) => o.type === 'ONE_TIME') && (
                 <Label
-                  key={option.id}
-                  htmlFor={option.id}
+                  htmlFor="one-time"
                   className={`flex items-center rounded-lg border-2 p-4 cursor-pointer transition-colors
                     ${
-                      selectedPurchaseOption.id === option.id
+                      selectedPurchaseOption.type === 'ONE_TIME'
                         ? "bg-accent border-primary"
                         : "border-border hover:bg-accent"
                     }`}
                 >
-                  <RadioGroupItem value={option.id} id={option.id} />
+                  <RadioGroupItem value="ONE_TIME" id="one-time" />
                   <div className="ml-4 flex flex-col">
-                    <span className="font-semibold text-text-base">
-                      {option.type === "ONE_TIME"
-                        ? "One-Time Purchase"
-                        : "Subscribe & Save"}
-                    </span>
+                    <span className="font-semibold text-text-base">One-Time Purchase</span>
+                  </div>
+                  <span className="ml-auto font-bold text-text-base text-lg">
+                    ${formatPrice(
+                      selectedVariant.purchaseOptions.find((o) => o.type === 'ONE_TIME')?.priceInCents || 0
+                    )}
+                  </span>
+                </Label>
+              )}
+
+              {/* Subscription Option Group - Hide if already in cart */}
+              {selectedVariant.purchaseOptions.some((o) => o.type === 'SUBSCRIPTION') && !hasSubscriptionInCart && (
+                <Label
+                  htmlFor="subscription"
+                  className={`flex items-center rounded-lg border-2 p-4 cursor-pointer transition-colors
+                    ${
+                      selectedPurchaseOption.type === 'SUBSCRIPTION'
+                        ? "bg-accent border-primary"
+                        : "border-border hover:bg-accent"
+                    }`}
+                >
+                  <RadioGroupItem 
+                    value="SUBSCRIPTION" 
+                    id="subscription"
+                  />
+                  <div className="ml-4 flex flex-col">
+                    <span className="font-semibold text-text-base">Subscribe & Save</span>
                     <span className="text-sm text-text-muted">
-                      {option.discountMessage || ""}
+                      {selectedPurchaseOption.discountMessage || 'Save on every order'}
                     </span>
                   </div>
                   <span className="ml-auto font-bold text-text-base text-lg">
-                    ${formatPrice(option.priceInCents)}
+                    ${formatPrice(selectedPurchaseOption.priceInCents)}
                   </span>
                 </Label>
-              ))}
+              )}
             </RadioGroup>
           </div>
 
-          {/* Delivery Schedule (Conditional) */}
-          {/* Subscription cadence is now encoded directly on PurchaseOption via billingInterval fields. */}
+          {/* Delivery Schedule Dropdown (dynamically generated from available subscription options) */}
+          {selectedPurchaseOption.type === "SUBSCRIPTION" && !hasSubscriptionInCart && (
+            <div>
+              <Label className="text-base font-semibold text-text-base mb-3 block">
+                Delivery Schedule
+              </Label>
+              <Select 
+                value={selectedSubscriptionOptionId || selectedPurchaseOption.id} 
+                onValueChange={handleSubscriptionCadenceChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose delivery schedule" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectedVariant.purchaseOptions
+                    .filter((o) => o.type === 'SUBSCRIPTION')
+                    .map((option) => {
+                      const interval = option.billingInterval?.toLowerCase() || 'week';
+                      const count = option.billingIntervalCount || 1;
+                      const label = formatBillingInterval(interval, count);
+                      const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+                      
+                      return (
+                        <SelectItem key={option.id} value={option.id}>
+                          {capitalizedLabel} - ${formatPrice(option.priceInCents)}
+                        </SelectItem>
+                      );
+                    })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Add to Cart Button */}
           <Button
