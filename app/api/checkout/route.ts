@@ -102,7 +102,9 @@ export async function POST(req: NextRequest) {
     const origin = req.headers.get("origin") || "http://localhost:3000";
 
     // Fetch user's email and selected address if provided
-    let shippingAddressCollection: any = undefined;
+    let shippingAddressCollection: any = deliveryMethod === "DELIVERY" 
+      ? { allowed_countries: ["US"] }
+      : undefined;
     let customerEmail: string | undefined;
     let prefillShippingDetails: any = undefined;
 
