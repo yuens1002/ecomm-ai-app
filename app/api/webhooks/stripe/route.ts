@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         // Retrieve the full session with shipping and customer details
         try {
           session = await stripe.checkout.sessions.retrieve(session.id, {
-            expand: ["line_items", "customer_details", "shipping_details"],
+            expand: ["line_items", "customer_details"],
           });
         } catch (retrieveError: any) {
           console.error("Failed to retrieve session:", retrieveError);
@@ -86,10 +86,11 @@ export async function POST(req: NextRequest) {
         let userId: string | null = null;
 
         // Extract shipping info from Stripe session
-        // Use shipping_details if available (for DELIVERY), fallback to customer_details for PICKUP
+        // For DELIVERY orders with shipping_address_collection, Stripe populates customer_details.address
+        // Note: Stripe Link may autofill with incomplete saved data in test mode
         const sessionWithShipping = session as any;
-        const shippingAddress = sessionWithShipping.shipping_details?.address || session.customer_details?.address;
-        const shippingName = sessionWithShipping.shipping_details?.name || session.customer_details?.name;
+        const shippingAddress = sessionWithShipping.shipping?.address || session.customer_details?.address;
+        const shippingName = sessionWithShipping.shipping?.name || session.customer_details?.name;
 
         if (customerEmail) {
           const user = await prisma.user.findUnique({

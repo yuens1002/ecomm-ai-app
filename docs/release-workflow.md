@@ -9,6 +9,7 @@ npm run precheck
 ```
 
 This runs:
+
 1. **TypeScript type checking** (`tsc --noEmit`) - catches type errors before they break production
 2. **ESLint** - catches code quality issues
 

@@ -51,25 +51,26 @@ export async function POST(req: NextRequest) {
         const imageUrl = dbOption.variant.product.images[0]?.url;
 
         // Derive Stripe recurring config directly from PurchaseOption billingInterval fields
-        let recurring: Stripe.Checkout.SessionCreateParams.LineItem.PriceData.Recurring | undefined = undefined;
-        let subscriptionDescription = 'One-time purchase';
-        
-        if (dbOption.type === 'SUBSCRIPTION') {
-          const interval = (dbOption.billingInterval || 'WEEK').toLowerCase() as
-            | 'day'
-            | 'week'
-            | 'month'
-            | 'year';
+        let recurring:
+          | Stripe.Checkout.SessionCreateParams.LineItem.PriceData.Recurring
+          | undefined = undefined;
+        let subscriptionDescription = "One-time purchase";
+
+        if (dbOption.type === "SUBSCRIPTION") {
+          const interval = (
+            dbOption.billingInterval || "WEEK"
+          ).toLowerCase() as "day" | "week" | "month" | "year";
           const intervalCount = dbOption.billingIntervalCount || 1;
 
           recurring = {
             interval,
             interval_count: intervalCount,
           };
-          
-          const intervalLabel = intervalCount === 1 
-            ? `Every ${interval}`
-            : `Every ${intervalCount} ${interval}s`;
+
+          const intervalLabel =
+            intervalCount === 1
+              ? `Every ${interval}`
+              : `Every ${intervalCount} ${interval}s`;
           subscriptionDescription = `Subscription: ${intervalLabel}`;
 
           console.log("🧮 Subscription line item recurring config", {
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
 
         return {
           price_data: {
-            currency: 'usd',
+            currency: "usd",
             product_data: {
               name: `${productName} - ${variantName}`,
               description: subscriptionDescription,
@@ -102,9 +103,8 @@ export async function POST(req: NextRequest) {
     const origin = req.headers.get("origin") || "http://localhost:3000";
 
     // Fetch user's email and selected address if provided
-    let shippingAddressCollection: any = deliveryMethod === "DELIVERY" 
-      ? { allowed_countries: ["US"] }
-      : undefined;
+    let shippingAddressCollection: any =
+      deliveryMethod === "DELIVERY" ? { allowed_countries: ["US"] } : undefined;
     let customerEmail: string | undefined;
     let prefillShippingDetails: any = undefined;
 
@@ -139,7 +139,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Determine checkout mode (subscription or one-time payment)
-    const subscriptionItems = items.filter((item: any) => item.purchaseType === 'SUBSCRIPTION');
+    const subscriptionItems = items.filter(
+      (item: any) => item.purchaseType === "SUBSCRIPTION"
+    );
     const isSubscription = subscriptionItems.length > 0;
 
     // Validate that all subscriptions have the same billing interval
@@ -152,11 +154,12 @@ export async function POST(req: NextRequest) {
           intervals.add(key);
         }
       });
-      
+
       if (intervals.size > 1) {
         return NextResponse.json(
           {
-            error: "Cannot checkout with subscriptions of different billing intervals. Please purchase them separately.",
+            error:
+              "Cannot checkout with subscriptions of different billing intervals. Please purchase them separately.",
             code: "MIXED_BILLING_INTERVALS",
           },
           { status: 400 }
@@ -182,40 +185,45 @@ export async function POST(req: NextRequest) {
       const activeSubs = await prisma.subscription.findMany({
         where: {
           userId,
-          status: { in: ['ACTIVE', 'PAUSED', 'PAST_DUE'] },
+          status: { in: ["ACTIVE", "PAUSED", "PAST_DUE"] },
         },
       });
-      
+
       // Create a set of existing stripe product IDs (which represent unique product+variant combos)
       const existingStripeProductIds = new Set(
-        activeSubs.map(s => s.stripeProductId)
+        activeSubs.map((s) => s.stripeProductId)
       );
-      
+
       const attemptedDuplicates: string[] = [];
       for (const item of subscriptionItems) {
         const dbOption = priceMap.get(item.purchaseOptionId);
         if (!dbOption) continue;
-        
+
         const productName = dbOption.variant.product.name;
         const variantName = dbOption.variant.name;
         // Stripe product will be created with this combined name
         const stripeProductKey = `${productName} - ${variantName}`;
-        
+
         // Check if we already have a subscription for this product+variant combo
         // Note: For new subscriptions, we won't have a stripeProductId yet, so we check by productName match
-        const existingForProductVariant = activeSubs.find(s => s.productName === stripeProductKey);
-        
+        const existingForProductVariant = activeSubs.find(
+          (s) => s.productName === stripeProductKey
+        );
+
         if (existingForProductVariant) {
           attemptedDuplicates.push(stripeProductKey);
         }
       }
-      
+
       if (attemptedDuplicates.length > 0) {
-        return NextResponse.json({
-          error: `You already have an active subscription for: ${attemptedDuplicates.join(', ')}. Each product variant can only have one active subscription.`,
-          code: 'SUBSCRIPTION_EXISTS',
-          duplicates: attemptedDuplicates
-        }, { status: 409 });
+        return NextResponse.json(
+          {
+            error: `You already have an active subscription for: ${attemptedDuplicates.join(", ")}. Each product variant can only have one active subscription.`,
+            code: "SUBSCRIPTION_EXISTS",
+            duplicates: attemptedDuplicates,
+          },
+          { status: 409 }
+        );
       }
     }
     const checkoutMode = isSubscription ? "subscription" : "payment";
@@ -227,20 +235,20 @@ export async function POST(req: NextRequest) {
     if (deliveryMethod === "DELIVERY") {
       shippingAddressCollection = { allowed_countries: ["US"] };
 
-      // Add shipping rate options (only for payment mode, not subscription)
-      if (!isSubscription) {
-        shippingOptions = [
-          {
-            shipping_rate: process.env.STRIPE_STANDARD_SHIPPING_RATE!,
-          },
-          {
-            shipping_rate: process.env.STRIPE_EXPRESS_SHIPPING_RATE!,
-          },
-          {
-            shipping_rate: process.env.STRIPE_OVERNIGHT_SHIPPING_RATE!,
-          },
-        ];
-      }
+      // Add shipping rate options
+      // Note: Shipping rates are required for Stripe to collect complete shipping addresses
+      // For subscriptions, the shipping rate is applied to the initial payment only
+      shippingOptions = [
+        {
+          shipping_rate: process.env.STRIPE_STANDARD_SHIPPING_RATE!,
+        },
+        {
+          shipping_rate: process.env.STRIPE_EXPRESS_SHIPPING_RATE!,
+        },
+        {
+          shipping_rate: process.env.STRIPE_OVERNIGHT_SHIPPING_RATE!,
+        },
+      ];
     }
 
     // Create Stripe Checkout Session
@@ -264,8 +272,8 @@ export async function POST(req: NextRequest) {
             qty: item.quantity,
           }))
         ),
-        deliveryMethod: deliveryMethod || 'DELIVERY',
-        selectedAddressId: selectedAddressId || '',
+        deliveryMethod: deliveryMethod || "DELIVERY",
+        selectedAddressId: selectedAddressId || "",
         // Deprecated; kept only for backward compatibility. New source of truth
         // is billingInterval + billingIntervalCount on PurchaseOption and Stripe price.
       },
