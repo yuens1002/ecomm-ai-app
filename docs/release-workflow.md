@@ -1,5 +1,21 @@
 # Release Workflow
 
+## Pre-Push Checklist
+
+Before pushing code to GitHub, **always run**:
+
+```powershell
+npm run precheck
+```
+
+This runs:
+1. **TypeScript type checking** (`tsc --noEmit`) - catches type errors before they break production
+2. **ESLint** - catches code quality issues
+
+If either fails, fix the issues before committing and pushing.
+
+---
+
 ## Standard Release Process
 
 Follow these steps for every release to GitHub:

@@ -8,6 +8,8 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "precheck": "npm run typecheck && npm run lint",
     "seed": "tsx prisma/seed.ts",
     "dedupe:subs": "tsx scripts/dedupe-subscriptions.ts"
   },

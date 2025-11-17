@@ -533,29 +533,35 @@ export async function POST(req: NextRequest) {
       }
 
       case "invoice.payment_succeeded": {
-        const invoice = event.data.object as Stripe.Invoice;
+        const invoice = event.data.object as any; // Use any to access subscription field
         console.log("\n=== INVOICE PAYMENT SUCCEEDED ===");
         console.log("Invoice ID:", invoice.id);
         console.log("Customer ID:", invoice.customer);
         console.log("Subscription ID:", invoice.subscription);
 
         // Only process invoices that are for subscriptions
-        if (!invoice.subscription) {
+        const subscriptionId = typeof invoice.subscription === 'string' 
+          ? invoice.subscription 
+          : invoice.subscription?.id;
+          
+        if (!subscriptionId) {
           console.log("⏭️ Skipping non-subscription invoice");
           break;
         }
 
-        // Fetch full subscription object from Stripe API
+        // Fetch full subscription object from Stripe API with items expanded
         const subscription = await stripe.subscriptions.retrieve(
-          invoice.subscription as string
+          subscriptionId,
+          { expand: ['items.data'] }
         );
 
         console.log("Processing subscription:", subscription.id);
         console.log("Subscription Status:", subscription.status);
 
-        // Calculate current billing period
-        const currentPeriodStart = subscription.current_period_start;
-        const currentPeriodEnd = subscription.current_period_end;
+        // Calculate current billing period from subscription items
+        const subscriptionItem = subscription.items.data[0];
+        const currentPeriodStart = subscriptionItem.current_period_start;
+        const currentPeriodEnd = subscriptionItem.current_period_end;
 
         console.log(
           "Current Period:",
@@ -601,8 +607,7 @@ export async function POST(req: NextRequest) {
 
         console.log("✅ Found user:", user.email, "(ID:", user.id, ")");
 
-        // Extract Product details from subscription items
-        const subscriptionItem = subscription.items.data[0];
+        // Extract Product details from subscription items (reuse variable from above)
         const price = subscriptionItem.price;
         const stripeProductId =
           typeof price.product === "string"
