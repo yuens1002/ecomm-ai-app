@@ -9,7 +9,10 @@
   - Status changes: Handled by `customer.subscription.updated` event
   - Prevents orphaned subscription records from failed or incomplete payments
   - **Bug Fix**: Exclude CANCELED subscriptions from duplicate check to allow re-subscription to previously canceled products
+  - **Bug Fix**: Extract billing period from `subscription.items` instead of top-level subscription object
+  - **Bug Fix**: Check both `cancel_at_period_end` and `cancel_at` fields for scheduled cancellations (Stripe uses `cancel_at` for portal cancellations)
   - Safety checks: Verify `payment_status === "paid"` and valid subscription status before creating records
+  - **Known Limitation**: Mixed orders (one-time + subscription items) create single order; canceling order doesn't cancel subscription. See backlog for planned split-order implementation.
 - **Subscription Schema Refactor**: Removed `variantName` field from Subscription model since `productName` already contains the full product+variant combination (e.g., "Death Valley Espresso - 12oz Bag")
   - Simplified webhook handler to only use `productName` from Stripe
   - Updated all UI components (AccountPageClient, SubscriptionsTab) to display `productName` only

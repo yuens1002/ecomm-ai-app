@@ -796,10 +796,8 @@ export async function POST(req: NextRequest) {
         console.log("\n=== SUBSCRIPTION UPDATED ===");
         console.log("Event Type:", event.type);
 
-        // Fetch full subscription object from Stripe API
-        const subscription = await stripe.subscriptions.retrieve(
-          (event.data.object as Stripe.Subscription).id
-        );
+        // Use event data directly - it contains the updated state
+        const subscription = event.data.object as Stripe.Subscription;
 
         console.log("Subscription ID:", subscription.id);
         console.log("Customer ID:", subscription.customer);
@@ -817,12 +815,12 @@ export async function POST(req: NextRequest) {
           break;
         }
 
-        // Calculate current billing period
-        const currentPeriodStart = subscription.current_period_start;
-        const currentPeriodEnd = subscription.current_period_end;
-
         // Extract Product details from subscription items
         const subscriptionItem = subscription.items.data[0];
+        
+        // Calculate current billing period - get from subscription items
+        const currentPeriodStart = subscriptionItem.current_period_start;
+        const currentPeriodEnd = subscriptionItem.current_period_end;
         const price = subscriptionItem.price;
         const stripeProductId =
           typeof price.product === "string"
@@ -859,7 +857,8 @@ export async function POST(req: NextRequest) {
         // Map Stripe status
         let status: "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE" = "ACTIVE";
         const stripeStatus = subscription.status;
-        const willCancel = subscription.cancel_at_period_end;
+        // Check both cancel_at_period_end AND cancel_at (scheduled cancellation)
+        const willCancel = subscription.cancel_at_period_end || !!subscription.cancel_at;
         if (stripeStatus === "canceled") status = "CANCELED";
         else if (stripeStatus === "paused") status = "PAUSED";
         else if (stripeStatus === "past_due") status = "PAST_DUE";
@@ -869,8 +868,7 @@ export async function POST(req: NextRequest) {
           stripeStatus,
           "->",
           status,
-          "cancel_at_period_end=",
-          willCancel
+          willCancel ? `(cancels ${subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toLocaleDateString() : 'at period end'})` : ""
         );
 
         // Get shipping address from subscription metadata
