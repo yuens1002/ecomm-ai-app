@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         // Retrieve the full session with shipping and customer details
         try {
           session = await stripe.checkout.sessions.retrieve(session.id, {
-            expand: ["line_items", "customer_details"],
+            expand: ["line_items", "customer_details", "shipping_details"],
           });
         } catch (retrieveError: any) {
           console.error("Failed to retrieve session:", retrieveError);
@@ -86,8 +86,10 @@ export async function POST(req: NextRequest) {
         let userId: string | null = null;
 
         // Extract shipping info from Stripe session
-        const shippingAddress = session.customer_details?.address;
-        const shippingName = session.customer_details?.name;
+        // Use shipping_details if available (for DELIVERY), fallback to customer_details for PICKUP
+        const sessionWithShipping = session as any;
+        const shippingAddress = sessionWithShipping.shipping_details?.address || session.customer_details?.address;
+        const shippingName = sessionWithShipping.shipping_details?.name || session.customer_details?.name;
 
         if (customerEmail) {
           const user = await prisma.user.findUnique({
@@ -344,14 +346,24 @@ export async function POST(req: NextRequest) {
           }
 
           // Handle subscription creation for subscription checkouts
-          if (session.mode === "subscription" && session.subscription && userId) {
-            console.log("\n🔄 Processing subscription from checkout session...");
+          if (
+            session.mode === "subscription" &&
+            session.subscription &&
+            userId
+          ) {
+            console.log(
+              "\n🔄 Processing subscription from checkout session..."
+            );
             console.log("Session payment_status:", session.payment_status);
-            
+
             // Only create subscription if payment is confirmed
             if (session.payment_status !== "paid") {
-              console.log("⏭️ Skipping subscription creation - payment not confirmed yet");
-              console.log("   Will be created via invoice.payment_succeeded event");
+              console.log(
+                "⏭️ Skipping subscription creation - payment not confirmed yet"
+              );
+              console.log(
+                "   Will be created via invoice.payment_succeeded event"
+              );
               break;
             }
 
@@ -359,7 +371,7 @@ export async function POST(req: NextRequest) {
               const subscription = await stripe.subscriptions.retrieve(
                 session.subscription as string,
                 {
-                  expand: ['latest_invoice', 'default_payment_method']
+                  expand: ["latest_invoice", "default_payment_method"],
                 }
               );
 
@@ -370,8 +382,13 @@ export async function POST(req: NextRequest) {
               const originalStripeStatus = subscription.status;
 
               // Double-check subscription is active before creating record
-              if (subscription.status !== "active" && subscription.status !== "trialing") {
-                console.log(`⏭️ Subscription status is ${subscription.status}, will handle via invoice.payment_succeeded`);
+              if (
+                subscription.status !== "active" &&
+                subscription.status !== "trialing"
+              ) {
+                console.log(
+                  `⏭️ Subscription status is ${subscription.status}, will handle via invoice.payment_succeeded`
+                );
                 break;
               }
 
@@ -381,8 +398,12 @@ export async function POST(req: NextRequest) {
               const currentPeriodEnd = subscriptionItem.current_period_end;
 
               if (!currentPeriodStart || !currentPeriodEnd) {
-                console.error("❌ Missing billing period dates from subscription items");
-                throw new Error("Subscription items missing current_period_start or current_period_end");
+                console.error(
+                  "❌ Missing billing period dates from subscription items"
+                );
+                throw new Error(
+                  "Subscription items missing current_period_start or current_period_end"
+                );
               }
 
               // Extract Product details from subscription items (already extracted above)
@@ -420,7 +441,8 @@ export async function POST(req: NextRequest) {
               }
 
               // Map Stripe status
-              let status: "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE" = "ACTIVE";
+              let status: "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE" =
+                "ACTIVE";
               if (originalStripeStatus === "canceled") status = "CANCELED";
               else if (originalStripeStatus === "paused") status = "PAUSED";
               else if (originalStripeStatus === "past_due") status = "PAST_DUE";
@@ -540,10 +562,11 @@ export async function POST(req: NextRequest) {
         console.log("Subscription ID:", invoice.subscription);
 
         // Only process invoices that are for subscriptions
-        const subscriptionId = typeof invoice.subscription === 'string' 
-          ? invoice.subscription 
-          : invoice.subscription?.id;
-          
+        const subscriptionId =
+          typeof invoice.subscription === "string"
+            ? invoice.subscription
+            : invoice.subscription?.id;
+
         if (!subscriptionId) {
           console.log("⏭️ Skipping non-subscription invoice");
           break;
@@ -552,7 +575,7 @@ export async function POST(req: NextRequest) {
         // Fetch full subscription object from Stripe API with items expanded
         const subscription = await stripe.subscriptions.retrieve(
           subscriptionId,
-          { expand: ['items.data'] }
+          { expand: ["items.data"] }
         );
 
         console.log("Processing subscription:", subscription.id);
@@ -691,8 +714,7 @@ export async function POST(req: NextRequest) {
             "♻️ Merging new Stripe subscription into existing product subscription record",
             {
               existingId: existingForProduct.id,
-              oldStripeSubscriptionId:
-                existingForProduct.stripeSubscriptionId,
+              oldStripeSubscriptionId: existingForProduct.stripeSubscriptionId,
               newStripeSubscriptionId: subscription.id,
             }
           );
@@ -824,7 +846,7 @@ export async function POST(req: NextRequest) {
 
         // Extract Product details from subscription items
         const subscriptionItem = subscription.items.data[0];
-        
+
         // Calculate current billing period - get from subscription items
         const currentPeriodStart = subscriptionItem.current_period_start;
         const currentPeriodEnd = subscriptionItem.current_period_end;
@@ -865,7 +887,8 @@ export async function POST(req: NextRequest) {
         let status: "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE" = "ACTIVE";
         const stripeStatus = subscription.status;
         // Check both cancel_at_period_end AND cancel_at (scheduled cancellation)
-        const willCancel = subscription.cancel_at_period_end || !!subscription.cancel_at;
+        const willCancel =
+          subscription.cancel_at_period_end || !!subscription.cancel_at;
         if (stripeStatus === "canceled") status = "CANCELED";
         else if (stripeStatus === "paused") status = "PAUSED";
         else if (stripeStatus === "past_due") status = "PAST_DUE";
@@ -875,7 +898,9 @@ export async function POST(req: NextRequest) {
           stripeStatus,
           "->",
           status,
-          willCancel ? `(cancels ${subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toLocaleDateString() : 'at period end'})` : ""
+          willCancel
+            ? `(cancels ${subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toLocaleDateString() : "at period end"})`
+            : ""
         );
 
         // Get shipping address from subscription metadata
