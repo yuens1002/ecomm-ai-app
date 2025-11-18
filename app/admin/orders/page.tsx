@@ -102,7 +102,8 @@ export default function AdminOrdersPage() {
       toast({
         title: "Error",
         description: "Failed to load orders",
-        variant: "destructive",
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
       });
     } finally {
       setLoading(false);
@@ -125,6 +126,8 @@ export default function AdminOrdersPage() {
       toast({
         title: "Order Shipped",
         description: `Order #${selectedOrder.orderNumber || selectedOrder.id.slice(-8)} marked as shipped`,
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
       });
 
       setShipDialogOpen(false);
@@ -136,7 +139,8 @@ export default function AdminOrdersPage() {
       toast({
         title: "Error",
         description: "Failed to mark order as shipped",
-        variant: "destructive",
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
       });
     } finally {
       setProcessing(false);
@@ -155,6 +159,8 @@ export default function AdminOrdersPage() {
       toast({
         title: "Order Picked Up",
         description: `Order #${order.orderNumber || order.id.slice(-8)} marked as picked up`,
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
       });
 
       fetchOrders();
@@ -162,7 +168,8 @@ export default function AdminOrdersPage() {
       toast({
         title: "Error",
         description: "Failed to mark order as picked up",
-        variant: "destructive",
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
       });
     } finally {
       setProcessing(false);

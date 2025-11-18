@@ -62,8 +62,8 @@ export function UserMenu({ user, isAdmin = false }: UserMenuProps) {
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/admin/orders" className="font-semibold text-primary">
-                Admin: Manage Orders
+              <Link href="/admin" className="font-semibold text-primary">
+                Admin Dashboard
               </Link>
             </DropdownMenuItem>
           </>

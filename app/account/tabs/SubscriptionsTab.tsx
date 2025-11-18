@@ -74,7 +74,8 @@ export default function SubscriptionsTab({
       toast({
         title: "Error",
         description: "Failed to open subscription management portal",
-        variant: "destructive",
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
       });
     } finally {
       setLoadingId(null);
