@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.11.9 - 2025-11-18
+
+- **Admin Owner Assignment**: Complete admin management and bootstrap system
+  - **Initial Setup Flow**: First-time admin account creation for new deployments
+    - `/setup` page with full name, email, and password form
+    - Password validation with real-time UI feedback (min 8 chars, uppercase, lowercase, number, special char)
+    - Confirm password field with match validation
+    - Auto-verifies email for initial admin account
+    - Only accessible when no admin exists in the system (checked via HEAD /api/admin/setup)
+    - Shows "Setup Already Complete" message if admin exists
+    - Redirects to sign-in after successful creation
+  - **Admin Dashboard**: Tabbed interface at `/admin` with overview and quick actions
+    - **Overview Tab**: Dashboard stats (total users, orders, products, admin count)
+    - **Users Tab**: Link to user management page
+    - **Orders Tab**: Link to orders page
+    - **Products Tab**: Placeholder for future product management
+    - **Profile Tab**: Admin account information display
+    - Quick action cards for common tasks
+  - **User Management UI**: `/admin/users` page for managing user privileges
+    - Lists all users with admin status, order counts, and subscription counts
+    - Toggle admin privileges with safety checks (cannot revoke last admin)
+    - Real-time status updates using optimistic UI patterns
+    - Table and Badge components added from shadcn/ui
+  - **API Endpoints**:
+    - `HEAD /api/admin/setup` - checks if admin exists (200 = no admin, 403 = admin exists)
+    - `POST /api/admin/setup` - creates first admin account with validation
+    - `GET /api/admin/users` - fetches all users with order/subscription counts
+    - `POST /api/admin/users/[id]/toggle-admin` - grants or revokes admin privileges with last-admin protection
+  - **Admin Layout**: Shared layout with setup redirect and admin authorization
+  - **Helper Functions**: Added `hasAnyAdmin()` to `lib/admin.ts` for initial setup detection
+  - **Security Features**:
+    - Strong password requirements with real-time validation
+    - Prevents revoking last admin (maintains at least one admin)
+    - Admin-only access to all admin endpoints
+    - Auto-email verification for bootstrap account
+  - **UI Components**: Added `components/ui/table.tsx` and `components/ui/badge.tsx` for data display
+- **Testing Notes**: Complete flow tested locally (initial setup → admin dashboard → user management → privilege toggling)
+
 ## 0.11.7 - 2025-11-18
 
 - **Split Orders for Mixed Carts**: Implemented order splitting for mixed carts with architectural pivot based on Stripe's subscription model

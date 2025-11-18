@@ -37,6 +37,110 @@
 
 ---
 
+### Consolidate Admin Pages into Dashboard Tabs
+**Status**: Backlog  
+**Priority**: Medium  
+**Description**: Move existing admin management pages into the tabbed admin dashboard for better navigation and consistency.
+
+**Current State**:
+- Admin dashboard exists with tabs (Overview, Users, Orders, Products, Profile)
+- Users tab links to `/admin/users` (separate page)
+- Orders tab links to `/admin/orders` (separate page)
+- Products tab is placeholder
+
+**Proposed Changes**:
+- Move user management content directly into Users tab (remove separate page)
+- Move order management content directly into Orders tab (remove separate page)
+- Implement products management in Products tab
+- Keep all admin functionality in single dashboard with tab navigation
+- Improve UX by eliminating page transitions
+
+**Tasks**:
+- [ ] Refactor `/app/admin/users/page.tsx` content into `AdminDashboardClient.tsx` Users tab
+- [ ] Refactor `/app/admin/orders/page.tsx` content into `AdminDashboardClient.tsx` Orders tab
+- [ ] Update tab navigation to use tab switching instead of links
+- [ ] Remove separate admin pages (`/app/admin/users/`, `/app/admin/orders/`)
+- [ ] Test user management functionality within tab
+- [ ] Test order management functionality within tab
+- [ ] Ensure API routes remain unchanged
+
+**Benefits**:
+- Single page experience for all admin functions
+- Consistent with account settings UX pattern
+- Faster navigation (no page reloads)
+- Easier to maintain single dashboard component
+
+**Acceptance Criteria**:
+- All admin management functions accessible via dashboard tabs
+- No separate page navigation required
+- Tab switching is instant without page reload
+- All existing functionality preserved
+
+---
+
+### Admin Profile Management
+**Status**: Backlog  
+**Priority**: Medium  
+**Description**: Allow admins to update their own profile information (name, email) from the admin dashboard.
+
+**Current State**:
+- Admin Profile tab exists but only displays read-only information
+- No way for admins to update their own details
+- Profile changes require direct database edits
+
+**Proposed Changes**:
+- Add edit mode to Profile tab with form fields
+- Allow updating name (safe, no side effects)
+- Allow updating email with proper validation and session handling
+- Add password change functionality
+- Update session after email change to prevent logout
+
+**Tasks**:
+- [ ] Create edit mode UI in Profile tab
+  - Toggle between view/edit modes
+  - Form fields for name, email
+  - "Change Password" section with current/new password fields
+- [ ] Create API endpoint: `POST /api/admin/profile`
+  - Validate email format and uniqueness
+  - Check for OAuth accounts (can't change email if OAuth-only)
+  - Hash password if changed
+  - Update user record in database
+- [ ] Handle email change session implications
+  - Update session with new email after database update
+  - Prevent forced logout after email change
+  - Show confirmation toast
+- [ ] Add security validations
+  - Require current password for email changes
+  - Require current password for password changes
+  - Rate limiting on profile updates
+- [ ] Update OAuth account handling
+  - Show message for OAuth-only accounts (email tied to provider)
+  - Allow name changes for OAuth accounts
+  - Consider adding "Link Email/Password" for OAuth users
+
+**Technical Considerations**:
+- **Email Changes**: May affect Auth.js session; need to refresh session token
+- **OAuth Accounts**: Users signed in via Google/GitHub may not have password in DB
+- **Credentials Accounts**: Can freely update email/password
+- **Mixed Accounts**: OAuth + Credentials - need careful handling
+
+**Acceptance Criteria**:
+- Admins can update their name successfully
+- Admins can update email with current password verification
+- Admins can change password with current password verification
+- OAuth-only accounts show appropriate messaging
+- Session remains valid after updates
+- Email uniqueness validated before update
+- All changes reflected immediately in UI
+
+**Security Notes**:
+- Require current password for sensitive changes (email, password)
+- Validate email format and check for duplicates
+- Rate limit profile update requests
+- Log profile changes for audit trail
+
+---
+
 ### Subscription Cancellation Feedback Tracking
 **Status**: Backlog  
 **Description**: Capture and analyze subscription cancellation feedback from Stripe Customer Portal.
