@@ -167,20 +167,77 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Create order in database
+        // Create orders in database
         try {
-          const order = await prisma.order.create({
+          // Fetch purchase options to determine item types (ONE_TIME vs SUBSCRIPTION)
+          const purchaseOptionIds = cartItems.map(
+            (item: any) => item.purchaseOptionId
+          );
+          const purchaseOptions = await prisma.purchaseOption.findMany({
+          where: { id: { in: purchaseOptionIds } },
+          include: {
+            variant: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        });
+
+        // Separate items by purchase type
+        const oneTimeItems = cartItems.filter((item: any) => {
+          const option = purchaseOptions.find(
+            (po) => po.id === item.purchaseOptionId
+          );
+          return option?.type === "ONE_TIME";
+        });
+
+        const subscriptionItems = cartItems.filter((item: any) => {
+          const option = purchaseOptions.find(
+            (po) => po.id === item.purchaseOptionId
+          );
+          return option?.type === "SUBSCRIPTION";
+        });
+
+        console.log(
+          `📦 Creating orders: ${oneTimeItems.length} one-time items, ${subscriptionItems.length} subscription items`
+        );
+
+        // Helper function to calculate item total
+        const calculateItemTotal = (items: any[]) => {
+          return items.reduce((sum, item) => {
+            const option = purchaseOptions.find(
+              (po) => po.id === item.purchaseOptionId
+            );
+            return sum + (option?.priceInCents || 0) * item.quantity;
+          }, 0);
+        };
+
+        const oneTimeTotal = calculateItemTotal(oneTimeItems);
+        const subscriptionTotal = calculateItemTotal(subscriptionItems);
+        const totalItemCost = oneTimeTotal + subscriptionTotal;
+
+        // Calculate shipping cost from session
+        const shippingCostInCents =
+          (session.amount_total || 0) - totalItemCost;
+
+        // Track all created orders for email notifications
+        const createdOrders: any[] = [];
+
+        // Create order for one-time items (if any)
+        if (oneTimeItems.length > 0) {
+          console.log("📦 Creating one-time order...");
+          const oneTimeOrder = await prisma.order.create({
             data: {
               stripeSessionId: session.id,
               stripePaymentIntentId: session.payment_intent as string,
               stripeCustomerId: session.customer as string,
               customerEmail: customerEmail || null,
-              totalInCents: session.amount_total || 0,
+              totalInCents: oneTimeTotal + shippingCostInCents, // One-time order includes shipping
               status: "PENDING",
               deliveryMethod: deliveryMethod as "DELIVERY" | "PICKUP",
               paymentCardLast4: paymentCardLast4,
               userId: userId || undefined,
-              // Store shipping fields directly on order (for both guests and logged-in users)
               recipientName: shippingName || null,
               shippingStreet: shippingAddress?.line1 || null,
               shippingCity: shippingAddress?.city || null,
@@ -188,23 +245,13 @@ export async function POST(req: NextRequest) {
               shippingPostalCode: shippingAddress?.postal_code || null,
               shippingCountry: shippingAddress?.country || null,
               items: {
-                create: cartItems.map((item: any) => ({
+                create: oneTimeItems.map((item: any) => ({
                   quantity: item.quantity,
                   priceInCents: 0, // Will be fetched from purchase option
                   purchaseOptionId: item.purchaseOptionId,
                 })),
               },
             },
-            include: {
-              items: true,
-            },
-          });
-
-          console.log("📦 Order created:", order.id);
-
-          // Fetch complete order details with product info for emails
-          const completeOrder = await prisma.order.findUnique({
-            where: { id: order.id },
             include: {
               items: {
                 include: {
@@ -221,10 +268,72 @@ export async function POST(req: NextRequest) {
               },
             },
           });
+          createdOrders.push(oneTimeOrder);
+          console.log("✅ One-time order created:", oneTimeOrder.id);
+        }
 
-          if (completeOrder) {
+        // Create single order for ALL subscription items (if any)
+        if (subscriptionItems.length > 0) {
+          console.log(`📦 Creating subscription order with ${subscriptionItems.length} items...`);
+
+          // If there are no one-time items, subscription order includes shipping
+          const shouldIncludeShipping = oneTimeItems.length === 0;
+          const orderTotal = shouldIncludeShipping 
+            ? subscriptionTotal + shippingCostInCents 
+            : subscriptionTotal;
+
+          const subscriptionOrder = await prisma.order.create({
+            data: {
+              stripeSessionId: session.id,
+              // Note: stripeSubscriptionId will be populated later when subscription is created
+              stripePaymentIntentId: session.payment_intent as string,
+              stripeCustomerId: session.customer as string,
+              customerEmail: customerEmail || null,
+              totalInCents: orderTotal,
+              status: "PENDING",
+              deliveryMethod: deliveryMethod as "DELIVERY" | "PICKUP",
+              paymentCardLast4: paymentCardLast4,
+              userId: userId || undefined,
+              recipientName: shippingName || null,
+              shippingStreet: shippingAddress?.line1 || null,
+              shippingCity: shippingAddress?.city || null,
+              shippingState: shippingAddress?.state || null,
+              shippingPostalCode: shippingAddress?.postal_code || null,
+              shippingCountry: shippingAddress?.country || null,
+              items: {
+                create: subscriptionItems.map((item: any) => ({
+                  quantity: item.quantity,
+                  priceInCents: 0,
+                  purchaseOptionId: item.purchaseOptionId,
+                })),
+              },
+            },
+            include: {
+              items: {
+                include: {
+                  purchaseOption: {
+                    include: {
+                      variant: {
+                        include: {
+                          product: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          });
+          createdOrders.push(subscriptionOrder);
+          console.log("✅ Subscription order created:", subscriptionOrder.id);
+        }
+
+        console.log(`✅ Created ${createdOrders.length} order(s) total`);
+
+          // Process each created order: decrement inventory and send emails
+          for (const order of createdOrders) {
             // Decrement inventory for each item
-            for (const item of completeOrder.items) {
+            for (const item of order.items) {
               try {
                 await prisma.productVariant.update({
                   where: { id: item.purchaseOption.variant.id },
@@ -242,110 +351,160 @@ export async function POST(req: NextRequest) {
                 // Continue processing even if inventory update fails
               }
             }
+          }
 
-            // Prepare email data
+          // Send emails for all orders together
+          if (createdOrders.length > 0) {
+            const firstOrder = createdOrders[0];
+
+            // Prepare combined email data for all orders
             const { formatBillingInterval } = await import("@/lib/utils");
-            const emailItems = completeOrder.items.map((item) => ({
-              productName: item.purchaseOption.variant.product.name,
-              variantName: item.purchaseOption.variant.name,
-              quantity: item.quantity,
-              priceInCents: item.purchaseOption.priceInCents,
-              purchaseType: item.purchaseOption.type, // ONE_TIME or SUBSCRIPTION
-              deliverySchedule:
-                item.purchaseOption.type === "SUBSCRIPTION" &&
-                item.purchaseOption.billingInterval
-                  ? formatBillingInterval(
-                      item.purchaseOption.billingInterval,
-                      item.purchaseOption.billingIntervalCount || 1
-                    )
-                  : null,
-            }));
+            
+            // Collect all items from all orders
+            const allEmailItems = createdOrders.flatMap((order) =>
+              order.items.map((item: any) => ({
+                productName: item.purchaseOption.variant.product.name,
+                variantName: item.purchaseOption.variant.name,
+                quantity: item.quantity,
+                priceInCents: item.purchaseOption.priceInCents,
+                purchaseType: item.purchaseOption.type,
+                deliverySchedule:
+                  item.purchaseOption.type === "SUBSCRIPTION" &&
+                  item.purchaseOption.billingInterval
+                    ? formatBillingInterval(
+                        item.purchaseOption.billingInterval,
+                        item.purchaseOption.billingIntervalCount || 1
+                      )
+                    : null,
+              }))
+            );
 
-            const subtotalInCents = completeOrder.items.reduce(
-              (sum, item) =>
-                sum + item.quantity * item.purchaseOption.priceInCents,
+            // Calculate totals across all orders
+            const combinedSubtotal = createdOrders.reduce(
+              (sum, order) =>
+                sum +
+                order.items.reduce(
+                  (orderSum: number, item: any) =>
+                    orderSum +
+                    item.quantity * item.purchaseOption.priceInCents,
+                  0
+                ),
               0
             );
-            const shippingInCents =
-              completeOrder.totalInCents - subtotalInCents;
+            const combinedTotal = createdOrders.reduce(
+              (sum, order) => sum + order.totalInCents,
+              0
+            );
+            const shippingInCents = combinedTotal - combinedSubtotal;
 
             const shippingAddressData =
-              completeOrder.deliveryMethod === "DELIVERY" &&
-              completeOrder.shippingStreet
+              firstOrder.deliveryMethod === "DELIVERY" &&
+              firstOrder.shippingStreet
                 ? {
-                    recipientName: completeOrder.recipientName || "Customer",
-                    street: completeOrder.shippingStreet,
-                    city: completeOrder.shippingCity || "",
-                    state: completeOrder.shippingState || "",
-                    postalCode: completeOrder.shippingPostalCode || "",
-                    country: completeOrder.shippingCountry || "",
+                    recipientName: firstOrder.recipientName || "Customer",
+                    street: firstOrder.shippingStreet,
+                    city: firstOrder.shippingCity || "",
+                    state: firstOrder.shippingState || "",
+                    postalCode: firstOrder.shippingPostalCode || "",
+                    country: firstOrder.shippingCountry || "",
                   }
                 : undefined;
 
-            // Send customer confirmation email
+            // Send single customer confirmation email for all orders
             try {
+              const orderNumbers = createdOrders
+                .map((o) => `#${o.id.slice(-8)}`)
+                .join(", ");
               await resend.emails.send({
                 from:
                   process.env.RESEND_FROM_EMAIL || "orders@artisan-roast.com",
-                to: completeOrder.customerEmail || "",
-                subject: `Order Confirmation - #${completeOrder.id.slice(-8)}`,
+                to: firstOrder.customerEmail || "",
+                subject:
+                  createdOrders.length > 1
+                    ? `Order Confirmation - ${orderNumbers}`
+                    : `Order Confirmation - ${orderNumbers}`,
                 react: OrderConfirmationEmail({
-                  orderId: completeOrder.id,
-                  orderNumber: completeOrder.id.slice(-8),
-                  customerName: completeOrder.recipientName || "Customer",
-                  customerEmail: completeOrder.customerEmail || "",
-                  items: emailItems,
-                  subtotalInCents,
+                  orderId: firstOrder.id,
+                  orderNumber: createdOrders
+                    .map((o) => o.id.slice(-8))
+                    .join(", "),
+                  customerName: firstOrder.recipientName || "Customer",
+                  customerEmail: firstOrder.customerEmail || "",
+                  items: allEmailItems,
+                  subtotalInCents: combinedSubtotal,
                   shippingInCents,
-                  totalInCents: completeOrder.totalInCents,
-                  deliveryMethod: completeOrder.deliveryMethod,
+                  totalInCents: combinedTotal,
+                  deliveryMethod: firstOrder.deliveryMethod,
                   shippingAddress: shippingAddressData,
-                  orderDate: new Date(
-                    completeOrder.createdAt
-                  ).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  }),
+                  orderDate: new Date(firstOrder.createdAt).toLocaleDateString(
+                    "en-US",
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }
+                  ),
                 }),
               });
-              console.log("📧 Customer confirmation email sent");
+              console.log(
+                `📧 Customer confirmation email sent for ${createdOrders.length} order(s)`
+              );
             } catch (emailError) {
               console.error("Failed to send customer email:", emailError);
-              // Don't fail webhook - order is already created
             }
 
-            // Send merchant notification email
-            try {
-              await resend.emails.send({
-                from:
-                  process.env.RESEND_FROM_EMAIL || "orders@artisan-roast.com",
-                to:
-                  process.env.RESEND_MERCHANT_EMAIL ||
-                  "merchant@artisan-roast.com",
-                subject: `New Order #${completeOrder.id.slice(-8)} - Action Required`,
-                react: MerchantOrderNotification({
-                  orderId: completeOrder.id,
-                  orderNumber: completeOrder.id.slice(-8),
-                  customerName: completeOrder.recipientName || "Customer",
-                  customerEmail: completeOrder.customerEmail || "",
-                  items: emailItems,
-                  totalInCents: completeOrder.totalInCents,
-                  deliveryMethod: completeOrder.deliveryMethod,
-                  shippingAddress: shippingAddressData,
-                  orderDate: new Date(
-                    completeOrder.createdAt
-                  ).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
+            // Send merchant notification email for each order
+            for (const order of createdOrders) {
+              try {
+                const emailItems = order.items.map((item: any) => ({
+                  productName: item.purchaseOption.variant.product.name,
+                  variantName: item.purchaseOption.variant.name,
+                  quantity: item.quantity,
+                  priceInCents: item.purchaseOption.priceInCents,
+                  purchaseType: item.purchaseOption.type,
+                  deliverySchedule:
+                    item.purchaseOption.type === "SUBSCRIPTION" &&
+                    item.purchaseOption.billingInterval
+                      ? formatBillingInterval(
+                          item.purchaseOption.billingInterval,
+                          item.purchaseOption.billingIntervalCount || 1
+                        )
+                      : null,
+                }));
+
+                await resend.emails.send({
+                  from:
+                    process.env.RESEND_FROM_EMAIL ||
+                    "orders@artisan-roast.com",
+                  to:
+                    process.env.RESEND_MERCHANT_EMAIL ||
+                    "merchant@artisan-roast.com",
+                  subject: `New Order #${order.id.slice(-8)} - Action Required`,
+                  react: MerchantOrderNotification({
+                    orderId: order.id,
+                    orderNumber: order.id.slice(-8),
+                    customerName: order.recipientName || "Customer",
+                    customerEmail: order.customerEmail || "",
+                    items: emailItems,
+                    totalInCents: order.totalInCents,
+                    deliveryMethod: order.deliveryMethod,
+                    shippingAddress: shippingAddressData,
+                    orderDate: new Date(order.createdAt).toLocaleDateString(
+                      "en-US",
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      }
+                    ),
                   }),
-                }),
-              });
-              console.log("📧 Merchant notification email sent");
-            } catch (emailError) {
-              console.error("Failed to send merchant email:", emailError);
-              // Don't fail webhook
+                });
+                console.log(
+                  `📧 Merchant notification sent for order ${order.id.slice(-8)}`
+                );
+              } catch (emailError) {
+                console.error("Failed to send merchant email:", emailError);
+              }
             }
           }
 
@@ -396,7 +555,7 @@ export async function POST(req: NextRequest) {
                 break;
               }
 
-              // Calculate current billing period - get from subscription items
+              // Calculate current billing period - get from first subscription item
               const subscriptionItem = subscription.items.data[0];
               const currentPeriodStart = subscriptionItem.current_period_start;
               const currentPeriodEnd = subscriptionItem.current_period_end;
@@ -410,37 +569,56 @@ export async function POST(req: NextRequest) {
                 );
               }
 
-              // Extract Product details from subscription items (already extracted above)
-              const price = subscriptionItem.price;
-              const stripeProductId =
-                typeof price.product === "string"
-                  ? price.product
-                  : (price.product as Stripe.Product).id;
-              const stripePriceId = price.id;
-
-              let productName: string = "Coffee Subscription";
+              // Extract ALL subscription items into arrays
+              const productNames: string[] = [];
+              const stripeProductIds: string[] = [];
+              const stripePriceIds: string[] = [];
+              const quantities: number[] = [];
+              let totalPriceInCents = 0;
               let productDescription: string | null = null;
-              try {
-                const product = await stripe.products.retrieve(stripeProductId);
-                productName = product.name || productName;
-                productDescription = (product.description as string) || null;
-              } catch (prodErr) {
-                console.warn("⚠️ Failed to retrieve Stripe product", prodErr);
+
+              for (const item of subscription.items.data) {
+                const price = item.price;
+                const productId =
+                  typeof price.product === "string"
+                    ? price.product
+                    : (price.product as Stripe.Product).id;
+                
+                stripeProductIds.push(productId);
+                stripePriceIds.push(price.id);
+                quantities.push(item.quantity || 1);
+                totalPriceInCents += (price.unit_amount || 0) * (item.quantity || 1);
+
+                // Fetch product name
+                try {
+                  const product = await stripe.products.retrieve(productId);
+                  productNames.push(product.name || "Coffee Subscription");
+                  // Use first product's description
+                  if (!productDescription) {
+                    productDescription = (product.description as string) || null;
+                  }
+                } catch (prodErr) {
+                  console.warn("⚠️ Failed to retrieve Stripe product", prodErr);
+                  productNames.push("Coffee Subscription");
+                }
               }
 
-              // Derive delivery schedule
+              console.log(`📦 Subscription has ${productNames.length} items:`, productNames);
+
+              // Derive delivery schedule from first item
+              const firstPrice = subscription.items.data[0].price;
               let deliverySchedule: string | null = null;
               if (subscription.metadata.deliverySchedule) {
                 deliverySchedule = subscription.metadata.deliverySchedule;
-              } else if (price.nickname) {
-                const scheduleMatch = price.nickname.match(/Every\s+[^-()]+/i);
+              } else if (firstPrice.nickname) {
+                const scheduleMatch = firstPrice.nickname.match(/Every\s+[^-()]+/i);
                 if (scheduleMatch) deliverySchedule = scheduleMatch[0].trim();
               }
-              if (!deliverySchedule && price.recurring?.interval) {
+              if (!deliverySchedule && firstPrice.recurring?.interval) {
                 const { formatBillingInterval } = await import("@/lib/utils");
                 deliverySchedule = formatBillingInterval(
-                  price.recurring.interval,
-                  price.recurring.interval_count || 1
+                  firstPrice.recurring.interval,
+                  firstPrice.recurring.interval_count || 1
                 );
               }
 
@@ -454,34 +632,24 @@ export async function POST(req: NextRequest) {
               // Get shipping address from session
               const shipping = shippingAddress;
 
-              // Check for existing subscription for this product
-              const existingForProduct = await prisma.subscription.findFirst({
-                where: {
-                  userId: userId,
-                  stripeProductId: stripeProductId,
-                  status: {
-                    not: "CANCELED",
-                  },
-                },
+              // Check if subscription already exists to avoid duplicate creation
+              const existingSubscription = await prisma.subscription.findUnique({
+                where: { stripeSubscriptionId: subscription.id },
               });
 
-              if (
-                existingForProduct &&
-                existingForProduct.stripeSubscriptionId !== subscription.id
-              ) {
-                console.log("♻️ Updating existing subscription record");
+              if (existingSubscription) {
+                console.log("ℹ️ Subscription already exists, updating it");
                 await prisma.subscription.update({
-                  where: { id: existingForProduct.id },
+                  where: { id: existingSubscription.id },
                   data: {
-                    stripeSubscriptionId: subscription.id,
                     stripeCustomerId: subscription.customer as string,
                     status,
-                    productName,
+                    productNames,
                     productDescription,
-                    stripeProductId: stripeProductId,
-                    stripePriceId: stripePriceId,
-                    quantity: subscriptionItem.quantity || 1,
-                    priceInCents: price.unit_amount || 0,
+                    stripeProductIds,
+                    stripePriceIds,
+                    quantities,
+                    priceInCents: totalPriceInCents,
                     deliverySchedule,
                     currentPeriodStart: new Date(currentPeriodStart * 1000),
                     currentPeriodEnd: new Date(currentPeriodEnd * 1000),
@@ -496,19 +664,19 @@ export async function POST(req: NextRequest) {
                 });
               } else {
                 // Create new subscription record
-                await prisma.subscription.upsert({
-                  where: { stripeSubscriptionId: subscription.id },
-                  create: {
+                console.log("🆕 Creating new subscription record");
+                await prisma.subscription.create({
+                  data: {
                     stripeSubscriptionId: subscription.id,
                     stripeCustomerId: subscription.customer as string,
                     userId: userId,
                     status,
-                    productName,
+                    productNames,
                     productDescription,
-                    stripeProductId: stripeProductId,
-                    stripePriceId: stripePriceId,
-                    quantity: subscriptionItem.quantity || 1,
-                    priceInCents: price.unit_amount || 0,
+                    stripeProductIds,
+                    stripePriceIds,
+                    quantities,
+                    priceInCents: totalPriceInCents,
                     deliverySchedule,
                     currentPeriodStart: new Date(currentPeriodStart * 1000),
                     currentPeriodEnd: new Date(currentPeriodEnd * 1000),
@@ -520,18 +688,33 @@ export async function POST(req: NextRequest) {
                     shippingPostalCode: shipping?.postal_code || null,
                     shippingCountry: shipping?.country || null,
                   },
-                  update: {
-                    status,
-                    quantity: subscriptionItem.quantity || 1,
-                    priceInCents: price.unit_amount || 0,
-                    deliverySchedule,
-                    currentPeriodStart: new Date(currentPeriodStart * 1000),
-                    currentPeriodEnd: new Date(currentPeriodEnd * 1000),
-                  },
                 });
               }
 
               console.log("✅ Subscription record created/updated");
+
+              // Link subscription to the subscription order
+              // Find the order that contains subscription items
+              const subscriptionOrder = createdOrders.find((order) =>
+                order.items.some(
+                  (item: any) => item.purchaseOption.type === "SUBSCRIPTION"
+                )
+              );
+
+              if (subscriptionOrder) {
+                console.log(
+                  `🔗 Linking subscription ${subscription.id} to order ${subscriptionOrder.id}`
+                );
+                await prisma.order.update({
+                  where: { id: subscriptionOrder.id },
+                  data: { stripeSubscriptionId: subscription.id },
+                });
+                console.log("✅ Order linked to subscription");
+              } else {
+                console.warn(
+                  `⚠️ Could not find subscription order to link`
+                );
+              }
             } catch (subError) {
               console.error("Failed to create subscription record:", subError);
               // Don't fail webhook - order is already created
@@ -649,47 +832,58 @@ export async function POST(req: NextRequest) {
 
         console.log("✅ Found user:", user.email, "(ID:", user.id, ")");
 
-        // Extract Product details from subscription items (reuse variable from above)
-        const price = subscriptionItem.price;
-        const stripeProductId =
-          typeof price.product === "string"
-            ? price.product
-            : (price.product as Stripe.Product).id;
-        const stripePriceId = price.id;
-
-        let productName: string = "Coffee Subscription";
+        // Extract ALL subscription items into arrays
+        const productNames: string[] = [];
+        const stripeProductIds: string[] = [];
+        const stripePriceIds: string[] = [];
+        const quantities: number[] = [];
+        let totalPriceInCents = 0;
         let productDescription: string | null = null;
-        try {
-          const product = await stripe.products.retrieve(stripeProductId);
-          productName = product.name || productName;
-          productDescription = (product.description as string) || null;
-        } catch (prodErr) {
-          console.warn("⚠️ Failed to retrieve Stripe product", prodErr);
+
+        for (const item of subscription.items.data) {
+          const price = item.price;
+          const productId =
+            typeof price.product === "string"
+              ? price.product
+              : (price.product as Stripe.Product).id;
+          
+          stripeProductIds.push(productId);
+          stripePriceIds.push(price.id);
+          quantities.push(item.quantity || 1);
+          totalPriceInCents += (price.unit_amount || 0) * (item.quantity || 1);
+
+          // Fetch product name
+          try {
+            const product = await stripe.products.retrieve(productId);
+            productNames.push(product.name || "Coffee Subscription");
+            // Use first product's description
+            if (!productDescription) {
+              productDescription = (product.description as string) || null;
+            }
+          } catch (prodErr) {
+            console.warn("⚠️ Failed to retrieve Stripe product", prodErr);
+            productNames.push("Coffee Subscription");
+          }
         }
 
-        // Derive delivery schedule
+        console.log(`📦 Subscription has ${productNames.length} items:`, productNames);
+
+        // Derive delivery schedule from first item
+        const firstPrice = subscription.items.data[0].price;
         let deliverySchedule: string | null = null;
         if (subscription.metadata.deliverySchedule) {
           deliverySchedule = subscription.metadata.deliverySchedule;
-        } else if (price.nickname) {
-          const scheduleMatch = price.nickname.match(/Every\s+[^-()]+/i);
+        } else if (firstPrice.nickname) {
+          const scheduleMatch = firstPrice.nickname.match(/Every\s+[^-()]+/i);
           if (scheduleMatch) deliverySchedule = scheduleMatch[0].trim();
         }
-        if (!deliverySchedule && price.recurring?.interval) {
+        if (!deliverySchedule && firstPrice.recurring?.interval) {
           const { formatBillingInterval } = await import("@/lib/utils");
           deliverySchedule = formatBillingInterval(
-            price.recurring.interval,
-            price.recurring.interval_count || 1
+            firstPrice.recurring.interval,
+            firstPrice.recurring.interval_count || 1
           );
         }
-
-        console.log("📦 Subscription Item (Payment Confirmed):");
-        console.log("  - Product Name:", productName);
-        console.log("  - Quantity:", subscriptionItem.quantity);
-        console.log("  - Price:", price.unit_amount, "cents");
-        console.log("  - Schedule (derived):", deliverySchedule);
-        console.log("  - Stripe Product ID:", stripeProductId);
-        console.log("  - Stripe Price ID:", stripePriceId);
 
         // Map Stripe status
         let status: "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE" = "ACTIVE";
@@ -718,43 +912,25 @@ export async function POST(req: NextRequest) {
           // INITIAL SUBSCRIPTION CREATION - Update database subscription record
           console.log("🆕 Processing initial subscription creation...");
 
-          // Business rule: one subscription per product per user
-          // Exclude canceled subscriptions to allow re-subscription
-          const existingForProduct = await prisma.subscription.findFirst({
-            where: {
-              userId: user.id,
-              stripeProductId: stripeProductId,
-              status: {
-                not: "CANCELED",
-              },
-            },
+          // Check if subscription already exists by stripeSubscriptionId
+          const existingSubscription = await prisma.subscription.findUnique({
+            where: { stripeSubscriptionId: subscription.id },
           });
 
-          if (
-            existingForProduct &&
-            existingForProduct.stripeSubscriptionId !== subscription.id
-          ) {
-            console.log(
-              "♻️ Merging new Stripe subscription into existing product subscription record",
-              {
-                existingId: existingForProduct.id,
-                oldStripeSubscriptionId:
-                  existingForProduct.stripeSubscriptionId,
-                newStripeSubscriptionId: subscription.id,
-              }
-            );
-            await prisma.subscription.update({
-              where: { id: existingForProduct.id },
+          if (!existingSubscription) {
+            // Create new subscription record
+            await prisma.subscription.create({
               data: {
                 stripeSubscriptionId: subscription.id,
                 stripeCustomerId: subscription.customer as string,
+                userId: user.id,
                 status,
-                productName,
+                productNames,
                 productDescription,
-                stripeProductId: stripeProductId,
-                stripePriceId: stripePriceId,
-                quantity: subscriptionItem.quantity || 1,
-                priceInCents: price.unit_amount || 0,
+                stripeProductIds,
+                stripePriceIds,
+                quantities,
+                priceInCents: totalPriceInCents,
                 deliverySchedule,
                 currentPeriodStart: new Date(currentPeriodStart * 1000),
                 currentPeriodEnd: new Date(currentPeriodEnd * 1000),
@@ -775,42 +951,13 @@ export async function POST(req: NextRequest) {
               },
             });
           } else {
-            // Standard upsert keyed by Stripe subscription ID
-            await prisma.subscription.upsert({
+            // Update existing subscription
+            await prisma.subscription.update({
               where: { stripeSubscriptionId: subscription.id },
-              create: {
-                stripeSubscriptionId: subscription.id,
-                stripeCustomerId: subscription.customer as string,
-                userId: user.id,
+              data: {
                 status,
-                productName,
-                productDescription,
-                stripeProductId: stripeProductId,
-                stripePriceId: stripePriceId,
-                quantity: subscriptionItem.quantity || 1,
-                priceInCents: price.unit_amount || 0,
-                deliverySchedule,
-                currentPeriodStart: new Date(currentPeriodStart * 1000),
-                currentPeriodEnd: new Date(currentPeriodEnd * 1000),
-                cancelAtPeriodEnd: willCancel,
-                canceledAt:
-                  stripeStatus === "canceled" || subscription.canceled_at
-                    ? new Date(
-                        (subscription.canceled_at ||
-                          Math.floor(Date.now() / 1000)) * 1000
-                      )
-                    : null,
-                recipientName: shipping?.name || null,
-                shippingStreet: shipping?.line1 || null,
-                shippingCity: shipping?.city || null,
-                shippingState: shipping?.state || null,
-                shippingPostalCode: shipping?.postal_code || null,
-                shippingCountry: shipping?.country || null,
-              },
-              update: {
-                status,
-                quantity: subscriptionItem.quantity || 1,
-                priceInCents: price.unit_amount || 0,
+                quantities,
+                priceInCents: totalPriceInCents,
                 currentPeriodStart: new Date(currentPeriodStart * 1000),
                 currentPeriodEnd: new Date(currentPeriodEnd * 1000),
                 cancelAtPeriodEnd: willCancel,
@@ -822,9 +969,9 @@ export async function POST(req: NextRequest) {
                       )
                     : null,
                 deliverySchedule,
-                stripeProductId: stripeProductId,
-                stripePriceId: stripePriceId,
-                productName,
+                stripeProductIds,
+                stripePriceIds,
+                productNames,
                 productDescription,
               },
             });
@@ -838,9 +985,9 @@ export async function POST(req: NextRequest) {
             stripeSubscriptionId: subscription.id,
             userId: user.id,
             status,
-            productName,
-            stripeProductId,
-            priceInCents: price.unit_amount,
+            productNames,
+            stripeProductIds,
+            priceInCents: totalPriceInCents,
           });
         } else {
           // SUBSCRIPTION RENEWAL - Create recurring order
@@ -854,31 +1001,56 @@ export async function POST(req: NextRequest) {
           );
 
           try {
-            // Find the matching purchase option for this subscription
-            const purchaseOption = await prisma.purchaseOption.findFirst({
-              where: {
-                type: "SUBSCRIPTION",
-                variant: {
-                  product: {
-                    name: {
-                      contains: productName.split(" - ")[0], // Extract product name before variant
+            // Find matching purchase options for ALL subscription items
+            const orderItemsData = [];
+            
+            for (let i = 0; i < productNames.length; i++) {
+              const productName = productNames[i];
+              const quantity = quantities[i];
+              
+              // Extract product name (before the " - " variant separator)
+              const productBaseName = productName.split(" - ")[0];
+              
+              const purchaseOption = await prisma.purchaseOption.findFirst({
+                where: {
+                  type: "SUBSCRIPTION",
+                  variant: {
+                    product: {
+                      name: {
+                        contains: productBaseName,
+                      },
                     },
                   },
                 },
-              },
-              include: {
-                variant: {
-                  include: {
-                    product: true,
+                include: {
+                  variant: {
+                    include: {
+                      product: true,
+                    },
                   },
                 },
-              },
-            });
+              });
 
-            if (!purchaseOption) {
+              if (!purchaseOption) {
+                console.error(
+                  "⚠️ Could not find matching purchase option for:",
+                  productName
+                );
+                continue;
+              }
+
+              orderItemsData.push({
+                quantity,
+                priceInCents: 0, // Will be populated by purchase option relation
+                purchaseOptionId: purchaseOption.id,
+              });
+              
+              console.log(`  ✅ Found purchase option for ${productName}`);
+            }
+
+            if (orderItemsData.length === 0) {
               console.error(
-                "⚠️ Could not find matching purchase option for subscription product:",
-                productName
+                "⚠️ Could not find any matching purchase options for subscription items"
               );
               console.log(
                 "Skipping order creation but subscription is still active"
@@ -886,11 +1058,9 @@ export async function POST(req: NextRequest) {
               break;
             }
 
-            // Calculate total (price * quantity + shipping if applicable)
-            const itemTotal =
-              (price.unit_amount || 0) * (subscriptionItem.quantity || 1);
+            // Calculate total from invoice
             const shippingCost = invoice.total - invoice.subtotal; // Stripe calculates shipping
-            const totalInCents = itemTotal + shippingCost;
+            const totalInCents = totalPriceInCents + shippingCost;
 
             // Get payment method details
             let paymentCardLast4: string | undefined;
@@ -917,6 +1087,7 @@ export async function POST(req: NextRequest) {
             // Create the recurring order
             const order = await prisma.order.create({
               data: {
+                stripeSubscriptionId: subscription.id, // Link to subscription
                 stripePaymentIntentId: invoice.payment_intent as string,
                 stripeCustomerId: subscription.customer as string,
                 customerEmail: user.email || null,
@@ -932,13 +1103,7 @@ export async function POST(req: NextRequest) {
                 shippingPostalCode: shipping?.postal_code || null,
                 shippingCountry: shipping?.country || null,
                 items: {
-                  create: [
-                    {
-                      quantity: subscriptionItem.quantity || 1,
-                      priceInCents: price.unit_amount || 0,
-                      purchaseOptionId: purchaseOption.id,
-                    },
-                  ],
+                  create: orderItemsData,
                 },
               },
               include: {
@@ -960,21 +1125,23 @@ export async function POST(req: NextRequest) {
 
             console.log("📦 Recurring order created:", order.id);
 
-            // Decrement inventory for recurring order
-            try {
-              await prisma.productVariant.update({
-                where: { id: purchaseOption.variant.id },
-                data: {
-                  stockQuantity: {
-                    decrement: subscriptionItem.quantity || 1,
+            // Decrement inventory for all items in recurring order
+            for (const item of order.items) {
+              try {
+                await prisma.productVariant.update({
+                  where: { id: item.purchaseOption.variant.id },
+                  data: {
+                    stockQuantity: {
+                      decrement: item.quantity,
+                    },
                   },
-                },
-              });
-              console.log(
-                `📉 Decremented stock for ${purchaseOption.variant.product.name} - ${purchaseOption.variant.name}`
-              );
-            } catch (inventoryError) {
-              console.error("Failed to update inventory:", inventoryError);
+                });
+                console.log(
+                  `📉 Decremented stock for ${item.purchaseOption.variant.product.name} - ${item.purchaseOption.variant.name}`
+                );
+              } catch (inventoryError) {
+                console.error("Failed to update inventory:", inventoryError);
+              }
             }
 
             // Send email notifications for recurring order
@@ -1088,7 +1255,7 @@ export async function POST(req: NextRequest) {
             : (price.product as Stripe.Product).id;
         const stripePriceId = price.id;
 
-        let productName: string = existingSub.productName;
+        let productName: string = existingSub.productNames[0] || "";
         let productDescription: string | null = existingSub.productDescription;
         try {
           const product = await stripe.products.retrieve(stripeProductId);
@@ -1134,6 +1301,75 @@ export async function POST(req: NextRequest) {
             : ""
         );
 
+        // If subscription is being canceled at period end, immediately cancel any PENDING orders
+        if (willCancel && !existingSub.cancelAtPeriodEnd) {
+          console.log("🔄 Subscription marked for cancellation - checking for PENDING orders...");
+          
+          const pendingOrders = await prisma.order.findMany({
+            where: {
+              stripeSubscriptionId: subscription.id,
+              status: "PENDING"
+            }
+          });
+
+          if (pendingOrders.length > 0) {
+            console.log(`📦 Found ${pendingOrders.length} PENDING order(s) - canceling immediately...`);
+            
+            for (const order of pendingOrders) {
+              try {
+                // Process refund if payment intent exists
+                if (order.stripePaymentIntentId) {
+                  await stripe.refunds.create({
+                    payment_intent: order.stripePaymentIntentId,
+                    reason: "requested_by_customer",
+                  });
+                  console.log(`💰 Refund processed for order ${order.id}`);
+                }
+
+                // Cancel the order
+                await prisma.order.update({
+                  where: { id: order.id },
+                  data: { status: "CANCELLED" }
+                });
+                console.log(`✅ Order ${order.id} canceled`);
+
+                // Restore inventory
+                const orderWithItems = await prisma.order.findUnique({
+                  where: { id: order.id },
+                  include: {
+                    items: {
+                      include: {
+                        purchaseOption: {
+                          include: {
+                            variant: true
+                          }
+                        }
+                      }
+                    }
+                  }
+                });
+
+                if (orderWithItems) {
+                  for (const item of orderWithItems.items) {
+                    await prisma.productVariant.update({
+                      where: { id: item.purchaseOption.variant.id },
+                      data: { stockQuantity: { increment: item.quantity } }
+                    });
+                    console.log(`📈 Restored stock for variant ${item.purchaseOption.variant.id}`);
+                  }
+                }
+              } catch (orderCancelError) {
+                console.error(`❌ Failed to cancel order ${order.id}:`, orderCancelError);
+              }
+            }
+
+            // Now cancel the subscription immediately in Stripe
+            console.log("🔄 Canceling subscription immediately in Stripe...");
+            await stripe.subscriptions.cancel(subscription.id);
+            console.log("✅ Subscription canceled immediately");
+          }
+        }
+
         // Get shipping address from subscription metadata
         const shipping = subscription.metadata.shipping_address
           ? JSON.parse(subscription.metadata.shipping_address)
@@ -1143,7 +1379,7 @@ export async function POST(req: NextRequest) {
           where: { stripeSubscriptionId: subscription.id },
           data: {
             status,
-            quantity: subscriptionItem.quantity || 1,
+            quantities: [subscriptionItem.quantity || 1],
             priceInCents: price.unit_amount || 0,
             currentPeriodStart: new Date(currentPeriodStart * 1000),
             currentPeriodEnd: new Date(currentPeriodEnd * 1000),
@@ -1156,9 +1392,9 @@ export async function POST(req: NextRequest) {
                   )
                 : null,
             deliverySchedule,
-            stripeProductId: stripeProductId,
-            stripePriceId: stripePriceId,
-            productName,
+            stripeProductIds: [stripeProductId],
+            stripePriceIds: [stripePriceId],
+            productNames: [productName],
             productDescription,
             recipientName: shipping?.name || existingSub.recipientName,
             shippingStreet: shipping?.line1 || existingSub.shippingStreet,

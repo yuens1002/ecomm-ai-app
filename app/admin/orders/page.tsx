@@ -42,6 +42,7 @@ type Order = {
   shippingState: string | null;
   shippingPostalCode: string | null;
   shippingCountry: string | null;
+  stripeSubscriptionId: string | null;
   createdAt: string;
   trackingNumber: string | null;
   carrier: string | null;
@@ -291,8 +292,16 @@ export default function AdminOrdersPage() {
                   {filteredOrders.map((order) => (
                     <tr key={order.id} className="hover:bg-muted/30">
                       <td className="py-4 px-4">
-                        <div className="font-medium">
-                          {order.orderNumber || order.id.slice(-8)}
+                        <div className="font-medium flex items-center gap-2">
+                          <span>{order.orderNumber || order.id.slice(-8)}</span>
+                          {order.stripeSubscriptionId && (
+                            <span 
+                              className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full"
+                              title="Subscription order"
+                            >
+                              🔄 Sub
+                            </span>
+                          )}
                         </div>
                         {order.trackingNumber && (
                           <button

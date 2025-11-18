@@ -20,9 +20,9 @@ interface Subscription {
   stripeSubscriptionId: string;
   stripeCustomerId: string;
   status: SubscriptionStatus;
-  productName: string;
+  productNames: string[];
   productDescription?: string | null;
-  quantity: number;
+  quantities: number[];
   priceInCents: number;
   deliverySchedule: string | null;
   currentPeriodStart: Date;
@@ -135,18 +135,15 @@ export default function SubscriptionsTab({
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-xl">
-                  {subscription.productName}
+                  {subscription.stripeSubscriptionId.replace('sub_', '')}
                 </CardTitle>
                 <CardDescription className="mt-1 space-y-0">
-                  <span>
-                    {subscription.productName}
-                    {subscription.quantity > 1 && ` × ${subscription.quantity}`}
-                  </span>
-                  {subscription.productDescription && (
-                    <span className="block text-xs text-muted-foreground mt-0.5">
-                      {subscription.productDescription}
+                  {subscription.productNames.map((name, idx) => (
+                    <span key={idx} className="block">
+                      {name}
+                      {subscription.quantities[idx] > 1 && ` × ${subscription.quantities[idx]}`}
                     </span>
-                  )}
+                  ))}
                 </CardDescription>
               </div>
               <span
@@ -164,9 +161,7 @@ export default function SubscriptionsTab({
               <div>
                 <p className="text-sm text-muted-foreground">Price</p>
                 <p className="font-semibold">
-                  {formatPrice(
-                    subscription.priceInCents * subscription.quantity
-                  )}
+                  {formatPrice(subscription.priceInCents)}
                   {subscription.deliverySchedule && (
                     <span className="text-sm text-muted-foreground font-normal ml-1">
                       / {subscription.deliverySchedule.toLowerCase()}

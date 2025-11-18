@@ -184,6 +184,34 @@
 
 ## Low Priority
 
+### Recurring Orders Should Not Show Cancel Button
+**Status**: Known Bug  
+**Priority**: Low  
+**Description**: Recurring orders (created at subscription renewal) currently show cancel buttons in order history. Customers should manage subscriptions at the subscription level, not cancel individual recurring deliveries.
+
+**Current Behavior**:
+- Recurring orders created with `status: "PENDING"` when subscription renews
+- Cancel button condition `{order.status === "PENDING" &&` matches recurring orders
+- Customers can cancel individual recurring orders from order history
+
+**Expected Behavior**:
+- Initial subscription order: Should show cancel button (customer just purchased)
+- Recurring orders: Should NOT show cancel button (part of ongoing subscription contract)
+- Customers should manage entire subscription via subscription tab, not individual deliveries
+
+**Possible Solutions**:
+1. Add `isRecurringOrder` boolean field to Order model to distinguish initial vs recurring orders
+2. Create recurring orders with different status (e.g., "PROCESSING" instead of "PENDING")
+3. Check if order has a prior order with same `stripeSubscriptionId` (if yes, it's recurring)
+
+**Impact**:  
+Customers can currently cancel individual recurring orders, which may create confusion about subscription management vs order cancellation.
+
+**Next Steps**:  
+Requires separate feature branch for proper design, implementation, and testing.
+
+---
+
 ### Merchant Order Notification Enhancements
 **Status**: Backlog  
 **Description**: Improve merchant notifications with actionable insights.

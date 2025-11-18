@@ -191,7 +191,7 @@ export async function POST(req: NextRequest) {
 
       // Create a set of existing stripe product IDs (which represent unique product+variant combos)
       const existingStripeProductIds = new Set(
-        activeSubs.map((s) => s.stripeProductId)
+        activeSubs.flatMap((s) => s.stripeProductIds)
       );
 
       const attemptedDuplicates: string[] = [];
@@ -205,9 +205,9 @@ export async function POST(req: NextRequest) {
         const stripeProductKey = `${productName} - ${variantName}`;
 
         // Check if we already have a subscription for this product+variant combo
-        // Note: For new subscriptions, we won't have a stripeProductId yet, so we check by productName match
+        // Note: For new subscriptions, we won't have a stripeProductId yet, so we check by productNames match
         const existingForProductVariant = activeSubs.find(
-          (s) => s.productName === stripeProductKey
+          (s) => s.productNames.includes(stripeProductKey)
         );
 
         if (existingForProductVariant) {
@@ -235,20 +235,35 @@ export async function POST(req: NextRequest) {
     if (deliveryMethod === "DELIVERY") {
       shippingAddressCollection = { allowed_countries: ["US"] };
 
-      // Add shipping rate options
-      // Note: Shipping rates are required for Stripe to collect complete shipping addresses
-      // For subscriptions, the shipping rate is applied to the initial payment only
-      shippingOptions = [
-        {
-          shipping_rate: process.env.STRIPE_STANDARD_SHIPPING_RATE!,
-        },
-        {
-          shipping_rate: process.env.STRIPE_EXPRESS_SHIPPING_RATE!,
-        },
-        {
-          shipping_rate: process.env.STRIPE_OVERNIGHT_SHIPPING_RATE!,
-        },
-      ];
+      // Add shipping rate options only for payment mode
+      // Note: Stripe doesn't support shipping_options in subscription mode
+      if (!isSubscription) {
+        shippingOptions = [
+          {
+            shipping_rate: process.env.STRIPE_STANDARD_SHIPPING_RATE!,
+          },
+          {
+            shipping_rate: process.env.STRIPE_EXPRESS_SHIPPING_RATE!,
+          },
+          {
+            shipping_rate: process.env.STRIPE_OVERNIGHT_SHIPPING_RATE!,
+          },
+        ];
+      } else {
+        // For subscription mode, add shipping as a one-time line item
+        // This charges shipping upfront for the initial delivery
+        lineItems.push({
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: "Shipping (One-time)",
+              description: "Shipping fee for initial delivery",
+            },
+            unit_amount: 1000, // $10 standard shipping (default)
+          },
+          quantity: 1,
+        });
+      }
     }
 
     // Create Stripe Checkout Session

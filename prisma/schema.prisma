@@ -206,9 +206,10 @@ model Order {
   deliveryMethod   DeliveryMethod @default(DELIVERY)
 
   // Stripe fields
-  stripeSessionId       String? @unique // Stripe Checkout Session ID
+  stripeSessionId       String? // Stripe Checkout Session ID (removed @unique to allow split orders from same session)
   stripePaymentIntentId String? // Stripe Payment Intent ID
   stripeCustomerId      String? // Stripe Customer ID
+  stripeSubscriptionId  String? @unique // Stripe Subscription ID (for subscription orders only)
   customerEmail         String? // Email from checkout
   paymentCardLast4      String? // Last 4 digits of payment card
 
@@ -236,6 +237,7 @@ model Order {
 
   @@index([userId])
   @@index([stripeSessionId])
+  @@index([stripeSubscriptionId])
   @@index([customerEmail])
 }
 
@@ -258,13 +260,23 @@ model Subscription {
   stripeCustomerId      String             // Stripe Customer ID
   status                SubscriptionStatus @default(ACTIVE)
   
-  // Product details
-  productName           String             // Product name at time of subscription (from Stripe Product name, includes variant)
-  stripeProductId       String             // Stripe Product ID for uniqueness enforcement per user
-  stripePriceId         String?            // Stripe Price ID for mapping to internal PurchaseOption
-  productDescription    String?            // Full product description (from Stripe product)
-  quantity              Int                @default(1)
-  priceInCents          Int                // Price per billing cycle
+  // Product details (can contain multiple products if subscription has multiple line items)
+  // 🏗️ ARCHITECTURAL DECISION: Snapshot approach vs. relational
+  // We store product names as strings instead of linking to Product/Variant/PurchaseOption models.
+  // WHY? 
+  // 1. Historical accuracy: If product is renamed/deleted, subscription shows original name
+  // 2. Fulfillment simplicity: Merchant only needs the name to ship the right product
+  // 3. UI simplicity: No complex joins needed to display subscription details
+  // TRADEOFF:
+  // - When creating recurring orders, we must lookup PurchaseOption by name (fuzzy match)
+  // - Risk: If product name changes significantly, recurring orders may fail to find match
+  // - Mitigation: Keep product names stable, or add purchaseOptionIds[] for direct lookup
+  productNames          String[]           // Array of product names (e.g., ["Ethiopian Yirgacheffe - 12oz", "Death Valley Espresso - 2lb"])
+  stripeProductIds      String[]           // Array of Stripe Product IDs for all items in subscription
+  stripePriceIds        String[]           // Array of Stripe Price IDs for all items in subscription
+  productDescription    String?            // Full product description (from first Stripe product)
+  quantities            Int[]              // Array of quantities for each product (matches order of productNames)
+  priceInCents          Int                // Total price per billing cycle (sum of all items)
   deliverySchedule      String?            // e.g., "Every 2 weeks", "Monthly"
   
   // Billing cycle
@@ -290,8 +302,6 @@ model Subscription {
   @@index([userId])
   @@index([stripeSubscriptionId])
   @@index([stripeCustomerId])
-  @@index([stripePriceId])
-  @@unique([userId, stripeProductId], name: "subscription_user_product")
 }
 
 // --- Enums ---
