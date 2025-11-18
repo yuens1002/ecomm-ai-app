@@ -2,61 +2,6 @@
 
 ## High Priority
 
-### Subscription Renewal Order Creation
-**Status**: Planned  
-**Priority**: High  
-**Description**: Automatically create Order records for each subscription billing cycle to enable fulfillment tracking.
-
-**Current Behavior**:
-- Subscription renews → Stripe charges customer → `invoice.payment_succeeded` webhook fires
-- ❌ No Order record created for merchant fulfillment
-- ❌ No inventory decrement for recurring deliveries
-- ❌ No visibility in order management dashboard
-
-**Desired Behavior**:
-- Each billing cycle creates a new Order record
-- Merchant receives notification email for fulfillment
-- Customer can view renewal orders in order history
-- Inventory properly tracked across subscription lifecycle
-
-**Tasks**:
-- [ ] Enhance `invoice.payment_succeeded` webhook handler
-  - Detect subscription renewal vs initial payment
-  - Create Order record for subscription renewals
-  - Link order to Subscription via `subscriptionId` field
-  - Extract product details from subscription items
-  - Use subscription shipping address
-- [ ] Handle inventory management
-  - Decrement stock for each renewal order
-  - Check stock availability before creating order
-  - Handle out-of-stock scenarios (pause/notify)
-- [ ] Create merchant notification system
-  - Send `MerchantOrderNotification` email for renewals
-  - Include subscription context ("Subscription Renewal")
-  - Add fulfillment priority indicators
-- [ ] Update order history UI
-  - Display renewal orders with "Subscription Renewal" badge
-  - Link to parent subscription from order details
-  - Show renewal number/cycle (1st, 2nd, 3rd delivery)
-- [ ] Handle edge cases
-  - Failed payment → Don't create order
-  - Subscription paused → Skip order creation
-  - Address change between renewals → Use updated address
-  - Product discontinued → Notify customer, pause subscription
-
-**Acceptance Criteria**:
-- Each successful billing cycle creates a new Order record
-- Renewal orders visible in admin order management dashboard
-- Inventory properly decremented for each renewal
-- Merchant receives email notification for fulfillment
-- Customer can see renewal orders in order history
-- Failed renewals don't create orders
-
-**Notes**:
-- Initial subscription order already created at checkout
-- This feature handles all subsequent billing cycles (2nd, 3rd, 4th... deliveries)
-- Critical for fulfillment operations and inventory tracking
-
 ---
 
 ### Failed Order Handling System
@@ -89,66 +34,6 @@
 ---
 
 ## Medium Priority
-
-### Split Mixed Cart into Separate Orders
-**Status**: Planned  
-**Description**: Separate one-time and subscription items into distinct orders for clearer fulfillment and cancellation workflows.
-
-**Business Logic:**
-- **Checkout with mixed cart** → Creates TWO orders:
-  - Order #1: One-time items only (normal order flow)
-  - Order #2: Subscription items only (linked to Subscription record)
-- **Order cancellation** (before shipment):
-  - One-time order: Cancel order, refund customer
-  - Subscription order: Opens "Manage Subscription" portal (same as subscription tab)
-- **Subscription management** (from subscription tab):
-  - Renew/cancel: Updates subscription status AND linked order status
-  - If order SHIPPED: Subscription managed independently (can't cancel shipped order)
-  - If order PENDING: Canceling subscription also cancels the order
-- **Order fulfillment**:
-  - Once subscription order ships → Subscription managed only from Subscription tab
-  - Clear separation between initial order and recurring deliveries
-
-**Tasks:**
-- [ ] Add database relationships
-  - `subscriptionId String? @unique` on Order model
-  - `initialOrderId String? @unique` on Subscription model
-  - Create migration for bidirectional relationship
-- [ ] Update `checkout.session.completed` webhook
-  - Detect mixed cart (one-time + subscription items)
-  - Create Order #1 for one-time items
-  - Create Order #2 for subscription items (with subscriptionId link)
-  - Ensure inventory decremented correctly for both
-  - Send separate email notifications (or combined with clear sections)
-- [ ] Update order history UI
-  - Badge subscription orders: "Subscription Order" or "Initial Subscription"
-  - Add "Manage Subscription" button on subscription orders (if not shipped)
-  - Link to related subscription from order details
-  - Show subscription status alongside order status
-- [ ] Update subscription tab UI
-  - Link to initial order from subscription details
-  - Show if initial order was shipped/pending/canceled
-- [ ] Update order cancellation logic
-  - Check if order has `subscriptionId`
-  - If yes and not shipped: Redirect to Stripe portal for subscription cancellation
-  - If no: Normal order cancellation flow
-- [ ] Update subscription webhook handlers
-  - When subscription canceled: Update linked order status if not shipped
-  - When subscription status changes: Reflect in order history if pending
-
-**Edge Cases:**
-- Cart with ONLY subscription items → Create single order (linked to subscription)
-- Cart with ONLY one-time items → Create single order (no subscription link)
-- Mixed cart checkout → Split into two orders with clear order numbers
-- Subscription reactivated → Order already shipped, no order status change needed
-
-**Acceptance Criteria:**
-- Mixed carts automatically split into separate orders
-- Subscription orders clearly identified in order history
-- Canceling pending subscription order cancels the subscription
-- Canceling subscription cancels pending order (if not shipped)
-- Once order ships, subscription managed independently
-- Clear UI indicators showing order ↔ subscription relationship
 
 ---
 
@@ -238,6 +123,67 @@ Requires separate feature branch for proper design, implementation, and testing.
 
 ## Completed
 
+### ✅ Split Orders for Mixed Carts (v0.11.7)
+**Completed**: November 18, 2025  
+**Description**: Implemented order splitting for mixed carts with architectural pivot based on Stripe's subscription model.
+
+**Key Implementation:**
+- **Order Structure**: Mixed carts create separate orders:
+  - One order for all one-time items
+  - ONE order for ALL subscription items (architectural decision based on Stripe's model)
+- **Stripe Discovery**: Stripe creates one subscription with multiple line items, not separate subscriptions per product
+- **Array-Based Subscription Model**: Changed from single values to arrays to support multiple products:
+  - `productNames String[]` - snapshot of product names at purchase time
+  - `stripeProductIds String[]` - Stripe product IDs for all items
+  - `stripePriceIds String[]` - Stripe price IDs for all items
+  - `quantities Int[]` - quantities for each item
+- **Architectural Decision**: Snapshot approach (store product names) vs relational (foreign keys)
+  - **Why**: Historical accuracy, fulfillment simplicity, UI simplicity
+  - **Tradeoff**: Recurring orders lookup by name (fuzzy match risk if product renamed)
+- **Webhook Updates**: Both `checkout.session.completed` and `invoice.payment_succeeded` refactored to handle arrays
+- **Duplicate Prevention**: Updated to check all products across productNames arrays
+- **Recurring Order Creation**: Loops through all subscription items to create order items
+- **UI Enhancements**: Subscription tab displays all products with quantities, subscription ID without prefix
+
+**Migrations:**
+- `20251118024917_add_subscription_id_to_order` - Added Order.stripeSubscriptionId
+- `20251118054840_change_subscription_to_arrays` - Changed Subscription to array fields
+
+**Testing:**
+- ✅ Mixed cart with 2 different subscription products (Death Valley 2lb + Guatemalan 12oz)
+- ✅ Single subscription record created with both products in arrays
+- ✅ Single order created containing all subscription items
+- ✅ UI displays all products correctly
+- ✅ Checkout validation prevents duplicate subscriptions
+
+**Files Changed**: 13 files (976 insertions, 395 deletions)
+
+**Notes**: This feature represents a significant architectural evolution from the initial design, pivoting based on real-world Stripe API behavior. The array-based approach provides flexibility for future multi-product subscription scenarios while maintaining data integrity and simplifying fulfillment workflows.
+
+---
+
+### ✅ Recurring Order Creation (v0.11.6)
+**Completed**: November 17, 2025  
+**Description**: Automatically create Order records for each subscription billing cycle to enable fulfillment tracking.
+
+**Implementation:**
+- Enhanced `invoice.payment_succeeded` webhook to detect renewal vs initial payment
+- Create Order records for each subscription renewal cycle
+- Link orders to Subscription via `stripeSubscriptionId` field
+- Decrement inventory for each renewal delivery
+- Send merchant notification emails for fulfillment
+- Handle edge cases: failed payments, paused subscriptions, address updates
+
+**Acceptance Criteria Met:**
+- ✅ Each successful billing cycle creates new Order record
+- ✅ Renewal orders visible in admin dashboard
+- ✅ Inventory properly decremented for renewals
+- ✅ Merchant receives email notifications
+- ✅ Customer can view renewal orders in order history
+- ✅ Failed renewals don't create orders
+
+---
+
 ### ✅ Subscription Webhook Refactor (v0.11.5)
 - Hybrid approach using `checkout.session.completed` and `invoice.payment_succeeded`
 - Exclude CANCELED subscriptions from duplicate check
@@ -254,4 +200,4 @@ Requires separate feature branch for proper design, implementation, and testing.
 
 ---
 
-*Last Updated: November 17, 2025*
+*Last Updated: November 18, 2025*

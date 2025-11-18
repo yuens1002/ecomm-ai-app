@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.11.7 - 2025-11-18
+
+- **Split Orders for Mixed Carts**: Implemented order splitting for mixed carts with architectural pivot based on Stripe's subscription model
+  - **Order Structure**: Mixed carts now create separate orders:
+    - One order for all one-time items
+    - ONE order for ALL subscription items (architectural decision based on Stripe creating one subscription with multiple line items)
+  - **Array-Based Subscription Model**: Refactored Subscription model to support multiple products using arrays:
+    - `productNames String[]` - snapshot of product names at purchase time for historical accuracy
+    - `stripeProductIds String[]` - Stripe product IDs for all subscription items
+    - `stripePriceIds String[]` - Stripe price IDs for all subscription items
+    - `quantities Int[]` - quantities for each subscription item
+  - **Architectural Decision - Snapshot Approach**: Store product names as strings instead of foreign key relations
+    - **Why**: Historical accuracy (if product renamed/deleted, subscription shows original name), fulfillment simplicity (merchant only needs name to ship), UI simplicity (no complex joins)
+    - **Tradeoff**: Recurring orders must lookup PurchaseOption by name using fuzzy match - risk if product name changes significantly
+    - Documented directly in Prisma schema for future maintainability
+  - **Webhook Refactoring**: Complete overhaul of both subscription webhooks to handle multiple products:
+    - `checkout.session.completed`: Loops through `subscription.items.data` to extract all products into arrays, creates single order with all subscription items
+    - `invoice.payment_succeeded`: Handles both initial subscription and renewals with array support, loops through productNames to find PurchaseOptions for recurring orders
+  - **Duplicate Subscription Prevention**: Updated checkout validation to check all products across productNames arrays (uses `flatMap` and `includes()` to detect duplicates)
+  - **Order Cancellation**: Added admin endpoint `/api/admin/orders/[orderId]/cancel` for manually canceling orders
+  - **UI Enhancements**: 
+    - Subscription tab now displays subscription ID without "sub_" prefix for cleaner look
+    - Lists all products in subscription with quantities (e.g., "Death Valley Espresso - 2lb Bag × 2")
+    - Removed product description field for cleaner UI
+    - Kept billing period display for subscription transparency
+  - **Helper Scripts**: Created `scripts/cancel-active-subscriptions.ts` for bulk subscription cancellation during testing
+- **Database Migrations**:
+  - `20251118024917_add_subscription_id_to_order` - Added `stripeSubscriptionId` to Order model for linking orders to subscriptions
+  - `20251118054840_change_subscription_to_arrays` - Changed Subscription from single values to arrays (productName → productNames[], etc.)
+- **Testing Results**:
+  - ✅ Mixed cart with 2 different subscription products (Death Valley 2lb + Guatemalan 12oz weekly)
+  - ✅ Single subscription record created with both products in arrays
+  - ✅ Single order created containing all subscription items
+  - ✅ UI correctly displays all products with quantities
+  - ✅ Checkout validation prevents duplicate subscriptions across all products
+  - ✅ Both webhooks handle arrays correctly
+  - ✅ TypeScript compilation passing (fixed 13 errors across 4 files)
+- **Architecture Notes**: This feature represents a significant pivot from the initial design (separate order per subscription item) after discovering Stripe creates one subscription with multiple line items, not separate subscriptions per product. The array-based approach provides flexibility for multi-product subscriptions while maintaining data integrity and simplifying fulfillment workflows.
+
 ## 0.11.6 - 2025-11-17
 
 - **Recurring Order Creation**: Automatic order creation for subscription renewals
