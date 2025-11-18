@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.11.6 - 2025-11-17
+
+- **Recurring Order Creation**: Automatic order creation for subscription renewals
+  - Enhanced `invoice.payment_succeeded` webhook to differentiate between initial subscription payments and renewals using `billing_reason` field
+  - Initial subscriptions (`billing_reason: "subscription_create"`): Update Subscription record in database
+  - Renewal payments (`billing_reason: "subscription_cycle"`): Create new Order record with PENDING status
+  - Subscription ID extraction with fallback: checks `invoice.subscription` and `invoice.parent.subscription_details.subscription`
+  - Automatic inventory decrementation when recurring orders are created
+  - Fuzzy product matching: maps Stripe product names to PurchaseOptions by splitting on " - " separator
+- **Subscription-Aware Email Notifications**: Enhanced all email templates with subscription context
+  - **OrderConfirmationEmail**: Shows "Your Subscription Order is Being Prepared! 📦" heading with green banner displaying subscription cadence (e.g., "☕ Every week delivery")
+  - **MerchantOrderNotification**: Shows "🔄 Subscription Renewal Order" heading with blue banner (e.g., "Every week • Auto-renewal")
+  - **ShipmentConfirmationEmail**: Shows "📦 Your Subscription Order Has Shipped!" with subscription cadence in preview and body text
+  - All templates accept `isRecurringOrder?: boolean` and `deliverySchedule?: string` props for conditional rendering
+- **Smart Email Strategy**: Optimized notification flow to reduce email fatigue
+  - Recurring order creation: Only merchant receives notification, customer email skipped
+  - Order shipment: Customer receives single email combining order confirmation + tracking + subscription context
+  - Reduces customer emails from 2 to 1 per subscription renewal cycle
+  - Logs clearly indicate: "⏭️ Skipping customer email - will send with tracking when order ships"
+- **Comprehensive Testing Documentation**: Created `docs/testing-recurring-orders.md` (~300 lines)
+  - Multiple testing methods: Stripe CLI webhook triggers, test clocks, event replay
+  - Verification steps: webhook logs, database queries, admin dashboard checks, email delivery, inventory tracking
+  - Test scenarios: weekly/monthly subscriptions, multiple items, delivery/pickup, stock depletion edge cases
+  - Troubleshooting guide: missing purchase options, inventory errors, email failures
+  - Stripe CLI command reference for local development
+  - Production testing checklist
+
 ## 0.11.5 - 2025-11-17
 
 - **Webhook Event Refactor**: Hybrid approach for subscription creation using both `checkout.session.completed` and `invoice.payment_succeeded`

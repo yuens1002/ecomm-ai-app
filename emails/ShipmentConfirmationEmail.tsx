@@ -19,6 +19,8 @@ interface ShipmentConfirmationEmailProps {
   carrier: string;
   estimatedDelivery: string;
   orderId: string;
+  isRecurringOrder?: boolean;
+  deliverySchedule?: string;
 }
 
 export default function ShipmentConfirmationEmail({
@@ -28,6 +30,8 @@ export default function ShipmentConfirmationEmail({
   carrier,
   estimatedDelivery,
   orderId,
+  isRecurringOrder = false,
+  deliverySchedule,
 }: ShipmentConfirmationEmailProps) {
   const trackingUrl = getTrackingUrl(carrier, trackingNumber);
   const orderUrl = `${process.env.NEXT_PUBLIC_APP_URL}/orders/${orderId}`;
@@ -35,16 +39,35 @@ export default function ShipmentConfirmationEmail({
   return (
     <Html>
       <Head />
-      <Preview>Your order #{orderNumber} has shipped!</Preview>
+      <Preview>
+        {isRecurringOrder
+          ? `Your ${deliverySchedule} subscription is on the way! - Order #${orderNumber}`
+          : `Your order #${orderNumber} has shipped!`}
+      </Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>📦 Your Order Has Shipped!</Heading>
+          {isRecurringOrder ? (
+            <>
+              <Heading style={h1}>
+                📦 Your Subscription Order Has Shipped!
+              </Heading>
+              <Section style={subscriptionBanner}>
+                <Text style={subscriptionBannerText}>
+                  ☕ {deliverySchedule} delivery
+                </Text>
+              </Section>
+            </>
+          ) : (
+            <Heading style={h1}>📦 Your Order Has Shipped!</Heading>
+          )}
 
           <Text style={text}>Hi {customerName},</Text>
 
           <Text style={text}>
-            Great news! Your order <strong>#{orderNumber}</strong> is on its
-            way.
+            {isRecurringOrder
+              ? `Great news! Your ${deliverySchedule?.toLowerCase()} subscription order `
+              : "Great news! Your order "}
+            <strong>#{orderNumber}</strong> is on its way.
           </Text>
 
           <Section style={trackingBox}>
@@ -126,6 +149,23 @@ const h1 = {
   fontWeight: "bold",
   margin: "40px 0",
   padding: "0",
+  textAlign: "center" as const,
+};
+
+const subscriptionBanner = {
+  backgroundColor: "#dcfce7",
+  borderLeft: "4px solid #16a34a",
+  padding: "12px 24px",
+  margin: "16px 24px 24px 24px",
+  borderRadius: "4px",
+};
+
+const subscriptionBannerText = {
+  color: "#166534",
+  fontSize: "16px",
+  fontWeight: "600" as const,
+  lineHeight: "24px",
+  margin: "0",
   textAlign: "center" as const,
 };
 

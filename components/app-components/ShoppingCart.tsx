@@ -103,7 +103,8 @@ export function ShoppingCart() {
       const customEvent = event as CustomEvent;
       toast({
         title: "Ooops!",
-        description: "Shopping cart can't handle mixed delivery schedule intervals",
+        description:
+          "Shopping cart can't handle mixed delivery schedule intervals",
         variant: undefined,
         className: "!bg-foreground !text-background !border-foreground",
       });
@@ -211,7 +212,8 @@ export function ShoppingCart() {
         if (data?.code === "MIXED_BILLING_INTERVALS") {
           toast({
             title: "Ooops!",
-            description: "Shopping cart can't handle mixed delivery schedule intervals",
+            description:
+              "Shopping cart can't handle mixed delivery schedule intervals",
             variant: undefined,
             className: "!bg-foreground !text-background !border-foreground",
           });
@@ -223,18 +225,20 @@ export function ShoppingCart() {
         if (data?.code === "SUBSCRIPTION_EXISTS") {
           const duplicates = data.duplicates || [];
           const count = duplicates.length;
-          const subscriptionText = count === 1 ? "Subscription" : "Subscriptions";
+          const subscriptionText =
+            count === 1 ? "Subscription" : "Subscriptions";
           const existsText = count === 1 ? "exists" : "exist";
-          
-          const productList = duplicates.map((name: string) => 
-            `• ${name}`
-          ).join('\n');
-          
+
+          const productList = duplicates
+            .map((name: string) => `• ${name}`)
+            .join("\n");
+
           toast({
             title: `${subscriptionText} ${existsText}`,
             description: `You already have a subscription for:\n${productList}`,
             variant: undefined,
-            className: "!bg-foreground !text-background !border-foreground whitespace-pre-line",
+            className:
+              "!bg-foreground !text-background !border-foreground whitespace-pre-line",
           });
           setIsCheckingOut(false);
           return;
@@ -543,7 +547,11 @@ export function ShoppingCart() {
               </Button>
 
               {/* Clear Cart */}
-              <Button variant="outline" className="w-full" onClick={handleClearCart}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleClearCart}
+              >
                 Clear Cart
               </Button>
             </div>

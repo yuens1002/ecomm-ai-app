@@ -35,6 +35,7 @@ interface MerchantOrderNotificationProps {
     country: string;
   };
   orderDate: string;
+  isRecurringOrder?: boolean;
 }
 
 export default function MerchantOrderNotification({
@@ -47,21 +48,44 @@ export default function MerchantOrderNotification({
   deliveryMethod,
   shippingAddress,
   orderDate,
+  isRecurringOrder = false,
 }: MerchantOrderNotificationProps) {
   const formatPrice = (cents: number) => {
     return `$${(cents / 100).toFixed(2)}`;
   };
 
+  // Get delivery schedule from first subscription item
+  const subscriptionSchedule = items.find(
+    (item) => item.purchaseType === "SUBSCRIPTION" && item.deliverySchedule
+  )?.deliverySchedule;
+
   return (
     <Html>
       <Head />
-      <Preview>New Order #{orderNumber} - Action Required</Preview>
+      <Preview>
+        {isRecurringOrder
+          ? `Subscription Renewal Order #{orderNumber} - ${subscriptionSchedule}`
+          : `New Order #{orderNumber} - Action Required`}
+      </Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>🎉 New Order Received!</Heading>
+          {isRecurringOrder ? (
+            <>
+              <Heading style={h1}>🔄 Subscription Renewal Order</Heading>
+              <Section style={subscriptionBanner}>
+                <Text style={subscriptionBannerText}>
+                  {subscriptionSchedule} • Auto-renewal
+                </Text>
+              </Section>
+            </>
+          ) : (
+            <Heading style={h1}>🎉 New Order Received!</Heading>
+          )}
 
           <Text style={text}>
-            A new order has been placed and requires your attention.
+            {isRecurringOrder
+              ? `A subscription has automatically renewed and requires fulfillment.`
+              : `A new order has been placed and requires your attention.`}
           </Text>
 
           <Section style={alertSection}>
@@ -103,12 +127,11 @@ export default function MerchantOrderNotification({
             <Section key={index} style={itemSection}>
               <Text style={itemText}>
                 <strong>{item.productName}</strong> - {item.variantName}
-                {item.purchaseType === "SUBSCRIPTION" && item.deliverySchedule && (
-                  <span> • Subscription - {item.deliverySchedule}</span>
-                )}
-                {item.purchaseType === "ONE_TIME" && (
-                  <span> • One-time</span>
-                )}
+                {item.purchaseType === "SUBSCRIPTION" &&
+                  item.deliverySchedule && (
+                    <span> • Subscription - {item.deliverySchedule}</span>
+                  )}
+                {item.purchaseType === "ONE_TIME" && <span> • One-time</span>}
               </Text>
               <Text style={itemText}>
                 Quantity: {item.quantity} × {formatPrice(item.priceInCents)}
@@ -201,6 +224,23 @@ const text = {
   fontSize: "16px",
   lineHeight: "26px",
   padding: "0 40px",
+};
+
+const subscriptionBanner = {
+  backgroundColor: "#dbeafe",
+  borderLeft: "4px solid #3b82f6",
+  padding: "12px 40px",
+  marginTop: "16px",
+  marginBottom: "24px",
+};
+
+const subscriptionBannerText = {
+  color: "#1e40af",
+  fontSize: "16px",
+  fontWeight: "600" as const,
+  lineHeight: "24px",
+  margin: "0",
+  textAlign: "center" as const,
 };
 
 const alertSection = {

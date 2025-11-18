@@ -52,7 +52,7 @@ export const useCartStore = create<CartState>()(
             const existingSubscriptions = state.items.filter(
               (item) => item.purchaseType === "SUBSCRIPTION"
             );
-            
+
             if (existingSubscriptions.length > 0) {
               // Check if any existing subscription has a different billing interval
               const hasDifferentInterval = existingSubscriptions.some(
@@ -60,7 +60,7 @@ export const useCartStore = create<CartState>()(
                   item.billingInterval !== newItem.billingInterval ||
                   item.billingIntervalCount !== newItem.billingIntervalCount
               );
-              
+
               if (hasDifferentInterval) {
                 // Show error to user
                 window.dispatchEvent(

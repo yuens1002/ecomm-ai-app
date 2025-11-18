@@ -26,9 +26,7 @@ export default function SignInPage() {
   // Show a notice when user was redirected here from checkout
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(
-      "artisan-roast-checkout-notice"
-    );
+    const stored = window.localStorage.getItem("artisan-roast-checkout-notice");
     if (stored) {
       setCheckoutNotice(stored);
       window.localStorage.removeItem("artisan-roast-checkout-notice");

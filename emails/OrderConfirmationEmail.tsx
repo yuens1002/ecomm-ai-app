@@ -38,6 +38,7 @@ interface OrderConfirmationEmailProps {
     country: string;
   };
   orderDate: string;
+  isRecurringOrder?: boolean;
 }
 
 export default function OrderConfirmationEmail({
@@ -52,24 +53,48 @@ export default function OrderConfirmationEmail({
   deliveryMethod,
   shippingAddress,
   orderDate,
+  isRecurringOrder = false,
 }: OrderConfirmationEmailProps) {
   const formatPrice = (cents: number) => {
     return `$${(cents / 100).toFixed(2)}`;
   };
 
+  // Get delivery schedule from first subscription item
+  const subscriptionSchedule = items.find(
+    (item) => item.purchaseType === "SUBSCRIPTION" && item.deliverySchedule
+  )?.deliverySchedule;
+
   return (
     <Html>
       <Head />
-      <Preview>Order #{orderNumber} confirmed - Artisan Roast Coffee</Preview>
+      <Preview>
+        {isRecurringOrder
+          ? `Your ${subscriptionSchedule} subscription is on the way! - Order #${orderNumber}`
+          : `Order #${orderNumber} confirmed - Artisan Roast Coffee`}
+      </Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Thank you for your order!</Heading>
+          {isRecurringOrder ? (
+            <>
+              <Heading style={h1}>
+                Your Subscription Order is Being Prepared! 📦
+              </Heading>
+              <Section style={subscriptionBanner}>
+                <Text style={subscriptionBannerText}>
+                  ☕ <strong>{subscriptionSchedule}</strong> delivery
+                </Text>
+              </Section>
+            </>
+          ) : (
+            <Heading style={h1}>Thank you for your order!</Heading>
+          )}
 
           <Text style={text}>Hi {customerName},</Text>
 
           <Text style={text}>
-            We've received your order and will process it shortly. Here are the
-            details:
+            {isRecurringOrder
+              ? `Great news! Your ${subscriptionSchedule?.toLowerCase()} subscription order has been processed and will be shipped soon. Here are the details:`
+              : "We've received your order and will process it shortly. Here are the details:"}
           </Text>
 
           <Section style={orderInfoSection}>
@@ -92,12 +117,11 @@ export default function OrderConfirmationEmail({
             <Section key={index} style={itemSection}>
               <Text style={itemText}>
                 <strong>{item.productName}</strong> - {item.variantName}
-                {item.purchaseType === "SUBSCRIPTION" && item.deliverySchedule && (
-                  <span> • Subscription - {item.deliverySchedule}</span>
-                )}
-                {item.purchaseType === "ONE_TIME" && (
-                  <span> • One-time</span>
-                )}
+                {item.purchaseType === "SUBSCRIPTION" &&
+                  item.deliverySchedule && (
+                    <span> • Subscription - {item.deliverySchedule}</span>
+                  )}
+                {item.purchaseType === "ONE_TIME" && <span> • One-time</span>}
               </Text>
               <Text style={itemText}>
                 Quantity: {item.quantity} × {formatPrice(item.priceInCents)} ={" "}
@@ -219,6 +243,23 @@ const text = {
   fontSize: "16px",
   lineHeight: "26px",
   padding: "0 40px",
+};
+
+const subscriptionBanner = {
+  backgroundColor: "#dcfce7",
+  borderLeft: "4px solid #16a34a",
+  padding: "12px 40px",
+  marginTop: "16px",
+  marginBottom: "24px",
+};
+
+const subscriptionBannerText = {
+  color: "#166534",
+  fontSize: "16px",
+  fontWeight: "600" as const,
+  lineHeight: "24px",
+  margin: "0",
+  textAlign: "center" as const,
 };
 
 const orderInfoSection = {

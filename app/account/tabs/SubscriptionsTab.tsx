@@ -48,7 +48,10 @@ export default function SubscriptionsTab({
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleManageSubscription = async (stripeCustomerId: string, subId: string) => {
+  const handleManageSubscription = async (
+    stripeCustomerId: string,
+    subId: string
+  ) => {
     setLoadingId(subId);
     try {
       const response = await fetch("/api/customer-portal", {
@@ -135,7 +138,10 @@ export default function SubscriptionsTab({
                   {subscription.productName}
                 </CardTitle>
                 <CardDescription className="mt-1 space-y-0">
-                  <span>{subscription.productName}{subscription.quantity > 1 && ` × ${subscription.quantity}`}</span>
+                  <span>
+                    {subscription.productName}
+                    {subscription.quantity > 1 && ` × ${subscription.quantity}`}
+                  </span>
                   {subscription.productDescription && (
                     <span className="block text-xs text-muted-foreground mt-0.5">
                       {subscription.productDescription}
