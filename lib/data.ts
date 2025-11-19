@@ -243,3 +243,302 @@ export async function getAllCategories() {
     throw new Error("Failed to fetch categories.");
   }
 }
+
+// --- USER BEHAVIOR & RECOMMENDATION FUNCTIONS ---
+
+/**
+ * Fetches a user's purchase history with product details.
+ * Returns orders with their items, sorted by most recent first.
+ */
+export async function getUserPurchaseHistory(userId: string) {
+  try {
+    const orders = await prisma.order.findMany({
+      where: {
+        userId: userId,
+        status: {
+          in: ["SHIPPED", "PICKED_UP"], // Only completed orders
+        },
+      },
+      include: {
+        items: {
+          include: {
+            purchaseOption: {
+              include: {
+                variant: {
+                  include: {
+                    product: {
+                      select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                        roastLevel: true,
+                        tastingNotes: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 20, // Limit to last 20 orders
+    });
+
+    return orders as any; // Type assertion for complex nested includes
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch user purchase history.");
+  }
+}
+
+/**
+ * Fetches a user's recently viewed products.
+ * Returns unique products based on PRODUCT_VIEW activities.
+ */
+export async function getUserRecentViews(userId: string, limit: number = 10) {
+  try {
+    const activities = await prisma.userActivity.findMany({
+      where: {
+        userId: userId,
+        activityType: "PRODUCT_VIEW",
+        productId: {
+          not: null,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: limit * 2, // Fetch extra to account for duplicates
+      select: {
+        productId: true,
+        createdAt: true,
+      },
+    });
+
+    // Get unique product IDs (most recent view of each product)
+    const seenIds = new Set<string>();
+    const uniqueProductIds = activities
+      .filter((a) => {
+        if (a.productId && !seenIds.has(a.productId)) {
+          seenIds.add(a.productId);
+          return true;
+        }
+        return false;
+      })
+      .map((a) => a.productId!)
+      .slice(0, limit);
+
+    // Fetch full product details
+    if (uniqueProductIds.length === 0) return [];
+
+    const products = await prisma.product.findMany({
+      where: {
+        id: {
+          in: uniqueProductIds,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        roastLevel: true,
+        tastingNotes: true,
+      },
+    });
+
+    // Preserve order from activities
+    return uniqueProductIds
+      .map((id) => products.find((p) => p.id === id))
+      .filter(Boolean);
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch user recent views.");
+  }
+}
+
+/**
+ * Fetches a user's search history.
+ * Returns unique search queries with their frequency.
+ */
+export async function getUserSearchHistory(userId: string, limit: number = 10) {
+  try {
+    const searches = await prisma.userActivity.findMany({
+      where: {
+        userId: userId,
+        activityType: "SEARCH",
+        searchQuery: {
+          not: null,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        searchQuery: true,
+        createdAt: true,
+      },
+    });
+
+    // Aggregate by query with frequency and most recent date
+    const queryMap = new Map<
+      string,
+      { query: string; count: number; lastSearched: Date }
+    >();
+
+    searches.forEach((s) => {
+      if (!s.searchQuery) return;
+      const existing = queryMap.get(s.searchQuery);
+      if (existing) {
+        existing.count++;
+        if (s.createdAt > existing.lastSearched) {
+          existing.lastSearched = s.createdAt;
+        }
+      } else {
+        queryMap.set(s.searchQuery, {
+          query: s.searchQuery,
+          count: 1,
+          lastSearched: s.createdAt,
+        });
+      }
+    });
+
+    // Convert to array and sort by frequency, then by recency
+    return Array.from(queryMap.values())
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return b.lastSearched.getTime() - a.lastSearched.getTime();
+      })
+      .slice(0, limit);
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch user search history.");
+  }
+}
+
+/**
+ * Aggregates all user behavioral data into a structured context for AI consumption.
+ * This is the primary function used by the recommendation system.
+ */
+export async function getUserRecommendationContext(userId: string) {
+  try {
+    const [purchaseHistory, recentViews, searchHistory] = await Promise.all([
+      getUserPurchaseHistory(userId),
+      getUserRecentViews(userId, 15),
+      getUserSearchHistory(userId, 10),
+    ]);
+
+    // Extract purchased products
+    const purchasedProducts = purchaseHistory.flatMap((order: any) =>
+      order.items.map((item: any) => ({
+        name: item.purchaseOption.variant.product.name,
+        roastLevel: item.purchaseOption.variant.product.roastLevel,
+        tastingNotes: item.purchaseOption.variant.product.tastingNotes,
+        purchasedAt: order.createdAt,
+      }))
+    );
+
+    // Analyze preferences
+    const roastLevelCounts = new Map<string, number>();
+    const tastingNotesCounts = new Map<string, number>();
+
+    purchasedProducts.forEach((p: any) => {
+      roastLevelCounts.set(p.roastLevel, (roastLevelCounts.get(p.roastLevel) || 0) + 1);
+      p.tastingNotes.forEach((note: string) => {
+        tastingNotesCounts.set(note, (tastingNotesCounts.get(note) || 0) + 1);
+      });
+    });
+
+    const preferredRoastLevel = Array.from(roastLevelCounts.entries())
+      .sort((a, b) => b[1] - a[1])[0]?.[0];
+
+    const topTastingNotes = Array.from(tastingNotesCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map((entry) => entry[0]);
+
+    return {
+      userId,
+      purchaseHistory: {
+        totalOrders: purchaseHistory.length,
+        products: purchasedProducts,
+        preferredRoastLevel,
+        topTastingNotes,
+      },
+      recentViews: recentViews.map((p) => ({
+        name: p!.name,
+        slug: p!.slug,
+        roastLevel: p!.roastLevel,
+        tastingNotes: p!.tastingNotes,
+      })),
+      searchHistory: searchHistory.map((s) => ({
+        query: s.query,
+        frequency: s.count,
+      })),
+    };
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch user recommendation context.");
+  }
+}
+
+/**
+ * Fetches trending products based on UserActivity analytics.
+ * Used for anonymous users or as fallback recommendations.
+ */
+export async function getTrendingProducts(limit: number = 6, daysBack: number = 7) {
+  try {
+    const since = new Date();
+    since.setDate(since.getDate() - daysBack);
+
+    // Get product view counts from the last N days
+    const productViews = await prisma.userActivity.groupBy({
+      by: ["productId"],
+      where: {
+        activityType: "PRODUCT_VIEW",
+        productId: {
+          not: null,
+        },
+        createdAt: {
+          gte: since,
+        },
+      },
+      _count: {
+        productId: true,
+      },
+      orderBy: {
+        _count: {
+          productId: "desc",
+        },
+      },
+      take: limit,
+    });
+
+    const productIds = (productViews as Array<{ productId: string | null }>)
+      .map((pv) => pv.productId)
+      .filter((id): id is string => id !== null);
+
+    if (productIds.length === 0) return [];
+
+    // Fetch full product details
+    const products = await prisma.product.findMany({
+      where: {
+        id: {
+          in: productIds,
+        },
+      },
+      include: productCardIncludes,
+    });
+
+    // Preserve order from analytics
+    return productIds
+      .map((id) => products.find((p) => p.id === id))
+      .filter(Boolean);
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch trending products.");
+  }
+}
