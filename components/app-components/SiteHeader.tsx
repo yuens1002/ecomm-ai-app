@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { ThemeSwitcher } from "@components/app-components/ThemeSwitcher";
 import { ShoppingCart } from "@components/app-components/ShoppingCart";
 import { UserMenu } from "@components/app-components/UserMenu";
 import { Category } from "@/lib/types";
-import { ChevronDown, Menu, Home, User } from "lucide-react";
+import { ChevronDown, Menu, Home, User, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +23,15 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 interface SiteHeaderProps {
@@ -43,6 +53,19 @@ export default function SiteHeader({
   user,
   isAdmin,
 }: SiteHeaderProps) {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setIsSearchOpen(false);
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery("");
+    }
+  }
+
   return (
     <header className="bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md">
       <div className="container mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
@@ -89,6 +112,35 @@ export default function SiteHeader({
 
         {/* Right Side Controls */}
         <div className="flex items-center space-x-4">
+          {/* Search Dialog */}
+          <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="hidden sm:flex">
+                <Search className="h-5 w-5" />
+                <span className="sr-only">Search products</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Search Products</DialogTitle>
+                <DialogDescription>
+                  Search for your favorite specialty coffees
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSearch} className="relative mt-4">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Try 'Ethiopian' or 'fruity'..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                  autoFocus
+                />
+              </form>
+            </DialogContent>
+          </Dialog>
+
           <ThemeSwitcher />
           <ShoppingCart />
           {user ? (
@@ -127,7 +179,7 @@ export default function SiteHeader({
                     and coffee categories
                   </SheetDescription>
                 </SheetHeader>
-                <div className="mt-4">
+                <div className="mt-4 flex gap-2">
                   <SheetClose asChild>
                     <Link
                       href="/"
@@ -136,6 +188,17 @@ export default function SiteHeader({
                       <Home className="w-5 h-5" />
                       <span className="text-[10px] uppercase tracking-wide font-medium">
                         Home
+                      </span>
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link
+                      href="/search"
+                      className="inline-flex flex-col items-center justify-center gap-1 w-12 rounded-lg text-text-base hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary py-2"
+                    >
+                      <Search className="w-5 h-5" />
+                      <span className="text-[10px] uppercase tracking-wide font-medium">
+                        Search
                       </span>
                     </Link>
                   </SheetClose>
