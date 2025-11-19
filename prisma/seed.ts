@@ -6,10 +6,9 @@ import { PrismaClient, PurchaseType, RoastLevel, BillingInterval } from "@prisma
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log(`Start seeding ...`);
+  console.log(`Start seeding with 30 specialty coffee products...`);
 
   // --- 1. Create Categories ---
-  // We use upsert to avoid creating duplicates
   const catBlends = await prisma.category.upsert({
     where: { slug: "blends" },
     update: {},
@@ -46,36 +45,30 @@ async function main() {
     create: { name: "Micro Lot", slug: "micro-lot" },
   });
 
-  // NEW: Added the Vietnam category from your previous seed file
-  const catVietnam = await prisma.category.upsert({
-    where: { slug: "vietnam" },
-    update: {},
-    create: { name: "Vietnam", slug: "vietnam" },
-  });
-
   console.log("Categories created/verified.");
 
-  // --- 2. Define Products and Links ---
-
+  // --- 2. Define 30 Products ---
   const coffeeData = [
-    // 1. Death Valley Espresso
+    // === ESPRESSO & DARK ROASTS (6 products) ===
+    
+    // 1. Midnight Espresso Blend
     {
       product: {
-        name: "Death Valley Espresso",
-        slug: "death-valley-espresso",
+        name: "Midnight Espresso Blend",
+        slug: "midnight-espresso-blend",
         description:
-          "A rich, full-bodied espresso blend. Sweet and chocolaty, with notes of baking chocolate, orange zest, and brown sugar. The foundation of our cafe drinks.",
-        origin: ["Ethiopia", "Colombia", "Indonesia"],
-        tastingNotes: ["Baking Chocolate", "Orange Zest", "Brown Sugar"],
-        isOrganic: true,
+          "Our signature espresso blend crafted for intense flavor and creamy body. A harmonious mix of Brazilian, Colombian, and Indonesian beans creates layers of dark chocolate, toasted hazelnut, and caramelized sugar. Perfect for straight shots or milk-based drinks.",
+        origin: ["Brazil", "Colombia", "Indonesia"],
+        tastingNotes: ["Dark Chocolate", "Toasted Hazelnut", "Caramel"],
+        isOrganic: false,
         roastLevel: RoastLevel.DARK,
         isFeatured: true,
         featuredOrder: 1,
         images: {
           create: [
             {
-              url: "https://placehold.co/600x400/3D2C1D/FFFFFF.png?text=Death+Valley",
-              altText: "Death Valley Espresso bag",
+              url: "https://placehold.co/600x400/1A1110/FFFFFF.png?text=Midnight+Espresso",
+              altText: "Midnight Espresso Blend bag",
               order: 1,
             },
           ],
@@ -85,7 +78,7 @@ async function main() {
             {
               name: "12oz Bag",
               weightInGrams: 340,
-              stockQuantity: 100,
+              stockQuantity: 150,
               purchaseOptions: {
                 create: [
                   { type: PurchaseType.ONE_TIME, priceInCents: 2200 },
@@ -93,13 +86,6 @@ async function main() {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 2090,
                     discountMessage: "Save 5%",
-                    billingInterval: BillingInterval.WEEK,
-                    billingIntervalCount: 1,
-                  },
-                  {
-                    type: PurchaseType.SUBSCRIPTION,
-                    priceInCents: 1980,
-                    discountMessage: "Save 10%",
                     billingInterval: BillingInterval.WEEK,
                     billingIntervalCount: 2,
                   },
@@ -116,21 +102,14 @@ async function main() {
             {
               name: "2lb Bag",
               weightInGrams: 907,
-              stockQuantity: 50,
+              stockQuantity: 75,
               purchaseOptions: {
                 create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 5800 },
+                  { type: PurchaseType.ONE_TIME, priceInCents: 5600 },
                   {
                     type: PurchaseType.SUBSCRIPTION,
-                    priceInCents: 5510,
+                    priceInCents: 5320,
                     discountMessage: "Save 5%",
-                    billingInterval: BillingInterval.WEEK,
-                    billingIntervalCount: 1,
-                  },
-                  {
-                    type: PurchaseType.SUBSCRIPTION,
-                    priceInCents: 5220,
-                    discountMessage: "Save 10%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
                   },
@@ -146,24 +125,23 @@ async function main() {
       ],
     },
 
-    // 2. Vietnam Lam Dong Peaberry
+    // 2. Italian Roast
     {
       product: {
-        name: "Vietnam Lam Dong Peaberry",
-        slug: "vietnam-lam-dong-peaberry",
+        name: "Italian Roast",
+        slug: "italian-roast",
         description:
-          "A bright, clean peaberry from the highlands of Vietnam. Features a smooth body with hints of bright citrus and spice.",
-        origin: ["Vietnam"],
-        tastingNotes: ["Bright Citrus", "Smooth Body", "Hint of Spice"],
+          "Bold, smoky, and intensely aromatic. This traditional dark roast delivers notes of bittersweet chocolate, roasted almonds, and a hint of smokiness. Ideal for those who love a powerful, full-bodied cup.",
+        origin: ["Brazil", "Guatemala"],
+        tastingNotes: ["Bittersweet Chocolate", "Roasted Almond", "Smoky"],
         isOrganic: false,
-        roastLevel: RoastLevel.LIGHT,
-        isFeatured: true,
-        featuredOrder: 2,
+        roastLevel: RoastLevel.DARK,
+        isFeatured: false,
         images: {
           create: [
             {
-              url: "https://placehold.co/600x400/8B4513/FFFFFF.png?text=Vietnam+Peaberry",
-              altText: "Vietnam Peaberry bag",
+              url: "https://placehold.co/600x400/2B1810/FFFFFF.png?text=Italian+Roast",
+              altText: "Italian Roast bag",
               order: 1,
             },
           ],
@@ -173,9 +151,53 @@ async function main() {
             {
               name: "12oz Bag",
               weightInGrams: 340,
-              stockQuantity: 50,
+              stockQuantity: 120,
               purchaseOptions: {
-                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2400 }],
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2100 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catBlends.id, isPrimary: true },
+        { categoryId: catDark.id, isPrimary: false },
+      ],
+    },
+
+    // 3. Sumatra Mandheling
+    {
+      product: {
+        name: "Sumatra Mandheling",
+        slug: "sumatra-mandheling",
+        description:
+          "A classic Indonesian single origin with a full body and low acidity. Earthy, herbaceous notes combine with dark chocolate and cedar for a distinctively complex cup.",
+        origin: ["Indonesia"],
+        tastingNotes: ["Earthy", "Dark Chocolate", "Cedar"],
+        isOrganic: true,
+        roastLevel: RoastLevel.DARK,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/3A2416/FFFFFF.png?text=Sumatra",
+              altText: "Sumatra Mandheling bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 85,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2400 },
+                ],
               },
             },
           ],
@@ -183,30 +205,27 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
-        { categoryId: catMicroLot.id, isPrimary: false },
-        { categoryId: catVietnam.id, isPrimary: false }, // Also add to Vietnam category
+        { categoryId: catDark.id, isPrimary: false },
       ],
     },
 
-    // 3. Ethiopian Yirgacheffe
+    // 4. French Roast
     {
       product: {
-        name: "Ethiopian Yirgacheffe",
-        slug: "ethiopian-yirgacheffe",
+        name: "French Roast",
+        slug: "french-roast",
         description:
-          "A classic from Ethiopia, known for its delicate, tea-like body and bright, floral and lemon notes. A favorite for pour-over lovers.",
-        origin: ["Ethiopia"],
-        tastingNotes: ["Floral", "Lemon", "Black Tea"],
-        isOrganic: true,
-        roastLevel: RoastLevel.LIGHT,
-        isFeatured: true,
-        featuredOrder: 3,
+          "A deeply roasted blend with intense, bold flavor. Pronounced notes of dark chocolate, charred wood, and a velvety smooth finish. For those who crave the darkest roasts.",
+        origin: ["Colombia", "Brazil"],
+        tastingNotes: ["Dark Chocolate", "Charred Wood", "Smooth"],
+        isOrganic: false,
+        roastLevel: RoastLevel.DARK,
+        isFeatured: false,
         images: {
           create: [
             {
-              url: "https://placehold.co/600x400/A0522D/FFFFFF.png?text=Yirgacheffe",
-              altText: "Ethiopian Yirgacheffe bag",
+              url: "https://placehold.co/600x400/1C1410/FFFFFF.png?text=French+Roast",
+              altText: "French Roast bag",
               order: 1,
             },
           ],
@@ -216,7 +235,280 @@ async function main() {
             {
               name: "12oz Bag",
               weightInGrams: 340,
-              stockQuantity: 75,
+              stockQuantity: 95,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2050 },
+                ],
+              },
+            },
+            {
+              name: "5lb Bulk Bag",
+              weightInGrams: 2268,
+              stockQuantity: 25,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 12500 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catBlends.id, isPrimary: true },
+        { categoryId: catDark.id, isPrimary: false },
+      ],
+    },
+
+    // 5. Papua New Guinea Sigri Estate
+    {
+      product: {
+        name: "Papua New Guinea Sigri Estate",
+        slug: "papua-new-guinea-sigri",
+        description:
+          "A rare gem from the Sigri Estate in PNG's highlands. Full-bodied with rich, earthy undertones, complemented by dark berry and cocoa notes. A sophisticated dark roast for true coffee connoisseurs.",
+        origin: ["Papua New Guinea"],
+        tastingNotes: ["Dark Berry", "Cocoa", "Earthy"],
+        isOrganic: false,
+        roastLevel: RoastLevel.DARK,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/3D2820/FFFFFF.png?text=PNG+Sigri",
+              altText: "Papua New Guinea Sigri bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 45,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2650 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catDark.id, isPrimary: false },
+        { categoryId: catMicroLot.id, isPrimary: false },
+      ],
+    },
+
+    // 6. Decaf Colombian
+    {
+      product: {
+        name: "Decaf Colombian",
+        slug: "decaf-colombian",
+        description:
+          "All the flavor, none of the caffeine. Swiss water processed Colombian beans deliver smooth, balanced notes of milk chocolate, toasted nuts, and mild caramel sweetness.",
+        origin: ["Colombia"],
+        tastingNotes: ["Milk Chocolate", "Toasted Nuts", "Caramel"],
+        isOrganic: false,
+        roastLevel: RoastLevel.DARK,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/4A3426/FFFFFF.png?text=Decaf+Colombian",
+              altText: "Decaf Colombian bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 110,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2300 },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 2185,
+                    discountMessage: "Save 5%",
+                    billingInterval: BillingInterval.MONTH,
+                    billingIntervalCount: 1,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catDark.id, isPrimary: false },
+      ],
+    },
+
+    // === MEDIUM ROASTS (10 products) ===
+
+    // 7. Breakfast Blend
+    {
+      product: {
+        name: "Breakfast Blend",
+        slug: "breakfast-blend",
+        description:
+          "Start your day right with this perfectly balanced blend. Smooth and approachable, with notes of honey, roasted almonds, and a bright citrus finish. The ideal morning companion.",
+        origin: ["Colombia", "Guatemala", "Costa Rica"],
+        tastingNotes: ["Honey", "Roasted Almond", "Citrus"],
+        isOrganic: false,
+        roastLevel: RoastLevel.MEDIUM,
+        isFeatured: true,
+        featuredOrder: 2,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/8B5A3C/FFFFFF.png?text=Breakfast+Blend",
+              altText: "Breakfast Blend bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 180,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 1950 },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 1850,
+                    discountMessage: "Save 5%",
+                    billingInterval: BillingInterval.WEEK,
+                    billingIntervalCount: 1,
+                  },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 1755,
+                    discountMessage: "Save 10%",
+                    billingInterval: BillingInterval.MONTH,
+                    billingIntervalCount: 1,
+                  },
+                ],
+              },
+            },
+            {
+              name: "2lb Bag",
+              weightInGrams: 907,
+              stockQuantity: 90,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 5000 },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 4750,
+                    discountMessage: "Save 5%",
+                    billingInterval: BillingInterval.MONTH,
+                    billingIntervalCount: 1,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catBlends.id, isPrimary: true },
+        { categoryId: catMedium.id, isPrimary: false },
+      ],
+    },
+
+    // 8. Colombian Supremo
+    {
+      product: {
+        name: "Colombian Supremo",
+        slug: "colombian-supremo",
+        description:
+          "A classic Colombian single origin showcasing the best of what this renowned region offers. Well-balanced with medium body, featuring notes of caramel, cocoa, and a pleasant, lingering sweetness.",
+        origin: ["Colombia"],
+        tastingNotes: ["Caramel", "Cocoa", "Sweet"],
+        isOrganic: false,
+        roastLevel: RoastLevel.MEDIUM,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/7A5230/FFFFFF.png?text=Colombian",
+              altText: "Colombian Supremo bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 130,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2100 },
+                ],
+              },
+            },
+            {
+              name: "2lb Bag",
+              weightInGrams: 907,
+              stockQuantity: 65,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 5400 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catMedium.id, isPrimary: false },
+      ],
+    },
+
+    // 9. Guatemalan Antigua
+    {
+      product: {
+        name: "Guatemalan Antigua",
+        slug: "guatemalan-antigua",
+        description:
+          "Grown in the volcanic soil of Antigua, this coffee offers exceptional complexity. Rich body with notes of dark fruit, milk chocolate, and a subtle smokiness that lingers.",
+        origin: ["Guatemala"],
+        tastingNotes: ["Dark Fruit", "Milk Chocolate", "Smoky"],
+        isOrganic: true,
+        roastLevel: RoastLevel.MEDIUM,
+        isFeatured: true,
+        featuredOrder: 3,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/6B4423/FFFFFF.png?text=Guatemala",
+              altText: "Guatemalan Antigua bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 100,
               purchaseOptions: {
                 create: [
                   { type: PurchaseType.ONE_TIME, priceInCents: 2350 },
@@ -224,13 +516,6 @@ async function main() {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 2230,
                     discountMessage: "Save 5%",
-                    billingInterval: BillingInterval.WEEK,
-                    billingIntervalCount: 1,
-                  },
-                  {
-                    type: PurchaseType.SUBSCRIPTION,
-                    priceInCents: 2115,
-                    discountMessage: "Save 10%",
                     billingInterval: BillingInterval.WEEK,
                     billingIntervalCount: 2,
                   },
@@ -249,116 +534,27 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
-      ],
-    },
-
-    // 4. Colombian Supremo
-    {
-      product: {
-        name: "Colombian Supremo",
-        slug: "colombian-supremo",
-        description:
-          "A well-balanced and smooth coffee, perfect for any time of day. Features notes of caramel, nutty undertones, and a mild, pleasant acidity.",
-        origin: ["Colombia"],
-        tastingNotes: ["Caramel", "Nutty", "Mild Acidity"],
-        isOrganic: false,
-        roastLevel: RoastLevel.MEDIUM,
-        isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/D2691E/FFFFFF.png?text=Colombian+Supremo",
-              altText: "Colombian Supremo bag",
-              order: 1,
-            },
-          ],
-        },
-        variants: {
-          create: [
-            {
-              name: "12oz Bag",
-              weightInGrams: 340,
-              stockQuantity: 80,
-              purchaseOptions: {
-                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2100 }],
-              },
-            },
-            {
-              name: "2lb Bag",
-              weightInGrams: 907,
-              stockQuantity: 20,
-              purchaseOptions: {
-                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 5500 }],
-              },
-            },
-          ],
-        },
-      },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
         { categoryId: catMedium.id, isPrimary: false },
       ],
     },
 
-    // 5. Sumatra Mandheling
+    // 10. Costa Rica Tarrazú
     {
       product: {
-        name: "Sumatra Mandheling",
-        slug: "sumatra-mandheling",
+        name: "Costa Rica Tarrazú",
+        slug: "costa-rica-tarrazu",
         description:
-          "A classic Indonesian coffee. Full-bodied, earthy, and low in acidity, with notes of dark chocolate and cedar.",
-        origin: ["Indonesia"],
-        tastingNotes: ["Earthy", "Dark Chocolate", "Cedar"],
-        isOrganic: true,
-        roastLevel: RoastLevel.DARK,
+          "From the famous Tarrazú region, this coffee is clean, bright, and perfectly balanced. Expect flavors of brown sugar, stone fruit, and a crisp, refreshing finish.",
+        origin: ["Costa Rica"],
+        tastingNotes: ["Brown Sugar", "Stone Fruit", "Crisp"],
+        isOrganic: false,
+        roastLevel: RoastLevel.MEDIUM,
         isFeatured: false,
         images: {
           create: [
             {
-              url: "https://placehold.co/600x400/5B3A29/FFFFFF.png?text=Sumatra",
-              altText: "Sumatra Mandheling bag",
-              order: 1,
-            },
-          ],
-        },
-        variants: {
-          create: [
-            {
-              name: "12oz Bag",
-              weightInGrams: 340,
-              stockQuantity: 60,
-              purchaseOptions: {
-                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2250 }],
-              },
-            },
-          ],
-        },
-      },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
-      ],
-    },
-
-    // 6. Guatemalan Antigua
-    {
-      product: {
-        name: "Guatemalan Antigua",
-        slug: "guatemalan-antigua",
-        description:
-          "A rich, complex coffee with a velvety body. Notes of milk chocolate, bright citrus, and a hint of spice.",
-        origin: ["Guatemala"],
-        tastingNotes: ["Milk Chocolate", "Citrus", "Spice"],
-        isOrganic: false,
-        roastLevel: RoastLevel.MEDIUM,
-        isFeatured: true,
-        featuredOrder: 4,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/6F4E37/FFFFFF.png?text=Guatemala",
-              altText: "Guatemalan Antigua bag",
+              url: "https://placehold.co/600x400/8A5C3A/FFFFFF.png?text=Costa+Rica",
+              altText: "Costa Rica Tarrazú bag",
               order: 1,
             },
           ],
@@ -371,25 +567,189 @@ async function main() {
               stockQuantity: 90,
               purchaseOptions: {
                 create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2250 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catMedium.id, isPrimary: false },
+      ],
+    },
+
+    // 11. Brazil Santos
+    {
+      product: {
+        name: "Brazil Santos",
+        slug: "brazil-santos",
+        description:
+          "A smooth, easy-drinking Brazilian coffee with low acidity. Nutty, chocolaty, and slightly sweet—perfect for everyday drinking and cold brew applications.",
+        origin: ["Brazil"],
+        tastingNotes: ["Nutty", "Chocolate", "Low Acidity"],
+        isOrganic: false,
+        roastLevel: RoastLevel.MEDIUM,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/9B6B47/FFFFFF.png?text=Brazil+Santos",
+              altText: "Brazil Santos bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 140,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 1950 },
+                ],
+              },
+            },
+            {
+              name: "5lb Bulk Bag",
+              weightInGrams: 2268,
+              stockQuantity: 40,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 11500 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catMedium.id, isPrimary: false },
+      ],
+    },
+
+    // 12. Honduras Marcala
+    {
+      product: {
+        name: "Honduras Marcala",
+        slug: "honduras-marcala",
+        description:
+          "A delightful Honduran coffee from the Marcala region. Balanced and sweet with notes of toffee, red apple, and a hint of citrus zest.",
+        origin: ["Honduras"],
+        tastingNotes: ["Toffee", "Red Apple", "Citrus Zest"],
+        isOrganic: false,
+        roastLevel: RoastLevel.MEDIUM,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/7E5835/FFFFFF.png?text=Honduras",
+              altText: "Honduras Marcala bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 70,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2150 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catMedium.id, isPrimary: false },
+      ],
+    },
+
+    // 13. Mexican Altura
+    {
+      product: {
+        name: "Mexican Altura",
+        slug: "mexican-altura",
+        description:
+          "From Mexico's high-altitude regions, this coffee delivers a light body with bright acidity. Features notes of cocoa, roasted nuts, and a gentle spice finish.",
+        origin: ["Mexico"],
+        tastingNotes: ["Cocoa", "Roasted Nuts", "Spice"],
+        isOrganic: true,
+        roastLevel: RoastLevel.MEDIUM,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/8E6240/FFFFFF.png?text=Mexican+Altura",
+              altText: "Mexican Altura bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 80,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2200 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catMedium.id, isPrimary: false },
+      ],
+    },
+
+    // 14. Peruvian Organic
+    {
+      product: {
+        name: "Peruvian Organic",
+        slug: "peruvian-organic",
+        description:
+          "Certified organic beans from Peru's finest estates. Smooth and mellow with notes of vanilla, caramel, and a subtle floral undertone.",
+        origin: ["Peru"],
+        tastingNotes: ["Vanilla", "Caramel", "Floral"],
+        isOrganic: true,
+        roastLevel: RoastLevel.MEDIUM,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/8A5E3C/FFFFFF.png?text=Peruvian+Organic",
+              altText: "Peruvian Organic bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 95,
+              purchaseOptions: {
+                create: [
                   { type: PurchaseType.ONE_TIME, priceInCents: 2300 },
                   {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 2185,
                     discountMessage: "Save 5%",
-                    billingInterval: BillingInterval.WEEK,
-                    billingIntervalCount: 1,
-                  },
-                  {
-                    type: PurchaseType.SUBSCRIPTION,
-                    priceInCents: 2070,
-                    discountMessage: "Save 10%",
-                    billingInterval: BillingInterval.WEEK,
-                    billingIntervalCount: 2,
-                  },
-                  {
-                    type: PurchaseType.SUBSCRIPTION,
-                    priceInCents: 2070,
-                    discountMessage: "Save 10%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
                   },
@@ -405,64 +765,23 @@ async function main() {
       ],
     },
 
-    // 7. Kenya AA
+    // 15. Nicaraguan SHG
     {
       product: {
-        name: "Kenya AA",
-        slug: "kenya-aa",
+        name: "Nicaraguan SHG",
+        slug: "nicaraguan-shg",
         description:
-          "Incredibly bright and vibrant, with a wine-like acidity. Expect bold notes of blackcurrant, grapefruit, and a syrupy body.",
-        origin: ["Kenya"],
-        tastingNotes: ["Blackcurrant", "Grapefruit", "Wine-like"],
-        isOrganic: false,
-        roastLevel: RoastLevel.LIGHT,
-        isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/4A2C2A/FFFFFF.png?text=Kenya+AA",
-              altText: "Kenya AA bag",
-              order: 1,
-            },
-          ],
-        },
-        variants: {
-          create: [
-            {
-              name: "12oz Bag",
-              weightInGrams: 340,
-              stockQuantity: 40,
-              purchaseOptions: {
-                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2500 }],
-              },
-            },
-          ],
-        },
-      },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
-        { categoryId: catMicroLot.id, isPrimary: false },
-      ],
-    },
-
-    // 8. Costa Rica Tarrazú
-    {
-      product: {
-        name: "Costa Rica Tarrazú",
-        slug: "costa-rica-tarrazu",
-        description:
-          "A classic Costa Rican coffee, well-balanced and clean. Features notes of brown sugar, dried fruit, and a bright, crisp finish.",
-        origin: ["Costa Rica"],
-        tastingNotes: ["Brown Sugar", "Dried Fruit", "Crisp Finish"],
+          "Strictly High Grown beans from Nicaragua's mountainous regions. Balanced cup with notes of milk chocolate, orange marmalade, and a smooth, creamy finish.",
+        origin: ["Nicaragua"],
+        tastingNotes: ["Milk Chocolate", "Orange Marmalade", "Creamy"],
         isOrganic: false,
         roastLevel: RoastLevel.MEDIUM,
         isFeatured: false,
         images: {
           create: [
             {
-              url: "https://placehold.co/600x400/7B5E49/FFFFFF.png?text=Costa+Rica",
-              altText: "Costa Rica Tarrazú bag",
+              url: "https://placehold.co/600x400/7C5638/FFFFFF.png?text=Nicaragua",
+              altText: "Nicaraguan SHG bag",
               order: 1,
             },
           ],
@@ -472,9 +791,11 @@ async function main() {
             {
               name: "12oz Bag",
               weightInGrams: 340,
-              stockQuantity: 55,
+              stockQuantity: 75,
               purchaseOptions: {
-                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2200 }],
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2250 },
+                ],
               },
             },
           ],
@@ -486,23 +807,69 @@ async function main() {
       ],
     },
 
-    // 9. Brazil Santos
+    // 16. El Salvador Pacamara
     {
       product: {
-        name: "Brazil Santos",
-        slug: "brazil-santos",
+        name: "El Salvador Pacamara",
+        slug: "el-salvador-pacamara",
         description:
-          "A smooth, mild, and nutty coffee. Very low acidity, making it a crowd-pleaser and a great base for espresso blends.",
-        origin: ["Brazil"],
-        tastingNotes: ["Nutty", "Mild", "Low Acidity"],
+          "A unique hybrid variety from El Salvador. Large beans produce a complex cup with notes of tropical fruit, honey, and a wine-like acidity.",
+        origin: ["El Salvador"],
+        tastingNotes: ["Tropical Fruit", "Honey", "Wine-like"],
         isOrganic: false,
         roastLevel: RoastLevel.MEDIUM,
         isFeatured: false,
         images: {
           create: [
             {
-              url: "https://placehold.co/600x400/967259/FFFFFF.png?text=Brazil+Santos",
-              altText: "Brazil Santos bag",
+              url: "https://placehold.co/600x400/8D6142/FFFFFF.png?text=El+Salvador",
+              altText: "El Salvador Pacamara bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 50,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2550 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catMedium.id, isPrimary: false },
+        { categoryId: catMicroLot.id, isPrimary: false },
+      ],
+    },
+
+    // === LIGHT ROASTS (14 products) ===
+
+    // 17. Ethiopian Yirgacheffe
+    {
+      product: {
+        name: "Ethiopian Yirgacheffe",
+        slug: "ethiopian-yirgacheffe",
+        description:
+          "The crown jewel of Ethiopian coffees. Delicate and tea-like with pronounced floral notes, bright lemon acidity, and hints of bergamot. A must-try for light roast enthusiasts.",
+        origin: ["Ethiopia"],
+        tastingNotes: ["Floral", "Lemon", "Bergamot"],
+        isOrganic: true,
+        roastLevel: RoastLevel.LIGHT,
+        isFeatured: true,
+        featuredOrder: 4,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/B8956A/FFFFFF.png?text=Yirgacheffe",
+              altText: "Ethiopian Yirgacheffe bag",
               order: 1,
             },
           ],
@@ -514,7 +881,23 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 110,
               purchaseOptions: {
-                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2000 }],
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2450 },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 2330,
+                    discountMessage: "Save 5%",
+                    billingInterval: BillingInterval.WEEK,
+                    billingIntervalCount: 2,
+                  },
+                  {
+                    type: PurchaseType.SUBSCRIPTION,
+                    priceInCents: 2205,
+                    discountMessage: "Save 10%",
+                    billingInterval: BillingInterval.MONTH,
+                    billingIntervalCount: 1,
+                  },
+                ],
               },
             },
           ],
@@ -522,28 +905,28 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
+        { categoryId: catLight.id, isPrimary: false },
       ],
     },
 
-    // 10. Vietnam Dalat (Anaerobic)
+    // 18. Kenya AA
     {
       product: {
-        name: "Vietnam Dalat (Anaerobic)",
-        slug: "vietnam-dalat-anaerobic",
+        name: "Kenya AA",
+        slug: "kenya-aa",
         description:
-          "An experimental, modern coffee from Vietnam. This anaerobic processed bean has unique, wine-like fruit notes and a complex profile.",
-        origin: ["Vietnam"],
-        tastingNotes: ["Red Wine", "Funky Fruit", "Complex"],
-        isOrganic: true,
+          "Bold, bright, and bursting with flavor. This top-grade Kenyan coffee delivers intense notes of blackcurrant, grapefruit, and tomato sweetness with a syrupy body.",
+        origin: ["Kenya"],
+        tastingNotes: ["Blackcurrant", "Grapefruit", "Tomato"],
+        isOrganic: false,
         roastLevel: RoastLevel.LIGHT,
         isFeatured: true,
-        featuredOrder: 5, // Showcasing a second Vietnamese coffee
+        featuredOrder: 5,
         images: {
           create: [
             {
-              url: "https://placehold.co/600x400/6B2B3A/FFFFFF.png?text=Vietnam+Dalat",
-              altText: "Vietnam Dalat Anaerobic bag",
+              url: "https://placehold.co/600x400/A67C52/FFFFFF.png?text=Kenya+AA",
+              altText: "Kenya AA bag",
               order: 1,
             },
           ],
@@ -553,9 +936,11 @@ async function main() {
             {
               name: "12oz Bag",
               weightInGrams: 340,
-              stockQuantity: 30,
+              stockQuantity: 85,
               purchaseOptions: {
-                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2600 }],
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2650 },
+                ],
               },
             },
           ],
@@ -568,23 +953,237 @@ async function main() {
       ],
     },
 
-    // 11. Vietnam Min Mt. Starmaya (Washed)
+    // 19. Ethiopian Sidamo
     {
       product: {
-        name: "Vietnam Min Mt. Starmaya (Washed)",
-        slug: "min-mt-starmaya-washed",
+        name: "Ethiopian Sidamo",
+        slug: "ethiopian-sidamo",
         description:
-          "A young variety coffee from Vietnam. This fully washed bean has stone fruits, almond notes with a complex profile.",
-        origin: ["Vietnam"],
-        tastingNotes: ["Stone Fruit", "Almond", "Complex"],
+          "From the birthplace of coffee, this Sidamo offers a complex profile with notes of blueberry, jasmine, and dark chocolate. Sweet and aromatic.",
+        origin: ["Ethiopia"],
+        tastingNotes: ["Blueberry", "Jasmine", "Dark Chocolate"],
+        isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/B89968/FFFFFF.png?text=Sidamo",
+              altText: "Ethiopian Sidamo bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 90,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2400 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catLight.id, isPrimary: false },
+      ],
+    },
+
+    // 20. Rwanda Bourbon
+    {
+      product: {
+        name: "Rwanda Bourbon",
+        slug: "rwanda-bourbon",
+        description:
+          "An exceptional African coffee with a silky body. Features bright notes of red fruit, caramel, and a hint of floral sweetness.",
+        origin: ["Rwanda"],
+        tastingNotes: ["Red Fruit", "Caramel", "Floral"],
         isOrganic: true,
         roastLevel: RoastLevel.LIGHT,
         isFeatured: false,
         images: {
           create: [
             {
-              url: "https://placehold.co/600x400/6B2B3A/FFFFFF.png?text=Min+Mt+Starmaya",
-              altText: "Vietnam Min Mt. Starmaya bag",
+              url: "https://placehold.co/600x400/AA7F5A/FFFFFF.png?text=Rwanda",
+              altText: "Rwanda Bourbon bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 60,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2500 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catLight.id, isPrimary: false },
+        { categoryId: catMicroLot.id, isPrimary: false },
+      ],
+    },
+
+    // 21. Burundi Kayanza
+    {
+      product: {
+        name: "Burundi Kayanza",
+        slug: "burundi-kayanza",
+        description:
+          "A gem from Burundi's Kayanza region. Clean and sweet with notes of cherry, cocoa nibs, and a pleasant tangy finish.",
+        origin: ["Burundi"],
+        tastingNotes: ["Cherry", "Cocoa Nibs", "Tangy"],
+        isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/A8825E/FFFFFF.png?text=Burundi",
+              altText: "Burundi Kayanza bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 55,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2450 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catLight.id, isPrimary: false },
+        { categoryId: catMicroLot.id, isPrimary: false },
+      ],
+    },
+
+    // 22. Tanzania Peaberry
+    {
+      product: {
+        name: "Tanzania Peaberry",
+        slug: "tanzania-peaberry",
+        description:
+          "Rare peaberry beans from the slopes of Mount Kilimanjaro. Bright acidity with notes of black currant, citrus, and a winey complexity.",
+        origin: ["Tanzania"],
+        tastingNotes: ["Black Currant", "Citrus", "Winey"],
+        isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/AF8660/FFFFFF.png?text=Tanzania",
+              altText: "Tanzania Peaberry bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 45,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2600 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catLight.id, isPrimary: false },
+        { categoryId: catMicroLot.id, isPrimary: false },
+      ],
+    },
+
+    // 23. Panama Geisha
+    {
+      product: {
+        name: "Panama Geisha",
+        slug: "panama-geisha",
+        description:
+          "One of the world's most sought-after coffees. Exquisite and delicate with pronounced jasmine, tropical fruit, and honey notes. A truly luxurious experience.",
+        origin: ["Panama"],
+        tastingNotes: ["Jasmine", "Tropical Fruit", "Honey"],
+        isOrganic: true,
+        roastLevel: RoastLevel.LIGHT,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/C9A676/FFFFFF.png?text=Panama+Geisha",
+              altText: "Panama Geisha bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 25,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 4500 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catLight.id, isPrimary: false },
+        { categoryId: catMicroLot.id, isPrimary: false },
+      ],
+    },
+
+    // 24. Colombia Geisha
+    {
+      product: {
+        name: "Colombia Geisha",
+        slug: "colombia-geisha",
+        description:
+          "An exceptional Geisha variety grown in Colombia. Floral, sweet, and complex with notes of peach, lavender, and brown sugar.",
+        origin: ["Colombia"],
+        tastingNotes: ["Peach", "Lavender", "Brown Sugar"],
+        isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/BDA279/FFFFFF.png?text=Colombia+Geisha",
+              altText: "Colombia Geisha bag",
               order: 1,
             },
           ],
@@ -596,7 +1195,266 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 30,
               purchaseOptions: {
-                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2600 }],
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 3800 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catLight.id, isPrimary: false },
+        { categoryId: catMicroLot.id, isPrimary: false },
+      ],
+    },
+
+    // 25. Costa Rica Honey Process
+    {
+      product: {
+        name: "Costa Rica Honey Process",
+        slug: "costa-rica-honey-process",
+        description:
+          "A unique honey-processed coffee from Costa Rica. Sweet and fruity with notes of apricot, honey, and a syrupy mouthfeel.",
+        origin: ["Costa Rica"],
+        tastingNotes: ["Apricot", "Honey", "Syrupy"],
+        isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/B8986E/FFFFFF.png?text=Honey+Process",
+              altText: "Costa Rica Honey Process bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 65,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2550 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catLight.id, isPrimary: false },
+        { categoryId: catMicroLot.id, isPrimary: false },
+      ],
+    },
+
+    // 26. Guatemala Huehuetenango
+    {
+      product: {
+        name: "Guatemala Huehuetenango",
+        slug: "guatemala-huehuetenango",
+        description:
+          "From Guatemala's highest and most remote region. Delicate and refined with notes of apple, almond, and a bright, clean finish.",
+        origin: ["Guatemala"],
+        tastingNotes: ["Apple", "Almond", "Clean"],
+        isOrganic: true,
+        roastLevel: RoastLevel.LIGHT,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/B39471/FFFFFF.png?text=Huehuetenango",
+              altText: "Guatemala Huehuetenango bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 70,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2400 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catLight.id, isPrimary: false },
+      ],
+    },
+
+    // 27. Bolivia Caranavi
+    {
+      product: {
+        name: "Bolivia Caranavi",
+        slug: "bolivia-caranavi",
+        description:
+          "A rare find from Bolivia's Yungas region. Sweet and delicate with notes of milk chocolate, orange, and a silky body.",
+        origin: ["Bolivia"],
+        tastingNotes: ["Milk Chocolate", "Orange", "Silky"],
+        isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/B5906C/FFFFFF.png?text=Bolivia",
+              altText: "Bolivia Caranavi bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 40,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2450 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catLight.id, isPrimary: false },
+        { categoryId: catMicroLot.id, isPrimary: false },
+      ],
+    },
+
+    // 28. Yemen Mocha
+    {
+      product: {
+        name: "Yemen Mocha",
+        slug: "yemen-mocha",
+        description:
+          "An ancient and legendary coffee with wild, complex flavors. Notes of dried fruit, chocolate, spice, and a winey acidity. For the adventurous palate.",
+        origin: ["Yemen"],
+        tastingNotes: ["Dried Fruit", "Chocolate", "Spice"],
+        isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/C0A078/FFFFFF.png?text=Yemen+Mocha",
+              altText: "Yemen Mocha bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 20,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 5200 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catLight.id, isPrimary: false },
+        { categoryId: catMicroLot.id, isPrimary: false },
+      ],
+    },
+
+    // 29. India Monsooned Malabar
+    {
+      product: {
+        name: "India Monsooned Malabar",
+        slug: "india-monsooned-malabar",
+        description:
+          "A unique monsooned coffee from India's Malabar coast. Low acidity with earthy, musty notes and hints of tobacco and spice. An acquired taste for the curious.",
+        origin: ["India"],
+        tastingNotes: ["Earthy", "Tobacco", "Spice"],
+        isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/A88C67/FFFFFF.png?text=Monsooned+Malabar",
+              altText: "India Monsooned Malabar bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "12oz Bag",
+              weightInGrams: 340,
+              stockQuantity: 50,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 2350 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      categories: [
+        { categoryId: catSingleOrigin.id, isPrimary: true },
+        { categoryId: catLight.id, isPrimary: false },
+        { categoryId: catMicroLot.id, isPrimary: false },
+      ],
+    },
+
+    // 30. Hawaiian Kona
+    {
+      product: {
+        name: "Hawaiian Kona",
+        slug: "hawaiian-kona",
+        description:
+          "Premium beans from Hawaii's Kona district. Smooth, balanced, and aromatic with notes of brown sugar, macadamia nut, and a bright, clean finish. A rare treat.",
+        origin: ["Hawaii"],
+        tastingNotes: ["Brown Sugar", "Macadamia Nut", "Clean"],
+        isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
+        isFeatured: false,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/D4AF7A/FFFFFF.png?text=Hawaiian+Kona",
+              altText: "Hawaiian Kona bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "8oz Bag",
+              weightInGrams: 227,
+              stockQuantity: 35,
+              purchaseOptions: {
+                create: [
+                  { type: PurchaseType.ONE_TIME, priceInCents: 4800 },
+                ],
               },
             },
           ],
@@ -610,16 +1468,14 @@ async function main() {
     },
   ];
 
-  // Loop and upsert products
+  // --- 3. Loop and upsert products ---
   for (const item of coffeeData) {
     const { product: productData, categories: categoryLinks } = item;
 
-    // First, create/update the product
     const product = await prisma.product.upsert({
       where: { slug: productData.slug },
       update: {
-        ...productData, // Update all top-level fields
-        // Clear existing relations before updating
+        ...productData,
         images: {
           deleteMany: {},
           create: productData.images.create,
@@ -632,8 +1488,6 @@ async function main() {
       create: productData,
     });
 
-    // After product is created/found, clear and set its categories
-    // This ensures the links are fresh
     await prisma.categoriesOnProducts.deleteMany({
       where: { productId: product.id },
     });
@@ -646,10 +1500,10 @@ async function main() {
       })),
     });
 
-    console.log(`Created or updated product: ${product.name}`);
+    console.log(`✓ ${product.name}`);
   }
 
-  console.log(`Seeding finished.`);
+  console.log(`\n✅ Seeding finished: 30 specialty coffee products created!`);
 }
 
 main()
