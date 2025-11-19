@@ -144,6 +144,7 @@ model User {
   addresses     Address[] 
   orders        Order[]
   subscriptions Subscription[]
+  activities    UserActivity[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -304,7 +305,45 @@ model Subscription {
   @@index([stripeCustomerId])
 }
 
+// --- User Activity Tracking ---
+
+model UserActivity {
+  id           String       @id @default(cuid())
+  sessionId    String       // Session identifier for anonymous and authenticated users
+  userId       String?      // Null for anonymous users
+  activityType ActivityType
+  
+  // Product context
+  productId    String?
+  productSlug  String?
+  categorySlug String?
+  
+  // Search context
+  searchQuery  String?
+  
+  // Additional metadata
+  source       String?      // "homepage", "category-page", "product-page", "search-results"
+  metadata     Json?        // Flexible field for future expansion
+  
+  createdAt    DateTime     @default(now())
+  
+  user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([sessionId])
+  @@index([productId])
+  @@index([activityType, createdAt])
+}
+
 // --- Enums ---
+
+enum ActivityType {
+  PAGE_VIEW
+  PRODUCT_VIEW
+  SEARCH
+  ADD_TO_CART
+  REMOVE_FROM_CART
+}
 
 enum OrderStatus {
   PENDING
