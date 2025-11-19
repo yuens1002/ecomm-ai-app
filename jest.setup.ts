@@ -5,10 +5,6 @@ import { TextEncoder, TextDecoder } from 'util';
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder as any;
 
-// Mock Request/Response for Next.js API routes
-global.Request = class Request {};
-global.Response = class Response {};
-
 // Mock sessionStorage for tests
 const sessionStorageMock = (() => {
   let store: Record<string, string> = {};
