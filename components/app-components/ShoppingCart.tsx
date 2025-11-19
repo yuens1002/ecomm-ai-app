@@ -20,6 +20,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { formatBillingInterval } from "@/lib/utils";
+import { useActivityTracking } from "@/hooks/useActivityTracking";
 import {
   Select,
   SelectContent,
@@ -47,6 +48,7 @@ export function ShoppingCart() {
   const { data: session } = useSession();
   const router = useRouter();
   const { toast } = useToast();
+  const { trackActivity } = useActivityTracking();
   const [cartItemCount, setCartItemCount] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -174,6 +176,10 @@ export function ShoppingCart() {
 
   const handleRemoveItem = (item: CartItem) => {
     removeItem(item.productId, item.variantId, item.purchaseOptionId);
+    trackActivity({
+      activityType: "REMOVE_FROM_CART",
+      productId: item.productId,
+    });
   };
 
   const handleCheckout = async () => {

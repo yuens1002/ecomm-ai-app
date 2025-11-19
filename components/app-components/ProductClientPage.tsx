@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FullProductPayload, RelatedProduct, Category } from "@/lib/types";
@@ -33,6 +33,7 @@ import { Label } from "@/components/ui/label"; // <-- ADDED THIS IMPORT
 import ProductCard from "@components/app-components/ProductCard"; // Re-use our card
 import { useCartStore } from "@/lib/store/cart-store";
 import { formatBillingInterval } from "@/lib/utils";
+import { useActivityTracking } from "@/hooks/useActivityTracking";
 
 // Prop interface for this component
 interface ProductClientPageProps {
@@ -53,6 +54,7 @@ export default function ProductClientPage({
 }: ProductClientPageProps) {
   const addItem = useCartStore((state) => state.addItem);
   const cartItems = useCartStore((state) => state.items);
+  const { trackActivity } = useActivityTracking();
 
   // --- State Management ---
   // Find the first variant and purchase option to set as default
@@ -64,6 +66,14 @@ export default function ProductClientPage({
   // Track which subscription cadence is selected (purchaseOptionId)
   const [selectedSubscriptionOptionId, setSelectedSubscriptionOptionId] =
     useState<string | null>(null);
+
+  // Track product view on mount
+  useEffect(() => {
+    trackActivity({
+      activityType: "PRODUCT_VIEW",
+      productId: product.id,
+    });
+  }, [product.id, trackActivity]);
 
   // Check if selected variant already has a subscription in cart
   const hasSubscriptionInCart = cartItems.some(
@@ -162,6 +172,12 @@ export default function ProductClientPage({
       billingInterval: selectedPurchaseOption.billingInterval || undefined,
       billingIntervalCount:
         selectedPurchaseOption.billingIntervalCount || undefined,
+    });
+
+    // Track add to cart activity
+    trackActivity({
+      activityType: "ADD_TO_CART",
+      productId: product.id,
     });
 
     // If a subscription was added, switch to one-time purchase option

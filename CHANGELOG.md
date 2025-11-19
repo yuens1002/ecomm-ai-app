@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.13.0 - 2025-11-19
+
+- **Real-Time Activity Tracking**: Session-based tracking for PRODUCT_VIEW, ADD_TO_CART, REMOVE_FROM_CART
+  - Client-side `useActivityTracking` hook with automatic session ID generation
+  - Silent failure design to not disrupt user experience
+  - Integrated into ProductClientPage and ShoppingCart components
+  - POST `/api/track-activity` endpoint with validation
+  - Visible in admin analytics dashboard immediately
+- **Unit Tests**: Jest and React Testing Library setup
+  - 7 passing tests for `useActivityTracking` hook
+  - Tests cover authenticated/anonymous users, error handling, session persistence
+  - Excluded API route tests (Next.js edge runtime complexity) and data tests (require live database)
+  - Scripts: `npm test` (watch mode), `npm run test:ci` (CI mode)
+
+## 0.12.0 - 2025-11-18
+
+- **AI-Powered Product Recommendations**: Behavioral recommendation system with personalized shopping experience
+  - **Product Catalog Expansion**: 30 specialty coffees (from 11) with detailed tasting notes, origins, and roast levels
+  - **User Activity Tracking**: New UserActivity model tracking PAGE_VIEW, PRODUCT_VIEW, SEARCH, ADD_TO_CART, REMOVE_FROM_CART events
+    - Session-based tracking supports both anonymous and authenticated users
+    - Indexed for query performance
+  - **Behavioral Analytics Functions**: Added 5 data functions in `lib/data.ts`
+    - Purchase history, recent views, search history aggregation
+    - User preference analysis (roast level, tasting notes)
+    - Trending products for anonymous users
+  - **Personalized AI Assistant**: Enhanced Gemini modal with user context injection
+    - Includes purchase history, views, searches, and preferences in prompt
+    - Displays personalization badge with user stats
+    - Graceful fallback for anonymous users
+  - **Homepage Recommendations**: "Recommended For You" section with behavioral scoring
+    - Algorithm: +10 roast match, +5 per tasting note, +3 viewed, -20 recent purchase
+    - Shows personalized subtitle with preferences
+    - Falls back to trending products for anonymous users
+  - **Product Search**: Full-text search across name, description, origin, and tasting notes
+    - Search dialog in header (desktop) and mobile menu
+    - Automatic search activity tracking
+    - Real-time results with loading states
+  - **Admin Analytics Dashboard**: New `/admin/analytics` page
+    - Trending products and top search queries
+    - Conversion metrics (view→cart→order rates)
+    - Activity breakdown and daily trend visualization
+    - Period selection (7/30 days)
+- **Database Migration**: `20251119034105_add_user_activity_tracking`
+- **API Endpoints**:
+  - `/api/recommendations` - Behavioral scoring algorithm
+  - `/api/admin/analytics` - Admin analytics data
+  - `/api/search` - Product search with tracking
+- **Seed Scripts**: Synthetic user data generation for testing and demo purposes
+
 ## 0.11.9 - 2025-11-18
 
 - **Admin Owner Assignment**: Complete admin management and bootstrap system

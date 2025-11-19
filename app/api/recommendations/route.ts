@@ -1,0 +1,176 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { getUserRecommendationContext, getTrendingProducts } from "@/lib/data";
+import { prisma } from "@/lib/prisma";
+
+interface RecommendationProduct {
+  id: string;
+  name: string;
+  slug: string;
+  roastLevel: string;
+  tastingNotes: string[];
+  reasoning?: string;
+}
+
+/**
+ * API endpoint for personalized product recommendations.
+ * Returns 4-6 product recommendations based on user behavior or trending data.
+ */
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get("limit") || "6");
+
+    // Check for authenticated user
+    const session = await auth();
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      // Anonymous user - return trending products
+      const trending = await getTrendingProducts(limit, 7);
+      return NextResponse.json({
+        products: trending.map((p) => ({
+          id: p!.id,
+          name: p!.name,
+          slug: p!.slug,
+          roastLevel: p!.roastLevel,
+          tastingNotes: p!.tastingNotes,
+          images: p!.images,
+          variants: p!.variants,
+          categories: p!.categories,
+        })),
+        isPersonalized: false,
+        source: "trending",
+      });
+    }
+
+    // Authenticated user - get personalized recommendations
+    const userContext = await getUserRecommendationContext(userId);
+
+    // Check if user has enough history for personalization
+    const hasHistory =
+      userContext.purchaseHistory.totalOrders > 0 ||
+      userContext.recentViews.length > 0;
+
+    if (!hasHistory) {
+      // New user - return trending products
+      const trending = await getTrendingProducts(limit, 7);
+      return NextResponse.json({
+        products: trending.map((p) => ({
+          id: p!.id,
+          name: p!.name,
+          slug: p!.slug,
+          roastLevel: p!.roastLevel,
+          tastingNotes: p!.tastingNotes,
+          images: p!.images,
+          variants: p!.variants,
+          categories: p!.categories,
+        })),
+        isPersonalized: false,
+        source: "trending",
+      });
+    }
+
+    // Get products they haven't ordered recently
+    const purchasedProductIds = userContext.purchaseHistory.products.map(
+      (p: any) => p.name
+    );
+    const recentlyViewedIds = userContext.recentViews.map((v) => v.name);
+
+    // Fetch all products
+    const allProducts = await prisma.product.findMany({
+      include: {
+        images: {
+          orderBy: { order: "asc" },
+          take: 1,
+        },
+        variants: {
+          include: {
+            purchaseOptions: {
+              where: { type: "ONE_TIME" },
+              take: 1,
+            },
+          },
+        },
+        categories: {
+          where: { isPrimary: true },
+          include: {
+            category: {
+              select: {
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Score products based on user preferences
+    const scoredProducts = allProducts.map((product) => {
+      let score = 0;
+
+      // Prefer products matching user's preferred roast level
+      if (
+        userContext.purchaseHistory.preferredRoastLevel &&
+        product.roastLevel === userContext.purchaseHistory.preferredRoastLevel
+      ) {
+        score += 10;
+      }
+
+      // Match tasting notes with user's top preferences
+      const matchingNotes = product.tastingNotes.filter((note) =>
+        userContext.purchaseHistory.topTastingNotes.includes(note)
+      );
+      score += matchingNotes.length * 5;
+
+      // Slightly prefer products they've viewed but not purchased
+      if (
+        recentlyViewedIds.includes(product.name) &&
+        !purchasedProductIds.includes(product.name)
+      ) {
+        score += 3;
+      }
+
+      // Penalize recently purchased products (avoid repetition)
+      if (purchasedProductIds.slice(0, 3).includes(product.name)) {
+        score -= 20;
+      }
+
+      return { product, score };
+    });
+
+    // Sort by score and take top recommendations
+    const recommendations = scoredProducts
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(({ product }) => ({
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        roastLevel: product.roastLevel,
+        tastingNotes: product.tastingNotes,
+        images: product.images,
+        variants: product.variants,
+        categories: product.categories,
+      }));
+
+    return NextResponse.json({
+      products: recommendations,
+      isPersonalized: true,
+      source: "behavioral",
+      userPreferences: {
+        preferredRoastLevel: userContext.purchaseHistory.preferredRoastLevel,
+        topTastingNotes: userContext.purchaseHistory.topTastingNotes.slice(0, 3),
+      },
+    });
+  } catch (error) {
+    console.error("Recommendations API Error:", error);
+    return new NextResponse(
+      JSON.stringify({ message: "Failed to fetch recommendations" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+}

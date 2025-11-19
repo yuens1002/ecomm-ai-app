@@ -4,6 +4,7 @@ import { useState } from "react";
 // --- UPDATED IMPORTS ---
 import FeaturedProducts from "@components/app-components/FeaturedProducts"; // Use new alias
 import AiHelperModal from "@components/app-components/AiHelperModal"; // Use new alias
+import RecommendationsSection from "@components/app-components/RecommendationsSection";
 import { Button } from "@/components/ui/button"; // shadcn/ui path remains the same
 
 // --- Main Page Component ---
@@ -30,6 +31,9 @@ export default function Home() {
           </Button>
         </div>
       </header>
+
+      {/* Personalized Recommendations Section */}
+      <RecommendationsSection />
 
       {/* Product Grid Section - Now a single component! */}
       <FeaturedProducts />
