@@ -52,6 +52,19 @@ export async function GET(request: NextRequest) {
           },
           take: 1,
         },
+        variants: {
+          include: {
+            purchaseOptions: {
+              select: {
+                id: true,
+                type: true,
+                priceInCents: true,
+                billingInterval: true,
+                billingIntervalCount: true,
+              },
+            },
+          },
+        },
         images: {
           select: {
             url: true,
