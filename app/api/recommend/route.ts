@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { getProductsForAI } from "@/lib/data"; // <-- Import our new DAL function
+import { getProductsForAI, getUserRecommendationContext } from "@/lib/data";
+import { auth } from "@/auth";
 
 // Define the expected structure of the *incoming* request body
 interface RecommendRequest {
   taste: string;
   brewMethod: string;
-  // --- 'products' array is REMOVED from the request ---
+  userId?: string; // Optional: explicit userId override
 }
 
 /**
@@ -21,8 +22,24 @@ export async function POST(request: Request) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
-    // --- 2. Fetch Products from Database (NEW) ---
-    // We fetch the product list securely on the server.
+    // --- 2. Check for authenticated user ---
+    const session = await auth();
+    const userId = body.userId || session?.user?.id;
+
+    // --- 3. Fetch user behavioral context (if authenticated) ---
+    let userContext = null;
+    let isPersonalized = false;
+    if (userId) {
+      try {
+        userContext = await getUserRecommendationContext(userId);
+        isPersonalized = true;
+      } catch (error) {
+        console.warn("Failed to fetch user context, falling back to generic:", error);
+        // Continue with generic recommendation
+      }
+    }
+
+    // --- 4. Fetch Products from Database ---
     const products = await getProductsForAI();
     if (!products || products.length === 0) {
       throw new Error("No products found in database.");
@@ -34,12 +51,49 @@ export async function POST(request: Request) {
     }
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
-    // --- 3. Create the Product List for the Prompt ---
+    // --- 5. Create the Product List for the Prompt ---
     const productList = products
       .map((p) => `- ${p.name}: (Tasting notes: ${p.tastingNotes.join(", ")})`)
       .join("\n");
 
-    // --- 4. Engineer the AI Prompt ---
+    // --- 6. Build Personalized Context (if available) ---
+    let personalizedContext = "";
+    if (userContext && isPersonalized) {
+      const purchasedNames = userContext.purchaseHistory.products
+        .slice(0, 5)
+        .map((p: any) => p.name);
+      const viewedNames = userContext.recentViews
+        .slice(0, 5)
+        .map((v: any) => v.name);
+      const topSearches = userContext.searchHistory
+        .slice(0, 3)
+        .map((s: any) => s.query);
+
+      personalizedContext = `\n\n--- CUSTOMER PURCHASE & BEHAVIOR HISTORY ---
+This customer has demonstrated clear preferences based on their history:
+
+Previously Purchased (${userContext.purchaseHistory.totalOrders} orders):
+${purchasedNames.length > 0 ? purchasedNames.map((n: string) => `  - ${n}`).join("\n") : "  (No previous orders)"}
+
+${
+        userContext.purchaseHistory.preferredRoastLevel
+          ? `Preferred Roast Level: ${userContext.purchaseHistory.preferredRoastLevel}\n`
+          : ""
+      }${
+        userContext.purchaseHistory.topTastingNotes.length > 0
+          ? `Frequently Enjoyed Tasting Notes: ${userContext.purchaseHistory.topTastingNotes.join(", ")}\n`
+          : ""
+      }
+Recently Viewed Products:
+${viewedNames.length > 0 ? viewedNames.map((n: string) => `  - ${n}`).join("\n") : "  (No recent views)"}
+
+Recent Search Queries:
+${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n") : "  (No recent searches)"}
+
+**IMPORTANT**: Use this history to provide a PERSONALIZED recommendation. Prioritize coffees similar to what they've enjoyed before, but also consider introducing them to complementary profiles they might love based on their stated preferences below.`;
+    }
+
+    // --- 7. Engineer the AI Prompt ---
     const systemPrompt = `
       You are an expert coffee sommelier for "Artisan Roast," a specialty coffee roaster.
       A customer needs a recommendation.
@@ -47,11 +101,11 @@ export async function POST(request: Request) {
       You must ONLY recommend a coffee from the list.
       
       Your response should be friendly, concise (2-3 sentences), and justify your choice
-      by connecting the coffee's tasting notes to the customer's preferences.
+      by connecting the coffee's tasting notes to the customer's preferences${isPersonalized ? " and purchase history" : ""}.
       Start by naming the coffee you recommend.
 
       Here is the list of available coffees:
-      ${productList}
+      ${productList}${personalizedContext}
     `;
 
     const userQuery = `I typically enjoy coffee with ${taste} notes and I brew using a ${brewMethod}. Which coffee should I try?`;
@@ -90,8 +144,15 @@ export async function POST(request: Request) {
       throw new Error("No text in Gemini response");
     }
 
-    // --- 7. Return the AI's response ---
-    return NextResponse.json({ text });
+    // --- 7. Return the AI's response with personalization flag ---
+    return NextResponse.json({ 
+      text,
+      isPersonalized,
+      userContext: isPersonalized ? {
+        totalOrders: userContext?.purchaseHistory.totalOrders,
+        preferredRoastLevel: userContext?.purchaseHistory.preferredRoastLevel,
+      } : null
+    });
   } catch (error) {
     console.error("AI Recommendation Error:", error);
     // Provide a generic error message to the client

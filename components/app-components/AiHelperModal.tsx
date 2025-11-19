@@ -24,6 +24,8 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
   const [brewMethod, setBrewMethod] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [recommendation, setRecommendation] = useState<string>("");
+  const [isPersonalized, setIsPersonalized] = useState<boolean>(false);
+  const [userStats, setUserStats] = useState<{ totalOrders?: number; preferredRoastLevel?: string } | null>(null);
 
   // Reset all state when the modal is closed
   const handleClose = () => {
@@ -35,6 +37,8 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
       setBrewMethod("");
       setRecommendation("");
       setIsLoading(false);
+      setIsPersonalized(false);
+      setUserStats(null);
     }, 300);
   };
 
@@ -42,7 +46,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
     setIsLoading(true);
     setRecommendation("");
     try {
-      // --- UPDATED: Simplified fetch call ---
+          
       // We no longer pass the product list.
       const response = await fetch("/api/recommend", {
         method: "POST",
@@ -65,6 +69,8 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
       }
 
       setRecommendation(result.text);
+      setIsPersonalized(result.isPersonalized || false);
+      setUserStats(result.userContext || null);
       setStep(3); // Move to the result step
     } catch (error) {
       console.error(error);
@@ -179,6 +185,35 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
         {/* Step 3: Result */}
         {step === 3 && (
           <div className="space-y-4 py-4">
+            {/* Personalization Badge */}
+            {isPersonalized && (
+              <div className="flex items-center gap-2 p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                <svg
+                  className="h-5 w-5 text-accent"
+                  fill="none"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-accent">
+                    Personalized Based on Your History
+                  </p>
+                  {userStats && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {userStats.totalOrders && `${userStats.totalOrders} past orders`}
+                      {userStats.preferredRoastLevel && ` • Prefers ${userStats.preferredRoastLevel.toLowerCase()} roasts`}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
             {/* We use whitespace-pre-wrap to respect newlines from the AI */}
             <p className="text-text-base whitespace-pre-wrap">
               {recommendation}
