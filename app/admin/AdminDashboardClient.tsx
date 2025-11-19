@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Users, Package, ShoppingCart, Shield, User, Settings } from "lucide-react";
+import { Users, Package, ShoppingCart, Shield, User, Settings, BarChart3 } from "lucide-react";
 import Link from "next/link";
 
 interface UserData {
@@ -128,7 +128,7 @@ export default function AdminDashboardClient({
                 Common administrative tasks
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
+            <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Link
                 href="/admin/users"
                 className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent transition-colors"
@@ -151,6 +151,19 @@ export default function AdminDashboardClient({
                   <p className="font-medium">View Orders</p>
                   <p className="text-sm text-muted-foreground">
                     Manage customer orders
+                  </p>
+                </div>
+              </Link>
+
+              <Link
+                href="/admin/analytics"
+                className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent transition-colors"
+              >
+                <BarChart3 className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium">Analytics</p>
+                  <p className="text-sm text-muted-foreground">
+                    View behavioral insights
                   </p>
                 </div>
               </Link>
