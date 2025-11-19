@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.13.0 - 2025-11-19
+
+- **Real-Time Activity Tracking**: Session-based tracking for PRODUCT_VIEW, ADD_TO_CART, REMOVE_FROM_CART
+  - Client-side `useActivityTracking` hook with automatic session ID generation
+  - Silent failure design to not disrupt user experience
+  - Integrated into ProductClientPage and ShoppingCart components
+  - POST `/api/track-activity` endpoint with validation
+  - Visible in admin analytics dashboard immediately
+- **Unit Tests**: Jest and React Testing Library setup
+  - 7 passing tests for `useActivityTracking` hook
+  - Tests cover authenticated/anonymous users, error handling, session persistence
+  - Excluded API route tests (Next.js edge runtime complexity) and data tests (require live database)
+  - Scripts: `npm test` (watch mode), `npm run test:ci` (CI mode)
+
 ## 0.12.0 - 2025-11-18
 
 - **AI-Powered Product Recommendations**: Behavioral recommendation system with personalized shopping experience
