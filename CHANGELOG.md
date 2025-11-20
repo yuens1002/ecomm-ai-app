@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.15.0 - 2025-11-20
+
+- **Chat Barista Phase 5 Complete**: Text-based chat MVP with full order history, brewing rules, and automatic caching ([12d1d3d](https://github.com/yuens1002/ecomm-ai-app/commit/12d1d3d65d30bdec21e3f66a8459c3275801edbb))
+  - Full order history context (removed 5-order limit) for complete personalization
+  - Enhanced brewing method rules with prominent warnings (drip ≠ espresso)
+  - Gemini automatic caching achieving 98% token reduction on turns 2+ (11,232/11,420 tokens cached)
+  - Thinking budget control (200 tokens) to prevent MAX_TOKENS errors
+  - Name usage limited to first message only (no spam on subsequent turns)
+  - Comprehensive error handling with specific messages for rate limits and service issues
+  - Component renamed from VoiceBarista to ChatBarista (reflects text-based nature)
+  - Cleaned up debug logging for production readiness
+
+- **AI Barista Chat MVP**: Text-based conversational interface with comprehensive error handling and brewing knowledge ([6560e73](https://github.com/yuens1002/ecomm-ai-app/commit/6560e730f3fe67fe86c5e11512388d90048ccefa))
+  - Modal-based chat UI with fixed height, scrollable messages, and always-visible input
+  - Gemini AI integration with user context (order history, favorites, addresses)
+  - Retry mechanism for service errors with spinning state and right-aligned button
+  - Comprehensive brewing method guide in system prompt (drip vs espresso distinction)
+  - Bilingual support with auto-detection (English/Spanish)
+  - Error handling for rate limits, service unavailable, and empty responses
+
+- **Voice Barista UI Foundation**: Session-based hero section with voice chat interface for authenticated users ([2519901](https://github.com/yuens1002/ecomm-ai-app/commit/2519901328b456f853c1df27bdca19d036468bd6))
+  - VoiceBarista component replaces hero for authenticated users with "Start Voice Chat" and "Get AI Recommendation" options
+  - Voice AI platform research complete - selected VAPI for multilingual support and function calling
+  - Conversation flow designed with 6 backend functions and bilingual templates (English/Spanish)
+
 ## 0.14.0 - 2025-11-20
 
 - **AI Recommendation Buy Now**: Complete checkout flow integration with AI recommendations
