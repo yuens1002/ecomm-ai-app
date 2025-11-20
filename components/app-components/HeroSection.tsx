@@ -14,7 +14,9 @@ export default function HeroSection({ onOpenAiModal }: HeroSectionProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // Avoid hydration mismatch
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Show loading state during hydration
