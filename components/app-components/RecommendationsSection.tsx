@@ -12,9 +12,9 @@ interface RecommendedProduct {
   slug: string;
   roastLevel: string;
   tastingNotes: string[];
-  images: any[];
-  variants: any[];
-  categories: any[];
+  images: { id: string; url: string; altText: string | null }[];
+  variants: { id: string; name: string }[];
+  categories: { id: string; name: string }[];
 }
 
 interface RecommendationsResponse {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { PurchaseOption } from "@prisma/client";
 import Link from "next/link";
 // --- REMOVED: useEffect and Product type ---
 import { AiHelperModalProps } from "@/lib/types"; // Import shared types
@@ -67,7 +68,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
 
       for (const variant of productData.variants) {
         const oneTimeOption = variant.purchaseOptions.find(
-          (po: any) => po.type === "ONE_TIME"
+          (po: PurchaseOption) => po.type === "ONE_TIME"
         );
         if (oneTimeOption && oneTimeOption.priceInCents < lowestPrice) {
           lowestPrice = oneTimeOption.priceInCents;
@@ -77,7 +78,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
 
       // Get the one-time purchase option (required for Buy Now)
       const purchaseOption = selectedVariant.purchaseOptions.find(
-        (po: any) => po.type === "ONE_TIME"
+        (po: PurchaseOption) => po.type === "ONE_TIME"
       ) || selectedVariant.purchaseOptions[0];
 
       // Create cart item for Stripe checkout
@@ -328,7 +329,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
 
                       for (const variant of productData.variants) {
                         const oneTimeOption = variant.purchaseOptions.find(
-                          (po: any) => po.type === "ONE_TIME"
+                          (po: PurchaseOption) => po.type === "ONE_TIME"
                         );
                         if (oneTimeOption && oneTimeOption.priceInCents < lowestPrice) {
                           lowestPrice = oneTimeOption.priceInCents;
@@ -338,7 +339,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
 
                       // Get the one-time purchase option (required)
                       const purchaseOption = selectedVariant.purchaseOptions.find(
-                        (po: any) => po.type === "ONE_TIME"
+                        (po: PurchaseOption) => po.type === "ONE_TIME"
                       ) || selectedVariant.purchaseOptions[0];
 
                       addItem({
