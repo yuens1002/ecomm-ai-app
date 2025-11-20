@@ -1,16 +1,19 @@
 # Changelog
 
-## 0.13.3 - 2025-11-20
+## 0.14.0 - 2025-11-20
 
-- **Buy Now Functionality**: AI recommendation modal now supports direct checkout with Stripe
-  - **Stripe Integration**: Buy Now button creates Stripe Checkout session and redirects to hosted payment page
-  - **Add to Cart**: New "Add to Cart" button adds recommended product and closes modal for continued shopping
-  - **Product Link**: Product name displays as clickable button link to product detail page
+- **AI Recommendation Buy Now**: Complete checkout flow integration with AI recommendations
+  - **Buy Now Functionality**: Direct checkout from AI modal creates Stripe Checkout session and redirects to hosted payment page
+  - **Add to Cart Integration**: Adds recommended product to cart and closes modal for continued shopping
+  - **Smart Variant Selection**: Automatically selects cheapest variant with one-time purchase option (never subscriptions)
+  - **Product Linking**: Product name displays as clickable button link to product detail page
   - **Smart Product Matching**: API fetches full product data (variants, images, purchase options) based on AI recommendation
-  - **Featured Product Fallback**: If AI doesn't match a specific product, automatically suggests first featured product
+  - **Featured Product Fallback**: If AI doesn't match specific product, automatically suggests first featured product
   - **Improved Button Layout**: When product found - "Add to Cart" (outline), "Buy Now" (primary); When no product - "Start Over" only
   - **Loading States**: Buy Now button shows spinner during Stripe session creation
-  - **Error Handling**: Graceful error messages if checkout session fails
+  - **Image URL Fix**: Converts relative image URLs to absolute URLs for Stripe API validation
+  - **Error Handling**: Concise red error message ("Something went wrong. Please try again.") displays above buttons without losing recommendation
+  - **Error Recovery**: Users can retry Buy Now without restarting the recommendation flow
 
 ## 0.13.2 - 2025-11-20
 

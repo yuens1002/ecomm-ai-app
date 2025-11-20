@@ -37,6 +37,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
     totalOrders?: number;
     preferredRoastLevel?: string;
   } | null>(null);
+  const [error, setError] = useState<string>("");
 
   // Reset all state when the modal is closed
   const handleClose = () => {
@@ -52,6 +53,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
       setIsLoading(false);
       setIsPersonalized(false);
       setUserStats(null);
+      setError("");
     }, 300);
   };
 
@@ -60,20 +62,34 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
 
     try {
       setIsLoading(true);
+      setError("");
 
-      // Get the first variant and its one-time purchase option
-      const variant = productData.variants[0];
-      const purchaseOption = variant.purchaseOptions.find(
+      // Find the cheapest variant (by one-time purchase price)
+      let selectedVariant = productData.variants[0];
+      let lowestPrice = Infinity;
+
+      for (const variant of productData.variants) {
+        const oneTimeOption = variant.purchaseOptions.find(
+          (po: any) => po.type === "ONE_TIME"
+        );
+        if (oneTimeOption && oneTimeOption.priceInCents < lowestPrice) {
+          lowestPrice = oneTimeOption.priceInCents;
+          selectedVariant = variant;
+        }
+      }
+
+      // Get the one-time purchase option (required for Buy Now)
+      const purchaseOption = selectedVariant.purchaseOptions.find(
         (po: any) => po.type === "ONE_TIME"
-      ) || variant.purchaseOptions[0];
+      ) || selectedVariant.purchaseOptions[0];
 
       // Create cart item for Stripe checkout
       const cartItem = {
         productId: productData.id,
         productName: productData.name,
         productSlug: productData.slug,
-        variantId: variant.id,
-        variantName: variant.name,
+        variantId: selectedVariant.id,
+        variantName: selectedVariant.name,
         purchaseOptionId: purchaseOption.id,
         purchaseType: purchaseOption.type,
         priceInCents: purchaseOption.priceInCents,
@@ -94,8 +110,8 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create checkout session");
+        setError("Something went wrong. Please try again.");
+        return;
       }
 
       const { url } = await response.json();
@@ -103,14 +119,12 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
       // Redirect to Stripe Checkout
       if (url) {
         window.location.href = url;
+      } else {
+        throw new Error("No checkout URL received");
       }
     } catch (error) {
       console.error("Buy Now error:", error);
-      alert(
-        `Sorry, something went wrong: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+      setError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -298,22 +312,42 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
               {recommendation}
             </p>
             
+            {error && (
+              <p className="text-red-600 text-sm font-medium mt-2">
+                {error}
+              </p>
+            )}
+            
             <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
               {productSlug && productData ? (
                 <>
                   <Button 
                     onClick={() => {
-                      const variant = productData.variants[0];
-                      const purchaseOption = variant.purchaseOptions.find(
+                      // Find the cheapest variant (by one-time purchase price)
+                      let selectedVariant = productData.variants[0];
+                      let lowestPrice = Infinity;
+
+                      for (const variant of productData.variants) {
+                        const oneTimeOption = variant.purchaseOptions.find(
+                          (po: any) => po.type === "ONE_TIME"
+                        );
+                        if (oneTimeOption && oneTimeOption.priceInCents < lowestPrice) {
+                          lowestPrice = oneTimeOption.priceInCents;
+                          selectedVariant = variant;
+                        }
+                      }
+
+                      // Get the one-time purchase option (required)
+                      const purchaseOption = selectedVariant.purchaseOptions.find(
                         (po: any) => po.type === "ONE_TIME"
-                      ) || variant.purchaseOptions[0];
+                      ) || selectedVariant.purchaseOptions[0];
 
                       addItem({
                         productId: productData.id,
                         productName: productData.name,
                         productSlug: productData.slug,
-                        variantId: variant.id,
-                        variantName: variant.name,
+                        variantId: selectedVariant.id,
+                        variantName: selectedVariant.name,
                         purchaseOptionId: purchaseOption.id,
                         purchaseType: purchaseOption.type,
                         priceInCents: purchaseOption.priceInCents,

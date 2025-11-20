@@ -49,6 +49,11 @@ export async function POST(req: NextRequest) {
         const productName = dbOption.variant.product.name;
         const variantName = dbOption.variant.name;
         const imageUrl = dbOption.variant.product.images[0]?.url;
+        
+        // Convert relative image URLs to absolute URLs for Stripe
+        const absoluteImageUrl = imageUrl && imageUrl.startsWith('/') 
+          ? `${origin}${imageUrl}`
+          : imageUrl;
 
         // Derive Stripe recurring config directly from PurchaseOption billingInterval fields
         let recurring:
@@ -89,7 +94,7 @@ export async function POST(req: NextRequest) {
             product_data: {
               name: `${productName} - ${variantName}`,
               description: subscriptionDescription,
-              images: imageUrl ? [imageUrl] : undefined,
+              images: absoluteImageUrl ? [absoluteImageUrl] : undefined,
             },
             unit_amount: actualPriceInCents,
             ...(recurring && { recurring }),
