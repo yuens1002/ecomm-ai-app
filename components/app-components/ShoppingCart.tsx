@@ -336,7 +336,7 @@ export function ShoppingCart() {
                     href={`/products/${item.productSlug}`}
                     className="flex-shrink-0"
                   >
-                    <div className="relative w-20 h-20 rounded-md overflow-hidden bg-gray-100 dark:bg-gray-800">
+                    <div className="relative w-20 h-20 rounded-md overflow-hidden bg-white dark:bg-gray-800">
                       {item.imageUrl ? (
                         <Image
                           src={item.imageUrl}

@@ -7,6 +7,7 @@ It features a minimal, high-quality product list and an AI-powered assistant to 
 ## Core Features
 
 ### 🛍️ E-Commerce Essentials
+
 - **🛒 Shopping Cart:** Zustand-powered cart with localStorage persistence, supports one-time purchases and subscriptions
 - **💳 Stripe Checkout:** Full payment integration with webhook processing for order fulfillment
 - **🔐 Authentication:** Auth.js with OAuth (GitHub/Google) and database sessions
@@ -15,6 +16,7 @@ It features a minimal, high-quality product list and an AI-powered assistant to 
 - **🔍 Product Search:** Full-text search with activity tracking across name, description, origin, and tasting notes
 
 ### 🤖 AI-Powered Personalization
+
 - **AI Recommendations:** Behavioral product recommendations based on user activity (purchases, views, searches)
 - **Personalized AI Assistant:** Gemini-powered chat modal with user context injection (50-100 lines of behavioral data)
 - **Smart Scoring Algorithm:** +10 roast match, +5 per tasting note match, +3 viewed, -20 recent purchase
@@ -22,12 +24,14 @@ It features a minimal, high-quality product list and an AI-powered assistant to 
 - **Trending Products:** Fallback recommendations for anonymous users based on view counts
 
 ### 📊 Analytics & Insights
+
 - **Admin Dashboard:** Comprehensive analytics with trending products, top searches, conversion metrics
 - **Behavioral Tracking:** 5 activity types (PAGE_VIEW, PRODUCT_VIEW, SEARCH, ADD_TO_CART, REMOVE_FROM_CART)
 - **Session Tracking:** Supports both anonymous and authenticated users
 - **Daily Activity Trends:** Visual bar charts showing activity patterns over 7/30 days
 
 ### 🎨 User Experience
+
 - **Theme-able UI:** Switch between Light and Dark modes (Tailwind CSS & CSS Variables)
 - **📱 Fully Responsive:** Clean, mobile-first layout that scales to all devices
 - **⚡ Type-Safe:** End-to-end TypeScript with Prisma for database type safety

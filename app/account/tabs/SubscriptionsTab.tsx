@@ -136,13 +136,14 @@ export default function SubscriptionsTab({
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-xl">
-                  {subscription.stripeSubscriptionId.replace('sub_', '')}
+                  {subscription.stripeSubscriptionId.replace("sub_", "")}
                 </CardTitle>
                 <CardDescription className="mt-1 space-y-0">
                   {subscription.productNames.map((name, idx) => (
                     <span key={idx} className="block">
                       {name}
-                      {subscription.quantities[idx] > 1 && ` × ${subscription.quantities[idx]}`}
+                      {subscription.quantities[idx] > 1 &&
+                        ` × ${subscription.quantities[idx]}`}
                     </span>
                   ))}
                 </CardDescription>

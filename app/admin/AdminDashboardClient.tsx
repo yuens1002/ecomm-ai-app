@@ -9,7 +9,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Users, Package, ShoppingCart, Shield, User, Settings, BarChart3 } from "lucide-react";
+import {
+  Users,
+  Package,
+  ShoppingCart,
+  Shield,
+  User,
+  Settings,
+  BarChart3,
+} from "lucide-react";
 import Link from "next/link";
 
 interface UserData {
@@ -47,7 +55,11 @@ export default function AdminDashboardClient({
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -76,7 +88,9 @@ export default function AdminDashboardClient({
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Users
+                </CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -89,7 +103,9 @@ export default function AdminDashboardClient({
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Orders
+                </CardTitle>
                 <ShoppingCart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -124,9 +140,7 @@ export default function AdminDashboardClient({
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>
-                Common administrative tasks
-              </CardDescription>
+              <CardDescription>Common administrative tasks</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Link
@@ -200,9 +214,7 @@ export default function AdminDashboardClient({
           <Card>
             <CardHeader>
               <CardTitle>Order Management</CardTitle>
-              <CardDescription>
-                View and manage customer orders
-              </CardDescription>
+              <CardDescription>View and manage customer orders</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
@@ -224,9 +236,7 @@ export default function AdminDashboardClient({
           <Card>
             <CardHeader>
               <CardTitle>Product Management</CardTitle>
-              <CardDescription>
-                Manage products and inventory
-              </CardDescription>
+              <CardDescription>Manage products and inventory</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
@@ -241,14 +251,14 @@ export default function AdminDashboardClient({
           <Card>
             <CardHeader>
               <CardTitle>Admin Profile</CardTitle>
-              <CardDescription>
-                Your admin account information
-              </CardDescription>
+              <CardDescription>Your admin account information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Name</label>
-                <p className="text-muted-foreground">{user.name || "Not set"}</p>
+                <p className="text-muted-foreground">
+                  {user.name || "Not set"}
+                </p>
               </div>
               <div>
                 <label className="text-sm font-medium">Email</label>

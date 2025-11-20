@@ -302,7 +302,7 @@ export default function AdminOrdersPage() {
                         <div className="font-medium flex items-center gap-2">
                           <span>{order.orderNumber || order.id.slice(-8)}</span>
                           {order.stripeSubscriptionId && (
-                            <span 
+                            <span
                               className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full"
                               title="Subscription order"
                             >

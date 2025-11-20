@@ -36,7 +36,7 @@ interface SearchResponse {
 // Generate a session ID for tracking
 function getSessionId() {
   if (typeof window === "undefined") return "";
-  
+
   let sessionId = sessionStorage.getItem("artisan_session_id");
   if (!sessionId) {
     sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
@@ -70,7 +70,7 @@ export default function SearchResults() {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const sessionId = getSessionId();
       const response = await fetch(
         `/api/search?q=${encodeURIComponent(searchQuery)}&sessionId=${sessionId}`
@@ -134,7 +134,8 @@ export default function SearchResults() {
               <p>No results found for &ldquo;{results.query}&rdquo;</p>
             ) : (
               <p>
-                Found {results.count} {results.count === 1 ? "result" : "results"} for &ldquo;
+                Found {results.count}{" "}
+                {results.count === 1 ? "result" : "results"} for &ldquo;
                 {results.query}&rdquo;
               </p>
             )}
@@ -145,10 +146,12 @@ export default function SearchResults() {
               {results.products.map((product) => (
                 <ProductCard
                   key={product.id}
-                  product={{
-                    ...product,
-                    category: product.categories[0]?.category || null,
-                  } as any}
+                  product={
+                    {
+                      ...product,
+                      category: product.categories[0]?.category || null,
+                    } as any
+                  }
                 />
               ))}
             </div>

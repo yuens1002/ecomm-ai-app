@@ -29,7 +29,8 @@ interface RecommendationsResponse {
 
 export default function RecommendationsSection() {
   const { data: session, status } = useSession();
-  const [recommendations, setRecommendations] = useState<RecommendationsResponse | null>(null);
+  const [recommendations, setRecommendations] =
+    useState<RecommendationsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -108,12 +109,17 @@ export default function RecommendationsSection() {
                 <p className="text-sm text-muted-foreground mt-1">
                   Based on your love for{" "}
                   {userPreferences.preferredRoastLevel?.toLowerCase()} roasts
-                  {userPreferences.topTastingNotes && userPreferences.topTastingNotes.length > 0 && (
-                    <>
-                      {" "}
-                      with {userPreferences.topTastingNotes.slice(0, 2).join(" and ")} notes
-                    </>
-                  )}
+                  {userPreferences.topTastingNotes &&
+                    userPreferences.topTastingNotes.length > 0 && (
+                      <>
+                        {" "}
+                        with{" "}
+                        {userPreferences.topTastingNotes
+                          .slice(0, 2)
+                          .join(" and ")}{" "}
+                        notes
+                      </>
+                    )}
                 </p>
               )}
               {!isPersonalized && (
@@ -131,7 +137,11 @@ export default function RecommendationsSection() {
             <ProductCard
               key={product.id}
               product={product as any}
-              categorySlug={isPersonalized ? "recommendations-personalized" : "recommendations-trending"}
+              categorySlug={
+                isPersonalized
+                  ? "recommendations-personalized"
+                  : "recommendations-trending"
+              }
             />
           ))}
         </div>

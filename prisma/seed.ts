@@ -1,7 +1,12 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
 
-import { PrismaClient, PurchaseType, RoastLevel, BillingInterval } from "@prisma/client";
+import {
+  PrismaClient,
+  PurchaseType,
+  RoastLevel,
+  BillingInterval,
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -50,7 +55,7 @@ async function main() {
   // --- 2. Define 30 Products ---
   const coffeeData = [
     // === ESPRESSO & DARK ROASTS (6 products) ===
-    
+
     // 1. Midnight Espresso Blend
     {
       product: {
@@ -153,9 +158,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 120,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2100 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2100 }],
               },
             },
           ],
@@ -195,9 +198,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 85,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2400 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2400 }],
               },
             },
           ],
@@ -237,9 +238,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 95,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2050 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2050 }],
               },
             },
             {
@@ -247,9 +246,7 @@ async function main() {
               weightInGrams: 2268,
               stockQuantity: 25,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 12500 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 12500 }],
               },
             },
           ],
@@ -289,9 +286,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 45,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2650 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2650 }],
               },
             },
           ],
@@ -457,9 +452,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 130,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2100 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2100 }],
               },
             },
             {
@@ -467,9 +460,7 @@ async function main() {
               weightInGrams: 907,
               stockQuantity: 65,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 5400 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 5400 }],
               },
             },
           ],
@@ -566,9 +557,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 90,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2250 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2250 }],
               },
             },
           ],
@@ -608,9 +597,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 140,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 1950 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 1950 }],
               },
             },
             {
@@ -618,9 +605,7 @@ async function main() {
               weightInGrams: 2268,
               stockQuantity: 40,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 11500 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 11500 }],
               },
             },
           ],
@@ -660,9 +645,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 70,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2150 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2150 }],
               },
             },
           ],
@@ -702,9 +685,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 80,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2200 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2200 }],
               },
             },
           ],
@@ -793,9 +774,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 75,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2250 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2250 }],
               },
             },
           ],
@@ -835,9 +814,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 50,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2550 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2550 }],
               },
             },
           ],
@@ -938,9 +915,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 85,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2650 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2650 }],
               },
             },
           ],
@@ -981,9 +956,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 90,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2400 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2400 }],
               },
             },
           ],
@@ -1023,9 +996,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 60,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2500 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2500 }],
               },
             },
           ],
@@ -1066,9 +1037,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 55,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2450 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2450 }],
               },
             },
           ],
@@ -1109,9 +1078,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 45,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2600 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2600 }],
               },
             },
           ],
@@ -1152,9 +1119,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 25,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 4500 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 4500 }],
               },
             },
           ],
@@ -1195,9 +1160,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 30,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 3800 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 3800 }],
               },
             },
           ],
@@ -1238,9 +1201,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 65,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2550 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2550 }],
               },
             },
           ],
@@ -1281,9 +1242,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 70,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2400 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2400 }],
               },
             },
           ],
@@ -1323,9 +1282,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 40,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2450 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2450 }],
               },
             },
           ],
@@ -1366,9 +1323,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 20,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 5200 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 5200 }],
               },
             },
           ],
@@ -1409,9 +1364,7 @@ async function main() {
               weightInGrams: 340,
               stockQuantity: 50,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 2350 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2350 }],
               },
             },
           ],
@@ -1452,9 +1405,7 @@ async function main() {
               weightInGrams: 227,
               stockQuantity: 35,
               purchaseOptions: {
-                create: [
-                  { type: PurchaseType.ONE_TIME, priceInCents: 4800 },
-                ],
+                create: [{ type: PurchaseType.ONE_TIME, priceInCents: 4800 }],
               },
             },
           ],

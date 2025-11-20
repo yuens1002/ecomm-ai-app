@@ -56,13 +56,12 @@ export default function ProductCard({
     >
       <Card
         className={clsx(
-          "w-full overflow-hidden rounded-lg bg-card-bg flex flex-col justify-between p-0",
-          !disableCardEffects &&
-            "cursor-pointer transition-transform duration-300 group-hover:scale-105 shadow-lg"
+          "w-full overflow-hidden rounded-none bg-card-bg flex flex-col justify-between p-4 border-0 shadow-none gap-0",
+          !disableCardEffects && "cursor-pointer"
         )}
       >
         {/* 1. Image container. The parent <Card> clips its top corners. */}
-        <CardHeader className="relative w-full aspect-16/10">
+        <CardHeader className="relative w-full aspect-square rounded-t-lg p-0 overflow-hidden max-h-[200px]">
           <Image
             src={displayImage}
             alt={altText}
@@ -75,48 +74,52 @@ export default function ProductCard({
 
         {/* 2. CardContent holds all text content. */}
         {/* Added the 'grow' class to push the footer down. */}
-        <CardContent className="pb-3 grow">
-          <CardTitle className="text-xl font-semibold text-text-base mb-1">
-            {product.name}
-          </CardTitle>
-          <CardDescription className="text-sm text-text-muted italic mb-4">
-            {product.tastingNotes.join(", ")}
-          </CardDescription>
+        <div className="border-x border-b rounded-b-lg">
+          <CardContent className="grow py-4">
+            <CardTitle className="text-xl overflow-hidden text-ellipsis whitespace-nowrap p-0">
+              {product.name}
+            </CardTitle>
+            <CardDescription className="text-sm italic pt-1 overflow-hidden text-ellipsis whitespace-nowrap">
+              {product.tastingNotes.join(", ")}
+            </CardDescription>
 
+            {showPurchaseOptions && (
+              <p className="text-lg font-bold text-primary pt-2">
+                ${displayPrice}
+              </p>
+            )}
+          </CardContent>
+
+          {/* 3. CardFooter (only shows if purchase options are enabled) */}
           {showPurchaseOptions && (
-            <p className="text-lg font-bold text-primary">${displayPrice}</p>
+            <CardFooter className="pb-8">
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+
+                  // Add to cart with default variant and one-time purchase
+                  if (displayVariant && oneTimePrice) {
+                    addItem({
+                      productId: product.id,
+                      productName: product.name,
+                      productSlug: product.slug,
+                      variantId: displayVariant.id,
+                      variantName: displayVariant.name,
+                      purchaseOptionId: oneTimePrice.id,
+                      purchaseType: "ONE_TIME",
+                      priceInCents: oneTimePrice.priceInCents,
+                      imageUrl: displayImage,
+                    });
+                  }
+                }}
+                className="w-full cursor-pointer"
+              >
+                Add to Cart
+              </Button>
+            </CardFooter>
           )}
-        </CardContent>
-
-        {/* 3. CardFooter (only shows if purchase options are enabled) */}
-        {showPurchaseOptions && (
-          <CardFooter className="p-6 pt-0">
-            <Button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                // Add to cart with default variant and one-time purchase
-                if (displayVariant && oneTimePrice) {
-                  addItem({
-                    productId: product.id,
-                    productName: product.name,
-                    productSlug: product.slug,
-                    variantId: displayVariant.id,
-                    variantName: displayVariant.name,
-                    purchaseOptionId: oneTimePrice.id,
-                    purchaseType: "ONE_TIME",
-                    priceInCents: oneTimePrice.priceInCents,
-                    imageUrl: displayImage,
-                  });
-                }
-              }}
-              className="w-full cursor-pointer"
-            >
-              Add to Cart
-            </Button>
-          </CardFooter>
-        )}
+        </div>
       </Card>
     </Link>
   );

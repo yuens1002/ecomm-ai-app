@@ -171,14 +171,14 @@ Version: v${version}
     try {
       const changelogPath = path.join(process.cwd(), "CHANGELOG.md");
       const changelogText = fs.readFileSync(changelogPath, "utf-8");
-      
+
       // Extract the section for this version
       const versionRegex = new RegExp(
         `## ${version.replace(/\./g, "\\.")}[\\s\\S]*?(?=\\n## |$)`,
         "i"
       );
       const match = changelogText.match(versionRegex);
-      
+
       if (match) {
         changelogContent = match[0].trim();
         console.log("✅ Changelog entry extracted");
@@ -194,18 +194,18 @@ Version: v${version}
       // Write changelog to temp file for tag message
       const tempFile = path.join(process.cwd(), ".git-tag-message.tmp");
       fs.writeFileSync(tempFile, changelogContent);
-      
+
       exec(
         `git tag -a v${version} -F "${tempFile}"`,
         `Create annotated tag v${version} with changelog`
       );
-      
+
       // Clean up temp file
       fs.unlinkSync(tempFile);
     } else {
       exec(`git tag v${version}`, `Create tag v${version}`);
     }
-    
+
     exec("git push origin main", "Push main to remote");
     exec(`git push origin v${version}`, `Push tag v${version}`);
 

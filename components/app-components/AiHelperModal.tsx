@@ -25,7 +25,10 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [recommendation, setRecommendation] = useState<string>("");
   const [isPersonalized, setIsPersonalized] = useState<boolean>(false);
-  const [userStats, setUserStats] = useState<{ totalOrders?: number; preferredRoastLevel?: string } | null>(null);
+  const [userStats, setUserStats] = useState<{
+    totalOrders?: number;
+    preferredRoastLevel?: string;
+  } | null>(null);
 
   // Reset all state when the modal is closed
   const handleClose = () => {
@@ -46,7 +49,6 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
     setIsLoading(true);
     setRecommendation("");
     try {
-          
       // We no longer pass the product list.
       const response = await fetch("/api/recommend", {
         method: "POST",
@@ -207,8 +209,10 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
                   </p>
                   {userStats && (
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {userStats.totalOrders && `${userStats.totalOrders} past orders`}
-                      {userStats.preferredRoastLevel && ` • Prefers ${userStats.preferredRoastLevel.toLowerCase()} roasts`}
+                      {userStats.totalOrders &&
+                        `${userStats.totalOrders} past orders`}
+                      {userStats.preferredRoastLevel &&
+                        ` • Prefers ${userStats.preferredRoastLevel.toLowerCase()} roasts`}
                     </p>
                   )}
                 </div>

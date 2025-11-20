@@ -228,7 +228,7 @@ export default function ProductClientPage({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
         {/* --- LEFT COLUMN: Image --- */}
         <div className="w-full">
-          <div className="relative aspect-square w-full overflow-hidden rounded-lg">
+          <div className="relative w-full overflow-hidden rounded-lg h-0 pb-[100%]">
             <Image
               src={displayImage}
               alt={altText}
