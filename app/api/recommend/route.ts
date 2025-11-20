@@ -55,6 +55,9 @@ export async function POST(request: Request) {
     const productList = products
       .map((p) => `- ${p.name}: (Tasting notes: ${p.tastingNotes.join(", ")})`)
       .join("\n");
+    
+    // Create a map for looking up slugs by product name
+    const productSlugMap = new Map(products.map(p => [p.name.toLowerCase(), p.slug]));
 
     // --- 6. Build Personalized Context (if available) ---
     let personalizedContext = "";
@@ -117,7 +120,7 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
         parts: [{ text: systemPrompt }],
       },
       generationConfig: {
-        maxOutputTokens: 1000,
+        maxOutputTokens: 2000,
         temperature: 0.7,
       },
     };
@@ -137,16 +140,43 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
     }
 
     const result = await response.json();
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    const candidate = result.candidates?.[0];
+    const text = candidate?.content?.parts?.[0]?.text;
+    const finishReason = candidate?.finishReason;
 
+    // Handle MAX_TOKENS or other issues
     if (!text) {
       console.warn("Gemini Response:", result);
+      
+      // If MAX_TOKENS, provide a graceful fallback
+      if (finishReason === 'MAX_TOKENS') {
+        return NextResponse.json({ 
+          text: "I'd recommend exploring our selection based on your preferences! Our ${taste.toLowerCase()} coffees are perfect for ${brewMethod.toLowerCase()}. Browse our full catalog to find your perfect match.",
+          isPersonalized,
+          userContext: isPersonalized ? {
+            totalOrders: userContext?.purchaseHistory.totalOrders,
+            preferredRoastLevel: userContext?.purchaseHistory.preferredRoastLevel,
+          } : null
+        });
+      }
+      
       throw new Error("No text in Gemini response");
     }
 
-    // --- 7. Return the AI's response with personalization flag ---
+    // --- 7. Extract recommended product slug from the response ---
+    let productSlug = null;
+    // Try to find a product name in the recommendation text
+    for (const product of products) {
+      if (text.toLowerCase().includes(product.name.toLowerCase())) {
+        productSlug = product.slug;
+        break;
+      }
+    }
+
+    // --- 8. Return the AI's response with personalization flag ---
     return NextResponse.json({ 
       text,
+      productSlug,
       isPersonalized,
       userContext: isPersonalized ? {
         totalOrders: userContext?.purchaseHistory.totalOrders,

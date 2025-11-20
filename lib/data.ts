@@ -103,6 +103,7 @@ export async function getProductsForAI() {
     const products = await prisma.product.findMany({
       select: {
         name: true,
+        slug: true,
         tastingNotes: true,
       },
     });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 // --- REMOVED: useEffect and Product type ---
 import { AiHelperModalProps } from "@/lib/types"; // Import shared types
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Loader2, X } from "lucide-react"; // Import icons
+import { Loader2, CheckCircle2 } from "lucide-react"; // Import icons
 
 // --- AI Helper Modal Component ---
 export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
@@ -24,6 +25,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
   const [brewMethod, setBrewMethod] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [recommendation, setRecommendation] = useState<string>("");
+  const [productSlug, setProductSlug] = useState<string | null>(null);
   const [isPersonalized, setIsPersonalized] = useState<boolean>(false);
   const [userStats, setUserStats] = useState<{
     totalOrders?: number;
@@ -39,6 +41,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
       setTaste("");
       setBrewMethod("");
       setRecommendation("");
+      setProductSlug(null);
       setIsLoading(false);
       setIsPersonalized(false);
       setUserStats(null);
@@ -71,6 +74,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
       }
 
       setRecommendation(result.text);
+      setProductSlug(result.productSlug || null);
       setIsPersonalized(result.isPersonalized || false);
       setUserStats(result.userContext || null);
       setStep(3); // Move to the result step
@@ -95,10 +99,12 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
           <DialogTitle className="text-2xl font-bold text-text-base">
             {step === 3 ? "Your Recommendation" : "Find Your Perfect Coffee"}
           </DialogTitle>
-          <DialogDescription>
-            Answer a few quick questions to find the perfect roast for your
-            brewing style.
-          </DialogDescription>
+          {step !== 3 && (
+            <DialogDescription>
+              Answer a few quick questions to find the perfect roast for your
+              brewing style.
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         {/* Step 1: Taste */}
@@ -186,48 +192,50 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
 
         {/* Step 3: Result */}
         {step === 3 && (
-          <div className="space-y-4 py-4">
-            {/* Personalization Badge */}
-            {isPersonalized && (
-              <div className="flex items-center gap-2 p-3 bg-accent/10 border border-accent/20 rounded-lg">
-                <svg
-                  className="h-5 w-5 text-accent"
-                  fill="none"
-                  strokeWidth="2"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-accent">
-                    Personalized Based on Your History
-                  </p>
-                  {userStats && (
+          <div className="space-y-4">
+            {/* Personalization Badge - Only show if user has actual purchase history */}
+            {isPersonalized &&
+              userStats &&
+              userStats.totalOrders &&
+              userStats.totalOrders > 0 && (
+                <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-green-700 dark:text-green-300">
+                      Personalized based on your history
+                    </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {userStats.totalOrders &&
-                        `${userStats.totalOrders} past orders`}
+                      {userStats.totalOrders} past{" "}
+                      {userStats.totalOrders === 1 ? "order" : "orders"}
                       {userStats.preferredRoastLevel &&
                         ` • Prefers ${userStats.preferredRoastLevel.toLowerCase()} roasts`}
                     </p>
-                  )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             {/* We use whitespace-pre-wrap to respect newlines from the AI */}
             <p className="text-text-base whitespace-pre-wrap">
               {recommendation}
             </p>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button onClick={handleClose} className="w-full">
-                  Start Over
+            <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+              <Button
+                onClick={() => {
+                  setStep(1);
+                  setRecommendation("");
+                  setProductSlug(null);
+                }}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
+                Start Over
+              </Button>
+              {productSlug && (
+                <Button asChild className="w-full sm:w-auto">
+                  <Link href={`/products/${productSlug}`}>
+                    View Product
+                  </Link>
                 </Button>
-              </DialogClose>
+              )}
             </DialogFooter>
           </div>
         )}
