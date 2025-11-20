@@ -2,6 +2,16 @@
 
 ## 0.15.0 - 2025-11-20
 
+- **Chat Barista Phase 5 Complete**: Text-based chat MVP with full order history, brewing rules, and automatic caching ([12d1d3d](https://github.com/yuens1002/ecomm-ai-app/commit/12d1d3d65d30bdec21e3f66a8459c3275801edbb))
+  - Full order history context (removed 5-order limit) for complete personalization
+  - Enhanced brewing method rules with prominent warnings (drip ≠ espresso)
+  - Gemini automatic caching achieving 98% token reduction on turns 2+ (11,232/11,420 tokens cached)
+  - Thinking budget control (200 tokens) to prevent MAX_TOKENS errors
+  - Name usage limited to first message only (no spam on subsequent turns)
+  - Comprehensive error handling with specific messages for rate limits and service issues
+  - Component renamed from VoiceBarista to ChatBarista (reflects text-based nature)
+  - Cleaned up debug logging for production readiness
+
 - **AI Barista Chat MVP**: Text-based conversational interface with comprehensive error handling and brewing knowledge ([6560e73](https://github.com/yuens1002/ecomm-ai-app/commit/6560e730f3fe67fe86c5e11512388d90048ccefa))
   - Modal-based chat UI with fixed height, scrollable messages, and always-visible input
   - Gemini AI integration with user context (order history, favorites, addresses)

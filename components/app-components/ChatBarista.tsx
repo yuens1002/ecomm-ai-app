@@ -4,17 +4,24 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, X, ShoppingCart, Loader2, Sparkles, Send, RotateCw } from "lucide-react";
+import {
+  MessageCircle,
+  X,
+  Loader2,
+  Sparkles,
+  Send,
+  RotateCw,
+} from "lucide-react";
 
-interface VoiceBaristaProps {
+interface ChatBaristaProps {
   userName?: string;
   onOpenAiModal?: () => void;
 }
 
-export default function VoiceBarista({
+export default function ChatBarista({
   userName,
   onOpenAiModal,
-}: VoiceBaristaProps) {
+}: ChatBaristaProps) {
   const [isActive, setIsActive] = useState(false);
   const [messages, setMessages] = useState<
     Array<{ role: "user" | "assistant"; text: string; error?: boolean }>
@@ -52,20 +59,20 @@ export default function VoiceBarista({
     if (!messageToSend || isLoading || isRetrying) return;
 
     const isRetry = !!retryMessage;
-    
+
     if (!isRetry) {
       setInput("");
     }
-    
+
     // Add user message only if not retrying
-    const newMessages = isRetry 
-      ? messages 
+    const newMessages = isRetry
+      ? messages
       : [...messages, { role: "user" as const, text: messageToSend }];
-    
+
     if (!isRetry) {
       setMessages(newMessages);
     }
-    
+
     if (isRetry) {
       setIsRetrying(true);
     } else {
@@ -74,11 +81,13 @@ export default function VoiceBarista({
 
     try {
       // Clean the conversation history to only include serializable data
-      const conversationHistory = (retryMessage ? messages.slice(0, -1) : messages).map(msg => ({
+      const conversationHistory = (
+        retryMessage ? messages.slice(0, -1) : messages
+      ).map((msg) => ({
         role: msg.role,
-        text: msg.text
+        text: msg.text,
       }));
-      
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -95,14 +104,17 @@ export default function VoiceBarista({
       }
 
       const data = await response.json();
-      console.log('Chat API response:', data);
-      
+      console.log("Chat API response:", data);
+
       // Check if the response contains an error flag (rate limit or service issues)
-      const hasError = data.error === "rate_limit" || data.error === "service_unavailable";
-      
+      const hasError =
+        data.error === "rate_limit" || data.error === "service_unavailable";
+
       // If no message or generic error, provide a helpful message without retry button
-      const messageText = data.message || "I'm having trouble understanding that. Could you rephrase your question?";
-      
+      const messageText =
+        data.message ||
+        "I'm having trouble understanding that. Could you rephrase your question?";
+
       if (retryMessage) {
         // Replace the last error message
         setMessages((prev) => [
@@ -237,18 +249,27 @@ export default function VoiceBarista({
               <div className="flex-1 space-y-4 my-4 overflow-y-auto min-h-0">
                 {messages.map((message, index) => {
                   const isLastMessage = index === messages.length - 1;
-                  const shouldHideForRetry = isLastMessage && message.role === "assistant" && message.error && isRetrying;
-                  const showRetry = message.role === "assistant" && message.error && !isRetrying;
-                  
+                  const shouldHideForRetry =
+                    isLastMessage &&
+                    message.role === "assistant" &&
+                    message.error &&
+                    isRetrying;
+                  const showRetry =
+                    message.role === "assistant" &&
+                    message.error &&
+                    !isRetrying;
+
                   if (shouldHideForRetry) {
                     return null;
                   }
-                  
+
                   return (
                     <div
                       key={index}
                       className={`flex items-start gap-2 ${
-                        message.role === "user" ? "justify-end" : "justify-start"
+                        message.role === "user"
+                          ? "justify-end"
+                          : "justify-start"
                       }`}
                     >
                       <div
@@ -258,7 +279,9 @@ export default function VoiceBarista({
                             : "bg-muted text-foreground"
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                        <p className="text-sm whitespace-pre-wrap">
+                          {message.text}
+                        </p>
                       </div>
                       {showRetry && (
                         <Button
@@ -316,9 +339,6 @@ export default function VoiceBarista({
                     ) : (
                       <Send className="w-4 h-4" />
                     )}
-                  </Button>
-                  <Button variant="outline" size="icon" title="View Cart">
-                    <ShoppingCart className="w-4 h-4" />
                   </Button>
                 </div>
 

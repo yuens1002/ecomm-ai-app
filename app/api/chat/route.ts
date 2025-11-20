@@ -19,12 +19,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get user context
+    // Get user context (full order history for better personalization)
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
         orders: {
-          take: 5,
           orderBy: { createdAt: "desc" },
           include: {
             items: {
@@ -121,6 +120,8 @@ ${conversationContext}
 Customer: ${message}
 Barista:`;
 
+
+
     // Call Gemini AI via REST API
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -128,26 +129,33 @@ Barista:`;
     }
 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    
+    // Structure prompt consistently to enable Gemini's automatic caching
+    // Static content (system + products) sent first encourages cache hits
+    const requestBody = {
+      contents: [
+        {
+          parts: [{ text: prompt }],
+        },
+      ],
+      generationConfig: {
+        maxOutputTokens: 1000,
+        temperature: 0.7,
+        thinkingConfig: {
+          thinkingBudget: 200, // Limit thinking to save tokens for response
+        },
+      },
+    };
 
     const aiResponse = await fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          maxOutputTokens: 800,
-          temperature: 0.7,
-        },
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("Gemini API error details:", errorText);
+      console.error("Gemini API error:", aiResponse.status, errorText);
       
       // Handle rate limit
       if (aiResponse.status === 429) {
@@ -169,7 +177,36 @@ Barista:`;
     }
 
     const aiData = await aiResponse.json();
-    const text = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a response.";
+
+    // Better error handling for missing data
+    if (!aiData.candidates || aiData.candidates.length === 0) {
+      console.error("No candidates in response:", aiData);
+      return NextResponse.json({
+        message: "I'm having trouble processing that request. Could you try rephrasing? ☕",
+        error: "no_candidates",
+      });
+    }
+
+    const candidate = aiData.candidates[0];
+    
+    // Check for safety blocks or other finish reasons
+    if (candidate.finishReason && candidate.finishReason !== "STOP") {
+      console.error("Unusual finish reason:", candidate.finishReason);
+      return NextResponse.json({
+        message: "I couldn't complete that response. Please try a different question. ☕",
+        error: "blocked_or_error",
+      });
+    }
+
+    const text = candidate?.content?.parts?.[0]?.text;
+    
+    if (!text) {
+      console.error("No text in response candidate");
+      return NextResponse.json({
+        message: "I couldn't generate a proper response. Please try again. ☕",
+        error: "no_text",
+      });
+    }
 
     return NextResponse.json({
       message: text.trim(),
