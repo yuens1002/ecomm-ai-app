@@ -17,6 +17,51 @@ If either fails, fix the issues before committing and pushing.
 
 ---
 
+## Feature Branch Workflow
+
+When working on a feature branch (e.g., `feature/voice-barista-mvp`):
+
+### 1. Make Changes and Commit
+
+```powershell
+git add -A
+git commit -m "feat: descriptive commit message"
+```
+
+You can make multiple commits on the feature branch - each is isolated to the branch.
+
+### 2. Run Precheck Before Push
+
+```powershell
+npm run precheck
+```
+
+Fix any TypeScript or ESLint errors before pushing.
+
+### 3. Push to Feature Branch
+
+```powershell
+git push origin feature/branch-name
+```
+
+This only pushes to the feature branch - `main` is not affected.
+
+### 4. When Ready to Merge to Main
+
+Use the merge script to merge the feature branch to main, create a tag, and push:
+
+```powershell
+npx tsx scripts/merge-feature.ts "feat: commit message" "0.15.0"
+```
+
+This script:
+- Switches to main
+- Merges the feature branch
+- Creates a version tag
+- Pushes main + tags to GitHub
+
+---
+
 ## Standard Release Process
 
 Follow these steps for every release to GitHub:
