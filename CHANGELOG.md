@@ -1,6 +1,18 @@
 # Changelog
 
+## 0.15.1 - 2025-11-20
+
+- **ESLint Cleanup Complete**: Fixed all TypeScript errors and improved demo account UX ([7980f27](https://github.com/yuens1002/ecomm-ai-app/commit/7980f27153e8c6b4981f926f29e1303425a90ce7))
+  - Fixed all 163 ESLint problems (100% reduction) - app/, lib/, hooks/, tests now fully typed
+  - Moved 14 dev-only scripts to dev-tools/ folder (gitignored)
+  - Added graceful demo account handling for subscription management and account deletion
+  - Stripe customer verification before portal access with helpful 404 error messages
+
 ## 0.15.0 - 2025-11-20
+  - Fixed all 163 ESLint problems (100% reduction) - app/, lib/, hooks/, tests now fully typed
+  - Moved 14 dev-only scripts to dev-tools/ folder (gitignored)
+  - Added graceful demo account handling for subscription management and account deletion
+  - Stripe customer verification before portal access with helpful 404 error messages
 
 - **Chat Barista Phase 5 Complete**: Text-based chat MVP with full order history, brewing rules, and automatic caching ([12d1d3d](https://github.com/yuens1002/ecomm-ai-app/commit/12d1d3d65d30bdec21e3f66a8459c3275801edbb))
   - Full order history context (removed 5-order limit) for complete personalization
