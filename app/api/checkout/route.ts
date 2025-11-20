@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     // SECURITY: Validate prices against database server-side
     const { prisma } = await import("@/lib/prisma");
 
-    const purchaseOptionIds = items.map((item: any) => item.purchaseOptionId);
+    const purchaseOptionIds = items.map((item: CartItem) => item.purchaseOptionId);
     const dbPurchaseOptions = await prisma.purchaseOption.findMany({
       where: {
         id: { in: purchaseOptionIds },
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     // Validate all items exist and build line items with DB prices
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map(
-      (item: any) => {
+      (item: CartItem) => {
         const dbOption = priceMap.get(item.purchaseOptionId);
         if (!dbOption) {
           throw new Error(`Invalid purchase option: ${item.purchaseOptionId}`);
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
     );
 
     // Fetch user's email and selected address if provided
-    let shippingAddressCollection: any =
+    let shippingAddressCollection: { allowed_countries: string[] } | undefined =
       deliveryMethod === "DELIVERY" ? { allowed_countries: ["US"] } : undefined;
     let customerEmail: string | undefined;
 
@@ -131,14 +131,14 @@ export async function POST(req: NextRequest) {
 
     // Determine checkout mode (subscription or one-time payment)
     const subscriptionItems = items.filter(
-      (item: any) => item.purchaseType === "SUBSCRIPTION"
+      (item: CartItem) => item.purchaseType === "SUBSCRIPTION"
     );
     const isSubscription = subscriptionItems.length > 0;
 
     // Validate that all subscriptions have the same billing interval
     if (isSubscription && subscriptionItems.length > 1) {
       const intervals = new Set();
-      subscriptionItems.forEach((item: any) => {
+      subscriptionItems.forEach((item: CartItem) => {
         const dbOption = priceMap.get(item.purchaseOptionId);
         if (dbOption) {
           const key = `${dbOption.billingInterval}-${dbOption.billingIntervalCount}`;
@@ -270,7 +270,7 @@ export async function POST(req: NextRequest) {
       // Note: Stripe metadata values limited to 500 chars, so we store minimal data
       metadata: {
         cartItems: JSON.stringify(
-          items.map((item: any) => ({
+          items.map((item: CartItem) => ({
             po: item.purchaseOptionId,
             qty: item.quantity,
           }))

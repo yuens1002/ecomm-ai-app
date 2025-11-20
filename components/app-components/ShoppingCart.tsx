@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import type { Address } from "@prisma/client";
 import {
   ShoppingCart as ShoppingCartIcon,
   Trash2,
@@ -129,7 +130,7 @@ export function ShoppingCart() {
           setAddresses(data.addresses || []);
 
           // Set default address as selected
-          const defaultAddr = data.addresses?.find((a: any) => a.isDefault);
+          const defaultAddr = data.addresses?.find((a: Address) => a.isDefault);
           if (defaultAddr) {
             setSelectedAddressId(defaultAddr.id);
           }
