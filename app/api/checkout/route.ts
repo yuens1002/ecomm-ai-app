@@ -11,6 +11,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
+    // Get the origin from the request headers (needed for absolute URLs)
+    const origin = req.headers.get("origin") || "http://localhost:3000";
+
     // SECURITY: Validate prices against database server-side
     const { prisma } = await import("@/lib/prisma");
 
@@ -103,9 +106,6 @@ export async function POST(req: NextRequest) {
         };
       }
     );
-
-    // Get the origin from the request headers
-    const origin = req.headers.get("origin") || "http://localhost:3000";
 
     // Fetch user's email and selected address if provided
     let shippingAddressCollection: any =
