@@ -2,13 +2,15 @@
 
 ## 0.13.3 - 2025-11-20
 
-- **Buy Now Functionality**: AI recommendation modal now supports direct checkout
-  - **Buy Now Button**: Primary action button that adds recommended product to cart and navigates to checkout
+- **Buy Now Functionality**: AI recommendation modal now supports direct checkout with Stripe
+  - **Stripe Integration**: Buy Now button creates Stripe Checkout session and redirects to hosted payment page
+  - **Add to Cart**: New "Add to Cart" button adds recommended product and closes modal for continued shopping
+  - **Product Link**: Product name displays as clickable button link to product detail page
   - **Smart Product Matching**: API fetches full product data (variants, images, purchase options) based on AI recommendation
   - **Featured Product Fallback**: If AI doesn't match a specific product, automatically suggests first featured product
-  - **Cart Integration**: Uses Zustand cart store to add first variant with one-time purchase option
-  - **Improved Button Layout**: Three action options - "Start Over" (outline), "View Details" (outline), "Buy Now" (primary)
-  - **Seamless Flow**: After adding to cart, user is redirected to checkout and modal closes automatically
+  - **Improved Button Layout**: When product found - "Add to Cart" (outline), "Buy Now" (primary); When no product - "Start Over" only
+  - **Loading States**: Buy Now button shows spinner during Stripe session creation
+  - **Error Handling**: Graceful error messages if checkout session fails
 
 ## 0.13.2 - 2025-11-20
 

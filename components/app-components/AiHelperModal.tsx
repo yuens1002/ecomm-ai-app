@@ -55,36 +55,65 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
     }, 300);
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (!productData) return;
 
-    // Get the first variant and its one-time purchase option
-    const variant = productData.variants[0];
-    const purchaseOption = variant.purchaseOptions.find(
-      (po: any) => po.type === "ONE_TIME"
-    ) || variant.purchaseOptions[0];
+    try {
+      setIsLoading(true);
 
-    // Add to cart
-    addItem({
-      productId: productData.id,
-      productName: productData.name,
-      productSlug: productData.slug,
-      variantId: variant.id,
-      variantName: variant.name,
-      purchaseOptionId: purchaseOption.id,
-      purchaseType: purchaseOption.type,
-      priceInCents: purchaseOption.priceInCents,
-      imageUrl: productData.images[0]?.url,
-      quantity: 1,
-      billingInterval: purchaseOption.billingInterval || undefined,
-      billingIntervalCount: purchaseOption.billingIntervalCount || undefined,
-    });
+      // Get the first variant and its one-time purchase option
+      const variant = productData.variants[0];
+      const purchaseOption = variant.purchaseOptions.find(
+        (po: any) => po.type === "ONE_TIME"
+      ) || variant.purchaseOptions[0];
 
-    // Navigate to checkout
-    router.push("/checkout");
-    
-    // Close modal
-    handleClose();
+      // Create cart item for Stripe checkout
+      const cartItem = {
+        productId: productData.id,
+        productName: productData.name,
+        productSlug: productData.slug,
+        variantId: variant.id,
+        variantName: variant.name,
+        purchaseOptionId: purchaseOption.id,
+        purchaseType: purchaseOption.type,
+        priceInCents: purchaseOption.priceInCents,
+        imageUrl: productData.images[0]?.url,
+        quantity: 1,
+        billingInterval: purchaseOption.billingInterval || undefined,
+        billingIntervalCount: purchaseOption.billingIntervalCount || undefined,
+      };
+
+      // Call Stripe checkout API
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: [cartItem],
+          deliveryMethod: "DELIVERY", // Default to delivery
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create checkout session");
+      }
+
+      const { url } = await response.json();
+
+      // Redirect to Stripe Checkout
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error("Buy Now error:", error);
+      alert(
+        `Sorry, something went wrong: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getRecommendation = async () => {
@@ -253,39 +282,78 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
                   </div>
                 </div>
               )}
+            {/* Product name as button link if available */}
+            {productSlug && productData && (
+              <div className="mb-4">
+                <Button asChild variant="link" className="h-auto p-0 text-lg font-semibold">
+                  <Link href={`/products/${productSlug}`}>
+                    {productData.name}
+                  </Link>
+                </Button>
+              </div>
+            )}
+            
             {/* We use whitespace-pre-wrap to respect newlines from the AI */}
             <p className="text-text-base whitespace-pre-wrap">
               {recommendation}
             </p>
+            
             <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-              <Button
-                onClick={() => {
-                  setStep(1);
-                  setRecommendation("");
-                  setProductSlug(null);
-                  setProductData(null);
-                }}
-                variant="outline"
-                className="w-full sm:w-auto"
-              >
-                Start Over
-              </Button>
-              {productSlug && (
+              {productSlug && productData ? (
                 <>
-                  <Button asChild variant="outline" className="w-full sm:w-auto">
-                    <Link href={`/products/${productSlug}`}>
-                      View Details
-                    </Link>
+                  <Button 
+                    onClick={() => {
+                      const variant = productData.variants[0];
+                      const purchaseOption = variant.purchaseOptions.find(
+                        (po: any) => po.type === "ONE_TIME"
+                      ) || variant.purchaseOptions[0];
+
+                      addItem({
+                        productId: productData.id,
+                        productName: productData.name,
+                        productSlug: productData.slug,
+                        variantId: variant.id,
+                        variantName: variant.name,
+                        purchaseOptionId: purchaseOption.id,
+                        purchaseType: purchaseOption.type,
+                        priceInCents: purchaseOption.priceInCents,
+                        imageUrl: productData.images[0]?.url,
+                        quantity: 1,
+                        billingInterval: purchaseOption.billingInterval || undefined,
+                        billingIntervalCount: purchaseOption.billingIntervalCount || undefined,
+                      });
+                      
+                      handleClose();
+                    }}
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
+                    Add to Cart
                   </Button>
-                  {productData && (
-                    <Button 
-                      onClick={handleBuyNow}
-                      className="w-full sm:w-auto"
-                    >
-                      Buy Now
-                    </Button>
-                  )}
+                  <Button 
+                    onClick={handleBuyNow}
+                    disabled={isLoading}
+                    className="w-full sm:w-auto"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Buy Now"
+                    )}
+                  </Button>
                 </>
+              ) : (
+                <Button
+                  onClick={() => {
+                    setStep(1);
+                    setRecommendation("");
+                    setProductSlug(null);
+                    setProductData(null);
+                  }}
+                  className="w-full"
+                >
+                  Start Over
+                </Button>
               )}
             </DialogFooter>
           </div>
