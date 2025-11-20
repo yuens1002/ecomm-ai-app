@@ -176,7 +176,9 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
 
   return (
     // shadcn/ui Dialog handles the open/close state and animations
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) handleClose();
+    }}>
       <DialogContent className="sm:max-w-md bg-background">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-text-base">
