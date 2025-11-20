@@ -30,7 +30,39 @@ git commit -m "feat: descriptive commit message"
 
 You can make multiple commits on the feature branch - each is isolated to the branch.
 
-### 2. Run Precheck Before Push
+### 2. Document Significant Commits in CHANGELOG.md (Optional)
+
+For commits that represent substantial features or improvements worth documenting:
+
+1. Get the commit hash: `git log -1 --format="%H"`
+2. Add entry under the current version section with this format:
+
+```markdown
+- **Feature Title**: One-line summary of what the commit accomplishes ([commit_hash](https://github.com/yuens1002/ecomm-ai-app/commit/{full_hash}))
+  - Key accomplishment or feature 1
+  - Key accomplishment or feature 2
+  - Key accomplishment or feature 3
+```
+
+**Example:**
+```markdown
+- **AI Barista Chat MVP**: Text-based conversational interface with comprehensive error handling and brewing knowledge ([6560e73](https://github.com/yuens1002/ecomm-ai-app/commit/6560e730f3fe67fe86c5e11512388d90048ccefa))
+  - Modal-based chat UI with fixed height, scrollable messages, and always-visible input
+  - Gemini AI integration with user context (order history, favorites, addresses)
+  - Retry mechanism for service errors with spinning state and right-aligned button
+  - Comprehensive brewing method guide in system prompt (drip vs espresso distinction)
+  - Bilingual support with auto-detection (English/Spanish)
+  - Error handling for rate limits, service unavailable, and empty responses
+```
+
+**Guidelines:**
+- Each worthy commit gets its own entry with commit link
+- One-line summary describes what was accomplished
+- 2-6 bullet points detail the key features/improvements
+- Keep bullets concise and high-level (avoid implementation minutiae)
+- This documentation helps track progress on feature branches and makes merging to main easier
+
+### 3. Run Precheck Before Push
 
 ```powershell
 npm run precheck

@@ -2,6 +2,14 @@
 
 ## 0.15.0 - 2025-11-20
 
+- **AI Barista Chat MVP**: Text-based conversational interface with comprehensive error handling and brewing knowledge ([6560e73](https://github.com/yuens1002/ecomm-ai-app/commit/6560e730f3fe67fe86c5e11512388d90048ccefa))
+  - Modal-based chat UI with fixed height, scrollable messages, and always-visible input
+  - Gemini AI integration with user context (order history, favorites, addresses)
+  - Retry mechanism for service errors with spinning state and right-aligned button
+  - Comprehensive brewing method guide in system prompt (drip vs espresso distinction)
+  - Bilingual support with auto-detection (English/Spanish)
+  - Error handling for rate limits, service unavailable, and empty responses
+
 - **Voice Barista UI Foundation**: Session-based hero section with voice chat interface for authenticated users ([2519901](https://github.com/yuens1002/ecomm-ai-app/commit/2519901328b456f853c1df27bdca19d036468bd6))
   - VoiceBarista component replaces hero for authenticated users with "Start Voice Chat" and "Get AI Recommendation" options
   - Voice AI platform research complete - selected VAPI for multilingual support and function calling
