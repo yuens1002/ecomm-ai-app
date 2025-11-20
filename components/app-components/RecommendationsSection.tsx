@@ -88,7 +88,7 @@ export default function RecommendationsSection() {
     return null; // Don't show section if no recommendations
   }
 
-  const { products, isPersonalized, source, userPreferences } = recommendations;
+  const { products, isPersonalized, userPreferences } = recommendations;
 
   return (
     <section className="bg-secondary py-12">

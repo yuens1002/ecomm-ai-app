@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getUserRecommendationContext, getTrendingProducts } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
+import { Product, ProductVariant, PurchaseOption } from "@prisma/client";
 
 interface RecommendationProduct {
   id: string;

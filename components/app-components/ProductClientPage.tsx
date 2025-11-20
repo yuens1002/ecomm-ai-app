@@ -62,7 +62,7 @@ export default function ProductClientPage({
   const [selectedPurchaseOption, setSelectedPurchaseOption] = useState(
     selectedVariant.purchaseOptions[0]
   );
-  const [quantity, setQuantity] = useState(1);
+  const quantity = 1;
   // Track which subscription cadence is selected (purchaseOptionId)
   const [selectedSubscriptionOptionId, setSelectedSubscriptionOptionId] =
     useState<string | null>(null);

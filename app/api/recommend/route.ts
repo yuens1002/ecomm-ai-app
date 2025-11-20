@@ -56,9 +56,6 @@ export async function POST(request: Request) {
     const productList = products
       .map((p) => `- ${p.name}: (Tasting notes: ${p.tastingNotes.join(", ")})`)
       .join("\n");
-    
-    // Create a map for looking up slugs by product name
-    const productSlugMap = new Map(products.map(p => [p.name.toLowerCase(), p.slug]));
 
     // --- 6. Build Personalized Context (if available) ---
     let personalizedContext = "";

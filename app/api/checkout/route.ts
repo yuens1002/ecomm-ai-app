@@ -111,7 +111,6 @@ export async function POST(req: NextRequest) {
     let shippingAddressCollection: any =
       deliveryMethod === "DELIVERY" ? { allowed_countries: ["US"] } : undefined;
     let customerEmail: string | undefined;
-    let prefillShippingDetails: any = undefined;
 
     if (userId) {
       const { auth } = await import("@/auth");
@@ -123,23 +122,10 @@ export async function POST(req: NextRequest) {
 
       // If user selected a specific address, fetch it to pre-fill Stripe
       if (selectedAddressId && deliveryMethod === "DELIVERY") {
-        const selectedAddress = await prisma.address.findUnique({
+        await prisma.address.findUnique({
           where: { id: selectedAddressId },
           include: { user: true },
         });
-
-        if (selectedAddress) {
-          prefillShippingDetails = {
-            name: selectedAddress.user.name || "",
-            address: {
-              line1: selectedAddress.street,
-              city: selectedAddress.city,
-              state: selectedAddress.state,
-              postal_code: selectedAddress.postalCode,
-              country: selectedAddress.country,
-            },
-          };
-        }
       }
     }
 
@@ -195,9 +181,6 @@ export async function POST(req: NextRequest) {
       });
 
       // Create a set of existing stripe product IDs (which represent unique product+variant combos)
-      const existingStripeProductIds = new Set(
-        activeSubs.flatMap((s) => s.stripeProductIds)
-      );
 
       const attemptedDuplicates: string[] = [];
       for (const item of subscriptionItems) {

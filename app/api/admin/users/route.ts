@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
 
 // GET /api/admin/users - List all users
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     // Verify admin access
     const auth = await requireAdminApi();

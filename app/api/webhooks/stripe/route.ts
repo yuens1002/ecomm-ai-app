@@ -4,7 +4,6 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { resend } from "@/lib/resend";
 import Stripe from "stripe";
-import { render } from "@react-email/components";
 import OrderConfirmationEmail from "@/emails/OrderConfirmationEmail";
 import MerchantOrderNotification from "@/emails/MerchantOrderNotification";
 
@@ -75,11 +74,6 @@ export async function POST(req: NextRequest) {
           : [];
 
         const deliveryMethod = session.metadata?.deliveryMethod || "DELIVERY";
-        const preferredAddressId =
-          session.metadata?.selectedAddressId &&
-          session.metadata.selectedAddressId !== ""
-            ? session.metadata.selectedAddressId
-            : null;
 
         // Find user by email if they're signed in
         const customerEmail = session.customer_details?.email;
@@ -1159,7 +1153,6 @@ export async function POST(req: NextRequest) {
                 sum + item.quantity * item.purchaseOption.priceInCents,
               0
             );
-            const shippingInCents = order.totalInCents - subtotalInCents;
 
             const shippingAddressData =
               order.deliveryMethod === "DELIVERY" && order.shippingStreet

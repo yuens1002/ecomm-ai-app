@@ -76,7 +76,7 @@ export default function AdminOrdersPage() {
       const data = await res.json();
       setOrders(data.orders);
       setFilteredOrders(data.orders);
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to load orders",
@@ -129,7 +129,7 @@ export default function AdminOrdersPage() {
       setCarrier("");
       setSelectedOrder(null);
       fetchOrders();
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to mark order as shipped",
@@ -158,7 +158,7 @@ export default function AdminOrdersPage() {
       });
 
       fetchOrders();
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to mark order as picked up",

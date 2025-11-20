@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -47,13 +46,11 @@ interface DangerZoneTabProps {
  * - Some data may need to be retained for legal/financial reasons
  */
 export default function DangerZoneTab({
-  userId,
   userEmail,
 }: DangerZoneTabProps) {
   const [confirmEmail, setConfirmEmail] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   const handleDelete = async () => {
     if (confirmEmail !== userEmail) {

@@ -100,8 +100,7 @@ export function ShoppingCart() {
 
   // Listen for cart errors (e.g., mixed billing intervals)
   useEffect(() => {
-    const handleCartError = (event: Event) => {
-      const customEvent = event as CustomEvent;
+    const handleCartError = () => {
       toast({
         title: "Ooops!",
         description:

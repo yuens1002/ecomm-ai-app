@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ export default function SignInPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [checkoutNotice, setCheckoutNotice] = useState(() => {
+  const checkoutNotice = (() => {
     if (typeof window === "undefined") return "";
     const stored = window.localStorage.getItem("artisan-roast-checkout-notice");
     if (stored) {
@@ -28,7 +28,7 @@ export default function SignInPage() {
       return stored;
     }
     return "";
-  });
+  })();
   const [showPassword, setShowPassword] = useState(false);
 
   const handleEmailSignIn = async (e: FormEvent<HTMLFormElement>) => {

@@ -56,11 +56,9 @@ interface AddressesTabProps {
  */
 export default function AddressesTab({
   addresses = [],
-  userId,
   onUpdate,
 }: AddressesTabProps) {
   const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{
