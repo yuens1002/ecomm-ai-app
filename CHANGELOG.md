@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.15.0 - 2025-11-20
+
+- **Voice Barista UI Foundation**: Session-based hero section with voice chat interface for authenticated users ([2519901](https://github.com/yuens1002/ecomm-ai-app/commit/2519901328b456f853c1df27bdca19d036468bd6))
+  - VoiceBarista component replaces hero for authenticated users with "Start Voice Chat" and "Get AI Recommendation" options
+  - Voice AI platform research complete - selected VAPI for multilingual support and function calling
+  - Conversation flow designed with 6 backend functions and bilingual templates (English/Spanish)
+
 ## 0.14.0 - 2025-11-20
 
 - **AI Recommendation Buy Now**: Complete checkout flow integration with AI recommendations

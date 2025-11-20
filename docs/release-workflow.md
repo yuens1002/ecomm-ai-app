@@ -26,8 +26,20 @@ Follow these steps for every release to GitHub:
 Add a new section at the top with:
 
 - Version number and date (e.g., `## 0.11.3 - 2025-11-16`)
-- Bullet points for all new features, bug fixes, and changes
+- **Main entry**: Feature name/title with GitHub commit link in format `([commit_hash](https://github.com/yuens1002/ecomm-ai-app/commit/{full_hash}))`
+- **2-4 concise bullets**: High-level summary statements only - what was accomplished, not implementation details
+- Keep it readable and valuable - avoid nitty-gritty technical details
 - Group by category: Features, Bug Fixes, Dependencies, etc.
+
+**Example:**
+```markdown
+## 0.15.0 - 2025-11-20
+
+- **Voice Barista UI Foundation**: Session-based hero section with voice chat interface ([abc1234](https://github.com/yuens1002/ecomm-ai-app/commit/abc1234))
+  - VoiceBarista component replaces hero for authenticated users
+  - Voice AI platform research complete - selected VAPI
+  - Conversation flow designed with 6 backend functions
+```
 
 ### 2. Bump Version in package.json
 
