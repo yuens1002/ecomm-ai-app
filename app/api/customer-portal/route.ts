@@ -34,9 +34,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Verify the customer exists in Stripe, if not return a helpful error
+    let customerId = stripeCustomerId;
+    try {
+      await stripe.customers.retrieve(stripeCustomerId);
+    } catch (error) {
+      if (error instanceof Stripe.errors.StripeInvalidRequestError && error.code === 'resource_missing') {
+        console.log("❌ Customer doesn't exist in Stripe:", stripeCustomerId);
+        return NextResponse.json(
+          { error: "Customer account not found. Please contact support or create a new order to set up billing." },
+          { status: 404 }
+        );
+      }
+      throw error; // Re-throw if it's a different error
+    }
+
     // Create portal session
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer: stripeCustomerId,
+      customer: customerId,
       return_url: returnUrl || `${process.env.NEXT_PUBLIC_BASE_URL}/account`,
     });
 
@@ -47,8 +62,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: portalSession.url });
   } catch (error: unknown) {
     console.error("Error creating portal session:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to create portal session";
     return NextResponse.json(
-      { error: error.message || "Failed to create portal session" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

@@ -47,6 +47,7 @@ export default function SubscriptionsTab({
   subscriptions,
 }: SubscriptionsTabProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [invalidCustomerIds, setInvalidCustomerIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const handleManageSubscription = async (
@@ -65,16 +66,25 @@ export default function SubscriptionsTab({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create portal session");
+        const errorData = await response.json();
+        
+        // If customer not found (404), mark as invalid and don't show error toast
+        if (response.status === 404) {
+          setInvalidCustomerIds(prev => new Set(prev).add(stripeCustomerId));
+          return;
+        }
+        
+        throw new Error(errorData.error || "Failed to create portal session");
       }
 
       const { url } = await response.json();
       window.location.href = url;
     } catch (error) {
       console.error("Error opening customer portal:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to open subscription management portal";
       toast({
         title: "Error",
-        description: "Failed to open subscription management portal",
+        description: errorMessage,
         variant: undefined,
         className: "!bg-foreground !text-background !border-foreground",
       });
@@ -236,30 +246,39 @@ export default function SubscriptionsTab({
               </div>
             )}
 
-            {/* Manage Button */}
+            {/* Manage Button or Info Message */}
             {subscription.status !== "CANCELED" && (
-              <Button
-                onClick={() =>
-                  handleManageSubscription(
-                    subscription.stripeCustomerId,
-                    subscription.id
-                  )
-                }
-                disabled={loadingId === subscription.id}
-                className="w-full"
-              >
-                {loadingId === subscription.id ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Opening Portal...
-                  </>
+              <>
+                {invalidCustomerIds.has(subscription.stripeCustomerId) ? (
+                  <div className="bg-muted rounded-md p-3 text-sm text-muted-foreground text-center">
+                    <p>Subscription management is not available for demo accounts.</p>
+                    <p className="mt-1 text-xs">Create a real order to access the billing portal.</p>
+                  </div>
                 ) : (
-                  <>
-                    Manage Subscription
-                    <ExternalLink className="ml-2 h-4 w-4" />
-                  </>
+                  <Button
+                    onClick={() =>
+                      handleManageSubscription(
+                        subscription.stripeCustomerId,
+                        subscription.id
+                      )
+                    }
+                    disabled={loadingId === subscription.id}
+                    className="w-full"
+                  >
+                    {loadingId === subscription.id ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Opening Portal...
+                      </>
+                    ) : (
+                      <>
+                        Manage Subscription
+                        <ExternalLink className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </>
             )}
 
             {/* Canceled Date */}

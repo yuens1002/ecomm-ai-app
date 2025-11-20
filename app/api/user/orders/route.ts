@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const limitParam = searchParams.get("limit");
     const limit = limitParam ? parseInt(limitParam, 10) : undefined;
-    const statusFilter = searchParams.get(\"status\");
+    const statusFilter = searchParams.get("status");
 
     // Build where clause with optional status filter
     const where: { userId: string; status?: string | { in: string[] } } = {

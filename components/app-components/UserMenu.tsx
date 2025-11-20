@@ -1,6 +1,7 @@
 "use client";
 
 import { signOut } from "next-auth/react";
+import Image from "next/image";
 import { User } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,9 +33,11 @@ export function UserMenu({ user, isAdmin = false }: UserMenuProps) {
           className="relative text-text-muted hover:text-primary transition-colors"
         >
           {user.image ? (
-            <img
+            <Image
               src={user.image}
               alt={user.name || "User"}
+              width={32}
+              height={32}
               className="w-8 h-8 rounded-full"
             />
           ) : (

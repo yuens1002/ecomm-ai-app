@@ -123,7 +123,10 @@ export default function AccountPageClient({ user }: AccountPageClientProps) {
         </TabsList>
 
         <TabsContent value="profile">
-          <ProfileTab user={userData} onUpdate={setUserData} />
+          <ProfileTab 
+            user={userData} 
+            onUpdate={(user) => setUserData({ ...userData, ...user })} 
+          />
         </TabsContent>
 
         <TabsContent value="security">

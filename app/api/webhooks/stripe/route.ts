@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
         // Extract shipping info from Stripe session
         // For DELIVERY orders with shipping_address_collection, Stripe populates customer_details.address
         // Note: Stripe Link may autofill with incomplete saved data in test mode
-        const sessionWithShipping = session as any;
+        const sessionWithShipping = session as Stripe.Checkout.Session & { shipping?: { address?: Stripe.Address; name?: string } };
         const shippingAddress =
           sessionWithShipping.shipping?.address ||
           session.customer_details?.address;
@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
                 expand: ["payment_method"],
               }
             );
-            const paymentMethod = paymentIntent.payment_method as any;
+            const paymentMethod = paymentIntent.payment_method as Stripe.PaymentMethod;
             if (paymentMethod?.card?.last4) {
               // Format as "Visa ****1234"
               const brand =
@@ -743,7 +743,7 @@ export async function POST(req: NextRequest) {
       }
 
       case "invoice.payment_succeeded": {
-        const invoice = event.data.object as any; // Use any to access subscription field
+        const invoice = event.data.object as Stripe.Invoice;
         console.log("\n=== INVOICE PAYMENT SUCCEEDED ===");
         console.log("Invoice ID:", invoice.id);
         console.log("Customer ID:", invoice.customer);
@@ -815,7 +815,7 @@ export async function POST(req: NextRequest) {
           const customer = await stripe.customers.retrieve(
             subscription.customer as string
           );
-          const customerEmail = (customer as any).email;
+          const customerEmail = (customer as Stripe.Customer).email;
 
           if (customerEmail) {
             user = await prisma.user.findUnique({
@@ -1073,7 +1073,7 @@ export async function POST(req: NextRequest) {
                     expand: ["payment_method"],
                   }
                 );
-                const paymentMethod = charge.payment_method as any;
+                const paymentMethod = charge.payment_method as Stripe.PaymentMethod;
                 if (paymentMethod?.card?.last4) {
                   const brand =
                     paymentMethod.card.brand.charAt(0).toUpperCase() +
@@ -1154,12 +1154,6 @@ export async function POST(req: NextRequest) {
               purchaseType: item.purchaseOption.type,
               deliverySchedule,
             }));
-
-            const subtotalInCents = order.items.reduce(
-              (sum, item) =>
-                sum + item.quantity * item.purchaseOption.priceInCents,
-              0
-            );
 
             const shippingAddressData =
               order.deliveryMethod === "DELIVERY" && order.shippingStreet

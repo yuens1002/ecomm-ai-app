@@ -23,21 +23,6 @@ import * as path from "path";
 dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 
 import { prisma } from "../lib/prisma";
-import { stripe } from "../lib/stripe";
-
-// Backfill newly added optional stripePriceIds field (older subscriptions may not have it)
-// NOTE: This function is now OUTDATED - stripePriceIds is an array
-async function backfillStripePriceIds() {
-  // This logic needs to be rewritten for array fields
-  console.log("⚠️ backfillStripePriceIds is outdated for array-based model");
-  return;
-}
-
-async function dedupePerUserProduct() {
-  // This logic needs to be rewritten for array-based stripeProductIds field
-  console.log("⚠️ dedupePerUserProduct is outdated for array-based model");
-  return;
-}
 
 async function main() {
   console.error("❌ This script is OUTDATED and incompatible with the current Subscription model.");

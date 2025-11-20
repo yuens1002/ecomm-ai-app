@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import { getUserRecommendationContext, getTrendingProducts } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 
+// RecommendationProduct interface matches the type returned from Prisma queries
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface RecommendationProduct {
   id: string;
   name: string;
@@ -73,7 +75,7 @@ export async function GET(request: Request) {
 
     // Get products they haven't ordered recently
     const purchasedProductIds = userContext.purchaseHistory.products.map(
-      (p: any) => p.name
+      (p: { name: string }) => p.name
     );
     const recentlyViewedIds = userContext.recentViews.map((v) => v.name);
 

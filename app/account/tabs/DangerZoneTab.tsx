@@ -122,13 +122,19 @@ export default function DangerZoneTab({
             </p>
           </div>
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="w-full sm:w-auto">
-                <AlertTriangle className="w-4 h-4 mr-2" />
-                Delete My Account
-              </Button>
-            </AlertDialogTrigger>
+          {userEmail?.includes('demo') ? (
+            <div className="bg-muted rounded-md p-3 text-sm text-muted-foreground">
+              <p>Account deletion is not available for demo accounts.</p>
+              <p className="mt-1 text-xs">This is a demonstration account used to showcase the platform features.</p>
+            </div>
+          ) : (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full sm:w-auto">
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  Delete My Account
+                </Button>
+              </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2 text-red-600">
@@ -191,6 +197,7 @@ export default function DangerZoneTab({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          )}
         </div>
 
         {/* Alternative: Export Data */}

@@ -3,7 +3,7 @@ import { TextEncoder, TextDecoder } from 'util';
 
 // Polyfill for Next.js edge runtime globals
 global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder as any;
+global.TextDecoder = TextDecoder as typeof global.TextDecoder;
 
 // Mock sessionStorage for tests
 const sessionStorageMock = (() => {

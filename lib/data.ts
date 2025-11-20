@@ -289,7 +289,7 @@ export async function getUserPurchaseHistory(userId: string) {
       take: 20, // Limit to last 20 orders
     });
 
-    return orders as any; // Type assertion for complex nested includes
+    return orders;
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to fetch user purchase history.");
@@ -433,8 +433,8 @@ export async function getUserRecommendationContext(userId: string) {
     ]);
 
     // Extract purchased products
-    const purchasedProducts = purchaseHistory.flatMap((order: any) =>
-      order.items.map((item: any) => ({
+    const purchasedProducts = purchaseHistory.flatMap((order: OrderWithItems) =>
+      order.items.map((item: OrderItemWithDetails) => ({
         name: item.purchaseOption.variant.product.name,
         roastLevel: item.purchaseOption.variant.product.roastLevel,
         tastingNotes: item.purchaseOption.variant.product.tastingNotes,
@@ -446,7 +446,7 @@ export async function getUserRecommendationContext(userId: string) {
     const roastLevelCounts = new Map<string, number>();
     const tastingNotesCounts = new Map<string, number>();
 
-    purchasedProducts.forEach((p: any) => {
+    purchasedProducts.forEach((p: { roastLevel: string; tastingNotes: string[] }) => {
       roastLevelCounts.set(p.roastLevel, (roastLevelCounts.get(p.roastLevel) || 0) + 1);
       p.tastingNotes.forEach((note: string) => {
         tastingNotesCounts.set(note, (tastingNotesCounts.get(note) || 0) + 1);
