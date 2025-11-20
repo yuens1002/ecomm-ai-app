@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.13.2 - 2025-11-20
+
+- **AI Recommendation Modal Improvements**: Enhanced user experience and functionality
+  - **Product Linking**: "View Product" button now appears when AI recommends a specific coffee, linking directly to the product page
+  - **Better Flow**: "Start Over" button resets to step 1 instead of closing modal, allowing users to get multiple recommendations
+  - **Conditional Badge**: Personalization badge only shows when user has actual purchase history (>0 orders)
+  - **Visual Polish**: Improved badge styling with CheckCircle2 icon from lucide-react, subtle green background (green-500/10) with better visibility in both light/dark modes
+  - **Cleaner Layout**: Removed unnecessary whitespace between title and content in result step
+  - **Increased Token Limit**: Raised Gemini maxOutputTokens from 1000 to 2000 to prevent response cutoff
+  - **Graceful Error Handling**: Added friendly fallback message when MAX_TOKENS is reached instead of showing error
+  - **API Enhancement**: Recommendation endpoint now returns product slug for direct linking
+
 ## 0.13.1 - 2025-11-20
 
 - **AI-Generated Product Images**: All 30 coffee products now have custom branded images
