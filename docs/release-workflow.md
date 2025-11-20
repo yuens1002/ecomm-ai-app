@@ -25,8 +25,13 @@ When working on a feature branch (e.g., `feature/voice-barista-mvp`):
 
 ```powershell
 git add -A
-git commit -m "feat: descriptive commit message"
+git commit -m "feat: concise commit message"
 ```
+
+**Commit Message Guidelines:**
+- Keep commit messages **concise** - one line describing what changed
+- Omit detailed explanations from commit messages
+- Save detailed documentation for CHANGELOG.md entries (see step 2)
 
 You can make multiple commits on the feature branch - each is isolated to the branch.
 
@@ -130,8 +135,13 @@ Update the `version` field:
 
 ```powershell
 git add -A
-git commit -m "feat: descriptive commit message"
+git commit -m "feat: concise commit message"
 ```
+
+**Commit Message Guidelines:**
+- Keep commit messages **concise** - one line describing what changed
+- Omit detailed explanations from commit messages
+- All details should be in CHANGELOG.md with the commit link
 
 ### 4. Version Bump Commit
 
