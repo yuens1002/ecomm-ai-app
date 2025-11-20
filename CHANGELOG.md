@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.3 - 2025-11-20
+
+- **Buy Now Functionality**: AI recommendation modal now supports direct checkout
+  - **Buy Now Button**: Primary action button that adds recommended product to cart and navigates to checkout
+  - **Smart Product Matching**: API fetches full product data (variants, images, purchase options) based on AI recommendation
+  - **Featured Product Fallback**: If AI doesn't match a specific product, automatically suggests first featured product
+  - **Cart Integration**: Uses Zustand cart store to add first variant with one-time purchase option
+  - **Improved Button Layout**: Three action options - "Start Over" (outline), "View Details" (outline), "Buy Now" (primary)
+  - **Seamless Flow**: After adding to cart, user is redirected to checkout and modal closes automatically
+
 ## 0.13.2 - 2025-11-20
 
 - **AI Recommendation Modal Improvements**: Enhanced user experience and functionality
