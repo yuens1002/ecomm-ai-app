@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     if (!apiKey) {
       throw new Error("GEMINI_API_KEY is not set");
     }
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     // --- 5. Create the Product List for the Prompt ---
     const productList = products
@@ -121,8 +121,11 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
         parts: [{ text: systemPrompt }],
       },
       generationConfig: {
-        maxOutputTokens: 2000,
+        maxOutputTokens: 500,
         temperature: 0.7,
+        thinkingConfig: {
+          thinkingBudget: 0
+        }
       },
     };
 
@@ -152,7 +155,7 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
       // If MAX_TOKENS, provide a graceful fallback
       if (finishReason === 'MAX_TOKENS') {
         return NextResponse.json({ 
-          text: "I'd recommend exploring our selection based on your preferences! Our ${taste.toLowerCase()} coffees are perfect for ${brewMethod.toLowerCase()}. Browse our full catalog to find your perfect match.",
+          text: `I'd recommend exploring our selection based on your preferences! Our ${taste.toLowerCase()} coffees are perfect for ${brewMethod.toLowerCase()}. Browse our full catalog to find your perfect match.`,
           isPersonalized,
           userContext: isPersonalized ? {
             totalOrders: userContext?.purchaseHistory.totalOrders,
