@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 // --- REMOVED: useEffect and Product type ---
 import { AiHelperModalProps } from "@/lib/types"; // Import shared types
 import { Button } from "@/components/ui/button";
+import { useCartStore } from "@/lib/store/cart-store";
 import {
   Dialog,
   DialogContent,
@@ -20,12 +22,16 @@ import { Loader2, CheckCircle2 } from "lucide-react"; // Import icons
 
 // --- AI Helper Modal Component ---
 export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
+  const router = useRouter();
+  const addItem = useCartStore((state) => state.addItem);
+  
   const [step, setStep] = useState<number>(1);
   const [taste, setTaste] = useState<string>("");
   const [brewMethod, setBrewMethod] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [recommendation, setRecommendation] = useState<string>("");
   const [productSlug, setProductSlug] = useState<string | null>(null);
+  const [productData, setProductData] = useState<any>(null);
   const [isPersonalized, setIsPersonalized] = useState<boolean>(false);
   const [userStats, setUserStats] = useState<{
     totalOrders?: number;
@@ -42,10 +48,43 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
       setBrewMethod("");
       setRecommendation("");
       setProductSlug(null);
+      setProductData(null);
       setIsLoading(false);
       setIsPersonalized(false);
       setUserStats(null);
     }, 300);
+  };
+
+  const handleBuyNow = () => {
+    if (!productData) return;
+
+    // Get the first variant and its one-time purchase option
+    const variant = productData.variants[0];
+    const purchaseOption = variant.purchaseOptions.find(
+      (po: any) => po.type === "ONE_TIME"
+    ) || variant.purchaseOptions[0];
+
+    // Add to cart
+    addItem({
+      productId: productData.id,
+      productName: productData.name,
+      productSlug: productData.slug,
+      variantId: variant.id,
+      variantName: variant.name,
+      purchaseOptionId: purchaseOption.id,
+      purchaseType: purchaseOption.type,
+      priceInCents: purchaseOption.priceInCents,
+      imageUrl: productData.images[0]?.url,
+      quantity: 1,
+      billingInterval: purchaseOption.billingInterval || undefined,
+      billingIntervalCount: purchaseOption.billingIntervalCount || undefined,
+    });
+
+    // Navigate to checkout
+    router.push("/checkout");
+    
+    // Close modal
+    handleClose();
   };
 
   const getRecommendation = async () => {
@@ -75,6 +114,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
 
       setRecommendation(result.text);
       setProductSlug(result.productSlug || null);
+      setProductData(result.productData || null);
       setIsPersonalized(result.isPersonalized || false);
       setUserStats(result.userContext || null);
       setStep(3); // Move to the result step
@@ -223,6 +263,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
                   setStep(1);
                   setRecommendation("");
                   setProductSlug(null);
+                  setProductData(null);
                 }}
                 variant="outline"
                 className="w-full sm:w-auto"
@@ -230,11 +271,21 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
                 Start Over
               </Button>
               {productSlug && (
-                <Button asChild className="w-full sm:w-auto">
-                  <Link href={`/products/${productSlug}`}>
-                    View Product
-                  </Link>
-                </Button>
+                <>
+                  <Button asChild variant="outline" className="w-full sm:w-auto">
+                    <Link href={`/products/${productSlug}`}>
+                      View Details
+                    </Link>
+                  </Button>
+                  {productData && (
+                    <Button 
+                      onClick={handleBuyNow}
+                      className="w-full sm:w-auto"
+                    >
+                      Buy Now
+                    </Button>
+                  )}
+                </>
               )}
             </DialogFooter>
           </div>

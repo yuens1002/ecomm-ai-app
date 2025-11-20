@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { getProductsForAI, getUserRecommendationContext } from "@/lib/data";
+import { getProductsForAI, getUserRecommendationContext, getFeaturedProducts } from "@/lib/data";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 
 // Define the expected structure of the *incoming* request body
 interface RecommendRequest {
@@ -165,6 +166,8 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
 
     // --- 7. Extract recommended product slug from the response ---
     let productSlug = null;
+    let productData = null;
+    
     // Try to find a product name in the recommendation text
     for (const product of products) {
       if (text.toLowerCase().includes(product.name.toLowerCase())) {
@@ -173,10 +176,52 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
       }
     }
 
-    // --- 8. Return the AI's response with personalization flag ---
+    // --- 8. Fetch full product data if found, otherwise use first featured ---
+    if (productSlug) {
+      productData = await prisma.product.findUnique({
+        where: { slug: productSlug },
+        include: {
+          images: {
+            orderBy: { order: "asc" },
+            take: 1,
+          },
+          variants: {
+            include: {
+              purchaseOptions: true,
+            },
+          },
+        },
+      });
+    }
+    
+    // Fallback: If no product matched, use first featured product
+    if (!productData) {
+      const featuredProducts = await getFeaturedProducts();
+      if (featuredProducts.length > 0) {
+        const fallbackProduct = featuredProducts[0];
+        productSlug = fallbackProduct.slug;
+        productData = await prisma.product.findUnique({
+          where: { slug: productSlug },
+          include: {
+            images: {
+              orderBy: { order: "asc" },
+              take: 1,
+            },
+            variants: {
+              include: {
+                purchaseOptions: true,
+              },
+            },
+          },
+        });
+      }
+    }
+
+    // --- 9. Return the AI's response with product data ---
     return NextResponse.json({ 
       text,
       productSlug,
+      productData,
       isPersonalized,
       userContext: isPersonalized ? {
         totalOrders: userContext?.purchaseHistory.totalOrders,
