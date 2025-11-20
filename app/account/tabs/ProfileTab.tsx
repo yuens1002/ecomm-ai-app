@@ -22,7 +22,7 @@ interface UserData {
 
 interface ProfileTabProps {
   user: UserData;
-  onUpdate: (user: any) => void;
+  onUpdate: (user: UserData) => void;
 }
 
 /**

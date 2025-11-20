@@ -121,7 +121,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {order.items.map((item: any) => (
+                  {order.items.map((item: OrderItemWithDetails) => (
                     <tr key={item.id}>
                       <td className="py-4 px-4">
                         <Link

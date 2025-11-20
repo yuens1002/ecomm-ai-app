@@ -61,7 +61,7 @@ export function ShoppingCart() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null
   );
-  const [addresses, setAddresses] = useState<any[]>([]);
+  const [addresses, setAddresses] = useState<Address[]>([]);
   const [loadingPreferences, setLoadingPreferences] = useState(true);
 
   const items = useCartStore((state) => state.items);

@@ -73,11 +73,11 @@ export async function DELETE(
       success: true,
       addresses,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Address deletion error:", error);
 
     // Handle foreign key constraint errors
-    if (error.code === "P2003") {
+    if (error && typeof error === "object" && "code" in error && error.code === "P2003") {
       return NextResponse.json(
         { error: "Cannot delete address that is used in orders" },
         { status: 400 }

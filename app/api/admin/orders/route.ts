@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
 
     const orders = await prisma.order.findMany({
-      where: status && status !== "all" ? { status: status as any } : {},
+      where: status && status !== "all" ? { status: status as OrderStatus } : {},
       include: {
         items: {
           include: {

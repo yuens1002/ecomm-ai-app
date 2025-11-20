@@ -51,7 +51,7 @@ export default function CategoryClientPage({
           {products.map((product) => (
             <ProductCard
               key={product.id}
-              product={product as any} // Cast as 'any' because getProductsByCategorySlug is partial
+              product={product}
               showPurchaseOptions={true} // Show button on category page
               categorySlug={categorySlug}
             />

@@ -136,7 +136,7 @@ export default function RecommendationsSection() {
           {products.map((product) => (
             <ProductCard
               key={product.id}
-              product={product as any}
+              product={product}
               categorySlug={
                 isPersonalized
                   ? "recommendations-personalized"

@@ -62,13 +62,13 @@ export async function POST(request: Request) {
     if (userContext && isPersonalized) {
       const purchasedNames = userContext.purchaseHistory.products
         .slice(0, 5)
-        .map((p: any) => p.name);
+        .map((p: { name: string }) => p.name);
       const viewedNames = userContext.recentViews
         .slice(0, 5)
-        .map((v: any) => v.name);
+        .map((v: { name: string }) => v.name);
       const topSearches = userContext.searchHistory
         .slice(0, 3)
-        .map((s: any) => s.query);
+        .map((s: { query: string }) => s.query);
 
       personalizedContext = `\n\n--- CUSTOMER PURCHASE & BEHAVIOR HISTORY ---
 This customer has demonstrated clear preferences based on their history:

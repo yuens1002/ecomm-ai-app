@@ -63,11 +63,11 @@ export async function POST(
           payment_intent: order.stripePaymentIntentId,
           reason: "requested_by_customer",
         });
-      } catch (stripeError: any) {
+      } catch (stripeError: unknown) {
         console.error("Stripe refund error:", stripeError);
         return NextResponse.json(
           {
-            error: `Failed to process refund: ${stripeError.message}`,
+            error: `Failed to process refund: ${stripeError instanceof Error ? stripeError.message : "Unknown error"}`,
           },
           { status: 500 }
         );

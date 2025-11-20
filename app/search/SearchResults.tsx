@@ -150,7 +150,7 @@ export default function SearchResults() {
                     {
                       ...product,
                       category: product.categories[0]?.category || null,
-                    } as any
+                    }
                   }
                 />
               ))}

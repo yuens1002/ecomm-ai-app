@@ -29,7 +29,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [recommendation, setRecommendation] = useState<string>("");
   const [productSlug, setProductSlug] = useState<string | null>(null);
-  const [productData, setProductData] = useState<any>(null);
+  const [productData, setProductData] = useState<{ id: string; name: string; slug: string; images: { url: string }[]; variants: { id: string; name: string; purchaseOptions: PurchaseOption[] }[] } | null>(null);
   const [isPersonalized, setIsPersonalized] = useState<boolean>(false);
   const [userStats, setUserStats] = useState<{
     totalOrders?: number;

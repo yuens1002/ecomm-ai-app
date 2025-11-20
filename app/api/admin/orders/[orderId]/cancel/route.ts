@@ -126,10 +126,10 @@ export async function POST(
         ? "Order and subscription canceled successfully"
         : "Order canceled successfully",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Order cancellation error:", error);
 
-    if (error.message.includes("Unauthorized")) {
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
       return NextResponse.json(
         { error: "Admin access required" },
         { status: 403 }

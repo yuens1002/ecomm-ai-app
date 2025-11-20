@@ -79,10 +79,10 @@ export async function PATCH(
       success: true,
       order,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Mark as picked up error:", error);
 
-    if (error.message.includes("Unauthorized")) {
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
       return NextResponse.json(
         { error: "Admin access required" },
         { status: 403 }

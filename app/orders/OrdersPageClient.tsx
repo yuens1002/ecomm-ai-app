@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { OrderWithItems } from "@/lib/types";
+import { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -255,7 +255,7 @@ export default function OrdersPageClient({
                   {/* Items - Mobile Third */}
                   <div className="col-span-1 md:col-span-2 md:order-3">
                     <div className="space-y-2">
-                      {order.items.map((item: any, idx: number) => (
+                      {order.items.map((item: OrderItemWithDetails, idx: number) => (
                         <div key={item.id}>
                           <div className="text-sm">
                             <Link

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getUserRecommendationContext, getTrendingProducts } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
-import { Product, ProductVariant, PurchaseOption } from "@prisma/client";
 
 interface RecommendationProduct {
   id: string;
@@ -161,7 +160,10 @@ export async function GET(request: Request) {
       source: "behavioral",
       userPreferences: {
         preferredRoastLevel: userContext.purchaseHistory.preferredRoastLevel,
-        topTastingNotes: userContext.purchaseHistory.topTastingNotes.slice(0, 3),
+        topTastingNotes: userContext.purchaseHistory.topTastingNotes.slice(
+          0,
+          3
+        ),
       },
     });
   } catch (error) {
