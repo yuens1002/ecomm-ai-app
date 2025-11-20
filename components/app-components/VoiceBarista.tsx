@@ -10,7 +10,10 @@ interface VoiceBaristaProps {
   onOpenAiModal?: () => void;
 }
 
-export default function VoiceBarista({ userName, onOpenAiModal }: VoiceBaristaProps) {
+export default function VoiceBarista({
+  userName,
+  onOpenAiModal,
+}: VoiceBaristaProps) {
   const [isActive, setIsActive] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState<
@@ -46,7 +49,7 @@ export default function VoiceBarista({ userName, onOpenAiModal }: VoiceBaristaPr
     <div className="relative w-full">
       {/* Hero Section - When Inactive */}
       {!isActive && (
-        <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-accent/10 border-b">
+        <div className="relative overflow-hidden bg-linear-to-br from-primary/10 via-background to-accent/10 border-b">
           <div className="container mx-auto px-4 py-16 md:py-24">
             <div className="max-w-3xl mx-auto text-center space-y-6">
               <h1 className="text-4xl md:text-5xl font-bold text-foreground">
@@ -94,9 +97,7 @@ export default function VoiceBarista({ userName, onOpenAiModal }: VoiceBaristaPr
               <div className="flex items-center gap-3">
                 <div
                   className={`w-3 h-3 rounded-full ${
-                    isListening
-                      ? "bg-green-500 animate-pulse"
-                      : "bg-gray-400"
+                    isListening ? "bg-green-500 animate-pulse" : "bg-gray-400"
                   }`}
                 />
                 <h2 className="text-lg font-semibold">
