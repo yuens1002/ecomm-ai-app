@@ -201,7 +201,7 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
                   Adding password authentication
                 </p>
                 <p>
-                  Once you set a password, you'll be able to sign in with either
+                  Once you set a password, you&apos;ll be able to sign in with either
                   your email/password or your connected OAuth accounts (Google,
                   GitHub).
                 </p>

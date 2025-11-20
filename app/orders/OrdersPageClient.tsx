@@ -27,16 +27,13 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface OrdersPageClientProps {
-  userId: string;
   statusFilter?: string;
 }
 
 export default function OrdersPageClient({
-  userId,
   statusFilter,
 }: OrdersPageClientProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(

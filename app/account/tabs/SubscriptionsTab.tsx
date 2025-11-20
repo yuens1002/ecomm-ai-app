@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -120,7 +121,7 @@ export default function SubscriptionsTab({
               Subscribe to your favorite coffee and get regular deliveries
             </p>
             <Button asChild>
-              <a href="/products">Browse Products</a>
+              <Link href="/products">Browse Products</Link>
             </Button>
           </div>
         </CardContent>

@@ -28,7 +28,7 @@ export default function HeroSection({ onOpenAiModal }: HeroSectionProps) {
             Discover Your Perfect Roast
           </h1>
           <p className="text-lg md:text-xl text-hero-text opacity-90 mb-8">
-            Specialty coffee sourced from the world's finest origins.
+            Specialty coffee sourced from the world&apos;s finest origins.
           </p>
           <Button size="lg" className="font-bold text-lg shadow-md" disabled>
             Loading...
@@ -56,7 +56,7 @@ export default function HeroSection({ onOpenAiModal }: HeroSectionProps) {
           Discover Your Perfect Roast
         </h1>
         <p className="text-lg md:text-xl text-hero-text opacity-90 mb-8">
-          Specialty coffee sourced from the world's finest origins.
+          Specialty coffee sourced from the world&apos;s finest origins.
         </p>
         <Button
           onClick={onOpenAiModal}

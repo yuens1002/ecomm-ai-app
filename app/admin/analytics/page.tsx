@@ -239,7 +239,7 @@ export default function AdminAnalyticsPage() {
                     <span className="text-sm font-medium text-muted-foreground w-6">
                       #{index + 1}
                     </span>
-                    <span className="text-sm font-medium truncate">"{search.query}"</span>
+                    <span className="text-sm font-medium truncate">&quot;{search.query}&quot;</span>
                   </div>
                   <span className="text-sm text-muted-foreground">{search.count}×</span>
                 </div>
