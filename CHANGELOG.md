@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.13.1 - 2025-11-20
+
+- **AI-Generated Product Images**: All 30 coffee products now have custom branded images
+  - Generated using Grok AI (xAI) with consistent "Artisan Roast" branding
+  - Minimalist white packaging with product name in colored label
+  - Images saved as 1024x1024 WebP format for optimal web performance
+  - Cost: ~$2.10 for all 30 images
+- **Product Card Redesign**: Updated ProductCard component for better image display
+  - Square aspect ratio (aspect-square) with 200px max height
+  - Bordered layout with rounded corners on bottom
+  - Text overflow handling with ellipsis for long product names
+  - Improved spacing and visual hierarchy
+- **Image Generation Infrastructure**: Added dependencies and scripts
+  - Dependencies: `sharp` (image processing), `form-data`, `node-fetch@2`
+  - Scripts for Grok API integration and batch image generation
+  - Updated `.env.example` with GROK_API_KEY documentation
+
 ## 0.13.0 - 2025-11-19
 
 - **Real-Time Activity Tracking**: Session-based tracking for PRODUCT_VIEW, ADD_TO_CART, REMOVE_FROM_CART
@@ -107,8 +124,8 @@
     - `invoice.payment_succeeded`: Handles both initial subscription and renewals with array support, loops through productNames to find PurchaseOptions for recurring orders
   - **Duplicate Subscription Prevention**: Updated checkout validation to check all products across productNames arrays (uses `flatMap` and `includes()` to detect duplicates)
   - **Order Cancellation**: Added admin endpoint `/api/admin/orders/[orderId]/cancel` for manually canceling orders
-  - **UI Enhancements**: 
-    - Subscription tab now displays subscription ID without "sub_" prefix for cleaner look
+  - **UI Enhancements**:
+    - Subscription tab now displays subscription ID without "sub\_" prefix for cleaner look
     - Lists all products in subscription with quantities (e.g., "Death Valley Espresso - 2lb Bag × 2")
     - Removed product description field for cleaner UI
     - Kept billing period display for subscription transparency
