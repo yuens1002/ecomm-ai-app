@@ -6,6 +6,13 @@ import { resend } from "@/lib/resend";
 import Stripe from "stripe";
 import OrderConfirmationEmail from "@/emails/OrderConfirmationEmail";
 import MerchantOrderNotification from "@/emails/MerchantOrderNotification";
+import { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
+
+// Webhook-specific cart item from Stripe metadata
+interface WebhookCartItem {
+  purchaseOptionId: string;
+  quantity: number;
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -66,8 +73,8 @@ export async function POST(req: NextRequest) {
 
         console.log("✅ Checkout completed:", session.id);
 
-        const cartItems = session.metadata?.cartItems
-          ? JSON.parse(session.metadata.cartItems).map((item: any) => ({
+        const cartItems: WebhookCartItem[] = session.metadata?.cartItems
+          ? JSON.parse(session.metadata.cartItems).map((item: { po: string; qty: number }) => ({
               purchaseOptionId: item.po, // Map shortened key back
               quantity: item.qty, // Map shortened key back
             }))
@@ -165,7 +172,7 @@ export async function POST(req: NextRequest) {
         try {
           // Fetch purchase options to determine item types (ONE_TIME vs SUBSCRIPTION)
           const purchaseOptionIds = cartItems.map(
-            (item: any) => item.purchaseOptionId
+            (item: WebhookCartItem) => item.purchaseOptionId
           );
           const purchaseOptions = await prisma.purchaseOption.findMany({
           where: { id: { in: purchaseOptionIds } },
@@ -179,14 +186,14 @@ export async function POST(req: NextRequest) {
         });
 
         // Separate items by purchase type
-        const oneTimeItems = cartItems.filter((item: any) => {
+        const oneTimeItems = cartItems.filter((item: WebhookCartItem) => {
           const option = purchaseOptions.find(
             (po) => po.id === item.purchaseOptionId
           );
           return option?.type === "ONE_TIME";
         });
 
-        const subscriptionItems = cartItems.filter((item: any) => {
+        const subscriptionItems = cartItems.filter((item: WebhookCartItem) => {
           const option = purchaseOptions.find(
             (po) => po.id === item.purchaseOptionId
           );
@@ -198,7 +205,7 @@ export async function POST(req: NextRequest) {
         );
 
         // Helper function to calculate item total
-        const calculateItemTotal = (items: any[]) => {
+        const calculateItemTotal = (items: WebhookCartItem[]) => {
           return items.reduce((sum, item) => {
             const option = purchaseOptions.find(
               (po) => po.id === item.purchaseOptionId
@@ -216,7 +223,7 @@ export async function POST(req: NextRequest) {
           (session.amount_total || 0) - totalItemCost;
 
         // Track all created orders for email notifications
-        const createdOrders: any[] = [];
+        const createdOrders: OrderWithItems[] = [];
 
         // Create order for one-time items (if any)
         if (oneTimeItems.length > 0) {
@@ -239,7 +246,7 @@ export async function POST(req: NextRequest) {
               shippingPostalCode: shippingAddress?.postal_code || null,
               shippingCountry: shippingAddress?.country || null,
               items: {
-                create: oneTimeItems.map((item: any) => ({
+                create: oneTimeItems.map((item: WebhookCartItem) => ({
                   quantity: item.quantity,
                   priceInCents: 0, // Will be fetched from purchase option
                   purchaseOptionId: item.purchaseOptionId,
@@ -295,7 +302,7 @@ export async function POST(req: NextRequest) {
               shippingPostalCode: shippingAddress?.postal_code || null,
               shippingCountry: shippingAddress?.country || null,
               items: {
-                create: subscriptionItems.map((item: any) => ({
+                create: subscriptionItems.map((item: WebhookCartItem) => ({
                   quantity: item.quantity,
                   priceInCents: 0,
                   purchaseOptionId: item.purchaseOptionId,
@@ -356,7 +363,7 @@ export async function POST(req: NextRequest) {
             
             // Collect all items from all orders
             const allEmailItems = createdOrders.flatMap((order) =>
-              order.items.map((item: any) => ({
+              order.items.map((item: OrderItemWithDetails) => ({
                 productName: item.purchaseOption.variant.product.name,
                 variantName: item.purchaseOption.variant.name,
                 quantity: item.quantity,
@@ -378,7 +385,7 @@ export async function POST(req: NextRequest) {
               (sum, order) =>
                 sum +
                 order.items.reduce(
-                  (orderSum: number, item: any) =>
+                  (orderSum: number, item: OrderItemWithDetails) =>
                     orderSum +
                     item.quantity * item.purchaseOption.priceInCents,
                   0
@@ -450,7 +457,7 @@ export async function POST(req: NextRequest) {
             // Send merchant notification email for each order
             for (const order of createdOrders) {
               try {
-                const emailItems = order.items.map((item: any) => ({
+                const emailItems = order.items.map((item: OrderItemWithDetails) => ({
                   productName: item.purchaseOption.variant.product.name,
                   variantName: item.purchaseOption.variant.name,
                   quantity: item.quantity,
@@ -691,7 +698,7 @@ export async function POST(req: NextRequest) {
               // Find the order that contains subscription items
               const subscriptionOrder = createdOrders.find((order) =>
                 order.items.some(
-                  (item: any) => item.purchaseOption.type === "SUBSCRIPTION"
+                  (item: OrderItemWithDetails) => item.purchaseOption.type === "SUBSCRIPTION"
                 )
               );
 
