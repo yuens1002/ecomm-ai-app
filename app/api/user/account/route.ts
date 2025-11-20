@@ -13,7 +13,7 @@ import { prisma } from "@/lib/prisma";
  * - Consider data retention policies for legal/financial requirements
  * - This is a cascading delete operation
  */
-export async function DELETE(request: Request) {
+export async function DELETE() {
   try {
     const session = await auth();
 

@@ -1,14 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -75,23 +69,7 @@ export default function AdminOrdersPage() {
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  useEffect(() => {
-    if (statusFilter === "all") {
-      setFilteredOrders(orders);
-    } else if (statusFilter === "completed") {
-      setFilteredOrders(
-        orders.filter((o) => o.status === "SHIPPED" || o.status === "PICKED_UP")
-      );
-    } else {
-      setFilteredOrders(orders.filter((o) => o.status === statusFilter));
-    }
-  }, [statusFilter, orders]);
-
-  async function fetchOrders() {
+  const fetchOrders = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/orders");
       if (!res.ok) throw new Error("Failed to fetch orders");
@@ -108,7 +86,23 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  useEffect(() => {
+    if (statusFilter === "all") {
+      setFilteredOrders(orders);
+    } else if (statusFilter === "completed") {
+      setFilteredOrders(
+        orders.filter((o) => o.status === "SHIPPED" || o.status === "PICKED_UP")
+      );
+    } else {
+      setFilteredOrders(orders.filter((o) => o.status === statusFilter));
+    }
+  }, [statusFilter, orders]);
 
   async function handleMarkAsShipped() {
     if (!selectedOrder || !trackingNumber || !carrier) return;

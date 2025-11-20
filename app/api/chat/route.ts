@@ -120,8 +120,6 @@ ${conversationContext}
 Customer: ${message}
 Barista:`;
 
-
-
     // Call Gemini AI via REST API
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -129,7 +127,7 @@ Barista:`;
     }
 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    
+
     // Structure prompt consistently to enable Gemini's automatic caching
     // Static content (system + products) sent first encourages cache hits
     const requestBody = {
@@ -156,24 +154,28 @@ Barista:`;
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error("Gemini API error:", aiResponse.status, errorText);
-      
+
       // Handle rate limit
       if (aiResponse.status === 429) {
         return NextResponse.json({
-          message: "I'm experiencing high demand right now. Please try again in a moment! ☕",
+          message:
+            "I'm experiencing high demand right now. Please try again in a moment! ☕",
           error: "rate_limit",
         });
       }
-      
+
       // Handle service unavailable/overload
       if (aiResponse.status === 503) {
         return NextResponse.json({
-          message: "I'm taking a quick coffee break! Please try again in a few seconds. ☕",
+          message:
+            "I'm taking a quick coffee break! Please try again in a few seconds. ☕",
           error: "service_unavailable",
         });
       }
-      
-      throw new Error(`Gemini API error: ${aiResponse.status} ${aiResponse.statusText}`);
+
+      throw new Error(
+        `Gemini API error: ${aiResponse.status} ${aiResponse.statusText}`
+      );
     }
 
     const aiData = await aiResponse.json();
@@ -182,24 +184,26 @@ Barista:`;
     if (!aiData.candidates || aiData.candidates.length === 0) {
       console.error("No candidates in response:", aiData);
       return NextResponse.json({
-        message: "I'm having trouble processing that request. Could you try rephrasing? ☕",
+        message:
+          "I'm having trouble processing that request. Could you try rephrasing? ☕",
         error: "no_candidates",
       });
     }
 
     const candidate = aiData.candidates[0];
-    
+
     // Check for safety blocks or other finish reasons
     if (candidate.finishReason && candidate.finishReason !== "STOP") {
       console.error("Unusual finish reason:", candidate.finishReason);
       return NextResponse.json({
-        message: "I couldn't complete that response. Please try a different question. ☕",
+        message:
+          "I couldn't complete that response. Please try a different question. ☕",
         error: "blocked_or_error",
       });
     }
 
     const text = candidate?.content?.parts?.[0]?.text;
-    
+
     if (!text) {
       console.error("No text in response candidate");
       return NextResponse.json({
@@ -242,7 +246,7 @@ function getFavoriteProducts(
     order.items.forEach((item) => {
       const product = item.purchaseOption?.variant?.product;
       if (!product) return;
-      
+
       const existing = productCounts.get(product.id);
       if (existing) {
         existing.count++;

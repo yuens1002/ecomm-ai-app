@@ -18,10 +18,12 @@ function CheckoutSuccessContent() {
     if (sessionId) {
       clearCart();
       // Simulate verification delay
-      setTimeout(() => setVerifying(false), 1500);
-    } else {
-      setVerifying(false);
+      const timer = setTimeout(() => setVerifying(false), 1500);
+      return () => clearTimeout(timer);
     }
+    // Only set verifying to false in timeout to avoid sync setState
+    const timer = setTimeout(() => setVerifying(false), 0);
+    return () => clearTimeout(timer);
   }, [sessionId, clearCart]);
 
   if (verifying) {

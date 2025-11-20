@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, X, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -44,11 +44,7 @@ export default function OrdersPageClient({
   );
   const activeTab = statusFilter || "all";
 
-  useEffect(() => {
-    fetchOrders();
-  }, [statusFilter]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setIsLoading(true);
     try {
       const url = statusFilter
@@ -63,7 +59,11 @@ export default function OrdersPageClient({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [statusFilter]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const handleTabChange = (value: string) => {
     if (value === "all") {

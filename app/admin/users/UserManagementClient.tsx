@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -43,11 +43,7 @@ export default function UserManagementClient({ currentUserId }: UserManagementCl
   const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const response = await fetch("/api/admin/users");
       const data = await response.json();
@@ -68,7 +64,11 @@ export default function UserManagementClient({ currentUserId }: UserManagementCl
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const toggleAdminStatus = async (userId: string, currentIsAdmin: boolean) => {
     setTogglingUserId(userId);

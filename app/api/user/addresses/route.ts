@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
  * GET /api/user/addresses
  * Fetch all user's shipping addresses
  */
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const session = await auth();
 

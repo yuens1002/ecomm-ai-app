@@ -30,11 +30,7 @@ export default function HeroSection({ onOpenAiModal }: HeroSectionProps) {
           <p className="text-lg md:text-xl text-hero-text opacity-90 mb-8">
             Specialty coffee sourced from the world's finest origins.
           </p>
-          <Button
-            size="lg"
-            className="font-bold text-lg shadow-md"
-            disabled
-          >
+          <Button size="lg" className="font-bold text-lg shadow-md" disabled>
             Loading...
           </Button>
         </div>
@@ -45,7 +41,7 @@ export default function HeroSection({ onOpenAiModal }: HeroSectionProps) {
   // Show ChatBarista for authenticated users
   if (status === "authenticated" && session) {
     return (
-      <ChatBarista 
+      <ChatBarista
         userName={session.user?.name || undefined}
         onOpenAiModal={onOpenAiModal}
       />

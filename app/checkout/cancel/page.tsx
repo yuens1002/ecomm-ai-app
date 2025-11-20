@@ -32,8 +32,8 @@ export default function CheckoutCancelPage() {
 
         <div className="bg-accent rounded-lg p-6 mb-8">
           <p className="text-sm text-text-base">
-            Don't worry! Your cart items are still there. You can continue
-            shopping or try checking out again when you're ready.
+            Don&apos;t worry! Your cart items are still there. You can continue
+            shopping or try checking out again when you&apos;re ready.
           </p>
         </div>
 

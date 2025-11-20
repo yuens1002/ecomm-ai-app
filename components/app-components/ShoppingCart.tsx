@@ -38,7 +38,6 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 
 /**
  * ShoppingCart component - manages cart UI and logic
@@ -504,7 +503,7 @@ export function ShoppingCart() {
                       ) : (
                         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded text-sm">
                           <p className="text-blue-800 dark:text-blue-200">
-                            You'll be able to enter your shipping address during
+                            You&apos;ll be able to enter your shipping address during
                             checkout.
                           </p>
                         </div>

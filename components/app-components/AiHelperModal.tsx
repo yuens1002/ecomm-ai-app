@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 // --- REMOVED: useEffect and Product type ---
 import { AiHelperModalProps } from "@/lib/types"; // Import shared types
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose,
   DialogDescription,
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -22,7 +20,6 @@ import { Loader2, CheckCircle2 } from "lucide-react"; // Import icons
 
 // --- AI Helper Modal Component ---
 export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
-  const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   
   const [step, setStep] = useState<number>(1);

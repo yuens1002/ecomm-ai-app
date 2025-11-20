@@ -110,7 +110,7 @@ export default function SubscriptionsTab({
         <CardHeader>
           <CardTitle>Subscriptions</CardTitle>
           <CardDescription>
-            You don't have any active subscriptions yet
+            You don&apos;t have any active subscriptions yet
           </CardDescription>
         </CardHeader>
         <CardContent>

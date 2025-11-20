@@ -20,18 +20,16 @@ export default function SignInPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [checkoutNotice, setCheckoutNotice] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-
-  // Show a notice when user was redirected here from checkout
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const [checkoutNotice, setCheckoutNotice] = useState(() => {
+    if (typeof window === "undefined") return "";
     const stored = window.localStorage.getItem("artisan-roast-checkout-notice");
     if (stored) {
-      setCheckoutNotice(stored);
       window.localStorage.removeItem("artisan-roast-checkout-notice");
+      return stored;
     }
-  }, []);
+    return "";
+  });
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleEmailSignIn = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -150,7 +148,7 @@ export default function SignInPage() {
               href="/auth/signup"
               className="text-primary hover:underline font-medium"
             >
-              Don't have an account? Sign up
+              Don&apos;t have an account? Sign up
             </Link>
           </div>
 

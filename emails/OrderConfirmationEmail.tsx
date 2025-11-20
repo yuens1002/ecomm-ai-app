@@ -4,7 +4,6 @@ import {
   Head,
   Heading,
   Html,
-  Img,
   Link,
   Preview,
   Section,
@@ -172,7 +171,7 @@ export default function OrderConfirmationEmail({
               <Text style={addressText}>123 Coffee Street</Text>
               <Text style={addressText}>San Francisco, CA 94102</Text>
               <Text style={addressText}>
-                We'll send you an email when your order is ready for pickup!
+                We&apos;ll send you an email when your order is ready for pickup!
               </Text>
             </Section>
           )}

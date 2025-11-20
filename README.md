@@ -1,5 +1,7 @@
 # Artisan Roast: A Modern E-Commerce Coffee Store
 
+🚀 **Live Demo:** [https://ecomm-ai-app.vercel.app/](https://ecomm-ai-app.vercel.app/)
+
 Artisan Roast is a full-stack, theme-able e-commerce application built for specialty coffee retail. This project serves as a comprehensive portfolio piece, designed from the ground up to demonstrate mastery of modern web development practices, end-to-end type safety, and AI integration.
 
 It features a minimal, high-quality product list and an AI-powered assistant to help customers find their perfect coffee, showcasing a blend of product-focused design and advanced technical implementation.
@@ -17,8 +19,10 @@ It features a minimal, high-quality product list and an AI-powered assistant to 
 
 ### 🤖 AI-Powered Personalization
 
+- **Chat AI Assistant (In Progress):** Text-based conversational interface with full order history context and brewing expertise
+- **Voice AI Barista (In Progress):** Multilingual voice assistant for hands-free coffee recommendations and ordering
 - **AI Recommendations:** Behavioral product recommendations based on user activity (purchases, views, searches)
-- **Personalized AI Assistant:** Gemini-powered chat modal with user context injection (50-100 lines of behavioral data)
+- **Personalized Context Injection:** Gemini-powered assistant with user context (order history, favorites, behavioral data)
 - **Smart Scoring Algorithm:** +10 roast match, +5 per tasting note match, +3 viewed, -20 recent purchase
 - **Homepage Recommendations:** Session-aware "Recommended For You" section with 6 personalized products
 - **Trending Products:** Fallback recommendations for anonymous users based on view counts
@@ -26,6 +30,7 @@ It features a minimal, high-quality product list and an AI-powered assistant to 
 ### 📊 Analytics & Insights
 
 - **Admin Dashboard:** Comprehensive analytics with trending products, top searches, conversion metrics
+- **Inventory Management (In Progress):** Real-time stock tracking, low stock alerts, and automated reordering
 - **Behavioral Tracking:** 5 activity types (PAGE_VIEW, PRODUCT_VIEW, SEARCH, ADD_TO_CART, REMOVE_FROM_CART)
 - **Session Tracking:** Supports both anonymous and authenticated users
 - **Daily Activity Trends:** Visual bar charts showing activity patterns over 7/30 days
@@ -65,19 +70,17 @@ This project was built to demonstrate proficiency across the entire stack, as de
 
 ### 3. DevOps & Modern Practices
 
-- **Containerization:** **Docker** & `docker-compose.yml` for a reproducible local development environment.
+- **Containerization (Planned):** **Docker** & `docker-compose.yml` for a reproducible local development environment.
 
 - **CI/CD:** **GitHub Actions** (configured to run tests and builds on every push).
 
 ### 4. Emerging Trends & AI
 
-- **AI Integration:** Real-time, dynamic recommendations from the **Google Gemini API** (`gemini-2.5-flash-preview-09-2025:generateContent`).
+- **AI Integration:** Real-time, dynamic recommendations from the **Google Gemini API** (`gemini-2.5-flash:generateContent`).
 
 ### 5. Testing & Quality
 
 - **Unit/Integration:** **Jest/Vitest** for testing critical business logic.
-
-- **E2E:** **Playwright** for end-to-end testing of user flows (e.g., adding to cart, using the AI helper).
 
 - **Accessibility:** Adherence to **WCAG** standards (supported by shadcn/ui).
 

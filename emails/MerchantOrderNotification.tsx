@@ -12,7 +12,6 @@ import {
 } from "@react-email/components";
 
 interface MerchantOrderNotificationProps {
-  orderId: string;
   orderNumber: string;
   customerName: string;
   customerEmail: string;
@@ -39,7 +38,6 @@ interface MerchantOrderNotificationProps {
 }
 
 export default function MerchantOrderNotification({
-  orderId,
   orderNumber,
   customerName,
   customerEmail,

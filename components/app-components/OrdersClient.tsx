@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { Package, ChevronRight } from "lucide-react";
+import { Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -35,11 +35,11 @@ export function OrdersClient({ orders }: OrdersClientProps) {
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-2xl mx-auto text-center">
           <Package className="w-16 h-16 text-text-muted mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-text-base mb-4">
+          <h1 className="text-3xl font-bold mb-4">
             No Orders Yet
           </h1>
           <p className="text-text-muted mb-8">
-            You haven't placed any orders. Start shopping to see your order
+            You haven&apos;t placed any orders. Start shopping to see your order
             history here!
           </p>
           <Button asChild size="lg">

@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+// Card components not used in this file
 import { User, Shield, Link2, MapPin, Trash2, Package } from "lucide-react";
 import ProfileTab from "./tabs/ProfileTab";
 import SecurityTab from "./tabs/SecurityTab";

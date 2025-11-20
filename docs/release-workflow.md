@@ -29,6 +29,7 @@ git commit -m "feat: concise commit message"
 ```
 
 **Commit Message Guidelines:**
+
 - Keep commit messages **concise** - one line describing what changed
 - Omit detailed explanations from commit messages
 - Save detailed documentation for CHANGELOG.md entries (see step 2)
@@ -50,6 +51,7 @@ For commits that represent substantial features or improvements worth documentin
 ```
 
 **Example:**
+
 ```markdown
 - **AI Barista Chat MVP**: Text-based conversational interface with comprehensive error handling and brewing knowledge ([6560e73](https://github.com/yuens1002/ecomm-ai-app/commit/6560e730f3fe67fe86c5e11512388d90048ccefa))
   - Modal-based chat UI with fixed height, scrollable messages, and always-visible input
@@ -61,6 +63,7 @@ For commits that represent substantial features or improvements worth documentin
 ```
 
 **Guidelines:**
+
 - Each worthy commit gets its own entry with commit link
 - One-line summary describes what was accomplished
 - 2-6 bullet points detail the key features/improvements
@@ -92,6 +95,7 @@ npx tsx scripts/merge-feature.ts "feat: commit message" "0.15.0"
 ```
 
 This script:
+
 - Switches to main
 - Merges the feature branch
 - Creates a version tag
@@ -114,6 +118,7 @@ Add a new section at the top with:
 - Group by category: Features, Bug Fixes, Dependencies, etc.
 
 **Example:**
+
 ```markdown
 ## 0.15.0 - 2025-11-20
 
@@ -139,6 +144,7 @@ git commit -m "feat: concise commit message"
 ```
 
 **Commit Message Guidelines:**
+
 - Keep commit messages **concise** - one line describing what changed
 - Omit detailed explanations from commit messages
 - All details should be in CHANGELOG.md with the commit link
