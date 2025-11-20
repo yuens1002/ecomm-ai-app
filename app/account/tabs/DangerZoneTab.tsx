@@ -77,7 +77,7 @@ export default function DangerZoneTab({
 
       // Sign out and redirect to home
       await signOut({ callbackUrl: "/?deleted=true" });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message);
       setIsDeleting(false);
     }

@@ -105,7 +105,7 @@ export async function POST(
         });
 
         console.log("✅ Subscription record updated");
-      } catch (stripeError: any) {
+      } catch (stripeError: unknown) {
         console.error("Failed to cancel Stripe subscription:", stripeError);
         // Return error to admin so they know subscription wasn't canceled
         return NextResponse.json(

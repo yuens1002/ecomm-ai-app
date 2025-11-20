@@ -59,7 +59,7 @@ export default function OrdersTab({ userId }: OrdersTabProps) {
         }
         const data = await response.json();
         setOrders(data.orders);
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError(err.message);
       } finally {
         setIsLoading(false);
@@ -106,7 +106,7 @@ export default function OrdersTab({ userId }: OrdersTabProps) {
           order.id === orderId ? { ...order, status: "CANCELLED" } : order
         )
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       alert(err.message || "Failed to cancel order");
     } finally {
       setCancellingOrderId(null);

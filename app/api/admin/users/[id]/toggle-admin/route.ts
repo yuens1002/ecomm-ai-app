@@ -80,7 +80,7 @@ export async function POST(
         : `Admin privileges revoked for ${updatedUser.name || updatedUser.email}`,
       user: updatedUser,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error toggling admin status:", error);
 
     // Check if it's an authorization error

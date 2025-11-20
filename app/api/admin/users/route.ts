@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({ users });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching users:", error);
     
     // Handle redirect from requireAdmin

@@ -79,7 +79,7 @@ export default function ProfileTab({ user, onUpdate }: ProfileTabProps) {
           });
         }, 2000);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       setMessage({ type: "error", text: error.message });
     } finally {
       setIsLoading(false);

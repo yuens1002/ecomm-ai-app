@@ -110,7 +110,7 @@ export default function AddressesTab({
       onUpdate(data.addresses);
       setMessage({ type: "success", text: "Address added successfully!" });
       resetForm();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setMessage({ type: "error", text: error.message });
     } finally {
       setIsLoading(false);
@@ -134,7 +134,7 @@ export default function AddressesTab({
 
       onUpdate(data.addresses);
       setMessage({ type: "success", text: "Default address updated!" });
-    } catch (error: any) {
+    } catch (error: unknown) {
       setMessage({ type: "error", text: error.message });
     } finally {
       setIsLoading(false);
@@ -161,7 +161,7 @@ export default function AddressesTab({
       onUpdate(data.addresses);
       setMessage({ type: "success", text: "Address deleted successfully!" });
       setDeleteId(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setMessage({ type: "error", text: error.message });
       setDeleteId(null);
     } finally {

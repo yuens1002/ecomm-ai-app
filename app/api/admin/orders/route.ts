@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       success: true,
       orders,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Admin orders fetch error:", error);
 
     if (error.message.includes("Unauthorized")) {

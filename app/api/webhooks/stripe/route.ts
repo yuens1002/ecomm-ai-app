@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Webhook signature verification failed:", err.message);
     return NextResponse.json(
       { error: `Webhook Error: ${err.message}` },
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
           session = await stripe.checkout.sessions.retrieve(session.id, {
             expand: ["line_items", "customer_details"],
           });
-        } catch (retrieveError: any) {
+        } catch (retrieveError: unknown) {
           console.error("Failed to retrieve session:", retrieveError);
           throw retrieveError;
         }
@@ -720,7 +720,7 @@ export async function POST(req: NextRequest) {
               // Don't fail webhook - order is already created
             }
           }
-        } catch (dbError: any) {
+        } catch (dbError: unknown) {
           console.error("Failed to create order:", dbError);
           // Don't fail the webhook - Stripe already processed payment
         }
@@ -1441,7 +1441,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error processing webhook:", err);
     return NextResponse.json(
       { error: "Webhook handler failed" },

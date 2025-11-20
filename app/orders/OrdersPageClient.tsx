@@ -91,7 +91,7 @@ export default function OrdersPageClient({
           order.id === orderId ? { ...order, status: "CANCELLED" } : order
         )
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       alert(err.message || "Failed to cancel order");
     } finally {
       setCancellingOrderId(null);

@@ -53,7 +53,7 @@ export default function UserManagementClient({ currentUserId }: UserManagementCl
       }
 
       setUsers(data.users);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching users:", error);
       toast({
         title: "Error",
@@ -102,7 +102,7 @@ export default function UserManagementClient({ currentUserId }: UserManagementCl
         variant: undefined,
         className: "!bg-foreground !text-background !border-foreground",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error toggling admin status:", error);
       toast({
         title: "Error",
