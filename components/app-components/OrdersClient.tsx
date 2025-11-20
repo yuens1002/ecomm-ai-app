@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
 import { format } from "date-fns";
 import { Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface OrdersClientProps {
-  orders: any[];
+  orders: OrderWithItems[];
 }
 
 export function OrdersClient({ orders }: OrdersClientProps) {
@@ -83,7 +84,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {order.items.map((item: any) => (
+                {order.items.map((item: OrderItemWithDetails) => (
                   <div
                     key={item.id}
                     className="flex items-center justify-between py-2 border-b last:border-b-0"

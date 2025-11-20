@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package } from "lucide-react";
 
 interface OrderDetailClientProps {
-  order: any;
+  order: OrderWithItems;
 }
 
 export default function OrderDetailClient({ order }: OrderDetailClientProps) {
@@ -56,7 +57,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
 
   // Calculate subtotal (sum of all items)
   const subtotal = order.items.reduce(
-    (sum: number, item: any) =>
+    (sum: number, item: OrderItemWithDetails) =>
       sum + item.purchaseOption.priceInCents * item.quantity,
     0
   );

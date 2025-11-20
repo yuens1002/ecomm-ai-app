@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { OrderWithItems } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -34,7 +35,7 @@ export default function OrdersPageClient({
   statusFilter,
 }: OrdersPageClientProps) {
   const router = useRouter();
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(
     null
@@ -89,7 +90,7 @@ export default function OrdersPageClient({
         )
       );
     } catch (err: unknown) {
-      alert(err.message || "Failed to cancel order");
+      alert(err instanceof Error ? err.message : "Failed to cancel order");
     } finally {
       setCancellingOrderId(null);
     }

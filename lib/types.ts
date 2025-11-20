@@ -48,6 +48,68 @@ export type Category = Prisma.PromiseReturnType<
   typeof getAllCategories
 >[number];
 
+// --- Order Types ---
+
+/**
+ * OrderItem with full purchaseOption details including variant and product.
+ * This matches the shape returned by the /api/user/orders endpoint.
+ */
+export interface OrderItemWithDetails {
+  id: string;
+  quantity: number;
+  priceInCents: number;
+  orderId: string;
+  purchaseOptionId: string;
+  purchaseOption: {
+    id: string;
+    type: string;
+    priceInCents: number;
+    billingInterval: string | null;
+    intervalCount: number | null;
+    variantId: string;
+    variant: {
+      id: string;
+      name: string;
+      productId: string;
+      product: {
+        name: string;
+        slug: string;
+      };
+    };
+  };
+}
+
+/**
+ * Order with full item details including nested purchaseOption, variant, and product.
+ * This matches the shape returned by the /api/user/orders endpoint.
+ */
+export interface OrderWithItems {
+  id: string;
+  totalInCents: number;
+  status: string;
+  deliveryMethod: string;
+  stripeSessionId: string | null;
+  stripePaymentIntentId: string | null;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  customerEmail: string | null;
+  paymentCardLast4: string | null;
+  recipientName: string | null;
+  shippingStreet: string | null;
+  shippingCity: string | null;
+  shippingState: string | null;
+  shippingPostalCode: string | null;
+  shippingCountry: string | null;
+  trackingNumber: string | null;
+  carrier: string | null;
+  shippedAt: Date | null;
+  userId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  items: OrderItemWithDetails[];
+  orderNumber?: string | null;
+}
+
 // --- Component Prop Types ---
 
 /**

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
 import Link from "next/link";
 import { format } from "date-fns";
 import {
@@ -43,7 +44,7 @@ interface OrdersTabProps {
  * - Pagination should be added for users with many orders
  */
 export default function OrdersTab({ userId }: OrdersTabProps) {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(
@@ -241,7 +242,7 @@ export default function OrdersTab({ userId }: OrdersTabProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {order.items.map((item: any) => (
+              {order.items.map((item: OrderItemWithDetails) => (
                 <div
                   key={item.id}
                   className="flex items-center justify-between py-2 border-b last:border-b-0"
