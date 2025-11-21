@@ -56,7 +56,8 @@ export async function GET(request: Request) {
       },
     });
 
-    const trendingProductsWithViews = trendingProducts.map((product) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const trendingProductsWithViews = trendingProducts.map((product: any) => {
       const views = (productViews as Array<{ productId: string; _count: { productId: number } }>).find(
         (pv) => pv.productId === product.id
       )?._count.productId || 0;
@@ -74,7 +75,8 @@ export async function GET(request: Request) {
     });
 
     const searchQueryMap = new Map<string, number>();
-    searchActivities.forEach((s) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    searchActivities.forEach((s: any) => {
       if (!s.searchQuery) return;
       searchQueryMap.set(s.searchQuery, (searchQueryMap.get(s.searchQuery) || 0) + 1);
     });

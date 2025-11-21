@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
+// import { withAccelerate } from "@prisma/extension-accelerate";
 import { PrismaNeon } from "@prisma/adapter-neon";
 
 // This file creates a "singleton" of the Prisma Client.
@@ -15,7 +15,8 @@ const createPrismaClient = () => {
 
   return new PrismaClient({
     adapter: adapter,
-  }).$extends(withAccelerate()); // withAccelerate() is for Vercel's Data Cache
+  });
+  // .$extends(withAccelerate()); // withAccelerate() is for Vercel's Data Cache
 };
 
 // --- 2. Define the global type using the function's return type ---

@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify the customer exists in Stripe, if not return a helpful error
-    let customerId = stripeCustomerId;
+    const customerId = stripeCustomerId;
     try {
       await stripe.customers.retrieve(stripeCustomerId);
     } catch (error) {

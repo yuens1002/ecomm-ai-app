@@ -162,6 +162,7 @@ export default function SearchResults() {
               {results.products.map((product) => (
                 <ProductCard
                   key={product.id}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   product={product as any}
                 />
               ))}

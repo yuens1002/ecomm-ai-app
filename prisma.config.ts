@@ -8,8 +8,11 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
-  engine: "classic",
   datasource: {
     url: env("DATABASE_URL"),
+  },
+  // @ts-expect-error - seed is supported in runtime but types might be missing
+  seed: {
+    command: "tsx prisma/seed.ts",
   },
 });
