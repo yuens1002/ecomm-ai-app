@@ -9,6 +9,7 @@ import SiteHeaderWrapper from "@/components/app-components/SiteHeaderWrapper";
 import SiteFooter from "@components/app-components/SiteFooter";
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/react";
+import { EnvironmentIndicator } from "@/components/app-components/EnvironmentIndicator";
 
 // Setup the Inter font with a CSS variable
 const inter = Inter({
@@ -62,6 +63,7 @@ export default function RootLayout({
             <Toaster />
           </ThemeProvider>
         </SessionProvider>
+        <EnvironmentIndicator />
         <Analytics />
       </body>
     </html>

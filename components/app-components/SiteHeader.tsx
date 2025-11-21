@@ -71,10 +71,7 @@ export default function SiteHeader({
     <header className="bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md">
       <div className="container mx-auto px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12">
         {/* Logo/Title */}
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-primary"
-        >
+        <Link href="/" className="flex items-center gap-2 text-primary">
           {/* Mobile View: Stacked */}
           <div className="flex flex-col items-center lg:hidden">
             <Image
@@ -118,7 +115,9 @@ export default function SiteHeader({
                   height={16}
                   className="w-4 h-4"
                 />
-                <span className="text-[10px] uppercase tracking-wide font-medium">Coffee</span>
+                <span className="text-[10px] uppercase tracking-wide font-medium">
+                  Coffee
+                </span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
@@ -142,7 +141,9 @@ export default function SiteHeader({
           >
             <Link href="/about">
               <FileText className="w-5 h-5" />
-              <span className="text-[10px] uppercase tracking-wide font-medium">About</span>
+              <span className="text-[10px] uppercase tracking-wide font-medium">
+                About
+              </span>
             </Link>
           </Button>
 
@@ -153,7 +154,9 @@ export default function SiteHeader({
           >
             <Link href="/contact">
               <Mail className="w-5 h-5" />
-              <span className="text-[10px] uppercase tracking-wide font-medium">Contact</span>
+              <span className="text-[10px] uppercase tracking-wide font-medium">
+                Contact
+              </span>
             </Link>
           </Button>
         </nav>
@@ -297,7 +300,11 @@ export default function SiteHeader({
                     {categories.map((category) => (
                       <li key={category.slug}>
                         <SheetClose asChild>
-                          <Button variant="ghost" asChild className="w-full justify-start font-normal">
+                          <Button
+                            variant="ghost"
+                            asChild
+                            className="w-full justify-start font-normal"
+                          >
                             <Link href={`/categories/${category.slug}`}>
                               {category.name}
                             </Link>
