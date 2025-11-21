@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.17.0 - 2025-11-21
+
+- **About Page & Header Refinement**: Added comprehensive About page and refined site navigation
+  - Created `/about` page with "Core Features", "AI-Powered Personalization", and "Admin Dashboard" sections
+  - Refined Site Header layout for better responsiveness (stacked logo on mobile, grouped nav links)
+  - Updated mobile menu with improved hierarchy and iconography
+  - Added "About" link to main navigation and mobile menu
+  - Replaced Info icon with FileText icon for About link
+
 ## 0.16.0 - 2025-11-20
 
 - **Contact Page & Form**: Added a dedicated contact page with email notifications ([e70088a](https://github.com/yuens1002/ecomm-ai-app/commit/e70088a))
