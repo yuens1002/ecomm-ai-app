@@ -1,4 +1,9 @@
-import { getAllCategories } from "@/lib/data";
+import {
+  getAllCategories,
+  getAllOrigins,
+  getRoastLevels,
+  getSpecialCategories,
+} from "@/lib/data";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
 import SiteHeader from "@components/app-components/SiteHeader";
@@ -10,14 +15,16 @@ import SiteHeader from "@components/app-components/SiteHeader";
  * keeping the data fetching logic on the server.
  */
 export default async function SiteHeaderWrapper() {
-  // Fetch all categories for the navigation menu
-  const categories = await getAllCategories();
+  // Fetch all data for the navigation menu in parallel
+  const [categories, origins, session, userIsAdmin] = await Promise.all([
+    getAllCategories(),
+    getAllOrigins(),
+    auth(),
+    isAdmin(),
+  ]);
 
-  // Get current user session
-  const session = await auth();
-
-  // Check if user is admin
-  const userIsAdmin = await isAdmin();
+  const roastLevels = getRoastLevels();
+  const specialCategories = getSpecialCategories();
 
   // Handle case where no categories are found (e.g., first deployment/empty DB)
   if (!categories) {
@@ -25,6 +32,9 @@ export default async function SiteHeaderWrapper() {
     return (
       <SiteHeader
         categories={[]}
+        origins={origins || []}
+        roastLevels={roastLevels}
+        specialCategories={specialCategories}
         user={session?.user || null}
         isAdmin={userIsAdmin}
       />
@@ -35,6 +45,9 @@ export default async function SiteHeaderWrapper() {
   return (
     <SiteHeader
       categories={categories}
+      origins={origins}
+      roastLevels={roastLevels}
+      specialCategories={specialCategories}
       user={session?.user || null}
       isAdmin={userIsAdmin}
     />

@@ -6,37 +6,51 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q");
+    const roast = searchParams.get("roast");
+    const origin = searchParams.get("origin");
     const sessionId = searchParams.get("sessionId");
 
-    if (!query || query.trim().length === 0) {
-      return NextResponse.json({ products: [], query: "" });
+    // Build the where clause dynamically
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const whereClause: any = {};
+    let searchQuery = "";
+
+    if (query && query.trim().length > 0) {
+      searchQuery = query.trim().toLowerCase();
+      whereClause.OR = [
+        { name: { contains: searchQuery, mode: "insensitive" } },
+        { description: { contains: searchQuery, mode: "insensitive" } },
+        { origin: { hasSome: [searchQuery] } }, // Case sensitive for arrays usually, but let's try
+        { tastingNotes: { hasSome: [searchQuery] } },
+      ];
     }
 
-    const searchQuery = query.trim().toLowerCase();
+    if (roast) {
+      whereClause.roastLevel = roast.toUpperCase();
+    }
 
-    // Track search activity
+    if (origin) {
+      // If origin is "Blend", we look for it in the array
+      // If origin is a country, we look for it
+      whereClause.origin = { has: origin };
+    }
+
+    // Track search activity only if there's a text query
     const session = await auth();
-    if (sessionId) {
+    if (sessionId && query) {
       await prisma.userActivity.create({
         data: {
           sessionId,
           userId: session?.user?.id || null,
           activityType: "SEARCH",
-          searchQuery: searchQuery,
+          searchQuery: query.trim(),
         },
       });
     }
 
-    // Search products by name, description, origin, or tasting notes
+    // Search products
     const products = await prisma.product.findMany({
-      where: {
-        OR: [
-          { name: { contains: searchQuery, mode: "insensitive" } },
-          { description: { contains: searchQuery, mode: "insensitive" } },
-          { origin: { hasSome: [searchQuery] } },
-          { tastingNotes: { hasSome: [searchQuery] } },
-        ],
-      },
+      where: whereClause,
       include: {
         categories: {
           include: {

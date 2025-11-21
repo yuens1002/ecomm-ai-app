@@ -37,6 +37,9 @@ import { Button } from "@/components/ui/button";
 
 interface SiteHeaderProps {
   categories: Category[];
+  origins: string[];
+  roastLevels: string[];
+  specialCategories: string[];
   user: {
     name?: string | null;
     email?: string | null;
@@ -51,6 +54,9 @@ interface SiteHeaderProps {
  */
 export default function SiteHeader({
   categories,
+  origins,
+  roastLevels,
+  specialCategories,
   user,
   isAdmin,
 }: SiteHeaderProps) {
@@ -101,7 +107,7 @@ export default function SiteHeader({
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-4">
-          {/* UPDATED: Category links now point to /categories/[slug] */}
+          {/* UPDATED: Mega Menu for Coffee Categories */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -120,17 +126,87 @@ export default function SiteHeader({
                 </span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {categories.map((category) => (
-                <DropdownMenuItem key={category.slug} asChild>
-                  <Link
-                    href={`/categories/${category.slug}`}
-                    className="text-text-base"
-                  >
-                    {category.name}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
+            <DropdownMenuContent align="start" className="w-[600px] p-6">
+              <div className="grid grid-cols-3 gap-8">
+                {/* Roast Level Column */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
+                    Roast Level
+                  </h4>
+                  <ul className="space-y-2">
+                    {roastLevels.map((roast) => (
+                      <li key={roast}>
+                        <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
+                          <Link
+                            href={`/search?roast=${roast.toLowerCase()}`}
+                            className="text-sm hover:text-primary transition-colors block py-1 cursor-pointer"
+                          >
+                            {roast.charAt(0) + roast.slice(1).toLowerCase()} Roast
+                          </Link>
+                        </DropdownMenuItem>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Origins Column */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
+                    Origins
+                  </h4>
+                  <ul className="space-y-2">
+                    {origins.map((origin) => (
+                      <li key={origin}>
+                        <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
+                          <Link
+                            href={`/search?origin=${encodeURIComponent(origin)}`}
+                            className="text-sm hover:text-primary transition-colors block py-1 cursor-pointer"
+                          >
+                            {origin}
+                          </Link>
+                        </DropdownMenuItem>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Collections Column */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
+                    Collections
+                  </h4>
+                  <ul className="space-y-2">
+                    {specialCategories.map((special) => (
+                      <li key={special}>
+                        <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
+                          <Link
+                            href={
+                              special === "Blends"
+                                ? "/search?origin=Blend"
+                                : `/search?q=${encodeURIComponent(special)}`
+                            }
+                            className="text-sm hover:text-primary transition-colors block py-1 cursor-pointer"
+                          >
+                            {special}
+                          </Link>
+                        </DropdownMenuItem>
+                      </li>
+                    ))}
+                    {categories.map((category) => (
+                      <li key={category.slug}>
+                        <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
+                          <Link
+                            href={`/categories/${category.slug}`}
+                            className="text-sm hover:text-primary transition-colors block py-1 cursor-pointer"
+                          >
+                            {category.name}
+                          </Link>
+                        </DropdownMenuItem>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
 

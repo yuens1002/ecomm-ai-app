@@ -70,27 +70,38 @@ export default function SearchResults() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const queryParam = searchParams.get("q");
-    if (queryParam) {
-      setQuery(queryParam);
-      performSearch(queryParam);
+    const q = searchParams.get("q");
+    const roast = searchParams.get("roast");
+    const origin = searchParams.get("origin");
+
+    // Update query state if it changed externally
+    if (q) setQuery(q);
+
+    // Perform search if any param exists
+    if (q || roast || origin) {
+      performSearch(q, roast, origin);
+    } else {
+      setResults(null);
     }
   }, [searchParams]);
 
-  async function performSearch(searchQuery: string) {
-    if (!searchQuery || searchQuery.trim().length === 0) {
-      setResults(null);
-      return;
-    }
-
+  async function performSearch(
+    searchQuery: string | null,
+    roast: string | null,
+    origin: string | null
+  ) {
     try {
       setIsLoading(true);
       setError(null);
 
       const sessionId = getSessionId();
-      const response = await fetch(
-        `/api/search?q=${encodeURIComponent(searchQuery)}&sessionId=${sessionId}`
-      );
+      const params = new URLSearchParams();
+      if (searchQuery) params.append("q", searchQuery);
+      if (roast) params.append("roast", roast);
+      if (origin) params.append("origin", origin);
+      if (sessionId) params.append("sessionId", sessionId);
+
+      const response = await fetch(`/api/search?${params.toString()}`);
 
       if (!response.ok) {
         throw new Error("Failed to search products");
@@ -111,6 +122,21 @@ export default function SearchResults() {
     if (query.trim()) {
       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
     }
+  }
+
+  // Helper to generate title based on active filters
+  function getResultsTitle() {
+    const parts = [];
+    const roast = searchParams.get("roast");
+    const origin = searchParams.get("origin");
+    const q = searchParams.get("q");
+
+    if (roast) parts.push(`${roast.charAt(0).toUpperCase() + roast.slice(1).toLowerCase()} Roast`);
+    if (origin) parts.push(origin);
+    if (q) parts.push(`"${q}"`);
+
+    if (parts.length === 0) return "products";
+    return parts.join(" • ");
   }
 
   return (
@@ -147,12 +173,11 @@ export default function SearchResults() {
         <>
           <div className="text-muted-foreground">
             {results.count === 0 ? (
-              <p>No results found for &ldquo;{results.query}&rdquo;</p>
+              <p>No results found for {getResultsTitle()}</p>
             ) : (
               <p>
                 Found {results.count}{" "}
-                {results.count === 1 ? "result" : "results"} for &ldquo;
-                {results.query}&rdquo;
+                {results.count === 1 ? "result" : "results"} for {getResultsTitle()}
               </p>
             )}
           </div>
@@ -172,9 +197,9 @@ export default function SearchResults() {
       )}
 
       {/* Empty State */}
-      {!results && !isLoading && query && (
+      {!results && !isLoading && !searchParams.toString() && (
         <div className="text-center py-12 text-muted-foreground">
-          <p>Enter a search term to find products</p>
+          <p>Enter a search term or select a category to find products</p>
         </div>
       )}
     </div>

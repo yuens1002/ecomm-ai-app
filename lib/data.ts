@@ -545,3 +545,42 @@ export async function getTrendingProducts(limit: number = 6, daysBack: number = 
     throw new Error("Failed to fetch trending products.");
   }
 }
+
+/**
+ * Fetches all unique origins from the product catalog.
+ */
+export async function getAllOrigins() {
+  try {
+    // Since origin is an array, we fetch all products and extract unique origins
+    // For a large catalog, this should be optimized with a raw query or distinct on unnested array
+    const products = await prisma.product.findMany({
+      select: {
+        origin: true,
+      },
+    });
+
+    const origins = new Set<string>();
+    products.forEach((p) => {
+      p.origin.forEach((o) => origins.add(o));
+    });
+
+    return Array.from(origins).sort();
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch origins.");
+  }
+}
+
+/**
+ * Returns the available roast levels.
+ */
+export function getRoastLevels() {
+  return Object.values(RoastLevel);
+}
+
+/**
+ * Returns special categories (Micro Lot, Blends).
+ */
+export function getSpecialCategories() {
+  return ["Micro Lot", "Blends"];
+}
