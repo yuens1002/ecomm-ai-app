@@ -58,3 +58,6 @@ next-env.d.ts
 
 # Development tooling scripts (not needed for production)
 /dev-tools/
+
+# Backup folder
+/public/backup/
