@@ -7,7 +7,7 @@ import { ThemeSwitcher } from "@components/app-components/ThemeSwitcher";
 import { ShoppingCart } from "@components/app-components/ShoppingCart";
 import { UserMenu } from "@components/app-components/UserMenu";
 import { Category } from "@/lib/types";
-import { ChevronDown, Menu, Home, User, Search } from "lucide-react";
+import { ChevronDown, Menu, Home, User, Search, Mail } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,45 +70,45 @@ export default function SiteHeader({
     <header className="bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md">
       <div className="container mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
         {/* Logo/Title */}
-        <Link href="/" className="text-2xl font-bold text-primary">
-          Artisan Roast
-        </Link>
-
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
-          {/* UPDATED: Category links now point to /categories/[slug] */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="text-text-base hover:text-primary data-[state=open]:text-primary"
-              >
-                Coffees
-                <ChevronDown className="w-4 h-4 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {categories.map((category) => (
-                <DropdownMenuItem key={category.slug} asChild>
-                  <Link
-                    href={`/categories/${category.slug}`}
-                    className="text-text-base"
-                  >
-                    {category.name}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {/* We can add other static links here */}
-          {/* <Link 
-            href="/about" 
-            className="text-text-base hover:text-primary transition-colors"
-          >
-            About
+        <div className="flex items-center gap-8">
+          <Link href="/" className="text-2xl font-bold text-primary">
+            Artisan Roast
           </Link>
-          */}
-        </nav>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-6">
+            {/* UPDATED: Category links now point to /categories/[slug] */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="text-text-base hover:text-primary data-[state=open]:text-primary"
+                >
+                  Coffees
+                  <ChevronDown className="w-4 h-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {categories.map((category) => (
+                  <DropdownMenuItem key={category.slug} asChild>
+                    <Link
+                      href={`/categories/${category.slug}`}
+                      className="text-text-base"
+                    >
+                      {category.name}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Button asChild variant="link" className="text-text-base hover:text-primary">
+              <Link href="/contact">
+                Contact
+              </Link>
+            </Button>
+          </nav>
+        </div>
 
         {/* Right Side Controls */}
         <div className="flex items-center space-x-4">
@@ -170,20 +170,31 @@ export default function SiteHeader({
               className="w-[280px] sm:w-[320px] bg-background p-0 flex flex-col"
             >
               <div className="px-6 pt-6 pb-4">
-                <SheetHeader>
-                  <SheetTitle className="text-2xl font-bold tracking-tight text-text-base text-left">
-                    Menu
-                  </SheetTitle>
-                  <SheetDescription className="sr-only">
-                    Navigate to different sections of the site including home
-                    and coffee categories
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="mt-4 flex gap-2">
+                <div className="flex items-center justify-between mb-4">
+                  <SheetHeader>
+                    <SheetTitle className="text-2xl font-bold tracking-tight text-text-base text-left">
+                      Menu
+                    </SheetTitle>
+                    <SheetDescription className="sr-only">
+                      Navigate to different sections of the site including home
+                      and coffee categories
+                    </SheetDescription>
+                  </SheetHeader>
+                  <SheetClose asChild>
+                    <Link
+                      href="/search"
+                      className="p-2 text-text-base hover:text-primary hover:bg-accent rounded-md transition-colors"
+                    >
+                      <Search className="w-5 h-5" />
+                      <span className="sr-only">Search</span>
+                    </Link>
+                  </SheetClose>
+                </div>
+                <div className="flex gap-2">
                   <SheetClose asChild>
                     <Link
                       href="/"
-                      className="inline-flex flex-col items-center justify-center gap-1 w-12 rounded-lg text-text-base hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary py-2"
+                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-text-base hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <Home className="w-5 h-5" />
                       <span className="text-[10px] uppercase tracking-wide font-medium">
@@ -193,12 +204,12 @@ export default function SiteHeader({
                   </SheetClose>
                   <SheetClose asChild>
                     <Link
-                      href="/search"
-                      className="inline-flex flex-col items-center justify-center gap-1 w-12 rounded-lg text-text-base hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary py-2"
+                      href="/contact"
+                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-text-base hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
-                      <Search className="w-5 h-5" />
+                      <Mail className="w-5 h-5" />
                       <span className="text-[10px] uppercase tracking-wide font-medium">
-                        Search
+                        Contact
                       </span>
                     </Link>
                   </SheetClose>

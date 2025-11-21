@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
+    "@hookform/resolvers": "^5.2.2",
     "@neondatabase/serverless": "^1.0.2",
     "@prisma/adapter-neon": "^7.0.0",
     "@prisma/client": "^7.0.0",
@@ -49,10 +50,12 @@
     "node-fetch": "^2.7.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "react-hook-form": "^7.66.1",
     "resend": "^6.4.2",
     "sharp": "^0.34.5",
     "stripe": "^19.3.1",
     "tailwind-merge": "^3.4.0",
+    "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
