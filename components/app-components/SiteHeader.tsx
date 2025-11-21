@@ -70,13 +70,12 @@ export default function SiteHeader({
     <header className="bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md">
       <div className="container mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
         {/* Logo/Title */}
-        <div className="flex items-center gap-8">
-          <Link href="/" className="text-2xl font-bold text-primary">
-            Artisan Roast
-          </Link>
+        <Link href="/" className="text-2xl font-bold text-primary">
+          Artisan Roast
+        </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-6">
             {/* UPDATED: Category links now point to /categories/[slug] */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -101,14 +100,15 @@ export default function SiteHeader({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            
-            <Button asChild variant="link" className="text-text-base hover:text-primary">
-              <Link href="/contact">
-                Contact
-              </Link>
+
+            <Button
+              asChild
+              variant="ghost"
+              className="text-text-base hover:text-primary"
+            >
+              <Link href="/contact">Contact</Link>
             </Button>
           </nav>
-        </div>
 
         {/* Right Side Controls */}
         <div className="flex items-center space-x-4">
