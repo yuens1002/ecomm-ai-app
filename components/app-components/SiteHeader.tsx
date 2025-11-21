@@ -8,7 +8,7 @@ import { ThemeSwitcher } from "@components/app-components/ThemeSwitcher";
 import { ShoppingCart } from "@components/app-components/ShoppingCart";
 import { UserMenu } from "@components/app-components/UserMenu";
 import { Category } from "@/lib/types";
-import { ChevronDown, Menu, Home, User, Search, Mail } from "lucide-react";
+import { Menu, Home, User, Search, Mail, FileText } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,14 +69,14 @@ export default function SiteHeader({
 
   return (
     <header className="bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md">
-      <div className="container mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
+      <div className="container mx-auto px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12">
         {/* Logo/Title */}
         <Link
           href="/"
           className="flex items-center gap-2 text-primary"
         >
           {/* Mobile View: Stacked */}
-          <div className="flex flex-col items-center md:hidden">
+          <div className="flex flex-col items-center lg:hidden">
             <Image
               src="/logo.svg"
               alt="Artisan Roast Logo"
@@ -90,7 +90,7 @@ export default function SiteHeader({
           </div>
 
           {/* Desktop View: Side by Side */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2">
             <Image
               src="/logo.svg"
               alt="Artisan Roast Logo"
@@ -103,24 +103,22 @@ export default function SiteHeader({
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center space-x-2">
+        <nav className="hidden md:flex items-center space-x-4">
           {/* UPDATED: Category links now point to /categories/[slug] */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                size="sm"
-                className="text-text-base hover:text-primary data-[state=open]:text-primary"
+                className="h-auto flex-col gap-1 px-2 py-2 text-text-base hover:text-primary data-[state=open]:text-primary"
               >
                 <Image
                   src="/beans.svg"
                   alt="Coffee selections"
-                  width={20}
-                  height={20}
-                  className="w-5 h-5 mr-2"
+                  width={16}
+                  height={16}
+                  className="w-4 h-4"
                 />
-                <span>Coffee</span>
-                <ChevronDown className="w-4 h-4 ml-1" />
+                <span className="text-[10px] uppercase tracking-wide font-medium">Coffee</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
@@ -140,18 +138,28 @@ export default function SiteHeader({
           <Button
             asChild
             variant="ghost"
-            size="sm"
-            className="text-text-base hover:text-primary"
+            className="h-auto flex-col gap-1 px-2 py-2 text-text-base hover:text-primary"
+          >
+            <Link href="/about">
+              <FileText className="w-5 h-5" />
+              <span className="text-[10px] uppercase tracking-wide font-medium">About</span>
+            </Link>
+          </Button>
+
+          <Button
+            asChild
+            variant="ghost"
+            className="h-auto flex-col gap-1 px-2 py-2 text-text-base hover:text-primary"
           >
             <Link href="/contact">
-              <Mail className="w-5 h-5 mr-2" />
-              <span>Contact</span>
+              <Mail className="w-5 h-5" />
+              <span className="text-[10px] uppercase tracking-wide font-medium">Contact</span>
             </Link>
           </Button>
         </nav>
 
         {/* Right Side Controls */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 ml-auto">
           {/* Search Dialog */}
           <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
             <DialogTrigger asChild>
@@ -195,7 +203,7 @@ export default function SiteHeader({
           )}
           {/* --- MOBILE MENU IMPLEMENTATION --- */}
           <Sheet>
-            <SheetTrigger asChild className="lg:hidden">
+            <SheetTrigger asChild className="md:hidden">
               <Button
                 variant="outline"
                 size="icon"
@@ -220,17 +228,8 @@ export default function SiteHeader({
                       and coffee categories
                     </SheetDescription>
                   </SheetHeader>
-                  <SheetClose asChild>
-                    <Link
-                      href="/search"
-                      className="p-2 text-text-base hover:text-primary hover:bg-accent rounded-md transition-colors"
-                    >
-                      <Search className="w-5 h-5" />
-                      <span className="sr-only">Search</span>
-                    </Link>
-                  </SheetClose>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-center w-full">
                   <SheetClose asChild>
                     <Link
                       href="/"
@@ -239,6 +238,28 @@ export default function SiteHeader({
                       <Home className="w-5 h-5" />
                       <span className="text-[10px] uppercase tracking-wide font-medium">
                         Home
+                      </span>
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link
+                      href="/search"
+                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-text-base hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <Search className="w-5 h-5" />
+                      <span className="text-[10px] uppercase tracking-wide font-medium">
+                        Search
+                      </span>
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link
+                      href="/about"
+                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-text-base hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <FileText className="w-5 h-5" />
+                      <span className="text-[10px] uppercase tracking-wide font-medium">
+                        About
                       </span>
                     </Link>
                   </SheetClose>
@@ -260,19 +281,27 @@ export default function SiteHeader({
                 className="flex-1 overflow-y-auto px-6 py-4 border-t border-border"
               >
                 <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-3">
-                    Coffees
-                  </h3>
-                  <ul className="space-y-2">
+                  <div className="flex items-center gap-2 mb-2 px-4">
+                    <Image
+                      src="/beans.svg"
+                      alt="Coffee"
+                      width={20}
+                      height={20}
+                      className="w-5 h-5"
+                    />
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
+                      Coffee
+                    </span>
+                  </div>
+                  <ul className="space-y-1">
                     {categories.map((category) => (
                       <li key={category.slug}>
                         <SheetClose asChild>
-                          <Link
-                            href={`/categories/${category.slug}`}
-                            className="block text-base text-text-base hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-1 py-1"
-                          >
-                            {category.name}
-                          </Link>
+                          <Button variant="ghost" asChild className="w-full justify-start font-normal">
+                            <Link href={`/categories/${category.slug}`}>
+                              {category.name}
+                            </Link>
+                          </Button>
                         </SheetClose>
                       </li>
                     ))}
