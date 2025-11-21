@@ -7,6 +7,7 @@ import Stripe from "stripe";
 import OrderConfirmationEmail from "@/emails/OrderConfirmationEmail";
 import MerchantOrderNotification from "@/emails/MerchantOrderNotification";
 import { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
+import { getErrorMessage } from "@/lib/error-utils";
 
 // Webhook-specific cart item from Stripe metadata
 interface WebhookCartItem {
@@ -43,9 +44,10 @@ export async function POST(req: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err: unknown) {
-    console.error("Webhook signature verification failed:", err.message);
+    const errorMessage = getErrorMessage(err, "Webhook verification failed");
+    console.error("Webhook signature verification failed:", errorMessage);
     return NextResponse.json(
-      { error: `Webhook Error: ${err.message}` },
+      { error: `Webhook Error: ${errorMessage}` },
       { status: 400 }
     );
   }
@@ -269,7 +271,7 @@ export async function POST(req: NextRequest) {
               },
             },
           });
-          createdOrders.push(oneTimeOrder);
+          createdOrders.push(oneTimeOrder as unknown as OrderWithItems);
           console.log("✅ One-time order created:", oneTimeOrder.id);
         }
 
@@ -325,7 +327,7 @@ export async function POST(req: NextRequest) {
               },
             },
           });
-          createdOrders.push(subscriptionOrder);
+          createdOrders.push(subscriptionOrder as unknown as OrderWithItems);
           console.log("✅ Subscription order created:", subscriptionOrder.id);
         }
 
@@ -374,7 +376,7 @@ export async function POST(req: NextRequest) {
                   item.purchaseOption.billingInterval
                     ? formatBillingInterval(
                         item.purchaseOption.billingInterval,
-                        item.purchaseOption.billingIntervalCount || 1
+                        item.purchaseOption.intervalCount || 1
                       )
                     : null,
               }))
@@ -435,7 +437,7 @@ export async function POST(req: NextRequest) {
                   subtotalInCents: combinedSubtotal,
                   shippingInCents,
                   totalInCents: combinedTotal,
-                  deliveryMethod: firstOrder.deliveryMethod,
+                  deliveryMethod: firstOrder.deliveryMethod as "DELIVERY" | "PICKUP",
                   shippingAddress: shippingAddressData,
                   orderDate: new Date(firstOrder.createdAt).toLocaleDateString(
                     "en-US",
@@ -468,7 +470,7 @@ export async function POST(req: NextRequest) {
                     item.purchaseOption.billingInterval
                       ? formatBillingInterval(
                           item.purchaseOption.billingInterval,
-                          item.purchaseOption.billingIntervalCount || 1
+                          item.purchaseOption.intervalCount || 1
                         )
                       : null,
                 }));
@@ -482,13 +484,12 @@ export async function POST(req: NextRequest) {
                     "merchant@artisan-roast.com",
                   subject: `New Order #${order.id.slice(-8)} - Action Required`,
                   react: MerchantOrderNotification({
-                    orderId: order.id,
                     orderNumber: order.id.slice(-8),
                     customerName: order.recipientName || "Customer",
                     customerEmail: order.customerEmail || "",
                     items: emailItems,
                     totalInCents: order.totalInCents,
-                    deliveryMethod: order.deliveryMethod,
+                    deliveryMethod: order.deliveryMethod as "DELIVERY" | "PICKUP",
                     shippingAddress: shippingAddressData,
                     orderDate: new Date(order.createdAt).toLocaleDateString(
                       "en-US",
@@ -743,23 +744,29 @@ export async function POST(req: NextRequest) {
       }
 
       case "invoice.payment_succeeded": {
-        const invoice = event.data.object as Stripe.Invoice;
+        const invoice = event.data.object as Stripe.Invoice & {
+          subscription?: string | { id: string };
+          parent?: { subscription_details?: { subscription: string } };
+          charge?: string | Stripe.Charge;
+          payment_intent?: string | Stripe.PaymentIntent;
+        };
         console.log("\n=== INVOICE PAYMENT SUCCEEDED ===");
         console.log("Invoice ID:", invoice.id);
         console.log("Customer ID:", invoice.customer);
-        console.log("Subscription ID:", invoice.subscription);
 
         // Only process invoices that are for subscriptions
         // Check both invoice.subscription and invoice.parent.subscription_details.subscription
-        let subscriptionId =
-          typeof invoice.subscription === "string"
-            ? invoice.subscription
-            : invoice.subscription?.id;
+        let subscriptionId: string | undefined;
+        
+        if (typeof invoice.subscription === "string") {
+          subscriptionId = invoice.subscription;
+        } else if (typeof invoice.subscription === "object") {
+          subscriptionId = invoice.subscription?.id;
+        }
+        
+        console.log("Subscription ID:", subscriptionId);
 
-        if (
-          !subscriptionId &&
-          invoice.parent?.subscription_details?.subscription
-        ) {
+        if (!subscriptionId && invoice.parent?.subscription_details?.subscription) {
           subscriptionId = invoice.parent.subscription_details.subscription;
         }
 
@@ -1065,20 +1072,22 @@ export async function POST(req: NextRequest) {
 
             // Get payment method details
             let paymentCardLast4: string | undefined;
-            if (invoice.charge) {
+            if (invoice.charge && typeof invoice.charge === "string") {
               try {
                 const charge = await stripe.charges.retrieve(
-                  invoice.charge as string,
+                  invoice.charge,
                   {
                     expand: ["payment_method"],
                   }
                 );
-                const paymentMethod = charge.payment_method as Stripe.PaymentMethod;
-                if (paymentMethod?.card?.last4) {
-                  const brand =
-                    paymentMethod.card.brand.charAt(0).toUpperCase() +
-                    paymentMethod.card.brand.slice(1);
-                  paymentCardLast4 = `${brand} ****${paymentMethod.card.last4}`;
+                if (charge.payment_method && typeof charge.payment_method === "object") {
+                  const paymentMethod = charge.payment_method as Stripe.PaymentMethod;
+                  if (paymentMethod.card?.last4) {
+                    const brand =
+                      paymentMethod.card.brand.charAt(0).toUpperCase() +
+                      paymentMethod.card.brand.slice(1);
+                    paymentCardLast4 = `${brand} ****${paymentMethod.card.last4}`;
+                  }
                 }
               } catch (error) {
                 console.error("Failed to retrieve payment method:", error);
@@ -1181,7 +1190,6 @@ export async function POST(req: NextRequest) {
                 to: process.env.MERCHANT_EMAIL || "admin@artisan-roast.com",
                 subject: `Subscription Renewal - ${deliverySchedule} - #${order.id.slice(-8)}`,
                 react: MerchantOrderNotification({
-                  orderId: order.id,
                   orderNumber: order.id.slice(-8),
                   customerName: order.recipientName || "Customer",
                   customerEmail: user.email || "",

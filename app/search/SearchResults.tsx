@@ -22,8 +22,24 @@ interface SearchProduct {
     };
   }>;
   images: Array<{
+    id: string;
+    order: number;
     url: string;
     altText: string;
+    productId: string;
+  }>;
+  variants: Array<{
+    id: string;
+    name: string;
+    purchaseOptions: Array<{
+      id: string;
+      type: string;
+      priceInCents: number;
+      discountMessage: string | null;
+      billingInterval: string | null;
+      billingIntervalCount: number | null;
+      variantId: string;
+    }>;
   }>;
 }
 
@@ -146,12 +162,7 @@ export default function SearchResults() {
               {results.products.map((product) => (
                 <ProductCard
                   key={product.id}
-                  product={
-                    {
-                      ...product,
-                      category: product.categories[0]?.category || null,
-                    }
-                  }
+                  product={product as any}
                 />
               ))}
             </div>

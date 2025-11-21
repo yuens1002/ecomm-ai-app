@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
+import { OrderStatus } from "@prisma/client";
 
 /**
  * GET /api/admin/orders
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
   } catch (error: unknown) {
     console.error("Admin orders fetch error:", error);
 
-    if (error.message.includes("Unauthorized")) {
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
       return NextResponse.json(
         { error: "Admin access required" },
         { status: 403 }

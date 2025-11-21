@@ -1,6 +1,7 @@
 import { requireAdminApi } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { getErrorMessage } from "@/lib/error-utils";
 
 export async function POST(
   request: NextRequest,
@@ -83,8 +84,10 @@ export async function POST(
   } catch (error: unknown) {
     console.error("Error toggling admin status:", error);
 
+    const errorMessage = getErrorMessage(error);
+    
     // Check if it's an authorization error
-    if (error.message === "Unauthorized") {
+    if (errorMessage === "Unauthorized") {
       return NextResponse.json(
         { error: "Unauthorized access" },
         { status: 401 }

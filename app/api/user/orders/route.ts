@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { OrderStatus } from "@prisma/client";
 
 /**
  * GET /api/user/orders
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
     const statusFilter = searchParams.get("status");
 
     // Build where clause with optional status filter
-    const where: { userId: string; status?: string | { in: string[] } } = {
+    const where: { userId: string; status?: OrderStatus | { in: OrderStatus[] } } = {
       userId: session.user.id,
     };
 
@@ -35,11 +36,11 @@ export async function GET(request: Request) {
       if (statusFilter === "completed") {
         // Completed = SHIPPED or PICKED_UP
         where.status = {
-          in: ["SHIPPED", "PICKED_UP"],
+          in: [OrderStatus.SHIPPED, OrderStatus.PICKED_UP],
         };
       } else {
         // Direct status match (PENDING, CANCELLED, etc.)
-        where.status = statusFilter.toUpperCase();
+        where.status = statusFilter.toUpperCase() as OrderStatus;
       }
     }
 

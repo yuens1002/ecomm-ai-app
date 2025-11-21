@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
+import { getErrorMessage } from "@/lib/error-utils";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-10-29.clover",
@@ -134,7 +135,7 @@ export async function POST(
             success: true,
             message:
               "Order canceled and refunded, but failed to cancel subscription. Please contact support.",
-            error: stripeError.message,
+            error: getErrorMessage(stripeError, "Unknown error"),
             order: updatedOrder,
           },
           { status: 200 }

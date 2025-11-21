@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import Stripe from "stripe";
+import { CartItem } from "@/lib/store/cart-store";
+import { getErrorMessage } from "@/lib/error-utils";
 
 export async function POST(req: NextRequest) {
   try {
@@ -108,7 +110,7 @@ export async function POST(req: NextRequest) {
     );
 
     // Fetch user's email and selected address if provided
-    let shippingAddressCollection: { allowed_countries: string[] } | undefined =
+    let shippingAddressCollection: Stripe.Checkout.SessionCreateParams.ShippingAddressCollection | undefined =
       deliveryMethod === "DELIVERY" ? { allowed_countries: ["US"] } : undefined;
     let customerEmail: string | undefined;
 
@@ -286,7 +288,7 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     console.error("Stripe checkout error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to create checkout session" },
+      { error: getErrorMessage(error, "Failed to create checkout session") },
       { status: 500 }
     );
   }

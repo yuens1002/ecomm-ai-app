@@ -21,5 +21,5 @@ export default async function OrdersPage({
 
   const { status } = await searchParams;
 
-  return <OrdersPageClient userId={session.user.id} statusFilter={status} />;
+  return <OrdersPageClient statusFilter={status} />;
 }

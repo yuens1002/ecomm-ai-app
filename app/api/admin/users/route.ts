@@ -35,7 +35,7 @@ export async function GET() {
     console.error("Error fetching users:", error);
     
     // Handle redirect from requireAdmin
-    if (error.message?.includes("NEXT_REDIRECT")) {
+    if (error instanceof Error && error.message?.includes("NEXT_REDIRECT")) {
       throw error;
     }
 

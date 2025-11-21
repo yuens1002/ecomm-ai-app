@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/error-utils";
 import {
   Card,
   CardContent,
@@ -80,7 +81,7 @@ export default function ProfileTab({ user, onUpdate }: ProfileTabProps) {
         }, 2000);
       }
     } catch (error: unknown) {
-      setMessage({ type: "error", text: error.message });
+      setMessage({ type: "error", text: getErrorMessage(error, "Failed to update profile") });
     } finally {
       setIsLoading(false);
     }

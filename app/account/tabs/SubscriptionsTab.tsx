@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/error-utils";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -81,10 +82,9 @@ export default function SubscriptionsTab({
       window.location.href = url;
     } catch (error) {
       console.error("Error opening customer portal:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to open subscription management portal";
       toast({
         title: "Error",
-        description: errorMessage,
+        description: getErrorMessage(error, "Failed to open subscription management portal"),
         variant: undefined,
         className: "!bg-foreground !text-background !border-foreground",
       });

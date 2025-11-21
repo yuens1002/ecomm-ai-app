@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/error-utils";
 import {
   Card,
   CardContent,
@@ -87,7 +88,7 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
       setNewPassword("");
       setConfirmPassword("");
     } catch (error: unknown) {
-      setMessage({ type: "error", text: error.message });
+      setMessage({ type: "error", text: getErrorMessage(error, "Failed to update password") });
     } finally {
       setIsLoading(false);
     }

@@ -12,9 +12,32 @@ interface RecommendedProduct {
   slug: string;
   roastLevel: string;
   tastingNotes: string[];
-  images: { id: string; url: string; altText: string | null }[];
-  variants: { id: string; name: string }[];
-  categories: { id: string; name: string }[];
+  images: Array<{
+    id: string;
+    order: number;
+    url: string;
+    altText: string;
+    productId: string;
+  }>;
+  variants: Array<{
+    id: string;
+    name: string;
+    purchaseOptions: Array<{
+      id: string;
+      type: string;
+      priceInCents: number;
+      discountMessage: string | null;
+      billingInterval: string | null;
+      billingIntervalCount: number | null;
+      variantId: string;
+    }>;
+  }>;
+  categories: Array<{
+    category: {
+      name: string;
+      slug: string;
+    };
+  }>;
 }
 
 interface RecommendationsResponse {
@@ -136,7 +159,7 @@ export default function RecommendationsSection() {
           {products.map((product) => (
             <ProductCard
               key={product.id}
-              product={product}
+              product={product as any}
               categorySlug={
                 isPersonalized
                   ? "recommendations-personalized"

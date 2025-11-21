@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { OrderWithItems } from "@/lib/types";
 import OrderDetailClient from "./OrderDetailClient";
 
 export default async function OrderDetailPage({
@@ -49,5 +50,5 @@ export default async function OrderDetailPage({
     redirect("/orders");
   }
 
-  return <OrderDetailClient order={order} />;
+  return <OrderDetailClient order={order as unknown as OrderWithItems} />;
 }

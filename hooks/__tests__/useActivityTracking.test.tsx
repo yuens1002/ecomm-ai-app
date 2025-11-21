@@ -59,7 +59,10 @@ describe('useActivityTracking', () => {
       global.fetch = mockFetch;
 
       mockUseSession.mockReturnValue({
-        data: { user: { id: 'user-123', email: 'test@example.com' } },
+        data: { 
+          user: { id: 'user-123', email: 'test@example.com' },
+          expires: new Date(Date.now() + 86400000).toISOString(),
+        },
         status: 'authenticated',
         update: jest.fn(),
       });
@@ -90,7 +93,10 @@ describe('useActivityTracking', () => {
       global.fetch = mockFetch;
 
       mockUseSession.mockReturnValue({
-        data: { user: { id: 'user-789' } },
+        data: { 
+          user: { id: 'user-789' },
+          expires: new Date(Date.now() + 86400000).toISOString(),
+        },
         status: 'authenticated',
         update: jest.fn(),
       });

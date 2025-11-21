@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/error-utils";
 import {
   Card,
   CardContent,
@@ -75,7 +76,7 @@ export default function DangerZoneTab({
       // Sign out and redirect to home
       await signOut({ callbackUrl: "/?deleted=true" });
     } catch (err: unknown) {
-      setError(err.message);
+      setError(getErrorMessage(err, "Failed to delete account"));
       setIsDeleting(false);
     }
   };

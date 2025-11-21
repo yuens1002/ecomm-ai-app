@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { RoastLevel } from "@prisma/client"; // Import the enum
+import { OrderWithItems, OrderItemWithDetails } from "./types";
 
 // --- COMMON INCLUDE OBJECT ---
 // We define this once to ensure all product cards get the same minimal data for rendering.
@@ -433,8 +434,8 @@ export async function getUserRecommendationContext(userId: string) {
     ]);
 
     // Extract purchased products
-    const purchasedProducts = purchaseHistory.flatMap((order: OrderWithItems) =>
-      order.items.map((item: OrderItemWithDetails) => ({
+    const purchasedProducts = (purchaseHistory as any).flatMap((order: { items: Array<{ purchaseOption: { variant: { product: { name: string; roastLevel: string; tastingNotes: string[] } } } }>; createdAt: Date }) =>
+      order.items.map((item) => ({
         name: item.purchaseOption.variant.product.name,
         roastLevel: item.purchaseOption.variant.product.roastLevel,
         tastingNotes: item.purchaseOption.variant.product.tastingNotes,

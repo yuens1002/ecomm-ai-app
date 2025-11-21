@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { stripe } from "@/lib/stripe";
+import { getErrorMessage } from "@/lib/error-utils";
 
 /**
  * POST /api/admin/orders/[orderId]/cancel
@@ -112,7 +113,7 @@ export async function POST(
           {
             success: true,
             message: "Order canceled but failed to cancel subscription",
-            error: stripeError.message,
+            error: getErrorMessage(stripeError, "Unknown error"),
             requiresManualAction: true,
           },
           { status: 200 }

@@ -136,8 +136,8 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                         <div className="text-xs text-text-muted">
                           {item.purchaseOption.type === "SUBSCRIPTION"
                             ? `Subscription${
-                                item.purchaseOption.deliverySchedule
-                                  ? ` • ${item.purchaseOption.deliverySchedule}`
+                                item.purchaseOption.billingInterval
+                                  ? ` • Every ${item.purchaseOption.intervalCount || 1} ${item.purchaseOption.billingInterval}${(item.purchaseOption.intervalCount || 1) > 1 ? "s" : ""}`
                                   : ""
                               }`
                             : "One-time purchase"}
@@ -241,7 +241,9 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                         </p>
                       </div>
                       {(() => {
-                        const trackingUrl = getTrackingUrl(order.carrier, order.trackingNumber);
+                        const trackingUrl = order.carrier && order.trackingNumber 
+                          ? getTrackingUrl(order.carrier, order.trackingNumber)
+                          : null;
                         return trackingUrl ? (
                           <Button variant="outline" size="sm" asChild>
                             <a

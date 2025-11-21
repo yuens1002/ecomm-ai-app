@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/error-utils";
 import {
   Card,
   CardContent,
@@ -84,7 +85,6 @@ export default function AddressesTab({
       country: "USA",
     });
     setIsAdding(false);
-    setEditingId(null);
   };
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -109,7 +109,7 @@ export default function AddressesTab({
       setMessage({ type: "success", text: "Address added successfully!" });
       resetForm();
     } catch (error: unknown) {
-      setMessage({ type: "error", text: error.message });
+      setMessage({ type: "error", text: getErrorMessage(error, "Failed to add address") });
     } finally {
       setIsLoading(false);
     }
@@ -133,7 +133,7 @@ export default function AddressesTab({
       onUpdate(data.addresses);
       setMessage({ type: "success", text: "Default address updated!" });
     } catch (error: unknown) {
-      setMessage({ type: "error", text: error.message });
+      setMessage({ type: "error", text: getErrorMessage(error, "Failed to update default address") });
     } finally {
       setIsLoading(false);
     }
@@ -160,7 +160,7 @@ export default function AddressesTab({
       setMessage({ type: "success", text: "Address deleted successfully!" });
       setDeleteId(null);
     } catch (error: unknown) {
-      setMessage({ type: "error", text: error.message });
+      setMessage({ type: "error", text: getErrorMessage(error, "Failed to delete address") });
       setDeleteId(null);
     } finally {
       setIsLoading(false);

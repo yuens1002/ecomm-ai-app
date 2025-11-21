@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
+import { getErrorMessage } from "@/lib/error-utils";
 import Link from "next/link";
 import { format } from "date-fns";
 import {
@@ -61,7 +62,7 @@ export default function OrdersTab({ userId }: OrdersTabProps) {
         const data = await response.json();
         setOrders(data.orders);
       } catch (err: unknown) {
-        setError(err.message);
+        setError(getErrorMessage(err, "Failed to load orders"));
       } finally {
         setIsLoading(false);
       }
@@ -108,7 +109,7 @@ export default function OrdersTab({ userId }: OrdersTabProps) {
         )
       );
     } catch (err: unknown) {
-      alert(err.message || "Failed to cancel order");
+      alert(getErrorMessage(err, "Failed to cancel order"));
     } finally {
       setCancellingOrderId(null);
     }

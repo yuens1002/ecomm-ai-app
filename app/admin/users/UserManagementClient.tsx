@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { getErrorMessage } from "@/lib/error-utils";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -57,7 +58,7 @@ export default function UserManagementClient({ currentUserId }: UserManagementCl
       console.error("Error fetching users:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to load users",
+        description: getErrorMessage(error, "Failed to load users"),
         variant: undefined,
         className: "!bg-foreground !text-background !border-foreground",
       });
@@ -106,7 +107,7 @@ export default function UserManagementClient({ currentUserId }: UserManagementCl
       console.error("Error toggling admin status:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update admin status",
+        description: getErrorMessage(error, "Failed to update admin status"),
         variant: undefined,
         className: "!bg-foreground !text-background !border-foreground",
       });
