@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.18.0 - 2025-11-21
+
+- **Environment Awareness**: Visual indicator for non-production environments ([efecdb2](https://github.com/yuens1002/ecomm-ai-app/commit/efecdb22570ff2c2511f9cb8bfd62c88aa6fcb58))
+  - Added floating badge showing current environment (Development/Preview)
+  - Integrated into RootLayout for global visibility
+  - Helps developers distinguish between production and test environments
+
 ## 0.17.0 - 2025-11-21
 
 - **About Page & Header Refinement**: Added comprehensive About page and refined site navigation
