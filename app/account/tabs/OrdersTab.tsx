@@ -250,7 +250,7 @@ export default function OrdersTab({ userId }: OrdersTabProps) {
                 >
                   <div className="flex-1">
                     <Link
-                      href={`/products/${item.purchaseOption.variant.product.slug}`}
+                      href={`/${item.purchaseOption.variant.product.roastLevel.toLowerCase()}-roast/${item.purchaseOption.variant.product.slug}`}
                       className="font-medium text-text-base hover:text-primary"
                     >
                       {item.purchaseOption.variant.product.name}

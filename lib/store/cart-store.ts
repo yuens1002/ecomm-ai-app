@@ -6,6 +6,7 @@ export interface CartItem {
   productId: string;
   productName: string;
   productSlug: string;
+  categorySlug?: string; // Added for linking back to product page
   variantId: string;
   variantName: string; // e.g., "12oz"
   purchaseOptionId: string;

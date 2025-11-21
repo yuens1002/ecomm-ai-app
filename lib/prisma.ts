@@ -1,3 +1,4 @@
+import { Pool } from "@neondatabase/serverless";
 import { PrismaClient } from "@prisma/client";
 // import { withAccelerate } from "@prisma/extension-accelerate";
 import { PrismaNeon } from "@prisma/adapter-neon";
@@ -10,11 +11,11 @@ import { PrismaNeon } from "@prisma/adapter-neon";
 const createPrismaClient = () => {
   const connectionString = process.env.DATABASE_URL!;
 
-  // Pass connectionString as an object
-  const adapter = new PrismaNeon({ connectionString });
+  const pool = new Pool({ connectionString });
+  const adapter = new PrismaNeon(pool);
 
   return new PrismaClient({
-    adapter: adapter,
+    adapter,
   });
   // .$extends(withAccelerate()); // withAccelerate() is for Vercel's Data Cache
 };

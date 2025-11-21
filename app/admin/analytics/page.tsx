@@ -2,16 +2,22 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  TrendingUp, 
-  Search, 
-  ShoppingCart, 
-  Eye, 
+import {
+  TrendingUp,
+  Search,
+  ShoppingCart,
+  Eye,
   BarChart3,
   ArrowLeft,
-  Loader2
+  Loader2,
 } from "lucide-react";
 
 interface TrendingProduct {
@@ -64,7 +70,9 @@ export default function AdminAnalyticsPage() {
     async function fetchAnalytics() {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/admin/analytics?days=${selectedPeriod}`);
+        const response = await fetch(
+          `/api/admin/analytics?days=${selectedPeriod}`
+        );
         if (!response.ok) {
           throw new Error("Failed to fetch analytics");
         }
@@ -103,7 +111,10 @@ export default function AdminAnalyticsPage() {
     );
   }
 
-  const maxDailyActivity = Math.max(...data.dailyActivity.map((d) => d.count), 1);
+  const maxDailyActivity = Math.max(
+    ...data.dailyActivity.map((d) => d.count),
+    1
+  );
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -117,7 +128,9 @@ export default function AdminAnalyticsPage() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-            <p className="text-muted-foreground">User behavior and product performance insights</p>
+            <p className="text-muted-foreground">
+              User behavior and product performance insights
+            </p>
           </div>
         </div>
 
@@ -144,7 +157,9 @@ export default function AdminAnalyticsPage() {
             <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.metrics.totalProductViews.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {data.metrics.totalProductViews.toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground mt-1">{data.period}</p>
           </CardContent>
         </Card>
@@ -155,7 +170,9 @@ export default function AdminAnalyticsPage() {
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.metrics.totalAddToCart.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {data.metrics.totalAddToCart.toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground mt-1">{data.period}</p>
           </CardContent>
         </Card>
@@ -166,19 +183,27 @@ export default function AdminAnalyticsPage() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.metrics.totalOrders.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {data.metrics.totalOrders.toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground mt-1">{data.period}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Conversion Rate
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.metrics.conversionRate}%</div>
-            <p className="text-xs text-muted-foreground mt-1">Views to Orders</p>
+            <div className="text-2xl font-bold">
+              {data.metrics.conversionRate}%
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Views to Orders
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -192,24 +217,31 @@ export default function AdminAnalyticsPage() {
               <TrendingUp className="h-5 w-5" />
               Trending Products
             </CardTitle>
-            <CardDescription>Most viewed products in {data.period.toLowerCase()}</CardDescription>
+            <CardDescription>
+              Most viewed products in {data.period.toLowerCase()}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {data.trendingProducts.slice(0, 8).map((product, index) => (
-                <div key={product.id} className="flex items-center justify-between">
+                <div
+                  key={product.id}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <span className="text-sm font-medium text-muted-foreground w-6">
                       #{index + 1}
                     </span>
                     <div className="flex-1 min-w-0">
                       <Link
-                        href={`/products/${product.slug}`}
+                        href={`/${product.roastLevel.toLowerCase()}-roast/${product.slug}`}
                         className="text-sm font-medium hover:text-accent truncate block"
                       >
                         {product.name}
                       </Link>
-                      <p className="text-xs text-muted-foreground">{product.roastLevel}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {product.roastLevel}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -234,14 +266,21 @@ export default function AdminAnalyticsPage() {
           <CardContent>
             <div className="space-y-3">
               {data.topSearches.slice(0, 8).map((search, index) => (
-                <div key={search.query} className="flex items-center justify-between">
+                <div
+                  key={search.query}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <span className="text-sm font-medium text-muted-foreground w-6">
                       #{index + 1}
                     </span>
-                    <span className="text-sm font-medium truncate">&quot;{search.query}&quot;</span>
+                    <span className="text-sm font-medium truncate">
+                      &quot;{search.query}&quot;
+                    </span>
                   </div>
-                  <span className="text-sm text-muted-foreground">{search.count}×</span>
+                  <span className="text-sm text-muted-foreground">
+                    {search.count}×
+                  </span>
                 </div>
               ))}
               {data.topSearches.length === 0 && (
@@ -258,7 +297,9 @@ export default function AdminAnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Daily Activity Trend</CardTitle>
-          <CardDescription>User activity over {data.period.toLowerCase()}</CardDescription>
+          <CardDescription>
+            User activity over {data.period.toLowerCase()}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -278,7 +319,9 @@ export default function AdminAnalyticsPage() {
                     }}
                   />
                 </div>
-                <span className="text-sm font-medium w-12 text-right">{day.count}</span>
+                <span className="text-sm font-medium w-12 text-right">
+                  {day.count}
+                </span>
               </div>
             ))}
           </div>
@@ -294,8 +337,13 @@ export default function AdminAnalyticsPage() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {data.activityBreakdown.map((activity) => (
-              <div key={activity.activityType} className="text-center p-4 bg-secondary rounded-lg">
-                <div className="text-2xl font-bold">{activity._count.activityType}</div>
+              <div
+                key={activity.activityType}
+                className="text-center p-4 bg-secondary rounded-lg"
+              >
+                <div className="text-2xl font-bold">
+                  {activity._count.activityType}
+                </div>
                 <div className="text-xs text-muted-foreground mt-1">
                   {activity.activityType.replace("_", " ")}
                 </div>

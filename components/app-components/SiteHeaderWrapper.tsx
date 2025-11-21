@@ -1,9 +1,4 @@
-import {
-  getAllCategories,
-  getAllOrigins,
-  getRoastLevels,
-  getSpecialCategories,
-} from "@/lib/data";
+import { getAllCategories } from "@/lib/data";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
 import SiteHeader from "@components/app-components/SiteHeader";
@@ -16,15 +11,11 @@ import SiteHeader from "@components/app-components/SiteHeader";
  */
 export default async function SiteHeaderWrapper() {
   // Fetch all data for the navigation menu in parallel
-  const [categories, origins, session, userIsAdmin] = await Promise.all([
+  const [categories, session, userIsAdmin] = await Promise.all([
     getAllCategories(),
-    getAllOrigins(),
     auth(),
     isAdmin(),
   ]);
-
-  const roastLevels = getRoastLevels();
-  const specialCategories = getSpecialCategories();
 
   // Handle case where no categories are found (e.g., first deployment/empty DB)
   if (!categories) {
@@ -32,22 +23,29 @@ export default async function SiteHeaderWrapper() {
     return (
       <SiteHeader
         categories={[]}
-        origins={origins || []}
-        roastLevels={roastLevels}
-        specialCategories={specialCategories}
+        originCategories={[]}
+        roastCategories={[]}
+        collectionCategories={[]}
         user={session?.user || null}
         isAdmin={userIsAdmin}
       />
     );
   }
 
+  // Filter categories by label
+  const originCategories = categories.filter((c) => c.label === "Origins");
+  const roastCategories = categories.filter((c) => c.label === "Roast Level");
+  const collectionCategories = categories.filter(
+    (c) => c.label === "Collections"
+  );
+
   // Pass the fetched, non-stale categories and user down to the client component
   return (
     <SiteHeader
       categories={categories}
-      origins={origins}
-      roastLevels={roastLevels}
-      specialCategories={specialCategories}
+      originCategories={originCategories}
+      roastCategories={roastCategories}
+      collectionCategories={collectionCategories}
       user={session?.user || null}
       isAdmin={userIsAdmin}
     />

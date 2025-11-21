@@ -4,11 +4,13 @@
 // 1. Define the database provider and URL
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // 2. Define the generator for Prisma Client (TypeScript)
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 // --- Product & Related Models ---
@@ -59,6 +61,7 @@ model Category {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
+  label     String?  // Grouping label (e.g. "Origins", "Collections")
   products  CategoriesOnProducts[] // Relation back to the join table
 }
 

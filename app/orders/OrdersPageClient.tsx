@@ -255,28 +255,30 @@ export default function OrdersPageClient({
                   {/* Items - Mobile Third */}
                   <div className="col-span-1 md:col-span-2 md:order-3">
                     <div className="space-y-2">
-                      {order.items.map((item: OrderItemWithDetails, idx: number) => (
-                        <div key={item.id}>
-                          <div className="text-sm">
-                            <Link
-                              href={`/products/${item.purchaseOption.variant.product.slug}`}
-                              className="text-text-base hover:text-primary"
-                            >
-                              {item.purchaseOption.variant.product.name}
-                            </Link>
+                      {order.items.map(
+                        (item: OrderItemWithDetails, idx: number) => (
+                          <div key={item.id}>
+                            <div className="text-sm">
+                              <Link
+                                href={`/${item.purchaseOption.variant.product.roastLevel.toLowerCase()}-roast/${item.purchaseOption.variant.product.slug}`}
+                                className="text-text-base hover:text-primary"
+                              >
+                                {item.purchaseOption.variant.product.name}
+                              </Link>
+                            </div>
+                            <div className="text-xs text-text-muted">
+                              {item.purchaseOption.variant.name} •{" "}
+                              {item.purchaseOption.type === "SUBSCRIPTION"
+                                ? "Subscription"
+                                : "One-time"}{" "}
+                              • Qty: {item.quantity}
+                            </div>
+                            {idx < order.items.length - 1 && (
+                              <div className="border-t border-border mt-2 pt-2" />
+                            )}
                           </div>
-                          <div className="text-xs text-text-muted">
-                            {item.purchaseOption.variant.name} •{" "}
-                            {item.purchaseOption.type === "SUBSCRIPTION"
-                              ? "Subscription"
-                              : "One-time"}{" "}
-                            • Qty: {item.quantity}
-                          </div>
-                          {idx < order.items.length - 1 && (
-                            <div className="border-t border-border mt-2 pt-2" />
-                          )}
-                        </div>
-                      ))}
+                        )
+                      )}
                     </div>
                   </div>
 

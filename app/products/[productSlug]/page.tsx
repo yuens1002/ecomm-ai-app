@@ -53,10 +53,24 @@ export default async function ProductPage({
   let displayCategory;
 
   if (fromCategorySlug) {
-    // Only use the `from` category if the product is actually linked to it
-    displayCategory = product.categories.find(
-      (c) => c.category.slug === fromCategorySlug
-    )?.category;
+    // Check if it's a virtual roast category
+    if (fromCategorySlug.endsWith("-roast")) {
+      const roastLevel = fromCategorySlug.replace("-roast", "").toUpperCase();
+      if (product.roastLevel === roastLevel) {
+        displayCategory = {
+          name:
+            roastLevel.charAt(0) + roastLevel.slice(1).toLowerCase() + " Roast",
+          slug: fromCategorySlug,
+        };
+      }
+    }
+
+    if (!displayCategory) {
+      // Only use the `from` category if the product is actually linked to it
+      displayCategory = product.categories.find(
+        (c) => c.category.slug === fromCategorySlug
+      )?.category;
+    }
   }
 
   // If no category from URL or category not found, fall back to primary or first

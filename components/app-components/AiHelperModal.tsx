@@ -22,14 +22,21 @@ import { Loader2, CheckCircle2 } from "lucide-react"; // Import icons
 // --- AI Helper Modal Component ---
 export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
   const addItem = useCartStore((state) => state.addItem);
-  
+
   const [step, setStep] = useState<number>(1);
   const [taste, setTaste] = useState<string>("");
   const [brewMethod, setBrewMethod] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [recommendation, setRecommendation] = useState<string>("");
   const [productSlug, setProductSlug] = useState<string | null>(null);
-  const [productData, setProductData] = useState<{ id: string; name: string; slug: string; images: { url: string }[]; variants: { id: string; name: string; purchaseOptions: PurchaseOption[] }[] } | null>(null);
+  const [productData, setProductData] = useState<{
+    id: string;
+    name: string;
+    slug: string;
+    roastLevel: string;
+    images: { url: string }[];
+    variants: { id: string; name: string; purchaseOptions: PurchaseOption[] }[];
+  } | null>(null);
   const [isPersonalized, setIsPersonalized] = useState<boolean>(false);
   const [userStats, setUserStats] = useState<{
     totalOrders?: number;
@@ -77,9 +84,10 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
       }
 
       // Get the one-time purchase option (required for Buy Now)
-      const purchaseOption = selectedVariant.purchaseOptions.find(
-        (po: PurchaseOption) => po.type === "ONE_TIME"
-      ) || selectedVariant.purchaseOptions[0];
+      const purchaseOption =
+        selectedVariant.purchaseOptions.find(
+          (po: PurchaseOption) => po.type === "ONE_TIME"
+        ) || selectedVariant.purchaseOptions[0];
 
       // Create cart item for Stripe checkout
       const cartItem = {
@@ -174,9 +182,12 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
 
   return (
     // shadcn/ui Dialog handles the open/close state and animations
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) handleClose();
-    }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) handleClose();
+      }}
+    >
       <DialogContent className="sm:max-w-md bg-background">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-text-base">
@@ -299,29 +310,33 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
             {/* Product name as button link if available */}
             {productSlug && productData && (
               <div className="mb-4">
-                <Button asChild variant="link" className="h-auto p-0 text-lg font-semibold">
-                  <Link href={`/products/${productSlug}`}>
+                <Button
+                  asChild
+                  variant="link"
+                  className="h-auto p-0 text-lg font-semibold"
+                >
+                  <Link
+                    href={`/${productData.roastLevel.toLowerCase()}-roast/${productSlug}`}
+                  >
                     {productData.name}
                   </Link>
                 </Button>
               </div>
             )}
-            
+
             {/* We use whitespace-pre-wrap to respect newlines from the AI */}
             <p className="text-text-base whitespace-pre-wrap">
               {recommendation}
             </p>
-            
+
             {error && (
-              <p className="text-red-600 text-sm font-medium mt-2">
-                {error}
-              </p>
+              <p className="text-red-600 text-sm font-medium mt-2">{error}</p>
             )}
-            
+
             <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
               {productSlug && productData ? (
                 <>
-                  <Button 
+                  <Button
                     onClick={() => {
                       // Find the cheapest variant (by one-time purchase price)
                       let selectedVariant = productData.variants[0];
@@ -331,16 +346,20 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
                         const oneTimeOption = variant.purchaseOptions.find(
                           (po: PurchaseOption) => po.type === "ONE_TIME"
                         );
-                        if (oneTimeOption && oneTimeOption.priceInCents < lowestPrice) {
+                        if (
+                          oneTimeOption &&
+                          oneTimeOption.priceInCents < lowestPrice
+                        ) {
                           lowestPrice = oneTimeOption.priceInCents;
                           selectedVariant = variant;
                         }
                       }
 
                       // Get the one-time purchase option (required)
-                      const purchaseOption = selectedVariant.purchaseOptions.find(
-                        (po: PurchaseOption) => po.type === "ONE_TIME"
-                      ) || selectedVariant.purchaseOptions[0];
+                      const purchaseOption =
+                        selectedVariant.purchaseOptions.find(
+                          (po: PurchaseOption) => po.type === "ONE_TIME"
+                        ) || selectedVariant.purchaseOptions[0];
 
                       addItem({
                         productId: productData.id,
@@ -353,10 +372,12 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
                         priceInCents: purchaseOption.priceInCents,
                         imageUrl: productData.images[0]?.url,
                         quantity: 1,
-                        billingInterval: purchaseOption.billingInterval || undefined,
-                        billingIntervalCount: purchaseOption.billingIntervalCount || undefined,
+                        billingInterval:
+                          purchaseOption.billingInterval || undefined,
+                        billingIntervalCount:
+                          purchaseOption.billingIntervalCount || undefined,
                       });
-                      
+
                       handleClose();
                     }}
                     variant="outline"
@@ -364,7 +385,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
                   >
                     Add to Cart
                   </Button>
-                  <Button 
+                  <Button
                     onClick={handleBuyNow}
                     disabled={isLoading}
                     className="w-full sm:w-auto"

@@ -17,6 +17,7 @@ import {
   User,
   Settings,
   BarChart3,
+  Tags,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -76,6 +77,10 @@ export default function AdminDashboardClient({
           <TabsTrigger value="products" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             <span className="hidden sm:inline">Products</span>
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="flex items-center gap-2">
+            <Tags className="h-4 w-4" />
+            <span className="hidden sm:inline">Categories</span>
           </TabsTrigger>
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
@@ -170,6 +175,19 @@ export default function AdminDashboardClient({
               </Link>
 
               <Link
+                href="/admin/categories"
+                className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent transition-colors"
+              >
+                <Tags className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium">Manage Categories</p>
+                  <p className="text-sm text-muted-foreground">
+                    Edit origins and collections
+                  </p>
+                </div>
+              </Link>
+
+              <Link
                 href="/admin/analytics"
                 className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent transition-colors"
               >
@@ -242,6 +260,30 @@ export default function AdminDashboardClient({
               <p className="text-muted-foreground">
                 Product management coming soon...
               </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Categories Tab */}
+        <TabsContent value="categories">
+          <Card>
+            <CardHeader>
+              <CardTitle>Category Management</CardTitle>
+              <CardDescription>
+                Manage product categories, origins, and collections
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                Go to the dedicated categories page for full functionality.
+              </p>
+              <Link
+                href="/admin/categories"
+                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                <Tags className="mr-2 h-4 w-4" />
+                Manage Categories
+              </Link>
             </CardContent>
           </Card>
         </TabsContent>

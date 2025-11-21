@@ -332,7 +332,7 @@ export function ShoppingCart() {
                 >
                   {/* Product Image */}
                   <Link
-                    href={`/products/${item.productSlug}`}
+                    href={`/${item.categorySlug || "blends"}/${item.productSlug}`}
                     className="flex-shrink-0"
                   >
                     <div className="relative w-20 h-20 rounded-md overflow-hidden bg-white dark:bg-gray-800">
@@ -354,7 +354,7 @@ export function ShoppingCart() {
                   {/* Product Details */}
                   <div className="flex-1 min-w-0">
                     <Link
-                      href={`/products/${item.productSlug}`}
+                      href={`/${item.categorySlug || "blends"}/${item.productSlug}`}
                       className="font-medium text-text-base hover:text-primary line-clamp-2 mb-1"
                     >
                       {item.productName}
@@ -503,8 +503,8 @@ export function ShoppingCart() {
                       ) : (
                         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded text-sm">
                           <p className="text-blue-800 dark:text-blue-200">
-                            You&apos;ll be able to enter your shipping address during
-                            checkout.
+                            You&apos;ll be able to enter your shipping address
+                            during checkout.
                           </p>
                         </div>
                       )}

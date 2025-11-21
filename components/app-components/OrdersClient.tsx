@@ -36,9 +36,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-2xl mx-auto text-center">
           <Package className="w-16 h-16 text-text-muted mx-auto mb-4" />
-          <h1 className="text-3xl font-bold mb-4">
-            No Orders Yet
-          </h1>
+          <h1 className="text-3xl font-bold mb-4">No Orders Yet</h1>
           <p className="text-text-muted mb-8">
             You haven&apos;t placed any orders. Start shopping to see your order
             history here!
@@ -91,7 +89,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                   >
                     <div className="flex-1">
                       <Link
-                        href={`/products/${item.purchaseOption.variant.product.slug}`}
+                        href={`/${item.purchaseOption.variant.product.roastLevel.toLowerCase()}-roast/${item.purchaseOption.variant.product.slug}`}
                         className="font-medium text-text-base hover:text-primary"
                       >
                         {item.purchaseOption.variant.product.name}

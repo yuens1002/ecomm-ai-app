@@ -190,6 +190,7 @@ export async function getCategorySlugs() {
  */
 export async function getCategoryBySlug(slug: string) {
   try {
+    // All categories (Origins, Collections, Roasts) are now in the database.
     const category = await prisma.category.findUnique({
       where: { slug: slug },
     });
@@ -205,6 +206,7 @@ export async function getCategoryBySlug(slug: string) {
  */
 export async function getProductsByCategorySlug(categorySlug: string) {
   try {
+    // Query the database relations for all categories.
     const products = await prisma.product.findMany({
       where: {
         // Filter by the many-to-many relation
@@ -234,6 +236,7 @@ export async function getAllCategories() {
       select: {
         name: true,
         slug: true,
+        label: true,
       },
       orderBy: {
         name: "asc",
@@ -435,28 +438,48 @@ export async function getUserRecommendationContext(userId: string) {
 
     // Extract purchased products
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const purchasedProducts = (purchaseHistory as any).flatMap((order: { items: Array<{ purchaseOption: { variant: { product: { name: string; roastLevel: string; tastingNotes: string[] } } } }>; createdAt: Date }) =>
-      order.items.map((item) => ({
-        name: item.purchaseOption.variant.product.name,
-        roastLevel: item.purchaseOption.variant.product.roastLevel,
-        tastingNotes: item.purchaseOption.variant.product.tastingNotes,
-        purchasedAt: order.createdAt,
-      }))
+    const purchasedProducts = (purchaseHistory as any).flatMap(
+      (order: {
+        items: Array<{
+          purchaseOption: {
+            variant: {
+              product: {
+                name: string;
+                roastLevel: string;
+                tastingNotes: string[];
+              };
+            };
+          };
+        }>;
+        createdAt: Date;
+      }) =>
+        order.items.map((item) => ({
+          name: item.purchaseOption.variant.product.name,
+          roastLevel: item.purchaseOption.variant.product.roastLevel,
+          tastingNotes: item.purchaseOption.variant.product.tastingNotes,
+          purchasedAt: order.createdAt,
+        }))
     );
 
     // Analyze preferences
     const roastLevelCounts = new Map<string, number>();
     const tastingNotesCounts = new Map<string, number>();
 
-    purchasedProducts.forEach((p: { roastLevel: string; tastingNotes: string[] }) => {
-      roastLevelCounts.set(p.roastLevel, (roastLevelCounts.get(p.roastLevel) || 0) + 1);
-      p.tastingNotes.forEach((note: string) => {
-        tastingNotesCounts.set(note, (tastingNotesCounts.get(note) || 0) + 1);
-      });
-    });
+    purchasedProducts.forEach(
+      (p: { roastLevel: string; tastingNotes: string[] }) => {
+        roastLevelCounts.set(
+          p.roastLevel,
+          (roastLevelCounts.get(p.roastLevel) || 0) + 1
+        );
+        p.tastingNotes.forEach((note: string) => {
+          tastingNotesCounts.set(note, (tastingNotesCounts.get(note) || 0) + 1);
+        });
+      }
+    );
 
-    const preferredRoastLevel = Array.from(roastLevelCounts.entries())
-      .sort((a, b) => b[1] - a[1])[0]?.[0];
+    const preferredRoastLevel = Array.from(roastLevelCounts.entries()).sort(
+      (a, b) => b[1] - a[1]
+    )[0]?.[0];
 
     const topTastingNotes = Array.from(tastingNotesCounts.entries())
       .sort((a, b) => b[1] - a[1])
@@ -492,7 +515,10 @@ export async function getUserRecommendationContext(userId: string) {
  * Fetches trending products based on UserActivity analytics.
  * Used for anonymous users or as fallback recommendations.
  */
-export async function getTrendingProducts(limit: number = 6, daysBack: number = 7) {
+export async function getTrendingProducts(
+  limit: number = 6,
+  daysBack: number = 7
+) {
   try {
     const since = new Date();
     since.setDate(since.getDate() - daysBack);
@@ -548,31 +574,27 @@ export async function getTrendingProducts(limit: number = 6, daysBack: number = 
 
 /**
  * Fetches all unique origins from the product catalog.
+ * @deprecated Origins are now managed via the Category table.
  */
 export async function getAllOrigins() {
+  // This function is kept for backward compatibility if needed,
+  // but should be replaced by querying categories with label="Origins".
   try {
-    // Since origin is an array, we fetch all products and extract unique origins
-    // For a large catalog, this should be optimized with a raw query or distinct on unnested array
-    const products = await prisma.product.findMany({
-      select: {
-        origin: true,
-      },
+    const categories = await prisma.category.findMany({
+      where: { label: "Origins" },
+      select: { name: true },
+      orderBy: { name: "asc" },
     });
-
-    const origins = new Set<string>();
-    products.forEach((p) => {
-      p.origin.forEach((o) => origins.add(o));
-    });
-
-    return Array.from(origins).sort();
+    return categories.map((c) => c.name);
   } catch (error) {
     console.error("Database Error:", error);
-    throw new Error("Failed to fetch origins.");
+    return [];
   }
 }
 
 /**
  * Returns the available roast levels.
+ * @deprecated Roast levels are now managed via the Category table.
  */
 export function getRoastLevels() {
   return Object.values(RoastLevel);
@@ -580,6 +602,7 @@ export function getRoastLevels() {
 
 /**
  * Returns special categories (Micro Lot, Blends).
+ * @deprecated Special categories are now managed via the Category table.
  */
 export function getSpecialCategories() {
   return ["Micro Lot", "Blends"];

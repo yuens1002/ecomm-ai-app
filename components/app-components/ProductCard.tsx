@@ -43,10 +43,13 @@ export default function ProductCard({
     product.images[0]?.altText || `A bag of ${product.name} coffee`;
 
   // Define the destination URL using the product's slug
-  // If categorySlug is provided, include it as a query parameter
-  const productUrl = categorySlug
-    ? `/products/${product.slug}?from=${encodeURIComponent(categorySlug)}`
-    : `/products/${product.slug}`;
+  // If categorySlug is provided, use it. Otherwise, try to find a primary category or fallback.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const roastLevelSlug = (product as any).roastLevel
+    ? `${(product as any).roastLevel.toLowerCase()}-roast`
+    : "blends";
+  const urlCategory = categorySlug || roastLevelSlug;
+  const productUrl = `/${urlCategory}/${product.slug}`;
 
   return (
     <Link
@@ -104,6 +107,7 @@ export default function ProductCard({
                       productId: product.id,
                       productName: product.name,
                       productSlug: product.slug,
+                      categorySlug: urlCategory,
                       variantId: displayVariant.id,
                       variantName: displayVariant.name,
                       purchaseOptionId: oneTimePrice.id,

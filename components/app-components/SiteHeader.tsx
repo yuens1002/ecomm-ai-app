@@ -8,13 +8,25 @@ import { ThemeSwitcher } from "@components/app-components/ThemeSwitcher";
 import { ShoppingCart } from "@components/app-components/ShoppingCart";
 import { UserMenu } from "@components/app-components/UserMenu";
 import { Category } from "@/lib/types";
-import { Menu, Home, User, Search, Mail, FileText } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Menu,
+  Home,
+  User,
+  Search,
+  Mail,
+  FileText,
+  ChevronDown,
+} from "lucide-react";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -34,12 +46,53 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import * as React from "react";
+
+const ListItem = React.forwardRef<
+  React.ElementRef<"a">,
+  React.ComponentPropsWithoutRef<"a">
+>(({ className, title, children, ...props }, ref) => {
+  return (
+    <li>
+      <NavigationMenuLink asChild>
+        <a
+          ref={ref}
+          className={cn(
+            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+            className
+          )}
+          {...props}
+        >
+          <div className="text-sm font-medium leading-none">{title}</div>
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+            {children}
+          </p>
+        </a>
+      </NavigationMenuLink>
+    </li>
+  );
+});
+ListItem.displayName = "ListItem";
+
+interface ExpandableListProps {
+  items: { label: string; href: string }[];
+}
+
+function ExpandableList({ items }: ExpandableListProps) {
+  return (
+    <ul className="space-y-1">
+      {items.map((item) => (
+        <ListItem key={item.label} href={item.href} title={item.label} />
+      ))}
+    </ul>
+  );
+}
 
 interface SiteHeaderProps {
   categories: Category[];
-  origins: string[];
-  roastLevels: string[];
-  specialCategories: string[];
+  originCategories: Category[];
+  roastCategories: Category[];
+  collectionCategories: Category[];
   user: {
     name?: string | null;
     email?: string | null;
@@ -54,9 +107,9 @@ interface SiteHeaderProps {
  */
 export default function SiteHeader({
   categories,
-  origins,
-  roastLevels,
-  specialCategories,
+  originCategories,
+  roastCategories,
+  collectionCategories,
   user,
   isAdmin,
 }: SiteHeaderProps) {
@@ -106,136 +159,112 @@ export default function SiteHeader({
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-4">
-          {/* UPDATED: Mega Menu for Coffee Categories */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="h-auto flex-col gap-1 px-2 py-2 text-text-base hover:text-primary data-[state=open]:text-primary"
-              >
-                <Image
-                  src="/beans.svg"
-                  alt="Coffee selections"
-                  width={16}
-                  height={16}
-                  className="w-4 h-4"
-                />
-                <span className="text-[10px] uppercase tracking-wide font-medium">
-                  Coffee
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[600px] p-6">
-              <div className="grid grid-cols-3 gap-8">
-                {/* Roast Level Column */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
-                    Roast Level
-                  </h4>
-                  <ul className="space-y-2">
-                    {roastLevels.map((roast) => (
-                      <li key={roast}>
-                        <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
-                          <Link
-                            href={`/search?roast=${roast.toLowerCase()}`}
-                            className="text-sm hover:text-primary transition-colors block py-1 cursor-pointer"
-                          >
-                            {roast.charAt(0) + roast.slice(1).toLowerCase()} Roast
-                          </Link>
-                        </DropdownMenuItem>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+        <div className="hidden md:flex items-center space-x-4">
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="h-auto px-2 py-2 text-text-base hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden">
+                  <div className="flex flex-col items-center gap-1">
+                    <Image
+                      src="/beans.svg"
+                      alt="Coffee selections"
+                      width={20}
+                      height={20}
+                      className="w-5 h-5"
+                    />
+                    <div className="flex items-center gap-1">
+                      {/* Spacer to balance the chevron for centering */}
+                      <div className="w-3 h-3" aria-hidden="true" />
+                      <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
+                        Coffee
+                      </span>
+                      <ChevronDown
+                        className="h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  </div>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="w-[600px] p-6 h-[330px] overflow-y-auto">
+                    <div className="grid grid-cols-3 gap-8">
+                      {/* Roast Level Column */}
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2 px-2">
+                          Roasts
+                        </h4>
+                        <ExpandableList
+                          items={roastCategories.map((roast) => ({
+                            label: roast.name,
+                            href: `/${roast.slug}`,
+                          }))}
+                        />
+                      </div>
 
-                {/* Origins Column */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
-                    Origins
-                  </h4>
-                  <ul className="space-y-2">
-                    {origins.map((origin) => (
-                      <li key={origin}>
-                        <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
-                          <Link
-                            href={`/search?origin=${encodeURIComponent(origin)}`}
-                            className="text-sm hover:text-primary transition-colors block py-1 cursor-pointer"
-                          >
-                            {origin}
-                          </Link>
-                        </DropdownMenuItem>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                      {/* Origins Column */}
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2 px-2">
+                          Origins
+                        </h4>
+                        <ExpandableList
+                          items={originCategories.map((origin) => ({
+                            label: origin.name,
+                            href: `/${origin.slug}`,
+                          }))}
+                        />
+                      </div>
 
-                {/* Collections Column */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
-                    Collections
-                  </h4>
-                  <ul className="space-y-2">
-                    {specialCategories.map((special) => (
-                      <li key={special}>
-                        <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
-                          <Link
-                            href={
-                              special === "Blends"
-                                ? "/search?origin=Blend"
-                                : `/search?q=${encodeURIComponent(special)}`
-                            }
-                            className="text-sm hover:text-primary transition-colors block py-1 cursor-pointer"
-                          >
-                            {special}
-                          </Link>
-                        </DropdownMenuItem>
-                      </li>
-                    ))}
-                    {categories.map((category) => (
-                      <li key={category.slug}>
-                        <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
-                          <Link
-                            href={`/categories/${category.slug}`}
-                            className="text-sm hover:text-primary transition-colors block py-1 cursor-pointer"
-                          >
-                            {category.name}
-                          </Link>
-                        </DropdownMenuItem>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                      {/* Collections Column */}
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2 px-2">
+                          Collections
+                        </h4>
+                        <ExpandableList
+                          items={collectionCategories.map((col) => ({
+                            label: col.name,
+                            href: `/${col.slug}`,
+                          }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
 
-          <Button
-            asChild
-            variant="ghost"
-            className="h-auto flex-col gap-1 px-2 py-2 text-text-base hover:text-primary"
-          >
-            <Link href="/about">
-              <FileText className="w-5 h-5" />
-              <span className="text-[10px] uppercase tracking-wide font-medium">
-                About
-              </span>
-            </Link>
-          </Button>
+              <NavigationMenuItem>
+                <Link href="/about" legacyBehavior passHref>
+                  <NavigationMenuLink
+                    className={cn(
+                      navigationMenuTriggerStyle(),
+                      "h-auto flex-col gap-1 px-2 py-2 text-text-base hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
+                    )}
+                  >
+                    <FileText className="w-5 h-5" />
+                    <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
+                      About
+                    </span>
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
 
-          <Button
-            asChild
-            variant="ghost"
-            className="h-auto flex-col gap-1 px-2 py-2 text-text-base hover:text-primary"
-          >
-            <Link href="/contact">
-              <Mail className="w-5 h-5" />
-              <span className="text-[10px] uppercase tracking-wide font-medium">
-                Contact
-              </span>
-            </Link>
-          </Button>
-        </nav>
+              <NavigationMenuItem>
+                <Link href="/contact" legacyBehavior passHref>
+                  <NavigationMenuLink
+                    className={cn(
+                      navigationMenuTriggerStyle(),
+                      "h-auto flex-col gap-1 px-2 py-2 text-text-base hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
+                    )}
+                  >
+                    <Mail className="w-5 h-5" />
+                    <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
+                      Contact
+                    </span>
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
 
         {/* Right Side Controls */}
         <div className="flex items-center space-x-4 ml-auto">
@@ -381,7 +410,7 @@ export default function SiteHeader({
                             asChild
                             className="w-full justify-start font-normal"
                           >
-                            <Link href={`/categories/${category.slug}`}>
+                            <Link href={`/${category.slug}`}>
                               {category.name}
                             </Link>
                           </Button>

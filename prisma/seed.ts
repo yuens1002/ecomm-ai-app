@@ -7,8 +7,11 @@ import {
   RoastLevel,
   BillingInterval,
 } from "@prisma/client";
+import { PrismaNeon } from "@prisma/adapter-neon";
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL!;
+const adapter = new PrismaNeon({ connectionString });
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log(`Start seeding with 30 specialty coffee products...`);
@@ -24,24 +27,6 @@ async function main() {
     where: { slug: "single-origin" },
     update: {},
     create: { name: "Single Origin", slug: "single-origin" },
-  });
-
-  const catLight = await prisma.category.upsert({
-    where: { slug: "light-roast" },
-    update: {},
-    create: { name: "Light Roast", slug: "light-roast" },
-  });
-
-  const catMedium = await prisma.category.upsert({
-    where: { slug: "medium-roast" },
-    update: {},
-    create: { name: "Medium Roast", slug: "medium-roast" },
-  });
-
-  const catDark = await prisma.category.upsert({
-    where: { slug: "dark-roast" },
-    update: {},
-    create: { name: "Dark Roast", slug: "dark-roast" },
   });
 
   const catMicroLot = await prisma.category.upsert({
@@ -124,10 +109,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catBlends.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catBlends.id, isPrimary: true }],
     },
 
     // 2. Italian Roast
@@ -164,10 +146,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catBlends.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catBlends.id, isPrimary: true }],
     },
 
     // 3. Sumatra Mandheling
@@ -204,10 +183,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 4. French Roast
@@ -252,10 +228,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catBlends.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catBlends.id, isPrimary: true }],
     },
 
     // 5. Papua New Guinea Sigri Estate
@@ -294,7 +267,6 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
         { categoryId: catMicroLot.id, isPrimary: false },
       ],
     },
@@ -342,10 +314,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // === MEDIUM ROASTS (10 products) ===
@@ -418,10 +387,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catBlends.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catBlends.id, isPrimary: true }],
     },
 
     // 8. Colombian Supremo
@@ -466,10 +432,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 9. Guatemalan Antigua
@@ -523,10 +486,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 10. Costa Rica Tarrazú
@@ -563,10 +523,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 11. Brazil Santos
@@ -611,10 +568,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 12. Honduras Marcala
@@ -651,10 +605,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 13. Mexican Altura
@@ -691,10 +642,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 14. Peruvian Organic
@@ -740,10 +688,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 15. Nicaraguan SHG
@@ -780,10 +725,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 16. El Salvador Pacamara
@@ -822,7 +764,6 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
         { categoryId: catMicroLot.id, isPrimary: false },
       ],
     },
@@ -880,10 +821,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 18. Kenya AA
@@ -923,7 +861,6 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
         { categoryId: catMicroLot.id, isPrimary: false },
       ],
     },
@@ -962,10 +899,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 20. Rwanda Bourbon
@@ -1004,7 +938,6 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
         { categoryId: catMicroLot.id, isPrimary: false },
       ],
     },
@@ -1045,7 +978,6 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
         { categoryId: catMicroLot.id, isPrimary: false },
       ],
     },
@@ -1086,7 +1018,6 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
         { categoryId: catMicroLot.id, isPrimary: false },
       ],
     },
@@ -1127,7 +1058,6 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
         { categoryId: catMicroLot.id, isPrimary: false },
       ],
     },
@@ -1168,7 +1098,6 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
         { categoryId: catMicroLot.id, isPrimary: false },
       ],
     },
@@ -1209,7 +1138,6 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
         { categoryId: catMicroLot.id, isPrimary: false },
       ],
     },
@@ -1248,10 +1176,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 27. Bolivia Caranavi
@@ -1290,7 +1215,6 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
         { categoryId: catMicroLot.id, isPrimary: false },
       ],
     },
@@ -1331,7 +1255,6 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
         { categoryId: catMicroLot.id, isPrimary: false },
       ],
     },
@@ -1372,7 +1295,6 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
         { categoryId: catMicroLot.id, isPrimary: false },
       ],
     },
@@ -1413,7 +1335,6 @@ async function main() {
       },
       categories: [
         { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
         { categoryId: catMicroLot.id, isPrimary: false },
       ],
     },
@@ -1426,15 +1347,15 @@ async function main() {
     const product = await prisma.product.upsert({
       where: { slug: productData.slug },
       update: {
-        ...productData,
-        images: {
-          deleteMany: {},
-          create: productData.images.create,
-        },
-        variants: {
-          deleteMany: {},
-          create: productData.variants.create,
-        },
+        name: productData.name,
+        description: productData.description,
+        origin: productData.origin,
+        tastingNotes: productData.tastingNotes,
+        isOrganic: productData.isOrganic,
+        roastLevel: productData.roastLevel,
+        isFeatured: productData.isFeatured,
+        featuredOrder: productData.featuredOrder,
+        // We do not update images/variants here to avoid breaking FK constraints with Orders
       },
       create: productData,
     });

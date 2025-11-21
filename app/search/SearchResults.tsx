@@ -131,7 +131,10 @@ export default function SearchResults() {
     const origin = searchParams.get("origin");
     const q = searchParams.get("q");
 
-    if (roast) parts.push(`${roast.charAt(0).toUpperCase() + roast.slice(1).toLowerCase()} Roast`);
+    if (roast)
+      parts.push(
+        `${roast.charAt(0).toUpperCase() + roast.slice(1).toLowerCase()} Roast`
+      );
     if (origin) parts.push(origin);
     if (q) parts.push(`"${q}"`);
 
@@ -177,7 +180,8 @@ export default function SearchResults() {
             ) : (
               <p>
                 Found {results.count}{" "}
-                {results.count === 1 ? "result" : "results"} for {getResultsTitle()}
+                {results.count === 1 ? "result" : "results"} for{" "}
+                {getResultsTitle()}
               </p>
             )}
           </div>

@@ -74,6 +74,7 @@ export interface OrderItemWithDetails {
       product: {
         name: string;
         slug: string;
+        roastLevel: string;
       };
     };
   };

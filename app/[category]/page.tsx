@@ -3,6 +3,8 @@ import {
   getCategoryBySlug,
   getProductsByCategorySlug,
   getCategorySlugs,
+  getAllOrigins,
+  getSpecialCategories,
 } from "@/lib/data";
 import CategoryClientPage from "@components/app-components/CategoryClientPage";
 
@@ -12,11 +14,11 @@ export const revalidate = 3600;
 
 interface CategoryPageProps {
   // We allow params to be a Promise to satisfy the Next.js runtime warning
-  params: { categorySlug: string } | Promise<{ categorySlug: string }>;
+  params: { category: string } | Promise<{ category: string }>;
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-  const { categorySlug } = (await params) as { categorySlug?: string };
+  const { category: categorySlug } = (await params) as { category?: string };
 
   if (!categorySlug) {
     notFound();
@@ -47,15 +49,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 export async function generateStaticParams() {
   const categories = await getCategorySlugs();
 
-  const roastLevels = ["light-roast", "medium-roast", "dark-roast"];
-
-  // Returns: [{ categorySlug: 'blends' }, { categorySlug: 'single-origin' }]
-  return [
-    ...categories.map((c) => ({
-      categorySlug: c.slug,
-    })),
-    ...roastLevels.map((slug) => ({
-      categorySlug: slug,
-    })),
-  ];
+  // Returns: [{ category: 'blends' }, { category: 'single-origin' }, { category: 'light-roast' }]
+  return categories.map((c) => ({
+    category: c.slug,
+  }));
 }

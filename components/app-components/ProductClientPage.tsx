@@ -162,6 +162,7 @@ export default function ProductClientPage({
       productId: product.id,
       productName: product.name,
       productSlug: product.slug,
+      categorySlug: category.slug,
       variantId: selectedVariant.id,
       variantName: selectedVariant.name,
       purchaseOptionId: selectedPurchaseOption.id,
@@ -212,7 +213,7 @@ export default function ProductClientPage({
           {/* Category link: Uses the category slug and name */}
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href={`/categories/${category.slug}`}>{category.name}</Link>
+              <Link href={`/${category.slug}`}>{category.name}</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
