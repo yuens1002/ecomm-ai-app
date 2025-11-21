@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -70,45 +71,84 @@ export default function SiteHeader({
     <header className="bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md">
       <div className="container mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
         {/* Logo/Title */}
-        <Link href="/" className="text-2xl font-bold text-primary">
-          Artisan Roast
+        <Link
+          href="/"
+          className="flex items-center gap-2 text-primary"
+        >
+          {/* Mobile View: Stacked */}
+          <div className="flex flex-col items-center md:hidden">
+            <Image
+              src="/logo.svg"
+              alt="Artisan Roast Logo"
+              width={32}
+              height={32}
+              className="w-8 h-8"
+            />
+            <span className="text-[10px] uppercase tracking-wide font-medium leading-none mt-1">
+              Artisan Roast
+            </span>
+          </div>
+
+          {/* Desktop View: Side by Side */}
+          <div className="hidden md:flex items-center gap-2">
+            <Image
+              src="/logo.svg"
+              alt="Artisan Roast Logo"
+              width={32}
+              height={32}
+              className="w-8 h-8"
+            />
+            <span className="text-2xl font-bold">Artisan Roast</span>
+          </div>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
-            {/* UPDATED: Category links now point to /categories/[slug] */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="text-text-base hover:text-primary data-[state=open]:text-primary"
-                >
-                  Coffees
-                  <ChevronDown className="w-4 h-4 ml-1" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {categories.map((category) => (
-                  <DropdownMenuItem key={category.slug} asChild>
-                    <Link
-                      href={`/categories/${category.slug}`}
-                      className="text-text-base"
-                    >
-                      {category.name}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+        <nav className="hidden lg:flex items-center space-x-2">
+          {/* UPDATED: Category links now point to /categories/[slug] */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-text-base hover:text-primary data-[state=open]:text-primary"
+              >
+                <Image
+                  src="/beans.svg"
+                  alt="Coffee selections"
+                  width={20}
+                  height={20}
+                  className="w-5 h-5 mr-2"
+                />
+                <span>Coffee</span>
+                <ChevronDown className="w-4 h-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {categories.map((category) => (
+                <DropdownMenuItem key={category.slug} asChild>
+                  <Link
+                    href={`/categories/${category.slug}`}
+                    className="text-text-base"
+                  >
+                    {category.name}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-            <Button
-              asChild
-              variant="ghost"
-              className="text-text-base hover:text-primary"
-            >
-              <Link href="/contact">Contact</Link>
-            </Button>
-          </nav>
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="text-text-base hover:text-primary"
+          >
+            <Link href="/contact">
+              <Mail className="w-5 h-5 mr-2" />
+              <span>Contact</span>
+            </Link>
+          </Button>
+        </nav>
 
         {/* Right Side Controls */}
         <div className="flex items-center space-x-4">
@@ -148,14 +188,14 @@ export default function SiteHeader({
           ) : (
             <Button asChild variant="ghost" size="sm">
               <Link href="/auth/signin">
-                <User className="w-4 h-4 mr-2" />
-                Sign In
+                <User className="w-4 h-4 lg:mr-2" />
+                <span className="hidden lg:inline">Sign In</span>
               </Link>
             </Button>
           )}
           {/* --- MOBILE MENU IMPLEMENTATION --- */}
           <Sheet>
-            <SheetTrigger asChild className="md:hidden">
+            <SheetTrigger asChild className="lg:hidden">
               <Button
                 variant="outline"
                 size="icon"
