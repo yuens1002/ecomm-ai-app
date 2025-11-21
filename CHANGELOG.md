@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.16.0 - 2025-11-20
+
+- **Contact Page & Form**: Added a dedicated contact page with email notifications ([e70088a](https://github.com/yuens1002/ecomm-ai-app/commit/e70088a))
+  - Created `/contact` page with a responsive form using shadcn/ui components
+  - Implemented API route `/api/contact` to handle form submissions
+  - Integrated Resend for email delivery with a custom React Email template
+  - Added "Contact" link to the site header and mobile menu
+  - Includes form validation with Zod and error handling
+
 ## 0.15.3 - 2025-11-20
 
 - **Prisma 7 Upgrade & Security Fixes**: Major ORM upgrade and vulnerability resolution ([e168038](https://github.com/yuens1002/ecomm-ai-app/commit/e168038c0b0fb3375f818ecf6fb7d284585a9d0b))
