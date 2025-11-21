@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.3 - 2025-11-20
+
+- **Prisma 7 Upgrade & Security Fixes**: Major ORM upgrade and vulnerability resolution ([e168038](https://github.com/yuens1002/ecomm-ai-app/commit/e168038c0b0fb3375f818ecf6fb7d284585a9d0b))
+  - Upgraded to Prisma 7.0.0 and Node.js 22.12.0 for improved performance and stability
+  - Migrated configuration to `prisma.config.ts` and removed deprecated `package.json` config
+  - Resolved critical security vulnerability in `hono` dependency via package override
+  - Fixed all resulting TypeScript errors and build warnings
+
 ## 0.15.2 - 2025-11-20
 
 - **Error Handling & Type Safety Hotfix**: Centralized error handling and resolved all TypeScript build errors ([e41dd15](https://github.com/yuens1002/ecomm-ai-app/commit/e41dd15))
