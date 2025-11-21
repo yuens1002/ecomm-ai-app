@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.15.2 - 2025-11-20
+
+- **Error Handling & Type Safety Hotfix**: Centralized error handling and resolved all TypeScript build errors ([e41dd15](https://github.com/yuens1002/ecomm-ai-app/commit/e41dd15))
+  - Created `lib/error-utils.ts` with `getErrorMessage()` helper for type-safe error handling
+  - Migrated 25+ error handlers across API routes, account tabs, and admin components
+  - Fixed Stripe type incompatibilities using optional chaining and proper type extensions
+  - Fixed Invoice webhook properties (subscription, charge, payment_intent) with safe access patterns
+  - Fixed OrderStatus enum usage in user orders route
+  - Fixed null handling in OrderDetailClient for tracking URLs
+  - Fixed SearchProduct and RecommendedProduct type definitions with complete property sets
+  - Fixed lib/data.ts purchase history type assertions
+  - Production build now compiles successfully with 0 TypeScript errors
+
 ## 0.15.1 - 2025-11-20
 
 - **ESLint Cleanup Complete**: Fixed all TypeScript errors and improved demo account UX ([7980f27](https://github.com/yuens1002/ecomm-ai-app/commit/7980f27153e8c6b4981f926f29e1303425a90ce7))
