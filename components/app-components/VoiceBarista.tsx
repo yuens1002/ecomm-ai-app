@@ -11,7 +11,12 @@ import {
   Sparkles,
   Send,
   RotateCw,
+  Mic,
+  MicOff,
+  Volume2,
 } from "lucide-react";
+import { useVapi } from "@/hooks/use-vapi";
+import { VAPI_ASSISTANT_CONFIG } from "@/lib/vapi-config";
 
 interface VoiceBaristaProps {
   userName?: string;
@@ -31,12 +36,44 @@ export default function VoiceBarista({
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const {
+    isSessionActive: isVoiceActive,
+    isConnecting: isVoiceConnecting,
+    startSession,
+    stopSession,
+    volumeLevel,
+    vapi,
+    error: voiceError,
+  } = useVapi();
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  // Handle VAPI transcripts
+  useEffect(() => {
+    if (!vapi) return;
+
+    const onMessage = (message: any) => {
+      if (message.type === "transcript" && message.transcriptType === "final") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: message.role === "assistant" ? "assistant" : "user",
+            text: message.transcript,
+          },
+        ]);
+      }
+    };
+
+    vapi.on("message", onMessage);
+    return () => {
+      vapi.off("message", onMessage);
+    };
+  }, [vapi]);
 
   const handleStartConversation = () => {
     setIsActive(true);
@@ -48,8 +85,32 @@ export default function VoiceBarista({
     ]);
   };
 
+  const handleStartVoice = async () => {
+    setIsActive(true);
+    if (messages.length === 0) {
+      setMessages([
+        {
+          role: "assistant",
+          text: `Hi ${userName || "there"}! Welcome back to Artisan Roast. I'm your personal coffee barista. How can I help you today?`,
+        },
+      ]);
+    }
+    await startSession(VAPI_ASSISTANT_CONFIG);
+  };
+
+  const handleToggleVoice = () => {
+    if (isVoiceActive) {
+      stopSession();
+    } else {
+      startSession(VAPI_ASSISTANT_CONFIG);
+    }
+  };
+
   const handleEndConversation = () => {
     setIsActive(false);
+    if (isVoiceActive) {
+      stopSession();
+    }
     setMessages([]);
     setInput("");
   };
@@ -205,9 +266,25 @@ export default function VoiceBarista({
                     Chat Now
                   </Button>
                   <p className="text-xs text-muted-foreground">
-                    English & Spanish
+                    Text Chat
                   </p>
                 </div>
+
+                <div className="flex flex-col items-center gap-1">
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    className="gap-2 text-lg px-8 py-6"
+                    onClick={handleStartVoice}
+                  >
+                    <Mic className="w-5 h-5" />
+                    Voice Chat
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Hands-free
+                  </p>
+                </div>
+
                 {onOpenAiModal && (
                   <Button
                     size="lg"
@@ -233,8 +310,17 @@ export default function VoiceBarista({
               {/* Header */}
               <div className="flex items-center justify-between pb-4 border-b shrink-0">
                 <div className="flex items-center gap-3">
-                  <MessageCircle className="w-5 h-5 text-primary" />
-                  <h2 className="text-lg font-semibold">Coffee Barista Chat</h2>
+                  {isVoiceActive ? (
+                    <div className="flex items-center gap-2 text-primary animate-pulse">
+                      <Mic className="w-5 h-5" />
+                      <span className="text-sm font-medium">Voice Active</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <MessageCircle className="w-5 h-5 text-primary" />
+                      <h2 className="text-lg font-semibold">Coffee Barista Chat</h2>
+                    </div>
+                  )}
                 </div>
                 <Button
                   variant="ghost"
@@ -316,23 +402,71 @@ export default function VoiceBarista({
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input */}
+              {/* Input Area */}
               <div className="shrink-0">
+                {/* Voice Controls Overlay or Toolbar */}
+                {isVoiceActive && (
+                  <div className="flex items-center justify-center gap-4 py-2 bg-muted/30 rounded-lg mb-2">
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="w-4 h-4 text-muted-foreground" />
+                      <div className="w-24 h-1 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all duration-100"
+                          style={{
+                            width: `${Math.min(volumeLevel * 100, 100)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => stopSession()}
+                      className="gap-2"
+                    >
+                      <MicOff className="w-4 h-4" />
+                      Stop Voice
+                    </Button>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2 pt-4 border-t">
                   <Input
                     type="text"
-                    placeholder="Type your message..."
+                    placeholder={
+                      isVoiceActive ? "Listening..." : "Type your message..."
+                    }
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    disabled={isLoading || isRetrying}
+                    disabled={isLoading || isRetrying || isVoiceActive}
                     className="flex-1"
                     autoFocus
                   />
+
+                  {/* Toggle Voice Button in Input Area */}
+                  <Button
+                    variant={isVoiceActive ? "destructive" : "secondary"}
+                    size="icon"
+                    onClick={handleToggleVoice}
+                    disabled={isVoiceConnecting}
+                    title={isVoiceActive ? "Stop Voice" : "Start Voice"}
+                  >
+                    {isVoiceConnecting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : isVoiceActive ? (
+                      <MicOff className="w-4 h-4" />
+                    ) : (
+                      <Mic className="w-4 h-4" />
+                    )}
+                  </Button>
+
                   <Button
                     size="icon"
                     onClick={() => handleSendMessage()}
-                    disabled={!input.trim() || isLoading || isRetrying}
+                    disabled={
+                      !input.trim() || isLoading || isRetrying || isVoiceActive
+                    }
                   >
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -345,7 +479,11 @@ export default function VoiceBarista({
                 {/* Status */}
                 <div className="mt-2 text-center">
                   <p className="text-xs text-muted-foreground">
-                    Your conversation is private and secure • English & Spanish
+                    {voiceError ? (
+                      <span className="text-destructive">{voiceError}</span>
+                    ) : (
+                      "Your conversation is private and secure • English & Spanish"
+                    )}
                   </p>
                 </div>
               </div>

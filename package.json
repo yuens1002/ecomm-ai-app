@@ -38,6 +38,7 @@
     "@react-email/components": "^1.0.1",
     "@react-email/render": "^2.0.0",
     "@stripe/stripe-js": "^8.4.0",
+    "@vapi-ai/web": "^2.5.1",
     "@vercel/analytics": "^1.5.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
