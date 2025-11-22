@@ -47,15 +47,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 export async function generateStaticParams() {
   const categories = await getCategorySlugs();
 
-  const roastLevels = ["light-roast", "medium-roast", "dark-roast"];
-
   // Returns: [{ categorySlug: 'blends' }, { categorySlug: 'single-origin' }]
-  return [
-    ...categories.map((c) => ({
-      categorySlug: c.slug,
-    })),
-    ...roastLevels.map((slug) => ({
-      categorySlug: slug,
-    })),
-  ];
+  return categories.map((c) => ({
+    categorySlug: c.slug,
+  }));
 }

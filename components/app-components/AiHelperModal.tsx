@@ -290,8 +290,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
             {/* Personalization Badge - Only show if user has actual purchase history */}
             {isPersonalized &&
               userStats &&
-              userStats.totalOrders &&
-              userStats.totalOrders > 0 && (
+              (userStats.totalOrders ?? 0) > 0 && (
                 <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
                   <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
                   <div className="flex-1">
@@ -316,7 +315,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
                   className="h-auto p-0 text-lg font-semibold"
                 >
                   <Link
-                    href={`/${productData.roastLevel.toLowerCase()}-roast/${productSlug}`}
+                    href={`/${(productData.roastLevel || "medium").toLowerCase()}-roast/${productSlug}`}
                   >
                     {productData.name}
                   </Link>

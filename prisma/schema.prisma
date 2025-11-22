@@ -24,6 +24,7 @@ model Product {
   
   origin        String[] // e.g., "Ethiopia", "Colombia", "Blend"
   tastingNotes  String[] // PostgreSQL arrays are great for this
+  roastLevel    RoastLevel @default(MEDIUM)
   isOrganic     Boolean @default(false)
 
 
@@ -362,4 +363,10 @@ enum SubscriptionStatus {
   PAUSED
   CANCELED
   PAST_DUE
+}
+
+enum RoastLevel {
+  LIGHT
+  MEDIUM
+  DARK
 }

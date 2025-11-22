@@ -13,7 +13,6 @@ interface SearchProduct {
   description: string | null;
   origin: string[];
   tastingNotes: string[];
-  roastLevel: string;
   isFeatured: boolean;
   categories: Array<{
     category: {

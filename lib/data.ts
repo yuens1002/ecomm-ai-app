@@ -283,8 +283,13 @@ export async function getUserPurchaseHistory(userId: string) {
                         id: true,
                         name: true,
                         slug: true,
-                        // roastLevel: true,
                         tastingNotes: true,
+                        roastLevel: true,
+                        categories: {
+                          include: {
+                            category: true,
+                          },
+                        },
                       },
                     },
                   },
@@ -357,8 +362,13 @@ export async function getUserRecentViews(userId: string, limit: number = 10) {
         id: true,
         name: true,
         slug: true,
-        // roastLevel: true,
         tastingNotes: true,
+        roastLevel: true,
+        categories: {
+          include: {
+            category: true,
+          },
+        },
       },
     });
 
@@ -453,41 +463,44 @@ export async function getUserRecommendationContext(userId: string) {
               product: {
                 name: string;
                 tastingNotes: string[];
+                roastLevel: string | null;
+                categories: Array<{ category: { name: string; slug: string } }>;
               };
             };
           };
         }>;
         createdAt: Date;
       }) =>
-        order.items.map((item) => ({
-          name: item.purchaseOption.variant.product.name,
-          // roastLevel: item.purchaseOption.variant.product.roastLevel, // Removed
-          tastingNotes: item.purchaseOption.variant.product.tastingNotes,
-          purchasedAt: order.createdAt,
-        }))
+        order.items.map((item) => {
+          return {
+            name: item.purchaseOption.variant.product.name,
+            roastLevel:
+              item.purchaseOption.variant.product.roastLevel || "Medium",
+            tastingNotes: item.purchaseOption.variant.product.tastingNotes,
+            purchasedAt: order.createdAt,
+          };
+        })
     );
 
     // Analyze preferences
-    // const roastLevelCounts = new Map<string, number>();
+    const roastLevelCounts = new Map<string, number>();
     const tastingNotesCounts = new Map<string, number>();
 
-    purchasedProducts.forEach((p: { tastingNotes: string[] }) => {
-      /*
+    purchasedProducts.forEach(
+      (p: { roastLevel: string; tastingNotes: string[] }) => {
         roastLevelCounts.set(
           p.roastLevel,
           (roastLevelCounts.get(p.roastLevel) || 0) + 1
         );
-        */
-      p.tastingNotes.forEach((note: string) => {
-        tastingNotesCounts.set(note, (tastingNotesCounts.get(note) || 0) + 1);
-      });
-    });
+        p.tastingNotes.forEach((note: string) => {
+          tastingNotesCounts.set(note, (tastingNotesCounts.get(note) || 0) + 1);
+        });
+      }
+    );
 
-    /*
     const preferredRoastLevel = Array.from(roastLevelCounts.entries()).sort(
       (a, b) => b[1] - a[1]
     )[0]?.[0];
-    */
 
     const topTastingNotes = Array.from(tastingNotesCounts.entries())
       .sort((a, b) => b[1] - a[1])
@@ -499,15 +512,18 @@ export async function getUserRecommendationContext(userId: string) {
       purchaseHistory: {
         totalOrders: purchaseHistory.length,
         products: purchasedProducts,
-        preferredRoastLevel: null, // preferredRoastLevel,
+        preferredRoastLevel: preferredRoastLevel || null,
         topTastingNotes,
       },
-      recentViews: recentViews.map((p) => ({
-        name: p!.name,
-        slug: p!.slug,
-        // roastLevel: p!.roastLevel,
-        tastingNotes: p!.tastingNotes,
-      })),
+      recentViews: recentViews.map((p) => {
+        return {
+          name: p!.name,
+          slug: p!.slug,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          roastLevel: (p as any).roastLevel || "Medium",
+          tastingNotes: p!.tastingNotes,
+        };
+      }),
       searchHistory: searchHistory.map((s) => ({
         query: s.query,
         frequency: s.count,

@@ -7,13 +7,15 @@ export const VAPI_ASSISTANT_CONFIG = {
     url: "https://stupid-cases-joke.loca.lt/api/vapi/webhook",
     secret: "8f6a9b2e-5d4c-4f3d-9f4b-1c3e5d7a9b2c-artisan-roast-webhook",
     headers: {
-      "x-vapi-secret": "8f6a9b2e-5d4c-4f3d-9f4b-1c3e5d7a9b2c-artisan-roast-webhook",
+      "x-vapi-secret":
+        "8f6a9b2e-5d4c-4f3d-9f4b-1c3e5d7a9b2c-artisan-roast-webhook",
       // Bypass localtunnel warning page
       "bypass-tunnel-reminder": "true",
-      "User-Agent": "Vapi-Webhook/1.0"
-    }
+      "User-Agent": "Vapi-Webhook/1.0",
+    },
   },
-  firstMessage: "Hi there. I'm your Artisan Roast barista. I can help you find the perfect coffee... or check your order status. How can I help you today?",
+  firstMessage:
+    "Hi there. I'm your Artisan Roast barista. I can help you find the perfect coffee... or check your order status. How can I help you today?",
   transcriber: {
     provider: "deepgram",
     model: "nova-2",
@@ -58,7 +60,10 @@ export const VAPI_ASSISTANT_CONFIG = {
             filters: {
               type: "object",
               properties: {
-                roastLevel: { type: "string", enum: ["light", "medium", "dark"] },
+                roastLevel: {
+                  type: "string",
+                  enum: ["light", "medium", "dark"],
+                },
                 origin: { type: "string" },
               },
             },
@@ -74,7 +79,10 @@ export const VAPI_ASSISTANT_CONFIG = {
             productId: { type: "string" },
             variantId: { type: "string" },
             quantity: { type: "number" },
-            purchaseType: { type: "string", enum: ["ONE_TIME", "SUBSCRIPTION"] },
+            purchaseType: {
+              type: "string",
+              enum: ["ONE_TIME", "SUBSCRIPTION"],
+            },
             billingInterval: { type: "string", enum: ["WEEK", "MONTH"] },
             billingIntervalCount: { type: "number" },
           },

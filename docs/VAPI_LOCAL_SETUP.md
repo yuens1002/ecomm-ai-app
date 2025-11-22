@@ -23,6 +23,7 @@ npx localtunnel --port 3000 --subdomain stupid-cases-joke
 ```
 
 **Important:**
+
 - The subdomain `stupid-cases-joke` is hardcoded in `lib/vapi-config.ts`.
 - If you lose this subdomain (someone else takes it), you must:
   1. Pick a new subdomain in the command above.
@@ -41,22 +42,24 @@ export const VAPI_ASSISTANT_CONFIG = {
     // ...
     headers: {
       // CRITICAL: Bypasses localtunnel's "Click to continue" warning page
-      "bypass-tunnel-reminder": "true", 
+      "bypass-tunnel-reminder": "true",
       // ...
-    }
+    },
   },
   // ...
-}
+};
 ```
 
 ## 4. Running the App
 
 1. **Start the Next.js server:**
+
    ```bash
    npm run dev
    ```
 
 2. **Start the Tunnel (if not running):**
+
    ```bash
    npx localtunnel --port 3000 --subdomain stupid-cases-joke
    ```
@@ -68,27 +71,32 @@ export const VAPI_ASSISTANT_CONFIG = {
 ## 5. Limitations & Troubleshooting
 
 ### "Error connecting to voice server"
+
 - **Cause:** The tunnel might be down or the subdomain changed.
 - **Fix:** Check the terminal running localtunnel. Ensure the URL matches `lib/vapi-config.ts`.
 
 ### "KrispSDK is duplicated"
+
 - **Cause:** React Strict Mode causing double-initialization of the VAPI SDK.
 - **Fix:** We implemented a Singleton pattern in `hooks/use-vapi.ts`. If you see this, refresh the page.
 
 ### Latency
+
 - **Cause:** The audio goes from: User -> VAPI -> LocalTunnel -> Your PC -> OpenAI -> Your PC -> LocalTunnel -> VAPI -> User.
 - **Note:** Expect 1-2 seconds of latency in local dev. Production (Vercel) will be faster.
 
 ### "Bypass Tunnel Reminder"
+
 - **Context:** Localtunnel shows a warning page for non-whitelisted IPs.
 - **Fix:** We send the `bypass-tunnel-reminder: true` header in `vapi-config.ts`. Do not remove this header, or the webhook will fail silently.
 
 ## 6. Deployment
 
 When deploying to Vercel:
+
 1. You do **not** need localtunnel.
 2. Update `lib/vapi-config.ts` to use your production URL (e.g., `https://artisan-roast.vercel.app/api/vapi/webhook`).
 3. Ideally, use an Environment Variable for the base URL:
    ```typescript
-   url: `${process.env.NEXT_PUBLIC_APP_URL}/api/vapi/webhook`
+   url: `${process.env.NEXT_PUBLIC_APP_URL}/api/vapi/webhook`;
    ```

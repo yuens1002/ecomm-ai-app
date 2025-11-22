@@ -38,8 +38,11 @@ export default function HeroSection({ onOpenAiModal }: HeroSectionProps) {
     );
   }
 
-  // Show VoiceBarista for authenticated users
-  if (status === "authenticated" && session) {
+  // Show VoiceBarista only for demo@artisanroast.com
+  if (
+    status === "authenticated" &&
+    session?.user?.email === "demo@artisanroast.com"
+  ) {
     return (
       <VoiceBarista
         userName={session.user?.name || undefined}

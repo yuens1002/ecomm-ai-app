@@ -1,7 +1,12 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
 
-import { PrismaClient, PurchaseType, BillingInterval } from "@prisma/client";
+import {
+  PrismaClient,
+  PurchaseType,
+  BillingInterval,
+  RoastLevel,
+} from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { Pool } from "@neondatabase/serverless";
 
@@ -94,14 +99,14 @@ async function main() {
                   {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 2090,
-                    discountMessage: "Save 5%",
+                    // // discountMessage: "Save 5%",
                     billingInterval: BillingInterval.WEEK,
                     billingIntervalCount: 2,
                   },
                   {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 1980,
-                    discountMessage: "Save 10%",
+                    // // discountMessage: "Save 10%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
                   },
@@ -118,7 +123,7 @@ async function main() {
                   {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 5320,
-                    discountMessage: "Save 5%",
+                    // // discountMessage: "Save 5%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
                   },
@@ -330,7 +335,7 @@ async function main() {
                   {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 2185,
-                    discountMessage: "Save 5%",
+                    // discountMessage: "Save 5%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
                   },
@@ -381,14 +386,14 @@ async function main() {
                   {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 1850,
-                    discountMessage: "Save 5%",
+                    // // discountMessage: "Save 5%",
                     billingInterval: BillingInterval.WEEK,
                     billingIntervalCount: 1,
                   },
                   {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 1755,
-                    discountMessage: "Save 10%",
+                    // // discountMessage: "Save 10%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
                   },
@@ -405,7 +410,7 @@ async function main() {
                   {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 4750,
-                    discountMessage: "Save 5%",
+                    // // discountMessage: "Save 5%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
                   },
@@ -501,14 +506,14 @@ async function main() {
                   {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 2230,
-                    discountMessage: "Save 5%",
+                    // // discountMessage: "Save 5%",
                     billingInterval: BillingInterval.WEEK,
                     billingIntervalCount: 2,
                   },
                   {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 2115,
-                    discountMessage: "Save 10%",
+                    // // discountMessage: "Save 10%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
                   },
@@ -720,7 +725,7 @@ async function main() {
                   {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 2185,
-                    discountMessage: "Save 5%",
+                    // discountMessage: "Save 5%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
                   },
@@ -849,14 +854,14 @@ async function main() {
                   {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 2330,
-                    discountMessage: "Save 5%",
+                    // // discountMessage: "Save 5%",
                     billingInterval: BillingInterval.WEEK,
                     billingIntervalCount: 2,
                   },
                   {
                     type: PurchaseType.SUBSCRIPTION,
                     priceInCents: 2205,
-                    discountMessage: "Save 10%",
+                    // // discountMessage: "Save 10%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
                   },
@@ -1385,6 +1390,14 @@ async function main() {
   for (const item of coffeeData) {
     const { product: productData, categories: categoryLinks } = item;
 
+    // Determine roast level from categories
+    let roastLevel: RoastLevel = RoastLevel.MEDIUM; // Default
+    if (categoryLinks.some((l) => l.categoryId === catDark.id)) {
+      roastLevel = RoastLevel.DARK;
+    } else if (categoryLinks.some((l) => l.categoryId === catLight.id)) {
+      roastLevel = RoastLevel.LIGHT;
+    }
+
     const product = await prisma.product.upsert({
       where: { slug: productData.slug },
       update: {
@@ -1393,12 +1406,15 @@ async function main() {
         origin: productData.origin,
         tastingNotes: productData.tastingNotes,
         isOrganic: productData.isOrganic,
-        // roastLevel removed
+        roastLevel: roastLevel,
         isFeatured: productData.isFeatured,
         featuredOrder: productData.featuredOrder,
         // We do not update images/variants here to avoid breaking FK constraints with Orders
       },
-      create: productData,
+      create: {
+        ...productData,
+        roastLevel: roastLevel,
+      },
     });
 
     await prisma.categoriesOnProducts.deleteMany({

@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { getProductsForAI, getUserRecommendationContext, getFeaturedProducts } from "@/lib/data";
+import {
+  getProductsForAI,
+  getUserRecommendationContext,
+  getFeaturedProducts,
+} from "@/lib/data";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -35,7 +39,10 @@ export async function POST(request: Request) {
         userContext = await getUserRecommendationContext(userId);
         isPersonalized = true;
       } catch (error) {
-        console.warn("Failed to fetch user context, falling back to generic:", error);
+        console.warn(
+          "Failed to fetch user context, falling back to generic:",
+          error
+        );
         // Continue with generic recommendation
       }
     }
@@ -77,10 +84,10 @@ Previously Purchased (${userContext.purchaseHistory.totalOrders} orders):
 ${purchasedNames.length > 0 ? purchasedNames.map((n: string) => `  - ${n}`).join("\n") : "  (No previous orders)"}
 
 ${
-        userContext.purchaseHistory.preferredRoastLevel
-          ? `Preferred Roast Level: ${userContext.purchaseHistory.preferredRoastLevel}\n`
-          : ""
-      }${
+  userContext.purchaseHistory.preferredRoastLevel
+    ? `Preferred Roast Level: ${userContext.purchaseHistory.preferredRoastLevel}\n`
+    : ""
+}${
         userContext.purchaseHistory.topTastingNotes.length > 0
           ? `Frequently Enjoyed Tasting Notes: ${userContext.purchaseHistory.topTastingNotes.join(", ")}\n`
           : ""
@@ -121,8 +128,8 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
         maxOutputTokens: 500,
         temperature: 0.7,
         thinkingConfig: {
-          thinkingBudget: 0
-        }
+          thinkingBudget: 0,
+        },
       },
     };
 
@@ -148,26 +155,29 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
     // Handle MAX_TOKENS or other issues
     if (!text) {
       console.warn("Gemini Response:", result);
-      
+
       // If MAX_TOKENS, provide a graceful fallback
-      if (finishReason === 'MAX_TOKENS') {
-        return NextResponse.json({ 
+      if (finishReason === "MAX_TOKENS") {
+        return NextResponse.json({
           text: `I'd recommend exploring our selection based on your preferences! Our ${taste.toLowerCase()} coffees are perfect for ${brewMethod.toLowerCase()}. Browse our full catalog to find your perfect match.`,
           isPersonalized,
-          userContext: isPersonalized ? {
-            totalOrders: userContext?.purchaseHistory.totalOrders,
-            preferredRoastLevel: userContext?.purchaseHistory.preferredRoastLevel,
-          } : null
+          userContext: isPersonalized
+            ? {
+                totalOrders: userContext?.purchaseHistory.totalOrders,
+                preferredRoastLevel:
+                  userContext?.purchaseHistory.preferredRoastLevel,
+              }
+            : null,
         });
       }
-      
+
       throw new Error("No text in Gemini response");
     }
 
     // --- 7. Extract recommended product slug from the response ---
     let productSlug = null;
     let productData = null;
-    
+
     // Try to find a product name in the recommendation text
     for (const product of products) {
       if (text.toLowerCase().includes(product.name.toLowerCase())) {
@@ -190,10 +200,15 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
               purchaseOptions: true,
             },
           },
+          categories: {
+            include: {
+              category: true,
+            },
+          },
         },
       });
     }
-    
+
     // Fallback: If no product matched, use first featured product
     if (!productData) {
       const featuredProducts = await getFeaturedProducts();
@@ -212,21 +227,49 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
                 purchaseOptions: true,
               },
             },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
           },
         });
       }
     }
 
     // --- 9. Return the AI's response with product data ---
-    return NextResponse.json({ 
+
+    // Inject roastLevel into productData if available
+    let enhancedProductData = null;
+    if (productData) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const categories = (productData as any).categories || [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const roastCategory = categories.find((c: any) =>
+        c.category.slug.endsWith("-roast")
+      );
+      const roastLevel = roastCategory
+        ? roastCategory.category.name.replace(" Roast", "")
+        : "Medium";
+
+      enhancedProductData = {
+        ...productData,
+        roastLevel,
+      };
+    }
+
+    return NextResponse.json({
       text,
       productSlug,
-      productData,
+      productData: enhancedProductData,
       isPersonalized,
-      userContext: isPersonalized ? {
-        totalOrders: userContext?.purchaseHistory.totalOrders,
-        preferredRoastLevel: userContext?.purchaseHistory.preferredRoastLevel,
-      } : null
+      userContext: isPersonalized
+        ? {
+            totalOrders: userContext?.purchaseHistory.totalOrders,
+            preferredRoastLevel:
+              userContext?.purchaseHistory.preferredRoastLevel,
+          }
+        : null,
     });
   } catch (error) {
     console.error("AI Recommendation Error:", error);

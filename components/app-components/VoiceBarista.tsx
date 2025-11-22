@@ -3,12 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Mic,
-  MicOff,
-  Loader2,
-  Send,
-} from "lucide-react";
+import { Mic, MicOff, Loader2, Send } from "lucide-react";
 import { useVapi } from "@/hooks/use-vapi";
 import { VAPI_ASSISTANT_CONFIG } from "@/lib/vapi-config";
 import { useCartStore } from "@/lib/store/cart-store";
@@ -32,7 +27,7 @@ export default function VoiceBarista({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [placeholderText, setPlaceholderText] = useState("Type a message...");
-  
+
   const { addItem } = useCartStore();
   const { toast } = useToast();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -88,48 +83,56 @@ export default function VoiceBarista({
           },
         ]);
       }
-      
+
       // Handle function calls
-      const toolCalls = message.toolCalls || (message.type === "tool-calls" ? message.toolCalls : undefined);
-      const functionCall = message.functionCall || (message.type === "function-call" ? message.functionCall : undefined);
+      const toolCalls =
+        message.toolCalls ||
+        (message.type === "tool-calls" ? message.toolCalls : undefined);
+      const functionCall =
+        message.functionCall ||
+        (message.type === "function-call" ? message.functionCall : undefined);
 
       if (functionCall && functionCall.name === "addToCart") {
-         await handleAddToCart(functionCall.parameters);
+        await handleAddToCart(functionCall.parameters);
       } else if (toolCalls && Array.isArray(toolCalls)) {
-          const addToCartCall = toolCalls.find((tc: any) => tc.function && tc.function.name === "addToCart");
-          if (addToCartCall) {
-              await handleAddToCart(addToCartCall.function.arguments);
-          }
+        const addToCartCall = toolCalls.find(
+          (tc: any) => tc.function && tc.function.name === "addToCart"
+        );
+        if (addToCartCall) {
+          await handleAddToCart(addToCartCall.function.arguments);
+        }
       }
     };
 
     const handleAddToCart = async (args: any) => {
-         try {
-            const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args;
-            if (parsedArgs && parsedArgs.variantId) {
-                const variantDetails = await getProductVariantForCart(parsedArgs.variantId);
-                if (variantDetails) {
-                  addItem({
-                    productId: variantDetails.product.id,
-                    productName: variantDetails.product.name,
-                    productSlug: variantDetails.product.slug,
-                    variantId: variantDetails.id,
-                    variantName: variantDetails.name,
-                    purchaseOptionId: variantDetails.purchaseOptionId || "unknown",
-                    purchaseType: "ONE_TIME",
-                    priceInCents: variantDetails.priceInCents,
-                    quantity: parsedArgs.quantity || 1,
-                    imageUrl: variantDetails.product.image,
-                  });
-                  toast({
-                      title: "Added to cart",
-                      description: `Added ${variantDetails.product.name} (${variantDetails.name}) to your cart.`,
-                  });
-                }
-            }
-         } catch (e) {
-             console.error("Error processing addToCart:", e);
-         }
+      try {
+        const parsedArgs = typeof args === "string" ? JSON.parse(args) : args;
+        if (parsedArgs && parsedArgs.variantId) {
+          const variantDetails = await getProductVariantForCart(
+            parsedArgs.variantId
+          );
+          if (variantDetails) {
+            addItem({
+              productId: variantDetails.product.id,
+              productName: variantDetails.product.name,
+              productSlug: variantDetails.product.slug,
+              variantId: variantDetails.id,
+              variantName: variantDetails.name,
+              purchaseOptionId: variantDetails.purchaseOptionId || "unknown",
+              purchaseType: "ONE_TIME",
+              priceInCents: variantDetails.priceInCents,
+              quantity: parsedArgs.quantity || 1,
+              imageUrl: variantDetails.product.image,
+            });
+            toast({
+              title: "Added to cart",
+              description: `Added ${variantDetails.product.name} (${variantDetails.name}) to your cart.`,
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Error processing addToCart:", e);
+      }
     };
 
     vapi.on("message", onMessage);
@@ -141,10 +144,10 @@ export default function VoiceBarista({
   const handleStartVoice = async () => {
     const config = { ...VAPI_ASSISTANT_CONFIG };
     if (userEmail && config.server) {
-      const separator = config.server.url.includes('?') ? '&' : '?';
+      const separator = config.server.url.includes("?") ? "&" : "?";
       config.server = {
         ...config.server,
-        url: `${config.server.url}${separator}userEmail=${encodeURIComponent(userEmail)}`
+        url: `${config.server.url}${separator}userEmail=${encodeURIComponent(userEmail)}`,
       };
     }
     await startSession(config);
@@ -160,10 +163,10 @@ export default function VoiceBarista({
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
-    
+
     const userMsg = input;
     setInput("");
-    setMessages(prev => [...prev, { role: "user", text: userMsg }]);
+    setMessages((prev) => [...prev, { role: "user", text: userMsg }]);
     setIsLoading(true);
 
     try {
@@ -172,12 +175,18 @@ export default function VoiceBarista({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMsg,
-          conversationHistory: messages.map(m => ({ role: m.role, text: m.text })),
+          conversationHistory: messages.map((m) => ({
+            role: m.role,
+            text: m.text,
+          })),
         }),
       });
 
       const data = await response.json();
-      setMessages(prev => [...prev, { role: "assistant", text: data.message || "I didn't catch that." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: data.message || "I didn't catch that." },
+      ]);
     } catch (error) {
       console.error(error);
     } finally {
@@ -187,7 +196,6 @@ export default function VoiceBarista({
 
   return (
     <div className="relative w-full h-[calc(100vh-4rem)] overflow-hidden bg-background transition-colors duration-500">
-      
       {/* Interactive Background Gradient - Blue Hue, Top Aligned */}
       <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-full max-w-4xl aspect-square pointer-events-none opacity-50">
         <motion.div
@@ -198,18 +206,18 @@ export default function VoiceBarista({
           transition={{ type: "spring", stiffness: 200, damping: 25 }}
           className="w-full h-full rounded-full blur-[100px] bg-radial-gradient from-blue-600/40 via-cyan-500/20 to-transparent"
           style={{
-            background: 'radial-gradient(circle, rgba(37, 99, 235, 0.4) 0%, rgba(6, 182, 212, 0.2) 40%, rgba(0,0,0,0) 70%)'
+            background:
+              "radial-gradient(circle, rgba(37, 99, 235, 0.4) 0%, rgba(6, 182, 212, 0.2) 40%, rgba(0,0,0,0) 70%)",
           }}
         />
       </div>
 
       {/* Main Interface */}
       <div className="relative z-10 flex flex-col h-full max-w-2xl mx-auto px-6 py-8 gap-6">
-        
         {/* Header - Fades out when started */}
         <AnimatePresence>
           {!hasStarted && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20, height: 0, marginBottom: 0 }}
@@ -227,24 +235,30 @@ export default function VoiceBarista({
 
         {/* Transcript Area - Fills space when started */}
         {hasStarted && (
-          <div 
+          <div
             ref={scrollContainerRef}
             className="flex-1 overflow-y-auto flex flex-col space-y-6 pb-24 scrollbar-hide"
-            style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)' }}
+            style={{
+              maskImage:
+                "linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)",
+            }}
           >
-            <div className="flex-1" /> {/* Spacer to push content down initially */}
+            <div className="flex-1" />{" "}
+            {/* Spacer to push content down initially */}
             {messages.map((msg, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex ${msg.role === 'assistant' ? 'justify-start' : 'justify-end'}`}
+                className={`flex ${msg.role === "assistant" ? "justify-start" : "justify-end"}`}
               >
-                <div className={`max-w-[80%] text-lg leading-relaxed ${
-                  msg.role === 'assistant' 
-                    ? 'text-foreground font-medium' 
-                    : 'text-muted-foreground text-right'
-                }`}>
+                <div
+                  className={`max-w-[80%] text-lg leading-relaxed ${
+                    msg.role === "assistant"
+                      ? "text-foreground font-medium"
+                      : "text-muted-foreground text-right"
+                  }`}
+                >
                   {msg.text}
                 </div>
               </motion.div>
@@ -253,10 +267,12 @@ export default function VoiceBarista({
         )}
 
         {/* Controls Container */}
-        <div className={`shrink-0 transition-all duration-500 ${!hasStarted ? 'flex justify-center pb-20' : 'pb-4'}`}>
+        <div
+          className={`shrink-0 transition-all duration-500 ${!hasStarted ? "flex justify-center pb-20" : "pb-4"}`}
+        >
           <AnimatePresence mode="wait">
             {!hasStarted ? (
-              <motion.div 
+              <motion.div
                 key="start-button"
                 layoutId="controls"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -277,7 +293,7 @@ export default function VoiceBarista({
                 </Button>
               </motion.div>
             ) : (
-              <motion.div 
+              <motion.div
                 key="input-bar"
                 layoutId="controls"
                 initial={{ opacity: 0, y: 20 }}
@@ -285,7 +301,6 @@ export default function VoiceBarista({
                 className="w-full"
               >
                 <div className="relative flex items-center gap-3 bg-secondary/50 backdrop-blur-md p-2 rounded-full border border-border/50 shadow-lg">
-                  
                   {/* Text Input */}
                   <Input
                     value={input}
@@ -303,10 +318,10 @@ export default function VoiceBarista({
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}
                       >
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          onClick={handleSendMessage} 
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={handleSendMessage}
                           className="h-10 w-10 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30"
                           disabled={isLoading}
                         >
@@ -325,9 +340,9 @@ export default function VoiceBarista({
                     size="icon"
                     variant={isSessionActive ? "destructive" : "default"}
                     className={`h-12 w-12 rounded-full shrink-0 transition-all ${
-                      isSessionActive 
-                        ? 'animate-pulse bg-red-500 hover:bg-red-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)]' 
-                        : 'bg-foreground hover:opacity-90 text-background'
+                      isSessionActive
+                        ? "animate-pulse bg-red-500 hover:bg-red-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)]"
+                        : "bg-foreground hover:opacity-90 text-background"
                     }`}
                     onClick={toggleVoice}
                   >
@@ -344,9 +359,8 @@ export default function VoiceBarista({
             )}
           </AnimatePresence>
         </div>
-
       </div>
-      
+
       {/* Error Toast */}
       {voiceError && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-destructive/90 text-white px-6 py-2 rounded-full text-sm font-medium shadow-lg backdrop-blur-sm z-50">

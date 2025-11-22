@@ -10,8 +10,11 @@ const verifySecret = (req: NextRequest) => {
 
 export async function POST(req: NextRequest) {
   console.log("VAPI Webhook: Received request");
-  console.log("VAPI Webhook: Headers:", Object.fromEntries(req.headers.entries()));
-  
+  console.log(
+    "VAPI Webhook: Headers:",
+    Object.fromEntries(req.headers.entries())
+  );
+
   if (!verifySecret(req)) {
     console.error("VAPI Webhook: Unauthorized - Invalid Secret");
     console.error("Expected:", process.env.VAPI_WEBHOOK_SECRET);
@@ -22,11 +25,14 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { message } = body;
-    
+
     // Log summary instead of full body to reduce noise
     console.log("VAPI Webhook: Message Type:", message.type);
     if (message.type === "tool-calls") {
-      console.log("VAPI Webhook: Tool Calls:", message.toolCalls.map((tc: any) => tc.function.name).join(", "));
+      console.log(
+        "VAPI Webhook: Tool Calls:",
+        message.toolCalls.map((tc: any) => tc.function.name).join(", ")
+      );
     } else if (message.type === "transcript") {
       console.log("VAPI Webhook: Transcript:", message.transcript);
     }
@@ -41,9 +47,9 @@ export async function POST(req: NextRequest) {
       for (const toolCall of toolCalls) {
         const { id, function: func } = toolCall;
         const { name, arguments: args } = func;
-        
+
         // Parse arguments if they are a string
-        const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args;
+        const parsedArgs = typeof args === "string" ? JSON.parse(args) : args;
 
         let result;
 
@@ -93,7 +99,8 @@ async function handleGetUserContext(userEmail: string | null) {
   if (!userEmail) {
     return {
       isAuthenticated: false,
-      message: "User is not logged in. Please ask them to log in for personalized assistance.",
+      message:
+        "User is not logged in. Please ask them to log in for personalized assistance.",
     };
   }
 
@@ -124,7 +131,10 @@ async function handleGetUserContext(userEmail: string | null) {
   };
 }
 
-async function handleGetOrderHistory(args: { limit?: number }, userEmail: string | null) {
+async function handleGetOrderHistory(
+  args: { limit?: number },
+  userEmail: string | null
+) {
   if (!userEmail) {
     return { error: "User not authenticated" };
   }
@@ -186,21 +196,23 @@ async function handleSearchProducts(args: { query: string; filters?: any }) {
         { description: { contains: query, mode: "insensitive" } },
         { tastingNotes: { hasSome: [query] } },
         // Also search in categories names
-        { categories: { some: { category: { name: { contains: query, mode: "insensitive" } } } } }
+        {
+          categories: {
+            some: {
+              category: { name: { contains: query, mode: "insensitive" } },
+            },
+          },
+        },
       ],
     });
   }
 
   // Roast Level Filter
   if (filters?.roastLevel) {
-    const roastSlug = `${filters.roastLevel.toLowerCase()}-roast`; // light-roast, medium-roast, dark-roast
     whereClause.AND.push({
-      categories: {
-        some: {
-          category: {
-            slug: roastSlug,
-          },
-        },
+      roastLevel: {
+        equals: filters.roastLevel,
+        mode: "insensitive",
       },
     });
   }
@@ -225,9 +237,9 @@ async function handleSearchProducts(args: { query: string; filters?: any }) {
       },
       categories: {
         include: {
-          category: true
-        }
-      }
+          category: true,
+        },
+      },
     },
   });
 
@@ -238,7 +250,7 @@ async function handleSearchProducts(args: { query: string; filters?: any }) {
       description: p.description,
       origin: p.origin,
       tastingNotes: p.tastingNotes,
-      roastLevel: p.categories.find(c => c.category.label === "Roast Level")?.category.name || "Unknown",
+      roastLevel: p.roastLevel || "Unknown",
       variants: p.variants.map((v) => ({
         id: v.id,
         name: v.name,
@@ -248,7 +260,11 @@ async function handleSearchProducts(args: { query: string; filters?: any }) {
   };
 }
 
-async function handleAddToCart(args: { productId: string; variantId: string; quantity: number }) {
+async function handleAddToCart(args: {
+  productId: string;
+  variantId: string;
+  quantity: number;
+}) {
   // Validate product exists
   const variant = await prisma.productVariant.findUnique({
     where: { id: args.variantId },

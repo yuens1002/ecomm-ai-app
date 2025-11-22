@@ -86,9 +86,7 @@ export async function POST(req: NextRequest) {
       name: p.name,
       slug: p.slug,
       description: p.description,
-      roastLevel:
-        p.categories.find((c) => c.category.label === "Roast Level")?.category
-          .name || "Unknown",
+      roastLevel: p.roastLevel || "Unknown",
       origin: p.origin,
       tastingNotes: p.tastingNotes,
       variants: p.variants.map((v) => ({

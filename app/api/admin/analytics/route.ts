@@ -54,6 +54,7 @@ export async function GET(request: Request) {
         id: true,
         name: true,
         slug: true,
+        roastLevel: true,
         categories: {
           include: {
             category: true,
@@ -72,10 +73,7 @@ export async function GET(request: Request) {
           }>
         ).find((pv) => pv.productId === product.id)?._count.productId || 0;
 
-      const roastLevel =
-        product.categories
-          .map((c: any) => c.category)
-          .find((c: any) => c.label === "Roast Level")?.name || "Medium";
+      const roastLevel = product.roastLevel || "Medium";
 
       return {
         id: product.id,

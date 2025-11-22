@@ -26,7 +26,17 @@ export async function GET(request: NextRequest) {
     }
 
     if (roast) {
-      whereClause.roastLevel = roast.toUpperCase();
+      const roastSlug = roast.toLowerCase().endsWith("-roast")
+        ? roast.toLowerCase()
+        : `${roast.toLowerCase()}-roast`;
+
+      whereClause.categories = {
+        some: {
+          category: {
+            slug: roastSlug,
+          },
+        },
+      };
     }
 
     if (origin) {
