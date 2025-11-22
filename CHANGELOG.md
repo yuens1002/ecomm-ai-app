@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.20.1 - 2025-11-22
+
+- **VAPI Production Configuration**: Fixed webhook URL configuration to support production environments ([8d90e02](https://github.com/yuens1002/ecomm-ai-app/commit/8d90e02))
+  - Added environment awareness to `vapi-config.ts`
+  - Automatically uses `NEXT_PUBLIC_APP_URL` in production
+  - Falls back to localtunnel URL for local development
+  - Ensures voice assistant functions correctly on Vercel deployments
+
 ## 0.20.0 - 2025-11-22
 
 - **VAPI Voice Assistant Integration**: Full voice-to-voice AI barista experience ([df8ab1c](https://github.com/yuens1002/ecomm-ai-app/commit/df8ab1c))
