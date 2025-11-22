@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.20.0 - 2025-11-22
+
+- **VAPI Voice Assistant Integration**: Full voice-to-voice AI barista experience ([df8ab1c](https://github.com/yuens1002/ecomm-ai-app/commit/df8ab1c))
+  - **Voice Interface**: Integrated VAPI web SDK for real-time voice conversations
+  - **Bilingual Support**: System prompt configured for English and Spanish support
+  - **Function Calling**: AI can query product catalog, get recommendations, and check order status via tools
+  - **Visual Feedback**: Real-time volume visualizer and status indicators (connecting, listening, speaking)
+  - **Documentation**: Added comprehensive setup guide in `docs/VAPI_LOCAL_SETUP.md`
+
+- **Database Schema Hardening**:
+  - **Roast Level Enum**: Migrated `roastLevel` from free-text string to strict `RoastLevel` enum (LIGHT, MEDIUM, DARK)
+  - **Data Integrity**: Updated all product queries and mutations to enforce type safety
+  - **Seed Script Fixes**: Resolved legacy data issues and updated seed data to match new schema
+
 ## 0.19.1 - 2025-11-22
 
 - **Site Header & 404 Fixes**: Improved theme consistency and error page experience
