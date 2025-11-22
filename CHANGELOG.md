@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.20.2 - 2025-11-22
+
+- **Prisma 7 & Neon Adapter Stabilization**: Fixed build and connection issues with Prisma 7 upgrade
+  - **WebSocket Configuration**: Implemented explicit `ws` configuration for `@neondatabase/serverless` to ensure compatibility with Node.js build environments
+  - **Adapter Initialization**: Updated `PrismaNeon` instantiation to match Prisma 7 factory pattern
+  - **Documentation**: Added detailed technical guide in `docs/prisma-7-neon-upgrade.md` showcasing the solution
+  - **Dependency Cleanup**: Removed unused `pg` and `@prisma/adapter-pg` dependencies to enforce serverless driver usage
+
 ## 0.20.1 - 2025-11-22
 
 - **VAPI Production Configuration**: Fixed webhook URL configuration to support production environments ([8d90e02](https://github.com/yuens1002/ecomm-ai-app/commit/8d90e02))
