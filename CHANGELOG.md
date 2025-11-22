@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.19.0 - 2025-11-22
+
+- **Catalog Management System**: Complete admin interface for managing products, categories, and variants ([4ea1f87](https://github.com/yuens1002/ecomm-ai-app/commit/4ea1f87))
+  - **Product Management**: Create, edit, and delete products with rich details (images, description, organic/featured status)
+  - **Category Management**: Create and manage product categories with hierarchy support
+  - **Variant System**: robust variant management with pricing, SKU, and inventory tracking
+  - **Product Form Refactoring**: Modernized product editor with 2-column grid layout, custom `Field` components, and improved validation
+  - **Bulk Operations**: Support for managing multiple variants and options efficiently
+
+- **Admin Dashboard Enhancements**:
+  - **Analytics View**: Enhanced analytics dashboard with visual charts and deeper insights
+  - **Order Management**: Improved order list and detail views for better fulfillment workflow
+  - **Navigation**: New navigation menu component for better admin area traversal
+
+- **Developer Experience**:
+  - **Seed Data Generation**: Added Python scripts (`generate_seed_data.py`) for generating realistic test data
+  - **Type Safety**: Improved TypeScript coverage across admin components
+
 ## 0.18.0 - 2025-11-21
 
 - **Environment Awareness**: Visual indicator for non-production environments ([efecdb2](https://github.com/yuens1002/ecomm-ai-app/commit/efecdb22570ff2c2511f9cb8bfd62c88aa6fcb58))

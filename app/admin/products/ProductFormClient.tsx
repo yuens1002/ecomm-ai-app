@@ -39,7 +39,7 @@ interface Category {
 
 interface ProductFormClientProps {
   productId?: string; // If undefined, it's a new product
-  onClose: () => void;
+  onClose?: () => void;
   onSaved?: (id: string) => void;
 }
 
