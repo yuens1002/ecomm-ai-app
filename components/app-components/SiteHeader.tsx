@@ -170,7 +170,7 @@ export default function SiteHeader({
                       alt="Coffee selections"
                       width={20}
                       height={20}
-                      className="w-5 h-5"
+                      className="w-5 h-5 dark:invert"
                     />
                     <div className="flex items-center gap-1">
                       {/* Spacer to balance the chevron for centering */}
@@ -397,7 +397,7 @@ export default function SiteHeader({
                       alt="Coffee"
                       width={20}
                       height={20}
-                      className="w-5 h-5"
+                      className="w-5 h-5 dark:invert"
                     />
                     <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
                       Coffee
