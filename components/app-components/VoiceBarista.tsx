@@ -2,43 +2,44 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  MessageCircle,
-  X,
-  Loader2,
-  Sparkles,
-  Send,
-  RotateCw,
   Mic,
   MicOff,
-  Volume2,
+  Loader2,
+  Send,
 } from "lucide-react";
 import { useVapi } from "@/hooks/use-vapi";
 import { VAPI_ASSISTANT_CONFIG } from "@/lib/vapi-config";
+import { useCartStore } from "@/lib/store/cart-store";
+import { useToast } from "@/hooks/use-toast";
+import { getProductVariantForCart } from "@/app/actions";
+import { motion, AnimatePresence } from "motion/react";
 
 interface VoiceBaristaProps {
   userName?: string;
+  userEmail?: string;
   onOpenAiModal?: () => void;
 }
 
 export default function VoiceBarista({
   userName,
-  onOpenAiModal,
+  userEmail,
 }: VoiceBaristaProps) {
-  const [isActive, setIsActive] = useState(false);
   const [messages, setMessages] = useState<
     Array<{ role: "user" | "assistant"; text: string; error?: boolean }>
   >([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRetrying, setIsRetrying] = useState(false);
   const [input, setInput] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [placeholderText, setPlaceholderText] = useState("Type a message...");
+  
+  const { addItem } = useCartStore();
+  const { toast } = useToast();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const {
-    isSessionActive: isVoiceActive,
-    isConnecting: isVoiceConnecting,
+    isSessionActive,
+    isConnecting,
     startSession,
     stopSession,
     volumeLevel,
@@ -46,18 +47,38 @@ export default function VoiceBarista({
     error: voiceError,
   } = useVapi();
 
-  // Auto-scroll to bottom when messages change
+  const hasStarted = messages.length > 0 || isSessionActive;
+
+  // Animate placeholder dots
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (isSessionActive) {
+      let dots = 0;
+      const interval = setInterval(() => {
+        dots = (dots + 1) % 4;
+        setPlaceholderText(`Listening${".".repeat(dots)}`);
+      }, 500);
+      return () => clearInterval(interval);
+    } else {
+      setPlaceholderText("Type a message...");
+    }
+  }, [isSessionActive]);
+
+  // Auto-scroll
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const { scrollHeight, clientHeight } = scrollContainerRef.current;
+      scrollContainerRef.current.scrollTo({
+        top: scrollHeight - clientHeight,
+        behavior: "smooth",
+      });
     }
   }, [messages]);
 
-  // Handle VAPI transcripts
+  // Handle VAPI events
   useEffect(() => {
     if (!vapi) return;
 
-    const onMessage = (message: any) => {
+    const onMessage = async (message: any) => {
       if (message.type === "transcript" && message.transcriptType === "final") {
         setMessages((prev) => [
           ...prev,
@@ -67,428 +88,269 @@ export default function VoiceBarista({
           },
         ]);
       }
+      
+      // Handle function calls
+      const toolCalls = message.toolCalls || (message.type === "tool-calls" ? message.toolCalls : undefined);
+      const functionCall = message.functionCall || (message.type === "function-call" ? message.functionCall : undefined);
+
+      if (functionCall && functionCall.name === "addToCart") {
+         await handleAddToCart(functionCall.parameters);
+      } else if (toolCalls && Array.isArray(toolCalls)) {
+          const addToCartCall = toolCalls.find((tc: any) => tc.function && tc.function.name === "addToCart");
+          if (addToCartCall) {
+              await handleAddToCart(addToCartCall.function.arguments);
+          }
+      }
+    };
+
+    const handleAddToCart = async (args: any) => {
+         try {
+            const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args;
+            if (parsedArgs && parsedArgs.variantId) {
+                const variantDetails = await getProductVariantForCart(parsedArgs.variantId);
+                if (variantDetails) {
+                  addItem({
+                    productId: variantDetails.product.id,
+                    productName: variantDetails.product.name,
+                    productSlug: variantDetails.product.slug,
+                    variantId: variantDetails.id,
+                    variantName: variantDetails.name,
+                    purchaseOptionId: variantDetails.purchaseOptionId || "unknown",
+                    purchaseType: "ONE_TIME",
+                    priceInCents: variantDetails.priceInCents,
+                    quantity: parsedArgs.quantity || 1,
+                    imageUrl: variantDetails.product.image,
+                  });
+                  toast({
+                      title: "Added to cart",
+                      description: `Added ${variantDetails.product.name} (${variantDetails.name}) to your cart.`,
+                  });
+                }
+            }
+         } catch (e) {
+             console.error("Error processing addToCart:", e);
+         }
     };
 
     vapi.on("message", onMessage);
     return () => {
       vapi.off("message", onMessage);
     };
-  }, [vapi]);
-
-  const handleStartConversation = () => {
-    setIsActive(true);
-    setMessages([
-      {
-        role: "assistant",
-        text: `Hi ${userName || "there"}! Welcome back to Artisan Roast. I'm your personal coffee barista. How can I help you today?`,
-      },
-    ]);
-  };
+  }, [vapi, toast, addItem]);
 
   const handleStartVoice = async () => {
-    setIsActive(true);
-    if (messages.length === 0) {
-      setMessages([
-        {
-          role: "assistant",
-          text: `Hi ${userName || "there"}! Welcome back to Artisan Roast. I'm your personal coffee barista. How can I help you today?`,
-        },
-      ]);
+    const config = { ...VAPI_ASSISTANT_CONFIG };
+    if (userEmail && config.server) {
+      const separator = config.server.url.includes('?') ? '&' : '?';
+      config.server = {
+        ...config.server,
+        url: `${config.server.url}${separator}userEmail=${encodeURIComponent(userEmail)}`
+      };
     }
-    await startSession(VAPI_ASSISTANT_CONFIG);
+    await startSession(config);
   };
 
-  const handleToggleVoice = () => {
-    if (isVoiceActive) {
+  const toggleVoice = () => {
+    if (isSessionActive) {
       stopSession();
     } else {
-      startSession(VAPI_ASSISTANT_CONFIG);
+      handleStartVoice();
     }
   };
 
-  const handleEndConversation = () => {
-    setIsActive(false);
-    if (isVoiceActive) {
-      stopSession();
-    }
-    setMessages([]);
+  const handleSendMessage = async () => {
+    if (!input.trim()) return;
+    
+    const userMsg = input;
     setInput("");
-  };
-
-  const handleSendMessage = async (retryMessage?: string) => {
-    const messageToSend = retryMessage || input.trim();
-    if (!messageToSend || isLoading || isRetrying) return;
-
-    const isRetry = !!retryMessage;
-
-    if (!isRetry) {
-      setInput("");
-    }
-
-    // Add user message only if not retrying
-    const newMessages = isRetry
-      ? messages
-      : [...messages, { role: "user" as const, text: messageToSend }];
-
-    if (!isRetry) {
-      setMessages(newMessages);
-    }
-
-    if (isRetry) {
-      setIsRetrying(true);
-    } else {
-      setIsLoading(true);
-    }
+    setMessages(prev => [...prev, { role: "user", text: userMsg }]);
+    setIsLoading(true);
 
     try {
-      // Clean the conversation history to only include serializable data
-      const conversationHistory = (
-        retryMessage ? messages.slice(0, -1) : messages
-      ).map((msg) => ({
-        role: msg.role,
-        text: msg.text,
-      }));
-
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: messageToSend,
-          conversationHistory,
+          message: userMsg,
+          conversationHistory: messages.map(m => ({ role: m.role, text: m.text })),
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("API error:", response.status, errorData);
-        throw new Error(errorData.error || "Failed to get response");
-      }
-
       const data = await response.json();
-      console.log("Chat API response:", data);
-
-      // Check if the response contains an error flag (rate limit or service issues)
-      const hasError =
-        data.error === "rate_limit" || data.error === "service_unavailable";
-
-      // If no message or generic error, provide a helpful message without retry button
-      const messageText =
-        data.message ||
-        "I'm having trouble understanding that. Could you rephrase your question?";
-
-      if (retryMessage) {
-        // Replace the last error message
-        setMessages((prev) => [
-          ...prev.slice(0, -1),
-          {
-            role: "assistant",
-            text: messageText,
-            error: hasError,
-          },
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            text: messageText,
-            error: hasError,
-          },
-        ]);
-      }
+      setMessages(prev => [...prev, { role: "assistant", text: data.message || "I didn't catch that." }]);
     } catch (error) {
-      console.error("Error sending message:", error);
-      if (retryMessage) {
-        // Replace the last error message with new error
-        setMessages((prev) => [
-          ...prev.slice(0, -1),
-          {
-            role: "assistant",
-            text: "Sorry, something went wrong. Please try again.",
-            error: true,
-          },
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            text: "Sorry, something went wrong. Please try again.",
-            error: true,
-          },
-        ]);
-      }
+      console.error(error);
     } finally {
       setIsLoading(false);
-      setIsRetrying(false);
-    }
-  };
-
-  const handleRetry = () => {
-    // Find the last user message
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === "user") {
-        handleSendMessage(messages[i].text);
-        break;
-      }
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
     }
   };
 
   return (
-    <div className="relative w-full">
-      {/* Hero Section - When Inactive */}
-      {!isActive && (
-        <div className="relative overflow-hidden bg-linear-to-br from-primary/10 via-background to-accent/10 border-b">
-          <div className="container mx-auto px-4 py-16 md:py-24">
-            <div className="max-w-3xl mx-auto text-center space-y-6">
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-                Welcome back{userName ? `, ${userName}` : ""}! 👋
+    <div className="relative w-full h-[calc(100vh-4rem)] overflow-hidden bg-background transition-colors duration-500">
+      
+      {/* Interactive Background Gradient - Blue Hue, Top Aligned */}
+      <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-full max-w-4xl aspect-square pointer-events-none opacity-50">
+        <motion.div
+          animate={{
+            scale: isSessionActive ? 1 + Math.min(volumeLevel * 3, 0.5) : 1,
+            opacity: isSessionActive ? 0.8 : 0.4,
+          }}
+          transition={{ type: "spring", stiffness: 200, damping: 25 }}
+          className="w-full h-full rounded-full blur-[100px] bg-radial-gradient from-blue-600/40 via-cyan-500/20 to-transparent"
+          style={{
+            background: 'radial-gradient(circle, rgba(37, 99, 235, 0.4) 0%, rgba(6, 182, 212, 0.2) 40%, rgba(0,0,0,0) 70%)'
+          }}
+        />
+      </div>
+
+      {/* Main Interface */}
+      <div className="relative z-10 flex flex-col h-full max-w-2xl mx-auto px-6 py-8 gap-6">
+        
+        {/* Header - Fades out when started */}
+        <AnimatePresence>
+          {!hasStarted && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20, height: 0, marginBottom: 0 }}
+              className="flex-1 flex flex-col items-center justify-center text-center space-y-6 mb-12"
+            >
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground">
+                Artisan Voice
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground">
-                Chat with your personal coffee barista. Get recommendations,
-                reorder favorites, or discover something new.
+              <p className="text-xl text-muted-foreground max-w-lg mx-auto">
+                Experience the future of coffee. Just ask for what you need.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-start">
-                <div className="flex flex-col items-center gap-1">
-                  <Button
-                    size="lg"
-                    className="gap-2 text-lg px-8 py-6"
-                    onClick={handleStartConversation}
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                    Chat Now
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    Text Chat
-                  </p>
-                </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-                <div className="flex flex-col items-center gap-1">
-                  <Button
-                    size="lg"
-                    variant="secondary"
-                    className="gap-2 text-lg px-8 py-6"
-                    onClick={handleStartVoice}
-                  >
-                    <Mic className="w-5 h-5" />
-                    Voice Chat
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    Hands-free
-                  </p>
+        {/* Transcript Area - Fills space when started */}
+        {hasStarted && (
+          <div 
+            ref={scrollContainerRef}
+            className="flex-1 overflow-y-auto flex flex-col space-y-6 pb-24 scrollbar-hide"
+            style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)' }}
+          >
+            <div className="flex-1" /> {/* Spacer to push content down initially */}
+            {messages.map((msg, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`flex ${msg.role === 'assistant' ? 'justify-start' : 'justify-end'}`}
+              >
+                <div className={`max-w-[80%] text-lg leading-relaxed ${
+                  msg.role === 'assistant' 
+                    ? 'text-foreground font-medium' 
+                    : 'text-muted-foreground text-right'
+                }`}>
+                  {msg.text}
                 </div>
-
-                {onOpenAiModal && (
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="gap-2 text-lg px-8 py-6"
-                    onClick={onOpenAiModal}
-                  >
-                    <Sparkles className="w-5 h-5" />
-                    Get AI Recommendation
-                  </Button>
-                )}
-              </div>
-            </div>
+              </motion.div>
+            ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Chat Modal */}
-      {isActive && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-3xl h-[80vh] flex flex-col">
-            <CardContent className="p-6 flex flex-col h-full">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-4 border-b shrink-0">
-                <div className="flex items-center gap-3">
-                  {isVoiceActive ? (
-                    <div className="flex items-center gap-2 text-primary animate-pulse">
-                      <Mic className="w-5 h-5" />
-                      <span className="text-sm font-medium">Voice Active</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <MessageCircle className="w-5 h-5 text-primary" />
-                      <h2 className="text-lg font-semibold">Coffee Barista Chat</h2>
-                    </div>
-                  )}
-                </div>
+        {/* Controls Container */}
+        <div className={`shrink-0 transition-all duration-500 ${!hasStarted ? 'flex justify-center pb-20' : 'pb-4'}`}>
+          <AnimatePresence mode="wait">
+            {!hasStarted ? (
+              <motion.div 
+                key="start-button"
+                layoutId="controls"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+              >
                 <Button
-                  variant="ghost"
                   size="icon"
-                  onClick={handleEndConversation}
+                  className="w-24 h-24 rounded-full bg-foreground hover:opacity-90 shadow-xl transition-transform hover:scale-105"
+                  onClick={handleStartVoice}
+                  disabled={isConnecting}
                 >
-                  <X className="w-5 h-5" />
+                  {isConnecting ? (
+                    <Loader2 className="w-10 h-10 animate-spin text-background" />
+                  ) : (
+                    <Mic className="w-10 h-10 text-background" />
+                  )}
                 </Button>
-              </div>
-
-              {/* Messages */}
-              <div className="flex-1 space-y-4 my-4 overflow-y-auto min-h-0">
-                {messages.map((message, index) => {
-                  const isLastMessage = index === messages.length - 1;
-                  const shouldHideForRetry =
-                    isLastMessage &&
-                    message.role === "assistant" &&
-                    message.error &&
-                    isRetrying;
-                  const showRetry =
-                    message.role === "assistant" &&
-                    message.error &&
-                    !isRetrying;
-
-                  if (shouldHideForRetry) {
-                    return null;
-                  }
-
-                  return (
-                    <div
-                      key={index}
-                      className={`flex items-start gap-2 ${
-                        message.role === "user"
-                          ? "justify-end"
-                          : "justify-start"
-                      }`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                          message.role === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-foreground"
-                        }`}
-                      >
-                        <p className="text-sm whitespace-pre-wrap">
-                          {message.text}
-                        </p>
-                      </div>
-                      {showRetry && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0 mt-1"
-                          onClick={handleRetry}
-                          title="Retry"
-                        >
-                          <RotateCw className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  );
-                })}
-                {isRetrying && (
-                  <div className="flex items-start gap-2 justify-start">
-                    <div className="bg-muted rounded-lg px-4 py-3">
-                      <p className="text-sm">Retrying...</p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 mt-1"
-                      disabled
-                      title="Retrying..."
-                    >
-                      <RotateCw className="w-4 h-4 animate-spin" />
-                    </Button>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Input Area */}
-              <div className="shrink-0">
-                {/* Voice Controls Overlay or Toolbar */}
-                {isVoiceActive && (
-                  <div className="flex items-center justify-center gap-4 py-2 bg-muted/30 rounded-lg mb-2">
-                    <div className="flex items-center gap-2">
-                      <Volume2 className="w-4 h-4 text-muted-foreground" />
-                      <div className="w-24 h-1 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary transition-all duration-100"
-                          style={{
-                            width: `${Math.min(volumeLevel * 100, 100)}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => stopSession()}
-                      className="gap-2"
-                    >
-                      <MicOff className="w-4 h-4" />
-                      Stop Voice
-                    </Button>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2 pt-4 border-t">
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="input-bar"
+                layoutId="controls"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full"
+              >
+                <div className="relative flex items-center gap-3 bg-secondary/50 backdrop-blur-md p-2 rounded-full border border-border/50 shadow-lg">
+                  
+                  {/* Text Input */}
                   <Input
-                    type="text"
-                    placeholder={
-                      isVoiceActive ? "Listening..." : "Type your message..."
-                    }
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    disabled={isLoading || isRetrying || isVoiceActive}
-                    className="flex-1"
-                    autoFocus
+                    placeholder={placeholderText}
+                    className="border-0 bg-transparent dark:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none h-12 text-lg pl-6 pr-2 placeholder:text-muted-foreground/70"
+                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                   />
 
-                  {/* Toggle Voice Button in Input Area */}
-                  <Button
-                    variant={isVoiceActive ? "destructive" : "secondary"}
-                    size="icon"
-                    onClick={handleToggleVoice}
-                    disabled={isVoiceConnecting}
-                    title={isVoiceActive ? "Stop Voice" : "Start Voice"}
-                  >
-                    {isVoiceConnecting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : isVoiceActive ? (
-                      <MicOff className="w-4 h-4" />
-                    ) : (
-                      <Mic className="w-4 h-4" />
+                  {/* Send Button */}
+                  <AnimatePresence>
+                    {input.trim() && (
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                      >
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          onClick={handleSendMessage} 
+                          className="h-10 w-10 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? (
+                            <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                          ) : (
+                            <Send className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          )}
+                        </Button>
+                      </motion.div>
                     )}
-                  </Button>
+                  </AnimatePresence>
 
+                  {/* Mic Toggle (Start/Stop) */}
                   <Button
                     size="icon"
-                    onClick={() => handleSendMessage()}
-                    disabled={
-                      !input.trim() || isLoading || isRetrying || isVoiceActive
-                    }
+                    variant={isSessionActive ? "destructive" : "default"}
+                    className={`h-12 w-12 rounded-full shrink-0 transition-all ${
+                      isSessionActive 
+                        ? 'animate-pulse bg-red-500 hover:bg-red-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)]' 
+                        : 'bg-foreground hover:opacity-90 text-background'
+                    }`}
+                    onClick={toggleVoice}
                   >
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                    {isConnecting ? (
+                      <Loader2 className="w-5 h-5 animate-spin text-current" />
+                    ) : isSessionActive ? (
+                      <MicOff className="w-5 h-5 text-current" />
                     ) : (
-                      <Send className="w-4 h-4" />
+                      <Mic className="w-5 h-5 text-current" />
                     )}
                   </Button>
                 </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-                {/* Status */}
-                <div className="mt-2 text-center">
-                  <p className="text-xs text-muted-foreground">
-                    {voiceError ? (
-                      <span className="text-destructive">{voiceError}</span>
-                    ) : (
-                      "Your conversation is private and secure • English & Spanish"
-                    )}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      </div>
+      
+      {/* Error Toast */}
+      {voiceError && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-destructive/90 text-white px-6 py-2 rounded-full text-sm font-medium shadow-lg backdrop-blur-sm z-50">
+          {voiceError}
         </div>
       )}
     </div>

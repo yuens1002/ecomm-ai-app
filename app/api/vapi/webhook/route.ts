@@ -9,13 +9,30 @@ const verifySecret = (req: NextRequest) => {
 };
 
 export async function POST(req: NextRequest) {
+  console.log("VAPI Webhook: Received request");
+  console.log("VAPI Webhook: Headers:", Object.fromEntries(req.headers.entries()));
+  
   if (!verifySecret(req)) {
+    console.error("VAPI Webhook: Unauthorized - Invalid Secret");
+    console.error("Expected:", process.env.VAPI_WEBHOOK_SECRET);
+    console.error("Received:", req.headers.get("x-vapi-secret"));
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
     const body = await req.json();
     const { message } = body;
+    
+    // Log summary instead of full body to reduce noise
+    console.log("VAPI Webhook: Message Type:", message.type);
+    if (message.type === "tool-calls") {
+      console.log("VAPI Webhook: Tool Calls:", message.toolCalls.map((tc: any) => tc.function.name).join(", "));
+    } else if (message.type === "transcript") {
+      console.log("VAPI Webhook: Transcript:", message.transcript);
+    }
+
+    // Extract userEmail from the query parameters
+    const userEmail = req.nextUrl.searchParams.get("userEmail");
 
     if (message.type === "tool-calls") {
       const { toolCalls } = message;
@@ -32,10 +49,10 @@ export async function POST(req: NextRequest) {
 
         switch (name) {
           case "getUserContext":
-            result = await handleGetUserContext();
+            result = await handleGetUserContext(userEmail);
             break;
           case "getOrderHistory":
-            result = await handleGetOrderHistory(parsedArgs);
+            result = await handleGetOrderHistory(parsedArgs, userEmail);
             break;
           case "searchProducts":
             result = await handleSearchProducts(parsedArgs);
@@ -72,10 +89,8 @@ export async function POST(req: NextRequest) {
 
 // --- Handlers ---
 
-async function handleGetUserContext() {
-  const session = await auth();
-  
-  if (!session?.user?.email) {
+async function handleGetUserContext(userEmail: string | null) {
+  if (!userEmail) {
     return {
       isAuthenticated: false,
       message: "User is not logged in. Please ask them to log in for personalized assistance.",
@@ -83,7 +98,7 @@ async function handleGetUserContext() {
   }
 
   const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
+    where: { email: userEmail },
     include: {
       addresses: {
         where: { isDefault: true },
@@ -109,16 +124,15 @@ async function handleGetUserContext() {
   };
 }
 
-async function handleGetOrderHistory(args: { limit?: number }) {
-  const session = await auth();
-  if (!session?.user?.email) {
+async function handleGetOrderHistory(args: { limit?: number }, userEmail: string | null) {
+  if (!userEmail) {
     return { error: "User not authenticated" };
   }
 
   const limit = args.limit || 5;
 
   const orders = await prisma.order.findMany({
-    where: { user: { email: session.user.email } },
+    where: { user: { email: userEmail } },
     orderBy: { createdAt: "desc" },
     take: limit,
     include: {
@@ -160,19 +174,48 @@ async function handleGetOrderHistory(args: { limit?: number }) {
 async function handleSearchProducts(args: { query: string; filters?: any }) {
   const { query, filters } = args;
 
-  // Basic search implementation
-  // In a real app, use full-text search or vector search
-  const products = await prisma.product.findMany({
-    where: {
+  const whereClause: any = {
+    AND: [],
+  };
+
+  // Text search
+  if (query) {
+    whereClause.AND.push({
       OR: [
         { name: { contains: query, mode: "insensitive" } },
         { description: { contains: query, mode: "insensitive" } },
-        { tastingNotes: { hasSome: [query] } }, // Exact match on array element
+        { tastingNotes: { hasSome: [query] } },
+        // Also search in categories names
+        { categories: { some: { category: { name: { contains: query, mode: "insensitive" } } } } }
       ],
-      // Apply filters if present
-      ...(filters?.roastLevel ? { description: { contains: filters.roastLevel, mode: "insensitive" } } : {}),
-      ...(filters?.origin ? { origin: { hasSome: [filters.origin] } } : {}),
-    },
+    });
+  }
+
+  // Roast Level Filter
+  if (filters?.roastLevel) {
+    const roastSlug = `${filters.roastLevel.toLowerCase()}-roast`; // light-roast, medium-roast, dark-roast
+    whereClause.AND.push({
+      categories: {
+        some: {
+          category: {
+            slug: roastSlug,
+          },
+        },
+      },
+    });
+  }
+
+  // Origin Filter
+  if (filters?.origin) {
+    whereClause.AND.push({
+      origin: {
+        hasSome: [filters.origin], // This requires exact match on one of the origins
+      },
+    });
+  }
+
+  const products = await prisma.product.findMany({
+    where: whereClause,
     take: 5,
     include: {
       variants: {
@@ -180,6 +223,11 @@ async function handleSearchProducts(args: { query: string; filters?: any }) {
           purchaseOptions: true,
         },
       },
+      categories: {
+        include: {
+          category: true
+        }
+      }
     },
   });
 
@@ -190,6 +238,7 @@ async function handleSearchProducts(args: { query: string; filters?: any }) {
       description: p.description,
       origin: p.origin,
       tastingNotes: p.tastingNotes,
+      roastLevel: p.categories.find(c => c.category.label === "Roast Level")?.category.name || "Unknown",
       variants: p.variants.map((v) => ({
         id: v.id,
         name: v.name,

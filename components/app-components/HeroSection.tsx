@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import ChatBarista from "@components/app-components/ChatBarista";
+import VoiceBarista from "@components/app-components/VoiceBarista";
 import { Button } from "@/components/ui/button";
 
 interface HeroSectionProps {
@@ -38,11 +38,12 @@ export default function HeroSection({ onOpenAiModal }: HeroSectionProps) {
     );
   }
 
-  // Show ChatBarista for authenticated users
+  // Show VoiceBarista for authenticated users
   if (status === "authenticated" && session) {
     return (
-      <ChatBarista
+      <VoiceBarista
         userName={session.user?.name || undefined}
+        userEmail={session.user?.email || undefined}
         onOpenAiModal={onOpenAiModal}
       />
     );
