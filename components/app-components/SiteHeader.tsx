@@ -163,7 +163,7 @@ export default function SiteHeader({
           <NavigationMenu>
             <NavigationMenuList>
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="h-auto px-2 py-2 text-text-base hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden">
+                <NavigationMenuTrigger className="h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden">
                   <div className="flex flex-col items-center gap-1">
                     <Image
                       src="/beans.svg"
@@ -237,7 +237,7 @@ export default function SiteHeader({
                     href="/about"
                     className={cn(
                       navigationMenuTriggerStyle(),
-                      "h-auto flex-col gap-1 px-2 py-2 text-text-base hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
+                      "h-auto flex-col gap-1 px-2 py-2 text-foreground hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
                     )}
                   >
                     <FileText className="w-5 h-5" />
@@ -254,7 +254,7 @@ export default function SiteHeader({
                     href="/contact"
                     className={cn(
                       navigationMenuTriggerStyle(),
-                      "h-auto flex-col gap-1 px-2 py-2 text-text-base hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
+                      "h-auto flex-col gap-1 px-2 py-2 text-foreground hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
                     )}
                   >
                     <Mail className="w-5 h-5" />
@@ -330,7 +330,7 @@ export default function SiteHeader({
               <div className="px-6 pt-6 pb-4">
                 <div className="flex items-center justify-between mb-4">
                   <SheetHeader>
-                    <SheetTitle className="text-2xl font-bold tracking-tight text-text-base text-left">
+                    <SheetTitle className="text-2xl font-bold tracking-tight text-foreground text-left">
                       Menu
                     </SheetTitle>
                     <SheetDescription className="sr-only">
@@ -343,7 +343,7 @@ export default function SiteHeader({
                   <SheetClose asChild>
                     <Link
                       href="/"
-                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-text-base hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <Home className="w-5 h-5" />
                       <span className="text-[10px] uppercase tracking-wide font-medium">
@@ -354,7 +354,7 @@ export default function SiteHeader({
                   <SheetClose asChild>
                     <Link
                       href="/search"
-                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-text-base hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <Search className="w-5 h-5" />
                       <span className="text-[10px] uppercase tracking-wide font-medium">
@@ -365,7 +365,7 @@ export default function SiteHeader({
                   <SheetClose asChild>
                     <Link
                       href="/about"
-                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-text-base hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <FileText className="w-5 h-5" />
                       <span className="text-[10px] uppercase tracking-wide font-medium">
@@ -376,7 +376,7 @@ export default function SiteHeader({
                   <SheetClose asChild>
                     <Link
                       href="/contact"
-                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-text-base hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <Mail className="w-5 h-5" />
                       <span className="text-[10px] uppercase tracking-wide font-medium">
