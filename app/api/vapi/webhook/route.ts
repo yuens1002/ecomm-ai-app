@@ -5,7 +5,9 @@ import { auth } from "@/auth";
 // Verify VAPI secret
 const verifySecret = (req: NextRequest) => {
   const secret = req.headers.get("x-vapi-secret");
-  return secret === process.env.VAPI_WEBHOOK_SECRET;
+  const expectedSecret = process.env.NEXT_PUBLIC_VAPI_WEBHOOK_SECRET;
+  if (!expectedSecret) return false;
+  return secret === expectedSecret;
 };
 
 export async function POST(req: NextRequest) {
@@ -17,7 +19,10 @@ export async function POST(req: NextRequest) {
 
   if (!verifySecret(req)) {
     console.error("VAPI Webhook: Unauthorized - Invalid Secret");
-    console.error("Expected:", process.env.VAPI_WEBHOOK_SECRET);
+    console.error(
+      "Expected:",
+      process.env.NEXT_PUBLIC_VAPI_WEBHOOK_SECRET ? "Set" : "Default"
+    );
     console.error("Received:", req.headers.get("x-vapi-secret"));
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

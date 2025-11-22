@@ -1,17 +1,26 @@
 import { VOICE_BARISTA_SYSTEM_PROMPT } from "./voice-barista-system-prompt";
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+const LOCALTUNNEL_URL = "https://stupid-cases-joke.loca.lt";
+
+// Use the production URL if available and not localhost, otherwise fallback to localtunnel
+const BASE_URL =
+  APP_URL && !APP_URL.includes("localhost") ? APP_URL : LOCALTUNNEL_URL;
+
+const isLocaltunnel = BASE_URL.includes("loca.lt");
+
+const VAPI_WEBHOOK_SECRET = process.env.NEXT_PUBLIC_VAPI_WEBHOOK_SECRET || "";
+
 export const VAPI_ASSISTANT_CONFIG = {
   name: "Artisan Roast Barista",
-  // Temporary localtunnel configuration
   server: {
-    url: "https://stupid-cases-joke.loca.lt/api/vapi/webhook",
-    secret: "8f6a9b2e-5d4c-4f3d-9f4b-1c3e5d7a9b2c-artisan-roast-webhook",
+    url: `${BASE_URL}/api/vapi/webhook`,
+    secret: VAPI_WEBHOOK_SECRET,
     headers: {
-      "x-vapi-secret":
-        "8f6a9b2e-5d4c-4f3d-9f4b-1c3e5d7a9b2c-artisan-roast-webhook",
-      // Bypass localtunnel warning page
-      "bypass-tunnel-reminder": "true",
+      "x-vapi-secret": VAPI_WEBHOOK_SECRET,
       "User-Agent": "Vapi-Webhook/1.0",
+      // Only include bypass header for localtunnel
+      ...(isLocaltunnel ? { "bypass-tunnel-reminder": "true" } : {}),
     },
   },
   firstMessage:
