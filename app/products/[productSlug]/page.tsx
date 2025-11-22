@@ -55,13 +55,13 @@ export default async function ProductPage({
   if (fromCategorySlug) {
     // Check if it's a virtual roast category
     if (fromCategorySlug.endsWith("-roast")) {
-      const roastLevel = fromCategorySlug.replace("-roast", "").toUpperCase();
-      if (product.roastLevel === roastLevel) {
-        displayCategory = {
-          name:
-            roastLevel.charAt(0) + roastLevel.slice(1).toLowerCase() + " Roast",
-          slug: fromCategorySlug,
-        };
+      // Find if product has a category with this slug
+      const roastCategory = product.categories.find(
+        (c) => c.category.slug === fromCategorySlug
+      )?.category;
+
+      if (roastCategory) {
+        displayCategory = roastCategory;
       }
     }
 
@@ -87,9 +87,13 @@ export default async function ProductPage({
   }
 
   // Fetch related products based on the current product's roast level
+  // We use the first category with label "Roast Level" or fallback to first category
+  const roastCategory = product.categories.find(
+    (c) => c.category.label === "Roast Level"
+  )?.category;
   const relatedProducts = await getRelatedProducts(
     product.id,
-    product.roastLevel
+    roastCategory?.slug || "medium-roast" // Fallback if no roast level found
   );
 
   return (

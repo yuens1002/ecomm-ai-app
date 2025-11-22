@@ -69,10 +69,10 @@ export async function PUT(
       name,
       slug,
       description,
-      roastLevel,
       isOrganic,
       isFeatured,
       categoryIds,
+      imageUrl,
     } = body;
 
     // Transaction to update product and categories
@@ -84,13 +84,37 @@ export async function PUT(
           name,
           slug,
           description,
-          roastLevel,
           isOrganic,
           isFeatured,
         },
       });
 
-      // 2. Update categories
+      // 2. Update Image (Simple logic: Update first image or create new one)
+      if (imageUrl) {
+        const existingImages = await tx.productImage.findMany({
+          where: { productId: id },
+          orderBy: { order: "asc" },
+          take: 1,
+        });
+
+        if (existingImages.length > 0) {
+          await tx.productImage.update({
+            where: { id: existingImages[0].id },
+            data: { url: imageUrl, altText: name },
+          });
+        } else {
+          await tx.productImage.create({
+            data: {
+              productId: id,
+              url: imageUrl,
+              altText: name,
+              order: 0,
+            },
+          });
+        }
+      }
+
+      // 3. Update categories
       // First, remove all existing connections
       await tx.categoriesOnProducts.deleteMany({
         where: { productId: id },
@@ -115,6 +139,34 @@ export async function PUT(
     console.error("Error updating product:", error);
     return NextResponse.json(
       { error: "Failed to update product" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/admin/products/[id] - Delete a product
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = await requireAdminApi();
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    // Delete product (cascade will handle related records like variants, images, etc.)
+    await prisma.product.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    return NextResponse.json(
+      { error: "Failed to delete product" },
       { status: 500 }
     );
   }

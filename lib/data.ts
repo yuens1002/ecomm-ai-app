@@ -1,5 +1,4 @@
 import { prisma } from "./prisma";
-import { RoastLevel } from "@prisma/client"; // Import the enum
 // import { OrderWithItems, OrderItemWithDetails } from "./types";
 
 // --- COMMON INCLUDE OBJECT ---
@@ -83,6 +82,7 @@ export async function getProductBySlug(productSlug?: string | null) {
               select: {
                 name: true,
                 slug: true,
+                label: true,
               },
             },
           },
@@ -120,13 +120,20 @@ export async function getProductsForAI() {
  */
 export async function getRelatedProducts(
   currentProductId: string,
-  roastLevel: RoastLevel,
+  roastLevelSlug: string,
   count: number = 4
 ) {
   try {
     const products = await prisma.product.findMany({
       where: {
-        roastLevel: roastLevel, // Match the roast level
+        // Filter by the roast level category
+        categories: {
+          some: {
+            category: {
+              slug: roastLevelSlug,
+            },
+          },
+        },
         id: {
           not: currentProductId, // Exclude the current product
         },
@@ -276,7 +283,7 @@ export async function getUserPurchaseHistory(userId: string) {
                         id: true,
                         name: true,
                         slug: true,
-                        roastLevel: true,
+                        // roastLevel: true,
                         tastingNotes: true,
                       },
                     },
@@ -350,7 +357,7 @@ export async function getUserRecentViews(userId: string, limit: number = 10) {
         id: true,
         name: true,
         slug: true,
-        roastLevel: true,
+        // roastLevel: true,
         tastingNotes: true,
       },
     });
@@ -445,7 +452,6 @@ export async function getUserRecommendationContext(userId: string) {
             variant: {
               product: {
                 name: string;
-                roastLevel: string;
                 tastingNotes: string[];
               };
             };
@@ -455,31 +461,33 @@ export async function getUserRecommendationContext(userId: string) {
       }) =>
         order.items.map((item) => ({
           name: item.purchaseOption.variant.product.name,
-          roastLevel: item.purchaseOption.variant.product.roastLevel,
+          // roastLevel: item.purchaseOption.variant.product.roastLevel, // Removed
           tastingNotes: item.purchaseOption.variant.product.tastingNotes,
           purchasedAt: order.createdAt,
         }))
     );
 
     // Analyze preferences
-    const roastLevelCounts = new Map<string, number>();
+    // const roastLevelCounts = new Map<string, number>();
     const tastingNotesCounts = new Map<string, number>();
 
-    purchasedProducts.forEach(
-      (p: { roastLevel: string; tastingNotes: string[] }) => {
+    purchasedProducts.forEach((p: { tastingNotes: string[] }) => {
+      /*
         roastLevelCounts.set(
           p.roastLevel,
           (roastLevelCounts.get(p.roastLevel) || 0) + 1
         );
-        p.tastingNotes.forEach((note: string) => {
-          tastingNotesCounts.set(note, (tastingNotesCounts.get(note) || 0) + 1);
-        });
-      }
-    );
+        */
+      p.tastingNotes.forEach((note: string) => {
+        tastingNotesCounts.set(note, (tastingNotesCounts.get(note) || 0) + 1);
+      });
+    });
 
+    /*
     const preferredRoastLevel = Array.from(roastLevelCounts.entries()).sort(
       (a, b) => b[1] - a[1]
     )[0]?.[0];
+    */
 
     const topTastingNotes = Array.from(tastingNotesCounts.entries())
       .sort((a, b) => b[1] - a[1])
@@ -491,13 +499,13 @@ export async function getUserRecommendationContext(userId: string) {
       purchaseHistory: {
         totalOrders: purchaseHistory.length,
         products: purchasedProducts,
-        preferredRoastLevel,
+        preferredRoastLevel: null, // preferredRoastLevel,
         topTastingNotes,
       },
       recentViews: recentViews.map((p) => ({
         name: p!.name,
         slug: p!.slug,
-        roastLevel: p!.roastLevel,
+        // roastLevel: p!.roastLevel,
         tastingNotes: p!.tastingNotes,
       })),
       searchHistory: searchHistory.map((s) => ({
@@ -596,8 +604,18 @@ export async function getAllOrigins() {
  * Returns the available roast levels.
  * @deprecated Roast levels are now managed via the Category table.
  */
-export function getRoastLevels() {
-  return Object.values(RoastLevel);
+export async function getRoastLevels() {
+  try {
+    const categories = await prisma.category.findMany({
+      where: { label: "Roast Level" },
+      select: { name: true },
+      orderBy: { name: "asc" },
+    });
+    return categories.map((c) => c.name);
+  } catch (error) {
+    console.error("Database Error:", error);
+    return [];
+  }
 }
 
 /**

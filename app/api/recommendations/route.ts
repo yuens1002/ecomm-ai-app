@@ -9,7 +9,6 @@ interface RecommendationProduct {
   id: string;
   name: string;
   slug: string;
-  roastLevel: string;
   tastingNotes: string[];
   reasoning?: string;
 }
@@ -35,7 +34,6 @@ export async function GET(request: Request) {
           id: p!.id,
           name: p!.name,
           slug: p!.slug,
-          roastLevel: p!.roastLevel,
           tastingNotes: p!.tastingNotes,
           images: p!.images,
           variants: p!.variants,
@@ -62,7 +60,6 @@ export async function GET(request: Request) {
           id: p!.id,
           name: p!.name,
           slug: p!.slug,
-          roastLevel: p!.roastLevel,
           tastingNotes: p!.tastingNotes,
           images: p!.images,
           variants: p!.variants,
@@ -111,14 +108,6 @@ export async function GET(request: Request) {
     const scoredProducts = allProducts.map((product) => {
       let score = 0;
 
-      // Prefer products matching user's preferred roast level
-      if (
-        userContext.purchaseHistory.preferredRoastLevel &&
-        product.roastLevel === userContext.purchaseHistory.preferredRoastLevel
-      ) {
-        score += 10;
-      }
-
       // Match tasting notes with user's top preferences
       const matchingNotes = product.tastingNotes.filter((note) =>
         userContext.purchaseHistory.topTastingNotes.includes(note)
@@ -149,7 +138,6 @@ export async function GET(request: Request) {
         id: product.id,
         name: product.name,
         slug: product.slug,
-        roastLevel: product.roastLevel,
         tastingNotes: product.tastingNotes,
         images: product.images,
         variants: product.variants,
@@ -161,7 +149,6 @@ export async function GET(request: Request) {
       isPersonalized: true,
       source: "behavioral",
       userPreferences: {
-        preferredRoastLevel: userContext.purchaseHistory.preferredRoastLevel,
         topTastingNotes: userContext.purchaseHistory.topTastingNotes.slice(
           0,
           3

@@ -125,7 +125,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                     <tr key={item.id}>
                       <td className="py-4 px-4">
                         <Link
-                          href={`/${item.purchaseOption.variant.product.roastLevel.toLowerCase()}-roast/${item.purchaseOption.variant.product.slug}`}
+                          href={`/products/${item.purchaseOption.variant.product.slug}`}
                           className="text-primary hover:underline font-medium truncate block max-w-[200px] sm:max-w-none"
                         >
                           {item.purchaseOption.variant.product.name}

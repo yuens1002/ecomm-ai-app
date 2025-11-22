@@ -15,17 +15,20 @@ export async function GET() {
         id: true,
         name: true,
         slug: true,
-        roastLevel: true,
-        stockQuantity: false, // Not on product model directly, it's on variants
         variants: {
           select: {
+            name: true,
             stockQuantity: true,
-            priceInCents: false, // Price is on PurchaseOption
             purchaseOptions: {
               select: {
+                type: true,
                 priceInCents: true,
+                billingInterval: true,
+                billingIntervalCount: true,
               },
-              take: 1,
+              orderBy: {
+                priceInCents: "asc",
+              },
             },
           },
         },
@@ -50,9 +53,13 @@ export async function GET() {
         id: p.id,
         name: p.name,
         slug: p.slug,
-        roastLevel: p.roastLevel,
         stock: totalStock,
         price: basePrice,
+        variants: p.variants.map((v: any) => ({
+          name: v.name,
+          stock: v.stockQuantity,
+          options: v.purchaseOptions,
+        })),
         categories: p.categories.map((c: any) => c.category.name).join(", "),
       };
     });
@@ -80,10 +87,10 @@ export async function POST(request: Request) {
       name,
       slug,
       description,
-      roastLevel,
       isOrganic,
       isFeatured,
       categoryIds,
+      imageUrl,
     } = body;
 
     // Transaction to create product and categories
@@ -93,11 +100,21 @@ export async function POST(request: Request) {
           name,
           slug,
           description,
-          roastLevel,
           isOrganic,
           isFeatured,
         },
       });
+
+      if (imageUrl) {
+        await tx.productImage.create({
+          data: {
+            productId: newProduct.id,
+            url: imageUrl,
+            altText: name,
+            order: 0,
+          },
+        });
+      }
 
       if (categoryIds && categoryIds.length > 0) {
         await tx.categoriesOnProducts.createMany({

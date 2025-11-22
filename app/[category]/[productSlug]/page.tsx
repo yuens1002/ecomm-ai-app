@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { getProductBySlug, getRelatedProducts } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import ProductClientPage from "@components/app-components/ProductClientPage";
-import { RoastLevel } from "@prisma/client";
 
 export const revalidate = 3600; // Re-fetch this page in the background, at most once per hour
 
@@ -53,9 +52,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   // Fetch related products based on the current product's roast level
+  const roastCategory = product.categories.find(
+    (c) => c.category.label === "Roast Level"
+  )?.category;
+
   const relatedProducts = await getRelatedProducts(
     product.id,
-    product.roastLevel
+    roastCategory?.slug || "medium-roast"
   );
 
   return (
@@ -76,7 +79,6 @@ export async function generateStaticParams() {
   const products = await prisma.product.findMany({
     select: {
       slug: true,
-      roastLevel: true,
       categories: {
         include: {
           category: {

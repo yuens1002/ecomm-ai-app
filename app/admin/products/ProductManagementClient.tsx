@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -11,28 +10,54 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ProductFormClient from "./ProductFormClient";
+
+interface PurchaseOption {
+  type: "ONE_TIME" | "SUBSCRIPTION";
+  priceInCents: number;
+  billingInterval?: string | null;
+  billingIntervalCount?: number | null;
+}
+
+interface Variant {
+  name: string;
+  stock: number;
+  options: PurchaseOption[];
+}
 
 interface Product {
   id: string;
   name: string;
   slug: string;
-  roastLevel: string;
   stock: number;
   price: number;
   categories: string;
+  variants: Variant[];
 }
 
 export default function ProductManagementClient() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [view, setView] = useState<"list" | "form">("list");
+  const [selectedProductId, setSelectedProductId] = useState<
+    string | undefined
+  >(undefined);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (view === "list") {
+      fetchProducts();
+    }
+  }, [view]);
 
   const fetchProducts = async () => {
     try {
@@ -59,27 +84,61 @@ export default function ProductManagementClient() {
     }).format(cents / 100);
   };
 
-  if (loading) {
+  if (loading && view === "list") {
     return <div>Loading products...</div>;
   }
 
+  if (view === "form") {
+    return (
+      <div className="space-y-4">
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setView("list");
+            setSelectedProductId(undefined);
+          }}
+          className="pl-0 hover:bg-transparent hover:text-primary"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back to products management
+        </Button>
+        <ProductFormClient
+          productId={selectedProductId}
+          onClose={() => {
+            setView("list");
+            setSelectedProductId(undefined);
+          }}
+          onSaved={(id) => {
+            setSelectedProductId(id);
+            // Stay in form view to allow adding variants
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <div className="flex justify-end mb-4">
-        <Button onClick={() => router.push("/admin/products/new")}>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <div className="space-y-1.5">
+          <CardTitle>Product Management</CardTitle>
+          <CardDescription>Manage products and inventory</CardDescription>
+        </div>
+        <Button
+          onClick={() => {
+            setSelectedProductId(undefined);
+            setView("form");
+          }}
+        >
           <Plus className="mr-2 h-4 w-4" /> Add Product
         </Button>
-      </div>
-
-      <div className="border rounded-md">
+      </CardHeader>
+      <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Roast Level</TableHead>
               <TableHead>Categories</TableHead>
-              <TableHead>Stock</TableHead>
-              <TableHead>Price (Base)</TableHead>
+              <TableHead>Variants</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -87,7 +146,7 @@ export default function ProductManagementClient() {
             {products.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={4}
                   className="text-center py-8 text-muted-foreground"
                 >
                   No products found.
@@ -97,17 +156,52 @@ export default function ProductManagementClient() {
               products.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.roastLevel}</TableCell>
                   <TableCell>{product.categories || "-"}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell>{formatPrice(product.price)}</TableCell>
+                  <TableCell>
+                    {product.variants && product.variants.length > 0 ? (
+                      <div className="flex flex-col gap-3 py-1">
+                        {product.variants.map((v, i) => (
+                          <div key={i} className="flex flex-col gap-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-semibold text-sm">
+                                {v.name}
+                              </span>
+                              <span className="text-xs text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
+                                Stock: {v.stock}
+                              </span>
+                            </div>
+                            <div className="grid gap-1 pl-2 border-l-2 border-muted">
+                              {v.options.map((opt, j) => (
+                                <div
+                                  key={j}
+                                  className="text-xs flex justify-between items-center gap-4"
+                                >
+                                  <span className="text-muted-foreground">
+                                    {opt.type === "ONE_TIME"
+                                      ? "One-time"
+                                      : `Sub (${opt.billingIntervalCount} ${opt.billingInterval?.toLowerCase()})`}
+                                  </span>
+                                  <span className="font-mono font-medium">
+                                    {formatPrice(opt.priceInCents)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
-                        router.push(`/admin/products/${product.id}`)
-                      }
+                      onClick={() => {
+                        setSelectedProductId(product.id);
+                        setView("form");
+                      }}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -117,7 +211,7 @@ export default function ProductManagementClient() {
             )}
           </TableBody>
         </Table>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

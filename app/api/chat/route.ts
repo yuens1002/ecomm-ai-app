@@ -57,6 +57,11 @@ export async function POST(req: NextRequest) {
             purchaseOptions: true,
           },
         },
+        categories: {
+          include: {
+            category: true,
+          },
+        },
       },
     });
 
@@ -81,7 +86,9 @@ export async function POST(req: NextRequest) {
       name: p.name,
       slug: p.slug,
       description: p.description,
-      roastLevel: p.roastLevel,
+      roastLevel:
+        p.categories.find((c) => c.category.label === "Roast Level")?.category
+          .name || "Unknown",
       origin: p.origin,
       tastingNotes: p.tastingNotes,
       variants: p.variants.map((v) => ({

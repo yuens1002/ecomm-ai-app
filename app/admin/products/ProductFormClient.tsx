@@ -1,20 +1,35 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
+import { Form, FormField } from "@/components/ui/form";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save } from "lucide-react";
+import { Save } from "lucide-react";
+import ProductVariantsClient from "./ProductVariantsClient";
 
 interface Category {
   id: string;
@@ -24,26 +39,63 @@ interface Category {
 
 interface ProductFormClientProps {
   productId?: string; // If undefined, it's a new product
+  onClose: () => void;
+  onSaved?: (id: string) => void;
 }
+
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  slug: z.string().min(1, "Slug is required"),
+  description: z.string().optional(),
+  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  isOrganic: z.boolean().default(false),
+  isFeatured: z.boolean().default(false),
+  categoryIds: z.array(z.string()).default([]),
+});
+
+type ProductFormValues = z.infer<typeof formSchema>;
 
 export default function ProductFormClient({
   productId,
+  onClose,
+  onSaved,
 }: ProductFormClientProps) {
-  const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(!!productId);
-  const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [originalName, setOriginalName] = useState<string>("");
 
-  const [formData, setFormData] = useState({
-    name: "",
-    slug: "",
-    description: "",
-    roastLevel: "MEDIUM",
-    isOrganic: false,
-    isFeatured: false,
-    categoryIds: [] as string[],
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      slug: "",
+      description: "",
+      imageUrl: "",
+      isOrganic: false,
+      isFeatured: false,
+      categoryIds: [],
+    },
   });
+
+  // Watch for name changes to auto-generate slug
+  const name = form.watch("name");
+
+  useEffect(() => {
+    // Only auto-generate slug if the name field has been modified by the user
+    if (form.formState.dirtyFields.name) {
+      const slug = name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/[\s_-]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+      form.setValue("slug", slug, { shouldValidate: true });
+    }
+  }, [name, form.formState.dirtyFields.name, form]);
 
   useEffect(() => {
     fetchCategories();
@@ -70,11 +122,12 @@ export default function ProductFormClient({
       if (!response.ok) throw new Error("Failed to fetch product");
       const data = await response.json();
       const p = data.product;
-      setFormData({
+      setOriginalName(p.name);
+      form.reset({
         name: p.name,
         slug: p.slug,
         description: p.description || "",
-        roastLevel: p.roastLevel,
+        imageUrl: p.images?.[0]?.url || "",
         isOrganic: p.isOrganic,
         isFeatured: p.isFeatured,
         categoryIds: p.categoryIds || [],
@@ -91,57 +144,34 @@ export default function ProductFormClient({
     }
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: checked }));
-  };
-
-  const handleCategoryChange = (categoryId: string, checked: boolean) => {
-    setFormData((prev) => {
-      if (checked) {
-        return { ...prev, categoryIds: [...prev.categoryIds, categoryId] };
-      } else {
-        return {
-          ...prev,
-          categoryIds: prev.categoryIds.filter((id) => id !== categoryId),
-        };
-      }
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-
+  const onSubmit = async (data: ProductFormValues) => {
     try {
       const url = productId
         ? `/api/admin/products/${productId}`
-        : "/api/admin/products/new"; // Need to implement create route
+        : "/api/admin/products";
 
       const method = productId ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) throw new Error("Failed to save product");
+
+      const responseData = await response.json();
 
       toast({
         title: "Success",
         description: "Product saved successfully",
       });
 
-      router.push("/admin/products");
-      router.refresh();
+      if (!productId && responseData.product?.id) {
+        if (onSaved) onSaved(responseData.product.id);
+      } else {
+        if (onSaved && productId) onSaved(productId);
+      }
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -149,8 +179,6 @@ export default function ProductFormClient({
         description: "Failed to save product",
         variant: "destructive",
       });
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -168,140 +196,229 @@ export default function ProductFormClient({
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-center mb-6">
-        <Button variant="ghost" onClick={() => router.back()} className="mr-4">
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div className="space-y-1.5">
+          <CardTitle>{productId ? "Edit Product" : "New Product"}</CardTitle>
+          <CardDescription>
+            {productId ? originalName : "Create a new product"}
+          </CardDescription>
+        </div>
+        <Button
+          onClick={form.handleSubmit(onSubmit)}
+          disabled={form.formState.isSubmitting}
+        >
+          <Save className="mr-2 h-4 w-4" />
+          {form.formState.isSubmitting
+            ? "Saving..."
+            : productId
+              ? "Save Product"
+              : "Save & Add Variants"}
         </Button>
-        <h1 className="text-2xl font-bold">
-          {productId ? "Edit Product" : "New Product"}
-        </h1>
-      </div>
+      </CardHeader>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="slug">Slug</Label>
-              <Input
-                id="slug"
-                name="slug"
-                value={formData.slug}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="roastLevel">Roast Level</Label>
-              <Select
-                value={formData.roastLevel}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, roastLevel: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select roast level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="LIGHT">Light</SelectItem>
-                  <SelectItem value="MEDIUM">Medium</SelectItem>
-                  <SelectItem value="DARK">Dark</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center space-x-4 pt-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="isOrganic"
-                  name="isOrganic"
-                  checked={formData.isOrganic}
-                  onChange={handleCheckboxChange}
-                  className="h-4 w-4 rounded border-gray-300"
+      <CardContent className="pt-3">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Left Column: Base Info */}
+              <FieldGroup>
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field, fieldState }) => (
+                    <Field>
+                      <FieldLabel>Name</FieldLabel>
+                      <Input {...field} />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
                 />
-                <Label htmlFor="isOrganic">Organic</Label>
-              </div>
 
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="isFeatured"
-                  name="isFeatured"
-                  checked={formData.isFeatured}
-                  onChange={handleCheckboxChange}
-                  className="h-4 w-4 rounded border-gray-300"
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field, fieldState }) => (
+                    <Field>
+                      <FieldLabel>Slug</FieldLabel>
+                      <Input {...field} readOnly className="bg-muted" />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
                 />
-                <Label htmlFor="isFeatured">Featured</Label>
-              </div>
-            </div>
-          </div>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                className="h-32"
-              />
-            </div>
-
-            <div className="border p-4 rounded-md">
-              <h3 className="font-medium mb-3">Categories</h3>
-              {Object.entries(categoriesByLabel).map(([label, cats]) => (
-                <div key={label} className="mb-4 last:mb-0">
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
-                    {label}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {cats.map((cat) => (
-                      <div key={cat.id} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`cat-${cat.id}`}
-                          checked={formData.categoryIds.includes(cat.id)}
-                          onChange={(e) =>
-                            handleCategoryChange(cat.id, e.target.checked)
-                          }
-                          className="h-4 w-4 rounded border-gray-300"
-                        />
-                        <label
-                          htmlFor={`cat-${cat.id}`}
-                          className="text-sm cursor-pointer"
-                        >
-                          {cat.name}
-                        </label>
-                      </div>
-                    ))}
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field, fieldState }) => (
+                    <Field>
+                      <FieldLabel>Image URL</FieldLabel>
+                      <Input {...field} placeholder="https://..." />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
+                {form.watch("imageUrl") && (
+                  <div className="mt-2 relative w-full h-40 rounded-md overflow-hidden border bg-muted">
+                    <img
+                      src={form.watch("imageUrl")}
+                      alt="Preview"
+                      className="object-cover w-full h-full"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                      onLoad={(e) => {
+                        (e.target as HTMLImageElement).style.display = "block";
+                      }}
+                    />
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+                )}
+              </FieldGroup>
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving..." : "Save Product"}
-            <Save className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-      </form>
-    </div>
+              {/* Right Column: Details */}
+              <FieldGroup>
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field, fieldState }) => (
+                    <Field>
+                      <FieldLabel>Description</FieldLabel>
+                      <Textarea {...field} className="h-32" />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
+
+                <FieldGroup>
+                  <FormField
+                    control={form.control}
+                    name="isOrganic"
+                    render={({ field }) => (
+                      <Field
+                        orientation="horizontal"
+                        className="rounded-md border p-4"
+                      >
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <FieldContent>
+                          <FieldLabel>Organic</FieldLabel>
+                          <FieldDescription>
+                            This product is organic certified.
+                          </FieldDescription>
+                        </FieldContent>
+                      </Field>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="isFeatured"
+                    render={({ field }) => (
+                      <Field
+                        orientation="horizontal"
+                        className="rounded-md border p-4"
+                      >
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <FieldContent>
+                          <FieldLabel>Featured</FieldLabel>
+                          <FieldDescription>
+                            Show this product on the homepage.
+                          </FieldDescription>
+                        </FieldContent>
+                      </Field>
+                    )}
+                  />
+                </FieldGroup>
+              </FieldGroup>
+            </div>
+
+            {/* Bottom Section: Categories & Variants */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Categories */}
+              <div className="border p-4 rounded-md h-full">
+                <h3 className="font-medium mb-6">Categories</h3>
+                <FormField
+                  control={form.control}
+                  name="categoryIds"
+                  render={({ fieldState }) => (
+                    <Field>
+                      {Object.entries(categoriesByLabel).map(
+                        ([label, cats], index) => (
+                          <div key={label}>
+                            {index > 0 && <Separator className="my-6" />}
+                            <h4 className="text-sm font-medium mb-3">
+                              {label}
+                            </h4>
+                            <div className="flex flex-row flex-wrap gap-4">
+                              {cats.map((cat) => (
+                                <FormField
+                                  key={cat.id}
+                                  control={form.control}
+                                  name="categoryIds"
+                                  render={({ field }) => {
+                                    return (
+                                      <Field
+                                        key={cat.id}
+                                        orientation="horizontal"
+                                        className="w-auto"
+                                      >
+                                        <Checkbox
+                                          checked={field.value?.includes(
+                                            cat.id
+                                          )}
+                                          onCheckedChange={(checked) => {
+                                            return checked
+                                              ? field.onChange([
+                                                  ...(field.value || []),
+                                                  cat.id,
+                                                ])
+                                              : field.onChange(
+                                                  (field.value || []).filter(
+                                                    (value) => value !== cat.id
+                                                  )
+                                                );
+                                          }}
+                                        />
+                                        <FieldLabel className="font-normal cursor-pointer">
+                                          {cat.name}
+                                        </FieldLabel>
+                                      </Field>
+                                    );
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      )}
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
+              </div>
+
+              {/* Variants */}
+              <div className="border p-4 rounded-md h-full">
+                {productId ? (
+                  <ProductVariantsClient productId={productId} />
+                ) : (
+                  <>
+                    <h3 className="font-medium mb-3">Variants & Pricing</h3>
+                    <div className="flex h-40 items-center justify-center text-muted-foreground text-sm border border-dashed rounded-md">
+                      Save product to add variants.
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }

@@ -42,7 +42,9 @@ export async function GET(request: Request) {
       take: 10,
     });
 
-    const trendingProductIds = (productViews as Array<{ productId: string | null }>)
+    const trendingProductIds = (
+      productViews as Array<{ productId: string | null }>
+    )
       .map((pv) => pv.productId)
       .filter((id): id is string => id !== null);
 
@@ -52,16 +54,36 @@ export async function GET(request: Request) {
         id: true,
         name: true,
         slug: true,
-        roastLevel: true,
+        categories: {
+          include: {
+            category: true,
+          },
+        },
       },
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const trendingProductsWithViews = trendingProducts.map((product: any) => {
-      const views = (productViews as Array<{ productId: string; _count: { productId: number } }>).find(
-        (pv) => pv.productId === product.id
-      )?._count.productId || 0;
-      return { ...product, views };
+      const views =
+        (
+          productViews as Array<{
+            productId: string;
+            _count: { productId: number };
+          }>
+        ).find((pv) => pv.productId === product.id)?._count.productId || 0;
+
+      const roastLevel =
+        product.categories
+          .map((c: any) => c.category)
+          .find((c: any) => c.label === "Roast Level")?.name || "Medium";
+
+      return {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        roastLevel,
+        views,
+      };
     });
 
     // === 2. TOP SEARCH QUERIES ===
@@ -78,7 +100,10 @@ export async function GET(request: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     searchActivities.forEach((s: any) => {
       if (!s.searchQuery) return;
-      searchQueryMap.set(s.searchQuery, (searchQueryMap.get(s.searchQuery) || 0) + 1);
+      searchQueryMap.set(
+        s.searchQuery,
+        (searchQueryMap.get(s.searchQuery) || 0) + 1
+      );
     });
 
     const topSearches = Array.from(searchQueryMap.entries())
@@ -108,13 +133,15 @@ export async function GET(request: Request) {
       },
     });
 
-    const conversionRate = totalProductViews > 0
-      ? ((totalOrders / totalProductViews) * 100).toFixed(2)
-      : "0.00";
+    const conversionRate =
+      totalProductViews > 0
+        ? ((totalOrders / totalProductViews) * 100).toFixed(2)
+        : "0.00";
 
-    const cartConversionRate = totalAddToCart > 0
-      ? ((totalOrders / totalAddToCart) * 100).toFixed(2)
-      : "0.00";
+    const cartConversionRate =
+      totalAddToCart > 0
+        ? ((totalOrders / totalAddToCart) * 100).toFixed(2)
+        : "0.00";
 
     // === 4. ACTIVITY BREAKDOWN ===
     const activityBreakdown = await prisma.userActivity.groupBy({

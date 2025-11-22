@@ -170,8 +170,7 @@ export default function CategoryManagementClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold tracking-tight">Categories</h2>
+      <div className="flex justify-end items-center">
         <Button onClick={() => handleOpenDialog()}>
           <Plus className="mr-2 h-4 w-4" /> Add Category
         </Button>

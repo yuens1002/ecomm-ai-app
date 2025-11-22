@@ -91,6 +91,17 @@ export default function ProductClientPage({
   const altText =
     product.images[0]?.altText || `A bag of ${product.name} coffee`;
 
+  // Calculate discount percentage for subscription
+  const oneTimePrice = selectedVariant.purchaseOptions.find(
+    (o) => o.type === "ONE_TIME"
+  )?.priceInCents;
+
+  const getDiscountMessage = (subscriptionPrice: number) => {
+    if (!oneTimePrice || subscriptionPrice >= oneTimePrice) return null;
+    const discount = Math.round((1 - subscriptionPrice / oneTimePrice) * 100);
+    return `Save ${discount}%`;
+  };
+
   // --- Event Handlers ---
   const handleVariantChange = (variantId: string) => {
     const newVariant = product.variants.find((v) => v.id === variantId)!;
@@ -360,10 +371,15 @@ export default function ProductClientPage({
                       <span className="font-semibold text-text-base">
                         Subscribe & Save
                       </span>
-                      <span className="text-sm text-text-muted">
-                        {selectedPurchaseOption.discountMessage ||
-                          "Save on every order"}
-                      </span>
+                      {getDiscountMessage(
+                        selectedPurchaseOption.priceInCents
+                      ) && (
+                        <span className="text-sm text-text-muted">
+                          {getDiscountMessage(
+                            selectedPurchaseOption.priceInCents
+                          )}
+                        </span>
+                      )}
                     </div>
                     <span className="ml-auto font-bold text-text-base text-lg">
                       ${formatPrice(selectedPurchaseOption.priceInCents)}

@@ -1,63 +1,7 @@
-import { config } from "dotenv";
-config({ path: ".env.local" });
 
-import { PrismaClient, PurchaseType, BillingInterval } from "@prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import { Pool } from "@neondatabase/serverless";
+import re
 
-const connectionString = process.env.DATABASE_URL!;
-const pool = new Pool({ connectionString });
-const adapter = new PrismaNeon(pool);
-const prisma = new PrismaClient({ adapter });
-
-async function main() {
-  console.log(`Start seeding with 30 specialty coffee products...`);
-
-  // --- 1. Create Categories ---
-  const catBlends = await prisma.category.upsert({
-    where: { slug: "blends" },
-    update: {},
-    create: { name: "Blends", slug: "blends" },
-  });
-
-  const catSingleOrigin = await prisma.category.upsert({
-    where: { slug: "single-origin" },
-    update: {},
-    create: { name: "Single Origin", slug: "single-origin" },
-  });
-
-  const catMicroLot = await prisma.category.upsert({
-    where: { slug: "micro-lot" },
-    update: {},
-    create: { name: "Micro Lot", slug: "micro-lot" },
-  });
-
-  const catDark = await prisma.category.upsert({
-    where: { slug: "dark-roast" },
-    update: {},
-    create: { name: "Dark Roast", slug: "dark-roast", label: "Roast Level" },
-  });
-
-  const catMedium = await prisma.category.upsert({
-    where: { slug: "medium-roast" },
-    update: {},
-    create: {
-      name: "Medium Roast",
-      slug: "medium-roast",
-      label: "Roast Level",
-    },
-  });
-
-  const catLight = await prisma.category.upsert({
-    where: { slug: "light-roast" },
-    update: {},
-    create: { name: "Light Roast", slug: "light-roast", label: "Roast Level" },
-  });
-
-  console.log("Categories created/verified.");
-
-  // --- 2. Define 30 Products ---
-
+original_data = """
   const coffeeData = [
     // === ESPRESSO & DARK ROASTS (6 products) ===
 
@@ -71,6 +15,7 @@ async function main() {
         origin: ["Brazil", "Colombia", "Indonesia"],
         tastingNotes: ["Dark Chocolate", "Toasted Hazelnut", "Caramel"],
         isOrganic: false,
+        roastLevel: RoastLevel.DARK,
         isFeatured: true,
         featuredOrder: 1,
         images: {
@@ -128,10 +73,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catBlends.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catBlends.id, isPrimary: true }],
     },
 
     // 2. Italian Roast
@@ -144,6 +86,7 @@ async function main() {
         origin: ["Brazil", "Guatemala"],
         tastingNotes: ["Bittersweet Chocolate", "Roasted Almond", "Smoky"],
         isOrganic: false,
+        roastLevel: RoastLevel.DARK,
         isFeatured: false,
         images: {
           create: [
@@ -167,10 +110,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catBlends.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catBlends.id, isPrimary: true }],
     },
 
     // 3. Sumatra Mandheling
@@ -183,6 +123,7 @@ async function main() {
         origin: ["Indonesia"],
         tastingNotes: ["Earthy", "Dark Chocolate", "Cedar"],
         isOrganic: true,
+        roastLevel: RoastLevel.DARK,
         isFeatured: false,
         images: {
           create: [
@@ -206,10 +147,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 4. French Roast
@@ -222,6 +160,7 @@ async function main() {
         origin: ["Colombia", "Brazil"],
         tastingNotes: ["Dark Chocolate", "Charred Wood", "Smooth"],
         isOrganic: false,
+        roastLevel: RoastLevel.DARK,
         isFeatured: false,
         images: {
           create: [
@@ -253,10 +192,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catBlends.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catBlends.id, isPrimary: true }],
     },
 
     // 5. Papua New Guinea Sigri Estate
@@ -269,6 +205,7 @@ async function main() {
         origin: ["Papua New Guinea"],
         tastingNotes: ["Dark Berry", "Cocoa", "Earthy"],
         isOrganic: false,
+        roastLevel: RoastLevel.DARK,
         isFeatured: false,
         images: {
           create: [
@@ -308,6 +245,7 @@ async function main() {
         origin: ["Colombia"],
         tastingNotes: ["Milk Chocolate", "Toasted Nuts", "Caramel"],
         isOrganic: false,
+        roastLevel: RoastLevel.DARK,
         isFeatured: false,
         images: {
           create: [
@@ -340,10 +278,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // === MEDIUM ROASTS (10 products) ===
@@ -358,6 +293,7 @@ async function main() {
         origin: ["Colombia", "Guatemala", "Costa Rica"],
         tastingNotes: ["Honey", "Roasted Almond", "Citrus"],
         isOrganic: false,
+        roastLevel: RoastLevel.MEDIUM,
         isFeatured: true,
         featuredOrder: 2,
         images: {
@@ -415,10 +351,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catBlends.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catBlends.id, isPrimary: true }],
     },
 
     // 8. Colombian Supremo
@@ -431,6 +364,7 @@ async function main() {
         origin: ["Colombia"],
         tastingNotes: ["Caramel", "Cocoa", "Sweet"],
         isOrganic: false,
+        roastLevel: RoastLevel.MEDIUM,
         isFeatured: false,
         images: {
           create: [
@@ -462,10 +396,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 9. Guatemalan Antigua
@@ -478,6 +409,7 @@ async function main() {
         origin: ["Guatemala"],
         tastingNotes: ["Dark Fruit", "Milk Chocolate", "Smoky"],
         isOrganic: true,
+        roastLevel: RoastLevel.MEDIUM,
         isFeatured: true,
         featuredOrder: 3,
         images: {
@@ -518,10 +450,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 10. Costa Rica Tarrazú
@@ -534,6 +463,7 @@ async function main() {
         origin: ["Costa Rica"],
         tastingNotes: ["Brown Sugar", "Stone Fruit", "Crisp"],
         isOrganic: false,
+        roastLevel: RoastLevel.MEDIUM,
         isFeatured: false,
         images: {
           create: [
@@ -557,10 +487,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 11. Brazil Santos
@@ -573,6 +500,7 @@ async function main() {
         origin: ["Brazil"],
         tastingNotes: ["Nutty", "Chocolate", "Low Acidity"],
         isOrganic: false,
+        roastLevel: RoastLevel.MEDIUM,
         isFeatured: false,
         images: {
           create: [
@@ -604,10 +532,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 12. Honduras Marcala
@@ -620,6 +545,7 @@ async function main() {
         origin: ["Honduras"],
         tastingNotes: ["Toffee", "Red Apple", "Citrus Zest"],
         isOrganic: false,
+        roastLevel: RoastLevel.MEDIUM,
         isFeatured: false,
         images: {
           create: [
@@ -643,10 +569,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 13. Mexican Altura
@@ -659,6 +582,7 @@ async function main() {
         origin: ["Mexico"],
         tastingNotes: ["Cocoa", "Roasted Nuts", "Spice"],
         isOrganic: true,
+        roastLevel: RoastLevel.MEDIUM,
         isFeatured: false,
         images: {
           create: [
@@ -682,10 +606,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 14. Peruvian Organic
@@ -698,6 +619,7 @@ async function main() {
         origin: ["Peru"],
         tastingNotes: ["Vanilla", "Caramel", "Floral"],
         isOrganic: true,
+        roastLevel: RoastLevel.MEDIUM,
         isFeatured: false,
         images: {
           create: [
@@ -730,10 +652,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 15. Nicaraguan SHG
@@ -746,6 +665,7 @@ async function main() {
         origin: ["Nicaragua"],
         tastingNotes: ["Milk Chocolate", "Orange Marmalade", "Creamy"],
         isOrganic: false,
+        roastLevel: RoastLevel.MEDIUM,
         isFeatured: false,
         images: {
           create: [
@@ -769,10 +689,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 16. El Salvador Pacamara
@@ -785,6 +702,7 @@ async function main() {
         origin: ["El Salvador"],
         tastingNotes: ["Tropical Fruit", "Honey", "Wine-like"],
         isOrganic: false,
+        roastLevel: RoastLevel.MEDIUM,
         isFeatured: false,
         images: {
           create: [
@@ -826,6 +744,7 @@ async function main() {
         origin: ["Ethiopia"],
         tastingNotes: ["Floral", "Lemon", "Bergamot"],
         isOrganic: true,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: true,
         featuredOrder: 4,
         images: {
@@ -866,10 +785,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 18. Kenya AA
@@ -882,6 +798,7 @@ async function main() {
         origin: ["Kenya"],
         tastingNotes: ["Blackcurrant", "Grapefruit", "Tomato"],
         isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: true,
         featuredOrder: 5,
         images: {
@@ -922,6 +839,7 @@ async function main() {
         origin: ["Ethiopia"],
         tastingNotes: ["Blueberry", "Jasmine", "Dark Chocolate"],
         isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: false,
         images: {
           create: [
@@ -945,10 +863,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 20. Rwanda Bourbon
@@ -961,6 +876,7 @@ async function main() {
         origin: ["Rwanda"],
         tastingNotes: ["Red Fruit", "Caramel", "Floral"],
         isOrganic: true,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: false,
         images: {
           create: [
@@ -1000,6 +916,7 @@ async function main() {
         origin: ["Burundi"],
         tastingNotes: ["Cherry", "Cocoa Nibs", "Tangy"],
         isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: false,
         images: {
           create: [
@@ -1039,6 +956,7 @@ async function main() {
         origin: ["Tanzania"],
         tastingNotes: ["Black Currant", "Citrus", "Winey"],
         isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: false,
         images: {
           create: [
@@ -1078,6 +996,7 @@ async function main() {
         origin: ["Panama"],
         tastingNotes: ["Jasmine", "Tropical Fruit", "Honey"],
         isOrganic: true,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: false,
         images: {
           create: [
@@ -1117,6 +1036,7 @@ async function main() {
         origin: ["Colombia"],
         tastingNotes: ["Peach", "Lavender", "Brown Sugar"],
         isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: false,
         images: {
           create: [
@@ -1156,6 +1076,7 @@ async function main() {
         origin: ["Costa Rica"],
         tastingNotes: ["Apricot", "Honey", "Syrupy"],
         isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: false,
         images: {
           create: [
@@ -1195,6 +1116,7 @@ async function main() {
         origin: ["Guatemala"],
         tastingNotes: ["Apple", "Almond", "Clean"],
         isOrganic: true,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: false,
         images: {
           create: [
@@ -1218,10 +1140,7 @@ async function main() {
           ],
         },
       },
-      categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
-      ],
+      categories: [{ categoryId: catSingleOrigin.id, isPrimary: true }],
     },
 
     // 27. Bolivia Caranavi
@@ -1234,6 +1153,7 @@ async function main() {
         origin: ["Bolivia"],
         tastingNotes: ["Milk Chocolate", "Orange", "Silky"],
         isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: false,
         images: {
           create: [
@@ -1273,6 +1193,7 @@ async function main() {
         origin: ["Yemen"],
         tastingNotes: ["Dried Fruit", "Chocolate", "Spice"],
         isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: false,
         images: {
           create: [
@@ -1312,6 +1233,7 @@ async function main() {
         origin: ["India"],
         tastingNotes: ["Earthy", "Tobacco", "Spice"],
         isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: false,
         images: {
           create: [
@@ -1351,6 +1273,7 @@ async function main() {
         origin: ["Hawaii"],
         tastingNotes: ["Brown Sugar", "Macadamia Nut", "Clean"],
         isOrganic: false,
+        roastLevel: RoastLevel.LIGHT,
         isFeatured: false,
         images: {
           create: [
@@ -1380,50 +1303,74 @@ async function main() {
       ],
     },
   ];
+"""
 
-  // --- 3. Loop and upsert products ---
-  for (const item of coffeeData) {
-    const { product: productData, categories: categoryLinks } = item;
+# Process the data
+# 1. Remove roastLevel: RoastLevel.X
+# 2. Add category based on removed roastLevel
 
-    const product = await prisma.product.upsert({
-      where: { slug: productData.slug },
-      update: {
-        name: productData.name,
-        description: productData.description,
-        origin: productData.origin,
-        tastingNotes: productData.tastingNotes,
-        isOrganic: productData.isOrganic,
-        // roastLevel removed
-        isFeatured: productData.isFeatured,
-        featuredOrder: productData.featuredOrder,
-        // We do not update images/variants here to avoid breaking FK constraints with Orders
-      },
-      create: productData,
-    });
+def replace_roast(match):
+    content = match.group(0)
+    
+    # Determine roast level
+    roast_cat = ""
+    if "RoastLevel.DARK" in content:
+        roast_cat = "catDark.id"
+    elif "RoastLevel.MEDIUM" in content:
+        roast_cat = "catMedium.id"
+    elif "RoastLevel.LIGHT" in content:
+        roast_cat = "catLight.id"
+    
+    # Remove roastLevel line
+    content = re.sub(r'\s*roastLevel: RoastLevel\.[A-Z]+,', '', content)
+    
+    # Add category
+    # Find categories array
+    if roast_cat:
+        content = re.sub(r'categories: \[(.*?)\]', f'categories: [\\1, {{ categoryId: {roast_cat}, isPrimary: false }}]', content)
+    
+    return content
 
-    await prisma.categoriesOnProducts.deleteMany({
-      where: { productId: product.id },
-    });
+# Split by product object to process each one
+# We look for { product: ... },
+# This regex is a bit simple but should work for this specific file structure
+# We match the whole object from { product: to the closing },
+# But nested braces make it hard.
+# Instead, let's iterate line by line or use a smarter regex.
 
-    await prisma.categoriesOnProducts.createMany({
-      data: categoryLinks.map((link) => ({
-        productId: product.id,
-        categoryId: link.categoryId,
-        isPrimary: link.isPrimary,
-      })),
-    });
+# Actually, since the structure is consistent:
+# roastLevel: RoastLevel.DARK,
+# ...
+# categories: [{ categoryId: catBlends.id, isPrimary: true }],
 
-    console.log(`✓ ${product.name}`);
-  }
+# We can just replace roastLevel line with empty string, and remember which one it was.
+# Then replace the next categories line.
 
-  console.log(`\n✅ Seeding finished: 30 specialty coffee products created!`);
-}
+lines = original_data.split('\n')
+new_lines = []
+current_roast = None
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+for line in lines:
+    if "roastLevel: RoastLevel.DARK" in line:
+        current_roast = "catDark.id"
+        continue # Skip this line
+    elif "roastLevel: RoastLevel.MEDIUM" in line:
+        current_roast = "catMedium.id"
+        continue
+    elif "roastLevel: RoastLevel.LIGHT" in line:
+        current_roast = "catLight.id"
+        continue
+    
+    if "categories: [" in line and current_roast:
+        # Append the roast category
+        # line is like: categories: [{ categoryId: catBlends.id, isPrimary: true }],
+        # we want: categories: [{ categoryId: catBlends.id, isPrimary: true }, { categoryId: catDark.id, isPrimary: false }],
+        
+        # Remove the closing ],
+        line = line.replace("],", f", {{ categoryId: {current_roast}, isPrimary: false }}],")
+        current_roast = None
+    
+    new_lines.append(line)
+
+with open('seed_data.txt', 'w', encoding='utf-8') as f:
+    f.write('\n'.join(new_lines))

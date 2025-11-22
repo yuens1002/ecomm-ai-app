@@ -89,7 +89,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                   >
                     <div className="flex-1">
                       <Link
-                        href={`/${item.purchaseOption.variant.product.roastLevel.toLowerCase()}-roast/${item.purchaseOption.variant.product.slug}`}
+                        href={`/products/${item.purchaseOption.variant.product.slug}`}
                         className="font-medium text-text-base hover:text-primary"
                       >
                         {item.purchaseOption.variant.product.name}

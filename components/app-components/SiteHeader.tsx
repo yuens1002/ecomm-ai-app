@@ -232,8 +232,9 @@ export default function SiteHeader({
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <Link href="/about" legacyBehavior passHref>
-                  <NavigationMenuLink
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/about"
                     className={cn(
                       navigationMenuTriggerStyle(),
                       "h-auto flex-col gap-1 px-2 py-2 text-text-base hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
@@ -243,13 +244,14 @@ export default function SiteHeader({
                     <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
                       About
                     </span>
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <Link href="/contact" legacyBehavior passHref>
-                  <NavigationMenuLink
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/contact"
                     className={cn(
                       navigationMenuTriggerStyle(),
                       "h-auto flex-col gap-1 px-2 py-2 text-text-base hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
@@ -259,8 +261,8 @@ export default function SiteHeader({
                     <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
                       Contact
                     </span>
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>

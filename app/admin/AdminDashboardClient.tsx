@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Users,
   Package,
@@ -16,10 +17,13 @@ import {
   Shield,
   User,
   Settings,
-  BarChart3,
   Tags,
 } from "lucide-react";
-import Link from "next/link";
+import ProductManagementClient from "./products/ProductManagementClient";
+import CategoryManagementClient from "./categories/CategoryManagementClient";
+import UserManagementClient from "./users/UserManagementClient";
+import OrderManagementClient from "./orders/OrderManagementClient";
+import AnalyticsView from "./analytics/AnalyticsView";
 
 interface UserData {
   id: string;
@@ -61,7 +65,7 @@ export default function AdminDashboardClient({
         onValueChange={setActiveTab}
         className="space-y-6"
       >
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Overview</span>
@@ -142,89 +146,12 @@ export default function AdminDashboardClient({
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common administrative tasks</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Link
-                href="/admin/users"
-                className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent transition-colors"
-              >
-                <Users className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">Manage Users</p>
-                  <p className="text-sm text-muted-foreground">
-                    View and manage user accounts
-                  </p>
-                </div>
-              </Link>
-
-              <Link
-                href="/admin/orders"
-                className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent transition-colors"
-              >
-                <ShoppingCart className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">View Orders</p>
-                  <p className="text-sm text-muted-foreground">
-                    Manage customer orders
-                  </p>
-                </div>
-              </Link>
-
-              <Link
-                href="/admin/categories"
-                className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent transition-colors"
-              >
-                <Tags className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">Manage Categories</p>
-                  <p className="text-sm text-muted-foreground">
-                    Edit origins and collections
-                  </p>
-                </div>
-              </Link>
-
-              <Link
-                href="/admin/analytics"
-                className="flex items-center gap-3 p-4 rounded-lg border hover:bg-accent transition-colors"
-              >
-                <BarChart3 className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">Analytics</p>
-                  <p className="text-sm text-muted-foreground">
-                    View behavioral insights
-                  </p>
-                </div>
-              </Link>
-            </CardContent>
-          </Card>
+          <AnalyticsView embedded={true} />
         </TabsContent>
 
         {/* Users Tab */}
         <TabsContent value="users">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                Manage user accounts and permissions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                Go to the dedicated user management page for full functionality.
-              </p>
-              <Link
-                href="/admin/users"
-                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                <Users className="mr-2 h-4 w-4" />
-                Manage Users
-              </Link>
-            </CardContent>
-          </Card>
+          <UserManagementClient currentUserId={user.id} />
         </TabsContent>
 
         {/* Orders Tab */}
@@ -235,33 +162,14 @@ export default function AdminDashboardClient({
               <CardDescription>View and manage customer orders</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-4">
-                Go to the dedicated orders page for full functionality.
-              </p>
-              <Link
-                href="/admin/orders"
-                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                View Orders
-              </Link>
+              <OrderManagementClient />
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Products Tab */}
         <TabsContent value="products">
-          <Card>
-            <CardHeader>
-              <CardTitle>Product Management</CardTitle>
-              <CardDescription>Manage products and inventory</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Product management coming soon...
-              </p>
-            </CardContent>
-          </Card>
+          <ProductManagementClient />
         </TabsContent>
 
         {/* Categories Tab */}
@@ -274,16 +182,7 @@ export default function AdminDashboardClient({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-4">
-                Go to the dedicated categories page for full functionality.
-              </p>
-              <Link
-                href="/admin/categories"
-                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                <Tags className="mr-2 h-4 w-4" />
-                Manage Categories
-              </Link>
+              <CategoryManagementClient />
             </CardContent>
           </Card>
         </TabsContent>

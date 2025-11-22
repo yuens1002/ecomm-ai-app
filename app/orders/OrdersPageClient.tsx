@@ -260,7 +260,7 @@ export default function OrdersPageClient({
                           <div key={item.id}>
                             <div className="text-sm">
                               <Link
-                                href={`/${item.purchaseOption.variant.product.roastLevel.toLowerCase()}-roast/${item.purchaseOption.variant.product.slug}`}
+                                href={`/products/${item.purchaseOption.variant.product.slug}`}
                                 className="text-text-base hover:text-primary"
                               >
                                 {item.purchaseOption.variant.product.name}

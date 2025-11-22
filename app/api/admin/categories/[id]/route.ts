@@ -5,7 +5,7 @@ import { requireAdminApi } from "@/lib/admin";
 // PUT /api/admin/categories/[id] - Update a category
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await requireAdminApi();
@@ -13,7 +13,7 @@ export async function PUT(
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
     const { name, slug, label } = body;
 
@@ -39,7 +39,7 @@ export async function PUT(
 // DELETE /api/admin/categories/[id] - Delete a category
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await requireAdminApi();
@@ -47,11 +47,19 @@ export async function DELETE(
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
-    await prisma.category.delete({
-      where: { id },
-    });
+    // Use a transaction to ensure both operations succeed or fail together
+    await prisma.$transaction([
+      // 1. Remove all associations with products
+      prisma.categoriesOnProducts.deleteMany({
+        where: { categoryId: id },
+      }),
+      // 2. Delete the category itself
+      prisma.category.delete({
+        where: { id },
+      }),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

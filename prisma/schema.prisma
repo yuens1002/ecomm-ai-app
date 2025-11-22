@@ -24,7 +24,6 @@ model Product {
   
   origin        String[] // e.g., "Ethiopia", "Colombia", "Blend"
   tastingNotes  String[] // PostgreSQL arrays are great for this
-  roastLevel    RoastLevel @default(MEDIUM) 
   isOrganic     Boolean @default(false)
 
 
@@ -102,7 +101,6 @@ model PurchaseOption {
   id              String @id @default(cuid())
   type            PurchaseType @default(ONE_TIME)
   priceInCents    Int    
-  discountMessage   String?
 
   // Stripe-style recurring config for subscriptions
   billingInterval      BillingInterval? // DAY, WEEK, MONTH, YEAR
@@ -357,12 +355,6 @@ enum OrderStatus {
 enum DeliveryMethod {
   DELIVERY
   PICKUP
-}
-
-enum RoastLevel {
-  LIGHT
-  MEDIUM
-  DARK
 }
 
 enum SubscriptionStatus {
