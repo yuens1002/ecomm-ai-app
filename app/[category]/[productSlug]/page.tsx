@@ -34,10 +34,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   // Determine the display category based on the URL param
-  let displayCategory;
-
-  // 1. Check for DB category (now includes Origins, Micro Lots, Blends, and Roasts)
-  displayCategory = product.categories.find(
+  const displayCategory = product.categories.find(
     (c) => c.category.slug === categorySlug
   )?.category;
 

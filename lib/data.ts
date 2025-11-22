@@ -23,6 +23,7 @@ const productCardIncludes = {
       category: {
         select: {
           slug: true,
+          label: true,
         },
       },
     },

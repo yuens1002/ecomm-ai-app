@@ -73,6 +73,7 @@ export default function VoiceBarista({
   useEffect(() => {
     if (!vapi) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const onMessage = async (message: any) => {
       if (message.type === "transcript" && message.transcriptType === "final") {
         setMessages((prev) => [
@@ -96,6 +97,7 @@ export default function VoiceBarista({
         await handleAddToCart(functionCall.parameters);
       } else if (toolCalls && Array.isArray(toolCalls)) {
         const addToCartCall = toolCalls.find(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (tc: any) => tc.function && tc.function.name === "addToCart"
         );
         if (addToCartCall) {
@@ -104,6 +106,7 @@ export default function VoiceBarista({
       }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleAddToCart = async (args: any) => {
       try {
         const parsedArgs = typeof args === "string" ? JSON.parse(args) : args;

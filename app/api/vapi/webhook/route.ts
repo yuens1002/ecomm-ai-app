@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
+import { Prisma, RoastLevel } from "@prisma/client";
 
 // Verify VAPI secret
 const verifySecret = (req: NextRequest) => {
@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     if (message.type === "tool-calls") {
       console.log(
         "VAPI Webhook: Tool Calls:",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message.toolCalls.map((tc: any) => tc.function.name).join(", ")
       );
     } else if (message.type === "transcript") {
@@ -186,16 +187,21 @@ async function handleGetOrderHistory(
   return { orders: summary };
 }
 
-async function handleSearchProducts(args: { query: string; filters?: any }) {
+async function handleSearchProducts(args: {
+  query: string;
+  filters?: { roastLevel?: string; origin?: string };
+}) {
   const { query, filters } = args;
 
-  const whereClause: any = {
+  const whereClause: Prisma.ProductWhereInput = {
     AND: [],
   };
 
+  const andConditions = whereClause.AND as Prisma.ProductWhereInput[];
+
   // Text search
   if (query) {
-    whereClause.AND.push({
+    andConditions.push({
       OR: [
         { name: { contains: query, mode: "insensitive" } },
         { description: { contains: query, mode: "insensitive" } },
@@ -214,17 +220,27 @@ async function handleSearchProducts(args: { query: string; filters?: any }) {
 
   // Roast Level Filter
   if (filters?.roastLevel) {
-    whereClause.AND.push({
-      roastLevel: {
-        equals: filters.roastLevel,
-        mode: "insensitive",
-      },
-    });
+    // Map string to RoastLevel enum if possible, or ignore if invalid
+    // Assuming the AI sends valid enum strings like "DARK", "MEDIUM", "LIGHT"
+    // or "dark-roast" which we might need to map.
+    // For now, let's assume exact match or simple case insensitivity if Prisma supports it for enums (it doesn't usually).
+    // We'll try to cast to RoastLevel.
+    const roastLevel = Object.values(RoastLevel).find(
+      (r) => r === filters.roastLevel?.toUpperCase()
+    );
+
+    if (roastLevel) {
+      andConditions.push({
+        roastLevel: {
+          equals: roastLevel,
+        },
+      });
+    }
   }
 
   // Origin Filter
   if (filters?.origin) {
-    whereClause.AND.push({
+    andConditions.push({
       origin: {
         hasSome: [filters.origin], // This requires exact match on one of the origins
       },

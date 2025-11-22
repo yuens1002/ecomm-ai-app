@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Vapi from "@vapi-ai/web";
 
 // Initialize Vapi outside component to avoid recreation
@@ -13,13 +13,14 @@ export function useVapi() {
   const [isSpeechActive, setIsSpeechActive] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [volumeLevel, setVolumeLevel] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    !vapiPublicKey ? "VAPI configuration missing" : null
+  );
   const [vapi, setVapi] = useState<Vapi | null>(null);
 
   useEffect(() => {
     if (!vapiPublicKey) {
       console.error("NEXT_PUBLIC_VAPI_PUBLIC_KEY is missing");
-      setError("VAPI configuration missing");
       return;
     }
 
@@ -27,6 +28,7 @@ export function useVapi() {
       vapiSingleton = new Vapi(vapiPublicKey);
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVapi(vapiSingleton);
 
     const onCallStart = () => {
@@ -55,6 +57,7 @@ export function useVapi() {
       setVolumeLevel(level);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const onError = (e: any) => {
       console.error("Vapi error:", e);
       // Try to extract a meaningful message from the error object
@@ -97,15 +100,18 @@ export function useVapi() {
     setError(null);
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await vapiSingleton.start(assistant as any);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to start Vapi session", err);
 
       let errorMessage = "Failed to start voice session";
-      if (err.message) errorMessage = err.message;
-      else if (err.error && err.error.message) errorMessage = err.error.message;
-      else if (typeof err === "string") errorMessage = err;
-      else if (Object.keys(err).length === 0)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const e = err as any;
+      if (e.message) errorMessage = e.message;
+      else if (e.error && e.error.message) errorMessage = e.error.message;
+      else if (typeof e === "string") errorMessage = e;
+      else if (Object.keys(e).length === 0)
         errorMessage =
           "Connection failed. The voice assistant could not connect to the server.";
 
@@ -122,12 +128,6 @@ export function useVapi() {
   const toggleMute = useCallback((mute: boolean) => {
     if (!vapiSingleton) return;
     vapiSingleton.setMuted(mute);
-  }, []);
-
-  const sendData = useCallback((data: any) => {
-    if (!vapiSingleton) return;
-    // Vapi allows sending messages/data to the assistant context
-    // vapiSingleton.send(data); // Check SDK for exact method if needed, usually .send()
   }, []);
 
   return {

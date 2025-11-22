@@ -42,9 +42,9 @@ export async function GET() {
     });
 
     // Transform for table display
-    const formattedProducts = (products as any).map((p: any) => {
+    const formattedProducts = products.map((p) => {
       const totalStock = p.variants.reduce(
-        (acc: any, v: any) => acc + v.stockQuantity,
+        (acc, v) => acc + v.stockQuantity,
         0
       );
       const basePrice = p.variants[0]?.purchaseOptions[0]?.priceInCents || 0;
@@ -55,12 +55,12 @@ export async function GET() {
         slug: p.slug,
         stock: totalStock,
         price: basePrice,
-        variants: p.variants.map((v: any) => ({
+        variants: p.variants.map((v) => ({
           name: v.name,
           stock: v.stockQuantity,
           options: v.purchaseOptions,
         })),
-        categories: p.categories.map((c: any) => c.category.name).join(", "),
+        categories: p.categories.map((c) => c.category.name).join(", "),
       };
     });
 

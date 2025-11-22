@@ -242,7 +242,8 @@ export default function ProductVariantsClient({
 
       {variants.length === 0 ? (
         <div className="text-center py-8 border rounded-md text-muted-foreground bg-muted/10">
-          No variants found. Add a variant (e.g. "12oz Bag") to set pricing.
+          No variants found. Add a variant (e.g. &quot;12oz Bag&quot;) to set
+          pricing.
         </div>
       ) : (
         <div className="grid gap-6">

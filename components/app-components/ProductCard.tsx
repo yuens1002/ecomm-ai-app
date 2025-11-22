@@ -44,11 +44,9 @@ export default function ProductCard({
 
   // Define the destination URL using the product's slug
   // If categorySlug is provided, use it. Otherwise, try to find a primary category or fallback.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const roastLevelSlug =
-    (product as any).categories?.find(
-      (c: any) => c.category.label === "Roast Level"
-    )?.category.slug || "blends";
+    product.categories?.find((c) => c.category.label === "Roast Level")
+      ?.category.slug || "blends";
   const urlCategory = categorySlug || roastLevelSlug;
   const productUrl = `/${urlCategory}/${product.slug}`;
 
