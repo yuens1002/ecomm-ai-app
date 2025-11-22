@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.19.1 - 2025-11-22
+
+- **Site Header & 404 Fixes**: Improved theme consistency and error page experience
+  - **Custom 404 Page**: Added branded 404 page with proper layout and theme support
+  - **Header Styling**: Fixed navigation link colors to adapt correctly in light/dark modes
+  - **Dark Mode Polish**: Inverted beans icon color in dark mode for better visibility
+
 ## 0.19.0 - 2025-11-22
 
 - **Catalog Management System**: Complete admin interface for managing products, categories, and variants ([4ea1f87](https://github.com/yuens1002/ecomm-ai-app/commit/4ea1f87))
@@ -239,13 +246,6 @@
   - **Order Structure**: Mixed carts now create separate orders:
     - One order for all one-time items
     - ONE order for ALL subscription items (architectural decision based on Stripe creating one subscription with multiple line items)
-  - **Array-Based Subscription Model**: Refactored Subscription model to support multiple products using arrays:
-    - `productNames String[]` - snapshot of product names at purchase time for historical accuracy
-    - `stripeProductIds String[]` - Stripe product IDs for all subscription items
-    - `stripePriceIds String[]` - Stripe price IDs for all subscription items
-    - `quantities Int[]` - quantities for each subscription item
-  - **Architectural Decision - Snapshot Approach**: Store product names as strings instead of foreign key relations
-    - **Why**: Historical accuracy (if product renamed/deleted, subscription shows original name), fulfillment simplicity (merchant only needs name to ship), UI simplicity (no complex joins)
     - **Tradeoff**: Recurring orders must lookup PurchaseOption by name using fuzzy match - risk if product name changes significantly
     - Documented directly in Prisma schema for future maintainability
   - **Webhook Refactoring**: Complete overhaul of both subscription webhooks to handle multiple products:
