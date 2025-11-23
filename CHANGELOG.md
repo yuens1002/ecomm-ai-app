@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.20.3 - 2025-11-22
+
+- **Product URL Generation Fix**: Resolved incorrect product URLs using primary category lookup
+  - **ProductCard Simplification**: Removed unnecessary categorySlug prop and fallback logic
+  - **Direct Database Access**: ProductCard now always uses primary category from database
+  - **Zod Validation**: Added `ProductCardSchema` and `RecommendationsResponseSchema` for type safety
+  - **Runtime Validation**: Added Zod validation to recommendations API response to catch data shape mismatches
+  - **Data Optimization**: Reduced data fetching to only select fields required by ProductCard component
+  - **Props Cleanup**: Removed unused categorySlug from CategoryClientPage and all parent components
+
+- **Social Links Management**: Added admin interface for managing social media links in footer
+  - **Admin CRUD**: Full create, read, update, delete functionality for social links
+  - **Footer Integration**: Dynamic social links rendering with active/inactive toggle
+  - **Database Schema**: Added `SocialLink` model with platform, url, icon, order fields
+
+- **Image Configuration**: Added github.com to Next.js image remotePatterns for profile images
+
 ## 0.20.2 - 2025-11-22
 
 - **Prisma 7 & Neon Adapter Stabilization**: Fixed build and connection issues with Prisma 7 upgrade
