@@ -18,34 +18,36 @@ export default async function SiteHeaderWrapper() {
   ]);
 
   // Handle case where no categories are found (e.g., first deployment/empty DB)
-  if (!categories) {
-    // Return an empty array to prevent map errors in SiteHeader
+  if (!categories || categories.length === 0) {
     return (
       <SiteHeader
-        categories={[]}
-        originCategories={[]}
-        roastCategories={[]}
-        collectionCategories={[]}
+        categoryGroups={{}}
         user={session?.user || null}
         isAdmin={userIsAdmin}
       />
     );
   }
 
-  // Filter categories by label
-  const originCategories = categories.filter((c) => c.label === "Origins");
-  const roastCategories = categories.filter((c) => c.label === "Roast Level");
-  const collectionCategories = categories.filter(
-    (c) => c.label === "Collections"
+  // Sort categories by order field, then group by label from SiteSettings
+  const sortedCategories = [...categories].sort((a, b) => a.order - b.order);
+
+  // Dynamically group categories by their labelSetting.value (maintaining sort order)
+  const categoryGroups = sortedCategories.reduce(
+    (acc, category) => {
+      const label = category.labelSetting.value;
+      if (!acc[label]) {
+        acc[label] = [];
+      }
+      acc[label].push(category);
+      return acc;
+    },
+    {} as Record<string, typeof categories>
   );
 
-  // Pass the fetched, non-stale categories and user down to the client component
+  // Pass the dynamically grouped categories to the client component
   return (
     <SiteHeader
-      categories={categories}
-      originCategories={originCategories}
-      roastCategories={roastCategories}
-      collectionCategories={collectionCategories}
+      categoryGroups={categoryGroups}
       user={session?.user || null}
       isAdmin={userIsAdmin}
     />

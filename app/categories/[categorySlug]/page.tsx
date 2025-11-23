@@ -37,6 +37,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       categoryName={category.name}
       categorySlug={categorySlug}
       products={products}
+      showPurchaseOptions={category.showPurchaseOptions}
     />
   );
 }

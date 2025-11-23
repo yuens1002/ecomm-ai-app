@@ -136,7 +136,7 @@ export default function ProductVariantsClient({
       });
       setIsVariantDialogOpen(false);
       fetchVariants();
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to save variant",
@@ -154,7 +154,7 @@ export default function ProductVariantsClient({
       if (!res.ok) throw new Error("Failed to delete variant");
       toast({ title: "Success", description: "Variant deleted" });
       fetchVariants();
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete variant",
@@ -195,7 +195,7 @@ export default function ProductVariantsClient({
       toast({ title: "Success", description: "Purchase option added" });
       setIsOptionDialogOpen(false);
       fetchVariants();
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to add option",
@@ -213,7 +213,7 @@ export default function ProductVariantsClient({
       if (!res.ok) throw new Error("Failed to delete option");
       toast({ title: "Success", description: "Option deleted" });
       fetchVariants();
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete option",

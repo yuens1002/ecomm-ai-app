@@ -89,10 +89,7 @@ function ExpandableList({ items }: ExpandableListProps) {
 }
 
 interface SiteHeaderProps {
-  categories: Category[];
-  originCategories: Category[];
-  roastCategories: Category[];
-  collectionCategories: Category[];
+  categoryGroups: Record<string, Category[]>;
   user: {
     name?: string | null;
     email?: string | null;
@@ -106,10 +103,7 @@ interface SiteHeaderProps {
  * it uses the ThemeSwitcher, which is a Client Component.
  */
 export default function SiteHeader({
-  categories,
-  originCategories,
-  roastCategories,
-  collectionCategories,
+  categoryGroups,
   user,
   isAdmin,
 }: SiteHeaderProps) {
@@ -188,44 +182,22 @@ export default function SiteHeader({
                 <NavigationMenuContent>
                   <div className="w-[600px] p-6 h-[330px] overflow-y-auto">
                     <div className="grid grid-cols-3 gap-8">
-                      {/* Roast Level Column */}
-                      <div className="space-y-3">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2 px-2">
-                          Roasts
-                        </h4>
-                        <ExpandableList
-                          items={roastCategories.map((roast) => ({
-                            label: roast.name,
-                            href: `/${roast.slug}`,
-                          }))}
-                        />
-                      </div>
-
-                      {/* Origins Column */}
-                      <div className="space-y-3">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2 px-2">
-                          Origins
-                        </h4>
-                        <ExpandableList
-                          items={originCategories.map((origin) => ({
-                            label: origin.name,
-                            href: `/${origin.slug}`,
-                          }))}
-                        />
-                      </div>
-
-                      {/* Collections Column */}
-                      <div className="space-y-3">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2 px-2">
-                          Collections
-                        </h4>
-                        <ExpandableList
-                          items={collectionCategories.map((col) => ({
-                            label: col.name,
-                            href: `/${col.slug}`,
-                          }))}
-                        />
-                      </div>
+                      {/* Dynamically render columns for each category group */}
+                      {Object.entries(categoryGroups).map(
+                        ([label, categories]) => (
+                          <div key={label} className="space-y-3">
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2 px-2">
+                              {label}
+                            </h4>
+                            <ExpandableList
+                              items={categories.map((cat) => ({
+                                label: cat.name,
+                                href: `/${cat.slug}`,
+                              }))}
+                            />
+                          </div>
+                        )
+                      )}
                     </div>
                   </div>
                 </NavigationMenuContent>
@@ -390,37 +362,39 @@ export default function SiteHeader({
                 aria-label="Mobile"
                 className="flex-1 overflow-y-auto px-6 py-4 border-t border-border"
               >
-                <div>
-                  <div className="flex items-center gap-2 mb-2 px-4">
-                    <Image
-                      src="/beans.svg"
-                      alt="Coffee"
-                      width={20}
-                      height={20}
-                      className="w-5 h-5 dark:invert"
-                    />
-                    <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
-                      Coffee
-                    </span>
+                {Object.entries(categoryGroups).map(([label, categories]) => (
+                  <div key={label} className="mb-6">
+                    <div className="flex items-center gap-2 mb-2 px-4">
+                      <Image
+                        src="/beans.svg"
+                        alt="Coffee"
+                        width={20}
+                        height={20}
+                        className="w-5 h-5 dark:invert"
+                      />
+                      <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
+                        {label}
+                      </span>
+                    </div>
+                    <ul className="space-y-1">
+                      {categories.map((category) => (
+                        <li key={category.slug}>
+                          <SheetClose asChild>
+                            <Button
+                              variant="ghost"
+                              asChild
+                              className="w-full justify-start font-normal"
+                            >
+                              <Link href={`/${category.slug}`}>
+                                {category.name}
+                              </Link>
+                            </Button>
+                          </SheetClose>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="space-y-1">
-                    {categories.map((category) => (
-                      <li key={category.slug}>
-                        <SheetClose asChild>
-                          <Button
-                            variant="ghost"
-                            asChild
-                            className="w-full justify-start font-normal"
-                          >
-                            <Link href={`/${category.slug}`}>
-                              {category.name}
-                            </Link>
-                          </Button>
-                        </SheetClose>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                ))}
               </nav>
               <div className="px-6 pb-6 mt-auto">
                 <SheetClose asChild>

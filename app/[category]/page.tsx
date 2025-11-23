@@ -3,8 +3,6 @@ import {
   getCategoryBySlug,
   getProductsByCategorySlug,
   getCategorySlugs,
-  getAllOrigins,
-  getSpecialCategories,
 } from "@/lib/data";
 import CategoryClientPage from "@components/app-components/CategoryClientPage";
 
@@ -39,6 +37,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       categoryName={category.name}
       categorySlug={categorySlug}
       products={products}
+      showPurchaseOptions={category.showPurchaseOptions}
     />
   );
 }

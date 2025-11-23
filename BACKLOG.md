@@ -40,6 +40,71 @@
 
 ---
 
+### Admin UI for Category Purchase Options Toggle
+
+**Status**: Backlog  
+**Priority**: Medium  
+**Description**: Add admin UI to control per-category `showPurchaseOptions` setting, allowing merchants to show/hide prices and purchase buttons on category pages.
+
+**Current State**:
+
+- `showPurchaseOptions` field exists on Category model (defaults to `true`)
+- Database migration applied: `20251123122634_add_show_purchase_options_to_category`
+- Feature is functional end-to-end: Category → CategoryClientPage → ProductCard
+- No UI exists for admins to toggle this setting
+
+**Proposed Changes**:
+
+- Add toggle control to category management interface
+- Allow merchants to control display behavior per category
+- Use cases: gallery view for "Origins" (hide prices), e-commerce view for "Blends" (show prices)
+
+**Tasks**:
+
+- [ ] Locate or create category management admin UI
+  - Check if `app/admin/categories/CategoryManagementClient.tsx` exists
+  - If not, create new admin section for category management
+- [ ] Add "Show Purchase Options" toggle to category edit form
+  - Checkbox or switch control
+  - Label: "Show prices and purchase buttons on category page"
+  - Default checked (matches database default)
+- [ ] Create/update API endpoint for category updates
+  - POST `/api/admin/categories/[id]` or similar
+  - Accept `showPurchaseOptions` boolean in request body
+  - Validate admin permissions
+  - Update category record in database
+- [ ] Add toggle to category list/grid view (optional)
+  - Quick toggle without opening full edit form
+  - Visual indicator of current state
+- [ ] Test toggle functionality
+  - Toggle ON: prices and buy buttons appear on category page
+  - Toggle OFF: gallery view with no purchase options
+  - Changes persist across page reloads
+  - Works for all categories independently
+
+**Technical Considerations**:
+
+- Field already exists in schema with migration applied
+- No database changes needed
+- Only requires UI and API endpoint
+- Consider batch operations if managing multiple categories
+
+**Acceptance Criteria**:
+
+- Admins can toggle `showPurchaseOptions` for any category
+- Changes reflect immediately on category pages (after refresh)
+- Toggle state persists in database
+- Visual feedback confirms toggle action
+- Works independently for each category
+
+**Benefits**:
+
+- Flexibility to create gallery-style category pages (Origins, Regions)
+- E-commerce view for purchasable categories (Blends, Subscriptions)
+- No code changes needed for different category display modes
+
+---
+
 ### Consolidate Admin Pages into Dashboard Tabs
 
 **Status**: Backlog  

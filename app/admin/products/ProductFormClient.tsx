@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,8 +16,6 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldLegend,
-  FieldSet,
 } from "@/components/ui/field";
 import { Form, FormField } from "@/components/ui/form";
 import {
@@ -57,7 +55,6 @@ type ProductFormValues = z.infer<typeof formSchema>;
 
 export default function ProductFormClient({
   productId,
-  onClose,
   onSaved,
 }: ProductFormClientProps) {
   const { toast } = useToast();
@@ -97,14 +94,7 @@ export default function ProductFormClient({
     }
   }, [name, form.formState.dirtyFields.name, form]);
 
-  useEffect(() => {
-    fetchCategories();
-    if (productId) {
-      fetchProduct(productId);
-    }
-  }, [productId]);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await fetch("/api/admin/categories");
       if (response.ok) {
@@ -114,9 +104,9 @@ export default function ProductFormClient({
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
-  };
+  }, []);
 
-  const fetchProduct = async (id: string) => {
+  const fetchProduct = useCallback(async (id: string) => {
     try {
       const response = await fetch(`/api/admin/products/${id}`);
       if (!response.ok) throw new Error("Failed to fetch product");
@@ -142,7 +132,14 @@ export default function ProductFormClient({
     } finally {
       setLoading(false);
     }
-  };
+  }, [form, toast]);
+
+  useEffect(() => {
+    fetchCategories();
+    if (productId) {
+      fetchProduct(productId);
+    }
+  }, [productId, fetchCategories, fetchProduct]);
 
   const onSubmit = async (data: ProductFormValues) => {
     try {
@@ -260,6 +257,7 @@ export default function ProductFormClient({
                 />
                 {form.watch("imageUrl") && (
                   <div className="mt-2 relative w-full h-40 rounded-md overflow-hidden border bg-muted">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={form.watch("imageUrl")}
                       alt="Preview"

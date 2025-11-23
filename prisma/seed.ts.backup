@@ -21,81 +21,29 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log(`Start seeding with 30 specialty coffee products...`);
 
-  // --- 1. Create SiteSettings for category labels ---
-  console.log("Creating SiteSettings...");
-
-  const labelRoasts = await prisma.siteSettings.upsert({
-    where: { key: "label_roasts" },
-    update: {},
-    create: { key: "label_roasts", value: "Roasts" },
-  });
-
-  const labelOrigins = await prisma.siteSettings.upsert({
-    where: { key: "label_origins" },
-    update: {},
-    create: { key: "label_origins", value: "Origins" },
-  });
-
-  const labelCollections = await prisma.siteSettings.upsert({
-    where: { key: "label_collections" },
-    update: {},
-    create: { key: "label_collections", value: "Collections" },
-  });
-
-  await prisma.siteSettings.upsert({
-    where: { key: "defaultCategoryLabel" },
-    update: {},
-    create: {
-      key: "defaultCategoryLabel",
-      value: labelCollections.id,
-    },
-  });
-
-  console.log("✓ SiteSettings created");
-
-  // --- 2. Create Categories ---
+  // --- 1. Create Categories ---
   const catBlends = await prisma.category.upsert({
     where: { slug: "blends" },
     update: {},
-    create: {
-      name: "Blend",
-      slug: "blends",
-      labelSettingId: labelCollections.id,
-      order: 20,
-    },
+    create: { name: "Blends", slug: "blends" },
   });
 
   const catSingleOrigin = await prisma.category.upsert({
     where: { slug: "single-origin" },
     update: {},
-    create: {
-      name: "Single Origin",
-      slug: "single-origin",
-      labelSettingId: labelCollections.id,
-      order: 22,
-    },
+    create: { name: "Single Origin", slug: "single-origin" },
   });
 
   const catMicroLot = await prisma.category.upsert({
     where: { slug: "micro-lot" },
     update: {},
-    create: {
-      name: "Micro Lot",
-      slug: "micro-lot",
-      labelSettingId: labelCollections.id,
-      order: 21,
-    },
+    create: { name: "Micro Lot", slug: "micro-lot" },
   });
 
   const catDark = await prisma.category.upsert({
     where: { slug: "dark-roast" },
     update: {},
-    create: {
-      name: "Dark Roast",
-      slug: "dark-roast",
-      labelSettingId: labelRoasts.id,
-      order: 3,
-    },
+    create: { name: "Dark Roast", slug: "dark-roast", label: "Roast Level" },
   });
 
   const catMedium = await prisma.category.upsert({
@@ -104,62 +52,15 @@ async function main() {
     create: {
       name: "Medium Roast",
       slug: "medium-roast",
-      labelSettingId: labelRoasts.id,
-      order: 2,
+      label: "Roast Level",
     },
   });
 
   const catLight = await prisma.category.upsert({
     where: { slug: "light-roast" },
     update: {},
-    create: {
-      name: "Light Roast",
-      slug: "light-roast",
-      labelSettingId: labelRoasts.id,
-      order: 1,
-    },
+    create: { name: "Light Roast", slug: "light-roast", label: "Roast Level" },
   });
-
-  // Origin Categories
-  const origins = [
-    "Ethiopia",
-    "Kenya",
-    "Colombia",
-    "Guatemala",
-    "Costa Rica",
-    "Brazil",
-    "Indonesia",
-    "Papua New Guinea",
-    "Honduras",
-    "Mexico",
-    "Peru",
-    "Nicaragua",
-    "El Salvador",
-    "Rwanda",
-    "Burundi",
-    "Tanzania",
-    "Panama",
-    "Bolivia",
-    "Yemen",
-    "India",
-    "Hawaii",
-  ];
-
-  const originCategories: Record<string, { id: string; name: string; slug: string }> = {};
-  for (let i = 0; i < origins.length; i++) {
-    const origin = origins[i];
-    const slug = origin.toLowerCase().replace(/\s+/g, "-");
-    originCategories[origin] = await prisma.category.upsert({
-      where: { slug },
-      update: {},
-      create: {
-        name: origin,
-        slug,
-        labelSettingId: labelOrigins.id,
-        order: 100 + i,
-      },
-    });
-  }
 
   console.log("Categories created/verified.");
 
@@ -1492,47 +1393,12 @@ async function main() {
   for (const item of coffeeData) {
     const { product: productData, categories: categoryLinks } = item;
 
-    // Determine roast level from old categories
+    // Determine roast level from categories
     let roastLevel: RoastLevel = RoastLevel.MEDIUM; // Default
     if (categoryLinks.some((l) => l.categoryId === catDark.id)) {
       roastLevel = RoastLevel.DARK;
     } else if (categoryLinks.some((l) => l.categoryId === catLight.id)) {
       roastLevel = RoastLevel.LIGHT;
-    }
-
-    // Determine new categories based on origin
-    const newCategories: Array<{ categoryId: string; isPrimary: boolean }> = [];
-    const origins = productData.origin;
-    const isMicroLot = categoryLinks.some(
-      (l) => l.categoryId === catMicroLot.id
-    );
-
-    if (origins.length === 1) {
-      // Single origin - use origin category as primary
-      const originCategory = originCategories[origins[0]];
-      if (originCategory) {
-        newCategories.push({ categoryId: originCategory.id, isPrimary: true });
-      } else {
-        // Fallback to single-origin collection
-        newCategories.push({ categoryId: catSingleOrigin.id, isPrimary: true });
-      }
-    } else {
-      // Multiple origins - use blend as primary
-      newCategories.push({ categoryId: catBlends.id, isPrimary: true });
-    }
-
-    // Add roast level as secondary
-    if (roastLevel === RoastLevel.DARK) {
-      newCategories.push({ categoryId: catDark.id, isPrimary: false });
-    } else if (roastLevel === RoastLevel.LIGHT) {
-      newCategories.push({ categoryId: catLight.id, isPrimary: false });
-    } else {
-      newCategories.push({ categoryId: catMedium.id, isPrimary: false });
-    }
-
-    // Add micro lot if applicable
-    if (isMicroLot) {
-      newCategories.push({ categoryId: catMicroLot.id, isPrimary: false });
     }
 
     const product = await prisma.product.upsert({
@@ -1559,9 +1425,10 @@ async function main() {
     });
 
     await prisma.categoriesOnProducts.createMany({
-      data: newCategories.map((cat) => ({
-        ...cat,
+      data: categoryLinks.map((link) => ({
         productId: product.id,
+        categoryId: link.categoryId,
+        isPrimary: link.isPrimary,
       })),
     });
 
@@ -1569,48 +1436,6 @@ async function main() {
   }
 
   console.log(`\n✅ Seeding finished: 30 specialty coffee products created!`);
-
-  // --- 4. Create synthetic demo users ---
-  console.log("\nCreating demo users...");
-
-  const demoUsers = [
-    {
-      email: "demo@artisanroast.com",
-      name: "Demo User",
-      isAdmin: false,
-    },
-    {
-      email: "admin@artisanroast.com",
-      name: "Admin User",
-      isAdmin: true,
-    },
-    {
-      email: "sarah.coffee@example.com",
-      name: "Sarah Johnson",
-      isAdmin: false,
-    },
-    {
-      email: "mike.espresso@example.com",
-      name: "Mike Chen",
-      isAdmin: false,
-    },
-    {
-      email: "emily.brew@example.com",
-      name: "Emily Rodriguez",
-      isAdmin: false,
-    },
-  ];
-
-  for (const userData of demoUsers) {
-    await prisma.user.upsert({
-      where: { email: userData.email },
-      update: {},
-      create: userData,
-    });
-    console.log(`✓ ${userData.name} (${userData.email})`);
-  }
-
-  console.log(`\n✅ All seeding complete!`);
 }
 
 main()

@@ -45,7 +45,6 @@ export default function HeroSection({ onOpenAiModal }: HeroSectionProps) {
   ) {
     return (
       <VoiceBarista
-        userName={session.user?.name || undefined}
         userEmail={session.user?.email || undefined}
         onOpenAiModal={onOpenAiModal}
       />

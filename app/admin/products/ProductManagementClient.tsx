@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -17,7 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Pencil, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ProductFormClient from "./ProductFormClient";
 
@@ -53,13 +53,7 @@ export default function ProductManagementClient() {
   >(undefined);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (view === "list") {
-      fetchProducts();
-    }
-  }, [view]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       const response = await fetch("/api/admin/products");
       if (!response.ok) throw new Error("Failed to fetch products");
@@ -75,7 +69,13 @@ export default function ProductManagementClient() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    if (view === "list") {
+      fetchProducts();
+    }
+  }, [view, fetchProducts]);
 
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat("en-US", {

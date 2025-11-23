@@ -23,7 +23,11 @@ const productCardIncludes = {
       category: {
         select: {
           slug: true,
-          label: true,
+          labelSetting: {
+            select: {
+              value: true,
+            },
+          },
         },
       },
     },
@@ -83,7 +87,11 @@ export async function getProductBySlug(productSlug?: string | null) {
               select: {
                 name: true,
                 slug: true,
-                label: true,
+                labelSetting: {
+                  select: {
+                    value: true,
+                  },
+                },
               },
             },
           },
@@ -201,6 +209,15 @@ export async function getCategoryBySlug(slug: string) {
     // All categories (Origins, Collections, Roasts) are now in the database.
     const category = await prisma.category.findUnique({
       where: { slug: slug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        order: true,
+        labelSettingId: true,
+        isUsingDefaultLabel: true,
+        showPurchaseOptions: true,
+      },
     });
     return category;
   } catch (error) {
@@ -242,12 +259,18 @@ export async function getAllCategories() {
   try {
     const categories = await prisma.category.findMany({
       select: {
+        id: true,
         name: true,
         slug: true,
-        label: true,
+        order: true,
+        labelSetting: {
+          select: {
+            value: true,
+          },
+        },
       },
       orderBy: {
-        name: "asc",
+        order: "asc",
       },
     });
     return categories;
@@ -603,10 +626,15 @@ export async function getTrendingProducts(
  */
 export async function getAllOrigins() {
   // This function is kept for backward compatibility if needed,
-  // but should be replaced by querying categories with label="Origins".
+  // but should be replaced by querying categories with labelSetting.value="Origins".
   try {
+    const labelOrigins = await prisma.siteSettings.findUnique({
+      where: { key: "label_origins" },
+    });
+    if (!labelOrigins) return [];
+
     const categories = await prisma.category.findMany({
-      where: { label: "Origins" },
+      where: { labelSettingId: labelOrigins.id },
       select: { name: true },
       orderBy: { name: "asc" },
     });
@@ -623,8 +651,13 @@ export async function getAllOrigins() {
  */
 export async function getRoastLevels() {
   try {
+    const labelRoasts = await prisma.siteSettings.findUnique({
+      where: { key: "label_roasts" },
+    });
+    if (!labelRoasts) return [];
+
     const categories = await prisma.category.findMany({
-      where: { label: "Roast Level" },
+      where: { labelSettingId: labelRoasts.id },
       select: { name: true },
       orderBy: { name: "asc" },
     });

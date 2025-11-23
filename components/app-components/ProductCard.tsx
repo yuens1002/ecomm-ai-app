@@ -42,13 +42,14 @@ export default function ProductCard({
   const altText =
     product.images[0]?.altText || `A bag of ${product.name} coffee`;
 
-  // Define the destination URL using the product's slug
-  // If categorySlug is provided, use it. Otherwise, try to find a primary category or fallback.
-  const roastLevelSlug =
-    product.categories?.find((c) => c.category.label === "Roast Level")
-      ?.category.slug || "blends";
-  const urlCategory = categorySlug || roastLevelSlug;
-  const productUrl = `/${urlCategory}/${product.slug}`;
+  // Define the destination URL using the product's primary category slug
+  const primaryCategorySlug = product.categories[0].category.slug;
+
+  // Build URL with optional "from" parameter if user came from a different category
+  let productUrl = `/${primaryCategorySlug}/${product.slug}`;
+  if (categorySlug && categorySlug !== primaryCategorySlug) {
+    productUrl += `?from=${encodeURIComponent(categorySlug)}`;
+  }
 
   return (
     <Link
@@ -84,17 +85,11 @@ export default function ProductCard({
             <CardDescription className="text-sm italic pt-1 overflow-hidden text-ellipsis whitespace-nowrap">
               {product.tastingNotes.join(", ")}
             </CardDescription>
-
-            {showPurchaseOptions && (
-              <p className="text-lg font-bold text-primary pt-2">
-                ${displayPrice}
-              </p>
-            )}
           </CardContent>
 
           {/* 3. CardFooter (only shows if purchase options are enabled) */}
           {showPurchaseOptions && (
-            <CardFooter className="pb-8">
+            <CardFooter className="pb-8 flex items-center justify-between">
               <Button
                 onClick={(e) => {
                   e.preventDefault();
@@ -106,7 +101,7 @@ export default function ProductCard({
                       productId: product.id,
                       productName: product.name,
                       productSlug: product.slug,
-                      categorySlug: urlCategory,
+                      categorySlug,
                       variantId: displayVariant.id,
                       variantName: displayVariant.name,
                       purchaseOptionId: oneTimePrice.id,
@@ -116,10 +111,15 @@ export default function ProductCard({
                     });
                   }
                 }}
-                className="w-full cursor-pointer"
+                className="cursor-pointer"
               >
                 Add to Cart
               </Button>
+              <div>
+                <p className="text-lg font-bold text-primary">
+                  ${displayPrice}
+                </p>
+              </div>
             </CardFooter>
           )}
         </div>

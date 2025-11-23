@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.21.0 - 2025-11-23
+
+- **Dynamic Category System & Navigation Improvements**: Complete category infrastructure overhaul with breadcrumb context preservation
+  - **Schema Migration**: Migrated Category model from hardcoded `label` field to relational `labelSetting` with SiteSettings table
+  - **Category Labels**: Three label types (Origins, Collections, Roasts) configurable via SiteSettings with default label support
+  - **Navigation Routes**: Unified routing pattern from `/categories/[slug]` to `/[category]/[slug]` for cleaner URLs
+  - **Breadcrumb Context**: Added query parameter system (`?from={categorySlug}`) to preserve user navigation path
+  - **Product Cards**: Enhanced to pass navigation context when user browses from non-primary category
+  - **Related Products**: Changed algorithm from roast-level matching to category-based matching for better contextual recommendations
+  - **Per-Category Purchase Options**: Added `showPurchaseOptions` boolean field to control price/buy button display per category
+  - **Data Flow**: Complete props threading from Category model → page → CategoryClientPage → ProductCard
+  - **Seed Data**: Generated 30 products with proper categorization, 75 synthetic users, and demo user
+  - **Migration**: Two migrations applied (`add_site_settings_and_category_label_reference`, `add_show_purchase_options_to_category`)
+
 ## 0.20.3 - 2025-11-22
 
 - **Product URL Generation Fix**: Resolved incorrect product URLs using primary category lookup

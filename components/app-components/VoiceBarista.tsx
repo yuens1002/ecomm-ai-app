@@ -12,13 +12,11 @@ import { getProductVariantForCart } from "@/app/actions";
 import { motion, AnimatePresence } from "motion/react";
 
 interface VoiceBaristaProps {
-  userName?: string;
   userEmail?: string;
   onOpenAiModal?: () => void;
 }
 
 export default function VoiceBarista({
-  userName,
   userEmail,
 }: VoiceBaristaProps) {
   const [messages, setMessages] = useState<

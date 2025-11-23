@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { name, slug, label } = body;
+    const { name, slug } = body;
 
     if (!name || !slug) {
       return NextResponse.json(
@@ -47,15 +47,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const category = await prisma.category.create({
-      data: {
-        name,
-        slug,
-        label,
-      },
-    });
-
-    return NextResponse.json({ category });
+    // TODO: This endpoint needs to be updated to handle labelSettingId
+    // For now, throw an error since the schema has changed
+    return NextResponse.json(
+      { error: "Category creation endpoint needs migration to new schema" },
+      { status: 501 }
+    );
   } catch (error) {
     console.error("Error creating category:", error);
     return NextResponse.json(

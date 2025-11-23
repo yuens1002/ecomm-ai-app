@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Table,
@@ -17,7 +17,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -55,17 +54,13 @@ export default function CategoryManagementClient() {
   const { toast } = useToast();
   const router = useRouter();
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  async function fetchCategories() {
+  const fetchCategories = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/categories");
       if (!res.ok) throw new Error("Failed to fetch categories");
       const data = await res.json();
       setCategories(data.categories);
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to load categories",
@@ -74,7 +69,11 @@ export default function CategoryManagementClient() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   function handleOpenDialog(category?: Category) {
     if (category) {
@@ -119,7 +118,7 @@ export default function CategoryManagementClient() {
       setIsDialogOpen(false);
       fetchCategories();
       router.refresh(); // Refresh server components if needed
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to save category",
@@ -145,7 +144,7 @@ export default function CategoryManagementClient() {
 
       fetchCategories();
       router.refresh();
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete category",

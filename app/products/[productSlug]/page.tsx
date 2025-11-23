@@ -53,24 +53,10 @@ export default async function ProductPage({
   let displayCategory;
 
   if (fromCategorySlug) {
-    // Check if it's a virtual roast category
-    if (fromCategorySlug.endsWith("-roast")) {
-      // Find if product has a category with this slug
-      const roastCategory = product.categories.find(
-        (c) => c.category.slug === fromCategorySlug
-      )?.category;
-
-      if (roastCategory) {
-        displayCategory = roastCategory;
-      }
-    }
-
-    if (!displayCategory) {
-      // Only use the `from` category if the product is actually linked to it
-      displayCategory = product.categories.find(
-        (c) => c.category.slug === fromCategorySlug
-      )?.category;
-    }
+    // Only use the `from` category if the product is actually linked to it
+    displayCategory = product.categories.find(
+      (c) => c.category.slug === fromCategorySlug
+    )?.category;
   }
 
   // If no category from URL or category not found, fall back to primary or first
@@ -87,9 +73,9 @@ export default async function ProductPage({
   }
 
   // Fetch related products based on the current product's roast level
-  // We use the first category with label "Roast Level" or fallback to first category
+  // We use the first category with labelSetting value "Roasts" or fallback to first category
   const roastCategory = product.categories.find(
-    (c) => c.category.label === "Roast Level"
+    (c) => c.category.labelSetting?.value === "Roasts"
   )?.category;
   const relatedProducts = await getRelatedProducts(
     product.id,

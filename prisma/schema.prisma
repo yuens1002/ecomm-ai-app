@@ -56,11 +56,17 @@ model CategoriesOnProducts {
 
 // NEW: Category table, now linked via the join table
 model Category {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  label     String?  // Grouping label (e.g. "Origins", "Collections")
-  products  CategoriesOnProducts[] // Relation back to the join table
+  id                   String       @id @default(cuid())
+  name                 String
+  slug                 String       @unique
+  labelSettingId       String       // References SiteSettings for the label value
+  labelSetting         SiteSettings @relation("CategoryLabel", fields: [labelSettingId], references: [id], onDelete: Restrict)
+  isUsingDefaultLabel  Boolean      @default(true) // Track if using default or explicitly set
+  order                Int          @default(0) // Display order in navigation menu
+  showPurchaseOptions  Boolean      @default(true) // Show price/buy button on category page
+  products             CategoriesOnProducts[] // Relation back to the join table
+  
+  @@index([labelSettingId])
 }
 
 
@@ -122,6 +128,18 @@ enum BillingInterval {
   WEEK
   MONTH
   YEAR
+}
+
+// --- Settings ---
+
+model SiteSettings {
+  id                      String     @id @default(cuid())
+  key                     String     @unique // e.g., "defaultCategoryLabel"
+  value                   String     // e.g., "Collections"
+  updatedAt               DateTime   @updatedAt
+  
+  // Categories using this setting as their label
+  categoriesAsLabel       Category[] @relation("CategoryLabel")
 }
 
 // --- User & Order Models ---
