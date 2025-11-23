@@ -2,33 +2,11 @@
 
 ## 0.22.0 - 2025-11-23
 
-- **Mega Footer with Social Links & Newsletter Management**: Complete footer redesign with admin-managed content
-  - **Database Models**: Added `SocialLink` and `NewsletterSubscriber` models with indexes for performance
-  - **Admin Interface**: Built `/admin/social-links` page with full CRUD operations for social media links
-    - Platform selection (Facebook, Twitter/X, Instagram, LinkedIn, YouTube, GitHub)
-    - URL validation and icon management
-    - Drag-to-reorder functionality with custom ordering
-    - Active/inactive toggle for visibility control without deletion
-    - Real-time updates with toast notifications
-  - **API Endpoints**: Implemented secure admin-only REST API
-    - `GET /api/admin/social-links` - List all social links (admin auth required)
-    - `POST /api/admin/social-links` - Create new social link (admin auth required)
-    - `PATCH /api/admin/social-links/[id]` - Update social link (admin auth required)
-    - `DELETE /api/admin/social-links/[id]` - Delete social link (admin auth required)
-    - `GET /api/social-links` - Public endpoint for active links (footer rendering)
-    - `POST /api/newsletter` - Newsletter subscription with email validation (Zod schema)
-  - **Mega Footer Component**: Replaced basic footer with comprehensive navigation
-    - **Coffee Categories Section**: All categories dynamically grouped by label (Origins, Collections, Roasts)
-    - **Quick Links Section**: Home, About, Contact, Account, Orders navigation
-    - **Newsletter Section**: Email signup form with client-side validation and error handling
-    - **Social Links Section**: Dynamic social media icons from database with external link handling
-    - **Contact Info**: Business hours and email contact information
-    - **Responsive Design**: Mobile-first layout with grid system (1/2/4 columns)
-  - **Client Components**: Separated interactive functionality
-    - `NewsletterSignup.tsx` - Form with loading states, validation, success/error toast notifications
-    - `SocialLinks.tsx` - Dynamic icon rendering with accessibility attributes (aria-labels, target="_blank")
-  - **Authentication**: NextAuth v5 `auth()` function integration for admin endpoints
-  - **Migration**: Applied `20251123140146_add_social_links_and_newsletter` migration
+- **Mega Footer with Social Links & Newsletter**: Admin-managed footer with social media links, newsletter signup, and dynamic category navigation
+  - Social media link management in admin panel with platform selection, ordering, and active/inactive toggle
+  - Newsletter subscription with email validation and duplicate handling
+  - Responsive mega footer with category groups, quick links, newsletter signup, and social icons
+  - Server-rendered footer component for optimal performance
 
 ## 0.21.0 - 2025-11-23
 

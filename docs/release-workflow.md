@@ -1,5 +1,20 @@
 # Release Workflow
 
+## Documentation Strategy
+
+Our release process separates **public-facing** information from **internal implementation** details:
+
+| Document           | Audience        | Content          | Details                                    |
+| ------------------ | --------------- | ---------------- | ------------------------------------------ |
+| **Commit Message** | Developers      | Single line      | Concise "what changed"                     |
+| **CHANGELOG.md**   | Users/Employers | Feature summary  | Bold title + user-visible features         |
+| **Git Tag**        | Developers      | Brief summary    | 2-3 sentences + link to internal docs      |
+| **Internal Docs**  | Team            | Complete details | Schema, migrations, auth, design decisions |
+
+**Key Principle**: Keep public docs focused on value delivered; save technical details for internal documentation.
+
+---
+
 ## Pre-Push Checklist
 
 Before pushing code to GitHub, **always run**:
@@ -19,7 +34,7 @@ If either fails, fix the issues before committing and pushing.
 
 ## Feature Branch Workflow
 
-When working on a feature branch (e.g., `feature/voice-barista-mvp`):
+When working on a feature branch (e.g., `feature/social-links-management`):
 
 ### 1. Make Changes and Commit
 
@@ -31,46 +46,70 @@ git commit -m "feat: concise commit message"
 **Commit Message Guidelines:**
 
 - Keep commit messages **concise** - one line describing what changed
-- Omit detailed explanations from commit messages
-- Save detailed documentation for CHANGELOG.md entries (see step 2)
+- Use conventional commit prefixes: `feat:`, `fix:`, `chore:`, `docs:`
+- Keep under 72 characters
+- Describe **what** changed, not **how**
 
 You can make multiple commits on the feature branch - each is isolated to the branch.
 
-### 2. Document Significant Commits in CHANGELOG.md (Optional)
+### 2. Create Internal Documentation
 
-For commits that represent substantial features or improvements worth documenting:
+**When**: After completing a substantial feature
 
-1. Get the commit hash: `git log -1 --format="%H"`
-2. Add entry under the current version section with this format:
+**Location**: `docs/releases/v{X.X.X}-{feature-name}.md`
+
+**Template**: Use `docs/releases/TEMPLATE.md` as starting point
+
+**Includes**:
+
+- Database schema changes & migration names
+- API endpoint specifications
+- File structure and components
+- Authentication/authorization implementation
+- Design decisions and tradeoffs
+- Admin credentials (if applicable)
+- Testing considerations
+- Future enhancement ideas
+
+**Example**: `docs/releases/v0.22.0-mega-footer.md`
+
+**Why**: This is your internal reference for understanding how the feature was built. Include everything developers need.
+
+### 3. Update CHANGELOG.md
+
+**Purpose**: Public-facing summary for users/employers
+
+**Format**:
 
 ```markdown
-- **Feature Title**: One-line summary of what the commit accomplishes ([commit_hash](https://github.com/yuens1002/ecomm-ai-app/commit/{full_hash}))
-  - Key accomplishment or feature 1
-  - Key accomplishment or feature 2
-  - Key accomplishment or feature 3
+## X.X.X - YYYY-MM-DD
+
+- **Feature Title**: Brief user-facing description
+  - User-visible feature 1
+  - User-visible feature 2
+  - User-visible feature 3
 ```
 
-**Example:**
+**Example**:
 
 ```markdown
-- **AI Barista Chat MVP**: Text-based conversational interface with comprehensive error handling and brewing knowledge ([6560e73](https://github.com/yuens1002/ecomm-ai-app/commit/6560e730f3fe67fe86c5e11512388d90048ccefa))
-  - Modal-based chat UI with fixed height, scrollable messages, and always-visible input
-  - Gemini AI integration with user context (order history, favorites, addresses)
-  - Retry mechanism for service errors with spinning state and right-aligned button
-  - Comprehensive brewing method guide in system prompt (drip vs espresso distinction)
-  - Bilingual support with auto-detection (English/Spanish)
-  - Error handling for rate limits, service unavailable, and empty responses
+## 0.22.0 - 2025-11-23
+
+- **Mega Footer with Social Links & Newsletter**: Admin-managed footer with social media links, newsletter signup, and dynamic category navigation
+  - Social media link management in admin panel
+  - Newsletter subscription with email validation
+  - Responsive mega footer with category groups
 ```
 
-**Guidelines:**
+**Guidelines**:
 
-- Each worthy commit gets its own entry with commit link
-- One-line summary describes what was accomplished
-- 2-6 bullet points detail the key features/improvements
-- Keep bullets concise and high-level (avoid implementation minutiae)
-- This documentation helps track progress on feature branches and makes merging to main easier
+- Bold title with brief description
+- Bullet points for user-visible features only
+- **NO** technical details (migrations, file paths, code changes)
+- Focus on **value delivered** to end users
+- Keep it professional and concise
 
-### 3. Run Precheck Before Push
+### 4. Run Precheck Before Push
 
 ```powershell
 npm run precheck
@@ -78,7 +117,7 @@ npm run precheck
 
 Fix any TypeScript or ESLint errors before pushing.
 
-### 3. Push to Feature Branch
+### 5. Push to Feature Branch
 
 ```powershell
 git push origin feature/branch-name
@@ -86,7 +125,54 @@ git push origin feature/branch-name
 
 This only pushes to the feature branch - `main` is not affected.
 
-### 4. When Ready to Merge to Main
+### 6. Create Annotated Tag
+
+**Purpose**: Developer-facing summary with link to internal docs
+
+**Format**:
+
+```powershell
+git tag -a v{X.X.X} -m "Feature Title
+
+Brief 2-3 sentence summary of what was accomplished.
+
+Commit: {short_hash}
+See: docs/releases/v{X.X.X}-{feature-name}.md for implementation details"
+```
+
+**Example**:
+
+```powershell
+git tag -a v0.22.0 -m "Mega Footer with Social Links & Newsletter
+
+Complete footer redesign with admin-managed social media links,
+newsletter subscription, and dynamic category navigation.
+
+Commit: b9d2fb1
+See: docs/releases/v0.22.0-mega-footer.md for implementation details"
+```
+
+**Guidelines**:
+
+- Brief summary (2-3 sentences)
+- Include commit hash
+- Link to internal docs for technical details
+- Keep it professional but minimal
+
+### 7. Push Everything
+
+```powershell
+git push origin feature/branch-name
+git push origin v{X.X.X}
+```
+
+Or use one line:
+
+```powershell
+git push origin feature/branch-name; git push origin v{X.X.X}
+```
+
+### 8. When Ready to Merge to Main
 
 Use the merge script to merge the feature branch to main, create a tag, and push:
 
@@ -103,70 +189,79 @@ This script:
 
 ---
 
-## Standard Release Process
+## Standard Release Process (Main Branch)
 
-Follow these steps for every release to GitHub:
+Follow these steps when releasing to `main`:
 
-### 1. Update CHANGELOG.md
+### 1. Create Internal Documentation
 
-Add a new section at the top with:
+**Location**: `docs/releases/v{X.X.X}-{feature-name}.md`
 
-- Version number and date (e.g., `## 0.11.3 - 2025-11-16`)
-- **Main entry**: Feature name/title with GitHub commit link in format `([commit_hash](https://github.com/yuens1002/ecomm-ai-app/commit/{full_hash}))`
-- **2-4 concise bullets**: High-level summary statements only - what was accomplished, not implementation details
-- Keep it readable and valuable - avoid nitty-gritty technical details
-- Group by category: Features, Bug Fixes, Dependencies, etc.
+Use the template and include all technical implementation details.
 
-**Example:**
+### 2. Update CHANGELOG.md
+
+Add a new section at the top with **user-facing summary only**:
 
 ```markdown
-## 0.15.0 - 2025-11-20
+## X.X.X - YYYY-MM-DD
 
-- **Voice Barista UI Foundation**: Session-based hero section with voice chat interface ([abc1234](https://github.com/yuens1002/ecomm-ai-app/commit/abc1234))
-  - VoiceBarista component replaces hero for authenticated users
-  - Voice AI platform research complete - selected VAPI
-  - Conversation flow designed with 6 backend functions
+- **Feature Title**: Brief description
+  - User-visible feature 1
+  - User-visible feature 2
 ```
 
-### 2. Bump Version in package.json
+**Guidelines**:
+
+- **NO** technical details (schema, migrations, file paths)
+- Focus on value delivered to users
+- Group by category if needed: Features, Bug Fixes, etc.
+
+### 3. Bump Version in package.json
 
 Update the `version` field:
 
 ```json
-"version": "0.11.3"
+"version": "0.22.0"
 ```
 
-### 3. Commit Changes
+### 4. Commit Changes
 
 ```powershell
 git add -A
 git commit -m "feat: concise commit message"
 ```
 
-**Commit Message Guidelines:**
-
-- Keep commit messages **concise** - one line describing what changed
-- Omit detailed explanations from commit messages
-- All details should be in CHANGELOG.md with the commit link
-
-### 4. Version Bump Commit
+### 5. Version Bump Commit
 
 ```powershell
 git add package.json CHANGELOG.md
-git commit -m "chore: bump version to 0.11.3"
+git commit -m "chore: bump version to 0.22.0"
 ```
 
-### 5. Tag and Push
+### 6. Create Annotated Tag
 
 ```powershell
-git tag v0.11.3
+git tag -a v0.22.0 -m "Feature Title
+
+Brief 2-3 sentence summary.
+
+Commit: {hash}
+See: docs/releases/v0.22.0-{feature}.md"
+```
+
+### 7. Push to Main with Tags
+
+```powershell
 git push origin main --tags
 ```
 
-## One-Liner for Steps 4-5
+## Quick Release One-Liner
+
+After updating internal docs, CHANGELOG.md, and package.json:
 
 ```powershell
-git add package.json CHANGELOG.md; git commit -m "chore: bump version to 0.11.3"; git tag v0.11.3; git push origin main --tags
+git add package.json CHANGELOG.md; git commit -m "chore: bump version to 0.22.0"; git tag -a v0.22.0 -m "Feature Title`n`nBrief summary.`n`nCommit: {hash}`nSee: docs/releases/v0.22.0-{feature}.md"; git push origin main --tags
 ```
 
 ## Version Numbering (Semantic Versioning)
