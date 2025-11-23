@@ -7,7 +7,9 @@ interface FooterAccountLinksProps {
   isAdmin?: boolean;
 }
 
-export default function FooterAccountLinks({ isAdmin = false }: FooterAccountLinksProps) {
+export default function FooterAccountLinks({
+  isAdmin = false,
+}: FooterAccountLinksProps) {
   const { data: session } = useSession();
 
   return (

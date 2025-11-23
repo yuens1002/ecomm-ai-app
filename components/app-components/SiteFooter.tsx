@@ -54,16 +54,46 @@ async function getSocialLinks() {
 }
 
 /**
+ * Get footer contact settings from database
+ */
+async function getFooterContactSettings() {
+  const settings = await prisma.siteSettings.findMany({
+    where: {
+      key: {
+        in: ['footer_show_hours', 'footer_hours_text', 'footer_show_email', 'footer_email']
+      }
+    },
+    select: {
+      key: true,
+      value: true,
+    },
+  });
+
+  const settingsMap = settings.reduce((acc, setting) => {
+    acc[setting.key] = setting.value;
+    return acc;
+  }, {} as Record<string, string>);
+
+  return {
+    showHours: settingsMap['footer_show_hours'] === 'true',
+    hoursText: settingsMap['footer_hours_text'] || 'Mon-Fri 7am-7pm',
+    showEmail: settingsMap['footer_show_email'] === 'true',
+    email: settingsMap['footer_email'] || 'hello@artisan-roast.com',
+  };
+}
+
+/**
  * Mega footer with category navigation, newsletter signup, and social links
  */
 export default async function SiteFooter() {
   const categoryGroups = await getCategoriesForFooter();
   const socialLinks = await getSocialLinks();
-  
+  const contactSettings = await getFooterContactSettings();
+
   // Check if current user is admin for footer links
   const session = await auth();
   let isAdmin = false;
-  
+
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
@@ -171,20 +201,26 @@ export default async function SiteFooter() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Follow Us</h3>
               <SocialLinks links={socialLinks} />
-              <div className="pt-4 space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Hours:</strong> Mon-Fri 7am-7pm
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  <strong>Email:</strong>{" "}
-                  <a
-                    href="mailto:hello@artisan-roast.com"
-                    className="hover:underline hover:text-primary"
-                  >
-                    hello@artisan-roast.com
-                  </a>
-                </p>
-              </div>
+              {(contactSettings.showHours || contactSettings.showEmail) && (
+                <div className="pt-4 space-y-2">
+                  {contactSettings.showHours && (
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Hours:</strong> {contactSettings.hoursText}
+                    </p>
+                  )}
+                  {contactSettings.showEmail && (
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Email:</strong>{" "}
+                      <a
+                        href={`mailto:${contactSettings.email}`}
+                        className="hover:underline hover:text-primary"
+                      >
+                        {contactSettings.email}
+                      </a>
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
