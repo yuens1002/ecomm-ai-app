@@ -34,6 +34,39 @@ If either fails, fix the issues before committing and pushing.
 
 ## Feature Branch Workflow
 
+**IMPORTANT**: Choose ONE approach - either use the merge script OR follow manual steps. Don't mix them!
+
+### Option A: Using Merge Script (Recommended for Clean Releases)
+
+The merge script handles version bumping, tagging, and pushing automatically. Use this for straightforward releases.
+
+**When to use**:
+- Feature is complete and tested
+- Ready to merge directly to main
+- Want automated version bump and tagging
+
+**Steps**:
+1. Create internal documentation (`docs/releases/v{X.X.X}-{feature-name}.md`)
+2. Update CHANGELOG.md with user-facing summary
+3. Commit both: `git add -A; git commit -m "docs: release documentation"`
+4. Run script: `npx tsx scripts/merge-feature.ts "commit-message" "X.X.X"`
+
+**What the script does**:
+- Runs precheck (TypeScript + ESLint)
+- Updates package.json version
+- Switches to main and merges
+- Creates annotated tag
+- Pushes everything to GitHub
+
+### Option B: Manual Workflow (More Control)
+
+Use this when you need more control over each step or want to test before merging to main.
+
+**When to use**:
+- Need to test changes before merging
+- Multiple iterations expected
+- Troubleshooting issues
+
 When working on a feature branch (e.g., `feature/social-links-management`):
 
 ### 1. Make Changes and Commit
@@ -109,83 +142,104 @@ You can make multiple commits on the feature branch - each is isolated to the br
 - Focus on **value delivered** to end users
 - Keep it professional and concise
 
-### 4. Run Precheck Before Push
+### 4. Run Precheck and Fix Issues
 
 ```powershell
 npm run precheck
 ```
 
-Fix any TypeScript or ESLint errors before pushing.
-
-### 5. Push to Feature Branch
+Fix any TypeScript or ESLint errors, then commit fixes:
 
 ```powershell
-git push origin feature/branch-name
+git add -A
+git commit -m "fix: resolve precheck issues"
 ```
 
-This only pushes to the feature branch - `main` is not affected.
+**Common fixes needed**:
+- Missing shadcn/ui components
+- ESLint warnings (unused variables, hooks dependencies)
+- Prisma Client needs regeneration: `npx prisma generate`
+
+### 5. Update package.json Version
+
+```powershell
+# Edit package.json, change version to X.X.X
+git add package.json
+git commit -m "chore: bump version to X.X.X"
+```
 
 ### 6. Create Annotated Tag
 
-**Purpose**: Developer-facing summary with link to internal docs
-
-**Format**:
-
 ```powershell
-git tag -a v{X.X.X} -m "Feature Title
+# Get commit hash
+git log -1 --format="%h"
 
-Brief 2-3 sentence summary of what was accomplished.
-
-Commit: {short_hash}
-See: docs/releases/v{X.X.X}-{feature-name}.md for implementation details"
+# Create tag
+git tag -a vX.X.X -m "Feature Title`n`nBrief summary.`n`nCommit: {hash}`nSee: docs/releases/vX.X.X-{feature}.md"
 ```
-
-**Example**:
-
-```powershell
-git tag -a v0.22.0 -m "Mega Footer with Social Links & Newsletter
-
-Complete footer redesign with admin-managed social media links,
-newsletter subscription, and dynamic category navigation.
-
-Commit: b9d2fb1
-See: docs/releases/v0.22.0-mega-footer.md for implementation details"
-```
-
-**Guidelines**:
-
-- Brief summary (2-3 sentences)
-- Include commit hash
-- Link to internal docs for technical details
-- Keep it professional but minimal
 
 ### 7. Push Everything
 
 ```powershell
 git push origin feature/branch-name
-git push origin v{X.X.X}
+git push origin vX.X.X
 ```
 
-Or use one line:
+### 8. Merge to Main
 
 ```powershell
-git push origin feature/branch-name; git push origin v{X.X.X}
+git checkout main
+git pull origin main
+git merge feature/branch-name
+git push origin main
 ```
 
-### 8. When Ready to Merge to Main
+---
 
-Use the merge script to merge the feature branch to main, create a tag, and push:
+## Common Pitfalls
 
+### Mixing Manual Steps with Merge Script
+
+**Problem**: Running manual version bump + precheck, then using merge script causes conflicts.
+
+**Solution**: Pick ONE approach:
+- **Merge Script**: Do internal docs + CHANGELOG first, let script handle version bump and tagging
+- **Manual**: Do ALL steps manually including version bump and tag creation
+
+### PowerShell SSH Issues
+
+**Problem**: Git commands fail with "Permission denied (publickey)" in PowerShell.
+
+**Solution**: Switch remote to HTTPS:
 ```powershell
-npx tsx scripts/merge-feature.ts "feat: commit message" "0.15.0"
+git remote set-url origin https://github.com/yuens1002/ecomm-ai-app.git
 ```
 
-This script:
+### Missing Prisma Client After Migration
 
-- Switches to main
-- Merges the feature branch
-- Creates a version tag
-- Pushes main + tags to GitHub
+**Problem**: TypeScript can't find new Prisma models after migration.
+
+**Solution**: Regenerate Prisma Client:
+```powershell
+npx prisma generate
+```
+
+### Tag Already Exists
+
+**Problem**: Tag creation fails because tag exists locally or remotely.
+
+**Solution**: 
+```powershell
+# Delete local tag
+git tag -d vX.X.X
+
+# Delete remote tag (if needed)
+git push origin :refs/tags/vX.X.X
+
+# Recreate tag
+git tag -a vX.X.X -m "..."
+git push origin vX.X.X --force
+```
 
 ---
 
