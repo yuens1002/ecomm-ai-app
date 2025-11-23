@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -73,26 +73,20 @@ export default function SocialLinksManagement() {
   });
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchSocialLinks();
-  }, []);
-
-  const fetchSocialLinks = async () => {
+  const fetchSocialLinks = useCallback(async () => {
     try {
       const response = await fetch("/api/admin/social-links");
       if (!response.ok) throw new Error("Failed to fetch social links");
       const data = await response.json();
       setSocialLinks(data);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load social links",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchSocialLinks();
+  }, [fetchSocialLinks]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,7 +113,7 @@ export default function SocialLinksManagement() {
       setIsDialogOpen(false);
       resetForm();
       fetchSocialLinks();
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to save social link",
@@ -144,7 +138,7 @@ export default function SocialLinksManagement() {
       });
 
       fetchSocialLinks();
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete social link",
@@ -164,7 +158,7 @@ export default function SocialLinksManagement() {
       if (!response.ok) throw new Error("Failed to update social link");
 
       fetchSocialLinks();
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to update social link",
