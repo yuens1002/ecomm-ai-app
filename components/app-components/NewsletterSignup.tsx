@@ -47,7 +47,7 @@ export default function NewsletterSignup() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
+    <form onSubmit={handleSubmit} className="flex w-full items-center">
       <Input
         type="email"
         placeholder="Your email"
@@ -55,9 +55,13 @@ export default function NewsletterSignup() {
         onChange={(e) => setEmail(e.target.value)}
         required
         disabled={isLoading}
-        className="flex-1"
+        className="rounded-r-none border-r-0 focus-visible:z-10"
       />
-      <Button type="submit" disabled={isLoading}>
+      <Button
+        type="submit"
+        disabled={isLoading}
+        className="rounded-l-none whitespace-nowrap"
+      >
         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Subscribe"}
       </Button>
     </form>

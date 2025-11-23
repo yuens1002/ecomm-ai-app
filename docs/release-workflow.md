@@ -41,17 +41,20 @@ If either fails, fix the issues before committing and pushing.
 The merge script handles version bumping, tagging, and pushing automatically. Use this for straightforward releases.
 
 **When to use**:
+
 - Feature is complete and tested
 - Ready to merge directly to main
 - Want automated version bump and tagging
 
 **Steps**:
+
 1. Create internal documentation (`docs/releases/v{X.X.X}-{feature-name}.md`)
 2. Update CHANGELOG.md with user-facing summary
 3. Commit both: `git add -A; git commit -m "docs: release documentation"`
 4. Run script: `npx tsx scripts/merge-feature.ts "commit-message" "X.X.X"`
 
 **What the script does**:
+
 - Runs precheck (TypeScript + ESLint)
 - Updates package.json version
 - Switches to main and merges
@@ -63,6 +66,7 @@ The merge script handles version bumping, tagging, and pushing automatically. Us
 Use this when you need more control over each step or want to test before merging to main.
 
 **When to use**:
+
 - Need to test changes before merging
 - Multiple iterations expected
 - Troubleshooting issues
@@ -156,6 +160,7 @@ git commit -m "fix: resolve precheck issues"
 ```
 
 **Common fixes needed**:
+
 - Missing shadcn/ui components
 - ESLint warnings (unused variables, hooks dependencies)
 - Prisma Client needs regeneration: `npx prisma generate`
@@ -203,6 +208,7 @@ git push origin main
 **Problem**: Running manual version bump + precheck, then using merge script causes conflicts.
 
 **Solution**: Pick ONE approach:
+
 - **Merge Script**: Do internal docs + CHANGELOG first, let script handle version bump and tagging
 - **Manual**: Do ALL steps manually including version bump and tag creation
 
@@ -211,6 +217,7 @@ git push origin main
 **Problem**: Git commands fail with "Permission denied (publickey)" in PowerShell.
 
 **Solution**: Switch remote to HTTPS:
+
 ```powershell
 git remote set-url origin https://github.com/yuens1002/ecomm-ai-app.git
 ```
@@ -220,6 +227,7 @@ git remote set-url origin https://github.com/yuens1002/ecomm-ai-app.git
 **Problem**: TypeScript can't find new Prisma models after migration.
 
 **Solution**: Regenerate Prisma Client:
+
 ```powershell
 npx prisma generate
 ```
@@ -228,7 +236,8 @@ npx prisma generate
 
 **Problem**: Tag creation fails because tag exists locally or remotely.
 
-**Solution**: 
+**Solution**:
+
 ```powershell
 # Delete local tag
 git tag -d vX.X.X

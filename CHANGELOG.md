@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.22.1 - 2025-11-23
+
+- **Footer Presentation Refinements**: Improved layout and visual consistency of mega footer
+  - Enhanced newsletter signup form with connected input and button styling
+  - Improved responsive grid layout for better spacing and alignment
+  - Added session-aware account links with admin dashboard access for authenticated admin users
+  - Refined separator presentation and container styling for better visual hierarchy
+
 ## 0.22.0 - 2025-11-23
 
 - **Mega Footer with Social Links & Newsletter**: Admin-managed footer with social media links, newsletter signup, and dynamic category navigation
