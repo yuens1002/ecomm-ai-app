@@ -106,33 +106,36 @@ export default function ProductFormClient({
     }
   }, []);
 
-  const fetchProduct = useCallback(async (id: string) => {
-    try {
-      const response = await fetch(`/api/admin/products/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch product");
-      const data = await response.json();
-      const p = data.product;
-      setOriginalName(p.name);
-      form.reset({
-        name: p.name,
-        slug: p.slug,
-        description: p.description || "",
-        imageUrl: p.images?.[0]?.url || "",
-        isOrganic: p.isOrganic,
-        isFeatured: p.isFeatured,
-        categoryIds: p.categoryIds || [],
-      });
-    } catch (error) {
-      console.error("Error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load product",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [form, toast]);
+  const fetchProduct = useCallback(
+    async (id: string) => {
+      try {
+        const response = await fetch(`/api/admin/products/${id}`);
+        if (!response.ok) throw new Error("Failed to fetch product");
+        const data = await response.json();
+        const p = data.product;
+        setOriginalName(p.name);
+        form.reset({
+          name: p.name,
+          slug: p.slug,
+          description: p.description || "",
+          imageUrl: p.images?.[0]?.url || "",
+          isOrganic: p.isOrganic,
+          isFeatured: p.isFeatured,
+          categoryIds: p.categoryIds || [],
+        });
+      } catch (error) {
+        console.error("Error:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load product",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [form, toast]
+  );
 
   useEffect(() => {
     fetchCategories();

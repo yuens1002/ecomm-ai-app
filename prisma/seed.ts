@@ -145,7 +145,10 @@ async function main() {
     "Hawaii",
   ];
 
-  const originCategories: Record<string, { id: string; name: string; slug: string }> = {};
+  const originCategories: Record<
+    string,
+    { id: string; name: string; slug: string }
+  > = {};
   for (let i = 0; i < origins.length; i++) {
     const origin = origins[i];
     const slug = origin.toLowerCase().replace(/\s+/g, "-");

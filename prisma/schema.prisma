@@ -351,6 +351,33 @@ model UserActivity {
   @@index([activityType, createdAt])
 }
 
+// --- Footer & Site Management ---
+
+model SocialLink {
+  id        String   @id @default(cuid())
+  platform  String   // e.g., "facebook", "twitter", "instagram", "linkedin"
+  url       String   // Full URL to the social media profile
+  icon      String   // Icon identifier (e.g., "facebook", "twitter-x", "instagram")
+  order     Int      @default(0) // Display order in footer
+  isActive  Boolean  @default(true) // Toggle visibility without deletion
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([order])
+  @@index([isActive])
+}
+
+model NewsletterSubscriber {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  subscribedAt DateTime @default(now())
+  isActive     Boolean  @default(true) // Allow unsubscribe without deletion
+  
+  @@index([email])
+  @@index([isActive])
+}
+
 // --- Enums ---
 
 enum ActivityType {

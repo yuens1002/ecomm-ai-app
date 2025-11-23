@@ -16,9 +16,7 @@ interface VoiceBaristaProps {
   onOpenAiModal?: () => void;
 }
 
-export default function VoiceBarista({
-  userEmail,
-}: VoiceBaristaProps) {
+export default function VoiceBarista({ userEmail }: VoiceBaristaProps) {
   const [messages, setMessages] = useState<
     Array<{ role: "user" | "assistant"; text: string; error?: boolean }>
   >([]);
