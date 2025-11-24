@@ -21,6 +21,7 @@ export interface CartItem {
 // --- Cart State Interface ---
 interface CartState {
   items: CartItem[];
+  isCartOpen: boolean;
   // Actions
   addItem: (item: Omit<CartItem, "quantity"> & { quantity?: number }) => void;
   removeItem: (
@@ -35,6 +36,7 @@ interface CartState {
     quantity: number
   ) => void;
   clearCart: () => void;
+  setCartOpen: (isOpen: boolean) => void;
   // Computed
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -45,6 +47,9 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      isCartOpen: false,
+
+      setCartOpen: (isOpen) => set({ isCartOpen: isOpen }),
 
       addItem: (newItem) => {
         set((state) => {

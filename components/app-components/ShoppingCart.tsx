@@ -52,7 +52,6 @@ export function ShoppingCart() {
   const [cartItemCount, setCartItemCount] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
 
   // Delivery preferences
   const [deliveryMethod, setDeliveryMethod] = useState<"DELIVERY" | "PICKUP">(
@@ -70,6 +69,8 @@ export function ShoppingCart() {
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
   const clearCart = useCartStore((state) => state.clearCart);
+  const isOpen = useCartStore((state) => state.isCartOpen);
+  const setIsOpen = useCartStore((state) => state.setCartOpen);
 
   // Hydration fix: only read cart count on client side after mount
   useEffect(() => {
@@ -90,7 +91,7 @@ export function ShoppingCart() {
     const handleOpenCart = () => setIsOpen(true);
     window.addEventListener("openCart", handleOpenCart);
     return () => window.removeEventListener("openCart", handleOpenCart);
-  }, []);
+  }, [setIsOpen]);
 
   // Reset checkout processing state when cart is closed
   useEffect(() => {
@@ -333,7 +334,7 @@ export function ShoppingCart() {
                   {/* Product Image */}
                   <Link
                     href={`/${item.categorySlug || "blends"}/${item.productSlug}`}
-                    className="flex-shrink-0"
+                    className="shrink-0"
                   >
                     <div className="relative w-20 h-20 rounded-md overflow-hidden bg-white dark:bg-gray-800">
                       {item.imageUrl ? (

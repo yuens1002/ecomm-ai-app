@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.23.1 - 2025-11-24
+
+- **Cart Button Fix**: Fixed cart button in chat dialog opening cart drawer instead of 404 error
+  - Added cart open state to global cart store
+  - Shopping cart now opens programmatically from anywhere in app
+  - Fixed ESLint warnings for type safety
+
 ## 0.23.0 - 2025-11-24
 
 - **Chat Barista Animation Enhancements**: Smooth, polished animations for natural conversation flow

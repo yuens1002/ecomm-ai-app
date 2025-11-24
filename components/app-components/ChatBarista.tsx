@@ -62,7 +62,7 @@ export default function ChatBarista({
   const inputRef = useRef<HTMLInputElement>(null);
   const messageCountRef = useRef(0);
   const messageIdCounter = useRef(0);
-  const { addItem } = useCartStore();
+  const { addItem, setCartOpen } = useCartStore();
   const { toast } = useToast();
 
   // Auto-scroll to bottom when messages change
@@ -740,7 +740,7 @@ export default function ChatBarista({
       // Get first variant and ONE_TIME purchase option
       const variant = product.variants[0];
       const oneTimePurchase = variant?.purchaseOptions?.find(
-        (option: any) => option.type === "ONE_TIME"
+        (option) => option.type === "ONE_TIME"
       );
 
       if (variant && oneTimePurchase) {
@@ -1164,7 +1164,7 @@ export default function ChatBarista({
                     size="icon"
                     onClick={() => {
                       handleEndConversation();
-                      window.location.href = "/checkout";
+                      setCartOpen(true);
                     }}
                     title="View Cart"
                   >
