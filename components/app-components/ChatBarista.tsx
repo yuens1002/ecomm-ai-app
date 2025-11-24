@@ -31,13 +31,12 @@ interface ProductRecommendation {
   roastLevel: string;
   variants: Array<{
     id: string;
-    size: string;
-    price: number;
-  }>;
-  purchaseOptions: Array<{
-    id: string;
-    type: string;
-    price: number;
+    name: string;
+    purchaseOptions: Array<{
+      id: string;
+      type: string;
+      priceInCents: number;
+    }>;
   }>;
 }
 
@@ -47,9 +46,9 @@ export default function ChatBarista({
 }: ChatBaristaProps) {
   const [isActive, setIsActive] = useState(false);
   const [messages, setMessages] = useState<
-    Array<{ 
-      role: "user" | "assistant"; 
-      text: string; 
+    Array<{
+      role: "user" | "assistant";
+      text: string;
       error?: boolean;
       product?: ProductRecommendation;
       id?: string;
@@ -93,7 +92,7 @@ export default function ChatBarista({
     setMessages([
       {
         role: "assistant",
-        text: userName 
+        text: userName
           ? `Hey ${userName}! Great to see you again! ☕ What kind of coffee are you in the mood for today?`
           : "Hey there! ☕ I'm here to help you find your perfect cup. What kind of coffee sounds good to you?",
         id: `msg-${messageIdCounter.current++}`,
@@ -118,7 +117,14 @@ export default function ChatBarista({
     // Add user message only if not retrying
     const newMessages = isRetry
       ? messages
-      : [...messages, { role: "user" as const, text: messageToSend, id: `msg-${messageIdCounter.current++}` }];
+      : [
+          ...messages,
+          {
+            role: "user" as const,
+            text: messageToSend,
+            id: `msg-${messageIdCounter.current++}`,
+          },
+        ];
 
     if (!isRetry) {
       setMessages(newMessages);
@@ -161,7 +167,8 @@ export default function ChatBarista({
         }
 
         data = await response.json();
-        hasError = data.error === "rate_limit" || data.error === "service_unavailable";
+        hasError =
+          data.error === "rate_limit" || data.error === "service_unavailable";
       } else {
         // Guest users: provide simple responses and recommendations
         data = await handleGuestChat(messageToSend, conversationHistory);
@@ -184,31 +191,60 @@ export default function ChatBarista({
 
         // Extract taste preferences - user's actual words only
         const tasteKeywords = [
-          "fruity", "fruit", "citrus", "berry", "floral", "bright",
-          "chocolate", "chocolatey", "nutty", "caramel", 
-          "sweet", "bold", "smooth", "rich", "earthy", "spicy", "vanilla",
-          "strong", "mild", "mellow", "intense", "balanced", "complex",
-          "soft", "delicate", "robust", "full-bodied", "dark", "medium", "light"
+          "fruity",
+          "fruit",
+          "citrus",
+          "berry",
+          "floral",
+          "bright",
+          "chocolate",
+          "chocolatey",
+          "nutty",
+          "caramel",
+          "sweet",
+          "bold",
+          "smooth",
+          "rich",
+          "earthy",
+          "spicy",
+          "vanilla",
+          "strong",
+          "mild",
+          "mellow",
+          "intense",
+          "balanced",
+          "complex",
+          "soft",
+          "delicate",
+          "robust",
+          "full-bodied",
+          "dark",
+          "medium",
+          "light",
         ];
-        
+
         // Find ALL matching keywords and join them
         const matchedTastes = tasteKeywords.filter((keyword) =>
           userMessages.includes(keyword)
         );
-        
+
         // Only return taste if explicitly mentioned
-        const taste = matchedTastes.length > 0 
-          ? matchedTastes.join(" ") 
-          : null;
+        const taste = matchedTastes.length > 0 ? matchedTastes.join(" ") : null;
 
         // Extract brew method - must be explicitly mentioned
         const brewMethods = [
-          "espresso", "pour over", "pour-over", "french press", "drip", 
-          "cold brew", "aeropress", "moka pot", "chemex"
+          "espresso",
+          "pour over",
+          "pour-over",
+          "french press",
+          "drip",
+          "cold brew",
+          "aeropress",
+          "moka pot",
+          "chemex",
         ];
-        const brewMethod = brewMethods.find((method) =>
-          userMessages.includes(method)
-        ) || null;
+        const brewMethod =
+          brewMethods.find((method) => userMessages.includes(method)) || null;
 
         return { taste, brewMethod };
       };
@@ -216,13 +252,13 @@ export default function ChatBarista({
       // Check if we should fetch a recommendation
       // Only recommend when BOTH taste and brew method are explicitly mentioned
       const { taste, brewMethod } = extractPreferences();
-      const shouldFetchRecommendation = 
+      const shouldFetchRecommendation =
         (messageText.toLowerCase().includes("recommend") ||
-        messageText.toLowerCase().includes("perfect") ||
-        messageText.toLowerCase().includes("excellent") ||
-        messageText.toLowerCase().includes("check this out") ||
-        messageText.toLowerCase().includes("just the thing")) &&
-        taste !== null && 
+          messageText.toLowerCase().includes("perfect") ||
+          messageText.toLowerCase().includes("excellent") ||
+          messageText.toLowerCase().includes("check this out") ||
+          messageText.toLowerCase().includes("just the thing")) &&
+        taste !== null &&
         brewMethod !== null;
 
       let productRecommendation: ProductRecommendation | undefined;
@@ -241,7 +277,7 @@ export default function ChatBarista({
 
           if (recommendResponse.ok) {
             const recommendData = await recommendResponse.json();
-            
+
             if (recommendData.productData) {
               const product = recommendData.productData;
               productRecommendation = {
@@ -328,207 +364,368 @@ export default function ChatBarista({
     }
   };
 
-  const handleGuestChat = async (message: string, history: Array<{ role: string; text: string }>) => {
+  const handleGuestChat = async (
+    message: string,
+    history: Array<{ role: string; text: string }>
+  ) => {
     const lowerMessage = message.toLowerCase();
-    
+
     // Only look at USER messages for context
     const userMessages = history
-      .filter(m => m.role === "user")
-      .map(m => m.text.toLowerCase())
+      .filter((m) => m.role === "user")
+      .map((m) => m.text.toLowerCase())
       .join(" ");
-    
+
     // Define comprehensive keywords
     const tasteKeywords = [
-      "chocolate", "chocolatey", "cocoa", "nutty", "nut", "almond",
-      "fruity", "fruit", "floral", "citrus", "lemon", "orange",
-      "caramel", "toffee", "sweet", "sugar", "honey",
-      "bright", "bold", "smooth", "creamy",
-      "rich", "full", "heavy", "earthy", "spicy", "pepper",
-      "berry", "berries", "blueberry", "strawberry",
-      "vanilla", "light", "delicate", "mild", "mellow",
-      "strong", "intense", "robust", "complex",
-      "soft", "gentle", "balanced", "medium", "dark"
+      "chocolate",
+      "chocolatey",
+      "cocoa",
+      "nutty",
+      "nut",
+      "almond",
+      "fruity",
+      "fruit",
+      "floral",
+      "citrus",
+      "lemon",
+      "orange",
+      "caramel",
+      "toffee",
+      "sweet",
+      "sugar",
+      "honey",
+      "bright",
+      "bold",
+      "smooth",
+      "creamy",
+      "rich",
+      "full",
+      "heavy",
+      "earthy",
+      "spicy",
+      "pepper",
+      "berry",
+      "berries",
+      "blueberry",
+      "strawberry",
+      "vanilla",
+      "light",
+      "delicate",
+      "mild",
+      "mellow",
+      "strong",
+      "intense",
+      "robust",
+      "complex",
+      "soft",
+      "gentle",
+      "balanced",
+      "medium",
+      "dark",
     ];
-    
+
     const brewKeywords = [
-      "espresso", "shot", "espresso machine",
-      "pour over", "pour-over", "pourover", "v60", "chemex",
-      "french press", "press pot", "plunger",
-      "drip", "drip coffee", "coffee maker", "automatic",
-      "cold brew", "iced", "cold",
-      "aeropress", "aero press",
-      "moka pot", "stovetop", "percolator"
+      "espresso",
+      "shot",
+      "espresso machine",
+      "pour over",
+      "pour-over",
+      "pourover",
+      "v60",
+      "chemex",
+      "french press",
+      "press pot",
+      "plunger",
+      "drip",
+      "drip coffee",
+      "coffee maker",
+      "automatic",
+      "cold brew",
+      "iced",
+      "cold",
+      "aeropress",
+      "aero press",
+      "moka pot",
+      "stovetop",
+      "percolator",
     ];
-    
+
     const offtopicKeywords = [
-      "weather", "time", "date", "news", "sports", "politics",
-      "help", "support", "account", "password", "login"
+      "weather",
+      "time",
+      "date",
+      "news",
+      "sports",
+      "politics",
+      "help",
+      "support",
+      "account",
+      "password",
+      "login",
     ];
-    
+
     const cartCheckoutKeywords = [
-      "checkout", "check out", "cart", "shopping cart", "buy", "purchase", "order"
+      "checkout",
+      "check out",
+      "cart",
+      "shopping cart",
+      "buy",
+      "purchase",
+      "order",
     ];
-    
+
     const moreOptionsKeywords = [
-      "other", "else", "another", "different", "more", "alternatives", "options", "suggestions"
+      "other",
+      "else",
+      "another",
+      "different",
+      "more",
+      "alternatives",
+      "options",
+      "suggestions",
     ];
-    
+
     // Check for informational questions - MUST be checked FIRST
-    const priceQuestions = ["cheap", "price", "cost", "expensive", "affordable", "budget"];
-    const brewingQuestions = ["what's", "what is", "what are", "how do", "how to", "explain", "tell me about"];
-    
-    const askingAboutPrice = priceQuestions.some(q => lowerMessage.includes(q));
-    const askingAboutBrewing = brewingQuestions.some(q => lowerMessage.includes(q)) && 
-                               (lowerMessage.includes("pour over") || 
-                                lowerMessage.includes("espresso") || 
-                                lowerMessage.includes("french press") || 
-                                lowerMessage.includes("drip") ||
-                                lowerMessage.includes("brew"));
-    
+    const priceQuestions = [
+      "cheap",
+      "price",
+      "cost",
+      "expensive",
+      "affordable",
+      "budget",
+    ];
+    const brewingQuestions = [
+      "what's",
+      "what is",
+      "what are",
+      "how do",
+      "how to",
+      "explain",
+      "tell me about",
+    ];
+
+    const askingAboutPrice = priceQuestions.some((q) =>
+      lowerMessage.includes(q)
+    );
+    const askingAboutBrewing =
+      brewingQuestions.some((q) => lowerMessage.includes(q)) &&
+      (lowerMessage.includes("pour over") ||
+        lowerMessage.includes("espresso") ||
+        lowerMessage.includes("french press") ||
+        lowerMessage.includes("drip") ||
+        lowerMessage.includes("brew"));
+
     // Check for product names being mentioned (don't confuse with preferences)
     const productNames = [
-      "brazilian", "colombian", "ethiopian", "kenyan", "guatemalan",
-      "santos", "supremo", "yirgacheffe", "sidamo"
+      "brazilian",
+      "colombian",
+      "ethiopian",
+      "kenyan",
+      "guatemalan",
+      "santos",
+      "supremo",
+      "yirgacheffe",
+      "sidamo",
     ];
-    const mentionsProduct = productNames.some(name => lowerMessage.includes(name));
-    
+    const mentionsProduct = productNames.some((name) =>
+      lowerMessage.includes(name)
+    );
+
     // FIRST: Check educational/informational questions (before detection logic)
-    
+
     // Handle price/budget questions
     if (askingAboutPrice) {
       return {
-        message: "Great question! Our bags range from $18-$28, with most around $20-22. Quality stuff without breaking the bank! 💰 So, what flavors get you excited - fruity, chocolatey, nutty, or something bold?",
+        message:
+          "Great question! Our bags range from $18-$28, with most around $20-22. Quality stuff without breaking the bank! 💰 So, what flavors get you excited - fruity, chocolatey, nutty, or something bold?",
       };
     }
-    
+
     // Track if bot just asked about brewing method (to avoid counting answer as preference immediately)
-    const lastBotMessage = history.length > 0 ? history[history.length - 1] : null;
-    const justAskedAboutBrewing = lastBotMessage?.role === "assistant" && 
+    const lastBotMessage =
+      history.length > 0 ? history[history.length - 1] : null;
+    const justAskedAboutBrewing =
+      lastBotMessage?.role === "assistant" &&
       (lastBotMessage.text.includes("Is that your weapon of choice?") ||
-       lastBotMessage.text.includes("Is that what you're working with?") ||
-       lastBotMessage.text.includes("Sound like your style?") ||
-       lastBotMessage.text.includes("Is that your daily driver?") ||
-       lastBotMessage.text.includes("Which would you like to know more about?"));
-    
+        lastBotMessage.text.includes("Is that what you're working with?") ||
+        lastBotMessage.text.includes("Sound like your style?") ||
+        lastBotMessage.text.includes("Is that your daily driver?") ||
+        lastBotMessage.text.includes(
+          "Which would you like to know more about?"
+        ));
+
     // Check if asking follow-up brewing questions (how about, what about, etc.)
-    const askingFollowUpBrewing = (lowerMessage.includes("how about") || 
-                                    lowerMessage.includes("what about") || 
-                                    lowerMessage.includes("and")) && 
-                                   brewKeywords.some(kw => lowerMessage.includes(kw));
-    
+    const askingFollowUpBrewing =
+      (lowerMessage.includes("how about") ||
+        lowerMessage.includes("what about") ||
+        lowerMessage.includes("and")) &&
+      brewKeywords.some((kw) => lowerMessage.includes(kw));
+
     // Handle brewing method questions - answer WITHOUT counting as preference
     if (askingAboutBrewing || askingFollowUpBrewing) {
       if (lowerMessage.includes("pour over")) {
         return {
-          message: "Ah, pour over! It's like art - you pour hot water in a slow spiral over the grounds. Makes a super clean, bright cup where you can really taste the coffee's personality. ✨ Sound like your style?",
+          message:
+            "Ah, pour over! It's like art - you pour hot water in a slow spiral over the grounds. Makes a super clean, bright cup where you can really taste the coffee's personality. ✨ Sound like your style?",
         };
       }
       if (lowerMessage.includes("french press")) {
         return {
-          message: "French press is classic! You steep the grounds, then press down a plunger. Gives you a rich, full-bodied cup with all those lovely oils. Perfect for bold flavors! 💪 Is that what you're working with?",
+          message:
+            "French press is classic! You steep the grounds, then press down a plunger. Gives you a rich, full-bodied cup with all those lovely oils. Perfect for bold flavors! 💪 Is that what you're working with?",
         };
       }
       if (lowerMessage.includes("espresso")) {
         return {
-          message: "Espresso! Now we're talking! High pressure forces hot water through fine grounds for that intense, concentrated shot. Bold and beautiful! ☕💥 Is that your weapon of choice?",
+          message:
+            "Espresso! Now we're talking! High pressure forces hot water through fine grounds for that intense, concentrated shot. Bold and beautiful! ☕💥 Is that your weapon of choice?",
         };
       }
       if (lowerMessage.includes("drip")) {
         return {
-          message: "Good ol' drip! Your trusty automatic machine does the work - steady drip, smooth balanced cup. Can't beat the convenience! ☕ Is that your daily driver?",
+          message:
+            "Good ol' drip! Your trusty automatic machine does the work - steady drip, smooth balanced cup. Can't beat the convenience! ☕ Is that your daily driver?",
         };
       }
       // General brewing question
       return {
-        message: "I can explain any brewing method! Pour over makes bright, clean coffee. French press is rich and full-bodied. Espresso is intense and concentrated. Drip is smooth and balanced. Which would you like to know more about?",
+        message:
+          "I can explain any brewing method! Pour over makes bright, clean coffee. French press is rich and full-bodied. Espresso is intense and concentrated. Drip is smooth and balanced. Which would you like to know more about?",
       };
     }
-    
+
     // Handle cart/checkout requests
-    const wantsCheckout = cartCheckoutKeywords.some(keyword => lowerMessage.includes(keyword));
+    const wantsCheckout = cartCheckoutKeywords.some((keyword) =>
+      lowerMessage.includes(keyword)
+    );
     if (wantsCheckout) {
       return {
-        message: "Ready to check out? Just click the shopping cart button below (next to the send button) to view your cart and complete your purchase! 🛒 Need help finding something else?",
+        message:
+          "Ready to check out? Just click the shopping cart button below (next to the send button) to view your cart and complete your purchase! 🛒 Need help finding something else?",
       };
     }
-    
+
     // Off-topic redirect
-    const isOffTopic = offtopicKeywords.some(keyword => lowerMessage.includes(keyword));
+    const isOffTopic = offtopicKeywords.some((keyword) =>
+      lowerMessage.includes(keyword)
+    );
     if (isOffTopic) {
-      if (lowerMessage.includes("order") || lowerMessage.includes("track") || lowerMessage.includes("shipping") || lowerMessage.includes("account")) {
+      if (
+        lowerMessage.includes("order") ||
+        lowerMessage.includes("track") ||
+        lowerMessage.includes("shipping") ||
+        lowerMessage.includes("account")
+      ) {
         return {
-          message: "For order tracking and account questions, please sign in to your account. I'm here to help you discover the perfect coffee! What kind of flavors do you enjoy?",
+          message:
+            "For order tracking and account questions, please sign in to your account. I'm here to help you discover the perfect coffee! What kind of flavors do you enjoy?",
         };
       }
       return {
-        message: "I specialize in coffee recommendations! Tell me about your taste preferences and how you brew, and I'll find the perfect match for you.",
+        message:
+          "I specialize in coffee recommendations! Tell me about your taste preferences and how you brew, and I'll find the perfect match for you.",
       };
     }
-    
+
     // THEN: Detect preferences (excluding questions)
-    const hasTaste = tasteKeywords.some(keyword => 
-      userMessages.includes(keyword) || lowerMessage.includes(keyword)
+    const hasTaste = tasteKeywords.some(
+      (keyword) =>
+        userMessages.includes(keyword) || lowerMessage.includes(keyword)
     );
-    
+
     // Only count brew method if NOT just asked about it (unless confirming) AND not asking follow-up
-    const confirmationWords = ["yes", "yeah", "yep", "sure", "that's right", "correct", "that's it", "exactly", "yup", "i'll go with", "i'll use", "i use"];
-    const isConfirming = confirmationWords.some(word => lowerMessage.includes(word));
-    
+    const confirmationWords = [
+      "yes",
+      "yeah",
+      "yep",
+      "sure",
+      "that's right",
+      "correct",
+      "that's it",
+      "exactly",
+      "yup",
+      "i'll go with",
+      "i'll use",
+      "i use",
+    ];
+    const isConfirming = confirmationWords.some((word) =>
+      lowerMessage.includes(word)
+    );
+
     // Count brew method from previous messages, or current if confirming or not just asked
-    const hasBrewFromHistory = brewKeywords.some(keyword => userMessages.includes(keyword));
-    const hasBrewInCurrent = brewKeywords.some(keyword => lowerMessage.includes(keyword));
-    const hasBrew = hasBrewFromHistory || (hasBrewInCurrent && !justAskedAboutBrewing && !askingFollowUpBrewing) || (hasBrewInCurrent && isConfirming);
-    
+    const hasBrewFromHistory = brewKeywords.some((keyword) =>
+      userMessages.includes(keyword)
+    );
+    const hasBrewInCurrent = brewKeywords.some((keyword) =>
+      lowerMessage.includes(keyword)
+    );
+    const hasBrew =
+      hasBrewFromHistory ||
+      (hasBrewInCurrent && !justAskedAboutBrewing && !askingFollowUpBrewing) ||
+      (hasBrewInCurrent && isConfirming);
+
     // Check if user wants more options after receiving a recommendation
-    const wantsMoreOptions = moreOptionsKeywords.some(keyword => lowerMessage.includes(keyword));
-    const hasReceivedRecommendation = history.some(m => m.role === "assistant" && m.text.toLowerCase().includes("check this out"));
-    
+    const wantsMoreOptions = moreOptionsKeywords.some((keyword) =>
+      lowerMessage.includes(keyword)
+    );
+    const hasReceivedRecommendation = history.some(
+      (m) =>
+        m.role === "assistant" &&
+        m.text.toLowerCase().includes("check this out")
+    );
+
     if (wantsMoreOptions && hasReceivedRecommendation && hasTaste && hasBrew) {
       return {
         message: "Let me find you another great option! 🎯 Check this out:",
       };
     }
-    
+
     // Handle product name confusion
     if (mentionsProduct && !hasBrew && history.length > 0) {
       return {
-        message: "I noticed you mentioned a coffee name! I need to know how you brew to make the best recommendation. Do you use espresso, pour over, French press, or drip?",
+        message:
+          "I noticed you mentioned a coffee name! I need to know how you brew to make the best recommendation. Do you use espresso, pour over, French press, or drip?",
       };
     }
-    
+
     // Conversation flow
-    
+
     // 1. Have both - make recommendation
     if (hasTaste && hasBrew) {
       return {
         message: "Ooh, I know just the thing for you! 🎯 Check this out:",
       };
     }
-    
+
     // 2. Have taste, need brew
     if (hasTaste && !hasBrew) {
       return {
-        message: "Love it! And how do you usually make your coffee? Espresso machine, pour over, French press, or just a regular drip?",
+        message:
+          "Love it! And how do you usually make your coffee? Espresso machine, pour over, French press, or just a regular drip?",
       };
     }
-    
+
     // 3. Have brew, need taste
     if (hasBrew && !hasTaste) {
       return {
-        message: "Nice setup! Now, what kind of flavors make you happy? Fruity and bright, rich and chocolatey, smooth and nutty, or bold and earthy?",
+        message:
+          "Nice setup! Now, what kind of flavors make you happy? Fruity and bright, rich and chocolatey, smooth and nutty, or bold and earthy?",
       };
     }
-    
+
     // 4. Multiple unclear responses - be more direct
     if (history.length >= 3) {
       return {
-        message: "No worries! Let me make this easy - just tell me two things: (1) What flavors you dig - fruity? chocolatey? nutty? And (2) How you brew it - espresso, drip, pour over? 😊",
+        message:
+          "No worries! Let me make this easy - just tell me two things: (1) What flavors you dig - fruity? chocolatey? nutty? And (2) How you brew it - espresso, drip, pour over? 😊",
       };
     }
-    
+
     // 5. First unclear response - provide clear examples
     return {
-      message: "I'm here to find you something amazing! What kind of flavors do you usually go for? Fruity and bright, chocolatey and rich, smooth and nutty, or bold and earthy?",
+      message:
+        "I'm here to find you something amazing! What kind of flavors do you usually go for? Fruity and bright, chocolatey and rich, smooth and nutty, or bold and earthy?",
     };
   };
 
@@ -604,7 +801,7 @@ export default function ChatBarista({
               hsl(${hue3}, 70%, 60%) 100%)`,
           }}
         />
-        
+
         {/* Floating orbs */}
         <div className="absolute inset-0 overflow-hidden">
           <div
@@ -646,16 +843,25 @@ export default function ChatBarista({
                 <>
                   Your perfect ☕ awaits
                   <span className="inline-block animate-dots">.</span>
-                  <span className="inline-block animate-dots" style={{ animationDelay: "0.2s" }}>.</span>
-                  <span className="inline-block animate-dots" style={{ animationDelay: "0.4s" }}>.</span>
+                  <span
+                    className="inline-block animate-dots"
+                    style={{ animationDelay: "0.2s" }}
+                  >
+                    .
+                  </span>
+                  <span
+                    className="inline-block animate-dots"
+                    style={{ animationDelay: "0.4s" }}
+                  >
+                    .
+                  </span>
                 </>
               )}
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground drop-shadow-sm">
-              {userName 
+              {userName
                 ? "Chat with your personal coffee barista. Get recommendations, reorder favorites, or discover something new."
-                : "Chat with our AI barista to find your perfect roast. Get personalized recommendations based on your taste preferences."
-              }
+                : "Chat with our AI barista to find your perfect roast. Get personalized recommendations based on your taste preferences."}
             </p>
             <div className="flex justify-center">
               <Button
@@ -673,7 +879,8 @@ export default function ChatBarista({
         {/* Add keyframes for animations */}
         <style jsx>{`
           @keyframes float {
-            0%, 100% {
+            0%,
+            100% {
               transform: translateY(0) translateX(0);
             }
             33% {
@@ -684,7 +891,8 @@ export default function ChatBarista({
             }
           }
           @keyframes dots {
-            0%, 20% {
+            0%,
+            20% {
               opacity: 0;
               transform: translateY(0);
             }
@@ -725,8 +933,12 @@ export default function ChatBarista({
                     <MessageCircle className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold">Coffee Barista Chat</h2>
-                    <p className="text-xs text-muted-foreground">Powered by AI ✨</p>
+                    <h2 className="text-lg font-semibold">
+                      Coffee Barista Chat
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      Powered by AI ✨
+                    </p>
                   </div>
                 </div>
                 <Button
@@ -758,15 +970,16 @@ export default function ChatBarista({
 
                   // Only animate messages that are new (index >= previous count)
                   const isNewMessage = index >= messageCountRef.current;
-                  
+
                   // Calculate staggered delay: AI messages wait for user messages
-                  const animationDelay = isNewMessage ? (message.role === "assistant" ? 0.4 : 0.05) : 0;
+                  const animationDelay = isNewMessage
+                    ? message.role === "assistant"
+                      ? 0.4
+                      : 0.05
+                    : 0;
 
                   return (
-                    <div 
-                      key={message.id || index} 
-                      className="space-y-2"
-                    >
+                    <div key={message.id || index} className="space-y-2">
                       <div
                         className={`flex items-start gap-2 ${
                           message.role === "user"
@@ -775,20 +988,24 @@ export default function ChatBarista({
                         }`}
                       >
                         <motion.div
-                          initial={isNewMessage ? {
-                            opacity: 0,
-                            x: message.role === "user" ? 30 : -30,
-                            scale: 0.95
-                          } : false}
+                          initial={
+                            isNewMessage
+                              ? {
+                                  opacity: 0,
+                                  x: message.role === "user" ? 30 : -30,
+                                  scale: 0.95,
+                                }
+                              : false
+                          }
                           animate={{
                             opacity: 1,
                             x: 0,
-                            scale: 1
+                            scale: 1,
                           }}
                           transition={{
                             duration: 0.5,
                             ease: [0.25, 0.1, 0.25, 1],
-                            delay: animationDelay
+                            delay: animationDelay,
                           }}
                           className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm ${
                             message.role === "user"
@@ -816,20 +1033,24 @@ export default function ChatBarista({
                       {/* Product Recommendation Card */}
                       {message.product && (
                         <motion.div
-                          initial={isNewMessage ? {
-                            opacity: 0,
-                            y: 20,
-                            scale: 0.95
-                          } : false}
+                          initial={
+                            isNewMessage
+                              ? {
+                                  opacity: 0,
+                                  y: 20,
+                                  scale: 0.95,
+                                }
+                              : false
+                          }
                           animate={{
                             opacity: 1,
                             y: 0,
-                            scale: 1
+                            scale: 1,
                           }}
                           transition={{
                             duration: 0.6,
                             ease: [0.25, 0.1, 0.25, 1],
-                            delay: animationDelay + 0.3
+                            delay: animationDelay + 0.3,
                           }}
                           className="flex justify-start"
                         >
@@ -868,7 +1089,12 @@ export default function ChatBarista({
                                         {message.product.roastLevel} Roast
                                       </span>
                                       <span className="text-sm font-semibold">
-                                        ${(message.product.variants[0]?.purchaseOptions?.[0]?.priceInCents / 100).toFixed(2)}
+                                        $
+                                        {(
+                                          message.product.variants[0]
+                                            ?.purchaseOptions?.[0]
+                                            ?.priceInCents / 100
+                                        ).toFixed(2)}
                                       </span>
                                     </div>
                                   </div>
@@ -927,10 +1153,7 @@ export default function ChatBarista({
                     className="flex-1"
                     autoFocus
                   />
-                  <Button
-                    size="icon"
-                    onClick={() => handleSendMessage()}
-                  >
+                  <Button size="icon" onClick={() => handleSendMessage()}>
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
