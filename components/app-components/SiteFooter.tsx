@@ -62,8 +62,13 @@ async function getFooterContactSettings() {
   const settings = await prisma.siteSettings.findMany({
     where: {
       key: {
-        in: ['footer_show_hours', 'footer_hours_text', 'footer_show_email', 'footer_email']
-      }
+        in: [
+          "footer_show_hours",
+          "footer_hours_text",
+          "footer_show_email",
+          "footer_email",
+        ],
+      },
     },
     select: {
       key: true,
@@ -71,16 +76,19 @@ async function getFooterContactSettings() {
     },
   });
 
-  const settingsMap = settings.reduce((acc, setting) => {
-    acc[setting.key] = setting.value;
-    return acc;
-  }, {} as Record<string, string>);
+  const settingsMap = settings.reduce(
+    (acc, setting) => {
+      acc[setting.key] = setting.value;
+      return acc;
+    },
+    {} as Record<string, string>
+  );
 
   return {
-    showHours: settingsMap['footer_show_hours'] === 'true',
-    hoursText: settingsMap['footer_hours_text'] || 'Mon-Fri 7am-7pm',
-    showEmail: settingsMap['footer_show_email'] === 'true',
-    email: settingsMap['footer_email'] || 'hello@artisan-roast.com',
+    showHours: settingsMap["footer_show_hours"] === "true",
+    hoursText: settingsMap["footer_hours_text"] || "Mon-Fri 7am-7pm",
+    showEmail: settingsMap["footer_show_email"] === "true",
+    email: settingsMap["footer_email"] || "hello@artisan-roast.com",
   };
 }
 

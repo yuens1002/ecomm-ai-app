@@ -49,8 +49,10 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check for duplicate platforms in the request
-    const platforms = links.map(l => l.platform.toLowerCase());
-    const duplicates = platforms.filter((item, index) => platforms.indexOf(item) !== index);
+    const platforms = links.map((l) => l.platform.toLowerCase());
+    const duplicates = platforms.filter(
+      (item, index) => platforms.indexOf(item) !== index
+    );
     if (duplicates.length > 0) {
       return NextResponse.json(
         { error: `Duplicate platform name: ${duplicates[0]}` },
@@ -64,10 +66,10 @@ export async function PUT(request: NextRequest) {
       const existing = await prisma.socialLink.findFirst({
         where: {
           platform: link.platform,
-          NOT: { id: link.id.startsWith("temp-") ? undefined : link.id }
-        }
+          NOT: { id: link.id.startsWith("temp-") ? undefined : link.id },
+        },
       });
-      
+
       if (existing) {
         return NextResponse.json(
           { error: `Platform "${link.platform}" already exists` },
@@ -82,7 +84,7 @@ export async function PUT(request: NextRequest) {
 
     // Perform operations
     const operations = [];
-      
+
     // Create new links
     for (const link of newLinks) {
       operations.push(
@@ -99,7 +101,7 @@ export async function PUT(request: NextRequest) {
         })
       );
     }
-      
+
     // Update existing links
     for (const link of updateLinks) {
       operations.push(
@@ -123,15 +125,15 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ message: "Social links updated successfully" });
   } catch (error: any) {
     console.error("Error updating social links:", error);
-    
+
     // Handle unique constraint violation
-    if (error.code === 'P2002') {
+    if (error.code === "P2002") {
       return NextResponse.json(
         { error: "A social link with this platform name already exists" },
         { status: 400 }
       );
     }
-    
+
     return NextResponse.json(
       { error: "Failed to update social links" },
       { status: 500 }

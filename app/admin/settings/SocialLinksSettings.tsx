@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -54,6 +48,7 @@ import {
   FieldTitle,
 } from "@/components/ui/field";
 import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
+import FileUpload from "@/components/app-components/FileUpload";
 
 interface SocialLink {
   id: string;
@@ -86,14 +81,18 @@ const MAX_LINKS = 5;
 export default function SocialLinksSettings() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [savingLinks, setSavingLinks] = useState<Record<string, boolean>>({});
   const [links, setLinks] = useState<SocialLink[]>([]);
   const [originalLinks, setOriginalLinks] = useState<SocialLink[]>([]);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  
+
   // Separate tracking for system vs custom platform names and URLs
-  const [systemPlatforms, setSystemPlatforms] = useState<Record<string, string>>({});
-  const [customPlatforms, setCustomPlatforms] = useState<Record<string, string>>({});
+  const [systemPlatforms, setSystemPlatforms] = useState<
+    Record<string, string>
+  >({});
+  const [customPlatforms, setCustomPlatforms] = useState<
+    Record<string, string>
+  >({});
   const [systemUrls, setSystemUrls] = useState<Record<string, string>>({});
   const [customUrls, setCustomUrls] = useState<Record<string, string>>({});
 
@@ -109,13 +108,13 @@ export default function SocialLinksSettings() {
       const data = await response.json();
       setLinks(data);
       setOriginalLinks(JSON.parse(JSON.stringify(data))); // Deep copy
-      
+
       // Initialize separate platform name and URL tracking
       const systemPlatformsMap: Record<string, string> = {};
       const customPlatformsMap: Record<string, string> = {};
       const systemUrlsMap: Record<string, string> = {};
       const customUrlsMap: Record<string, string> = {};
-      
+
       data.forEach((link: SocialLink) => {
         if (link.useCustomIcon) {
           customPlatformsMap[link.id] = link.platform;
@@ -125,7 +124,7 @@ export default function SocialLinksSettings() {
           systemUrlsMap[link.id] = link.url;
         }
       });
-      
+
       setSystemPlatforms(systemPlatformsMap);
       setCustomPlatforms(customPlatformsMap);
       setSystemUrls(systemUrlsMap);
@@ -142,7 +141,7 @@ export default function SocialLinksSettings() {
   };
 
   const handleSave = async (linkId: string) => {
-    const link = links.find(l => l.id === linkId);
+    const link = links.find((l) => l.id === linkId);
     if (!link) return;
 
     // Validate required fields
@@ -155,11 +154,11 @@ export default function SocialLinksSettings() {
       return;
     }
 
-    setIsSaving(true);
+    setSavingLinks({ ...savingLinks, [linkId]: true });
     try {
       // If any link order has changed, save all links to preserve ordering
       const orderChanged = links.some((l, idx) => {
-        const original = originalLinks.find(o => o.id === l.id);
+        const original = originalLinks.find((o) => o.id === l.id);
         return original && original.order !== l.order;
       });
 
@@ -187,13 +186,11 @@ export default function SocialLinksSettings() {
       toast({
         title: "Error",
         description:
-          error instanceof Error
-            ? error.message
-            : "Failed to save social link",
+          error instanceof Error ? error.message : "Failed to save social link",
         variant: "destructive",
       });
     } finally {
-      setIsSaving(false);
+      setSavingLinks({ ...savingLinks, [linkId]: false });
     }
   };
 
@@ -219,7 +216,7 @@ export default function SocialLinksSettings() {
       isActive: true,
     };
     setLinks([...links, newLink]);
-    
+
     // Initialize empty platform names and URLs for new link
     setSystemPlatforms({ ...systemPlatforms, [newId]: "" });
     setCustomPlatforms({ ...customPlatforms, [newId]: "" });
@@ -286,36 +283,36 @@ export default function SocialLinksSettings() {
     if (platform) {
       // Update system platform name tracking
       setSystemPlatforms({ ...systemPlatforms, [id]: platformName });
-      
+
       updateLink(id, {
         platform: platformName,
         icon: platform.icon,
       });
     }
   };
-  
+
   const updateCustomPlatformName = (id: string, platformName: string) => {
     // Update custom platform name tracking
     setCustomPlatforms({ ...customPlatforms, [id]: platformName });
-    
+
     updateLink(id, {
       platform: platformName,
     });
   };
-  
+
   const updateSystemUrl = (id: string, url: string) => {
     // Update system URL tracking
     setSystemUrls({ ...systemUrls, [id]: url });
-    
+
     updateLink(id, {
       url: url,
     });
   };
-  
+
   const updateCustomUrl = (id: string, url: string) => {
     // Update custom URL tracking
     setCustomUrls({ ...customUrls, [id]: url });
-    
+
     updateLink(id, {
       url: url,
     });
@@ -413,12 +410,16 @@ export default function SocialLinksSettings() {
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
-            <div>
-              <CardTitle>Social Media Links</CardTitle>
-              <CardDescription>
-                Manage social media links displayed in the footer
-              </CardDescription>
-            </div>
+            <Field orientation="vertical">
+              <FieldContent>
+                <FieldTitle className="text-base font-semibold">
+                  Social Media Links
+                </FieldTitle>
+                <FieldDescription>
+                  Manage social media links displayed in the footer
+                </FieldDescription>
+              </FieldContent>
+            </Field>
             <Button
               onClick={addLink}
               size="sm"
@@ -472,7 +473,7 @@ export default function SocialLinksSettings() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                        
+
                         <div className="flex items-center gap-3">
                           {isDirty && (
                             <span className="text-sm text-amber-600 dark:text-amber-500 flex items-center gap-2">
@@ -482,11 +483,11 @@ export default function SocialLinksSettings() {
                           )}
                           <Button
                             onClick={() => handleSave(link.id)}
-                            disabled={isSaving || !isDirty}
+                            disabled={savingLinks[link.id] || !isDirty}
                             variant="outline"
                             size="sm"
                           >
-                            {isSaving ? (
+                            {savingLinks[link.id] ? (
                               <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Saving...
@@ -510,22 +511,21 @@ export default function SocialLinksSettings() {
                           value={link.useCustomIcon ? "custom" : "system"}
                           onValueChange={(value) => {
                             const isCustom = value === "custom";
-                            
+
                             // Use the stored platform name and URL for the selected mode
-                            const platformName = isCustom 
-                              ? (customPlatforms[link.id] || "")
-                              : (systemPlatforms[link.id] || "");
+                            const platformName = isCustom
+                              ? customPlatforms[link.id] || ""
+                              : systemPlatforms[link.id] || "";
                             const url = isCustom
-                              ? (customUrls[link.id] || "")
-                              : (systemUrls[link.id] || "");
-                            
+                              ? customUrls[link.id] || ""
+                              : systemUrls[link.id] || "";
+
                             updateLink(link.id, {
                               useCustomIcon: isCustom,
                               platform: platformName,
                               url: url,
-                              ...(isCustom
-                                ? { customIconUrl: null, icon: "Link" }
-                                : { customIconUrl: null }),
+                              // Don't set icon to "Link" if not custom, preserve existing icon
+                              ...(!isCustom && { icon: link.icon }),
                             });
                           }}
                         >
@@ -538,15 +538,16 @@ export default function SocialLinksSettings() {
                                   ? isDirty
                                     ? "border border-amber-500"
                                     : "border border-primary/30"
-                                  : "border border-border/60"
+                                  : "border border-border/80"
                               }`}
                             >
                               <Field orientation="horizontal">
                                 <FieldContent>
-                                  <FieldTitle>Social platforms</FieldTitle>
+                                  <FieldTitle>
+                                    Social media platforms
+                                  </FieldTitle>
                                   <FieldDescription>
-                                    Choose from a group of available social
-                                    platforms
+                                    Choose a social media platform
                                   </FieldDescription>
                                 </FieldContent>
                                 <RadioGroupItem
@@ -558,7 +559,9 @@ export default function SocialLinksSettings() {
                               {!link.useCustomIcon && (
                                 <div className="mt-6">
                                   <div className="flex items-center gap-3">
-                                    <Label className="text-sm font-medium w-12 shrink-0">URL</Label>
+                                    <Label className="text-sm font-medium w-12 shrink-0">
+                                      Link
+                                    </Label>
                                     <ButtonGroup className="flex-1">
                                       <Select
                                         value={systemPlatforms[link.id] || ""}
@@ -588,18 +591,56 @@ export default function SocialLinksSettings() {
                                           ))}
                                         </SelectContent>
                                       </Select>
-                                      <InputGroup>
-                                        <InputGroupAddon className="text-muted-foreground pl-1.5">
-                                          https://
-                                        </InputGroupAddon>
+                                      <InputGroup className="flex-1 min-w-0">
                                         <InputGroupInput
                                           id={`url-${link.id}`}
                                           type="text"
-                                          value={(systemUrls[link.id] || "").replace(/^https?:\/\//, "")}
+                                          value={systemUrls[link.id] || ""}
                                           onChange={(e) =>
-                                            updateSystemUrl(link.id, `https://${e.target.value}`)
+                                            updateSystemUrl(
+                                              link.id,
+                                              e.target.value
+                                            )
                                           }
-                                          placeholder="facebook.com/yourpage"
+                                          placeholder={
+                                            systemPlatforms[link.id] ===
+                                            "Facebook"
+                                              ? "https://facebook.com/yourpage"
+                                              : systemPlatforms[link.id] ===
+                                                  "Twitter/X"
+                                                ? "https://x.com/yourhandle"
+                                                : systemPlatforms[link.id] ===
+                                                    "Instagram"
+                                                  ? "https://instagram.com/yourhandle"
+                                                  : systemPlatforms[link.id] ===
+                                                      "LinkedIn"
+                                                    ? "https://linkedin.com/company/yourcompany"
+                                                    : systemPlatforms[
+                                                          link.id
+                                                        ] === "YouTube"
+                                                      ? "https://youtube.com/@yourchannel"
+                                                      : systemPlatforms[
+                                                            link.id
+                                                          ] === "TikTok"
+                                                        ? "https://tiktok.com/@yourhandle"
+                                                        : systemPlatforms[
+                                                              link.id
+                                                            ] === "Pinterest"
+                                                          ? "https://pinterest.com/yourhandle"
+                                                          : systemPlatforms[
+                                                                link.id
+                                                              ] === "GitHub"
+                                                            ? "https://github.com/yourusername"
+                                                            : systemPlatforms[
+                                                                  link.id
+                                                                ] === "Discord"
+                                                              ? "https://discord.gg/yourinvite"
+                                                              : systemPlatforms[
+                                                                    link.id
+                                                                  ] === "Twitch"
+                                                                ? "https://twitch.tv/yourchannel"
+                                                                : "Select a platform"
+                                          }
                                           onClick={(e) => e.stopPropagation()}
                                         />
                                       </InputGroup>
@@ -608,7 +649,7 @@ export default function SocialLinksSettings() {
                                 </div>
                               )}
                             </label>
-                            
+
                             {/* Move Up/Down Buttons - Between Options */}
                             <div className="hidden md:flex flex-col gap-1 justify-center self-center">
                               <Button
@@ -632,7 +673,7 @@ export default function SocialLinksSettings() {
                                 <ChevronDown className="h-4 w-4" />
                               </Button>
                             </div>
-                            
+
                             {/* Custom Platform */}
                             <label
                               htmlFor={`custom-${link.id}`}
@@ -641,7 +682,7 @@ export default function SocialLinksSettings() {
                                   ? isDirty
                                     ? "border border-amber-500"
                                     : "border border-primary/30"
-                                  : "border border-border/60"
+                                  : "border border-border/80"
                               }`}
                             >
                               <Field orientation="horizontal">
@@ -660,70 +701,54 @@ export default function SocialLinksSettings() {
                               {link.useCustomIcon && (
                                 <div className="mt-6 space-y-3">
                                   <div className="flex items-center gap-3">
-                                    <Label className="text-sm font-medium w-12 shrink-0">Name</Label>
-                                    <Input
-                                      type="text"
-                                      className="flex-1"
-                                      value={customPlatforms[link.id] || ""}
-                                      onChange={(e) =>
-                                        updateCustomPlatformName(link.id, e.target.value)
-                                      }
-                                      placeholder="Platform name (e.g., Mastodon)"
-                                      onClick={(e) => e.stopPropagation()}
-                                    />
-                                  </div>
-
-                                  <div className="flex items-center gap-3">
-                                    <Label className="text-sm font-medium w-12 shrink-0">URL</Label>
-                                    <InputGroup className="flex-1">
-                                      <InputGroupAddon className="text-muted-foreground pl-1.5">
-                                        https://
-                                      </InputGroupAddon>
+                                    <Label className="text-sm font-medium w-16 shrink-0">
+                                      Name
+                                    </Label>
+                                    <InputGroup className="flex-1 min-w-0">
                                       <InputGroupInput
                                         type="text"
-                                      value={(customUrls[link.id] || "").replace(/^https?:\/\//, "")}
-                                      onChange={(e) =>
-                                        updateCustomUrl(link.id, `https://${e.target.value}`)
-                                      }
-                                        placeholder="example.com/yourpage"
+                                        value={customPlatforms[link.id] || ""}
+                                        onChange={(e) =>
+                                          updateCustomPlatformName(
+                                            link.id,
+                                            e.target.value
+                                          )
+                                        }
+                                        placeholder="Platform name (e.g., Mastodon)"
                                         onClick={(e) => e.stopPropagation()}
                                       />
                                     </InputGroup>
                                   </div>
 
-                                  <div className="space-y-2">
-                                    <div className="flex items-center gap-3">
-                                      <Label className="text-sm font-medium whitespace-nowrap shrink-0">Icon URL</Label>
-                                      <InputGroup className="flex-1">
-                                        <InputGroupAddon className="text-muted-foreground pl-1.5">
-                                          https://
-                                        </InputGroupAddon>
-                                        <InputGroupInput
-                                          type="text"
-                                        value={(link.customIconUrl || "").replace(/^https?:\/\//, "")}
+                                  <div className="flex items-center gap-3">
+                                    <Label className="text-sm font-medium w-16 shrink-0">
+                                      Link
+                                    </Label>
+                                    <InputGroup className="flex-1 min-w-0">
+                                      <InputGroupInput
+                                        type="text"
+                                        value={customUrls[link.id] || ""}
                                         onChange={(e) =>
-                                          updateLink(link.id, {
-                                            customIconUrl: `https://${e.target.value}`,
-                                          })
+                                          updateCustomUrl(
+                                            link.id,
+                                            e.target.value
+                                          )
                                         }
-                                          placeholder="example.com/icon.png"
-                                          onClick={(e) => e.stopPropagation()}
-                                        />
-                                      </InputGroup>
-                                    </div>
-                                    {link.customIconUrl && (
-                                      <div className="flex items-center gap-2 p-2 border rounded bg-muted/50">
-                                        <span className="text-xs text-muted-foreground">
-                                          Preview:
-                                        </span>
-                                        <img
-                                          src={link.customIconUrl}
-                                          alt="Custom icon preview"
-                                          className="w-5 h-5 object-contain"
-                                        />
-                                      </div>
-                                    )}
+                                        placeholder="https://example.com/yourpage"
+                                        onClick={(e) => e.stopPropagation()}
+                                      />
+                                    </InputGroup>
                                   </div>
+
+                                  <FileUpload
+                                    linkId={link.id}
+                                    currentIconUrl={link.customIconUrl}
+                                    onUploadComplete={(url) =>
+                                      updateLink(link.id, {
+                                        customIconUrl: url,
+                                      })
+                                    }
+                                  />
                                 </div>
                               )}
                             </label>

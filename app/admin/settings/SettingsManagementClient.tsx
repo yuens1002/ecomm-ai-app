@@ -1,13 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Trash2 } from "lucide-react";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldTitle,
+} from "@/components/ui/field";
 import SocialLinksSettings from "./SocialLinksSettings";
 
 interface FooterSettings {
@@ -17,10 +23,17 @@ interface FooterSettings {
   email: string;
 }
 
+type FieldName = "showHours" | "hoursText" | "showEmail" | "email";
+
 export default function SettingsManagementClient() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [savingFields, setSavingFields] = useState<Record<FieldName, boolean>>({
+    showHours: false,
+    hoursText: false,
+    showEmail: false,
+    email: false,
+  });
   const [settings, setSettings] = useState<FooterSettings>({
     showHours: true,
     hoursText: "Mon-Fri 7am-7pm",
@@ -42,7 +55,7 @@ export default function SettingsManagementClient() {
     try {
       const response = await fetch("/api/admin/settings/footer-contact");
       if (!response.ok) throw new Error("Failed to fetch settings");
-      
+
       const data = await response.json();
       setSettings(data);
       setOriginalSettings(data);
@@ -57,8 +70,16 @@ export default function SettingsManagementClient() {
     }
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
+  const handleToggleActive = (checked: boolean) => {
+    setSettings({
+      ...settings,
+      showHours: checked,
+      showEmail: checked,
+    });
+  };
+
+  const handleSaveField = async (field: FieldName) => {
+    setSavingFields({ ...savingFields, [field]: true });
     try {
       const response = await fetch("/api/admin/settings/footer-contact", {
         method: "PUT",
@@ -72,21 +93,26 @@ export default function SettingsManagementClient() {
         title: "Success",
         description: "Settings saved successfully",
       });
-      
+
       // Update original settings after successful save
       setOriginalSettings(settings);
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save settings",
+        description:
+          error instanceof Error ? error.message : "Failed to save settings",
         variant: "destructive",
       });
     } finally {
-      setIsSaving(false);
+      setSavingFields({ ...savingFields, [field]: false });
     }
   };
 
-  const hasUnsavedChanges = 
+  const isFieldDirty = (field: FieldName) => {
+    return settings[field] !== originalSettings[field];
+  };
+
+  const hasAnyUnsavedChanges =
     settings.showHours !== originalSettings.showHours ||
     settings.hoursText !== originalSettings.hoursText ||
     settings.showEmail !== originalSettings.showEmail ||
@@ -106,53 +132,71 @@ export default function SettingsManagementClient() {
       <SocialLinksSettings />
 
       {/* Footer Contact Info */}
-      <Card className={hasUnsavedChanges ? 'border-amber-500' : ''}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Footer Contact Information</CardTitle>
-              <CardDescription>
+      <Card>
+        <CardHeader className="pb-8">
+          <Field orientation="vertical">
+            <FieldContent>
+              <FieldTitle className="text-base font-semibold">
+                Footer Contact Information
+              </FieldTitle>
+              <FieldDescription>
                 Manage the shop hours and email address displayed in the footer
-              </CardDescription>
-            </div>
-            {hasUnsavedChanges && (
-              <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-500">
-                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                Unsaved changes
-              </div>
-            )}
-          </div>
+              </FieldDescription>
+            </FieldContent>
+          </Field>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Shop Hours */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="show-hours">Display Shop Hours</Label>
-                <p className="text-sm text-muted-foreground">
-                  Show business hours in the footer
-                </p>
+            <div className="flex items-center justify-between gap-12">
+              <div className="flex items-center gap-12">
+                <div className="space-y-0.5">
+                  <Label htmlFor="show-hours">Display Shop Hours</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Show business hours in the footer
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="show-hours"
+                    className="text-xs text-muted-foreground w-14"
+                  >
+                    {settings.showHours ? "Active" : "Inactive"}
+                  </Label>
+                  <Switch
+                    id="show-hours"
+                    checked={settings.showHours}
+                    onCheckedChange={(checked) =>
+                      setSettings({ ...settings, showHours: checked })
+                    }
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      setSettings({
+                        ...settings,
+                        showHours: false,
+                        hoursText: "",
+                      });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="show-hours"
-                  className="text-xs text-muted-foreground"
-                >
-                  {settings.showHours ? "Active" : "Inactive"}
-                </Label>
-                <Switch
-                  id="show-hours"
-                  checked={settings.showHours}
-                  onCheckedChange={(checked) =>
-                    setSettings({ ...settings, showHours: checked })
-                  }
-                />
-              </div>
+              {isFieldDirty("showHours") && (
+                <span className="text-sm text-amber-600 dark:text-amber-500 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  Unsaved changes
+                </span>
+              )}
             </div>
 
-            {settings.showHours && (
-              <div className="space-y-2">
-                <Label htmlFor="hours-text">Hours Text</Label>
+            <div className="space-y-2">
+              <Label htmlFor="hours-text">Hours Text</Label>
+              <div className="flex items-center gap-2">
                 <Input
                   id="hours-text"
                   value={settings.hoursText}
@@ -160,42 +204,84 @@ export default function SettingsManagementClient() {
                     setSettings({ ...settings, hoursText: e.target.value })
                   }
                   placeholder="e.g., Mon-Fri 7am-7pm"
+                  className={
+                    isFieldDirty("hoursText") ? "border-amber-500" : ""
+                  }
                 />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleSaveField("hoursText")}
+                  disabled={
+                    !isFieldDirty("hoursText") || savingFields["hoursText"]
+                  }
+                  className="shrink-0"
+                >
+                  {savingFields["hoursText"] ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="ml-2">Saving</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span className="ml-2">Save</span>
+                    </>
+                  )}
+                </Button>
               </div>
-            )}
+            </div>
           </div>
 
-          <div className="border-t pt-6" />
+          <div className="border-t pt-6 mt-12" />
 
           {/* Email Address */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="show-email">Display Email Address</Label>
-                <p className="text-sm text-muted-foreground">
-                  Show contact email in the footer
-                </p>
+            <div className="flex items-center justify-between gap-12">
+              <div className="flex items-center gap-12">
+                <div className="space-y-0.5">
+                  <Label htmlFor="show-email">Display Email Address</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Show contact email in the footer
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="show-email"
+                    className="text-xs text-muted-foreground w-14"
+                  >
+                    {settings.showEmail ? "Active" : "Inactive"}
+                  </Label>
+                  <Switch
+                    id="show-email"
+                    checked={settings.showEmail}
+                    onCheckedChange={(checked) =>
+                      setSettings({ ...settings, showEmail: checked })
+                    }
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      setSettings({ ...settings, showEmail: false, email: "" });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="show-email"
-                  className="text-xs text-muted-foreground"
-                >
-                  {settings.showEmail ? "Active" : "Inactive"}
-                </Label>
-                <Switch
-                  id="show-email"
-                  checked={settings.showEmail}
-                  onCheckedChange={(checked) =>
-                    setSettings({ ...settings, showEmail: checked })
-                  }
-                />
-              </div>
+              {isFieldDirty("showEmail") && (
+                <span className="text-sm text-amber-600 dark:text-amber-500 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  Unsaved changes
+                </span>
+              )}
             </div>
 
-            {settings.showEmail && (
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <div className="flex items-center gap-2">
                 <Input
                   id="email"
                   type="email"
@@ -204,25 +290,29 @@ export default function SettingsManagementClient() {
                     setSettings({ ...settings, email: e.target.value })
                   }
                   placeholder="e.g., hello@artisan-roast.com"
+                  className={isFieldDirty("email") ? "border-amber-500" : ""}
                 />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleSaveField("email")}
+                  disabled={!isFieldDirty("email") || savingFields["email"]}
+                  className="shrink-0"
+                >
+                  {savingFields["email"] ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="ml-2">Saving</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span className="ml-2">Save</span>
+                    </>
+                  )}
+                </Button>
               </div>
-            )}
-          </div>
-
-          <div className="flex justify-end pt-4">
-            <Button onClick={handleSave} disabled={isSaving || !hasUnsavedChanges}>
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
-                </>
-              )}
-            </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

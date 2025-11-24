@@ -16,8 +16,13 @@ export async function GET() {
     const settings = await prisma.siteSettings.findMany({
       where: {
         key: {
-          in: ['footer_show_hours', 'footer_hours_text', 'footer_show_email', 'footer_email']
-        }
+          in: [
+            "footer_show_hours",
+            "footer_hours_text",
+            "footer_show_email",
+            "footer_email",
+          ],
+        },
       },
       select: {
         key: true,
@@ -25,16 +30,19 @@ export async function GET() {
       },
     });
 
-    const settingsMap = settings.reduce((acc, setting) => {
-      acc[setting.key] = setting.value;
-      return acc;
-    }, {} as Record<string, string>);
+    const settingsMap = settings.reduce(
+      (acc, setting) => {
+        acc[setting.key] = setting.value;
+        return acc;
+      },
+      {} as Record<string, string>
+    );
 
     return NextResponse.json({
-      showHours: settingsMap['footer_show_hours'] === 'true',
-      hoursText: settingsMap['footer_hours_text'] || 'Mon-Fri 7am-7pm',
-      showEmail: settingsMap['footer_show_email'] === 'true',
-      email: settingsMap['footer_email'] || 'hello@artisan-roast.com',
+      showHours: settingsMap["footer_show_hours"] === "true",
+      hoursText: settingsMap["footer_hours_text"] || "Mon-Fri 7am-7pm",
+      showEmail: settingsMap["footer_show_email"] === "true",
+      email: settingsMap["footer_email"] || "hello@artisan-roast.com",
     });
   } catch (error) {
     console.error("Error fetching footer contact settings:", error);
@@ -62,24 +70,24 @@ export async function PUT(request: NextRequest) {
     // Update all settings in parallel
     await Promise.all([
       prisma.siteSettings.upsert({
-        where: { key: 'footer_show_hours' },
+        where: { key: "footer_show_hours" },
         update: { value: String(showHours) },
-        create: { key: 'footer_show_hours', value: String(showHours) },
+        create: { key: "footer_show_hours", value: String(showHours) },
       }),
       prisma.siteSettings.upsert({
-        where: { key: 'footer_hours_text' },
+        where: { key: "footer_hours_text" },
         update: { value: hoursText },
-        create: { key: 'footer_hours_text', value: hoursText },
+        create: { key: "footer_hours_text", value: hoursText },
       }),
       prisma.siteSettings.upsert({
-        where: { key: 'footer_show_email' },
+        where: { key: "footer_show_email" },
         update: { value: String(showEmail) },
-        create: { key: 'footer_show_email', value: String(showEmail) },
+        create: { key: "footer_show_email", value: String(showEmail) },
       }),
       prisma.siteSettings.upsert({
-        where: { key: 'footer_email' },
+        where: { key: "footer_email" },
         update: { value: email },
-        create: { key: 'footer_email', value: email },
+        create: { key: "footer_email", value: email },
       }),
     ]);
 

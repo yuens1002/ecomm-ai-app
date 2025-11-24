@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.22.3 - 2025-11-24
+
+- **Admin Footer Settings Refinements**: Enhanced footer contact management with per-field save states and file upload
+  - Individual save buttons for each footer contact field (shop hours, email) with separate loading states and unsaved changes tracking
+  - File upload system for custom social media icons with validation, preview, and storage to `public/images/`
+  - Consistent Field component usage across Social Links and Footer Contact cards
+  - Three-column layout with trash icon buttons to reset field pairs
+
 ## 0.22.2 - 2025-11-24
 
 - **Admin Social Links Settings**: Complete social media management interface with database-driven footer

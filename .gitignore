@@ -61,3 +61,7 @@ next-env.d.ts
 
 # Backup folder
 /public/backup/
+
+# Uploaded images (keep folder structure, ignore contents)
+/public/images/*
+!/public/images/.gitkeep
