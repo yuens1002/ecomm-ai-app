@@ -288,7 +288,6 @@ export default function ChatBarista({
                 description: recommendData.text || product.description,
                 roastLevel: product.roastLevel,
                 variants: product.variants,
-                purchaseOptions: product.purchaseOptions || [],
               };
             }
           }
