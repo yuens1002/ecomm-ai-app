@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
@@ -16,7 +15,6 @@ interface FileUploadProps {
 }
 
 export default function FileUpload({
-  linkId,
   currentIconUrl,
   onUploadComplete,
   disabled = false,
@@ -110,6 +108,7 @@ export default function FileUpload({
               </>
             ) : currentIconUrl ? (
               <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={currentIconUrl}
                   alt="Icon preview"

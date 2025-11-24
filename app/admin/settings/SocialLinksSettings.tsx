@@ -1,14 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+import { InputGroup, InputGroupInput } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -37,7 +32,6 @@ import {
   ChevronUp,
   ChevronDown,
   Save,
-  Link2Icon,
 } from "lucide-react";
 import { icons } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -47,7 +41,7 @@ import {
   FieldDescription,
   FieldTitle,
 } from "@/components/ui/field";
-import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
+import { ButtonGroup } from "@/components/ui/button-group";
 import FileUpload from "@/components/app-components/FileUpload";
 
 interface SocialLink {
@@ -96,11 +90,7 @@ export default function SocialLinksSettings() {
   const [systemUrls, setSystemUrls] = useState<Record<string, string>>({});
   const [customUrls, setCustomUrls] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    fetchLinks();
-  }, []);
-
-  const fetchLinks = async () => {
+  const fetchLinks = useCallback(async () => {
     try {
       const response = await fetch("/api/admin/settings/social-links");
       if (!response.ok) throw new Error("Failed to fetch social links");
@@ -129,7 +119,7 @@ export default function SocialLinksSettings() {
       setCustomPlatforms(customPlatformsMap);
       setSystemUrls(systemUrlsMap);
       setCustomUrls(customUrlsMap);
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to load social links",
@@ -138,7 +128,11 @@ export default function SocialLinksSettings() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchLinks();
+  }, [fetchLinks]);
 
   const handleSave = async (linkId: string) => {
     const link = links.find((l) => l.id === linkId);
@@ -157,7 +151,7 @@ export default function SocialLinksSettings() {
     setSavingLinks({ ...savingLinks, [linkId]: true });
     try {
       // If any link order has changed, save all links to preserve ordering
-      const orderChanged = links.some((l, idx) => {
+      const orderChanged = links.some((l) => {
         const original = originalLinks.find((o) => o.id === l.id);
         return original && original.order !== l.order;
       });
@@ -338,18 +332,6 @@ export default function SocialLinksSettings() {
     );
   };
 
-  // Check if there are any unsaved changes across all links
-  const hasUnsavedChanges = () => {
-    // Check for new links
-    if (links.some((link) => link.id.startsWith("temp-"))) return true;
-
-    // Check for deleted links
-    if (links.length !== originalLinks.length) return true;
-
-    // Check for modified links
-    return links.some((link) => isLinkDirty(link.id));
-  };
-
   // Render icon preview with case-insensitive matching
   const renderIcon = (iconName: string) => {
     // Try exact match first
@@ -433,7 +415,8 @@ export default function SocialLinksSettings() {
         <CardContent className="space-y-6">
           {links.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No social links added yet. Click "Add Link" to get started.
+              No social links added yet. Click &quot;Add Link&quot; to get
+              started.
             </div>
           ) : (
             <div className="space-y-4">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -47,11 +47,7 @@ export default function SettingsManagementClient() {
     email: "hello@artisan-roast.com",
   });
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       const response = await fetch("/api/admin/settings/footer-contact");
       if (!response.ok) throw new Error("Failed to fetch settings");
@@ -59,7 +55,7 @@ export default function SettingsManagementClient() {
       const data = await response.json();
       setSettings(data);
       setOriginalSettings(data);
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to load settings",
@@ -68,15 +64,11 @@ export default function SettingsManagementClient() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
-  const handleToggleActive = (checked: boolean) => {
-    setSettings({
-      ...settings,
-      showHours: checked,
-      showEmail: checked,
-    });
-  };
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   const handleSaveField = async (field: FieldName) => {
     setSavingFields({ ...savingFields, [field]: true });
@@ -111,12 +103,6 @@ export default function SettingsManagementClient() {
   const isFieldDirty = (field: FieldName) => {
     return settings[field] !== originalSettings[field];
   };
-
-  const hasAnyUnsavedChanges =
-    settings.showHours !== originalSettings.showHours ||
-    settings.hoursText !== originalSettings.hoursText ||
-    settings.showEmail !== originalSettings.showEmail ||
-    settings.email !== originalSettings.email;
 
   if (isLoading) {
     return (

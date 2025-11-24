@@ -123,11 +123,16 @@ export async function PUT(request: NextRequest) {
     await prisma.$transaction(operations);
 
     return NextResponse.json({ message: "Social links updated successfully" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating social links:", error);
 
     // Handle unique constraint violation
-    if (error.code === "P2002") {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "P2002"
+    ) {
       return NextResponse.json(
         { error: "A social link with this platform name already exists" },
         { status: 400 }
