@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.22.2 - 2025-11-24
+
+- **Admin Social Links Settings**: Complete social media management interface with database-driven footer
+  - Admin CRUD for social links with system platforms (Facebook, Instagram, etc.) and custom platforms
+  - Separate state tracking for system vs custom fields to prevent field linking
+  - Individual save buttons per social link with unsaved changes tracking
+  - Order management with move up/down buttons and automatic order preservation
+  - Custom icon support with URL input and preview, toggle between Lucide icons and custom images
+  - Active/Inactive toggle per link with dynamic labels
+  - Per-record validation preventing duplicate platform names with unique constraint
+  - InputGroup components for clean URL inputs with https:// prefix styling
+  - Footer contact settings (shop hours, email) with Active/Inactive toggles
+  - Dynamic Lucide icon rendering with case-insensitive matching and fill="currentColor"
+  - Unique constraint on SocialLink.platform field with data cleanup script
+  - Clean component structure with proper ButtonGroup and InputGroup nesting
+
 ## 0.22.1 - 2025-11-23
 
 - **Footer Presentation Refinements**: Improved layout and visual consistency of mega footer

@@ -49,6 +49,8 @@ async function getSocialLinks() {
       platform: true,
       url: true,
       icon: true,
+      customIconUrl: true,
+      useCustomIcon: true,
     },
   });
 }

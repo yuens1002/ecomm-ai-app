@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save } from "lucide-react";
+import SocialLinksSettings from "./SocialLinksSettings";
 
 interface FooterSettings {
   showHours: boolean;
@@ -26,6 +27,12 @@ export default function SettingsManagementClient() {
     showEmail: true,
     email: "hello@artisan-roast.com",
   });
+  const [originalSettings, setOriginalSettings] = useState<FooterSettings>({
+    showHours: true,
+    hoursText: "Mon-Fri 7am-7pm",
+    showEmail: true,
+    email: "hello@artisan-roast.com",
+  });
 
   useEffect(() => {
     fetchSettings();
@@ -38,6 +45,7 @@ export default function SettingsManagementClient() {
       
       const data = await response.json();
       setSettings(data);
+      setOriginalSettings(data);
     } catch (error) {
       toast({
         title: "Error",
@@ -64,6 +72,9 @@ export default function SettingsManagementClient() {
         title: "Success",
         description: "Settings saved successfully",
       });
+      
+      // Update original settings after successful save
+      setOriginalSettings(settings);
     } catch (error) {
       toast({
         title: "Error",
@@ -75,6 +86,12 @@ export default function SettingsManagementClient() {
     }
   };
 
+  const hasUnsavedChanges = 
+    settings.showHours !== originalSettings.showHours ||
+    settings.hoursText !== originalSettings.hoursText ||
+    settings.showEmail !== originalSettings.showEmail ||
+    settings.email !== originalSettings.email;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -85,12 +102,26 @@ export default function SettingsManagementClient() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      {/* Social Links */}
+      <SocialLinksSettings />
+
+      {/* Footer Contact Info */}
+      <Card className={hasUnsavedChanges ? 'border-amber-500' : ''}>
         <CardHeader>
-          <CardTitle>Footer Contact Information</CardTitle>
-          <CardDescription>
-            Manage the shop hours and email address displayed in the footer
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Footer Contact Information</CardTitle>
+              <CardDescription>
+                Manage the shop hours and email address displayed in the footer
+              </CardDescription>
+            </div>
+            {hasUnsavedChanges && (
+              <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-500">
+                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                Unsaved changes
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Shop Hours */}
@@ -102,13 +133,21 @@ export default function SettingsManagementClient() {
                   Show business hours in the footer
                 </p>
               </div>
-              <Switch
-                id="show-hours"
-                checked={settings.showHours}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, showHours: checked })
-                }
-              />
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="show-hours"
+                  className="text-xs text-muted-foreground"
+                >
+                  {settings.showHours ? "Active" : "Inactive"}
+                </Label>
+                <Switch
+                  id="show-hours"
+                  checked={settings.showHours}
+                  onCheckedChange={(checked) =>
+                    setSettings({ ...settings, showHours: checked })
+                  }
+                />
+              </div>
             </div>
 
             {settings.showHours && (
@@ -137,13 +176,21 @@ export default function SettingsManagementClient() {
                   Show contact email in the footer
                 </p>
               </div>
-              <Switch
-                id="show-email"
-                checked={settings.showEmail}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, showEmail: checked })
-                }
-              />
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="show-email"
+                  className="text-xs text-muted-foreground"
+                >
+                  {settings.showEmail ? "Active" : "Inactive"}
+                </Label>
+                <Switch
+                  id="show-email"
+                  checked={settings.showEmail}
+                  onCheckedChange={(checked) =>
+                    setSettings({ ...settings, showEmail: checked })
+                  }
+                />
+              </div>
             </div>
 
             {settings.showEmail && (
@@ -163,7 +210,7 @@ export default function SettingsManagementClient() {
           </div>
 
           <div className="flex justify-end pt-4">
-            <Button onClick={handleSave} disabled={isSaving}>
+            <Button onClick={handleSave} disabled={isSaving || !hasUnsavedChanges}>
               {isSaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
