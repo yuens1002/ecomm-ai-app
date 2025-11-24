@@ -156,7 +156,7 @@ export default function RecommendationsSection() {
 
         {/* Product Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
+          {products.map((product, index) => (
             <ProductCard
               key={product.id}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -166,6 +166,7 @@ export default function RecommendationsSection() {
                   ? "recommendations-personalized"
                   : "recommendations-trending"
               }
+              priority={index === 0} // Load first image eagerly as it's likely LCP
             />
           ))}
         </div>

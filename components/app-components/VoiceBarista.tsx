@@ -13,7 +13,6 @@ import { motion, AnimatePresence } from "motion/react";
 
 interface VoiceBaristaProps {
   userEmail?: string;
-  onOpenAiModal?: () => void;
 }
 
 export default function VoiceBarista({ userEmail }: VoiceBaristaProps) {

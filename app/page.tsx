@@ -1,31 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useSession } from "next-auth/react";
 import FeaturedProducts from "@components/app-components/FeaturedProducts";
 import RecommendationsSection from "@components/app-components/RecommendationsSection";
-import HeroSection from "@components/app-components/HeroSection";
-import AiHelperModal from "@components/app-components/AiHelperModal";
+import ChatBarista from "@components/app-components/ChatBarista";
+import VoiceBarista from "@components/app-components/VoiceBarista";
 
 // --- Main Page Component ---
 export default function Home() {
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const { data: session } = useSession();
+
+  // Show VoiceBarista for demo user, ChatBarista for everyone else
+  const isDemoUser = session?.user?.email === "demo@artisanroast.com";
+  const isAuthenticated = !!session?.user;
 
   return (
     <>
-      {/* Hero Section - receives modal handler */}
-      <HeroSection onOpenAiModal={() => setIsAiModalOpen(true)} />
+      {/* Voice Barista for demo user, Chat Barista for all others */}
+      {isDemoUser ? (
+        <VoiceBarista userEmail={session?.user?.email || undefined} />
+      ) : (
+        <ChatBarista 
+          userName={session?.user?.name || undefined}
+          isAuthenticated={isAuthenticated}
+        />
+      )}
 
       {/* Personalized Recommendations Section */}
       <RecommendationsSection />
 
       {/* Product Grid Section */}
       <FeaturedProducts />
-
-      {/* AI Helper Modal - centralized at page level */}
-      <AiHelperModal
-        isOpen={isAiModalOpen}
-        onClose={() => setIsAiModalOpen(false)}
-      />
     </>
   );
 }

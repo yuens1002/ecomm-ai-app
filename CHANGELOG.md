@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.23.0 - 2025-11-24
+
+- **Chat Barista Animation Enhancements**: Smooth, polished animations for natural conversation flow
+  - Messages slide in with smooth fade and scale effects
+  - User messages appear from right, AI responses from left
+  - Staggered timing creates natural back-and-forth rhythm
+  - Product recommendations slide up with emphasis
+  - Improved page load performance for product images
+
 ## 0.22.3 - 2025-11-24
 
 - **Admin Footer Settings Refinements**: Enhanced footer contact management with per-field save states and file upload

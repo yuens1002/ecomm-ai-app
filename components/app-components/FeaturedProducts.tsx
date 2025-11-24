@@ -42,11 +42,12 @@ export default function FeaturedProducts() {
         <div className="text-center text-text-muted">Loading coffees...</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0 border-0 shadow-none">
-          {products.map((product) => (
+          {products.map((product, index) => (
             <ProductCard
               key={product.id}
               product={product}
               showPurchaseOptions={false} // <-- Prop to hide price/button
+              priority={index < 4} // Load first 4 images eagerly (first row)
             />
           ))}
         </div>

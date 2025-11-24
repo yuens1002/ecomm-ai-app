@@ -23,7 +23,8 @@ export default function ProductCard({
   showPurchaseOptions = true,
   disableCardEffects = false,
   categorySlug,
-}: Omit<ProductCardProps, "onAddToCart"> & { categorySlug?: string }) {
+  priority = false,
+}: Omit<ProductCardProps, "onAddToCart"> & { categorySlug?: string; priority?: boolean }) {
   const addItem = useCartStore((state) => state.addItem);
 
   // --- Find price and image ---
@@ -71,7 +72,7 @@ export default function ProductCard({
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            priority={product.isFeatured}
+            priority={priority || product.isFeatured}
           />
         </CardHeader>
 
