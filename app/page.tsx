@@ -20,7 +20,7 @@ export default function Home() {
       {isDemoUser ? (
         <VoiceBarista userEmail={session?.user?.email || undefined} />
       ) : (
-        <ChatBarista 
+        <ChatBarista
           userName={session?.user?.name || undefined}
           isAuthenticated={isAuthenticated}
         />

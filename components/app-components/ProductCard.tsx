@@ -24,7 +24,10 @@ export default function ProductCard({
   disableCardEffects = false,
   categorySlug,
   priority = false,
-}: Omit<ProductCardProps, "onAddToCart"> & { categorySlug?: string; priority?: boolean }) {
+}: Omit<ProductCardProps, "onAddToCart"> & {
+  categorySlug?: string;
+  priority?: boolean;
+}) {
   const addItem = useCartStore((state) => state.addItem);
 
   // --- Find price and image ---
