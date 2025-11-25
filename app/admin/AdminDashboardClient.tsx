@@ -17,6 +17,7 @@ import {
   User,
   Settings,
   Tags,
+  Mail,
 } from "lucide-react";
 import ProductManagementClient from "./products/ProductManagementClient";
 import CategoryManagementClient from "./categories/CategoryManagementClient";
@@ -24,6 +25,7 @@ import UserManagementClient from "./users/UserManagementClient";
 import OrderManagementClient from "./orders/OrderManagementClient";
 import AnalyticsView from "./analytics/AnalyticsView";
 import SettingsManagementClient from "./settings/SettingsManagementClient";
+import NewsletterManagementClient from "./newsletter/NewsletterManagementClient";
 
 interface UserData {
   id: string;
@@ -65,7 +67,7 @@ export default function AdminDashboardClient({
         onValueChange={setActiveTab}
         className="space-y-6"
       >
-        <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:inline-grid">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Overview</span>
@@ -85,6 +87,10 @@ export default function AdminDashboardClient({
           <TabsTrigger value="categories" className="flex items-center gap-2">
             <Tags className="h-4 w-4" />
             <span className="hidden sm:inline">Categories</span>
+          </TabsTrigger>
+          <TabsTrigger value="newsletter" className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            <span className="hidden sm:inline">Newsletter</span>
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -189,6 +195,11 @@ export default function AdminDashboardClient({
               <CategoryManagementClient />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Newsletter Tab */}
+        <TabsContent value="newsletter">
+          <NewsletterManagementClient />
         </TabsContent>
 
         {/* Settings Tab */}

@@ -265,11 +265,13 @@
 **Description**: Add a configurable store name field to the Settings model to allow branding customization throughout the application.
 
 **Current State**:
+
 - Store name is hardcoded as "Artisan Roast" throughout the application
 - Email templates, navigation, and branding use hardcoded values
 - SiteSettings model exists with key-value structure for configuration
 
 **Proposed Changes**:
+
 - Add `storeName` key to SiteSettings model
 - Default value: "Artisan Roast"
 - Admin UI in Settings tab to configure store name
@@ -277,6 +279,7 @@
 - Update site header/footer to use configured name
 
 **Tasks**:
+
 - [ ] Add storeName to seed.ts with default "Artisan Roast"
 - [ ] Add store name field to admin settings UI
 - [ ] Update email templates to fetch and use store name from settings
@@ -285,6 +288,7 @@
 - [ ] Test store name changes reflect across all touchpoints
 
 **Acceptance Criteria**:
+
 - Admins can configure store name from settings panel
 - Store name updates across all email templates
 - Store name updates in navigation and branding

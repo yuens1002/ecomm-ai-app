@@ -6,7 +6,7 @@ import { z } from "zod";
 import crypto from "crypto";
 
 const newsletterSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.string().email(),
 });
 
 /**
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     // Create new subscription
     const subscriber = await prisma.newsletterSubscriber.create({
-      data: { 
+      data: {
         email,
         unsubscribeToken,
       },

@@ -27,7 +27,12 @@ interface EmailSettings {
   contactEmail: string;
 }
 
-type FieldName = "showHours" | "hoursText" | "showEmail" | "email" | "contactEmail";
+type FieldName =
+  | "showHours"
+  | "hoursText"
+  | "showEmail"
+  | "email"
+  | "contactEmail";
 
 export default function SettingsManagementClient() {
   const { toast } = useToast();
@@ -54,9 +59,10 @@ export default function SettingsManagementClient() {
   const [emailSettings, setEmailSettings] = useState<EmailSettings>({
     contactEmail: "onboarding@resend.dev",
   });
-  const [originalEmailSettings, setOriginalEmailSettings] = useState<EmailSettings>({
-    contactEmail: "onboarding@resend.dev",
-  });
+  const [originalEmailSettings, setOriginalEmailSettings] =
+    useState<EmailSettings>({
+      contactEmail: "onboarding@resend.dev",
+    });
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -64,14 +70,14 @@ export default function SettingsManagementClient() {
         fetch("/api/admin/settings/footer-contact"),
         fetch("/api/admin/settings/email"),
       ]);
-      
+
       if (!footerResponse.ok || !emailResponse.ok) {
         throw new Error("Failed to fetch settings");
       }
 
       const footerData = await footerResponse.json();
       const emailData = await emailResponse.json();
-      
+
       setSettings(footerData);
       setOriginalSettings(footerData);
       setEmailSettings(emailData);
@@ -167,7 +173,8 @@ export default function SettingsManagementClient() {
                 Email Configuration
               </FieldTitle>
               <FieldDescription>
-                Configure the email address used for all system communications (newsletter, orders, contact form)
+                Configure the email address used for all system communications
+                (newsletter, orders, contact form)
               </FieldDescription>
             </FieldContent>
           </Field>
@@ -181,7 +188,10 @@ export default function SettingsManagementClient() {
                 type="email"
                 value={emailSettings.contactEmail}
                 onChange={(e) =>
-                  setEmailSettings({ ...emailSettings, contactEmail: e.target.value })
+                  setEmailSettings({
+                    ...emailSettings,
+                    contactEmail: e.target.value,
+                  })
                 }
                 placeholder="e.g., onboarding@resend.dev"
                 className={
@@ -217,7 +227,8 @@ export default function SettingsManagementClient() {
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              This email will be used as the sender address for welcome emails, order confirmations, and contact form submissions.
+              This email will be used as the sender address for welcome emails,
+              order confirmations, and contact form submissions.
             </p>
           </div>
         </CardContent>

@@ -59,7 +59,9 @@ export async function PUT(request: NextRequest) {
       create: { key: "contactEmail", value: contactEmail },
     });
 
-    return NextResponse.json({ message: "Email settings updated successfully" });
+    return NextResponse.json({
+      message: "Email settings updated successfully",
+    });
   } catch (error) {
     console.error("Error updating email settings:", error);
     return NextResponse.json(

@@ -32,15 +32,14 @@ export default function NewsletterWelcomeEmail({
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Welcome to Artisan Roast! ☕</Heading>
-          
+
           <Text style={text}>
-            Thank you for subscribing to our newsletter! We're excited to have you join our community of coffee enthusiasts.
+            Thank you for subscribing to our newsletter! We're excited to have
+            you join our community of coffee enthusiasts.
           </Text>
 
           <Section style={highlightBox}>
-            <Text style={highlightText}>
-              You'll receive updates about:
-            </Text>
+            <Text style={highlightText}>You'll receive updates about:</Text>
             <ul style={list}>
               <li>New coffee arrivals and seasonal blends</li>
               <li>Exclusive subscriber discounts and promotions</li>
