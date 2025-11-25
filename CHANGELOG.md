@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.24.0 - 2025-11-24
+
+- **Newsletter Backend Foundation**: Email settings and backend infrastructure for newsletter campaigns
+  - Contact email configuration in site settings (default: hello@artisanroast.com)
+  - Newsletter subscriber storage with active/inactive status
+  - Welcome email preparation using Resend integration
+  - Admin dashboard ready for subscriber management
+
 ## 0.23.1 - 2025-11-24
 
 - **Cart Button Fix**: Fixed cart button in chat dialog opening cart drawer instead of 404 error
