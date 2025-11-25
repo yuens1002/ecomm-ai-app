@@ -371,13 +371,15 @@ model SocialLink {
 }
 
 model NewsletterSubscriber {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  subscribedAt DateTime @default(now())
-  isActive     Boolean  @default(true) // Allow unsubscribe without deletion
+  id                String   @id @default(cuid())
+  email             String   @unique
+  subscribedAt      DateTime @default(now())
+  isActive          Boolean  @default(true) // Allow unsubscribe without deletion
+  unsubscribeToken  String   @unique @default(cuid()) // Token for unsubscribe links
   
   @@index([email])
   @@index([isActive])
+  @@index([unsubscribeToken])
 }
 
 // --- Enums ---

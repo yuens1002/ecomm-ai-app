@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { resend } from "@/lib/resend";
+import NewsletterWelcomeEmail from "@/emails/NewsletterWelcomeEmail";
 import { z } from "zod";
+import crypto from "crypto";
 
 const newsletterSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -38,10 +41,31 @@ export async function POST(request: NextRequest) {
         );
       } else {
         // Reactivate subscription
-        await prisma.newsletterSubscriber.update({
+        const subscriber = await prisma.newsletterSubscriber.update({
           where: { email },
           data: { isActive: true, subscribedAt: new Date() },
         });
+
+        // Send welcome back email
+        try {
+          const emailSetting = await prisma.siteSettings.findUnique({
+            where: { key: "contactEmail" },
+          });
+          const fromEmail = emailSetting?.value || "onboarding@resend.dev";
+
+          await resend.emails.send({
+            from: `Artisan Roast <${fromEmail}>`,
+            to: [email],
+            subject: "Welcome Back to Artisan Roast Newsletter! ☕",
+            react: NewsletterWelcomeEmail({
+              email,
+              unsubscribeToken: subscriber.unsubscribeToken,
+            }),
+          });
+        } catch (emailError) {
+          console.error("Error sending welcome back email:", emailError);
+        }
+
         return NextResponse.json(
           { message: "Welcome back! Your subscription has been reactivated." },
           { status: 200 }
@@ -49,10 +73,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Generate unsubscribe token
+    const unsubscribeToken = crypto.randomBytes(32).toString("hex");
+
     // Create new subscription
-    await prisma.newsletterSubscriber.create({
-      data: { email },
+    const subscriber = await prisma.newsletterSubscriber.create({
+      data: { 
+        email,
+        unsubscribeToken,
+      },
     });
+
+    // Get contact email from settings
+    const emailSetting = await prisma.siteSettings.findUnique({
+      where: { key: "contactEmail" },
+    });
+    const fromEmail = emailSetting?.value || "onboarding@resend.dev";
+
+    // Send welcome email
+    try {
+      await resend.emails.send({
+        from: `Artisan Roast <${fromEmail}>`,
+        to: [email],
+        subject: "Welcome to Artisan Roast Newsletter! ☕",
+        react: NewsletterWelcomeEmail({
+          email,
+          unsubscribeToken: subscriber.unsubscribeToken,
+        }),
+      });
+    } catch (emailError) {
+      console.error("Error sending welcome email:", emailError);
+      // Don't fail the subscription if email fails
+    }
 
     return NextResponse.json(
       { message: "Successfully subscribed to our newsletter!" },
