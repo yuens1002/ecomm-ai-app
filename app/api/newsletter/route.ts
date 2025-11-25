@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resend } from "@/lib/resend";
 import NewsletterWelcomeEmail from "@/emails/NewsletterWelcomeEmail";
+import NewsletterSignupNotification from "@/emails/NewsletterSignupNotification";
 import { z } from "zod";
 
 const newsletterSchema = z.object({
@@ -45,12 +46,18 @@ export async function POST(request: NextRequest) {
           data: { isActive: true, subscribedAt: new Date() },
         });
 
-        // Send welcome back email
+        // Send welcome back email and admin notification
         try {
-          const emailSetting = await prisma.siteSettings.findUnique({
-            where: { key: "contactEmail" },
-          });
+          const [emailSetting, notifySetting] = await Promise.all([
+            prisma.siteSettings.findUnique({
+              where: { key: "contactEmail" },
+            }),
+            prisma.siteSettings.findUnique({
+              where: { key: "notifyAdminOnNewsletterSignup" },
+            }),
+          ]);
           const fromEmail = emailSetting?.value || "onboarding@resend.dev";
+          const shouldNotifyAdmin = notifySetting?.value === "true";
 
           await resend.emails.send({
             from: `Artisan Roast <${fromEmail}>`,
@@ -61,6 +68,27 @@ export async function POST(request: NextRequest) {
               unsubscribeToken: subscriber.unsubscribeToken,
             }),
           });
+
+          // Send admin notification if enabled
+          if (shouldNotifyAdmin) {
+            const totalSubscribers = await prisma.newsletterSubscriber.count({
+              where: { isActive: true },
+            });
+
+            await resend.emails.send({
+              from: `Artisan Roast Notifications <${fromEmail}>`,
+              to: [fromEmail],
+              subject: `Newsletter Resubscribed: ${email}`,
+              react: NewsletterSignupNotification({
+                subscriberEmail: email,
+                subscribedAt: subscriber.subscribedAt.toLocaleString("en-US", {
+                  dateStyle: "long",
+                  timeStyle: "short",
+                }),
+                totalSubscribers,
+              }),
+            });
+          }
         } catch (emailError) {
           console.error("Error sending welcome back email:", emailError);
         }
@@ -79,11 +107,17 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Get contact email from settings
-    const emailSetting = await prisma.siteSettings.findUnique({
-      where: { key: "contactEmail" },
-    });
+    // Get settings
+    const [emailSetting, notifySetting] = await Promise.all([
+      prisma.siteSettings.findUnique({
+        where: { key: "contactEmail" },
+      }),
+      prisma.siteSettings.findUnique({
+        where: { key: "notifyAdminOnNewsletterSignup" },
+      }),
+    ]);
     const fromEmail = emailSetting?.value || "onboarding@resend.dev";
+    const shouldNotifyAdmin = notifySetting?.value === "true";
 
     // Send welcome email
     try {
@@ -99,6 +133,32 @@ export async function POST(request: NextRequest) {
     } catch (emailError) {
       console.error("Error sending welcome email:", emailError);
       // Don't fail the subscription if email fails
+    }
+
+    // Send admin notification if enabled
+    if (shouldNotifyAdmin) {
+      try {
+        const totalSubscribers = await prisma.newsletterSubscriber.count({
+          where: { isActive: true },
+        });
+
+        await resend.emails.send({
+          from: `Artisan Roast Notifications <${fromEmail}>`,
+          to: [fromEmail],
+          subject: `New Newsletter Subscriber: ${email}`,
+          react: NewsletterSignupNotification({
+            subscriberEmail: email,
+            subscribedAt: subscriber.subscribedAt.toLocaleString("en-US", {
+              dateStyle: "long",
+              timeStyle: "short",
+            }),
+            totalSubscribers,
+          }),
+        });
+      } catch (adminEmailError) {
+        console.error("Error sending admin notification:", adminEmailError);
+        // Don't fail the subscription if admin email fails
+      }
     }
 
     return NextResponse.json(

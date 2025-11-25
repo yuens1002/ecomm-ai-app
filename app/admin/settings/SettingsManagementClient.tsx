@@ -25,6 +25,7 @@ interface FooterSettings {
 
 interface EmailSettings {
   contactEmail: string;
+  notifyAdminOnNewsletterSignup: boolean;
 }
 
 type FieldName =
@@ -32,7 +33,8 @@ type FieldName =
   | "hoursText"
   | "showEmail"
   | "email"
-  | "contactEmail";
+  | "contactEmail"
+  | "notifyAdminOnNewsletterSignup";
 
 export default function SettingsManagementClient() {
   const { toast } = useToast();
@@ -43,6 +45,7 @@ export default function SettingsManagementClient() {
     showEmail: false,
     email: false,
     contactEmail: false,
+    notifyAdminOnNewsletterSignup: false,
   });
   const [settings, setSettings] = useState<FooterSettings>({
     showHours: true,
@@ -58,10 +61,12 @@ export default function SettingsManagementClient() {
   });
   const [emailSettings, setEmailSettings] = useState<EmailSettings>({
     contactEmail: "onboarding@resend.dev",
+    notifyAdminOnNewsletterSignup: false,
   });
   const [originalEmailSettings, setOriginalEmailSettings] =
     useState<EmailSettings>({
       contactEmail: "onboarding@resend.dev",
+      notifyAdminOnNewsletterSignup: false,
     });
 
   const fetchSettings = useCallback(async () => {
@@ -100,7 +105,10 @@ export default function SettingsManagementClient() {
   const handleSaveField = async (field: FieldName) => {
     setSavingFields({ ...savingFields, [field]: true });
     try {
-      if (field === "contactEmail") {
+      if (
+        field === "contactEmail" ||
+        field === "notifyAdminOnNewsletterSignup"
+      ) {
         const response = await fetch("/api/admin/settings/email", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -144,7 +152,7 @@ export default function SettingsManagementClient() {
   };
 
   const isFieldDirty = (field: FieldName) => {
-    if (field === "contactEmail") {
+    if (field === "contactEmail" || field === "notifyAdminOnNewsletterSignup") {
       return emailSettings[field] !== originalEmailSettings[field];
     }
     return settings[field] !== originalSettings[field];
@@ -230,6 +238,71 @@ export default function SettingsManagementClient() {
               This email will be used as the sender address for welcome emails,
               order confirmations, and contact form submissions.
             </p>
+          </div>
+
+          <div className="border-t pt-6 mt-6" />
+
+          {/* Newsletter Admin Notifications */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-12">
+              <div className="space-y-0.5">
+                <Label htmlFor="notify-admin">Newsletter Notifications</Label>
+                <p className="text-sm text-muted-foreground">
+                  Send email notification to admin when someone subscribes to
+                  the newsletter
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="notify-admin"
+                  className="text-xs text-muted-foreground w-14"
+                >
+                  {emailSettings.notifyAdminOnNewsletterSignup
+                    ? "Active"
+                    : "Inactive"}
+                </Label>
+                <Switch
+                  id="notify-admin"
+                  checked={emailSettings.notifyAdminOnNewsletterSignup}
+                  onCheckedChange={(checked) =>
+                    setEmailSettings({
+                      ...emailSettings,
+                      notifyAdminOnNewsletterSignup: checked,
+                    })
+                  }
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    handleSaveField("notifyAdminOnNewsletterSignup")
+                  }
+                  disabled={
+                    !isFieldDirty("notifyAdminOnNewsletterSignup") ||
+                    savingFields["notifyAdminOnNewsletterSignup"]
+                  }
+                  className="shrink-0"
+                >
+                  {savingFields["notifyAdminOnNewsletterSignup"] ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="ml-2">Saving</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span className="ml-2">Save</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+            {isFieldDirty("notifyAdminOnNewsletterSignup") && (
+              <p className="text-sm text-amber-600 dark:text-amber-500 flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                Unsaved changes
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

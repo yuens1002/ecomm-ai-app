@@ -13,13 +13,21 @@ export async function GET() {
   }
 
   try {
-    const setting = await prisma.siteSettings.findUnique({
-      where: { key: "contactEmail" },
-      select: { value: true },
-    });
+    const [contactEmailSetting, notifyAdminSetting] = await Promise.all([
+      prisma.siteSettings.findUnique({
+        where: { key: "contactEmail" },
+        select: { value: true },
+      }),
+      prisma.siteSettings.findUnique({
+        where: { key: "notifyAdminOnNewsletterSignup" },
+        select: { value: true },
+      }),
+    ]);
 
     return NextResponse.json({
-      contactEmail: setting?.value || "onboarding@resend.dev",
+      contactEmail: contactEmailSetting?.value || "onboarding@resend.dev",
+      notifyAdminOnNewsletterSignup:
+        notifyAdminSetting?.value === "true" || false,
     });
   } catch (error) {
     console.error("Error fetching email settings:", error);
@@ -42,7 +50,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { contactEmail } = body;
+    const { contactEmail, notifyAdminOnNewsletterSignup } = body;
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -53,11 +61,21 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    await prisma.siteSettings.upsert({
-      where: { key: "contactEmail" },
-      update: { value: contactEmail },
-      create: { key: "contactEmail", value: contactEmail },
-    });
+    await Promise.all([
+      prisma.siteSettings.upsert({
+        where: { key: "contactEmail" },
+        update: { value: contactEmail },
+        create: { key: "contactEmail", value: contactEmail },
+      }),
+      prisma.siteSettings.upsert({
+        where: { key: "notifyAdminOnNewsletterSignup" },
+        update: { value: String(notifyAdminOnNewsletterSignup) },
+        create: {
+          key: "notifyAdminOnNewsletterSignup",
+          value: String(notifyAdminOnNewsletterSignup),
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       message: "Email settings updated successfully",
