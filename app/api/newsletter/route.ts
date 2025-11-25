@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resend } from "@/lib/resend";
+import { render } from "@react-email/render";
 import NewsletterWelcomeEmail from "@/emails/NewsletterWelcomeEmail";
 import NewsletterSignupNotification from "@/emails/NewsletterSignupNotification";
 import { z } from "zod";
@@ -59,14 +60,18 @@ export async function POST(request: NextRequest) {
           const fromEmail = emailSetting?.value || "onboarding@resend.dev";
           const shouldNotifyAdmin = notifySetting?.value === "true";
 
+          const welcomeBackHtml = await render(
+            NewsletterWelcomeEmail({
+              email,
+              unsubscribeToken: subscriber.unsubscribeToken,
+            })
+          );
+
           await resend.emails.send({
             from: `Artisan Roast <${fromEmail}>`,
             to: [email],
             subject: "Welcome Back to Artisan Roast Newsletter! ☕",
-            react: NewsletterWelcomeEmail({
-              email,
-              unsubscribeToken: subscriber.unsubscribeToken,
-            }),
+            html: welcomeBackHtml,
           });
 
           // Send admin notification if enabled
@@ -75,18 +80,22 @@ export async function POST(request: NextRequest) {
               where: { isActive: true },
             });
 
-            await resend.emails.send({
-              from: `Artisan Roast Notifications <${fromEmail}>`,
-              to: [fromEmail],
-              subject: `Newsletter Resubscribed: ${email}`,
-              react: NewsletterSignupNotification({
+            const resubNotificationHtml = await render(
+              NewsletterSignupNotification({
                 subscriberEmail: email,
                 subscribedAt: subscriber.subscribedAt.toLocaleString("en-US", {
                   dateStyle: "long",
                   timeStyle: "short",
                 }),
                 totalSubscribers,
-              }),
+              })
+            );
+
+            await resend.emails.send({
+              from: `Artisan Roast Notifications <${fromEmail}>`,
+              to: [fromEmail],
+              subject: `Newsletter Resubscribed: ${email}`,
+              html: resubNotificationHtml,
             });
           }
         } catch (emailError) {
@@ -121,14 +130,18 @@ export async function POST(request: NextRequest) {
 
     // Send welcome email
     try {
+      const emailHtml = await render(
+        NewsletterWelcomeEmail({
+          email,
+          unsubscribeToken: subscriber.unsubscribeToken,
+        })
+      );
+
       await resend.emails.send({
         from: `Artisan Roast <${fromEmail}>`,
         to: [email],
         subject: "Welcome to Artisan Roast Newsletter! ☕",
-        react: NewsletterWelcomeEmail({
-          email,
-          unsubscribeToken: subscriber.unsubscribeToken,
-        }),
+        html: emailHtml,
       });
     } catch (emailError) {
       console.error("Error sending welcome email:", emailError);
@@ -142,18 +155,22 @@ export async function POST(request: NextRequest) {
           where: { isActive: true },
         });
 
-        await resend.emails.send({
-          from: `Artisan Roast Notifications <${fromEmail}>`,
-          to: [fromEmail],
-          subject: `New Newsletter Subscriber: ${email}`,
-          react: NewsletterSignupNotification({
+        const notificationHtml = await render(
+          NewsletterSignupNotification({
             subscriberEmail: email,
             subscribedAt: subscriber.subscribedAt.toLocaleString("en-US", {
               dateStyle: "long",
               timeStyle: "short",
             }),
             totalSubscribers,
-          }),
+          })
+        );
+
+        await resend.emails.send({
+          from: `Artisan Roast Notifications <${fromEmail}>`,
+          to: [fromEmail],
+          subject: `New Newsletter Subscriber: ${email}`,
+          html: notificationHtml,
         });
       } catch (adminEmailError) {
         console.error("Error sending admin notification:", adminEmailError);
