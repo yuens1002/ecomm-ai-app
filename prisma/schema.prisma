@@ -24,7 +24,10 @@ model Product {
   tastingNotes  String[] // PostgreSQL arrays are great for this
   roastLevel    RoastLevel @default(MEDIUM)
   isOrganic     Boolean @default(false)
-
+  
+  // --- SPECIALTY COFFEE DETAILS ---
+  altitude      String? // Growing altitude (e.g., "1200-1500m")
+  variety       String? // Coffee variety (e.g., "Bourbon", "Typica", "Geisha")
 
   // --- FIELDS FOR HOMEPAGE ---
   isFeatured    Boolean @default(false)
@@ -33,6 +36,7 @@ model Product {
   // --- Relations ---
   images        ProductImage[] // A product can have many images
   variants      ProductVariant[] // A product can have many variants (e.g., 12oz, 5lb)
+  tags          ProductTag[] // Many-to-many relation to tags (max 3 per product)
   
   // UPDATED: This is now a many-to-many relation
   categories    CategoriesOnProducts[]
@@ -370,6 +374,40 @@ model SocialLink {
   @@index([isActive])
 }
 
+// --- Product Tags ---
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique // Unique slug-friendly name (e.g., "single-origin", "limited-edition")
+  label     String   // Display text (e.g., "Single Origin", "Limited Edition")
+  color     TagColor // Badge color for UI display
+  
+  products  ProductTag[] // Many-to-many relation to products
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([name])
+}
+
+// Junction table for Product <-> Tag many-to-many with ordering
+model ProductTag {
+  id           String  @id @default(cuid())
+  productId    String
+  tagId        String
+  displayOrder Int     @default(0) // Custom ordering per product
+  
+  product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag          Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@unique([productId, tagId]) // Prevent duplicate tags on same product
+  @@index([productId])
+  @@index([tagId])
+}
+
 model NewsletterSubscriber {
   id                String   @id @default(cuid())
   email             String   @unique
@@ -416,4 +454,14 @@ enum RoastLevel {
   LIGHT
   MEDIUM
   DARK
+}
+
+enum TagColor {
+  RED
+  ORANGE
+  GREEN
+  BLUE
+  PURPLE
+  YELLOW
+  GRAY
 }
