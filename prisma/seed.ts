@@ -57,7 +57,7 @@ async function main() {
     update: {},
     create: {
       key: "contactEmail",
-      value: "hello@artisanroast.com",
+      value: "onboarding@resend.dev",
     },
   });
 
