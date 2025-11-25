@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.24.2 - 2025-11-25
+
+- **Product Tag System**: Added altitude, variety fields and tag system with many-to-many relations
+
 ## 0.24.1 - 2025-11-25
 
 - **Feature Toggle System**: Newsletter and social links features now configurable from admin settings
