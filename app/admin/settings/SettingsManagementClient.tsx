@@ -12,9 +12,7 @@ import {
   Field,
   FieldContent,
   FieldDescription,
-  FieldError,
   FieldGroup,
-  FieldLabel,
   FieldTitle,
 } from "@/components/ui/field";
 import SocialLinksSettings from "./SocialLinksSettings";
@@ -189,47 +187,10 @@ export default function SettingsManagementClient() {
     return settings[field] !== originalSettings[field];
   };
 
-  const isNewsletterEnabledDirty =
-    newsletterSettings.enabled !== originalNewsletterSettings.enabled;
   const isNewsletterHeadingDirty =
     newsletterSettings.heading !== originalNewsletterSettings.heading;
   const isNewsletterDescriptionDirty =
     newsletterSettings.description !== originalNewsletterSettings.description;
-  const isNewsletterDirty =
-    isNewsletterEnabledDirty ||
-    isNewsletterHeadingDirty ||
-    isNewsletterDescriptionDirty;
-
-  const handleNewsletterAutoSave = async (
-    updates: Partial<NewsletterSettings>
-  ) => {
-    const newSettings = { ...newsletterSettings, ...updates };
-    setNewsletterSettings(newSettings);
-    setSavingNewsletter(true);
-
-    try {
-      const response = await fetch("/api/admin/settings/newsletter", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSettings),
-      });
-
-      if (!response.ok) throw new Error("Failed to save newsletter settings");
-
-      setOriginalNewsletterSettings(newSettings);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to save settings",
-        variant: "destructive",
-      });
-      // Revert on error
-      setNewsletterSettings(newsletterSettings);
-    } finally {
-      setSavingNewsletter(false);
-    }
-  };
 
   const handleSaveNewsletterSettings = async () => {
     setSavingNewsletter(true);
