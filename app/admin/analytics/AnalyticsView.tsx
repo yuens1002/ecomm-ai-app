@@ -306,32 +306,41 @@ export default function AnalyticsView({
         <CardHeader>
           <CardTitle>Daily Activity Trend</CardTitle>
           <CardDescription>
-            User activity over {data.period.toLowerCase()}
+            Total user activities per day (views, searches, cart adds, orders)
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {data.dailyActivity.map((day) => (
-              <div key={day.date} className="flex items-center gap-4">
-                <span className="text-xs text-muted-foreground w-20">
-                  {new Date(day.date).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </span>
-                <div className="flex-1 h-8 bg-secondary rounded-sm overflow-hidden">
-                  <div
-                    className="h-full bg-accent transition-all"
-                    style={{
-                      width: `${(day.count / maxDailyActivity) * 100}%`,
-                    }}
-                  />
+            {data.dailyActivity.map((day) => {
+              const percentage =
+                maxDailyActivity > 0 ? (day.count / maxDailyActivity) * 100 : 0;
+              // Ensure minimum visible width for non-zero values
+              const displayWidth = day.count > 0 ? Math.max(percentage, 2) : 0;
+
+              return (
+                <div key={day.date} className="flex items-center gap-4">
+                  <span className="text-xs text-muted-foreground w-20">
+                    {new Date(day.date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                  <div className="flex-1 h-8 bg-secondary rounded-sm overflow-hidden relative">
+                    {day.count > 0 && (
+                      <div
+                        className="h-full bg-teal-500 transition-all"
+                        style={{
+                          width: `${displayWidth}%`,
+                        }}
+                      />
+                    )}
+                  </div>
+                  <span className="text-sm font-medium w-12 text-right">
+                    {day.count}
+                  </span>
                 </div>
-                <span className="text-sm font-medium w-12 text-right">
-                  {day.count}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>

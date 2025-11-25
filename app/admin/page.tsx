@@ -32,13 +32,21 @@ export default async function AdminDashboardPage() {
   }
 
   // Fetch dashboard stats
-  const [totalUsers, totalOrders, totalProducts, adminCount] =
-    await Promise.all([
-      prisma.user.count(),
-      prisma.order.count(),
-      prisma.product.count(),
-      prisma.user.count({ where: { isAdmin: true } }),
-    ]);
+  const [
+    totalUsers,
+    totalOrders,
+    totalProducts,
+    adminCount,
+    newsletterTotal,
+    newsletterActive,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.order.count(),
+    prisma.product.count(),
+    prisma.user.count({ where: { isAdmin: true } }),
+    prisma.newsletterSubscriber.count(),
+    prisma.newsletterSubscriber.count({ where: { isActive: true } }),
+  ]);
 
   return (
     <AdminDashboardClient
@@ -48,6 +56,9 @@ export default async function AdminDashboardPage() {
         totalOrders,
         totalProducts,
         adminCount,
+        newsletterTotal,
+        newsletterActive,
+        newsletterInactive: newsletterTotal - newsletterActive,
       }}
     />
   );

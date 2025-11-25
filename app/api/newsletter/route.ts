@@ -29,6 +29,19 @@ export async function POST(request: NextRequest) {
 
     const { email } = validation.data;
 
+    const newsletterStatus = await prisma.siteSettings.findUnique({
+      where: { key: "newsletter_enabled" },
+      select: { value: true },
+    });
+
+    const isNewsletterEnabled = newsletterStatus?.value !== "false";
+    if (!isNewsletterEnabled) {
+      return NextResponse.json(
+        { error: "Newsletter signups are currently disabled." },
+        { status: 503 }
+      );
+    }
+
     // Check if already subscribed
     const existing = await prisma.newsletterSubscriber.findUnique({
       where: { email },
@@ -64,7 +77,8 @@ export async function POST(request: NextRequest) {
             NewsletterWelcomeEmail({
               email,
               unsubscribeToken: subscriber.unsubscribeToken,
-            })
+            }),
+            { pretty: false }
           );
 
           await resend.emails.send({
@@ -88,7 +102,8 @@ export async function POST(request: NextRequest) {
                   timeStyle: "short",
                 }),
                 totalSubscribers,
-              })
+              }),
+              { pretty: false }
             );
 
             await resend.emails.send({
@@ -134,8 +149,11 @@ export async function POST(request: NextRequest) {
         NewsletterWelcomeEmail({
           email,
           unsubscribeToken: subscriber.unsubscribeToken,
-        })
+        }),
+        { pretty: false }
       );
+
+      console.log("Welcome email HTML length:", emailHtml.length);
 
       await resend.emails.send({
         from: `Artisan Roast <${fromEmail}>`,
@@ -163,8 +181,11 @@ export async function POST(request: NextRequest) {
               timeStyle: "short",
             }),
             totalSubscribers,
-          })
+          }),
+          { pretty: false }
         );
+
+        console.log("Admin notification HTML length:", notificationHtml.length);
 
         await resend.emails.send({
           from: `Artisan Roast Notifications <${fromEmail}>`,

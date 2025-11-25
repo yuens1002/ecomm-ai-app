@@ -39,10 +39,15 @@ import {
   Field,
   FieldContent,
   FieldDescription,
+  FieldGroup,
   FieldTitle,
 } from "@/components/ui/field";
 import { ButtonGroup } from "@/components/ui/button-group";
 import FileUpload from "@/components/app-components/FileUpload";
+import { FormHeading } from "@/components/ui/app/FormHeading";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Mail } from "lucide-react";
 
 interface SocialLink {
   id: string;
@@ -72,13 +77,34 @@ const SOCIAL_PLATFORMS = [
 
 const MAX_LINKS = 5;
 
+interface SocialLinksFeatureSettings {
+  enabled: boolean;
+  heading: string;
+  description: string;
+}
+
 export default function SocialLinksSettings() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [savingLinks, setSavingLinks] = useState<Record<string, boolean>>({});
+  const [savingFeature, setSavingFeature] = useState(false);
   const [links, setLinks] = useState<SocialLink[]>([]);
   const [originalLinks, setOriginalLinks] = useState<SocialLink[]>([]);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Feature settings
+  const [featureSettings, setFeatureSettings] =
+    useState<SocialLinksFeatureSettings>({
+      enabled: false,
+      heading: "Stay Connected",
+      description: "",
+    });
+  const [originalFeatureSettings, setOriginalFeatureSettings] =
+    useState<SocialLinksFeatureSettings>({
+      enabled: false,
+      heading: "Stay Connected",
+      description: "",
+    });
 
   // Separate tracking for system vs custom platform names and URLs
   const [systemPlatforms, setSystemPlatforms] = useState<
@@ -90,14 +116,25 @@ export default function SocialLinksSettings() {
   const [systemUrls, setSystemUrls] = useState<Record<string, string>>({});
   const [customUrls, setCustomUrls] = useState<Record<string, string>>({});
 
-  const fetchLinks = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const response = await fetch("/api/admin/settings/social-links");
-      if (!response.ok) throw new Error("Failed to fetch social links");
+      const [linksResponse, featureResponse] = await Promise.all([
+        fetch("/api/admin/settings/social-links"),
+        fetch("/api/admin/settings/social-links-feature"),
+      ]);
 
-      const data = await response.json();
-      setLinks(data);
-      setOriginalLinks(JSON.parse(JSON.stringify(data))); // Deep copy
+      if (!linksResponse.ok) throw new Error("Failed to fetch social links");
+      if (!featureResponse.ok)
+        throw new Error("Failed to fetch feature settings");
+
+      const linksData = await linksResponse.json();
+      const featureData = await featureResponse.json();
+
+      setLinks(linksData);
+      setOriginalLinks(JSON.parse(JSON.stringify(linksData))); // Deep copy
+
+      setFeatureSettings(featureData);
+      setOriginalFeatureSettings(JSON.parse(JSON.stringify(featureData))); // Deep copy
 
       // Initialize separate platform name and URL tracking
       const systemPlatformsMap: Record<string, string> = {};
@@ -105,7 +142,7 @@ export default function SocialLinksSettings() {
       const systemUrlsMap: Record<string, string> = {};
       const customUrlsMap: Record<string, string> = {};
 
-      data.forEach((link: SocialLink) => {
+      linksData.forEach((link: SocialLink) => {
         if (link.useCustomIcon) {
           customPlatformsMap[link.id] = link.platform;
           customUrlsMap[link.id] = link.url;
@@ -122,7 +159,7 @@ export default function SocialLinksSettings() {
     } catch {
       toast({
         title: "Error",
-        description: "Failed to load social links",
+        description: "Failed to load settings",
         variant: "destructive",
       });
     } finally {
@@ -131,8 +168,8 @@ export default function SocialLinksSettings() {
   }, [toast]);
 
   useEffect(() => {
-    fetchLinks();
-  }, [fetchLinks]);
+    fetchData();
+  }, [fetchData]);
 
   const handleSave = async (linkId: string) => {
     const link = links.find((l) => l.id === linkId);
@@ -185,6 +222,35 @@ export default function SocialLinksSettings() {
       });
     } finally {
       setSavingLinks({ ...savingLinks, [linkId]: false });
+    }
+  };
+
+  const handleSaveFeatureSettings = async () => {
+    setSavingFeature(true);
+    try {
+      const response = await fetch("/api/admin/settings/social-links-feature", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(featureSettings),
+      });
+
+      if (!response.ok) throw new Error("Failed to save feature settings");
+
+      toast({
+        title: "Success",
+        description: "Social links feature settings saved",
+      });
+
+      setOriginalFeatureSettings(JSON.parse(JSON.stringify(featureSettings)));
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to save settings",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingFeature(false);
     }
   };
 
@@ -332,6 +398,12 @@ export default function SocialLinksSettings() {
     );
   };
 
+  // Check if feature settings are dirty
+  const isFeatureHeadingDirty =
+    featureSettings.heading !== originalFeatureSettings.heading;
+  const isFeatureDescriptionDirty =
+    featureSettings.description !== originalFeatureSettings.description;
+
   // Render icon preview with case-insensitive matching
   const renderIcon = (iconName: string) => {
     // Try exact match first
@@ -390,11 +462,12 @@ export default function SocialLinksSettings() {
       </AlertDialog>
 
       <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
+        <CardHeader className="pb-8">
+          <div className="flex items-start justify-between gap-4">
             <Field orientation="vertical">
               <FieldContent>
-                <FieldTitle className="text-base font-semibold">
+                <FieldTitle className="text-base font-semibold flex items-center gap-2">
+                  <Mail className="h-5 w-5" />
                   Social Media Links
                 </FieldTitle>
                 <FieldDescription>
@@ -402,347 +475,482 @@ export default function SocialLinksSettings() {
                 </FieldDescription>
               </FieldContent>
             </Field>
-            <Button
-              onClick={addLink}
-              size="sm"
-              disabled={links.length >= MAX_LINKS}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Link {links.length > 0 && `(${links.length}/${MAX_LINKS})`}
-            </Button>
+            <div className="flex items-center gap-2 shrink-0 pt-1">
+              <Label
+                htmlFor="social-links-enabled"
+                className="text-xs text-muted-foreground w-14 text-right"
+              >
+                {featureSettings.enabled ? "Active" : "Inactive"}
+              </Label>
+              <Switch
+                id="social-links-enabled"
+                checked={featureSettings.enabled}
+                onCheckedChange={async (checked) => {
+                  const newSettings = {
+                    ...featureSettings,
+                    enabled: checked,
+                  };
+                  setFeatureSettings(newSettings);
+                  setSavingFeature(true);
+
+                  try {
+                    const response = await fetch(
+                      "/api/admin/settings/social-links-feature",
+                      {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(newSettings),
+                      }
+                    );
+
+                    if (!response.ok)
+                      throw new Error("Failed to save feature settings");
+
+                    setOriginalFeatureSettings(newSettings);
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description:
+                        error instanceof Error
+                          ? error.message
+                          : "Failed to save settings",
+                      variant: "destructive",
+                    });
+                    // Revert on error
+                    setFeatureSettings(featureSettings);
+                  } finally {
+                    setSavingFeature(false);
+                  }
+                }}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Feature Settings: Heading & Description */}
+          <FieldGroup>
+            <Field>
+              <FormHeading
+                htmlFor="social-links-heading"
+                label="Heading"
+                isDirty={isFeatureHeadingDirty}
+              />
+              <Input
+                id="social-links-heading"
+                value={featureSettings.heading}
+                onChange={(e) =>
+                  setFeatureSettings({
+                    ...featureSettings,
+                    heading: e.target.value,
+                  })
+                }
+                placeholder={originalFeatureSettings.heading}
+                className={isFeatureHeadingDirty ? "border-amber-500" : ""}
+              />
+            </Field>
+            <Field>
+              <FormHeading
+                htmlFor="social-links-description"
+                label="Description (Optional)"
+                isDirty={isFeatureDescriptionDirty}
+              />
+              <Textarea
+                id="social-links-description"
+                value={featureSettings.description}
+                onChange={(e) =>
+                  setFeatureSettings({
+                    ...featureSettings,
+                    description: e.target.value,
+                  })
+                }
+                rows={3}
+                placeholder="Add an optional description for the social links section"
+                className={isFeatureDescriptionDirty ? "border-amber-500" : ""}
+              />
+            </Field>
+
+            <div className="flex items-center justify-end pt-2">
+              <Button
+                size="sm"
+                onClick={handleSaveFeatureSettings}
+                disabled={savingFeature}
+                className="shrink-0"
+              >
+                {savingFeature ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="ml-2">Saving</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    <span className="ml-2">Save</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </FieldGroup>
+
+          <div className="border-t pt-6 mt-6" />
+
+          {/* Links Management */}
           {links.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No social links added yet. Click &quot;Add Link&quot; to get
-              started.
+            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+              <Button
+                onClick={addLink}
+                size="sm"
+                disabled={links.length >= MAX_LINKS}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Link {links.length > 0 && `(${links.length}/${MAX_LINKS})`}
+              </Button>
+              <p className="text-center text-sm text-muted-foreground">
+                No social links added yet. Click &quot;Add Link&quot; to get
+                started.
+              </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {links.map((link, index) => {
-                const isDirty = isLinkDirty(link.id);
-                return (
-                  <div
-                    key={link.id}
-                    className="flex items-center gap-3 p-4 rounded-lg"
-                  >
-                    <div className="flex-1 space-y-4">
-                      {/* Header row with title, actions, and unsaved changes */}
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <h3 className="text-sm font-medium">
-                            Social Link ({index + 1}/{links.length})
-                          </h3>
-                          <Label
-                            htmlFor={`active-${link.id}`}
-                            className="text-xs text-muted-foreground w-14"
-                          >
-                            {link.isActive ? "Active" : "Inactive"}
-                          </Label>
-                          <Switch
-                            id={`active-${link.id}`}
-                            checked={link.isActive}
-                            onCheckedChange={(checked) =>
-                              updateLink(link.id, { isActive: checked })
-                            }
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => removeLink(link.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          {isDirty && (
-                            <span className="text-sm text-amber-600 dark:text-amber-500 flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                              Unsaved changes
-                            </span>
-                          )}
-                          <Button
-                            onClick={() => handleSave(link.id)}
-                            disabled={savingLinks[link.id] || !isDirty}
-                            variant="outline"
-                            size="sm"
-                          >
-                            {savingLinks[link.id] ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Saving...
-                              </>
-                            ) : (
-                              <>
-                                <Save className="mr-2 h-4 w-4" />
-                                Save
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Platform Type Radio Group */}
-                      <div className="space-y-8">
-                        <Label className="hidden">
-                          Toggle between system or custom social icon link
-                        </Label>
-                        <RadioGroup
-                          value={link.useCustomIcon ? "custom" : "system"}
-                          onValueChange={(value) => {
-                            const isCustom = value === "custom";
-
-                            // Use the stored platform name and URL for the selected mode
-                            const platformName = isCustom
-                              ? customPlatforms[link.id] || ""
-                              : systemPlatforms[link.id] || "";
-                            const url = isCustom
-                              ? customUrls[link.id] || ""
-                              : systemUrls[link.id] || "";
-
-                            updateLink(link.id, {
-                              useCustomIcon: isCustom,
-                              platform: platformName,
-                              url: url,
-                              // Don't set icon to "Link" if not custom, preserve existing icon
-                              ...(!isCustom && { icon: link.icon }),
-                            });
-                          }}
-                        >
-                          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6">
-                            {/* System Platforms */}
-                            <label
-                              htmlFor={`system-${link.id}`}
-                              className={`block p-6 rounded-lg transition-all cursor-pointer ${
-                                !link.useCustomIcon
-                                  ? isDirty
-                                    ? "border border-amber-500"
-                                    : "border border-primary/30"
-                                  : "border border-border/80"
-                              }`}
+            <>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">Manage Links</h3>
+                <Button
+                  onClick={addLink}
+                  size="sm"
+                  disabled={links.length >= MAX_LINKS}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Link{" "}
+                  {links.length > 0 && `(${links.length}/${MAX_LINKS})`}
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {links.map((link, index) => {
+                  const isDirty = isLinkDirty(link.id);
+                  return (
+                    <div
+                      key={link.id}
+                      className="flex items-center gap-3 rounded-lg"
+                    >
+                      <div className="flex-1 space-y-4">
+                        {/* Header row with title, actions, and unsaved changes */}
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-sm font-medium">
+                              Social Link ({index + 1}/{links.length})
+                            </h3>
+                            <Label
+                              htmlFor={`active-${link.id}`}
+                              className="text-xs text-muted-foreground w-14"
                             >
-                              <Field orientation="horizontal">
-                                <FieldContent>
-                                  <FieldTitle>
-                                    Social media platforms
-                                  </FieldTitle>
-                                  <FieldDescription>
-                                    Choose a social media platform
-                                  </FieldDescription>
-                                </FieldContent>
-                                <RadioGroupItem
-                                  value="system"
-                                  id={`system-${link.id}`}
-                                />
-                              </Field>
+                              {link.isActive ? "Active" : "Inactive"}
+                            </Label>
+                            <Switch
+                              id={`active-${link.id}`}
+                              checked={link.isActive}
+                              onCheckedChange={(checked) =>
+                                updateLink(link.id, { isActive: checked })
+                              }
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => removeLink(link.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
 
-                              {!link.useCustomIcon && (
-                                <div className="mt-6">
-                                  <div className="flex items-center gap-3">
-                                    <Label className="text-sm font-medium w-12 shrink-0">
-                                      Link
-                                    </Label>
-                                    <ButtonGroup className="flex-1">
-                                      <Select
-                                        value={systemPlatforms[link.id] || ""}
-                                        onValueChange={(value) =>
-                                          selectPlatform(link.id, value)
-                                        }
-                                      >
-                                        <SelectTrigger
-                                          className="w-[140px]"
-                                          onClick={(e) => e.stopPropagation()}
+                          <div className="flex items-center gap-3">
+                            {isDirty && (
+                              <span className="text-sm text-amber-600 dark:text-amber-500 flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                                Unsaved changes
+                              </span>
+                            )}
+                            <Button
+                              onClick={() => handleSave(link.id)}
+                              disabled={savingLinks[link.id] || !isDirty}
+                              variant="outline"
+                              size="sm"
+                            >
+                              {savingLinks[link.id] ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Saving...
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="mr-2 h-4 w-4" />
+                                  Save
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Platform Type Radio Group */}
+                        <div className="space-y-8">
+                          <Label className="hidden">
+                            Toggle between system or custom social icon link
+                          </Label>
+                          <RadioGroup
+                            value={link.useCustomIcon ? "custom" : "system"}
+                            onValueChange={(value) => {
+                              const isCustom = value === "custom";
+
+                              // Use the stored platform name and URL for the selected mode
+                              const platformName = isCustom
+                                ? customPlatforms[link.id] || ""
+                                : systemPlatforms[link.id] || "";
+                              const url = isCustom
+                                ? customUrls[link.id] || ""
+                                : systemUrls[link.id] || "";
+
+                              updateLink(link.id, {
+                                useCustomIcon: isCustom,
+                                platform: platformName,
+                                url: url,
+                                // Don't set icon to "Link" if not custom, preserve existing icon
+                                ...(!isCustom && { icon: link.icon }),
+                              });
+                            }}
+                          >
+                            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6">
+                              {/* System Platforms */}
+                              <label
+                                htmlFor={`system-${link.id}`}
+                                className={`block p-6 rounded-lg transition-all cursor-pointer ${
+                                  !link.useCustomIcon
+                                    ? isDirty
+                                      ? "border border-amber-500"
+                                      : "border border-primary/30"
+                                    : "border border-border/80"
+                                }`}
+                              >
+                                <Field orientation="horizontal">
+                                  <FieldContent>
+                                    <FieldTitle>
+                                      Social media platforms
+                                    </FieldTitle>
+                                    <FieldDescription>
+                                      Choose a social media platform
+                                    </FieldDescription>
+                                  </FieldContent>
+                                  <RadioGroupItem
+                                    value="system"
+                                    id={`system-${link.id}`}
+                                  />
+                                </Field>
+
+                                {!link.useCustomIcon && (
+                                  <div className="mt-6">
+                                    <div className="flex items-center gap-3">
+                                      <Label className="text-sm font-medium w-12 shrink-0">
+                                        Link
+                                      </Label>
+                                      <ButtonGroup className="flex-1">
+                                        <Select
+                                          value={systemPlatforms[link.id] || ""}
+                                          onValueChange={(value) =>
+                                            selectPlatform(link.id, value)
+                                          }
                                         >
-                                          <SelectValue placeholder="Platform" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {SOCIAL_PLATFORMS.filter(
-                                            (p) => p.name !== "Custom"
-                                          ).map((platform) => (
-                                            <SelectItem
-                                              key={platform.name}
-                                              value={platform.name}
-                                            >
-                                              <div className="flex items-center gap-2">
-                                                {renderIcon(platform.icon)}
-                                                {platform.name}
-                                              </div>
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
+                                          <SelectTrigger
+                                            className="w-[140px]"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <SelectValue placeholder="Platform" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {SOCIAL_PLATFORMS.filter(
+                                              (p) => p.name !== "Custom"
+                                            ).map((platform) => (
+                                              <SelectItem
+                                                key={platform.name}
+                                                value={platform.name}
+                                              >
+                                                <div className="flex items-center gap-2">
+                                                  {renderIcon(platform.icon)}
+                                                  {platform.name}
+                                                </div>
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <InputGroup className="flex-1 min-w-0">
+                                          <InputGroupInput
+                                            id={`url-${link.id}`}
+                                            type="text"
+                                            value={systemUrls[link.id] || ""}
+                                            onChange={(e) =>
+                                              updateSystemUrl(
+                                                link.id,
+                                                e.target.value
+                                              )
+                                            }
+                                            placeholder={
+                                              systemPlatforms[link.id] ===
+                                              "Facebook"
+                                                ? "https://facebook.com/yourpage"
+                                                : systemPlatforms[link.id] ===
+                                                    "Twitter/X"
+                                                  ? "https://x.com/yourhandle"
+                                                  : systemPlatforms[link.id] ===
+                                                      "Instagram"
+                                                    ? "https://instagram.com/yourhandle"
+                                                    : systemPlatforms[
+                                                          link.id
+                                                        ] === "LinkedIn"
+                                                      ? "https://linkedin.com/company/yourcompany"
+                                                      : systemPlatforms[
+                                                            link.id
+                                                          ] === "YouTube"
+                                                        ? "https://youtube.com/@yourchannel"
+                                                        : systemPlatforms[
+                                                              link.id
+                                                            ] === "TikTok"
+                                                          ? "https://tiktok.com/@yourhandle"
+                                                          : systemPlatforms[
+                                                                link.id
+                                                              ] === "Pinterest"
+                                                            ? "https://pinterest.com/yourhandle"
+                                                            : systemPlatforms[
+                                                                  link.id
+                                                                ] === "GitHub"
+                                                              ? "https://github.com/yourusername"
+                                                              : systemPlatforms[
+                                                                    link.id
+                                                                  ] ===
+                                                                  "Discord"
+                                                                ? "https://discord.gg/yourinvite"
+                                                                : systemPlatforms[
+                                                                      link.id
+                                                                    ] ===
+                                                                    "Twitch"
+                                                                  ? "https://twitch.tv/yourchannel"
+                                                                  : "Select a platform"
+                                            }
+                                            onClick={(e) => e.stopPropagation()}
+                                          />
+                                        </InputGroup>
+                                      </ButtonGroup>
+                                    </div>
+                                  </div>
+                                )}
+                              </label>
+
+                              {/* Move Up/Down Buttons - Between Options */}
+                              <div className="hidden md:flex flex-col gap-1 justify-center self-center">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-accent"
+                                  onClick={() => moveLink(index, "up")}
+                                  disabled={index === 0}
+                                  title="Move up"
+                                >
+                                  <ChevronUp className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-accent"
+                                  onClick={() => moveLink(index, "down")}
+                                  disabled={index === links.length - 1}
+                                  title="Move down"
+                                >
+                                  <ChevronDown className="h-4 w-4" />
+                                </Button>
+                              </div>
+
+                              {/* Custom Platform */}
+                              <label
+                                htmlFor={`custom-${link.id}`}
+                                className={`block p-6 rounded-lg transition-all cursor-pointer ${
+                                  link.useCustomIcon
+                                    ? isDirty
+                                      ? "border border-amber-500"
+                                      : "border border-primary/30"
+                                    : "border border-border/80"
+                                }`}
+                              >
+                                <Field orientation="horizontal">
+                                  <FieldContent>
+                                    <FieldTitle>Custom</FieldTitle>
+                                    <FieldDescription>
+                                      Enter the name, link & icon URL
+                                    </FieldDescription>
+                                  </FieldContent>
+                                  <RadioGroupItem
+                                    value="custom"
+                                    id={`custom-${link.id}`}
+                                  />
+                                </Field>
+
+                                {link.useCustomIcon && (
+                                  <div className="mt-6 space-y-3">
+                                    <div className="flex items-center gap-3">
+                                      <Label className="text-sm font-medium w-16 shrink-0">
+                                        Name
+                                      </Label>
                                       <InputGroup className="flex-1 min-w-0">
                                         <InputGroupInput
-                                          id={`url-${link.id}`}
                                           type="text"
-                                          value={systemUrls[link.id] || ""}
+                                          value={customPlatforms[link.id] || ""}
                                           onChange={(e) =>
-                                            updateSystemUrl(
+                                            updateCustomPlatformName(
                                               link.id,
                                               e.target.value
                                             )
                                           }
-                                          placeholder={
-                                            systemPlatforms[link.id] ===
-                                            "Facebook"
-                                              ? "https://facebook.com/yourpage"
-                                              : systemPlatforms[link.id] ===
-                                                  "Twitter/X"
-                                                ? "https://x.com/yourhandle"
-                                                : systemPlatforms[link.id] ===
-                                                    "Instagram"
-                                                  ? "https://instagram.com/yourhandle"
-                                                  : systemPlatforms[link.id] ===
-                                                      "LinkedIn"
-                                                    ? "https://linkedin.com/company/yourcompany"
-                                                    : systemPlatforms[
-                                                          link.id
-                                                        ] === "YouTube"
-                                                      ? "https://youtube.com/@yourchannel"
-                                                      : systemPlatforms[
-                                                            link.id
-                                                          ] === "TikTok"
-                                                        ? "https://tiktok.com/@yourhandle"
-                                                        : systemPlatforms[
-                                                              link.id
-                                                            ] === "Pinterest"
-                                                          ? "https://pinterest.com/yourhandle"
-                                                          : systemPlatforms[
-                                                                link.id
-                                                              ] === "GitHub"
-                                                            ? "https://github.com/yourusername"
-                                                            : systemPlatforms[
-                                                                  link.id
-                                                                ] === "Discord"
-                                                              ? "https://discord.gg/yourinvite"
-                                                              : systemPlatforms[
-                                                                    link.id
-                                                                  ] === "Twitch"
-                                                                ? "https://twitch.tv/yourchannel"
-                                                                : "Select a platform"
-                                          }
+                                          placeholder="Platform name (e.g., Mastodon)"
                                           onClick={(e) => e.stopPropagation()}
                                         />
                                       </InputGroup>
-                                    </ButtonGroup>
-                                  </div>
-                                </div>
-                              )}
-                            </label>
+                                    </div>
 
-                            {/* Move Up/Down Buttons - Between Options */}
-                            <div className="hidden md:flex flex-col gap-1 justify-center self-center">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-accent"
-                                onClick={() => moveLink(index, "up")}
-                                disabled={index === 0}
-                                title="Move up"
-                              >
-                                <ChevronUp className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-accent"
-                                onClick={() => moveLink(index, "down")}
-                                disabled={index === links.length - 1}
-                                title="Move down"
-                              >
-                                <ChevronDown className="h-4 w-4" />
-                              </Button>
+                                    <div className="flex items-center gap-3">
+                                      <Label className="text-sm font-medium w-16 shrink-0">
+                                        Link
+                                      </Label>
+                                      <InputGroup className="flex-1 min-w-0">
+                                        <InputGroupInput
+                                          type="text"
+                                          value={customUrls[link.id] || ""}
+                                          onChange={(e) =>
+                                            updateCustomUrl(
+                                              link.id,
+                                              e.target.value
+                                            )
+                                          }
+                                          placeholder="https://example.com/yourpage"
+                                          onClick={(e) => e.stopPropagation()}
+                                        />
+                                      </InputGroup>
+                                    </div>
+
+                                    <FileUpload
+                                      linkId={link.id}
+                                      currentIconUrl={link.customIconUrl}
+                                      onUploadComplete={(url) =>
+                                        updateLink(link.id, {
+                                          customIconUrl: url,
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                )}
+                              </label>
                             </div>
-
-                            {/* Custom Platform */}
-                            <label
-                              htmlFor={`custom-${link.id}`}
-                              className={`block p-6 rounded-lg transition-all cursor-pointer ${
-                                link.useCustomIcon
-                                  ? isDirty
-                                    ? "border border-amber-500"
-                                    : "border border-primary/30"
-                                  : "border border-border/80"
-                              }`}
-                            >
-                              <Field orientation="horizontal">
-                                <FieldContent>
-                                  <FieldTitle>Custom</FieldTitle>
-                                  <FieldDescription>
-                                    Enter the name, link & icon URL
-                                  </FieldDescription>
-                                </FieldContent>
-                                <RadioGroupItem
-                                  value="custom"
-                                  id={`custom-${link.id}`}
-                                />
-                              </Field>
-
-                              {link.useCustomIcon && (
-                                <div className="mt-6 space-y-3">
-                                  <div className="flex items-center gap-3">
-                                    <Label className="text-sm font-medium w-16 shrink-0">
-                                      Name
-                                    </Label>
-                                    <InputGroup className="flex-1 min-w-0">
-                                      <InputGroupInput
-                                        type="text"
-                                        value={customPlatforms[link.id] || ""}
-                                        onChange={(e) =>
-                                          updateCustomPlatformName(
-                                            link.id,
-                                            e.target.value
-                                          )
-                                        }
-                                        placeholder="Platform name (e.g., Mastodon)"
-                                        onClick={(e) => e.stopPropagation()}
-                                      />
-                                    </InputGroup>
-                                  </div>
-
-                                  <div className="flex items-center gap-3">
-                                    <Label className="text-sm font-medium w-16 shrink-0">
-                                      Link
-                                    </Label>
-                                    <InputGroup className="flex-1 min-w-0">
-                                      <InputGroupInput
-                                        type="text"
-                                        value={customUrls[link.id] || ""}
-                                        onChange={(e) =>
-                                          updateCustomUrl(
-                                            link.id,
-                                            e.target.value
-                                          )
-                                        }
-                                        placeholder="https://example.com/yourpage"
-                                        onClick={(e) => e.stopPropagation()}
-                                      />
-                                    </InputGroup>
-                                  </div>
-
-                                  <FileUpload
-                                    linkId={link.id}
-                                    currentIconUrl={link.customIconUrl}
-                                    onUploadComplete={(url) =>
-                                      updateLink(link.id, {
-                                        customIconUrl: url,
-                                      })
-                                    }
-                                  />
-                                </div>
-                              )}
-                            </label>
-                          </div>
-                        </RadioGroup>
+                          </RadioGroup>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

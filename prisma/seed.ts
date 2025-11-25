@@ -61,6 +61,34 @@ async function main() {
     },
   });
 
+  await prisma.siteSettings.upsert({
+    where: { key: "newsletter_enabled" },
+    update: {},
+    create: {
+      key: "newsletter_enabled",
+      value: "true",
+    },
+  });
+
+  await prisma.siteSettings.upsert({
+    where: { key: "newsletter_heading" },
+    update: {},
+    create: {
+      key: "newsletter_heading",
+      value: "Stay Connected",
+    },
+  });
+
+  await prisma.siteSettings.upsert({
+    where: { key: "newsletter_description" },
+    update: {},
+    create: {
+      key: "newsletter_description",
+      value:
+        "Subscribe to our newsletter for exclusive offers and coffee tips.",
+    },
+  });
+
   console.log("✓ SiteSettings created");
 
   // --- 2. Create Categories ---

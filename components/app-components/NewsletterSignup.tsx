@@ -6,10 +6,24 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-export default function NewsletterSignup() {
+interface NewsletterSignupProps {
+  enabled?: boolean;
+}
+
+export default function NewsletterSignup({
+  enabled = true,
+}: NewsletterSignupProps) {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  if (!enabled) {
+    return (
+      <div className="rounded-md border border-dashed bg-muted/40 p-4 text-sm text-muted-foreground">
+        Newsletter signups are currently disabled.
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

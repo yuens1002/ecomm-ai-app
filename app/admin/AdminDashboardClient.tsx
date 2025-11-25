@@ -40,6 +40,9 @@ interface DashboardStats {
   totalOrders: number;
   totalProducts: number;
   adminCount: number;
+  newsletterTotal: number;
+  newsletterActive: number;
+  newsletterInactive: number;
 }
 
 interface AdminDashboardClientProps {
@@ -104,7 +107,18 @@ export default function AdminDashboardClient({
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Your Role</CardTitle>
+                <Shield className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">Admin</div>
+                <p className="text-xs text-muted-foreground">Full access</p>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -146,12 +160,19 @@ export default function AdminDashboardClient({
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Your Role</CardTitle>
-                <Shield className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">
+                  Newsletter Subscribers
+                </CardTitle>
+                <Mail className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">Admin</div>
-                <p className="text-xs text-muted-foreground">Full access</p>
+                <div className="text-2xl font-bold">
+                  {stats.newsletterTotal}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {stats.newsletterActive} active • {stats.newsletterInactive}{" "}
+                  churned
+                </p>
               </CardContent>
             </Card>
           </div>

@@ -92,6 +92,66 @@ async function getFooterContactSettings() {
   };
 }
 
+async function getNewsletterSettings() {
+  const settings = await prisma.siteSettings.findMany({
+    where: {
+      key: {
+        in: [
+          "newsletter_enabled",
+          "newsletter_heading",
+          "newsletter_description",
+        ],
+      },
+    },
+    select: {
+      key: true,
+      value: true,
+    },
+  });
+
+  const map = settings.reduce<Record<string, string>>((acc, setting) => {
+    acc[setting.key] = setting.value;
+    return acc;
+  }, {});
+
+  return {
+    enabled: map["newsletter_enabled"] !== "false",
+    heading: map["newsletter_heading"] || "Stay Connected",
+    description:
+      map["newsletter_description"] ||
+      "Subscribe to our newsletter for exclusive offers and coffee tips.",
+  };
+}
+
+async function getSocialLinksSettings() {
+  const settings = await prisma.siteSettings.findMany({
+    where: {
+      key: {
+        in: [
+          "social_links_enabled",
+          "social_links_heading",
+          "social_links_description",
+        ],
+      },
+    },
+    select: {
+      key: true,
+      value: true,
+    },
+  });
+
+  const map = settings.reduce<Record<string, string>>((acc, setting) => {
+    acc[setting.key] = setting.value;
+    return acc;
+  }, {});
+
+  return {
+    enabled: map["social_links_enabled"] === "true",
+    heading: map["social_links_heading"] || "Stay Connected",
+    description: map["social_links_description"] || "",
+  };
+}
+
 /**
  * Mega footer with category navigation, newsletter signup, and social links
  */
@@ -99,6 +159,12 @@ export default async function SiteFooter() {
   const categoryGroups = await getCategoriesForFooter();
   const socialLinks = await getSocialLinks();
   const contactSettings = await getFooterContactSettings();
+  const newsletterSettings = await getNewsletterSettings();
+  const socialLinksSettings = await getSocialLinksSettings();
+
+  // Check if third column should be shown
+  const showThirdColumn =
+    newsletterSettings.enabled || socialLinksSettings.enabled;
 
   // Check if current user is admin for footer links
   const session = await auth();
@@ -132,7 +198,13 @@ export default async function SiteFooter() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-[30%_auto_1fr] lg:grid-cols-[1fr_auto_3fr_auto_2fr] gap-8 items-start">
+        <div
+          className={`grid grid-cols-1 gap-8 items-start ${
+            showThirdColumn
+              ? "md:grid-cols-[30%_auto_1fr] lg:grid-cols-[1fr_auto_3fr_auto_2fr]"
+              : "md:grid-cols-[30%_auto_1fr] lg:grid-cols-[1fr_auto_3fr]"
+          }`}
+        >
           {/* Quick Links */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Quick Links</h3>
@@ -177,62 +249,83 @@ export default async function SiteFooter() {
           {/* Coffee Categories */}
           <FooterCategories categoryGroups={categoryGroups} />
 
-          {/* Horizontal Separator (sm only) */}
-          <Separator className="md:hidden" />
+          {showThirdColumn && (
+            <>
+              {/* Horizontal Separator (sm only) */}
+              <Separator className="md:hidden" />
 
-          {/* Horizontal Separator spanning full width at md (after row 1) */}
-          <Separator className="hidden md:block lg:hidden md:col-span-3" />
+              {/* Horizontal Separator spanning full width at md (after row 1) */}
+              <Separator className="hidden md:block lg:hidden md:col-span-3" />
 
-          {/* Vertical Separator (lg+ only) */}
-          <Separator
-            orientation="vertical"
-            className="hidden lg:block h-auto self-stretch"
-          />
+              {/* Vertical Separator (lg+ only) */}
+              <Separator
+                orientation="vertical"
+                className="hidden lg:block h-auto self-stretch"
+              />
 
-          {/* Third Column: Stay Connected & Follow Us wrapper (lg+ only) */}
-          <div className="md:col-span-3 lg:col-span-1 space-y-8">
-            {/* Stay Connected (Newsletter) */}
-            <div className="space-y-4 pb-6 lg:pb-0">
-              <h3 className="text-lg font-semibold">Stay Connected</h3>
-              <p className="text-sm text-muted-foreground">
-                Subscribe to our newsletter for exclusive offers and coffee
-                tips.
-              </p>
-              <NewsletterSignup />
-            </div>
+              {/* Third Column: Stay Connected & Follow Us wrapper (lg+ only) */}
+              <div className="md:col-span-3 lg:col-span-1 space-y-8">
+                {/* Stay Connected (Newsletter) */}
+                {newsletterSettings.enabled && (
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold">
+                      {newsletterSettings.heading}
+                    </h3>
+                    <h4 className="text-sm text-muted-foreground pb-4">
+                      {newsletterSettings.description}
+                    </h4>
+                    <NewsletterSignup enabled={newsletterSettings.enabled} />
+                  </div>
+                )}
 
-            {/* Horizontal Separator (sm & md only) */}
-            <Separator className="lg:hidden" />
+                {/* Horizontal Separator (sm & md only) - only show if both newsletter and social links are enabled */}
+                {newsletterSettings.enabled && socialLinksSettings.enabled && (
+                  <Separator className="lg:hidden" />
+                )}
 
-            {/* Horizontal Separator within third column at lg+ */}
-            <Separator className="hidden lg:block" />
+                {/* Horizontal Separator within third column at lg+ - only show if both newsletter and social links are enabled */}
+                {newsletterSettings.enabled && socialLinksSettings.enabled && (
+                  <Separator className="hidden lg:block" />
+                )}
 
-            {/* Follow Us (Social) */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Follow Us</h3>
-              <SocialLinks links={socialLinks} />
-              {(contactSettings.showHours || contactSettings.showEmail) && (
-                <div className="pt-4 space-y-2">
-                  {contactSettings.showHours && (
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Hours:</strong> {contactSettings.hoursText}
-                    </p>
-                  )}
-                  {contactSettings.showEmail && (
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Email:</strong>{" "}
-                      <a
-                        href={`mailto:${contactSettings.email}`}
-                        className="hover:underline hover:text-primary"
-                      >
-                        {contactSettings.email}
-                      </a>
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+                {/* Follow Us (Social) */}
+                {socialLinksSettings.enabled && (
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold">
+                      {socialLinksSettings.heading}
+                    </h3>
+                    {socialLinksSettings.description && (
+                      <h4 className="text-sm text-muted-foreground pb-4">
+                        {socialLinksSettings.description}
+                      </h4>
+                    )}
+                    <SocialLinks links={socialLinks} />
+                    {(contactSettings.showHours ||
+                      contactSettings.showEmail) && (
+                      <div className="pt-4 space-y-2">
+                        {contactSettings.showHours && (
+                          <p className="text-sm text-muted-foreground">
+                            <strong>Hours:</strong> {contactSettings.hoursText}
+                          </p>
+                        )}
+                        {contactSettings.showEmail && (
+                          <p className="text-sm text-muted-foreground">
+                            <strong>Email:</strong>{" "}
+                            <a
+                              href={`mailto:${contactSettings.email}`}
+                              className="hover:underline hover:text-primary"
+                            >
+                              {contactSettings.email}
+                            </a>
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
 

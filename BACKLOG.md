@@ -4,6 +4,43 @@
 
 ---
 
+### Advanced Discount & Promotion Controls
+
+**Status**: Backlog  
+**Priority**: High  
+**Description**: Build a flexible discount system so marketing can run site-wide promotions, SKU-specific sales, and subscriber incentives without code changes.
+
+**Current State**:
+
+- Only ad-hoc coupon codes exist inside Stripe; not exposed in admin
+- No way to schedule discounts or target specific products/collections
+- Cart/checkout logic lacks awareness of stacked promotions
+
+**Proposed Changes**:
+
+- Add Discount model capturing type, scope, schedule, and targeting
+- Surface discount creation + monitoring inside admin dashboard
+- Extend cart + checkout flows to evaluate active discounts before payment
+- Sync applied promotions to Stripe line items for accurate receipts
+
+**Tasks**:
+
+- [ ] Design Prisma model + migration for discounts (type, percentage/amount, schedule window, target SKUs/categories, usage caps)
+- [ ] Create admin UI (list + create/edit modal) with validation and preview of impacted products
+- [ ] Update product listing + PDP to show strike-through pricing and promotional messaging when applicable
+- [ ] Enhance cart totals service to stack compatible discounts, enforce exclusivity rules, and expose savings breakdown
+- [ ] Update checkout/session creation to attach promotion metadata for Stripe + order records
+- [ ] Add audit logging + reporting to track redemptions, revenue impact, and abuse
+
+**Acceptance Criteria**:
+
+- Admins can create, schedule, and retire discounts without engineering help
+- Customers see accurate promotional pricing across PDP/cart/checkout
+- Orders record which discount(s) applied for analytics
+- Conflicting promotions are prevented or resolved deterministically
+
+---
+
 ### Failed Order Handling System
 
 **Status**: Planned  
@@ -37,6 +74,42 @@
 ---
 
 ## Medium Priority
+
+---
+
+### Lifecycle Marketing Automation
+
+**Status**: Backlog  
+**Priority**: Medium  
+**Description**: Introduce automated marketing campaigns (welcome, abandoned cart, win-back) powered by in-app triggers and our existing email infrastructure.
+
+**Current State**:
+
+- Only transactional emails are sent (order confirmations, shipping, etc.)
+- No subscriber segmentation or drip cadence management
+- Abandoned carts + inactive customers receive no automated outreach
+
+**Proposed Changes**:
+
+- Create MarketingCampaign + CampaignStep models to define triggers, delays, templates, and experiments
+- Integrate with Resend to queue personalized sends tied to customer lifecycle events
+- Add analytics in admin dashboard to show campaign performance (opens, clicks, conversions)
+
+**Tasks**:
+
+- [ ] Define Prisma models for campaigns, steps, audiences, and delivery logs
+- [ ] Add admin UI for building a campaign (trigger selection, template picker, delay offsets, enable/disable)
+- [ ] Instrument key events (signup, first order, abandoned cart, churn risk) and push into a marketing job queue
+- [ ] Build worker/cron process to evaluate audiences daily and enqueue Resend deliveries with merge variables
+- [ ] Update email templates folder with new marketing layouts + CTA styles consistent with brand
+- [ ] Expose campaign metrics (deliveries, opens, CTR, revenue lift) in admin analytics tab
+
+**Acceptance Criteria**:
+
+- Welcome, abandoned cart, and win-back campaigns can be configured and toggled independently
+- Emails respect user subscription preferences and CAN-SPAM requirements
+- Campaign reporting shows basic funnel metrics within 15 minutes of send
+- System is extensible for future SMS/push channels
 
 ---
 
@@ -219,6 +292,42 @@
 - Validate email format and check for duplicates
 - Rate limit profile update requests
 - Log profile changes for audit trail
+
+---
+
+### Replace Hardcoded Frontend Values with Admin Settings
+
+**Status**: Backlog  
+**Priority**: Medium  
+**Description**: Centralize all customer-facing copy (store name, taglines, contact info, footer CTAs) into the Site Settings model so non-technical staff can update branding without deployments.
+
+**Current State**:
+
+- Multiple components (Navbar, Footer, Hero banners, SEO metadata, emails) embed "Artisan Roast" strings and marketing blurbs
+- SiteSettings table only stores a handful of keys (support email, newsletter text)
+- Updating branding requires code edits + redeploys
+
+**Proposed Changes**:
+
+- Expand SiteSettings schema to include store name, hero headline/subtitle, support phone, social URLs, CTA labels, etc.
+- Provide admin UI (Settings → Branding) with preview cards and validation
+- Refactor frontend + email templates to read from settings hook/API and fallback gracefully
+
+**Tasks**:
+
+- [ ] Audit repository for hardcoded brand strings and categorize by usage (navigation, hero, footer, SEO, emails)
+- [ ] Update Prisma `SiteSettings` model + seed data with new keys + defaults
+- [ ] Extend `/api/admin/settings` endpoint + Settings client to manage branding values with live preview
+- [ ] Create frontend helper (e.g., `useSiteSettings`) with caching to avoid repeated fetches
+- [ ] Replace hardcoded literals across components (`app/layout.tsx`, `components/app-components/SiteFooter.tsx`, email templates, metadata builders)
+- [ ] Add regression tests (unit + Cypress smoke) ensuring settings propagate to critical pages
+
+**Acceptance Criteria**:
+
+- Admins can update branding copy from dashboard and see immediate changes after refresh
+- All hardcoded brand values removed or have default fallback from settings service
+- Emails inherit settings so transactional + marketing messages stay on-brand
+- Site renders even if some settings missing, using seeded defaults
 
 ---
 
@@ -446,4 +555,4 @@ Requires separate feature branch for proper design, implementation, and testing.
 
 ---
 
-_Last Updated: November 18, 2025_
+_Last Updated: November 25, 2025_
