@@ -258,6 +258,41 @@
 
 ## Low Priority
 
+### Add Store Name to Settings Model
+
+**Status**: Backlog  
+**Priority**: Low  
+**Description**: Add a configurable store name field to the Settings model to allow branding customization throughout the application.
+
+**Current State**:
+- Store name is hardcoded as "Artisan Roast" throughout the application
+- Email templates, navigation, and branding use hardcoded values
+- SiteSettings model exists with key-value structure for configuration
+
+**Proposed Changes**:
+- Add `storeName` key to SiteSettings model
+- Default value: "Artisan Roast"
+- Admin UI in Settings tab to configure store name
+- Update email templates to use dynamic store name
+- Update site header/footer to use configured name
+
+**Tasks**:
+- [ ] Add storeName to seed.ts with default "Artisan Roast"
+- [ ] Add store name field to admin settings UI
+- [ ] Update email templates to fetch and use store name from settings
+- [ ] Update navigation components to use dynamic store name
+- [ ] Update metadata/SEO tags to use configured store name
+- [ ] Test store name changes reflect across all touchpoints
+
+**Acceptance Criteria**:
+- Admins can configure store name from settings panel
+- Store name updates across all email templates
+- Store name updates in navigation and branding
+- Changes persist and apply immediately
+- Default "Artisan Roast" used if not configured
+
+---
+
 ### Recurring Orders Should Not Show Cancel Button
 
 **Status**: Known Bug  
