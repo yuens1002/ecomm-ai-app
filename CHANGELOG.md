@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.24.1 - 2025-11-25
+
+- **Feature Toggle System**: Newsletter and social links features now configurable from admin settings
+  - Newsletter feature toggle with heading and description customization
+  - Social links feature toggle with heading and optional description
+  - Footer conditionally renders features based on toggle state
+  - Dynamic 2-column vs 3-column footer grid when third column hidden
+  - FormHeading component for consistent field headers with amber dirty indicators
+  - Auto-save for feature toggles, manual save for text fields
+  - Footer Contact Information updated with FormHeading and improved controls layout
+  - Active/Inactive labels and delete buttons relocated to right side inline with text
+  - Auto-save for hours and email display toggles
+  - Admin dashboard cards reordered (Your Role moved to first position)
+  - Analytics Daily Activity Trend visualization improved with teal bars and minimum visible width
+  - Social links cards padding removed for cleaner layout
+  - Database backup and settings migration scripts for safe feature additions
+
 ## 0.24.0 - 2025-11-25
 
 - **Newsletter System**: Complete newsletter subscription system with email notifications and admin management
