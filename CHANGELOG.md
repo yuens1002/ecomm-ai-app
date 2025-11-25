@@ -1,12 +1,19 @@
 # Changelog
 
-## 0.24.0 - 2025-11-24
+## 0.24.0 - 2025-11-25
 
-- **Newsletter Backend Foundation**: Email settings and backend infrastructure for newsletter campaigns
-  - Contact email configuration in site settings (default: hello@artisanroast.com)
-  - Newsletter subscriber storage with active/inactive status
-  - Welcome email preparation using Resend integration
-  - Admin dashboard ready for subscriber management
+- **Newsletter System**: Complete newsletter subscription system with email notifications and admin management
+  - Newsletter signup API endpoint with email validation and duplicate checking
+  - Welcome email sent via Resend with personalized unsubscribe token
+  - Unsubscribe functionality with secure token-based links (soft delete with isActive flag)
+  - Admin dashboard view with subscriber list, search, stats (total/active/inactive), and CSV export
+  - Admin email notifications for new signups (configurable toggle in settings)
+  - NewsletterSignupNotification email template with subscriber details and total count
+  - Database schema with unsubscribeToken (unique, auto-generated via cuid())
+  - Manual migration to add database-level default for unsubscribeToken using gen_random_uuid()
+  - Contact email configuration in admin settings (used as sender for all newsletter emails)
+  - Comprehensive documentation in docs/newsletter-system.md
+  - Reactivation support for previously unsubscribed users
 
 ## 0.23.1 - 2025-11-24
 
