@@ -22,7 +22,7 @@ export default function NewsletterWelcomeEmail({
   unsubscribeToken,
 }: NewsletterWelcomeEmailProps) {
   const unsubscribeUrl = unsubscribeToken
-    ? `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/newsletter/unsubscribe?token=${unsubscribeToken}`
+    ? `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/newsletter/unsubscribe?token=${unsubscribeToken}`
     : "#";
 
   return (
