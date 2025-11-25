@@ -51,6 +51,16 @@ async function main() {
     },
   });
 
+  // Contact email for all communications
+  await prisma.siteSettings.upsert({
+    where: { key: "contactEmail" },
+    update: {},
+    create: {
+      key: "contactEmail",
+      value: "hello@artisanroast.com",
+    },
+  });
+
   console.log("✓ SiteSettings created");
 
   // --- 2. Create Categories ---
