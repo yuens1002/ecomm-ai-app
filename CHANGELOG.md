@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.24.3 - 2025-11-25
+
+- **Hotfix**: Wrapped useSearchParams in Suspense boundary for newsletter unsubscribe page to fix build error
+
 ## 0.24.2 - 2025-11-25
 
 - **Product Tag System**: Added altitude, variety fields and tag system with many-to-many relations
