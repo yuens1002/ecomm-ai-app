@@ -92,8 +92,8 @@ export default function UnsubscribePage() {
           {!isLoading && status === "success" && (
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                We&apos;re sorry to see you go! You won&apos;t receive any more newsletter
-                emails from us.
+                We&apos;re sorry to see you go! You won&apos;t receive any more
+                newsletter emails from us.
               </p>
               <p className="text-sm text-muted-foreground">
                 If you change your mind, you can always subscribe again from our

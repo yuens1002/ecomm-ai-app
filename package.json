@@ -13,7 +13,10 @@
     "seed": "tsx prisma/seed.ts",
     "dedupe:subs": "tsx scripts/dedupe-subscriptions.ts",
     "test": "jest --watch",
-    "test:ci": "jest --ci"
+    "test:ci": "jest --ci",
+    "db:backup": "tsx dev-tools/backup-database.ts",
+    "db:restore": "tsx dev-tools/restore-database.ts",
+    "db:safe-migrate": "tsx dev-tools/safe-migrate.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

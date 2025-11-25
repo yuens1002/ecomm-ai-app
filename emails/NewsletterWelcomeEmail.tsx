@@ -34,12 +34,14 @@ export default function NewsletterWelcomeEmail({
           <Heading style={h1}>Welcome to Artisan Roast! ☕</Heading>
 
           <Text style={text}>
-            Thank you for subscribing to our newsletter! We&apos;re excited to have
-            you join our community of coffee enthusiasts.
+            Thank you for subscribing to our newsletter! We&apos;re excited to
+            have you join our community of coffee enthusiasts.
           </Text>
 
           <Section style={highlightBox}>
-            <Text style={highlightText}>You&apos;ll receive updates about:</Text>
+            <Text style={highlightText}>
+              You&apos;ll receive updates about:
+            </Text>
             <ul style={list}>
               <li>New coffee arrivals and seasonal blends</li>
               <li>Exclusive subscriber discounts and promotions</li>
