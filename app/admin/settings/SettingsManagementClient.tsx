@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Trash2 } from "lucide-react";
+import { Loader2, Save, Trash2, Mail } from "lucide-react";
 import {
   Field,
   FieldContent,
@@ -23,7 +23,11 @@ interface FooterSettings {
   email: string;
 }
 
-type FieldName = "showHours" | "hoursText" | "showEmail" | "email";
+interface EmailSettings {
+  contactEmail: string;
+}
+
+type FieldName = "showHours" | "hoursText" | "showEmail" | "email" | "contactEmail";
 
 export default function SettingsManagementClient() {
   const { toast } = useToast();
@@ -33,6 +37,7 @@ export default function SettingsManagementClient() {
     hoursText: false,
     showEmail: false,
     email: false,
+    contactEmail: false,
   });
   const [settings, setSettings] = useState<FooterSettings>({
     showHours: true,
@@ -46,15 +51,31 @@ export default function SettingsManagementClient() {
     showEmail: true,
     email: "hello@artisan-roast.com",
   });
+  const [emailSettings, setEmailSettings] = useState<EmailSettings>({
+    contactEmail: "onboarding@resend.dev",
+  });
+  const [originalEmailSettings, setOriginalEmailSettings] = useState<EmailSettings>({
+    contactEmail: "onboarding@resend.dev",
+  });
 
   const fetchSettings = useCallback(async () => {
     try {
-      const response = await fetch("/api/admin/settings/footer-contact");
-      if (!response.ok) throw new Error("Failed to fetch settings");
+      const [footerResponse, emailResponse] = await Promise.all([
+        fetch("/api/admin/settings/footer-contact"),
+        fetch("/api/admin/settings/email"),
+      ]);
+      
+      if (!footerResponse.ok || !emailResponse.ok) {
+        throw new Error("Failed to fetch settings");
+      }
 
-      const data = await response.json();
-      setSettings(data);
-      setOriginalSettings(data);
+      const footerData = await footerResponse.json();
+      const emailData = await emailResponse.json();
+      
+      setSettings(footerData);
+      setOriginalSettings(footerData);
+      setEmailSettings(emailData);
+      setOriginalEmailSettings(emailData);
     } catch {
       toast({
         title: "Error",
@@ -73,21 +94,37 @@ export default function SettingsManagementClient() {
   const handleSaveField = async (field: FieldName) => {
     setSavingFields({ ...savingFields, [field]: true });
     try {
-      const response = await fetch("/api/admin/settings/footer-contact", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
-      });
+      if (field === "contactEmail") {
+        const response = await fetch("/api/admin/settings/email", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(emailSettings),
+        });
 
-      if (!response.ok) throw new Error("Failed to save settings");
+        if (!response.ok) throw new Error("Failed to save email settings");
 
-      toast({
-        title: "Success",
-        description: "Settings saved successfully",
-      });
+        toast({
+          title: "Success",
+          description: "Email settings saved successfully",
+        });
 
-      // Update original settings after successful save
-      setOriginalSettings(settings);
+        setOriginalEmailSettings(emailSettings);
+      } else {
+        const response = await fetch("/api/admin/settings/footer-contact", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(settings),
+        });
+
+        if (!response.ok) throw new Error("Failed to save settings");
+
+        toast({
+          title: "Success",
+          description: "Settings saved successfully",
+        });
+
+        setOriginalSettings(settings);
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -101,6 +138,9 @@ export default function SettingsManagementClient() {
   };
 
   const isFieldDirty = (field: FieldName) => {
+    if (field === "contactEmail") {
+      return emailSettings[field] !== originalEmailSettings[field];
+    }
     return settings[field] !== originalSettings[field];
   };
 
@@ -116,6 +156,72 @@ export default function SettingsManagementClient() {
     <div className="space-y-6">
       {/* Social Links */}
       <SocialLinksSettings />
+
+      {/* Email Configuration */}
+      <Card>
+        <CardHeader className="pb-8">
+          <Field orientation="vertical">
+            <FieldContent>
+              <FieldTitle className="text-base font-semibold flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                Email Configuration
+              </FieldTitle>
+              <FieldDescription>
+                Configure the email address used for all system communications (newsletter, orders, contact form)
+              </FieldDescription>
+            </FieldContent>
+          </Field>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="contact-email">Contact Email</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="contact-email"
+                type="email"
+                value={emailSettings.contactEmail}
+                onChange={(e) =>
+                  setEmailSettings({ ...emailSettings, contactEmail: e.target.value })
+                }
+                placeholder="e.g., onboarding@resend.dev"
+                className={
+                  isFieldDirty("contactEmail") ? "border-amber-500" : ""
+                }
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleSaveField("contactEmail")}
+                disabled={
+                  !isFieldDirty("contactEmail") || savingFields["contactEmail"]
+                }
+                className="shrink-0"
+              >
+                {savingFields["contactEmail"] ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="ml-2">Saving</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    <span className="ml-2">Save</span>
+                  </>
+                )}
+              </Button>
+            </div>
+            {isFieldDirty("contactEmail") && (
+              <p className="text-sm text-amber-600 dark:text-amber-500 flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                Unsaved changes
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              This email will be used as the sender address for welcome emails, order confirmations, and contact form submissions.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Footer Contact Info */}
       <Card>
