@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.26.2 - 2025-11-26
+
+- **Pages CMS Foundation**: Added Page model and seed data for content management system (database-only, zero UI impact)
+
 ## 0.26.1 - 2025-11-26
 
 - **Documentation**: Added comprehensive architecture documentation for Pages CMS and AI content generation
