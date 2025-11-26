@@ -3,11 +3,15 @@ import SearchResults from "./SearchResults";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { getSiteMetadata } from "@/lib/site-metadata";
 
-export const metadata = {
-  title: "Search Products | Artisan Roast",
-  description: "Search for specialty coffee products",
-};
+export async function generateMetadata() {
+  const { storeName } = await getSiteMetadata();
+  return {
+    title: `Search Products | ${storeName}`,
+    description: "Search for specialty coffee products",
+  };
+}
 
 export default function SearchPage() {
   return (

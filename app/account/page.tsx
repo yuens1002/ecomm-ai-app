@@ -2,11 +2,15 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import AccountPageClient from "./AccountPageClient";
+import { getSiteMetadata } from "@/lib/site-metadata";
 
-export const metadata = {
-  title: "Account Settings | Artisan Roast",
-  description: "Manage your account settings, profile, and preferences",
-};
+export async function generateMetadata() {
+  const { storeName } = await getSiteMetadata();
+  return {
+    title: `Account Settings | ${storeName}`,
+    description: "Manage your account settings, profile, and preferences",
+  };
+}
 
 /**
  * Account Settings Page - Protected Route
