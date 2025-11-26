@@ -20,6 +20,8 @@ async function getBrandingSettings() {
           "store_tagline",
           "store_description",
           "store_logo_url",
+          "footer_categories_heading",
+          "footer_quick_links_heading",
         ],
       },
     },
@@ -39,6 +41,10 @@ async function getBrandingSettings() {
       settingsMap.store_tagline ||
       "Specialty coffee sourced from the world's finest origins.",
     storeLogoUrl: settingsMap.store_logo_url || "/logo.svg",
+    footerCategoriesHeading:
+      settingsMap.footer_categories_heading || "Coffee Selection",
+    footerQuickLinksHeading:
+      settingsMap.footer_quick_links_heading || "Quick Links",
   };
 }
 
@@ -249,7 +255,9 @@ export default async function SiteFooter() {
         >
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Quick Links</h3>
+            <h3 className="text-lg font-semibold">
+              {brandingSettings.footerQuickLinksHeading}
+            </h3>
             <ul className="space-y-2">
               <li>
                 <Link
@@ -289,7 +297,10 @@ export default async function SiteFooter() {
           />
 
           {/* Coffee Categories */}
-          <FooterCategories categoryGroups={categoryGroups} />
+          <FooterCategories
+            categoryGroups={categoryGroups}
+            heading={brandingSettings.footerCategoriesHeading}
+          />
 
           {showThirdColumn && (
             <>

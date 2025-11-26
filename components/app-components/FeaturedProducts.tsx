@@ -4,9 +4,12 @@ import React, { useState, useEffect } from "react";
 import { FeaturedProduct } from "@/lib/types"; // Import shared types
 import ProductCard from "@components/app-components/ProductCard";
 
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+
 // This component is now self-contained. It fetches its own data.
 // Changed from arrow function to function declaration
 export default function FeaturedProducts() {
+  const { settings } = useSiteSettings();
   const [products, setProducts] = useState<FeaturedProduct[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -35,7 +38,7 @@ export default function FeaturedProducts() {
   return (
     <section className="container mx-auto px-4 md:px-8 py-16">
       <h2 className="text-3xl font-bold text-center text-text-base mb-12">
-        Our Small Batch Collection
+        {settings.homepageFeaturedHeading}
       </h2>
 
       {isLoading ? (

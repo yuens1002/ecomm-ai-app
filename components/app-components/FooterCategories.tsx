@@ -10,6 +10,7 @@ interface Category {
 
 interface FooterCategoriesProps {
   categoryGroups: Record<string, Category[]>;
+  heading?: string;
 }
 
 function CategoryGroup({
@@ -59,10 +60,11 @@ function CategoryGroup({
 
 export default function FooterCategories({
   categoryGroups,
+  heading = "Coffee Selection",
 }: FooterCategoriesProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Coffee Selection</h3>
+      <h3 className="text-lg font-semibold">{heading}</h3>
 
       {/* 3-column grid of label groups */}
       <div className="grid grid-cols-3 gap-x-6 gap-y-4">
