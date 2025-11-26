@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FullProductPayload, RelatedProduct, Category } from "@/lib/types";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -52,6 +53,7 @@ export default function ProductClientPage({
   relatedProducts,
   category,
 }: ProductClientPageProps) {
+  const { settings } = useSiteSettings();
   const addItem = useCartStore((state) => state.addItem);
   const cartItems = useCartStore((state) => state.items);
   const { trackActivity } = useActivityTracking();
@@ -445,7 +447,7 @@ export default function ProductClientPage({
       <div className="my-16">
         <Separator className="my-12" />
         <h2 className="text-3xl font-bold text-center text-text-base mb-12">
-          You Might Also Like
+          {settings.productRelatedHeading}
         </h2>
         <Carousel
           opts={{

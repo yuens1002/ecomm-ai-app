@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import ProductCard from "@/components/app-components/ProductCard";
 import { Sparkles, TrendingUp } from "lucide-react";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface RecommendedProduct {
   id: string;
@@ -51,6 +52,7 @@ interface RecommendationsResponse {
 }
 
 export default function RecommendationsSection() {
+  const { settings } = useSiteSettings();
   const { data: session, status } = useSession();
   const [recommendations, setRecommendations] =
     useState<RecommendationsResponse | null>(null);
@@ -126,7 +128,9 @@ export default function RecommendationsSection() {
             )}
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-text-base">
-                {isPersonalized ? "Recommended For You" : "Trending Now"}
+                {isPersonalized
+                  ? settings.homepageRecommendationsPersonalizedHeading
+                  : settings.homepageRecommendationsTrendingHeading}
               </h2>
               {isPersonalized && userPreferences && (
                 <p className="text-sm text-muted-foreground mt-1">
@@ -147,7 +151,7 @@ export default function RecommendationsSection() {
               )}
               {!isPersonalized && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Discover what other coffee lovers are enjoying
+                  {settings.homepageRecommendationsTrendingDescription}
                 </p>
               )}
             </div>
@@ -178,7 +182,7 @@ export default function RecommendationsSection() {
               href="/products"
               className="text-accent hover:text-accent/80 font-medium inline-flex items-center gap-2"
             >
-              Explore All Coffees
+              {settings.homepageRecommendationsExploreAllText}
               <svg
                 className="h-4 w-4"
                 fill="none"

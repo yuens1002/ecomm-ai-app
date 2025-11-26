@@ -8,6 +8,15 @@ export interface SiteSettings {
   storeDescription: string;
   storeLogoUrl: string;
   contactEmail: string;
+  // Marketing Content
+  homepageFeaturedHeading: string;
+  homepageRecommendationsTrendingHeading: string;
+  homepageRecommendationsTrendingDescription: string;
+  homepageRecommendationsPersonalizedHeading: string;
+  homepageRecommendationsExploreAllText: string;
+  footerCategoriesHeading: string;
+  footerQuickLinksHeading: string;
+  productRelatedHeading: string;
 }
 
 const defaultSettings: SiteSettings = {
@@ -17,6 +26,16 @@ const defaultSettings: SiteSettings = {
     "Premium specialty coffee, carefully roasted to perfection. From single-origin beans to signature blends, discover exceptional coffee delivered to your door.",
   storeLogoUrl: "/logo.svg",
   contactEmail: "hello@artisan-roast.com",
+  // Marketing Content defaults
+  homepageFeaturedHeading: "Our Small Batch Collection",
+  homepageRecommendationsTrendingHeading: "Trending Now",
+  homepageRecommendationsTrendingDescription:
+    "Discover what other coffee lovers are enjoying",
+  homepageRecommendationsPersonalizedHeading: "Recommended For You",
+  homepageRecommendationsExploreAllText: "Explore All Coffees",
+  footerCategoriesHeading: "Coffee Selection",
+  footerQuickLinksHeading: "Quick Links",
+  productRelatedHeading: "You Might Also Like",
 };
 
 // Cache for settings to avoid repeated fetches
@@ -44,6 +63,30 @@ async function fetchSettings(): Promise<SiteSettings> {
           data.store_description || defaultSettings.storeDescription,
         storeLogoUrl: data.store_logo_url || defaultSettings.storeLogoUrl,
         contactEmail: data.contactEmail || defaultSettings.contactEmail,
+        // Marketing Content
+        homepageFeaturedHeading:
+          data.homepage_featured_heading ||
+          defaultSettings.homepageFeaturedHeading,
+        homepageRecommendationsTrendingHeading:
+          data.homepage_recommendations_trending_heading ||
+          defaultSettings.homepageRecommendationsTrendingHeading,
+        homepageRecommendationsTrendingDescription:
+          data.homepage_recommendations_trending_description ||
+          defaultSettings.homepageRecommendationsTrendingDescription,
+        homepageRecommendationsPersonalizedHeading:
+          data.homepage_recommendations_personalized_heading ||
+          defaultSettings.homepageRecommendationsPersonalizedHeading,
+        homepageRecommendationsExploreAllText:
+          data.homepage_recommendations_explore_all_text ||
+          defaultSettings.homepageRecommendationsExploreAllText,
+        footerCategoriesHeading:
+          data.footer_categories_heading ||
+          defaultSettings.footerCategoriesHeading,
+        footerQuickLinksHeading:
+          data.footer_quick_links_heading ||
+          defaultSettings.footerQuickLinksHeading,
+        productRelatedHeading:
+          data.product_related_heading || defaultSettings.productRelatedHeading,
       };
       fetchPromise = null; // Clear promise after successful fetch
       return cachedSettings;
