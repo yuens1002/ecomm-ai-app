@@ -18,6 +18,7 @@ interface PickupReadyEmailProps {
   storeAddress: string;
   storeHours: string;
   orderId: string;
+  storeName?: string;
 }
 
 export default function PickupReadyEmail({
@@ -26,6 +27,7 @@ export default function PickupReadyEmail({
   storeAddress,
   storeHours,
   orderId,
+  storeName = "Artisan Roast",
 }: PickupReadyEmailProps) {
   const orderUrl = `${process.env.NEXT_PUBLIC_APP_URL}/orders/${orderId}`;
 
@@ -70,15 +72,15 @@ export default function PickupReadyEmail({
           <Hr style={hr} />
 
           <Text style={text}>
-            We&apos;re excited to see you! If you have any questions, please don&apos;t
-            hesitate to contact us.
+            We&apos;re excited to see you! If you have any questions, please
+            don&apos;t hesitate to contact us.
           </Text>
 
           <Text style={footer}>
             Thank you for your order!
             <br />
             <Link href={process.env.NEXT_PUBLIC_APP_URL} style={link}>
-              Artisan Roast
+              {storeName}
             </Link>
           </Text>
         </Container>

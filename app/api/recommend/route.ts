@@ -101,9 +101,15 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
 **IMPORTANT**: Use this history to provide a PERSONALIZED recommendation. Prioritize coffees similar to what they've enjoyed before, but also consider introducing them to complementary profiles they might love based on their stated preferences below.`;
     }
 
+    // Fetch store name
+    const storeNameSetting = await prisma.siteSettings.findUnique({
+      where: { key: "store_name" },
+    });
+    const storeName = storeNameSetting?.value || "Artisan Roast";
+
     // --- 7. Engineer the AI Prompt ---
     const systemPrompt = `
-      You are an expert coffee sommelier for "Artisan Roast," a specialty coffee roaster.
+      You are an expert coffee sommelier for "${storeName}," a specialty coffee roaster.
       A customer needs a recommendation.
       Your task is to recommend ONE coffee from the provided list that best matches the customer's preferences.
       You must ONLY recommend a coffee from the list.

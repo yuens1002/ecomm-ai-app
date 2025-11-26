@@ -23,12 +23,20 @@ export async function POST(req: NextRequest) {
     // In a real app, this would be the site owner's email
     // For this demo, we'll send it to the configured "from" address or a specific admin email
     // Fallback to delivered@resend.dev for testing if no env var is set
-    const adminEmail = process.env.RESEND_MERCHANT_EMAIL || "delivered@resend.dev";
+    const adminEmail =
+      process.env.RESEND_MERCHANT_EMAIL || "delivered@resend.dev";
 
     console.log(`Attempting to send email to: ${adminEmail}`);
 
+    // Fetch store name
+    const { prisma } = await import("@/lib/prisma");
+    const storeNameSetting = await prisma.siteSettings.findUnique({
+      where: { key: "store_name" },
+    });
+    const storeName = storeNameSetting?.value || "Artisan Roast";
+
     const { data, error } = await resend.emails.send({
-      from: "Artisan Roast <onboarding@resend.dev>",
+      from: `${storeName} <onboarding@resend.dev>`,
       to: [adminEmail],
       subject: `[Contact Form] ${subject}`,
       react: ContactFormEmail({ name, email, subject, message }),

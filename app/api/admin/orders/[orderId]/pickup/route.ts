@@ -52,6 +52,12 @@ export async function PATCH(
         });
       }
 
+      // Fetch store name
+      const storeNameSetting = await prisma.siteSettings.findUnique({
+        where: { key: "store_name" },
+      });
+      const storeName = storeNameSetting?.value || "Artisan Roast";
+
       const emailHtml = await render(
         PickupReadyEmail({
           orderNumber: order.id.slice(-8),
@@ -59,6 +65,7 @@ export async function PATCH(
           storeAddress: "123 Coffee Lane, Seattle, WA 98101",
           storeHours: "Mon-Fri: 7am-6pm, Sat-Sun: 8am-5pm",
           orderId: order.id,
+          storeName,
         })
       );
 

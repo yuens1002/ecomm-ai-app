@@ -2,11 +2,15 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import AdminDashboardClient from "./AdminDashboardClient";
+import { getSiteMetadata } from "@/lib/site-metadata";
 
-export const metadata = {
-  title: "Admin Dashboard | Artisan Roast",
-  description: "Manage users, orders, and site settings",
-};
+export async function generateMetadata() {
+  const { storeName } = await getSiteMetadata();
+  return {
+    title: `Admin Dashboard | ${storeName}`,
+    description: "Manage users, orders, and site settings",
+  };
+}
 
 export default async function AdminDashboardPage() {
   const session = await auth();

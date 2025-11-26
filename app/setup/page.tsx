@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Loader2, Eye, EyeOff, Shield, AlertCircle } from "lucide-react";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface PasswordValidation {
   minLength: boolean;
@@ -23,6 +24,7 @@ interface PasswordValidation {
 
 export default function SetupPage() {
   const router = useRouter();
+  const { settings } = useSiteSettings();
   const [isLoading, setIsLoading] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [adminExists, setAdminExists] = useState(false);
@@ -111,7 +113,9 @@ export default function SetupPage() {
       }
 
       // Success - redirect to signin
-      router.push("/auth/signin?message=Admin account created. Please sign in.");
+      router.push(
+        "/auth/signin?message=Admin account created. Please sign in."
+      );
     } catch (error) {
       console.error("Setup error:", error);
       setError("An unexpected error occurred. Please try again.");
@@ -181,14 +185,15 @@ export default function SetupPage() {
             Initial Setup
           </CardTitle>
           <CardDescription className="text-center">
-            Create the first admin account for Artisan Roast
+            Create the first admin account for {settings.storeName}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
             <p className="text-sm text-blue-900 dark:text-blue-100">
               <strong>Welcome!</strong> This appears to be the first time
-              setting up Artisan Roast. Create an admin account to get started.
+              setting up {settings.storeName}. Create an admin account to get
+              started.
             </p>
           </div>
 
@@ -255,23 +260,54 @@ export default function SetupPage() {
                   )}
                 </button>
               </div>
-              
+
               {showValidation && password.length > 0 && (
                 <div className="mt-2 space-y-1 text-xs">
-                  <div className={validation.minLength ? "text-green-600 dark:text-green-500" : "text-muted-foreground"}>
+                  <div
+                    className={
+                      validation.minLength
+                        ? "text-green-600 dark:text-green-500"
+                        : "text-muted-foreground"
+                    }
+                  >
                     {validation.minLength ? "✓" : "○"} At least 8 characters
                   </div>
-                  <div className={validation.hasUpperCase ? "text-green-600 dark:text-green-500" : "text-muted-foreground"}>
+                  <div
+                    className={
+                      validation.hasUpperCase
+                        ? "text-green-600 dark:text-green-500"
+                        : "text-muted-foreground"
+                    }
+                  >
                     {validation.hasUpperCase ? "✓" : "○"} One uppercase letter
                   </div>
-                  <div className={validation.hasLowerCase ? "text-green-600 dark:text-green-500" : "text-muted-foreground"}>
+                  <div
+                    className={
+                      validation.hasLowerCase
+                        ? "text-green-600 dark:text-green-500"
+                        : "text-muted-foreground"
+                    }
+                  >
                     {validation.hasLowerCase ? "✓" : "○"} One lowercase letter
                   </div>
-                  <div className={validation.hasNumber ? "text-green-600 dark:text-green-500" : "text-muted-foreground"}>
+                  <div
+                    className={
+                      validation.hasNumber
+                        ? "text-green-600 dark:text-green-500"
+                        : "text-muted-foreground"
+                    }
+                  >
                     {validation.hasNumber ? "✓" : "○"} One number
                   </div>
-                  <div className={validation.hasSpecialChar ? "text-green-600 dark:text-green-500" : "text-muted-foreground"}>
-                    {validation.hasSpecialChar ? "✓" : "○"} One special character
+                  <div
+                    className={
+                      validation.hasSpecialChar
+                        ? "text-green-600 dark:text-green-500"
+                        : "text-muted-foreground"
+                    }
+                  >
+                    {validation.hasSpecialChar ? "✓" : "○"} One special
+                    character
                   </div>
                 </div>
               )}

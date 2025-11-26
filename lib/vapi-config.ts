@@ -11,8 +11,13 @@ const isLocaltunnel = BASE_URL.includes("loca.lt");
 
 const VAPI_WEBHOOK_SECRET = process.env.NEXT_PUBLIC_VAPI_WEBHOOK_SECRET || "";
 
+// Note: This config uses a hardcoded store name for VAPI assistant.
+// In production, you would dynamically fetch the store name from settings
+// when creating the assistant via the VAPI API.
+const STORE_NAME = "Artisan Roast"; // TODO: Make dynamic via admin settings
+
 export const VAPI_ASSISTANT_CONFIG = {
-  name: "Artisan Roast Barista",
+  name: `${STORE_NAME} Barista`,
   server: {
     url: `${BASE_URL}/api/vapi/webhook`,
     secret: VAPI_WEBHOOK_SECRET,
@@ -23,8 +28,7 @@ export const VAPI_ASSISTANT_CONFIG = {
       ...(isLocaltunnel ? { "bypass-tunnel-reminder": "true" } : {}),
     },
   },
-  firstMessage:
-    "Hi there. I'm your Artisan Roast barista. I can help you find the perfect coffee... or check your order status. How can I help you today?",
+  firstMessage: `Hi there. I'm your ${STORE_NAME} barista. I can help you find the perfect coffee... or check your order status. How can I help you today?`,
   transcriber: {
     provider: "deepgram",
     model: "nova-2",
