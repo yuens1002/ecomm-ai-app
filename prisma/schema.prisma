@@ -465,3 +465,43 @@ enum TagColor {
   YELLOW
   GRAY
 }
+
+// --- Page CMS Models ---
+
+model Page {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  
+  // Content
+  heroImage       String?
+  content         String   @db.Text
+  
+  // Hierarchy (parent/child relationships)
+  parentId        String?
+  parent          Page?    @relation("PageHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children        Page[]   @relation("PageHierarchy")
+  
+  // Navigation
+  showInFooter    Boolean  @default(false)
+  footerOrder     Int?
+  
+  // SEO
+  metaDescription String?
+  
+  // Publishing
+  isPublished     Boolean  @default(false)
+  publishedAt     DateTime?
+  
+  // AI Generation metadata
+  generatedBy      String?   // "ai" | "manual"
+  generationPrompt Json?     // Store Q&A answers for regeneration
+  generatedAt      DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([slug])
+  @@index([parentId])
+  @@index([isPublished])
+}
