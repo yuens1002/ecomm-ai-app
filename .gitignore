@@ -55,6 +55,7 @@ next-env.d.ts
 # Internal planning documents (not for public repo)
 /docs/*-internal-*.md
 /docs/internal/
+DEPLOYMENT-READINESS.md
 
 # Development tooling scripts (not needed for production)
 /dev-tools/
