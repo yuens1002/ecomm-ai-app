@@ -283,6 +283,14 @@ export default async function SiteFooter() {
                   Contact
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/app-features"
+                  className="text-sm hover:underline hover:text-primary transition-colors"
+                >
+                  App Features
+                </Link>
+              </li>
               <FooterAccountLinks isAdmin={isAdmin} />
             </ul>
           </div>

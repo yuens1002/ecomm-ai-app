@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.26.4 - 2025-11-26
+
+- **App Features Demo**: Added `/app-features` showcase page with CMS overview, feature descriptions, and links to documentation
+
 ## 0.26.3 - 2025-11-26
 
 - **Dynamic Page Route**: Added `/pages/[...slug]` route to render CMS pages from database with hero images, rich content, and child page navigation
