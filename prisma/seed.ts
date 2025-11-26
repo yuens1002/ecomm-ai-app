@@ -1850,7 +1850,7 @@ async function main() {
       metaDescription:
         "Visit our café for freshly roasted specialty coffee. Find our location, hours, and what to expect.",
       showInFooter: false,
-      isPublished: false, // Draft until store owner customizes
+      isPublished: false, // Draft - test publishing workflow
       generatedBy: "manual",
     },
   });
