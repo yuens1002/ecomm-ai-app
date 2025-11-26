@@ -14,12 +14,14 @@ interface NewsletterSignupNotificationProps {
   subscriberEmail: string;
   subscribedAt: string;
   totalSubscribers: number;
+  storeName?: string;
 }
 
 export default function NewsletterSignupNotification({
   subscriberEmail,
   subscribedAt,
   totalSubscribers,
+  storeName = "Artisan Roast",
 }: NewsletterSignupNotificationProps) {
   return (
     <Html>
@@ -46,8 +48,8 @@ export default function NewsletterSignupNotification({
           <Hr style={hr} />
 
           <Text style={footer}>
-            This is an automated notification from your Artisan Roast admin
-            panel. You can manage notification settings in Admin → Settings.
+            This is an automated notification from your {storeName} admin panel.
+            You can manage notification settings in Admin → Settings.
           </Text>
         </Container>
       </Body>

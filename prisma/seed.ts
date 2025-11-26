@@ -89,6 +89,53 @@ async function main() {
     },
   });
 
+  // Store branding
+  await prisma.siteSettings.upsert({
+    where: { key: "store_name" },
+    update: {},
+    create: {
+      key: "store_name",
+      value: "Artisan Roast",
+    },
+  });
+
+  await prisma.siteSettings.upsert({
+    where: { key: "store_tagline" },
+    update: {},
+    create: {
+      key: "store_tagline",
+      value: "Specialty coffee sourced from the world's finest origins.",
+    },
+  });
+
+  await prisma.siteSettings.upsert({
+    where: { key: "store_description" },
+    update: {},
+    create: {
+      key: "store_description",
+      value:
+        "Premium specialty coffee, carefully roasted to perfection. From single-origin beans to signature blends, discover exceptional coffee delivered to your door.",
+    },
+  });
+
+  await prisma.siteSettings.upsert({
+    where: { key: "store_logo_url" },
+    update: {},
+    create: {
+      key: "store_logo_url",
+      value: "/logo.svg",
+    },
+  });
+
+  await prisma.siteSettings.upsert({
+    where: { key: "store_favicon_url" },
+    update: {},
+    create: {
+      key: "store_favicon_url",
+      value: "/favicon.ico",
+    },
+  });
+
   console.log("✓ SiteSettings created");
 
   // --- 2. Create Categories ---

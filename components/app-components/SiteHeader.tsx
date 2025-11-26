@@ -8,6 +8,7 @@ import { ThemeSwitcher } from "@components/app-components/ThemeSwitcher";
 import { ShoppingCart } from "@components/app-components/ShoppingCart";
 import { UserMenu } from "@components/app-components/UserMenu";
 import { Category } from "@/lib/types";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   Menu,
   Home,
@@ -110,6 +111,7 @@ export default function SiteHeader({
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { settings } = useSiteSettings();
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -128,27 +130,27 @@ export default function SiteHeader({
           {/* Mobile View: Stacked */}
           <div className="flex flex-col items-center lg:hidden">
             <Image
-              src="/logo.svg"
-              alt="Artisan Roast Logo"
+              src={settings.storeLogoUrl}
+              alt={`${settings.storeName} Logo`}
               width={32}
               height={32}
               className="w-8 h-8"
             />
             <span className="text-[10px] uppercase tracking-wide font-medium leading-none mt-1">
-              Artisan Roast
+              {settings.storeName}
             </span>
           </div>
 
           {/* Desktop View: Side by Side */}
           <div className="hidden lg:flex items-center gap-2">
             <Image
-              src="/logo.svg"
-              alt="Artisan Roast Logo"
+              src={settings.storeLogoUrl}
+              alt={`${settings.storeName} Logo`}
               width={32}
               height={32}
               className="w-8 h-8"
             />
-            <span className="text-2xl font-bold">Artisan Roast</span>
+            <span className="text-2xl font-bold">{settings.storeName}</span>
           </div>
         </Link>
 

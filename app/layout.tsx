@@ -10,6 +10,7 @@ import SiteFooter from "@components/app-components/SiteFooter";
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/react";
 import { EnvironmentIndicator } from "@/components/app-components/EnvironmentIndicator";
+import { getSiteMetadata } from "@/lib/site-metadata";
 
 // Setup the Inter font with a CSS variable
 const inter = Inter({
@@ -19,10 +20,19 @@ const inter = Inter({
   variable: "--font-inter", // We link this in tailwind.config.js
 });
 
-export const metadata: Metadata = {
-  title: "Artisan Roast E-Commerce",
-  description: "Specialty coffee sourced from the world's finest origins.",
-};
+// Generate metadata dynamically from database
+export async function generateMetadata(): Promise<Metadata> {
+  const { storeName, storeDescription, storeFaviconUrl } =
+    await getSiteMetadata();
+
+  return {
+    title: storeName,
+    description: storeDescription,
+    icons: {
+      icon: storeFaviconUrl,
+    },
+  };
+}
 
 /**
  * This is the root layout (a Server Component).

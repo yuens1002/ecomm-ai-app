@@ -62,16 +62,21 @@ export async function POST(request: NextRequest) {
 
         // Send welcome back email and admin notification
         try {
-          const [emailSetting, notifySetting] = await Promise.all([
-            prisma.siteSettings.findUnique({
-              where: { key: "contactEmail" },
-            }),
-            prisma.siteSettings.findUnique({
-              where: { key: "notifyAdminOnNewsletterSignup" },
-            }),
-          ]);
+          const [emailSetting, notifySetting, storeNameSetting] =
+            await Promise.all([
+              prisma.siteSettings.findUnique({
+                where: { key: "contactEmail" },
+              }),
+              prisma.siteSettings.findUnique({
+                where: { key: "notifyAdminOnNewsletterSignup" },
+              }),
+              prisma.siteSettings.findUnique({
+                where: { key: "store_name" },
+              }),
+            ]);
           const fromEmail = emailSetting?.value || "onboarding@resend.dev";
           const shouldNotifyAdmin = notifySetting?.value === "true";
+          const storeName = storeNameSetting?.value || "Artisan Roast";
 
           const welcomeBackHtml = await render(
             NewsletterWelcomeEmail({
@@ -82,9 +87,9 @@ export async function POST(request: NextRequest) {
           );
 
           await resend.emails.send({
-            from: `Artisan Roast <${fromEmail}>`,
+            from: `${storeName} <${fromEmail}>`,
             to: [email],
-            subject: "Welcome Back to Artisan Roast Newsletter! ☕",
+            subject: `Welcome Back to ${storeName} Newsletter! ☕`,
             html: welcomeBackHtml,
           });
 
@@ -102,12 +107,13 @@ export async function POST(request: NextRequest) {
                   timeStyle: "short",
                 }),
                 totalSubscribers,
+                storeName,
               }),
               { pretty: false }
             );
 
             await resend.emails.send({
-              from: `Artisan Roast Notifications <${fromEmail}>`,
+              from: `${storeName} Notifications <${fromEmail}>`,
               to: [fromEmail],
               subject: `Newsletter Resubscribed: ${email}`,
               html: resubNotificationHtml,
@@ -132,16 +138,20 @@ export async function POST(request: NextRequest) {
     });
 
     // Get settings
-    const [emailSetting, notifySetting] = await Promise.all([
+    const [emailSetting, notifySetting, storeNameSetting] = await Promise.all([
       prisma.siteSettings.findUnique({
         where: { key: "contactEmail" },
       }),
       prisma.siteSettings.findUnique({
         where: { key: "notifyAdminOnNewsletterSignup" },
       }),
+      prisma.siteSettings.findUnique({
+        where: { key: "store_name" },
+      }),
     ]);
     const fromEmail = emailSetting?.value || "onboarding@resend.dev";
     const shouldNotifyAdmin = notifySetting?.value === "true";
+    const storeName = storeNameSetting?.value || "Artisan Roast";
 
     // Send welcome email
     try {
@@ -156,9 +166,9 @@ export async function POST(request: NextRequest) {
       console.log("Welcome email HTML length:", emailHtml.length);
 
       await resend.emails.send({
-        from: `Artisan Roast <${fromEmail}>`,
+        from: `${storeName} <${fromEmail}>`,
         to: [email],
-        subject: "Welcome to Artisan Roast Newsletter! ☕",
+        subject: `Welcome to ${storeName} Newsletter! ☕`,
         html: emailHtml,
       });
     } catch (emailError) {
@@ -181,6 +191,7 @@ export async function POST(request: NextRequest) {
               timeStyle: "short",
             }),
             totalSubscribers,
+            storeName,
           }),
           { pretty: false }
         );
@@ -188,7 +199,7 @@ export async function POST(request: NextRequest) {
         console.log("Admin notification HTML length:", notificationHtml.length);
 
         await resend.emails.send({
-          from: `Artisan Roast Notifications <${fromEmail}>`,
+          from: `${storeName} Notifications <${fromEmail}>`,
           to: [fromEmail],
           subject: `New Newsletter Subscriber: ${email}`,
           html: notificationHtml,

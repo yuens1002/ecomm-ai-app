@@ -15,8 +15,10 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 export default function SignInPage() {
+  const { settings } = useSiteSettings();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -68,7 +70,7 @@ export default function SignInPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
-            Welcome to Artisan Roast
+            Welcome to {settings.storeName}
           </CardTitle>
           <CardDescription className="text-center">
             Sign in to manage your orders and subscriptions

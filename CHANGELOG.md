@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.25.0 - 2025-11-25
+
+- **Configurable Store Branding**: Complete system for managing store identity without code changes
+  - Admin UI for store name, tagline, description, logo, and favicon with individual save buttons and file upload
+  - Dynamic branding across header, footer, layout metadata, and authentication pages
+  - Server-side `getSiteMetadata()` helper and client-side `useSiteSettings()` hook with caching
+  - Footer displays tagline under logo; homepage uses description for SEO metadata
+  - Public API endpoint (`/api/settings/public`) and protected admin endpoint (`/api/admin/settings/branding`)
+
 ## 0.24.3 - 2025-11-25
 
 - **Hotfix**: Wrapped useSearchParams in Suspense boundary for newsletter unsubscribe page to fix build error
