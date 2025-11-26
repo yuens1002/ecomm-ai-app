@@ -28,8 +28,7 @@ export const VAPI_ASSISTANT_CONFIG = {
       ...(isLocaltunnel ? { "bypass-tunnel-reminder": "true" } : {}),
     },
   },
-  firstMessage:
-    `Hi there. I'm your ${STORE_NAME} barista. I can help you find the perfect coffee... or check your order status. How can I help you today?`,
+  firstMessage: `Hi there. I'm your ${STORE_NAME} barista. I can help you find the perfect coffee... or check your order status. How can I help you today?`,
   transcriber: {
     provider: "deepgram",
     model: "nova-2",

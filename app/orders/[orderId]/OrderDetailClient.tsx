@@ -13,7 +13,7 @@ interface OrderDetailClientProps {
 }
 
 export default function OrderDetailClient({ order }: OrderDetailClientProps) {
-  const settings = useSiteSettings();
+  const { settings } = useSiteSettings();
 
   const formatPrice = (priceInCents: number) => {
     return `$${(priceInCents / 100).toFixed(2)}`;

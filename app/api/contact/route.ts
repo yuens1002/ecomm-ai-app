@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     // Fetch store name
     const { prisma } = await import("@/lib/prisma");
-    const storeNameSetting = await prisma.siteSetting.findUnique({
+    const storeNameSetting = await prisma.siteSettings.findUnique({
       where: { key: "store_name" },
     });
     const storeName = storeNameSetting?.value || "Artisan Roast";

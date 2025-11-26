@@ -102,7 +102,7 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
     }
 
     // Fetch store name
-    const storeNameSetting = await prisma.siteSetting.findUnique({
+    const storeNameSetting = await prisma.siteSettings.findUnique({
       where: { key: "store_name" },
     });
     const storeName = storeNameSetting?.value || "Artisan Roast";

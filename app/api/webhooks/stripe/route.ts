@@ -422,7 +422,7 @@ export async function POST(req: NextRequest) {
                 : undefined;
 
             // Fetch store name for emails
-            const storeNameSetting = await prisma.siteSetting.findUnique({
+            const storeNameSetting = await prisma.siteSettings.findUnique({
               where: { key: "store_name" },
             });
             const storeName = storeNameSetting?.value || "Artisan Roast";
@@ -1217,7 +1217,7 @@ export async function POST(req: NextRequest) {
             );
 
             // Fetch store name for emails
-            const storeNameSetting = await prisma.siteSetting.findUnique({
+            const storeNameSetting = await prisma.siteSettings.findUnique({
               where: { key: "store_name" },
             });
             const storeName = storeNameSetting?.value || "Artisan Roast";

@@ -24,7 +24,7 @@ interface PasswordValidation {
 
 export default function SetupPage() {
   const router = useRouter();
-  const settings = useSiteSettings();
+  const { settings } = useSiteSettings();
   const [isLoading, setIsLoading] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [adminExists, setAdminExists] = useState(false);
