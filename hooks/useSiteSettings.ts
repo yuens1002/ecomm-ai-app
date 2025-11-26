@@ -16,6 +16,7 @@ export interface SiteSettings {
   homepageRecommendationsExploreAllText: string;
   footerCategoriesHeading: string;
   footerQuickLinksHeading: string;
+  productRelatedHeading: string;
 }
 
 const defaultSettings: SiteSettings = {
@@ -34,6 +35,7 @@ const defaultSettings: SiteSettings = {
   homepageRecommendationsExploreAllText: "Explore All Coffees",
   footerCategoriesHeading: "Coffee Selection",
   footerQuickLinksHeading: "Quick Links",
+  productRelatedHeading: "You Might Also Like",
 };
 
 // Cache for settings to avoid repeated fetches
@@ -83,6 +85,8 @@ async function fetchSettings(): Promise<SiteSettings> {
         footerQuickLinksHeading:
           data.footer_quick_links_heading ||
           defaultSettings.footerQuickLinksHeading,
+        productRelatedHeading:
+          data.product_related_heading || defaultSettings.productRelatedHeading,
       };
       fetchPromise = null; // Clear promise after successful fetch
       return cachedSettings;

@@ -200,6 +200,15 @@ async function main() {
     },
   });
 
+  await prisma.siteSettings.upsert({
+    where: { key: "product_related_heading" },
+    update: {},
+    create: {
+      key: "product_related_heading",
+      value: "You Might Also Like",
+    },
+  });
+
   console.log("✓ SiteSettings created");
 
   // --- 2. Create Categories ---

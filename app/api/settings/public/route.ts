@@ -25,6 +25,7 @@ export async function GET() {
             "homepage_recommendations_explore_all_text",
             "footer_categories_heading",
             "footer_quick_links_heading",
+            "product_related_heading",
           ],
         },
       },
