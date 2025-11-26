@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.26.0 - 2025-11-26
+
+- **Configurable Marketing Content**: Section headings and marketing copy now managed through site settings
+  - Full white-label capability for homepage marketing copy
+  - No code changes needed to customize section headings
+  - Scoped naming convention (homepage_, footer_, product_) for future expansion
+  - Maintains consistent architecture with existing branding system
+  - See `docs/marketing-content-architecture-decision.md` for architecture rationale
+
 ## 0.25.1 - 2025-11-26
 
 - **Dynamic Branding Completion**: Extended dynamic store name to all remaining hardcoded references
