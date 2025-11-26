@@ -1,11 +1,18 @@
 # Changelog
 
+## 0.26.1 - 2025-11-26
+
+- **Documentation**: Added comprehensive architecture documentation for Pages CMS and AI content generation
+  - Pages CMS architecture decision document with implementation plan
+  - AI-powered About page generator specification
+  - Complete Q&A wizard question reference
+
 ## 0.26.0 - 2025-11-26
 
 - **Configurable Marketing Content**: Section headings and marketing copy now managed through site settings
   - Full white-label capability for homepage marketing copy
   - No code changes needed to customize section headings
-  - Scoped naming convention (homepage_, footer_, product_) for future expansion
+  - Scoped naming convention (homepage*, footer*, product\_) for future expansion
   - Maintains consistent architecture with existing branding system
   - See `docs/marketing-content-architecture-decision.md` for architecture rationale
 
