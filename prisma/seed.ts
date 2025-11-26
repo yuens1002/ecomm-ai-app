@@ -1771,6 +1771,91 @@ async function main() {
     console.log(`✓ ${userData.name} (${userData.email})`);
   }
 
+  console.log("\nCreating CMS pages...");
+
+  // About Page
+  await prisma.page.upsert({
+    where: { slug: "about" },
+    update: {},
+    create: {
+      slug: "about",
+      title: "About Us",
+      heroImage: "/logo.svg",
+      content: `
+        <h2>Our Story</h2>
+        <p>Welcome to our specialty coffee roastery. This page will be customized with your unique brand story using our AI-powered wizard.</p>
+        
+        <h2>Our Values</h2>
+        <p>Quality, sustainability, and community are at the heart of everything we do.</p>
+        
+        <h2>Visit Us</h2>
+        <p>Stop by our roastery to experience the art of coffee roasting firsthand.</p>
+      `,
+      metaDescription:
+        "Learn about our specialty coffee roastery, our values, and our commitment to quality.",
+      showInFooter: true,
+      footerOrder: 1,
+      isPublished: true,
+      publishedAt: new Date(),
+      generatedBy: "manual",
+    },
+  });
+  console.log("✓ About page");
+
+  // Brewing Guides (Parent Page)
+  const brewingGuides = await prisma.page.upsert({
+    where: { slug: "brewing" },
+    update: {},
+    create: {
+      slug: "brewing",
+      title: "Brewing Guides",
+      heroImage: null,
+      content: `
+        <h2>Master the Art of Coffee Brewing</h2>
+        <p>Explore our comprehensive brewing guides to make the perfect cup of coffee at home.</p>
+        <p>Choose your preferred brewing method below to get started.</p>
+      `,
+      metaDescription:
+        "Learn how to brew perfect coffee with our step-by-step guides for various brewing methods.",
+      showInFooter: true,
+      footerOrder: 2,
+      isPublished: true,
+      publishedAt: new Date(),
+      generatedBy: "manual",
+    },
+  });
+  console.log("✓ Brewing Guides (parent page)");
+
+  // Café Location Page (optional - stores can customize)
+  await prisma.page.upsert({
+    where: { slug: "cafe" },
+    update: {},
+    create: {
+      slug: "cafe",
+      title: "Visit Our Café",
+      heroImage: null,
+      content: `
+        <h2>Experience Coffee at Its Best</h2>
+        <p>Visit our café to enjoy freshly roasted coffee in a welcoming atmosphere.</p>
+        
+        <h3>Location</h3>
+        <p>123 Coffee Street<br>Portland, OR 97201</p>
+        
+        <h3>Hours</h3>
+        <p>Monday - Friday: 7:00 AM - 7:00 PM<br>
+        Saturday - Sunday: 8:00 AM - 6:00 PM</p>
+        
+        <p><em>Note: This is example content. Customize this page with your actual location details.</em></p>
+      `,
+      metaDescription:
+        "Visit our café for freshly roasted specialty coffee. Find our location, hours, and what to expect.",
+      showInFooter: false,
+      isPublished: false, // Draft until store owner customizes
+      generatedBy: "manual",
+    },
+  });
+  console.log("✓ Café page (draft)");
+
   console.log(`\n✅ All seeding complete!`);
 }
 
