@@ -7,7 +7,7 @@ An interactive Q&A wizard that guides store owners through creating their About 
 ## User Flow
 
 ```
-Admin clicks: "Create About Page with AI" 
+Admin clicks: "Create About Page with AI"
   ↓
 Interactive Q&A Wizard (10 questions across 4 sections)
   ↓
@@ -29,12 +29,14 @@ Can regenerate or manually edit anytime
 ### Section 1: Origin Story (Questions 1-3)
 
 **Q1: What inspired you to start this coffee business?**
+
 - Type: Long textarea (500 chars)
 - Purpose: Capture authentic founding story
 - Example: "I fell in love with coffee while traveling through Ethiopia and wanted to bring that experience to my community..."
 - Required: Yes
 
 **Q2: When did you start? What are some key milestones?**
+
 - Year founded: Text input (4 digits)
 - Key moments: Textarea (300 chars)
 - Purpose: Establish timeline and credibility
@@ -42,6 +44,7 @@ Can regenerate or manually edit anytime
 - Required: Year only
 
 **Q3: Who is behind the business?**
+
 - Founder name(s): Text input
 - Founder title: Text input (e.g., "Founder & Head Roaster")
 - Founder photo: File upload (optional)
@@ -53,6 +56,7 @@ Can regenerate or manually edit anytime
 ### Section 2: Values & Mission (Questions 4-6)
 
 **Q4: What do you care most about?**
+
 - Type: Multi-select checkboxes
 - Options:
   - [ ] Quality & craftsmanship
@@ -67,12 +71,14 @@ Can regenerate or manually edit anytime
 - Required: At least 2
 
 **Q5: What makes your coffee different from others?**
+
 - Type: Textarea (400 chars)
 - Purpose: Unique value proposition
 - Example: "We only source from women-owned farms and roast in small 5kg batches to highlight each origin's unique characteristics."
 - Required: Yes
 
 **Q6: What's your roasting philosophy or approach?**
+
 - Type: Textarea (300 chars)
 - Purpose: Technical differentiation
 - Example: "Light to medium roasts that celebrate the coffee's origin. We prefer to highlight acidity and sweetness rather than roast flavors."
@@ -83,12 +89,14 @@ Can regenerate or manually edit anytime
 ### Section 3: Products & Process (Questions 7-8)
 
 **Q7: Where do you source your coffee from?**
+
 - Type: Text input (200 chars)
 - Purpose: Establish sourcing practices
 - Example: "Direct trade relationships with farmers in Colombia, Ethiopia, Guatemala, and Kenya"
 - Required: Yes
 
 **Q8: Do you have a physical location?**
+
 - Type: Radio buttons
   - ( ) Yes - Café/Roastery
   - ( ) Online only
@@ -105,6 +113,7 @@ Can regenerate or manually edit anytime
 ### Section 4: Voice & Personality (Questions 9-10)
 
 **Q9: How would you describe your brand personality?**
+
 - Type: Dropdown select
 - Options:
   - Professional & sophisticated
@@ -118,6 +127,7 @@ Can regenerate or manually edit anytime
 - Required: Yes
 
 **Q10: Any quotes, sayings, or philosophies that represent your brand?**
+
 - Type: Textarea (200 chars)
 - Purpose: Include memorable quotes in narrative
 - Example: "Coffee should make you think twice about how you start your day."
@@ -170,27 +180,28 @@ function buildUserPrompt(answers: WizardAnswers): string {
 Create an About page for a specialty coffee business with these details:
 
 === ORIGIN STORY ===
-Founded: ${answers.yearFounded || 'Recently established'}
+Founded: ${answers.yearFounded || "Recently established"}
 Founding inspiration: ${answers.inspiration}
 Founder: ${answers.founderName}, ${answers.founderTitle}
-${answers.milestones ? `Key milestones: ${answers.milestones}` : ''}
+${answers.milestones ? `Key milestones: ${answers.milestones}` : ""}
 
 === VALUES & DIFFERENTIATORS ===
-Core values: ${answers.values.join(', ')}
+Core values: ${answers.values.join(", ")}
 What makes them unique: ${answers.uniqueness}
-${answers.roastingPhilosophy ? `Roasting philosophy: ${answers.roastingPhilosophy}` : ''}
+${answers.roastingPhilosophy ? `Roasting philosophy: ${answers.roastingPhilosophy}` : ""}
 
 === SOURCING & BUSINESS MODEL ===
 Coffee origins: ${answers.sourceLocations}
 Business type: ${answers.businessType}
-${answers.hasPhysicalLocation === 'yes' 
-  ? `Physical location: ${answers.location}\nSpace description: ${answers.locationDetails}` 
-  : 'Online-only business'
+${
+  answers.hasPhysicalLocation === "yes"
+    ? `Physical location: ${answers.location}\nSpace description: ${answers.locationDetails}`
+    : "Online-only business"
 }
 
 === BRAND PERSONALITY ===
 Tone: ${answers.brandPersonality}
-${answers.brandQuote ? `Featured quote: "${answers.brandQuote}"` : ''}
+${answers.brandQuote ? `Featured quote: "${answers.brandQuote}"` : ""}
 
 Generate a compelling About page that tells their story authentically and memorably.
   `.trim();
@@ -202,18 +213,21 @@ Generate a compelling About page that tells their story authentically and memora
 Generate **2-3 style variations** for user to choose from:
 
 #### Variation 1: Story-First
+
 - Opens with founder's inspiration
 - Personal, narrative-driven
 - Uses "we" voice
 - Emotional connection emphasis
 
 #### Variation 2: Values-First
+
 - Opens with mission statement
 - Clear, direct language
 - Emphasizes what they stand for
 - Data/fact-driven where applicable
 
 #### Variation 3: Product-First
+
 - Opens with coffee quality/sourcing
 - Technical but accessible
 - Emphasizes craftsmanship
@@ -226,7 +240,7 @@ Generate **2-3 style variations** for user to choose from:
 ```prisma
 model Page {
   // ... existing fields from pages-cms-architecture.md ...
-  
+
   // AI Generation metadata
   generatedBy      String?   // "ai" | "manual"
   generationPrompt Json?     // Store complete Q&A answers
@@ -235,6 +249,7 @@ model Page {
 ```
 
 **Example stored prompt**:
+
 ```json
 {
   "inspiration": "Fell in love with coffee in Ethiopia...",
@@ -291,15 +306,15 @@ export default function AboutPageWizard() {
           ✨ Create Your About Page
         </h1>
         <p className="text-muted-foreground mt-2">
-          Answer a few questions about your business, and AI will write 
+          Answer a few questions about your business, and AI will write
           a compelling About page for you.
         </p>
       </div>
-      
+
       {/* Progress */}
-      <ProgressIndicator 
-        currentStep={step} 
-        totalSteps={10} 
+      <ProgressIndicator
+        currentStep={step}
+        totalSteps={10}
         sections={[
           { name: 'Origin Story', steps: 3 },
           { name: 'Values', steps: 3 },
@@ -307,7 +322,7 @@ export default function AboutPageWizard() {
           { name: 'Personality', steps: 2 }
         ]}
       />
-      
+
       {/* Question Cards */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -319,17 +334,17 @@ export default function AboutPageWizard() {
           {renderQuestion(step)}
         </motion.div>
       </AnimatePresence>
-      
+
       {/* Navigation */}
       <div className="flex justify-between mt-8">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => setStep(step - 1)}
           disabled={step === 1}
         >
           ← Back
         </Button>
-        
+
         {step < 10 ? (
           <Button onClick={handleNext}>
             Next →
@@ -362,11 +377,11 @@ function VariationSelector({ variations, onSelect }) {
     <div className="space-y-6">
       <div className="bg-blue-50 border border-blue-200 rounded p-4">
         <p className="text-sm text-blue-900">
-          ✨ AI generated 3 different takes on your story. 
+          ✨ AI generated 3 different takes on your story.
           Choose the one that feels right, then edit to perfection!
         </p>
       </div>
-      
+
       {variations.map((content, index) => (
         <Card key={index} className="p-6">
           <div className="flex items-start justify-between mb-4">
@@ -382,15 +397,15 @@ function VariationSelector({ variations, onSelect }) {
               Use This One →
             </Button>
           </div>
-          
+
           {/* Preview */}
-          <div 
+          <div
             className="prose prose-sm max-w-none line-clamp-10"
             dangerouslySetInnerHTML={{ __html: content }}
           />
         </Card>
       ))}
-      
+
       <Button variant="outline" onClick={onRegenerate}>
         🔄 Not quite right? Regenerate
       </Button>
@@ -401,7 +416,7 @@ function VariationSelector({ variations, onSelect }) {
 function getVariationTitle(index: number): string {
   const titles = [
     'Story-First Approach',
-    'Values-First Approach', 
+    'Values-First Approach',
     'Product-First Approach'
   ];
   return titles[index];
@@ -434,7 +449,7 @@ function ReviewAndEdit({ content, answers, onSave, onRegenerate }) {
           Edit the content below, or regenerate if you'd like a different take.
         </p>
       </div>
-      
+
       {/* Rich Text Editor */}
       <Card className="p-6 mb-6">
         <TipTapEditor
@@ -443,39 +458,39 @@ function ReviewAndEdit({ content, answers, onSave, onRegenerate }) {
           placeholder="Edit your About page content..."
         />
       </Card>
-      
+
       {/* Actions */}
       <div className="flex items-center justify-between">
         <div className="flex gap-3">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => setShowInputs(!showInputs)}
           >
             {showInputs ? 'Hide' : 'View'} Original Answers
           </Button>
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             onClick={onRegenerate}
           >
             ✨ Regenerate with AI
           </Button>
         </div>
-        
+
         <div className="flex gap-3">
-          <Button 
+          <Button
             variant="outline"
             onClick={() => onSave(editedContent, false)}
           >
             Save as Draft
           </Button>
-          
+
           <Button onClick={() => onSave(editedContent, true)}>
             Publish Now
           </Button>
         </div>
       </div>
-      
+
       {/* Show original inputs if toggled */}
       {showInputs && (
         <Card className="mt-6 p-6 bg-muted">
@@ -503,7 +518,7 @@ function ReviewAndEdit({ content, answers, onSave, onRegenerate }) {
 
 ### Generation Endpoint
 
-```typescript
+````typescript
 // app/api/admin/pages/generate-about/route.ts
 
 import { requireAdminApi } from "@/lib/admin";
@@ -511,11 +526,11 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(request: Request) {
   await requireAdminApi();
-  
+
   const { answers } = await request.json();
-  
+
   // Validate required fields
-  const required = ['inspiration', 'founderName', 'founderTitle', 'uniqueness'];
+  const required = ["inspiration", "founderName", "founderTitle", "uniqueness"];
   for (const field of required) {
     if (!answers[field]) {
       return Response.json(
@@ -524,67 +539,71 @@ export async function POST(request: Request) {
       );
     }
   }
-  
+
   // Generate 3 variations
   const variations = await Promise.all([
-    generateVariation(answers, 'story-first'),
-    generateVariation(answers, 'values-first'),
-    generateVariation(answers, 'product-first')
+    generateVariation(answers, "story-first"),
+    generateVariation(answers, "values-first"),
+    generateVariation(answers, "product-first"),
   ]);
-  
-  return Response.json({ 
+
+  return Response.json({
     variations,
-    prompt: answers // Store for regeneration
+    prompt: answers, // Store for regeneration
   });
 }
 
 async function generateVariation(
-  answers: WizardAnswers, 
-  style: 'story-first' | 'values-first' | 'product-first'
+  answers: WizardAnswers,
+  style: "story-first" | "values-first" | "product-first"
 ): Promise<string> {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-  const model = genAI.getGenerativeModel({ 
+  const model = genAI.getGenerativeModel({
     model: "gemini-2.0-flash-exp",
     generationConfig: {
       temperature: 0.8, // Creative but not too random
       maxOutputTokens: 1500,
-    }
+    },
   });
-  
+
   const systemPrompt = ABOUT_PAGE_GENERATOR_SYSTEM_PROMPT;
   const styleGuidance = getStyleGuidance(style);
   const userPrompt = buildUserPrompt(answers);
-  
+
   const result = await model.generateContent([
     { text: systemPrompt },
     { text: styleGuidance },
-    { text: userPrompt }
+    { text: userPrompt },
   ]);
-  
+
   const content = result.response.text();
-  
+
   // Clean up (remove markdown code fences if present)
   return content
-    .replace(/```html\n?/g, '')
-    .replace(/```\n?/g, '')
+    .replace(/```html\n?/g, "")
+    .replace(/```\n?/g, "")
     .trim();
 }
 
 function getStyleGuidance(style: string): string {
   const guidance = {
-    'story-first': 'Focus on the founder\'s personal journey and inspiration. Open with the founding story. Use warm, narrative language.',
-    'values-first': 'Lead with mission and values. Use clear, direct language. Emphasize what they stand for.',
-    'product-first': 'Start with coffee quality and sourcing. Emphasize craftsmanship and process. Use precise, professional language.'
+    "story-first":
+      "Focus on the founder's personal journey and inspiration. Open with the founding story. Use warm, narrative language.",
+    "values-first":
+      "Lead with mission and values. Use clear, direct language. Emphasize what they stand for.",
+    "product-first":
+      "Start with coffee quality and sourcing. Emphasize craftsmanship and process. Use precise, professional language.",
   };
   return guidance[style];
 }
-```
+````
 
 ---
 
 ## Implementation Timeline
 
 ### Day 1: Wizard UI Foundation
+
 - [ ] Create wizard route structure
 - [ ] Build question components
 - [ ] Implement progress tracking
@@ -592,6 +611,7 @@ function getStyleGuidance(style: string): string {
 - [ ] Style with animations
 
 ### Day 2: AI Integration
+
 - [ ] Create generation API route
 - [ ] Implement system/user prompts
 - [ ] Generate 3 variations
@@ -599,6 +619,7 @@ function getStyleGuidance(style: string): string {
 - [ ] Add loading states
 
 ### Day 3: Review & Save Flow
+
 - [ ] Build variation selector
 - [ ] Integrate TipTap editor
 - [ ] Implement save/publish logic
@@ -606,6 +627,7 @@ function getStyleGuidance(style: string): string {
 - [ ] Add regeneration capability
 
 ### Day 4: Polish & Testing
+
 - [ ] Add preview mode
 - [ ] Improve error messages
 - [ ] Test all edge cases
@@ -617,17 +639,20 @@ function getStyleGuidance(style: string): string {
 ## Success Metrics
 
 **User Experience**:
+
 - [ ] Wizard completion time < 10 minutes
 - [ ] At least 1 of 3 variations is satisfactory (>80% of users)
 - [ ] Regeneration needed < 30% of time
 - [ ] Users publish within 5 minutes of generation
 
 **Technical**:
+
 - [ ] AI generation time < 10 seconds
 - [ ] Error rate < 2%
 - [ ] Generated content requires < 20% editing on average
 
 **Business**:
+
 - [ ] 80%+ of new stores use AI wizard vs manual creation
 - [ ] Generated About pages drive engagement (track analytics)
 
@@ -636,17 +661,20 @@ function getStyleGuidance(style: string): string {
 ## Future Enhancements
 
 ### Phase 2: Café Page Generator
+
 - Add similar Q&A wizard for café/location pages
 - Questions: address, hours, atmosphere, menu highlights
 - Generate descriptions and format details
 
 ### Phase 3: Inline AI Assistant
+
 - "Improve this section" button in editor
 - "Make this more [tone]" options
 - "Expand this paragraph" feature
 - Context-aware suggestions
 
 ### Phase 4: Multi-Language Generation
+
 - Generate in store owner's language
 - Auto-translate to multiple languages
 - Maintain brand voice across translations
