@@ -20,13 +20,15 @@ import {
   Boxes,
   Truck,
 } from "lucide-react";
+import { getSiteMetadata } from "@/lib/site-metadata";
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const { storeName } = await getSiteMetadata();
   return (
     <div className="container mx-auto px-4 py-12 md:py-16 max-w-5xl">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold tracking-tight mb-4">
-          About Artisan Roast
+          About {storeName}
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           A modern, full-stack e-commerce experience built for specialty coffee
@@ -41,7 +43,7 @@ export default function AboutPage() {
           <h2 className="text-3xl font-bold mb-8 border-b pb-2">
             Core Features
           </h2>
-          
+
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -125,8 +127,8 @@ export default function AboutPage() {
                   <div>
                     <h3 className="font-semibold">Chat AI Assistant</h3>
                     <p className="text-sm text-muted-foreground">
-                      Text-based conversational interface with full order history
-                      context and brewing expertise.
+                      Text-based conversational interface with full order
+                      history context and brewing expertise.
                     </p>
                   </div>
                 </div>
@@ -204,7 +206,9 @@ export default function AboutPage() {
                 <div className="flex gap-3">
                   <Truck className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="font-semibold">Order Tracking & Fulfillment</h3>
+                    <h3 className="font-semibold">
+                      Order Tracking & Fulfillment
+                    </h3>
                     <p className="text-sm text-muted-foreground">
                       Process orders, update shipping status, and manage
                       customer fulfillment workflows.
@@ -221,7 +225,10 @@ export default function AboutPage() {
           <h2 className="text-2xl font-bold mb-6">Project Information</h2>
           <div className="flex flex-col md:flex-row justify-center gap-6">
             <Button asChild size="lg" variant="outline" className="gap-2">
-              <Link href="https://github.com/yuens1002/ecomm-ai-app" target="_blank">
+              <Link
+                href="https://github.com/yuens1002/ecomm-ai-app"
+                target="_blank"
+              >
                 <Github className="w-5 h-5" />
                 View on GitHub
               </Link>

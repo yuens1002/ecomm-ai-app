@@ -9,6 +9,40 @@ import FooterCategories from "./FooterCategories";
 import FooterAccountLinks from "./FooterAccountLinks";
 
 /**
+ * Get branding settings from database
+ */
+async function getBrandingSettings() {
+  const settings = await prisma.siteSettings.findMany({
+    where: {
+      key: {
+        in: [
+          "store_name",
+          "store_tagline",
+          "store_description",
+          "store_logo_url",
+        ],
+      },
+    },
+  });
+
+  const settingsMap = settings.reduce(
+    (acc, setting) => {
+      acc[setting.key] = setting.value;
+      return acc;
+    },
+    {} as Record<string, string>
+  );
+
+  return {
+    storeName: settingsMap.store_name || "Artisan Roast",
+    storeTagline:
+      settingsMap.store_tagline ||
+      "Specialty coffee sourced from the world's finest origins.",
+    storeLogoUrl: settingsMap.store_logo_url || "/logo.svg",
+  };
+}
+
+/**
  * Get all categories grouped by their label for footer navigation
  */
 async function getCategoriesForFooter() {
@@ -156,6 +190,7 @@ async function getSocialLinksSettings() {
  * Mega footer with category navigation, newsletter signup, and social links
  */
 export default async function SiteFooter() {
+  const brandingSettings = await getBrandingSettings();
   const categoryGroups = await getCategoriesForFooter();
   const socialLinks = await getSocialLinks();
   const contactSettings = await getFooterContactSettings();
@@ -185,16 +220,23 @@ export default async function SiteFooter() {
         <div className="mb-8">
           <Link
             href="/"
-            className="inline-flex items-center gap-3 hover:opacity-80 transition-opacity"
+            className="inline-block hover:opacity-80 transition-opacity"
           >
-            <Image
-              src="/logo.svg"
-              alt="Artisan Roast Logo"
-              width={40}
-              height={40}
-              className="w-10 h-10"
-            />
-            <span className="text-2xl font-bold">Artisan Roast</span>
+            <div className="flex items-center gap-3">
+              <Image
+                src={brandingSettings.storeLogoUrl}
+                alt={`${brandingSettings.storeName} Logo`}
+                width={32}
+                height={32}
+                className="w-8 h-8"
+              />
+              <span className="text-2xl font-bold">
+                {brandingSettings.storeName}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2 ml-11">
+              {brandingSettings.storeTagline}
+            </p>
           </Link>
         </div>
 
@@ -333,8 +375,8 @@ export default async function SiteFooter() {
       <div className="border-t border-border/30 bg-white/90 dark:bg-slate-950/90">
         <div className="container mx-auto px-4 md:px-8 py-4 text-center">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Artisan Roast. All rights
-            reserved.
+            &copy; {new Date().getFullYear()} {brandingSettings.storeName}. All
+            rights reserved.
           </p>
         </div>
       </div>

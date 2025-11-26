@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Trash2, Mail } from "lucide-react";
+import { Loader2, Save, Trash2, Mail, Store } from "lucide-react";
 import {
   Field,
   FieldContent,
@@ -18,6 +18,7 @@ import {
 import SocialLinksSettings from "./SocialLinksSettings";
 import { Textarea } from "@/components/ui/textarea";
 import { FormHeading } from "@/components/ui/app/FormHeading";
+import FileUpload from "@/components/app-components/FileUpload";
 
 interface FooterSettings {
   showHours: boolean;
@@ -37,13 +38,26 @@ interface NewsletterSettings {
   description: string;
 }
 
+interface BrandingSettings {
+  storeName: string;
+  storeTagline: string;
+  storeDescription: string;
+  storeLogoUrl: string;
+  storeFaviconUrl: string;
+}
+
 type FieldName =
   | "showHours"
   | "hoursText"
   | "showEmail"
   | "email"
   | "contactEmail"
-  | "notifyAdminOnNewsletterSignup";
+  | "notifyAdminOnNewsletterSignup"
+  | "storeName"
+  | "storeTagline"
+  | "storeDescription"
+  | "storeLogoUrl"
+  | "storeFaviconUrl";
 
 export default function SettingsManagementClient() {
   const { toast } = useToast();
@@ -55,6 +69,11 @@ export default function SettingsManagementClient() {
     email: false,
     contactEmail: false,
     notifyAdminOnNewsletterSignup: false,
+    storeName: false,
+    storeTagline: false,
+    storeDescription: false,
+    storeLogoUrl: false,
+    storeFaviconUrl: false,
   });
   const [settings, setSettings] = useState<FooterSettings>({
     showHours: true,
@@ -92,23 +111,51 @@ export default function SettingsManagementClient() {
         "Subscribe to our newsletter for exclusive offers and coffee tips.",
     });
   const [savingNewsletter, setSavingNewsletter] = useState(false);
+  const [brandingSettings, setBrandingSettings] = useState<BrandingSettings>({
+    storeName: "Artisan Roast",
+    storeTagline: "Specialty coffee sourced from the world's finest origins.",
+    storeDescription:
+      "Premium specialty coffee, carefully roasted to perfection. From single-origin beans to signature blends, discover exceptional coffee delivered to your door.",
+    storeLogoUrl: "/logo.svg",
+    storeFaviconUrl: "/favicon.ico",
+  });
+  const [originalBrandingSettings, setOriginalBrandingSettings] =
+    useState<BrandingSettings>({
+      storeName: "Artisan Roast",
+      storeTagline: "Specialty coffee sourced from the world's finest origins.",
+      storeDescription:
+        "Premium specialty coffee, carefully roasted to perfection. From single-origin beans to signature blends, discover exceptional coffee delivered to your door.",
+      storeLogoUrl: "/logo.svg",
+      storeFaviconUrl: "/favicon.ico",
+    });
 
   const fetchSettings = useCallback(async () => {
     try {
-      const [footerResponse, emailResponse, newsletterResponse] =
-        await Promise.all([
-          fetch("/api/admin/settings/footer-contact"),
-          fetch("/api/admin/settings/email"),
-          fetch("/api/admin/settings/newsletter"),
-        ]);
+      const [
+        footerResponse,
+        emailResponse,
+        newsletterResponse,
+        brandingResponse,
+      ] = await Promise.all([
+        fetch("/api/admin/settings/footer-contact"),
+        fetch("/api/admin/settings/email"),
+        fetch("/api/admin/settings/newsletter"),
+        fetch("/api/admin/settings/branding"),
+      ]);
 
-      if (!footerResponse.ok || !emailResponse.ok || !newsletterResponse.ok) {
+      if (
+        !footerResponse.ok ||
+        !emailResponse.ok ||
+        !newsletterResponse.ok ||
+        !brandingResponse.ok
+      ) {
         throw new Error("Failed to fetch settings");
       }
 
       const footerData = await footerResponse.json();
       const emailData = await emailResponse.json();
       const newsletterData = await newsletterResponse.json();
+      const brandingData = await brandingResponse.json();
 
       setSettings(footerData);
       setOriginalSettings(footerData);
@@ -116,6 +163,8 @@ export default function SettingsManagementClient() {
       setOriginalEmailSettings(emailData);
       setNewsletterSettings(newsletterData);
       setOriginalNewsletterSettings(newsletterData);
+      setBrandingSettings(brandingData);
+      setOriginalBrandingSettings(brandingData);
     } catch {
       toast({
         title: "Error",
@@ -152,6 +201,27 @@ export default function SettingsManagementClient() {
         });
 
         setOriginalEmailSettings(emailSettings);
+      } else if (
+        field === "storeName" ||
+        field === "storeTagline" ||
+        field === "storeDescription" ||
+        field === "storeLogoUrl" ||
+        field === "storeFaviconUrl"
+      ) {
+        const response = await fetch("/api/admin/settings/branding", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(brandingSettings),
+        });
+
+        if (!response.ok) throw new Error("Failed to save branding settings");
+
+        toast({
+          title: "Success",
+          description: "Branding settings saved successfully",
+        });
+
+        setOriginalBrandingSettings(brandingSettings);
       } else {
         const response = await fetch("/api/admin/settings/footer-contact", {
           method: "PUT",
@@ -183,6 +253,15 @@ export default function SettingsManagementClient() {
   const isFieldDirty = (field: FieldName) => {
     if (field === "contactEmail" || field === "notifyAdminOnNewsletterSignup") {
       return emailSettings[field] !== originalEmailSettings[field];
+    }
+    if (
+      field === "storeName" ||
+      field === "storeTagline" ||
+      field === "storeDescription" ||
+      field === "storeLogoUrl" ||
+      field === "storeFaviconUrl"
+    ) {
+      return brandingSettings[field] !== originalBrandingSettings[field];
     }
     return settings[field] !== originalSettings[field];
   };
@@ -231,6 +310,252 @@ export default function SettingsManagementClient() {
 
   return (
     <div className="space-y-6">
+      {/* Store Branding */}
+      <Card>
+        <CardHeader className="pb-8">
+          <Field orientation="vertical">
+            <FieldContent>
+              <FieldTitle className="text-base font-semibold flex items-center gap-2">
+                <Store className="h-5 w-5" />
+                Store Branding
+              </FieldTitle>
+              <FieldDescription>
+                Customize your store name, tagline, and description displayed
+                throughout the site
+              </FieldDescription>
+            </FieldContent>
+          </Field>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <FieldGroup>
+            <Field>
+              <FormHeading
+                htmlFor="store-name"
+                label="Store Name"
+                isDirty={isFieldDirty("storeName")}
+              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="store-name"
+                  type="text"
+                  value={brandingSettings.storeName}
+                  onChange={(e) =>
+                    setBrandingSettings({
+                      ...brandingSettings,
+                      storeName: e.target.value,
+                    })
+                  }
+                  placeholder={originalBrandingSettings.storeName}
+                  className={
+                    isFieldDirty("storeName") ? "border-amber-500" : ""
+                  }
+                />
+                <Button
+                  size="sm"
+                  onClick={() => handleSaveField("storeName")}
+                  disabled={savingFields["storeName"]}
+                  className="shrink-0"
+                >
+                  {savingFields["storeName"] ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="ml-2">Saving</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span className="ml-2">Save</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+              <FieldDescription>
+                Your store name appears in the header, footer, emails, and
+                metadata.
+              </FieldDescription>
+            </Field>
+          </FieldGroup>
+
+          <FieldGroup>
+            <Field>
+              <FormHeading
+                htmlFor="store-tagline"
+                label="Store Tagline"
+                isDirty={isFieldDirty("storeTagline")}
+              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="store-tagline"
+                  type="text"
+                  value={brandingSettings.storeTagline}
+                  onChange={(e) =>
+                    setBrandingSettings({
+                      ...brandingSettings,
+                      storeTagline: e.target.value,
+                    })
+                  }
+                  placeholder={originalBrandingSettings.storeTagline}
+                  className={
+                    isFieldDirty("storeTagline") ? "border-amber-500" : ""
+                  }
+                />
+                <Button
+                  size="sm"
+                  onClick={() => handleSaveField("storeTagline")}
+                  disabled={savingFields["storeTagline"]}
+                  className="shrink-0"
+                >
+                  {savingFields["storeTagline"] ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="ml-2">Saving</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span className="ml-2">Save</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+              <FieldDescription>
+                A short tagline displayed in page metadata and hero sections.
+              </FieldDescription>
+            </Field>
+          </FieldGroup>
+
+          <FieldGroup>
+            <Field>
+              <FormHeading
+                htmlFor="store-description"
+                label="Store Description"
+                isDirty={isFieldDirty("storeDescription")}
+              />
+              <div className="flex items-start gap-2">
+                <Textarea
+                  id="store-description"
+                  value={brandingSettings.storeDescription}
+                  onChange={(e) =>
+                    setBrandingSettings({
+                      ...brandingSettings,
+                      storeDescription: e.target.value,
+                    })
+                  }
+                  placeholder={originalBrandingSettings.storeDescription}
+                  rows={3}
+                  className={
+                    isFieldDirty("storeDescription") ? "border-amber-500" : ""
+                  }
+                />
+                <Button
+                  size="sm"
+                  onClick={() => handleSaveField("storeDescription")}
+                  disabled={savingFields["storeDescription"]}
+                  className="shrink-0"
+                >
+                  {savingFields["storeDescription"] ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="ml-2">Saving</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span className="ml-2">Save</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+              <FieldDescription>
+                Detailed description for search engineers and about pages (2-3
+                sentences).
+              </FieldDescription>
+            </Field>
+          </FieldGroup>
+
+          <FieldGroup>
+            <Field>
+              <FormHeading
+                htmlFor="store-logo"
+                label="Store Logo"
+                isDirty={isFieldDirty("storeLogoUrl")}
+              />
+              <div className="space-y-2">
+                {brandingSettings.storeLogoUrl && (
+                  <div className="flex items-center gap-3 p-3 border rounded-md bg-muted/50">
+                    <img
+                      src={brandingSettings.storeLogoUrl}
+                      alt="Store logo preview"
+                      className="w-8 h-8 object-contain"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      Current logo
+                    </span>
+                  </div>
+                )}
+                <FileUpload
+                  linkId="store-logo"
+                  currentIconUrl={brandingSettings.storeLogoUrl}
+                  onUploadComplete={(url) => {
+                    setBrandingSettings({
+                      ...brandingSettings,
+                      storeLogoUrl: url,
+                    });
+                    handleSaveField("storeLogoUrl");
+                  }}
+                  disabled={savingFields["storeLogoUrl"]}
+                />
+              </div>
+              <FieldDescription>
+                Upload your logo (SVG, PNG, or JPG). Recommended size: 32x32px
+                for consistent display across header and footer.
+              </FieldDescription>
+            </Field>
+          </FieldGroup>
+
+          <FieldGroup>
+            <Field>
+              <FormHeading
+                htmlFor="store-favicon"
+                label="Favicon"
+                isDirty={isFieldDirty("storeFaviconUrl")}
+              />
+              <div className="space-y-2">
+                {brandingSettings.storeFaviconUrl && (
+                  <div className="flex items-center gap-3 p-3 border rounded-md bg-muted/50">
+                    <img
+                      src={brandingSettings.storeFaviconUrl}
+                      alt="Favicon preview"
+                      className="w-4 h-4 object-contain"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      Current favicon
+                    </span>
+                  </div>
+                )}
+                <FileUpload
+                  linkId="store-favicon"
+                  currentIconUrl={brandingSettings.storeFaviconUrl}
+                  onUploadComplete={(url) => {
+                    setBrandingSettings({
+                      ...brandingSettings,
+                      storeFaviconUrl: url,
+                    });
+                    handleSaveField("storeFaviconUrl");
+                  }}
+                  disabled={savingFields["storeFaviconUrl"]}
+                />
+              </div>
+              <FieldDescription>
+                Upload your favicon (.ico, .png, or .svg). Recommended: 16x16px
+                or 32x32px. Note: Favicon changes require a browser cache clear
+                to see updates.
+              </FieldDescription>
+            </Field>
+          </FieldGroup>
+        </CardContent>
+      </Card>
+
       {/* Social Links */}
       <SocialLinksSettings />
 
