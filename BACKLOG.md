@@ -4,6 +4,46 @@
 
 ---
 
+### Admin Dashboard Reorganization
+
+**Status**: Backlog  
+**Priority**: High  
+**Description**: The admin dashboard has too many tabs (8+) making navigation cluttered. Need to reorganize into a proper navigation structure with dedicated routes for major features.
+
+**Current State**:
+
+- Single dashboard with 8 tabs: Overview, Users, Orders, Products, Categories, Newsletter, Settings, Profile
+- All features crammed into tabs within one route (/admin)
+- Adding new features (like Pages CMS) makes the tabs overflow
+- Poor UX for features requiring rich interactions (TipTap editor, complex forms)
+
+**Proposed Changes**:
+
+- Convert to sidebar navigation with dedicated routes:
+  - /admin (Dashboard overview with stats cards)
+  - /admin/orders (Full order management)
+  - /admin/products (Product catalog)
+  - /admin/categories (Category management)
+  - /admin/pages (Pages CMS)
+  - /admin/newsletter (Newsletter management)
+  - /admin/settings (Site settings)
+  - /admin/users (User management)
+- Keep Profile as dropdown in header
+- Use consistent layout with sidebar across all admin routes
+
+**Tasks**:
+
+- [ ] Design new admin layout with sidebar navigation
+- [ ] Create AdminSidebarNav component
+- [ ] Migrate each tab to dedicated route
+- [ ] Update AdminLayout to include sidebar
+- [ ] Add breadcrumbs for deep navigation
+- [ ] Test all admin routes and transitions
+
+**Impact**: Pages CMS feature is currently complete but not integrated into admin nav due to this limitation.
+
+---
+
 ### Advanced Discount & Promotion Controls
 
 **Status**: Backlog  
