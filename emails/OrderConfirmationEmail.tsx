@@ -173,7 +173,8 @@ export default function OrderConfirmationEmail({
               <Text style={addressText}>123 Coffee Street</Text>
               <Text style={addressText}>San Francisco, CA 94102</Text>
               <Text style={addressText}>
-                We&apos;ll send you an email when your order is ready for pickup!
+                We&apos;ll send you an email when your order is ready for
+                pickup!
               </Text>
             </Section>
           )}
@@ -199,9 +200,7 @@ export default function OrderConfirmationEmail({
             support@artisan-roast.com
           </Text>
 
-          <Text style={footerText}>
-            Thank you for choosing {storeName}!
-          </Text>
+          <Text style={footerText}>Thank you for choosing {storeName}!</Text>
         </Container>
       </Body>
     </Html>

@@ -72,8 +72,8 @@ export default function PickupReadyEmail({
           <Hr style={hr} />
 
           <Text style={text}>
-            We&apos;re excited to see you! If you have any questions, please don&apos;t
-            hesitate to contact us.
+            We&apos;re excited to see you! If you have any questions, please
+            don&apos;t hesitate to contact us.
           </Text>
 
           <Text style={footer}>
