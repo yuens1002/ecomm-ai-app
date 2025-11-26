@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.26.5 - 2025-11-26
+
+- **Admin Pages CRUD**: Full admin interface for Pages CMS at `/admin/pages` with TipTap rich text editor, create/edit/delete operations, and publishing workflow (Note: Not yet integrated into main admin dashboard - see BACKLOG for admin reorganization plan)
+
 ## 0.26.4 - 2025-11-26
 
 - **App Features Demo**: Added `/app-features` showcase page with CMS overview, feature descriptions, and links to documentation
