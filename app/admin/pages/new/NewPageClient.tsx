@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,6 +94,12 @@ export default function NewPageClient() {
             </p>
           </div>
         </div>
+        <Button variant="outline" asChild>
+          <Link href="/admin/pages/new/wizard">
+            <Sparkles className="mr-2 h-4 w-4" />
+            Use AI Wizard
+          </Link>
+        </Button>
       </div>
 
       {/* Form */}
