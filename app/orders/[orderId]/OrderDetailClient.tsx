@@ -6,12 +6,15 @@ import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package } from "lucide-react";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface OrderDetailClientProps {
   order: OrderWithItems;
 }
 
 export default function OrderDetailClient({ order }: OrderDetailClientProps) {
+  const settings = useSiteSettings();
+
   const formatPrice = (priceInCents: number) => {
     return `$${(priceInCents / 100).toFixed(2)}`;
   };
@@ -280,7 +283,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                   Your order is ready for pickup at:
                 </p>
                 <address className="not-italic text-sm">
-                  <strong>Artisan Roast Coffee</strong>
+                  <strong>{settings.storeName}</strong>
                   <br />
                   123 Coffee Street
                   <br />
