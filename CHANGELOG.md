@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.26.3 - 2025-11-26
+
+- **Dynamic Page Route**: Added `/pages/[...slug]` route to render CMS pages from database with hero images, rich content, and child page navigation
+
 ## 0.26.2 - 2025-11-26
 
 - **Pages CMS Foundation**: Added Page model and seed data for content management system (database-only, zero UI impact)
