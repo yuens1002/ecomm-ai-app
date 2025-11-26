@@ -413,6 +413,12 @@ export async function POST(req: NextRequest) {
                   }
                 : undefined;
 
+            // Fetch store name for emails
+            const storeNameSetting = await prisma.siteSetting.findUnique({
+              where: { key: "store_name" },
+            });
+            const storeName = storeNameSetting?.value || "Artisan Roast";
+
             // Send single customer confirmation email for all orders
             try {
               const orderNumbers = createdOrders
@@ -447,6 +453,7 @@ export async function POST(req: NextRequest) {
                       day: "numeric",
                     }
                   ),
+                  storeName,
                 }),
               });
               console.log(
@@ -1181,6 +1188,12 @@ export async function POST(req: NextRequest) {
             console.log(
               "⏭️  Skipping customer email - will send with tracking when order ships"
             );
+
+            // Fetch store name for emails
+            const storeNameSetting = await prisma.siteSetting.findUnique({
+              where: { key: "store_name" },
+            });
+            const storeName = storeNameSetting?.value || "Artisan Roast";
 
             // Send merchant notification email only
             try {

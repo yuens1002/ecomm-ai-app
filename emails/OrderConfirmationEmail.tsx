@@ -38,6 +38,7 @@ interface OrderConfirmationEmailProps {
   };
   orderDate: string;
   isRecurringOrder?: boolean;
+  storeName?: string;
 }
 
 export default function OrderConfirmationEmail({
@@ -53,6 +54,7 @@ export default function OrderConfirmationEmail({
   shippingAddress,
   orderDate,
   isRecurringOrder = false,
+  storeName = "Artisan Roast",
 }: OrderConfirmationEmailProps) {
   const formatPrice = (cents: number) => {
     return `$${(cents / 100).toFixed(2)}`;
@@ -69,7 +71,7 @@ export default function OrderConfirmationEmail({
       <Preview>
         {isRecurringOrder
           ? `Your ${subscriptionSchedule} subscription is on the way! - Order #${orderNumber}`
-          : `Order #${orderNumber} confirmed - Artisan Roast Coffee`}
+          : `Order #${orderNumber} confirmed - ${storeName}`}
       </Preview>
       <Body style={main}>
         <Container style={container}>
@@ -166,7 +168,7 @@ export default function OrderConfirmationEmail({
           ) : (
             <Section style={addressSection}>
               <Text style={addressText}>
-                <strong>Artisan Roast Coffee</strong>
+                <strong>{storeName}</strong>
               </Text>
               <Text style={addressText}>123 Coffee Street</Text>
               <Text style={addressText}>San Francisco, CA 94102</Text>
@@ -198,7 +200,7 @@ export default function OrderConfirmationEmail({
           </Text>
 
           <Text style={footerText}>
-            Thank you for choosing Artisan Roast Coffee!
+            Thank you for choosing {storeName}!
           </Text>
         </Container>
       </Body>

@@ -64,6 +64,12 @@ export async function PATCH(
         });
       }
 
+      // Fetch store name
+      const storeNameSetting = await prisma.siteSetting.findUnique({
+        where: { key: "store_name" },
+      });
+      const storeName = storeNameSetting?.value || "Artisan Roast";
+
       const emailHtml = await render(
         ShipmentConfirmationEmail({
           orderNumber: order.id.slice(-8),
@@ -72,6 +78,7 @@ export async function PATCH(
           carrier,
           estimatedDelivery: "3-5 business days",
           orderId: order.id,
+          storeName,
         })
       );
 
