@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
             NewsletterWelcomeEmail({
               email,
               unsubscribeToken: subscriber.unsubscribeToken,
+              storeName,
             }),
             { pretty: false }
           );
@@ -159,6 +160,7 @@ export async function POST(request: NextRequest) {
         NewsletterWelcomeEmail({
           email,
           unsubscribeToken: subscriber.unsubscribeToken,
+          storeName,
         }),
         { pretty: false }
       );

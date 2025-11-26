@@ -15,11 +15,13 @@ import * as React from "react";
 interface NewsletterWelcomeEmailProps {
   email: string;
   unsubscribeToken?: string;
+  storeName?: string;
 }
 
 export default function NewsletterWelcomeEmail({
   email,
   unsubscribeToken,
+  storeName = "Artisan Roast",
 }: NewsletterWelcomeEmailProps) {
   const unsubscribeUrl = unsubscribeToken
     ? `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/newsletter/unsubscribe?token=${unsubscribeToken}`
@@ -28,10 +30,10 @@ export default function NewsletterWelcomeEmail({
   return (
     <Html>
       <Head />
-      <Preview>Welcome to Artisan Roast Newsletter</Preview>
+      <Preview>Welcome to {storeName} Newsletter</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Welcome to Artisan Roast! ☕</Heading>
+          <Heading style={h1}>Welcome to {storeName}! ☕</Heading>
 
           <Text style={text}>
             Thank you for subscribing to our newsletter! We&apos;re excited to
@@ -65,7 +67,7 @@ export default function NewsletterWelcomeEmail({
           </Text>
 
           <Text style={footer}>
-            © {new Date().getFullYear()} Artisan Roast. All rights reserved.
+            © {new Date().getFullYear()} {storeName}. All rights reserved.
           </Text>
         </Container>
       </Body>
