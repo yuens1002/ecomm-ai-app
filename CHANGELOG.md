@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.25.1 - 2025-11-26
+
+- **Dynamic Branding Completion**: Extended dynamic store name to all remaining hardcoded references
+  - Order confirmation and notification emails now use dynamic store name
+  - AI recommendation prompt references configured store name
+  - Newsletter welcome email uses dynamic store name
+  - Contact form email uses dynamic store name
+  - All page metadata (account, search, admin) now dynamic
+  - Setup page references dynamic store name
+  - Order detail component uses dynamic store name
+  - VAPI voice assistant config and prompts use dynamic store name
+  - Admin order fulfillment emails (pickup/shipment) use dynamic store name
+
 ## 0.25.0 - 2025-11-25
 
 - **Configurable Store Branding**: Complete system for managing store identity without code changes
