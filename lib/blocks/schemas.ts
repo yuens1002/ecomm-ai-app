@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * Block System Schemas
- * 
+ *
  * Defines all block types with Zod validation.
  * TypeScript types are inferred from these schemas.
  */
@@ -91,13 +91,16 @@ export const faqItemBlockSchema = baseBlockSchema.extend({
 export const imageGalleryBlockSchema = baseBlockSchema.extend({
   type: z.literal("imageGallery"),
   content: z.object({
-    images: z.array(
-      z.object({
-        url: z.string().url(),
-        alt: z.string().max(200),
-        caption: z.string().max(200).optional(),
-      })
-    ).min(1).max(12),
+    images: z
+      .array(
+        z.object({
+          url: z.string().url(),
+          alt: z.string().max(200),
+          caption: z.string().max(200).optional(),
+        })
+      )
+      .min(1)
+      .max(12),
   }),
 });
 
@@ -130,10 +133,15 @@ export type BlockType = Block["type"];
 // Helper to create new blocks with defaults
 export function createBlock(type: BlockType, order: number): Partial<Block> {
   const id = `block_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-  
+
   switch (type) {
     case "hero":
-      return { id, type, order, content: { title: "", imageUrl: "", imageAlt: "" } };
+      return {
+        id,
+        type,
+        order,
+        content: { title: "", imageUrl: "", imageAlt: "" },
+      };
     case "stat":
       return { id, type, order, content: { label: "", value: "" } };
     case "pullQuote":
@@ -141,7 +149,19 @@ export function createBlock(type: BlockType, order: number): Partial<Block> {
     case "richText":
       return { id, type, order, content: { html: "" } };
     case "location":
-      return { id, type, order, content: { name: "", street: "", city: "", state: "", zip: "", country: "" } };
+      return {
+        id,
+        type,
+        order,
+        content: {
+          name: "",
+          street: "",
+          city: "",
+          state: "",
+          zip: "",
+          country: "",
+        },
+      };
     case "hours":
       return { id, type, order, content: { title: "Hours", schedule: [] } };
     case "faqItem":

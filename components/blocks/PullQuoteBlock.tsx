@@ -26,7 +26,9 @@ export function PullQuoteBlock({
   const [editedBlock, setEditedBlock] = useState(block);
 
   if (!isEditing) {
-    return <PullQuote text={block.content.text} author={block.content.author} />;
+    return (
+      <PullQuote text={block.content.text} author={block.content.author} />
+    );
   }
 
   if (isEditingBlock) {

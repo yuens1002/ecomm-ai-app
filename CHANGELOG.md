@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.26.11 - 2025-11-27
+
+- **Page Editors with Live Editing**: Created dedicated admin editors for About, Cafe, and FAQ pages
+  - Built `/admin/pages/about`, `/admin/pages/cafe`, `/admin/pages/faq` routes with PageEditor integration
+  - Added API endpoint `/api/pages/[id]` (PATCH) for publish/unpublish functionality
+  - Auto-creates page records on first access with type-specific defaults
+  - Updated AdminSidebar with direct links to all 3 page editors
+  - Each editor supports inline block editing, reordering, and publish toggle
+
 ## 0.26.10 - 2025-11-27
 
 - **Block Components & Editor**: Completed block-based page editor with rendering components

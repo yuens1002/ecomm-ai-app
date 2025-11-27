@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { Block, BlockType } from "@/lib/blocks/schemas";
-import { PageType, PAGE_LAYOUTS, canAddBlock, getBlockDisplayName } from "@/lib/blocks/layouts";
+import {
+  PageType,
+  PAGE_LAYOUTS,
+  canAddBlock,
+  getBlockDisplayName,
+} from "@/lib/blocks/layouts";
 import { BlockRenderer } from "@/components/blocks/BlockRenderer";
 import { Button } from "@/components/ui/button";
 import { Plus, Save, Eye, EyeOff } from "lucide-react";
@@ -13,12 +18,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { addBlock, updateBlock, deleteBlock, reorderBlocks } from "@/lib/blocks/actions";
+import {
+  addBlock,
+  updateBlock,
+  deleteBlock,
+  reorderBlocks,
+} from "@/lib/blocks/actions";
 
 interface PageEditorProps {
   pageId: string;
   pageType: PageType;
   initialBlocks: Block[];
+  isPublished?: boolean;
+  onPublishToggle?: () => Promise<void>;
   onSave?: () => void;
 }
 
@@ -26,6 +38,8 @@ export function PageEditor({
   pageId,
   pageType,
   initialBlocks,
+  isPublished,
+  onPublishToggle,
   onSave,
 }: PageEditorProps) {
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
@@ -36,10 +50,13 @@ export function PageEditor({
   const layout = PAGE_LAYOUTS[pageType];
 
   const handleAddBlock = async (blockType: BlockType) => {
-    const currentBlockCounts = blocks.reduce((acc, block) => {
-      acc[block.type] = (acc[block.type] || 0) + 1;
-      return acc;
-    }, {} as Record<BlockType, number>);
+    const currentBlockCounts = blocks.reduce(
+      (acc, block) => {
+        acc[block.type] = (acc[block.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<BlockType, number>
+    );
 
     if (!canAddBlock(pageType, blockType, currentBlockCounts)) {
       toast({
@@ -51,7 +68,7 @@ export function PageEditor({
     }
 
     const result = await addBlock(pageId, blockType, blocks.length);
-    
+
     if ("error" in result) {
       toast({
         title: "Error adding block",
@@ -72,7 +89,7 @@ export function PageEditor({
 
   const handleUpdateBlock = async (updatedBlock: Block) => {
     const result = await updateBlock(pageId, updatedBlock);
-    
+
     if ("error" in result) {
       toast({
         title: "Error updating block",
@@ -91,7 +108,7 @@ export function PageEditor({
 
   const handleDeleteBlock = async (blockId: string) => {
     const result = await deleteBlock(pageId, blockId);
-    
+
     if ("error" in result) {
       toast({
         title: "Error deleting block",
@@ -124,11 +141,14 @@ export function PageEditor({
   };
 
   const availableBlocks = layout.allowedBlocks.filter((blockType) => {
-    const currentBlockCounts = blocks.reduce((acc, block) => {
-      acc[block.type] = (acc[block.type] || 0) + 1;
-      return acc;
-    }, {} as Record<BlockType, number>);
-    
+    const currentBlockCounts = blocks.reduce(
+      (acc, block) => {
+        acc[block.type] = (acc[block.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<BlockType, number>
+    );
+
     return canAddBlock(pageType, blockType, currentBlockCounts);
   });
 
@@ -177,29 +197,71 @@ export function PageEditor({
           )}
         </div>
 
-        <Button onClick={handleSave} disabled={isSaving}>
-          <Save className="h-4 w-4 mr-2" />
-          {isSaving ? "Saving..." : "Save"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {onPublishToggle && (
+            <Button
+              onClick={onPublishToggle}
+              variant={isPublished ? "outline" : "default"}
+              size="sm"
+            >
+              {isPublished ? "Unpublish" : "Publish"}
+            </Button>
+          )}
+          <Button onClick={handleSave} disabled={isSaving} size="sm">
+            <Save className="h-4 w-4 mr-2" />
+            {isSaving ? "Saving..." : "Save"}
+          </Button>
+        </div>
       </div>
 
       {/* Blocks Container */}
-      <div className={`space-y-6 px-4 ${layout.defaultLayout === "two-column" ? "md:grid md:grid-cols-2 md:gap-6 md:space-y-0" : ""}`}>
+      <div className="px-4 pb-8">
         {blocks.length === 0 ? (
-          <div className="col-span-full text-center py-12 text-muted-foreground">
-            <p>No blocks yet. Click "Add Block" to get started.</p>
+          <div className="flex flex-col items-center justify-center py-24 border-2 border-dashed rounded-lg">
+            <div className="text-center space-y-4">
+              <div className="text-6xl mb-4">📄</div>
+              <h3 className="text-xl font-semibold">No blocks yet</h3>
+              <p className="text-muted-foreground max-w-md">
+                Start building your page by adding blocks. Each block represents
+                a section of content.
+              </p>
+              {isEditing && availableBlocks.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="lg" className="mt-4">
+                      <Plus className="h-5 w-5 mr-2" />
+                      Add Your First Block
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center">
+                    {availableBlocks.map((blockType) => (
+                      <DropdownMenuItem
+                        key={blockType}
+                        onClick={() => handleAddBlock(blockType)}
+                      >
+                        {getBlockDisplayName(blockType)}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
         ) : (
-          blocks.map((block) => (
-            <div key={block.id}>
-              <BlockRenderer
-                block={block}
-                isEditing={isEditing}
-                onUpdate={handleUpdateBlock}
-                onDelete={handleDeleteBlock}
-              />
-            </div>
-          ))
+          <div
+            className={`space-y-6 ${layout.defaultLayout === "two-column" ? "md:grid md:grid-cols-2 md:gap-6 md:space-y-0" : ""}`}
+          >
+            {blocks.map((block) => (
+              <div key={block.id}>
+                <BlockRenderer
+                  block={block}
+                  isEditing={isEditing}
+                  onUpdate={handleUpdateBlock}
+                  onDelete={handleDeleteBlock}
+                />
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

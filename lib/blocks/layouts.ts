@@ -1,6 +1,6 @@
 /**
  * Page Layout Configurations
- * 
+ *
  * Defines which blocks are allowed for each page type
  * and their default layout structure.
  */
@@ -28,7 +28,7 @@ export const PAGE_LAYOUTS: Record<PageType, PageLayoutConfig> = {
     },
     requiredBlocks: ["hero"],
   },
-  
+
   cafe: {
     allowedBlocks: ["hero", "location", "hours", "imageGallery", "richText"],
     defaultLayout: "single-column",
@@ -41,7 +41,7 @@ export const PAGE_LAYOUTS: Record<PageType, PageLayoutConfig> = {
     },
     requiredBlocks: ["hero", "location", "hours"],
   },
-  
+
   faq: {
     allowedBlocks: ["hero", "faqItem", "richText"],
     defaultLayout: "accordion",
@@ -57,7 +57,10 @@ export const PAGE_LAYOUTS: Record<PageType, PageLayoutConfig> = {
 /**
  * Check if a block type is allowed for a page type
  */
-export function isBlockAllowed(pageType: PageType, blockType: BlockType): boolean {
+export function isBlockAllowed(
+  pageType: PageType,
+  blockType: BlockType
+): boolean {
   return PAGE_LAYOUTS[pageType].allowedBlocks.includes(blockType);
 }
 

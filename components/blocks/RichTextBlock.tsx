@@ -94,7 +94,9 @@ export function RichTextBlock({
         <div className="border rounded-lg p-4 bg-background">
           <p className="text-xs font-semibold mb-2">Preview:</p>
           <Typography>
-            <div dangerouslySetInnerHTML={{ __html: editedBlock.content.html }} />
+            <div
+              dangerouslySetInnerHTML={{ __html: editedBlock.content.html }}
+            />
           </Typography>
         </div>
       </div>

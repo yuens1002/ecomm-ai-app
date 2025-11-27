@@ -472,6 +472,7 @@ model Page {
   id              String   @id @default(cuid())
   slug            String   @unique
   title           String
+  type            PageType @default(GENERIC) // Page type for block-based editing
   
   // Content
   heroImage       String?
@@ -502,6 +503,14 @@ model Page {
   updatedAt       DateTime @updatedAt
   
   @@index([slug])
+  @@index([type])
   @@index([parentId])
   @@index([isPublished])
+}
+
+enum PageType {
+  GENERIC
+  ABOUT
+  CAFE
+  FAQ
 }

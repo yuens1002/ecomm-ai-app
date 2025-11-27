@@ -6,17 +6,21 @@ import { blockSchema, Block, BlockType, createBlock } from "./schemas";
 
 /**
  * Server Actions for Block Management
- * 
+ *
  * All block CRUD operations with Zod validation
  */
 
 /**
  * Add a new block to a page
  */
-export async function addBlock(pageId: string, blockType: BlockType, order: number) {
+export async function addBlock(
+  pageId: string,
+  blockType: BlockType,
+  order: number
+) {
   try {
     const newBlock = createBlock(blockType, order);
-    
+
     // Validate the block
     const result = blockSchema.safeParse(newBlock);
     if (!result.success) {
@@ -212,8 +216,16 @@ export async function getPageBlocks(pageId: string): Promise<Block[]> {
       return [];
     }
 
-    const blocks = JSON.parse(page.content);
-    
+    // Try to parse as JSON, if it fails, it's old HTML content - return empty array
+    let blocks;
+    try {
+      blocks = JSON.parse(page.content);
+    } catch (parseError) {
+      // Content is not JSON (probably old HTML), return empty blocks array
+      console.log("Page content is not JSON, returning empty blocks array");
+      return [];
+    }
+
     // Validate all blocks
     const validatedBlocks: Block[] = [];
     for (const block of blocks) {

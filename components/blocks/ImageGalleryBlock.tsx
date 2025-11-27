@@ -28,7 +28,10 @@ export function ImageGalleryBlock({
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {block.content.images.map((image, index) => (
-          <div key={index} className="relative aspect-square overflow-hidden rounded-lg">
+          <div
+            key={index}
+            className="relative aspect-square overflow-hidden rounded-lg"
+          >
             <Image
               src={image.url}
               alt={image.alt || `Gallery image ${index + 1}`}
@@ -76,9 +79,7 @@ export function ImageGalleryBlock({
           {editedBlock.content.images.map((image, index) => (
             <div key={index} className="border rounded-lg p-3 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-semibold">
-                  Image {index + 1}
-                </span>
+                <span className="text-xs font-semibold">Image {index + 1}</span>
                 <Button
                   size="sm"
                   variant="ghost"
@@ -180,7 +181,10 @@ export function ImageGalleryBlock({
     >
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {block.content.images.map((image, index) => (
-          <div key={index} className="relative aspect-square overflow-hidden rounded-lg">
+          <div
+            key={index}
+            className="relative aspect-square overflow-hidden rounded-lg"
+          >
             <Image
               src={image.url}
               alt={image.alt || `Gallery image ${index + 1}`}

@@ -15,7 +15,12 @@ interface StatBlockProps {
   onDelete: (blockId: string) => void;
 }
 
-export function StatBlock({ block, isEditing, onUpdate, onDelete }: StatBlockProps) {
+export function StatBlock({
+  block,
+  isEditing,
+  onUpdate,
+  onDelete,
+}: StatBlockProps) {
   const [isEditingBlock, setIsEditingBlock] = useState(false);
   const [editedBlock, setEditedBlock] = useState(block);
 
@@ -55,7 +60,7 @@ export function StatBlock({ block, isEditing, onUpdate, onDelete }: StatBlockPro
             </Button>
           </div>
         </div>
-        
+
         <div className="space-y-3">
           <div>
             <Label htmlFor={`stat-value-${block.id}`}>Value</Label>

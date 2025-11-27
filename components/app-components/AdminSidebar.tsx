@@ -48,8 +48,18 @@ const navSections: NavSection[] = [
     title: "Content",
     items: [
       {
-        title: "Pages",
-        href: "/admin/pages",
+        title: "About Page",
+        href: "/admin/pages/about",
+        icon: FileText,
+      },
+      {
+        title: "Cafe Page",
+        href: "/admin/pages/cafe",
+        icon: FileText,
+      },
+      {
+        title: "FAQ Page",
+        href: "/admin/pages/faq",
         icon: FileText,
       },
     ],

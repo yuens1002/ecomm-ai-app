@@ -95,7 +95,10 @@ export function HeroBlock({ block, isEditing, onUpdate }: HeroBlockProps) {
                 onChange={(e) =>
                   setEditedBlock({
                     ...editedBlock,
-                    content: { ...editedBlock.content, imageUrl: e.target.value },
+                    content: {
+                      ...editedBlock.content,
+                      imageUrl: e.target.value,
+                    },
                   })
                 }
                 placeholder="/images/hero.jpg"
