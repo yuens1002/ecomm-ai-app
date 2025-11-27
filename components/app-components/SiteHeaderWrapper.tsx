@@ -1,6 +1,5 @@
 import { getAllCategories } from "@/lib/data";
 import { auth } from "@/auth";
-import { isAdmin } from "@/lib/admin";
 import SiteHeader from "@components/app-components/SiteHeader";
 
 /**
@@ -11,21 +10,11 @@ import SiteHeader from "@components/app-components/SiteHeader";
  */
 export default async function SiteHeaderWrapper() {
   // Fetch all data for the navigation menu in parallel
-  const [categories, session, userIsAdmin] = await Promise.all([
-    getAllCategories(),
-    auth(),
-    isAdmin(),
-  ]);
+  const [categories, session] = await Promise.all([getAllCategories(), auth()]);
 
   // Handle case where no categories are found (e.g., first deployment/empty DB)
   if (!categories || categories.length === 0) {
-    return (
-      <SiteHeader
-        categoryGroups={{}}
-        user={session?.user || null}
-        isAdmin={userIsAdmin}
-      />
-    );
+    return <SiteHeader categoryGroups={{}} user={session?.user || null} />;
   }
 
   // Sort categories by order field, then group by label from SiteSettings
@@ -46,10 +35,6 @@ export default async function SiteHeaderWrapper() {
 
   // Pass the dynamically grouped categories to the client component
   return (
-    <SiteHeader
-      categoryGroups={categoryGroups}
-      user={session?.user || null}
-      isAdmin={userIsAdmin}
-    />
+    <SiteHeader categoryGroups={categoryGroups} user={session?.user || null} />
   );
 }

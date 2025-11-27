@@ -20,10 +20,9 @@ interface UserMenuProps {
     email?: string | null;
     image?: string | null;
   };
-  isAdmin?: boolean;
 }
 
-export function UserMenu({ user, isAdmin = false }: UserMenuProps) {
+export function UserMenu({ user }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -61,16 +60,6 @@ export function UserMenu({ user, isAdmin = false }: UserMenuProps) {
         <DropdownMenuItem asChild>
           <Link href="/account">Account Settings</Link>
         </DropdownMenuItem>
-        {isAdmin && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/admin" className="font-semibold text-primary">
-                Admin Dashboard
-              </Link>
-            </DropdownMenuItem>
-          </>
-        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => signOut({ callbackUrl: "/" })}

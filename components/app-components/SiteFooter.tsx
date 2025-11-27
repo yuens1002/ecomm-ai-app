@@ -291,7 +291,7 @@ export default async function SiteFooter() {
                   App Features
                 </Link>
               </li>
-              <FooterAccountLinks isAdmin={isAdmin} />
+              <FooterAccountLinks />
             </ul>
           </div>
 

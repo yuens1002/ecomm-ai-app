@@ -5,8 +5,6 @@ import "./globals.css"; // Your global styles with CSS variables
 // Import the new layout components
 import { ThemeProvider } from "@components/app-components/ThemeProvider";
 import { SessionProvider } from "@components/app-components/SessionProvider";
-import SiteHeaderWrapper from "@/components/app-components/SiteHeaderWrapper";
-import SiteFooter from "@components/app-components/SiteFooter";
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/react";
 import { EnvironmentIndicator } from "@/components/app-components/EnvironmentIndicator";
@@ -36,7 +34,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /**
  * This is the root layout (a Server Component).
- * It wraps every page in the ThemeProvider, Header, Main, and Footer.
+ * It provides global wrappers (theme, session, analytics) for all routes.
+ * Individual route groups like (site) and admin have their own layouts.
  */
 export default function RootLayout({
   children,
@@ -47,10 +46,6 @@ export default function RootLayout({
     // We add 'suppressHydrationWarning' as required by next-themes
     <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
-        {/* ThemeProvider is a Client Component wrapper.
-          It must wrap all content, including the header/footer,
-          to allow them to react to theme changes.
-        */}
         <SessionProvider>
           <ThemeProvider
             attribute="class"
@@ -58,18 +53,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <div className="relative flex min-h-screen flex-col">
-              {/* Our site header (Client Component) */}
-              <SiteHeaderWrapper />
-
-              {/* The <main> tag holds the unique page content (our {children}).
-                'flex-1' ensures it grows to push the footer to the bottom.
-              */}
-              <main className="flex-1 w-full">{children}</main>
-
-              {/* Our site footer (Server Component) */}
-              <SiteFooter />
-            </div>
+            {children}
             <Toaster />
           </ThemeProvider>
         </SessionProvider>

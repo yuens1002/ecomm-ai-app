@@ -3,13 +3,7 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 
-interface FooterAccountLinksProps {
-  isAdmin?: boolean;
-}
-
-export default function FooterAccountLinks({
-  isAdmin = false,
-}: FooterAccountLinksProps) {
+export default function FooterAccountLinks() {
   const { data: session } = useSession();
 
   return (
@@ -32,16 +26,6 @@ export default function FooterAccountLinks({
               Order History
             </Link>
           </li>
-          {isAdmin && (
-            <li>
-              <Link
-                href="/admin"
-                className="text-sm hover:underline hover:text-primary transition-colors"
-              >
-                Admin Dashboard
-              </Link>
-            </li>
-          )}
           <li>
             <Link
               href="/api/auth/signout"

@@ -96,18 +96,13 @@ interface SiteHeaderProps {
     email?: string | null;
     image?: string | null;
   } | null;
-  isAdmin: boolean;
 }
 
 /**
  * The site-wide header. This is a Client Component because
  * it uses the ThemeSwitcher, which is a Client Component.
  */
-export default function SiteHeader({
-  categoryGroups,
-  user,
-  isAdmin,
-}: SiteHeaderProps) {
+export default function SiteHeader({ categoryGroups, user }: SiteHeaderProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -276,7 +271,7 @@ export default function SiteHeader({
           <ThemeSwitcher />
           <ShoppingCart />
           {user ? (
-            <UserMenu user={user} isAdmin={isAdmin} />
+            <UserMenu user={user} />
           ) : (
             <Button asChild variant="ghost" size="sm">
               <Link href="/auth/signin">
