@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.26.8 - 2025-11-27
+
+- **Admin/Customer Layout Separation**: Implemented Next.js route groups to completely separate admin and customer interfaces
+  - Created `app/(site)/` route group for all customer-facing pages with dedicated layout (header/footer)
+  - Admin routes use separate layout with sidebar navigation and admin header
+  - Removed all admin references from customer site (header, footer, user menu)
+  - Added dedicated `/admin/signin` page with admin-only authentication flow
+
 ## 0.26.7 - 2025-11-27
 
 - **AI Wizard Edit Improvements**: Enhanced variation selection page with inline editing, regeneration animations, AI-generated content structure display (stats cards, pull quotes), and formatted HTML editing in TipTap with Typography styles
