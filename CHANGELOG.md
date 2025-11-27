@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.26.7 - 2025-11-27
+
+- **AI Wizard Edit Improvements**: Enhanced variation selection page with inline editing, regeneration animations, AI-generated content structure display (stats cards, pull quotes), and formatted HTML editing in TipTap with Typography styles
+
 ## 0.26.6 - 2025-11-26
 
 - **AI About Page Wizard**: 10-question interview wizard at `/admin/pages/new/wizard` that generates 3 AI-powered About page variations using Gemini 2.0 (story-first, values-first, product-first styles)

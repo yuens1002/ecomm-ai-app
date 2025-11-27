@@ -3,6 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
+import { Typography } from "@/components/ui/typography";
+import { PullQuote } from "@/components/app-components/PullQuote";
+import { StatCard } from "@/components/app-components/StatCard";
 
 interface PageProps {
   params: Promise<{
@@ -70,6 +73,18 @@ export default async function Page({ params }: PageProps) {
               {page.title}
             </h1>
           </div>
+          {/* Image Caption */}
+          {page.generationPrompt &&
+            typeof page.generationPrompt === "object" &&
+            page.generationPrompt !== null &&
+            "heroImageDescription" in page.generationPrompt &&
+            typeof page.generationPrompt.heroImageDescription === "string" && (
+              <Typography>
+                <figcaption className="absolute bottom-4 right-4 bg-black/70 text-white px-4 py-2 rounded-lg max-w-md text-sm">
+                  {page.generationPrompt.heroImageDescription}
+                </figcaption>
+              </Typography>
+            )}
         </div>
       )}
 
@@ -79,11 +94,52 @@ export default async function Page({ params }: PageProps) {
           <h1 className="mb-8 text-4xl font-bold md:text-5xl">{page.title}</h1>
         )}
 
-        {/* Rich Text Content */}
-        <div
-          className="prose prose-slate max-w-none dark:prose-invert lg:prose-lg"
-          dangerouslySetInnerHTML={{ __html: page.content }}
-        />
+        {/* AI-Generated Content with Visual Elements */}
+        {page.generationPrompt &&
+        typeof page.generationPrompt === "object" &&
+        page.generationPrompt !== null &&
+        "pullQuote" in page.generationPrompt &&
+        "stats" in page.generationPrompt ? (
+          <div className="space-y-12">
+            {/* Stats Grid */}
+            {Array.isArray(page.generationPrompt.stats) &&
+              page.generationPrompt.stats.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {page.generationPrompt.stats.map(
+                    (stat: any, index: number) => (
+                      <StatCard
+                        key={index}
+                        label={stat.label}
+                        value={stat.value}
+                      />
+                    )
+                  )}
+                </div>
+              )}
+
+            {/* Two-Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+              {/* Left Column - Pull Quote */}
+              <div className="lg:col-span-1">
+                {typeof page.generationPrompt.pullQuote === "string" && (
+                  <PullQuote text={page.generationPrompt.pullQuote} />
+                )}
+              </div>
+
+              {/* Right Column - Main Content */}
+              <div className="lg:col-span-2">
+                <Typography>
+                  <div dangerouslySetInnerHTML={{ __html: page.content }} />
+                </Typography>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Standard Content Layout */
+          <Typography>
+            <div dangerouslySetInnerHTML={{ __html: page.content }} />
+          </Typography>
+        )}
 
         {/* Child Pages Grid */}
         {page.children.length > 0 && (

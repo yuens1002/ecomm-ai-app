@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -30,39 +31,60 @@ export default function TipTapEditor({
   onChange,
   placeholder = "Start writing your content...",
 }: TipTapEditorProps) {
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [2, 3],
+  const editor = useEditor(
+    {
+      immediatelyRender: false,
+      editable: true,
+      extensions: [
+        StarterKit.configure({
+          heading: {
+            levels: [2, 3],
+          },
+        }),
+        Link.configure({
+          openOnClick: false,
+          HTMLAttributes: {
+            class: "text-primary underline",
+          },
+        }),
+        Image.configure({
+          HTMLAttributes: {
+            class: "max-w-full h-auto rounded-lg",
+          },
+        }),
+        Placeholder.configure({
+          placeholder,
+        }),
+      ],
+      content,
+      editorProps: {
+        attributes: {
+          class:
+            "min-h-[300px] p-4 focus:outline-none text-foreground " +
+            "[&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:mb-4 [&_h2]:mt-8 first:[&_h2]:mt-0 " +
+            "[&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:tracking-tight [&_h3]:mb-3 [&_h3]:mt-6 " +
+            "[&_p]:text-base [&_p]:leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_p]:text-muted-foreground " +
+            "[&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4 [&_ul]:space-y-2 " +
+            "[&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-4 [&_ol]:space-y-2 " +
+            "[&_li]:text-muted-foreground [&_li]:leading-7 " +
+            "[&_strong]:font-semibold [&_strong]:text-foreground " +
+            "[&_em]:italic " +
+            "[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4",
         },
-      }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: "text-primary underline",
-        },
-      }),
-      Image.configure({
-        HTMLAttributes: {
-          class: "max-w-full h-auto rounded-lg",
-        },
-      }),
-      Placeholder.configure({
-        placeholder,
-      }),
-    ],
-    content,
-    editorProps: {
-      attributes: {
-        class:
-          "prose prose-slate dark:prose-invert max-w-none min-h-[300px] p-4 focus:outline-none",
+      },
+      onUpdate: ({ editor }) => {
+        onChange(editor.getHTML());
       },
     },
-    onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
-    },
-  });
+    []
+  );
+
+  // Update editor content when prop changes
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
 
   if (!editor) {
     return null;

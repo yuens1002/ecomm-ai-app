@@ -117,6 +117,94 @@
 
 ---
 
+### AI Image Generation for About Page Wizard
+
+**Status**: Backlog  
+**Priority**: Medium  
+**Description**: Integrate AI image generation into the About Page wizard to automatically create hero images based on the user's story and brand personality.
+
+**Current State**:
+
+- Wizard includes optional hero image URL field (step 3)
+- Users must manually upload/provide image URLs
+- No visual content generation capability
+
+**Proposed Changes**:
+
+- Add AI image generation option in wizard after story questions
+- Use DALL-E, Midjourney API, or similar service
+- Generate hero image based on:
+  - Founding story context
+  - Brand personality (passionate/professional/friendly)
+  - Coffee roastery aesthetic
+- Provide 2-3 image variations for user selection
+- Allow users to regenerate or skip and upload manually
+
+**Tasks**:
+
+- [ ] Research and select AI image generation provider
+  - Evaluate: DALL-E 3, Stable Diffusion, Midjourney API
+  - Consider: cost per image, quality, commercial usage rights
+- [ ] Design prompt engineering strategy
+  - Extract key visual elements from wizard answers
+  - Incorporate brand personality into image style
+  - Include coffee roastery context (equipment, origin, workspace)
+- [ ] Add new wizard step: "Generate Hero Image (Optional)"
+  - Button: "Generate AI Image" vs "Upload Your Own"
+  - Show loading state during generation (15-30 seconds)
+  - Display 2-3 variations with radio selection
+  - Include "Regenerate" and "Skip" options
+- [ ] Create API endpoint: `POST /api/admin/pages/generate-image`
+  - Accept wizard answers as context
+  - Build descriptive prompt from story + personality
+  - Call AI service with prompt
+  - Return image URLs or base64 data
+- [ ] Handle image storage
+  - Upload generated images to cloud storage (Cloudinary/S3)
+  - Or store as base64 in database (temporary solution)
+  - Provide permanent URLs for page hero image field
+- [ ] Update wizard flow
+  - Insert image generation step after hero image URL field
+  - Populate heroImageUrl automatically if AI image selected
+  - Allow continuing without image (optional nature preserved)
+- [ ] Add cost controls and rate limiting
+  - Limit generations per user/session
+  - Cache generated images for retry scenarios
+  - Track generation costs in admin analytics
+
+**Prompt Engineering Considerations**:
+
+- Combine founding story, sourcing details, roasting philosophy
+- Map brand personality to art styles:
+  - Passionate & Artisanal → warm, textured, rustic
+  - Professional & Expert → clean, modern, technical
+  - Friendly & Approachable → bright, inviting, casual
+  - Educational & Informative → detailed, documentary-style
+- Include coffee-specific keywords: roaster, beans, origin, café
+
+**Example Prompts**:
+
+- _"Professional photograph of a specialty coffee roastery workspace, warm lighting, vintage roasting equipment, bags of green coffee beans, rustic wooden surfaces, artisanal aesthetic"_
+- _"Modern coffee roasting facility, clean industrial design, precision equipment, coffee samples on cupping table, professional atmosphere, natural light"_
+
+**Acceptance Criteria**:
+
+- Users can generate AI hero images from wizard
+- Generated images reflect story context and brand personality
+- 2-3 variations provided for selection
+- Images stored permanently and accessible via URL
+- Feature is optional - users can skip or upload manually
+- Generation costs tracked and controlled
+
+**Future Enhancements**:
+
+- Allow custom prompt editing before generation
+- Provide style presets (vintage, modern, minimal)
+- Generate multiple images for use throughout page content
+- Integrate with existing image library/gallery
+
+---
+
 ### Lifecycle Marketing Automation
 
 **Status**: Backlog  

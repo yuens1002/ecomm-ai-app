@@ -141,7 +141,7 @@ export default function NewPageClient() {
               <Label htmlFor="heroImage">Hero Image (Optional)</Label>
               <Input
                 id="heroImage"
-                type="url"
+                type="text"
                 value={formData.heroImage}
                 onChange={(e) =>
                   setFormData((prev) => ({
@@ -149,7 +149,7 @@ export default function NewPageClient() {
                     heroImage: e.target.value,
                   }))
                 }
-                placeholder="https://example.com/image.jpg"
+                placeholder="https://example.com/image.jpg or /images/..."
               />
               <p className="text-xs text-muted-foreground">
                 Enter a URL or upload via /admin/settings

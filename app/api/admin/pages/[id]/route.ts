@@ -34,6 +34,8 @@ export async function PATCH(
       showInFooter,
       footerOrder,
       isPublished,
+      generatedBy,
+      generationPrompt,
     } = body;
 
     // Check if page exists
@@ -46,7 +48,7 @@ export async function PATCH(
     }
 
     // Check if slug is changing and if new slug already exists
-    if (slug !== existingPage.slug) {
+    if (slug && slug !== existingPage.slug) {
       const slugExists = await prisma.page.findUnique({
         where: { slug },
       });
@@ -70,19 +72,28 @@ export async function PATCH(
     }
 
     // Update the page
+    const updateData: any = {
+      publishedAt,
+    };
+
+    if (title !== undefined) updateData.title = title;
+    if (slug !== undefined) updateData.slug = slug;
+    if (heroImage !== undefined) updateData.heroImage = heroImage || null;
+    if (content !== undefined) updateData.content = content || "";
+    if (metaDescription !== undefined)
+      updateData.metaDescription = metaDescription || null;
+    if (showInFooter !== undefined)
+      updateData.showInFooter = showInFooter || false;
+    if (footerOrder !== undefined) updateData.footerOrder = footerOrder || 0;
+    if (isPublished !== undefined)
+      updateData.isPublished = isPublished || false;
+    if (generatedBy !== undefined) updateData.generatedBy = generatedBy;
+    if (generationPrompt !== undefined)
+      updateData.generationPrompt = generationPrompt;
+
     const page = await prisma.page.update({
       where: { id: params.id },
-      data: {
-        title,
-        slug,
-        heroImage: heroImage || null,
-        content: content || "",
-        metaDescription: metaDescription || null,
-        showInFooter: showInFooter || false,
-        footerOrder: footerOrder || 0,
-        isPublished: isPublished || false,
-        publishedAt,
-      },
+      data: updateData,
     });
 
     return NextResponse.json(page);

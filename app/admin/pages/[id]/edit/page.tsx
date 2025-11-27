@@ -22,6 +22,8 @@ async function getPage(id: string) {
       showInFooter: true,
       footerOrder: true,
       isPublished: true,
+      generationPrompt: true,
+      generatedBy: true,
     },
   });
 
