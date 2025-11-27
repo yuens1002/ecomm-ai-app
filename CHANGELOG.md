@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.26.10 - 2025-11-27
+
+- **Block Components & Editor**: Completed block-based page editor with rendering components
+  - Built 8 block renderer components (HeroBlock, StatBlock, PullQuoteBlock, RichTextBlock, LocationBlock, HoursBlock, FaqItemBlock, ImageGalleryBlock)
+  - Created PageEditor component with inline editing, drag-to-reorder, add/delete block UI
+  - Added shadcn Collapsible component for FAQ accordion functionality
+  - Each block has edit/display modes with save/cancel controls
+
+## 0.26.9 - 2025-11-27
+
+- **Block-Based Page System Foundation**: Created reusable block architecture for structured page editing
+  - Implemented Zod schemas for 8 block types (hero, stat, pullQuote, richText, location, hours, faqItem, imageGallery)
+  - Built page layout configurations defining allowed blocks per page type (About, Cafe, FAQ)
+  - Created server actions for block CRUD with runtime validation
+  - Eliminates need for generic rich text editor in favor of purpose-built blocks
+
 ## 0.26.8 - 2025-11-27
 
 - **Admin/Customer Layout Separation**: Implemented Next.js route groups to completely separate admin and customer interfaces
