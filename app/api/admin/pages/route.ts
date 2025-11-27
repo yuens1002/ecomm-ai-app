@@ -31,6 +31,8 @@ export async function POST(request: NextRequest) {
       footerOrder,
       isPublished,
       parentId,
+      generatedBy,
+      generationPrompt,
     } = body;
 
     // Validate required fields
@@ -66,7 +68,8 @@ export async function POST(request: NextRequest) {
         isPublished: isPublished || false,
         publishedAt: isPublished ? new Date() : null,
         parentId: parentId || null,
-        generatedBy: "manual",
+        generatedBy: generatedBy || "manual",
+        generationPrompt: generationPrompt || null,
       },
     });
 

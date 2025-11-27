@@ -23,6 +23,8 @@ interface EditPageClientProps {
     showInFooter: boolean;
     footerOrder: number | null;
     isPublished: boolean;
+    generationPrompt: any;
+    generatedBy: string | null;
   };
 }
 
@@ -175,7 +177,7 @@ export default function EditPageClient({ page }: EditPageClientProps) {
               <Label htmlFor="heroImage">Hero Image (Optional)</Label>
               <Input
                 id="heroImage"
-                type="url"
+                type="text"
                 value={formData.heroImage}
                 onChange={(e) =>
                   setFormData((prev) => ({
@@ -183,12 +185,54 @@ export default function EditPageClient({ page }: EditPageClientProps) {
                     heroImage: e.target.value,
                   }))
                 }
-                placeholder="https://example.com/image.jpg"
+                placeholder="https://example.com/image.jpg or /images/..."
               />
               <p className="text-xs text-muted-foreground">
                 Enter a URL or upload via /admin/settings
               </p>
             </div>
+
+            {/* AI-Generated Content Info */}
+            {page.generatedBy === "ai" && page.generationPrompt && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                <h3 className="font-semibold text-sm">
+                  AI-Generated Page Structure
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  This page was generated with additional components (stats
+                  cards and pull quote). To edit these, regenerate the page
+                  using the wizard.
+                </p>
+                {page.generationPrompt.stats &&
+                  page.generationPrompt.stats.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium mb-2">Stats Cards:</p>
+                      <div className="text-xs space-y-1">
+                        {page.generationPrompt.stats.map(
+                          (stat: any, i: number) => (
+                            <div key={i} className="flex gap-2">
+                              <span className="font-semibold">
+                                {stat.value}
+                              </span>
+                              <span className="text-muted-foreground">
+                                {stat.label}
+                              </span>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+                {page.generationPrompt.pullQuote && (
+                  <div>
+                    <p className="text-xs font-medium mb-1">Pull Quote:</p>
+                    <p className="text-xs italic text-muted-foreground">
+                      "{page.generationPrompt.pullQuote}"
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Content */}
             <div className="space-y-2">
