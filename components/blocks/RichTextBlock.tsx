@@ -1,29 +1,85 @@
 "use client";
 
-import { RichTextBlock as RichTextBlockType } from "@/lib/blocks/schemas";
+import {
+  RichTextBlock as RichTextBlockType,
+  BLOCK_METADATA,
+  richTextBlockSchema,
+} from "@/lib/blocks/schemas";
 import { Typography } from "@/components/ui/typography";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import { Field } from "@/components/ui/field";
+import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
-import { Trash2, Check, X, Bold, Italic, Heading } from "lucide-react";
-import { useState } from "react";
+import { Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface RichTextBlockProps {
   block: RichTextBlockType;
   isEditing: boolean;
-  onUpdate: (block: RichTextBlockType) => void;
-  onDelete: (blockId: string) => void;
+  isSelected?: boolean;
+  canDelete?: boolean;
+  isNew?: boolean;
+  onSelect?: () => void;
+  onUpdate?: (block: RichTextBlockType) => void;
+  onDelete?: (blockId: string) => void;
+  onRestore?: (blockId: string) => void;
 }
 
 export function RichTextBlock({
   block,
   isEditing,
+  isSelected = false,
+  canDelete = true,
+  isNew = false,
+  onSelect,
   onUpdate,
   onDelete,
+  onRestore,
 }: RichTextBlockProps) {
-  const [isEditingBlock, setIsEditingBlock] = useState(false);
-  const [editedBlock, setEditedBlock] = useState(block);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editedBlock, setEditedBlock] = useState<RichTextBlockType>(block);
+  const [errors, setErrors] = useState<{ html?: string }>({});
+  const [hasOpenedOnce, setHasOpenedOnce] = useState(false);
 
+  // Auto-open dialog when block is selected (for newly added blocks)
+  useEffect(() => {
+    if (isSelected && isEditing && !hasOpenedOnce) {
+      // For new blocks, clear the default values to show placeholder
+      if (isNew) {
+        setEditedBlock({
+          ...block,
+          content: { html: "" },
+        });
+      }
+      setIsDialogOpen(true);
+      setHasOpenedOnce(true);
+    }
+  }, [isSelected, isEditing, isNew, block, hasOpenedOnce]);
+
+  // Deleted/disabled state
+  if (block.isDeleted) {
+    return (
+      <DeletedBlockOverlay
+        blockId={block.id}
+        blockName="Rich Text Block"
+        onRestore={onRestore}
+      >
+        <Typography>
+          <div dangerouslySetInnerHTML={{ __html: block.content.html }} />
+        </Typography>
+      </DeletedBlockOverlay>
+    );
+  }
+
+  // Display mode (non-editing page view)
   if (!isEditing) {
     return (
       <Typography>
@@ -32,98 +88,132 @@ export function RichTextBlock({
     );
   }
 
-  if (isEditingBlock) {
-    return (
-      <div className="border-2 border-primary rounded-lg p-4 space-y-4 bg-muted/50">
-        <div className="flex justify-between items-center">
-          <span className="text-xs font-semibold uppercase text-muted-foreground">
-            Editing Rich Text
-          </span>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                onUpdate(editedBlock);
-                setIsEditingBlock(false);
-              }}
-            >
-              <Check className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setEditedBlock(block);
-                setIsEditingBlock(false);
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+  // Save changes from dialog
+  const handleSave = () => {
+    // Validate before saving
+    const result = richTextBlockSchema.safeParse(editedBlock);
+    if (!result.success) {
+      const fieldErrors: { html?: string } = {};
+      const zodErrors = result.error.issues || [];
 
-        <div>
-          <Label htmlFor={`richtext-${block.id}`}>Content (HTML)</Label>
-          <Textarea
-            id={`richtext-${block.id}`}
-            value={editedBlock.content.html}
-            onChange={(e) =>
-              setEditedBlock({
-                ...editedBlock,
-                content: { ...editedBlock.content, html: e.target.value },
-              })
-            }
-            placeholder="<p>Enter HTML content...</p>"
-            rows={10}
-            className="font-mono text-sm"
-          />
-          <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Bold className="h-3 w-3" /> &lt;strong&gt;
-            </span>
-            <span className="flex items-center gap-1">
-              <Italic className="h-3 w-3" /> &lt;em&gt;
-            </span>
-            <span className="flex items-center gap-1">
-              <Heading className="h-3 w-3" /> &lt;h2&gt;-&lt;h6&gt;
-            </span>
-          </div>
-        </div>
+      for (const err of zodErrors) {
+        const field = err.path[err.path.length - 1] as string;
+        if (field === "html") {
+          fieldErrors[field] = err.message;
+        }
+      }
+      setErrors(fieldErrors);
+      return;
+    }
 
-        <div className="border rounded-lg p-4 bg-background">
-          <p className="text-xs font-semibold mb-2">Preview:</p>
-          <Typography>
-            <div
-              dangerouslySetInnerHTML={{ __html: editedBlock.content.html }}
-            />
-          </Typography>
-        </div>
-      </div>
-    );
-  }
+    setErrors({});
+    onUpdate?.(editedBlock);
+    setIsDialogOpen(false);
+  };
 
+  // Cancel changes - if new block, delete it; otherwise just revert
+  const handleCancel = () => {
+    if (isNew) {
+      onDelete?.(block.id);
+    } else {
+      setEditedBlock(block);
+      setIsDialogOpen(false);
+    }
+  };
+
+  // Handle dialog close (X button or ESC) - same as cancel
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+      handleCancel();
+    } else {
+      setIsDialogOpen(open);
+    }
+  };
+
+  // Edit mode with dialog
   return (
-    <div
-      className="relative group cursor-pointer"
-      onClick={() => setIsEditingBlock(true)}
-    >
-      <Typography>
+    <>
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="pr-8 flex-shrink-0">
+            <DialogTitle>
+              {isNew
+                ? `Add ${BLOCK_METADATA.richText.name}`
+                : `Edit ${BLOCK_METADATA.richText.name}`}
+            </DialogTitle>
+            <DialogDescription>
+              {BLOCK_METADATA.richText.description}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="overflow-y-auto flex-1 -mx-6 px-6">
+            <Field>
+              <FormHeading
+                htmlFor="rich-text-content"
+                label="Content"
+                required={true}
+                validationType={errors.html ? "error" : undefined}
+                isDirty={
+                  errors.html
+                    ? true
+                    : editedBlock.content.html !== block.content.html &&
+                      editedBlock.content.html !== ""
+                }
+                errorMessage={errors.html}
+              />
+              <RichTextEditor
+                content={editedBlock.content.html}
+                onChange={(html) => {
+                  setEditedBlock({
+                    ...editedBlock,
+                    content: { ...editedBlock.content, html },
+                  });
+                  if (errors.html) setErrors({ html: undefined });
+                }}
+                placeholder="Start typing your content..."
+                className={errors.html ? "border-destructive" : ""}
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Use the toolbar to format your content. Supports headings, bold,
+                italic, lists, and links.
+              </p>
+            </Field>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6 flex-shrink-0">
+            <Button variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>{isNew ? "Add" : "Save"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* WYSIWYG Block Display with hover/select states */}
+      <Typography
+        isEditing={true}
+        onClick={() => {
+          if (onSelect) onSelect();
+          setIsDialogOpen(true);
+        }}
+        actionButtons={
+          canDelete ? (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.(block.id);
+              }}
+              className="shadow-lg"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          ) : undefined
+        }
+      >
         <div dangerouslySetInnerHTML={{ __html: block.content.html }} />
       </Typography>
-      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
-        <span className="text-white text-sm font-medium">Click to edit</span>
-        <Button
-          size="sm"
-          variant="destructive"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(block.id);
-          }}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
+    </>
   );
 }

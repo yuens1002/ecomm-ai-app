@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { Block, BlockType } from "@/lib/blocks/schemas";
 import {
-  PageType,
   canAddBlock,
   getBlockDisplayName,
   isAtMinimumCount,
   PAGE_LAYOUTS,
 } from "@/lib/page-layouts";
 import { LayoutRenderer, BlockHandlers } from "@/lib/page-layouts";
+import { PageType } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -67,15 +67,19 @@ interface PageEditorProps {
   layoutRenderer: LayoutRenderer;
   isPublished?: boolean;
   metaDescription?: string | null;
+  showInHeader?: boolean;
   showInFooter?: boolean;
   footerOrder?: number | null;
+  headerOrder?: number | null;
   icon?: string | null;
   onPublishToggle?: () => Promise<void>;
   onSave?: () => void;
   onMetadataUpdate?: (data: {
     title: string;
     metaDescription: string;
+    showInHeader?: boolean;
     showInFooter?: boolean;
+    headerOrder?: number | null;
     footerOrder?: number | null;
     icon?: string | null;
   }) => Promise<void>;
@@ -90,8 +94,10 @@ export function PageEditor({
   layoutRenderer,
   isPublished,
   metaDescription,
-  showInFooter,
+  showInHeader: initialShowInHeader,
+  showInFooter: initialShowInFooter,
   footerOrder,
+  headerOrder,
   icon,
   onPublishToggle,
   onSave,
@@ -108,8 +114,11 @@ export function PageEditor({
   const [title, setTitle] = useState(pageTitle);
   const [description, setDescription] = useState(metaDescription || "");
   const [published, setPublished] = useState(isPublished || false);
-  const [showInHeader, setShowInHeader] = useState(false); // TODO: Add to database
-  const [showFooter, setShowFooter] = useState(showInFooter || false);
+  const [showInHeader, setShowInHeader] = useState(
+    initialShowInHeader || false
+  );
+  const [showFooter, setShowFooter] = useState(initialShowInFooter || false);
+  const [headerOrderValue, setHeaderOrderValue] = useState(headerOrder || 0);
   const [footerOrderValue, setFooterOrderValue] = useState(footerOrder || 0);
   const [iconValue, setIconValue] = useState(icon || "");
   const { toast } = useToast();
@@ -191,7 +200,7 @@ export function PageEditor({
       const newBlocks = [...updatedBlocks, finalBlock].sort(
         (a, b) => a.order - b.order
       );
-      setBlocks(newBlocks);
+      setBlocks(newBlocks as Block[]);
       setPendingBlock(null);
 
       toast({
@@ -335,7 +344,9 @@ export function PageEditor({
       await onMetadataUpdate({
         title,
         metaDescription: description,
+        showInHeader,
         showInFooter: showFooter,
+        headerOrder: headerOrderValue,
         footerOrder: footerOrderValue,
         icon: iconValue || null,
       });
@@ -355,17 +366,23 @@ export function PageEditor({
     }
   };
 
-  const availableBlocks = layout.allowedBlocks.filter((blockType) => {
-    const currentBlockCounts = blocks.reduce(
-      (acc, block) => {
-        acc[block.type] = (acc[block.type] || 0) + 1;
-        return acc;
-      },
-      {} as Record<BlockType, number>
-    );
+  const availableBlocks = layout.allowedBlocks.filter(
+    (blockType: BlockType) => {
+      const currentBlockCounts = blocks.reduce(
+        (acc, block) => {
+          acc[block.type] = (acc[block.type] || 0) + 1;
+          return acc;
+        },
+        {} as Record<BlockType, number>
+      );
 
-    return canAddBlock(pageType, blockType, currentBlockCounts[blockType] || 0);
-  });
+      return canAddBlock(
+        pageType,
+        blockType,
+        currentBlockCounts[blockType] || 0
+      );
+    }
+  );
   // Open live preview in new tab
   const handleViewLive = () => {
     window.open(`/pages/${pageSlug}`, "_blank");
@@ -465,35 +482,83 @@ export function PageEditor({
                       <div className="space-y-4">
                         <h4 className="text-sm font-medium">Show Page Link</h4>
                         <div className="space-y-3">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="show-header"
-                              checked={showInHeader}
-                              onCheckedChange={(checked) =>
-                                setShowInHeader(checked === true)
-                              }
-                            />
-                            <Label
-                              htmlFor="show-header"
-                              className="text-sm cursor-pointer"
-                            >
-                              Site Header
-                            </Label>
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="show-header"
+                                checked={showInHeader}
+                                onCheckedChange={(checked) =>
+                                  setShowInHeader(checked === true)
+                                }
+                              />
+                              <Label
+                                htmlFor="show-header"
+                                className="text-sm cursor-pointer"
+                              >
+                                Site Header
+                              </Label>
+                            </div>
+                            {showInHeader && (
+                              <div className="ml-6">
+                                <Label
+                                  htmlFor="header-order"
+                                  className="text-xs text-muted-foreground"
+                                >
+                                  Display Order
+                                </Label>
+                                <Input
+                                  id="header-order"
+                                  type="number"
+                                  min="0"
+                                  value={headerOrderValue}
+                                  onChange={(e) =>
+                                    setHeaderOrderValue(
+                                      parseInt(e.target.value) || 0
+                                    )
+                                  }
+                                  className="mt-1 w-20"
+                                />
+                              </div>
+                            )}
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="show-footer"
-                              checked={showFooter}
-                              onCheckedChange={(checked) =>
-                                setShowFooter(checked === true)
-                              }
-                            />
-                            <Label
-                              htmlFor="show-footer"
-                              className="text-sm cursor-pointer"
-                            >
-                              Site Footer
-                            </Label>
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="show-footer"
+                                checked={showFooter}
+                                onCheckedChange={(checked) =>
+                                  setShowFooter(checked === true)
+                                }
+                              />
+                              <Label
+                                htmlFor="show-footer"
+                                className="text-sm cursor-pointer"
+                              >
+                                Site Footer
+                              </Label>
+                            </div>
+                            {showFooter && (
+                              <div className="ml-6">
+                                <Label
+                                  htmlFor="footer-order"
+                                  className="text-xs text-muted-foreground"
+                                >
+                                  Display Order
+                                </Label>
+                                <Input
+                                  id="footer-order"
+                                  type="number"
+                                  min="0"
+                                  value={footerOrderValue}
+                                  onChange={(e) =>
+                                    setFooterOrderValue(
+                                      parseInt(e.target.value) || 0
+                                    )
+                                  }
+                                  className="mt-1 w-20"
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

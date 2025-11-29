@@ -1,21 +1,39 @@
 "use client";
 
-import { PageEditor } from "@/components/PageEditor";
+import { PageEditor } from "@/components/app-components/PageEditor";
 import { Block } from "@/lib/blocks/schemas";
+import { renderLocationInfoLayout } from "@/lib/page-layouts";
+import { PageType } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
 interface CafeEditorClientProps {
   pageId: string;
+  pageSlug: string;
+  pageTitle: string;
   initialBlocks: Block[];
   isPublished: boolean;
+  metaDescription: string | null;
+  showInHeader: boolean;
+  showInFooter: boolean;
+  headerOrder: number | null;
+  footerOrder: number | null;
+  icon: string | null;
 }
 
 export default function CafeEditorClient({
   pageId,
+  pageSlug,
+  pageTitle,
   initialBlocks,
   isPublished: initialIsPublished,
+  metaDescription,
+  showInHeader,
+  showInFooter,
+  headerOrder,
+  footerOrder,
+  icon,
 }: CafeEditorClientProps) {
   const router = useRouter();
   const [isPublished, setIsPublished] = useState(initialIsPublished);
@@ -53,15 +71,45 @@ export default function CafeEditorClient({
     }
   };
 
+  const handleMetadataUpdate = async (data: {
+    title: string;
+    metaDescription: string;
+    showInHeader?: boolean;
+    showInFooter?: boolean;
+    headerOrder?: number | null;
+    footerOrder?: number | null;
+    icon?: string | null;
+  }) => {
+    const response = await fetch(`/api/pages/${pageId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update metadata");
+    }
+
+    router.refresh();
+  };
+
   return (
-    <div className="container mx-auto py-8">
-      <PageEditor
-        pageId={pageId}
-        pageType="cafe"
-        initialBlocks={initialBlocks}
-        isPublished={isPublished}
-        onPublishToggle={handlePublishToggle}
-      />
-    </div>
+    <PageEditor
+      pageId={pageId}
+      pageType={PageType.CAFE}
+      pageSlug={pageSlug}
+      pageTitle={pageTitle}
+      initialBlocks={initialBlocks}
+      layoutRenderer={renderLocationInfoLayout}
+      isPublished={isPublished}
+      metaDescription={metaDescription}
+      showInHeader={showInHeader}
+      showInFooter={showInFooter}
+      headerOrder={headerOrder}
+      footerOrder={footerOrder}
+      icon={icon}
+      onPublishToggle={handlePublishToggle}
+      onMetadataUpdate={handleMetadataUpdate}
+    />
   );
 }

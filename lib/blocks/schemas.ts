@@ -9,17 +9,24 @@ import { z } from "zod";
 
 // Base schema for all blocks
 const baseBlockSchema = z.object({
-  id: z.string().cuid(),
+  id: z.string().min(1),
   order: z.number().int().min(0),
+  isDeleted: z.boolean().optional().default(false),
+  originalContent: z.any().optional(), // Store AI-generated content for regeneration
+  layoutColumn: z.enum(["full", "left", "right"]).optional().default("full"), // Layout positioning
 });
 
 // Hero block - main page header with image
 export const heroBlockSchema = baseBlockSchema.extend({
   type: z.literal("hero"),
   content: z.object({
-    title: z.string().min(1).max(100),
-    imageUrl: z.string().url(),
+    title: z
+      .string()
+      .min(1, "Title is required")
+      .max(100, "Title must be 100 characters or less"),
+    imageUrl: z.string().min(1, "Image URL is required"),
     imageAlt: z.string().max(200).optional(),
+    caption: z.string().max(500).optional(),
   }),
 });
 
@@ -27,8 +34,16 @@ export const heroBlockSchema = baseBlockSchema.extend({
 export const statBlockSchema = baseBlockSchema.extend({
   type: z.literal("stat"),
   content: z.object({
-    label: z.string().min(1).max(50),
-    value: z.string().min(1).max(50),
+    label: z
+      .string()
+      .trim()
+      .min(1, "Label is required")
+      .max(50, "Label must be 50 characters or less"),
+    value: z
+      .string()
+      .trim()
+      .min(1, "Value is required")
+      .max(50, "Value must be 50 characters or less"),
   }),
 });
 
@@ -36,7 +51,10 @@ export const statBlockSchema = baseBlockSchema.extend({
 export const pullQuoteBlockSchema = baseBlockSchema.extend({
   type: z.literal("pullQuote"),
   content: z.object({
-    text: z.string().min(1).max(500),
+    text: z
+      .string()
+      .min(1, "Quote text is required")
+      .max(500, "Quote must be 500 characters or less"),
     author: z.string().max(100).optional(),
   }),
 });
@@ -45,7 +63,7 @@ export const pullQuoteBlockSchema = baseBlockSchema.extend({
 export const richTextBlockSchema = baseBlockSchema.extend({
   type: z.literal("richText"),
   content: z.object({
-    html: z.string().min(1),
+    html: z.string().trim().min(1, "Content is required"),
   }),
 });
 
@@ -53,14 +71,15 @@ export const richTextBlockSchema = baseBlockSchema.extend({
 export const locationBlockSchema = baseBlockSchema.extend({
   type: z.literal("location"),
   content: z.object({
-    name: z.string().min(1).max(100),
-    street: z.string().min(1).max(200),
-    city: z.string().min(1).max(100),
-    state: z.string().min(2).max(50),
-    zip: z.string().min(5).max(10),
-    country: z.string().min(2).max(100),
-    phone: z.string().max(20).optional(),
-    email: z.string().email().optional(),
+    name: z
+      .string()
+      .min(1, "Location name is required")
+      .max(100, "Name must be 100 characters or less"),
+    address: z
+      .string()
+      .min(1, "Address is required")
+      .max(500, "Address must be 500 characters or less"),
+    googleMapsUrl: z.string().optional(),
   }),
 });
 
@@ -82,8 +101,8 @@ export const hoursBlockSchema = baseBlockSchema.extend({
 export const faqItemBlockSchema = baseBlockSchema.extend({
   type: z.literal("faqItem"),
   content: z.object({
-    question: z.string().min(1).max(200),
-    answer: z.string().min(1).max(2000),
+    question: z.string().max(200),
+    answer: z.string().max(2000),
   }),
 });
 
@@ -94,12 +113,11 @@ export const imageGalleryBlockSchema = baseBlockSchema.extend({
     images: z
       .array(
         z.object({
-          url: z.string().url(),
+          url: z.string(),
           alt: z.string().max(200),
           caption: z.string().max(200).optional(),
         })
       )
-      .min(1)
       .max(12),
   }),
 });
@@ -130,43 +148,144 @@ export type ImageGalleryBlock = z.infer<typeof imageGalleryBlockSchema>;
 // Block type enum for easier checking
 export type BlockType = Block["type"];
 
+// Block type constants for safe usage
+export const BLOCK_TYPES = {
+  HERO: "hero",
+  STAT: "stat",
+  PULL_QUOTE: "pullQuote",
+  RICH_TEXT: "richText",
+  LOCATION: "location",
+  HOURS: "hours",
+  FAQ_ITEM: "faqItem",
+  IMAGE_GALLERY: "imageGallery",
+} as const;
+
+// Block metadata for UI labels and descriptions
+export const BLOCK_METADATA: Record<
+  BlockType,
+  { name: string; description: string }
+> = {
+  hero: {
+    name: "Hero",
+    description: "Main header with image and title",
+  },
+  stat: {
+    name: "Statistic",
+    description: "Display a key metric or number",
+  },
+  pullQuote: {
+    name: "Pull Quote",
+    description: "Highlight an important quote",
+  },
+  richText: {
+    name: "Content",
+    description: "Add formatted text and content",
+  },
+  location: {
+    name: "Location",
+    description: "Physical address and map link",
+  },
+  hours: {
+    name: "Hours",
+    description: "Business operating hours",
+  },
+  faqItem: {
+    name: "FAQ Item",
+    description: "Question and answer pair",
+  },
+  imageGallery: {
+    name: "Image Gallery",
+    description: "Collection of images",
+  },
+};
+
 // Helper to create new blocks with defaults
-export function createBlock(type: BlockType, order: number): Partial<Block> {
+export function createBlock(type: BlockType, order: number): Block {
+  // Generate a unique ID
   const id = `block_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+  const baseBlock = {
+    id,
+    order,
+    isDeleted: false,
+    layoutColumn: "full" as const,
+  };
 
   switch (type) {
     case "hero":
       return {
-        id,
+        ...baseBlock,
         type,
-        order,
-        content: { title: "", imageUrl: "", imageAlt: "" },
+        content: {
+          title: "Add your title here",
+          imageUrl: "/placeholder-hero.jpg",
+          imageAlt: "Hero image",
+          caption: "",
+        },
       };
     case "stat":
-      return { id, type, order, content: { label: "", value: "" } };
+      return {
+        ...baseBlock,
+        type,
+        content: {
+          label: "Click to edit",
+          value: "0",
+        },
+      };
     case "pullQuote":
-      return { id, type, order, content: { text: "" } };
+      return {
+        ...baseBlock,
+        type,
+        content: {
+          text: "Click to add your quote here",
+        },
+      };
     case "richText":
-      return { id, type, order, content: { html: "" } };
+      return {
+        ...baseBlock,
+        type,
+        content: {
+          html: "<p>Click to edit this content block. Add your text here.</p>",
+        },
+      };
     case "location":
       return {
-        id,
+        ...baseBlock,
         type,
-        order,
         content: {
-          name: "",
-          street: "",
-          city: "",
-          state: "",
-          zip: "",
-          country: "",
+          name: "Location Name",
+          address: "Click to edit address",
+          googleMapsUrl: "",
         },
       };
     case "hours":
-      return { id, type, order, content: { title: "Hours", schedule: [] } };
+      return {
+        ...baseBlock,
+        type,
+        content: {
+          title: "Hours",
+          schedule: [
+            { day: "Monday - Friday", hours: "Click to edit" },
+            { day: "Saturday - Sunday", hours: "Click to edit" },
+          ],
+        },
+      };
     case "faqItem":
-      return { id, type, order, content: { question: "", answer: "" } };
+      return {
+        ...baseBlock,
+        type,
+        content: {
+          question: "Click to add your question",
+          answer: "Click to add your answer",
+        },
+      };
     case "imageGallery":
-      return { id, type, order, content: { images: [] } };
+      return {
+        ...baseBlock,
+        type,
+        content: {
+          images: [],
+        },
+      };
   }
 }

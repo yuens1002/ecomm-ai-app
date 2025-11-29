@@ -10,7 +10,18 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import TipTapEditor from "@/components/app-components/TipTapEditor";
+import {
+  DynamicIcon,
+  COMMON_PAGE_ICONS,
+} from "@/components/app-components/DynamicIcon";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface EditPageClientProps {
   page: {
@@ -22,6 +33,7 @@ interface EditPageClientProps {
     metaDescription: string | null;
     showInFooter: boolean;
     footerOrder: number | null;
+    icon: string | null;
     isPublished: boolean;
     generationPrompt: any;
     generatedBy: string | null;
@@ -42,6 +54,7 @@ export default function EditPageClient({ page }: EditPageClientProps) {
     metaDescription: page.metaDescription || "",
     showInFooter: page.showInFooter,
     footerOrder: page.footerOrder || 0,
+    icon: page.icon || "",
     isPublished: page.isPublished,
   });
 
@@ -307,21 +320,53 @@ export default function EditPageClient({ page }: EditPageClientProps) {
                 </Label>
               </div>
               {formData.showInFooter && (
-                <div className="space-y-2">
-                  <Label htmlFor="footerOrder">Display Order</Label>
-                  <Input
-                    id="footerOrder"
-                    type="number"
-                    value={formData.footerOrder}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        footerOrder: parseInt(e.target.value) || 0,
-                      }))
-                    }
-                    min={0}
-                  />
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="icon">Icon</Label>
+                    <Select
+                      value={formData.icon}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, icon: value }))
+                      }
+                    >
+                      <SelectTrigger id="icon">
+                        <SelectValue placeholder="Select an icon">
+                          {formData.icon && (
+                            <div className="flex items-center gap-2">
+                              <DynamicIcon name={formData.icon} size={16} />
+                              <span>{formData.icon}</span>
+                            </div>
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COMMON_PAGE_ICONS.map((icon) => (
+                          <SelectItem key={icon} value={icon}>
+                            <div className="flex items-center gap-2">
+                              <DynamicIcon name={icon} size={16} />
+                              <span>{icon}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="footerOrder">Display Order</Label>
+                    <Input
+                      id="footerOrder"
+                      type="number"
+                      value={formData.footerOrder}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          footerOrder: parseInt(e.target.value) || 0,
+                        }))
+                      }
+                      min={0}
+                    />
+                  </div>
+                </>
               )}
             </div>
 

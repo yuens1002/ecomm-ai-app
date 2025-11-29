@@ -4,9 +4,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth();
 
     if (!session?.user?.email) {
@@ -23,18 +24,40 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { isPublished } = body;
+    const {
+      isPublished,
+      title,
+      metaDescription,
+      showInHeader,
+      showInFooter,
+      headerOrder,
+      footerOrder,
+      icon,
+    } = body;
 
-    if (typeof isPublished !== "boolean") {
+    // Validate if isPublished is provided
+    if (isPublished !== undefined && typeof isPublished !== "boolean") {
       return NextResponse.json(
         { error: "isPublished must be a boolean" },
         { status: 400 }
       );
     }
 
+    // Build the update data object dynamically
+    const updateData: any = {};
+    if (isPublished !== undefined) updateData.isPublished = isPublished;
+    if (title !== undefined) updateData.title = title;
+    if (metaDescription !== undefined)
+      updateData.metaDescription = metaDescription;
+    if (showInHeader !== undefined) updateData.showInHeader = showInHeader;
+    if (showInFooter !== undefined) updateData.showInFooter = showInFooter;
+    if (headerOrder !== undefined) updateData.headerOrder = headerOrder;
+    if (footerOrder !== undefined) updateData.footerOrder = footerOrder;
+    if (icon !== undefined) updateData.icon = icon;
+
     const page = await prisma.page.update({
-      where: { id: params.id },
-      data: { isPublished },
+      where: { id },
+      data: updateData,
     });
 
     return NextResponse.json(page);

@@ -15,71 +15,70 @@ generator client {
 
 // This is the main Product table
 model Product {
-  id            String  @id @default(cuid())
-  name          String
-  slug          String  @unique // For clean URLs like /products/hayes-valley-espresso
-  description   String? @db.Text // Can store long text/HTML/Markdown
-  
-  origin        String[] // e.g., "Ethiopia", "Colombia", "Blend"
-  tastingNotes  String[] // PostgreSQL arrays are great for this
-  roastLevel    RoastLevel @default(MEDIUM)
-  isOrganic     Boolean @default(false)
-  
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique // For clean URLs like /products/hayes-valley-espresso
+  description String? @db.Text // Can store long text/HTML/Markdown
+
+  origin       String[] // e.g., "Ethiopia", "Colombia", "Blend"
+  tastingNotes String[] // PostgreSQL arrays are great for this
+  roastLevel   RoastLevel @default(MEDIUM)
+  isOrganic    Boolean    @default(false)
+
   // --- SPECIALTY COFFEE DETAILS ---
-  altitude      String? // Growing altitude (e.g., "1200-1500m")
-  variety       String? // Coffee variety (e.g., "Bourbon", "Typica", "Geisha")
+  altitude String? // Growing altitude (e.g., "1200-1500m")
+  variety  String? // Coffee variety (e.g., "Bourbon", "Typica", "Geisha")
 
   // --- FIELDS FOR HOMEPAGE ---
   isFeatured    Boolean @default(false)
-  featuredOrder Int?    // Optional integer to control sort order
+  featuredOrder Int? // Optional integer to control sort order
 
   // --- Relations ---
-  images        ProductImage[] // A product can have many images
-  variants      ProductVariant[] // A product can have many variants (e.g., 12oz, 5lb)
-  tags          ProductTag[] // Many-to-many relation to tags (max 3 per product)
-  
-  // UPDATED: This is now a many-to-many relation
-  categories    CategoriesOnProducts[]
+  images   ProductImage[] // A product can have many images
+  variants ProductVariant[] // A product can have many variants (e.g., 12oz, 5lb)
+  tags     ProductTag[] // Many-to-many relation to tags (max 3 per product)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  // UPDATED: This is now a many-to-many relation
+  categories CategoriesOnProducts[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([isFeatured])
 }
 
 // NEW: This is the explicit join table for Many-to-Many
 model CategoriesOnProducts {
-  product     Product   @relation(fields: [productId], references: [id])
-  productId   String
-  category    Category  @relation(fields: [categoryId], references: [id])
-  categoryId  String
-  isPrimary   Boolean   @default(false) // Use this to define the "main" category for breadcrumbs
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  String
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+  isPrimary  Boolean  @default(false) // Use this to define the "main" category for breadcrumbs
 
   @@id([productId, categoryId]) // Composite primary key
 }
 
 // NEW: Category table, now linked via the join table
 model Category {
-  id                   String       @id @default(cuid())
-  name                 String
-  slug                 String       @unique
-  labelSettingId       String       // References SiteSettings for the label value
-  labelSetting         SiteSettings @relation("CategoryLabel", fields: [labelSettingId], references: [id], onDelete: Restrict)
-  isUsingDefaultLabel  Boolean      @default(true) // Track if using default or explicitly set
-  order                Int          @default(0) // Display order in navigation menu
-  showPurchaseOptions  Boolean      @default(true) // Show price/buy button on category page
-  products             CategoriesOnProducts[] // Relation back to the join table
-  
+  id                  String                 @id @default(cuid())
+  name                String
+  slug                String                 @unique
+  labelSettingId      String // References SiteSettings for the label value
+  labelSetting        SiteSettings           @relation("CategoryLabel", fields: [labelSettingId], references: [id], onDelete: Restrict)
+  isUsingDefaultLabel Boolean                @default(true) // Track if using default or explicitly set
+  order               Int                    @default(0) // Display order in navigation menu
+  showPurchaseOptions Boolean                @default(true) // Show price/buy button on category page
+  products            CategoriesOnProducts[] // Relation back to the join table
+
   @@index([labelSettingId])
 }
 
-
 // This table holds all images for a product
 model ProductImage {
-  id        String @id @default(cuid())
-  url       String // The URL to the image (e.g., in an S3 bucket or Cloudinary)
-  altText   String // Important for accessibility (a11y)
-  order     Int    @default(0) // To control the order of images in a gallery
+  id      String @id @default(cuid())
+  url     String // The URL to the image (e.g., in an S3 bucket or Cloudinary)
+  altText String // Important for accessibility (a11y)
+  order   Int    @default(0) // To control the order of images in a gallery
 
   // Relation back to the Product
   productId String
@@ -92,33 +91,34 @@ model ProductImage {
 model ProductVariant {
   id            String @id @default(cuid())
   name          String // e.g., "12oz Bag", "5lb Bag"
-  weightInGrams Int    // e.g., 340
-  stockQuantity Int @default(0) 
+  weightInGrams Int // e.g., 340
+  stockQuantity Int    @default(0)
 
   // Relation back to the Product
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   // Relation to purchase options
-  purchaseOptions PurchaseOption[] 
+  purchaseOptions PurchaseOption[]
 
   @@index([productId])
 }
 
 // This table holds the different ways to buy a variant
 model PurchaseOption {
-  id              String @id @default(cuid())
-  type            PurchaseType @default(ONE_TIME)
-  priceInCents    Int    
+  id           String       @id @default(cuid())
+  type         PurchaseType @default(ONE_TIME)
+  priceInCents Int
 
   // Stripe-style recurring config for subscriptions
   billingInterval      BillingInterval? // DAY, WEEK, MONTH, YEAR
-  billingIntervalCount Int?             // e.g. 1, 2, 3, 4
+  billingIntervalCount Int? // e.g. 1, 2, 3, 4
 
   // Relation back to the Variant
-  variantId String
-  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId  String
+  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
+
   @@index([variantId])
 }
 
@@ -137,13 +137,13 @@ enum BillingInterval {
 // --- Settings ---
 
 model SiteSettings {
-  id                      String     @id @default(cuid())
-  key                     String     @unique // e.g., "defaultCategoryLabel"
-  value                   String     // e.g., "Collections"
-  updatedAt               DateTime   @updatedAt
-  
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g., "defaultCategoryLabel"
+  value     String // e.g., "Collections"
+  updatedAt DateTime @updatedAt
+
   // Categories using this setting as their label
-  categoriesAsLabel       Category[] @relation("CategoryLabel")
+  categoriesAsLabel Category[] @relation("CategoryLabel")
 }
 
 // --- User & Order Models ---
@@ -155,19 +155,19 @@ model User {
   name          String?
   email         String?   @unique
   emailVerified DateTime?
-  image         String?   
+  image         String?
   passwordHash  String?
   isAdmin       Boolean   @default(false) // Admin access for order fulfillment
-  
-  accounts      Account[] 
-  sessions      Session[] 
-  addresses     Address[] 
+
+  accounts      Account[]
+  sessions      Session[]
+  addresses     Address[]
   orders        Order[]
   subscriptions Subscription[]
   activities    UserActivity[]
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Account {
@@ -206,25 +206,25 @@ model VerificationToken {
 }
 
 model Address {
-  id          String  @id @default(cuid())
-  street      String
-  city        String
-  state       String
-  postalCode  String
-  country     String
-  isDefault   Boolean @default(false)
+  id         String  @id @default(cuid())
+  street     String
+  city       String
+  state      String
+  postalCode String
+  country    String
+  isDefault  Boolean @default(false)
 
-  userId      String
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model Order {
-  id               String      @id @default(cuid())
-  totalInCents     Int
-  status           OrderStatus @default(PENDING)
-  deliveryMethod   DeliveryMethod @default(DELIVERY)
+  id             String         @id @default(cuid())
+  totalInCents   Int
+  status         OrderStatus    @default(PENDING)
+  deliveryMethod DeliveryMethod @default(DELIVERY)
 
   // Stripe fields
   stripeSessionId       String? // Stripe Checkout Session ID (removed @unique to allow split orders from same session)
@@ -237,24 +237,24 @@ model Order {
   // Shipping fields for all orders
   // For DELIVERY orders: populated from checkout form or saved address
   // For PICKUP orders: can be left null/empty since customer collects in-store
-  recipientName       String? // Recipient name for shipping
-  shippingStreet      String? // Street address
-  shippingCity        String? // City
-  shippingState       String? // State/Province
-  shippingPostalCode  String? // Postal/ZIP code
-  shippingCountry     String? // Country
+  recipientName      String? // Recipient name for shipping
+  shippingStreet     String? // Street address
+  shippingCity       String? // City
+  shippingState      String? // State/Province
+  shippingPostalCode String? // Postal/ZIP code
+  shippingCountry    String? // Country
 
   // Fulfillment tracking
   trackingNumber String? // Shipping tracking number
   carrier        String? // Shipping carrier (USPS, FedEx, UPS, etc.)
   shippedAt      DateTime? // When order was shipped
 
-  userId       String?
-  user         User?        @relation(fields: [userId], references: [id], onDelete: Restrict)
-  items        OrderItem[]
-  
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  userId String?
+  user   User?       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  items  OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([stripeSessionId])
@@ -263,11 +263,11 @@ model Order {
 }
 
 model OrderItem {
-  id            String @id @default(cuid())
-  quantity      Int
-  priceInCents  Int 
-  orderId       String
-  order         Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id               String         @id @default(cuid())
+  quantity         Int
+  priceInCents     Int
+  orderId          String
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   purchaseOptionId String
   purchaseOption   PurchaseOption @relation(fields: [purchaseOptionId], references: [id], onDelete: Restrict)
 
@@ -276,11 +276,11 @@ model OrderItem {
 }
 
 model Subscription {
-  id                    String             @id @default(cuid())
-  stripeSubscriptionId  String             @unique // Stripe Subscription ID
-  stripeCustomerId      String             // Stripe Customer ID
-  status                SubscriptionStatus @default(ACTIVE)
-  
+  id                   String             @id @default(cuid())
+  stripeSubscriptionId String             @unique // Stripe Subscription ID
+  stripeCustomerId     String // Stripe Customer ID
+  status               SubscriptionStatus @default(ACTIVE)
+
   // Product details (can contain multiple products if subscription has multiple line items)
   // 🏗️ ARCHITECTURAL DECISION: Snapshot approach vs. relational
   // We store product names as strings instead of linking to Product/Variant/PurchaseOption models.
@@ -292,33 +292,33 @@ model Subscription {
   // - When creating recurring orders, we must lookup PurchaseOption by name (fuzzy match)
   // - Risk: If product name changes significantly, recurring orders may fail to find match
   // - Mitigation: Keep product names stable, or add purchaseOptionIds[] for direct lookup
-  productNames          String[]           // Array of product names (e.g., ["Ethiopian Yirgacheffe - 12oz", "Death Valley Espresso - 2lb"])
-  stripeProductIds      String[]           // Array of Stripe Product IDs for all items in subscription
-  stripePriceIds        String[]           // Array of Stripe Price IDs for all items in subscription
-  productDescription    String?            // Full product description (from first Stripe product)
-  quantities            Int[]              // Array of quantities for each product (matches order of productNames)
-  priceInCents          Int                // Total price per billing cycle (sum of all items)
-  deliverySchedule      String?            // e.g., "Every 2 weeks", "Monthly"
-  
+  productNames       String[] // Array of product names (e.g., ["Ethiopian Yirgacheffe - 12oz", "Death Valley Espresso - 2lb"])
+  stripeProductIds   String[] // Array of Stripe Product IDs for all items in subscription
+  stripePriceIds     String[] // Array of Stripe Price IDs for all items in subscription
+  productDescription String? // Full product description (from first Stripe product)
+  quantities         Int[] // Array of quantities for each product (matches order of productNames)
+  priceInCents       Int // Total price per billing cycle (sum of all items)
+  deliverySchedule   String? // e.g., "Every 2 weeks", "Monthly"
+
   // Billing cycle
-  currentPeriodStart    DateTime
-  currentPeriodEnd      DateTime
-  cancelAtPeriodEnd     Boolean            @default(false)
-  canceledAt            DateTime?
-  
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean   @default(false)
+  canceledAt         DateTime?
+
   // Shipping address
-  recipientName         String?
-  shippingStreet        String?
-  shippingCity          String?
-  shippingState         String?
-  shippingPostalCode    String?
-  shippingCountry       String?
-  
-  userId                String
-  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+  recipientName      String?
+  shippingStreet     String?
+  shippingCity       String?
+  shippingState      String?
+  shippingPostalCode String?
+  shippingCountry    String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([stripeSubscriptionId])
@@ -329,26 +329,26 @@ model Subscription {
 
 model UserActivity {
   id           String       @id @default(cuid())
-  sessionId    String       // Session identifier for anonymous and authenticated users
-  userId       String?      // Null for anonymous users
+  sessionId    String // Session identifier for anonymous and authenticated users
+  userId       String? // Null for anonymous users
   activityType ActivityType
-  
+
   // Product context
   productId    String?
   productSlug  String?
   categorySlug String?
-  
+
   // Search context
-  searchQuery  String?
-  
+  searchQuery String?
+
   // Additional metadata
-  source       String?      // "homepage", "category-page", "product-page", "search-results"
-  metadata     Json?        // Flexible field for future expansion
-  
-  createdAt    DateTime     @default(now())
-  
-  user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  source   String? // "homepage", "category-page", "product-page", "search-results"
+  metadata Json? // Flexible field for future expansion
+
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([sessionId])
   @@index([productId])
@@ -358,18 +358,18 @@ model UserActivity {
 // --- Footer & Site Management ---
 
 model SocialLink {
-  id           String   @id @default(cuid())
-  platform     String   @unique // Display name (e.g., "Facebook", "Twitter", "Custom Network") - must be unique
-  url          String   // Full URL to the social media profile
-  icon         String   // Lucide icon name (e.g., "Facebook", "Twitter", "Link")
+  id            String  @id @default(cuid())
+  platform      String  @unique // Display name (e.g., "Facebook", "Twitter", "Custom Network") - must be unique
+  url           String // Full URL to the social media profile
+  icon          String // Lucide icon name (e.g., "Facebook", "Twitter", "Link")
   customIconUrl String? // Optional custom icon image URL
   useCustomIcon Boolean @default(false) // Toggle between Lucide icon and custom image
-  order        Int      @default(0) // Display order in footer
-  isActive     Boolean  @default(true) // Toggle visibility without deletion
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+  order         Int     @default(0) // Display order in footer
+  isActive      Boolean @default(true) // Toggle visibility without deletion
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([order])
   @@index([isActive])
 }
@@ -377,44 +377,44 @@ model SocialLink {
 // --- Product Tags ---
 
 model Tag {
-  id        String   @id @default(cuid())
-  name      String   @unique // Unique slug-friendly name (e.g., "single-origin", "limited-edition")
-  label     String   // Display text (e.g., "Single Origin", "Limited Edition")
-  color     TagColor // Badge color for UI display
-  
-  products  ProductTag[] // Many-to-many relation to products
-  
+  id    String   @id @default(cuid())
+  name  String   @unique // Unique slug-friendly name (e.g., "single-origin", "limited-edition")
+  label String // Display text (e.g., "Single Origin", "Limited Edition")
+  color TagColor // Badge color for UI display
+
+  products ProductTag[] // Many-to-many relation to products
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([name])
 }
 
 // Junction table for Product <-> Tag many-to-many with ordering
 model ProductTag {
-  id           String  @id @default(cuid())
+  id           String @id @default(cuid())
   productId    String
   tagId        String
-  displayOrder Int     @default(0) // Custom ordering per product
-  
-  product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  tag          Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+  displayOrder Int    @default(0) // Custom ordering per product
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([productId, tagId]) // Prevent duplicate tags on same product
   @@index([productId])
   @@index([tagId])
 }
 
 model NewsletterSubscriber {
-  id                String   @id @default(cuid())
-  email             String   @unique
-  subscribedAt      DateTime @default(now())
-  isActive          Boolean  @default(true) // Allow unsubscribe without deletion
-  unsubscribeToken  String   @unique @default(cuid()) // Token for unsubscribe links
-  
+  id               String   @id @default(cuid())
+  email            String   @unique
+  subscribedAt     DateTime @default(now())
+  isActive         Boolean  @default(true) // Allow unsubscribe without deletion
+  unsubscribeToken String   @unique @default(cuid()) // Token for unsubscribe links
+
   @@index([email])
   @@index([isActive])
   @@index([unsubscribeToken])
@@ -469,43 +469,70 @@ enum TagColor {
 // --- Page CMS Models ---
 
 model Page {
-  id              String   @id @default(cuid())
-  slug            String   @unique
-  title           String
-  type            PageType @default(GENERIC) // Page type for block-based editing
-  
+  id    String   @id @default(cuid())
+  slug  String   @unique
+  title String
+  type  PageType @default(GENERIC) // Page type for block-based editing
+
   // Content
-  heroImage       String?
-  content         String   @db.Text
-  
+  heroImage String?
+  content   String  @db.Text
+
   // Hierarchy (parent/child relationships)
-  parentId        String?
-  parent          Page?    @relation("PageHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
-  children        Page[]   @relation("PageHierarchy")
-  
+  parentId String?
+  parent   Page?   @relation("PageHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children Page[]  @relation("PageHierarchy")
+
   // Navigation
-  showInFooter    Boolean  @default(false)
-  footerOrder     Int?
-  
+  showInHeader Boolean @default(false)
+  headerOrder  Int?
+  showInFooter Boolean @default(false)
+  footerOrder  Int?
+  icon         String? // Lucide icon name (e.g., "Coffee", "MapPin")
+
   // SEO
   metaDescription String?
-  
+
   // Publishing
-  isPublished     Boolean  @default(false)
-  publishedAt     DateTime?
-  
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+
   // AI Generation metadata
-  generatedBy      String?   // "ai" | "manual"
-  generationPrompt Json?     // Store Q&A answers for regeneration
+  generatedBy      String? // "ai" | "manual"
+  generationPrompt Json? // Store Q&A answers for regeneration
   generatedAt      DateTime?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+
+  // Block-based content
+  blocks Block[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([slug])
   @@index([type])
   @@index([parentId])
   @@index([isPublished])
+}
+
+// Block model for structured page content
+model Block {
+  id              String  @id @default(cuid())
+  type            String // Block type (hero, hours, stat, pullQuote, richText, location, faqItem, imageGallery)
+  order           Int // Display order on the page
+  content         Json // Block-specific content stored as JSON
+  isDeleted       Boolean @default(false) // Soft delete for restore functionality
+  originalContent Json? // AI-generated content for comparison
+  layoutColumn    String  @default("full") // Layout positioning: "full", "left", "right"
+
+  // Relation to Page
+  pageId String
+  page   Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pageId])
+  @@index([order])
 }
 
 enum PageType {

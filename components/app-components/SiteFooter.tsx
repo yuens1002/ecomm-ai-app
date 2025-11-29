@@ -7,6 +7,8 @@ import NewsletterSignup from "./NewsletterSignup";
 import SocialLinks from "./SocialLinks";
 import FooterCategories from "./FooterCategories";
 import FooterAccountLinks from "./FooterAccountLinks";
+import { getPagesForFooter } from "@/app/actions";
+import { DynamicIcon } from "./DynamicIcon";
 
 /**
  * Get branding settings from database
@@ -196,12 +198,23 @@ async function getSocialLinksSettings() {
  * Mega footer with category navigation, newsletter signup, and social links
  */
 export default async function SiteFooter() {
-  const brandingSettings = await getBrandingSettings();
-  const categoryGroups = await getCategoriesForFooter();
-  const socialLinks = await getSocialLinks();
-  const contactSettings = await getFooterContactSettings();
-  const newsletterSettings = await getNewsletterSettings();
-  const socialLinksSettings = await getSocialLinksSettings();
+  const [
+    brandingSettings,
+    categoryGroups,
+    socialLinks,
+    contactSettings,
+    newsletterSettings,
+    socialLinksSettings,
+    footerPages,
+  ] = await Promise.all([
+    getBrandingSettings(),
+    getCategoriesForFooter(),
+    getSocialLinks(),
+    getFooterContactSettings(),
+    getNewsletterSettings(),
+    getSocialLinksSettings(),
+    getPagesForFooter(),
+  ]);
 
   // Check if third column should be shown
   const showThirdColumn =
@@ -267,30 +280,20 @@ export default async function SiteFooter() {
                   Home
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/about"
-                  className="text-sm hover:underline hover:text-primary transition-colors"
-                >
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/contact"
-                  className="text-sm hover:underline hover:text-primary transition-colors"
-                >
-                  Contact
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/app-features"
-                  className="text-sm hover:underline hover:text-primary transition-colors"
-                >
-                  App Features
-                </Link>
-              </li>
+              {/* Dynamic Pages from Database */}
+              {footerPages.map((page) => (
+                <li key={page.id}>
+                  <Link
+                    href={`/pages/${page.slug}`}
+                    className="text-sm hover:underline hover:text-primary transition-colors inline-flex items-center gap-2"
+                  >
+                    {page.icon && (
+                      <DynamicIcon name={page.icon} className="w-4 h-4" />
+                    )}
+                    {page.title}
+                  </Link>
+                </li>
+              ))}
               <FooterAccountLinks />
             </ul>
           </div>

@@ -14,5 +14,8 @@
     "typescript",
     "typescriptreact"
   ],
-  "prisma.pinToPrisma6": true
+  "prisma.pinToPrisma6": true,
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  }
 }

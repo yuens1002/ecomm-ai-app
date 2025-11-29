@@ -53,8 +53,16 @@ export default async function CafeEditorPage() {
   return (
     <CafeEditorClient
       pageId={cafePage.id}
+      pageSlug={cafePage.slug}
+      pageTitle={cafePage.title}
       initialBlocks={blocks}
       isPublished={cafePage.isPublished}
+      metaDescription={cafePage.metaDescription}
+      showInHeader={cafePage.showInHeader}
+      showInFooter={cafePage.showInFooter}
+      headerOrder={cafePage.headerOrder}
+      footerOrder={cafePage.footerOrder}
+      icon={cafePage.icon}
     />
   );
 }

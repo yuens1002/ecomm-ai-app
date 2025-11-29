@@ -3,27 +3,69 @@
 import { ImageGalleryBlock as ImageGalleryBlockType } from "@/lib/blocks/schemas";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
-import { Trash2, Check, X, Plus, Upload } from "lucide-react";
+import { Trash2, Plus, Upload } from "lucide-react";
 import { useState } from "react";
+import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ImageGalleryBlockProps {
   block: ImageGalleryBlockType;
   isEditing: boolean;
-  onUpdate: (block: ImageGalleryBlockType) => void;
-  onDelete: (blockId: string) => void;
+  isSelected?: boolean;
+  onSelect?: () => void;
+  onUpdate?: (block: ImageGalleryBlockType) => void;
+  onDelete?: (blockId: string) => void;
+  onRestore?: (blockId: string) => void;
 }
 
 export function ImageGalleryBlock({
   block,
   isEditing,
+  isSelected = false,
+  onSelect,
   onUpdate,
   onDelete,
+  onRestore,
 }: ImageGalleryBlockProps) {
-  const [isEditingBlock, setIsEditingBlock] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editedBlock, setEditedBlock] = useState(block);
 
+  // Deleted/disabled state
+  if (block.isDeleted) {
+    return (
+      <DeletedBlockOverlay
+        blockId={block.id}
+        blockName="Image Gallery Block"
+        onRestore={onRestore}
+      >
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {block.content.images.map((image, index) => (
+            <div
+              key={index}
+              className="relative aspect-square overflow-hidden rounded-lg"
+            >
+              <Image
+                src={image.url}
+                alt={image.alt || `Gallery image ${index + 1}`}
+                fill
+                className="object-cover"
+              />
+            </div>
+          ))}
+        </div>
+      </DeletedBlockOverlay>
+    );
+  }
+
+  // Display mode (non-editing page view)
   if (!isEditing) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -44,142 +86,146 @@ export function ImageGalleryBlock({
     );
   }
 
-  if (isEditingBlock) {
-    return (
-      <div className="border-2 border-primary rounded-lg p-4 space-y-4 bg-muted/50">
-        <div className="flex justify-between items-center">
-          <span className="text-xs font-semibold uppercase text-muted-foreground">
-            Editing Image Gallery
-          </span>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                onUpdate(editedBlock);
-                setIsEditingBlock(false);
-              }}
-            >
-              <Check className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setEditedBlock(block);
-                setIsEditingBlock(false);
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+  // Save changes from dialog
+  const handleSave = () => {
+    onUpdate?.(editedBlock);
+    setIsDialogOpen(false);
+  };
 
-        <div className="space-y-3">
-          {editedBlock.content.images.map((image, index) => (
-            <div key={index} className="border rounded-lg p-3 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-semibold">Image {index + 1}</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    const newImages = editedBlock.content.images.filter(
-                      (_, i) => i !== index
-                    );
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: { images: newImages },
-                    });
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-              <div>
-                <Label htmlFor={`gallery-url-${block.id}-${index}`}>
-                  Image URL
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    id={`gallery-url-${block.id}-${index}`}
-                    value={image.url}
-                    onChange={(e) => {
-                      const newImages = [...editedBlock.content.images];
-                      newImages[index] = { ...image, url: e.target.value };
+  // Cancel changes
+  const handleCancel = () => {
+    setEditedBlock(block);
+    setIsDialogOpen(false);
+  };
+
+  // Edit mode with dialog
+  return (
+    <>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="pr-8 flex-shrink-0">
+            <DialogTitle>Edit Image Gallery Block</DialogTitle>
+            <DialogDescription>
+              Manage gallery images • {editedBlock.content.images.length} of 20
+              images
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            {editedBlock.content.images.map((image, index) => (
+              <div key={index} className="border rounded-lg p-3 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold">
+                    Image {index + 1}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      const newImages = editedBlock.content.images.filter(
+                        (_, i) => i !== index
+                      );
                       setEditedBlock({
                         ...editedBlock,
                         content: { images: newImages },
                       });
                     }}
-                    placeholder="/images/gallery-1.jpg"
-                  />
-                  <Button variant="outline" size="icon">
-                    <Upload className="h-4 w-4" />
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-              </div>
-              <div>
-                <Label htmlFor={`gallery-alt-${block.id}-${index}`}>
-                  Alt Text
-                </Label>
-                <Input
-                  id={`gallery-alt-${block.id}-${index}`}
-                  value={image.alt || ""}
-                  onChange={(e) => {
-                    const newImages = [...editedBlock.content.images];
-                    newImages[index] = { ...image, alt: e.target.value };
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: { images: newImages },
-                    });
-                  }}
-                  placeholder="Describe the image..."
-                  maxLength={200}
-                />
-              </div>
-              {image.url && (
-                <div className="relative h-32 w-full rounded overflow-hidden">
-                  <Image
-                    src={image.url}
-                    alt="Preview"
-                    fill
-                    className="object-cover"
+                <Field>
+                  <FieldLabel htmlFor={`gallery-url-${block.id}-${index}`}>
+                    Image URL
+                  </FieldLabel>
+                  <div className="flex gap-2">
+                    <Input
+                      id={`gallery-url-${block.id}-${index}`}
+                      value={image.url}
+                      onChange={(e) => {
+                        const newImages = [...editedBlock.content.images];
+                        newImages[index] = { ...image, url: e.target.value };
+                        setEditedBlock({
+                          ...editedBlock,
+                          content: { images: newImages },
+                        });
+                      }}
+                      placeholder="/images/gallery-1.jpg"
+                    />
+                    <Button variant="outline" size="icon">
+                      <Upload className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor={`gallery-alt-${block.id}-${index}`}>
+                    Alt Text
+                  </FieldLabel>
+                  <Input
+                    id={`gallery-alt-${block.id}-${index}`}
+                    value={image.alt || ""}
+                    onChange={(e) => {
+                      const newImages = [...editedBlock.content.images];
+                      newImages[index] = { ...image, alt: e.target.value };
+                      setEditedBlock({
+                        ...editedBlock,
+                        content: { images: newImages },
+                      });
+                    }}
+                    placeholder="Describe the image..."
+                    maxLength={200}
                   />
-                </div>
-              )}
-            </div>
-          ))}
+                </Field>
+                {image.url && (
+                  <div className="relative h-32 w-full rounded overflow-hidden">
+                    <Image
+                      src={image.url}
+                      alt="Preview"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
 
-          {editedBlock.content.images.length < 20 && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                const newImages = [
-                  ...editedBlock.content.images,
-                  { url: "", alt: "" },
-                ];
-                setEditedBlock({
-                  ...editedBlock,
-                  content: { images: newImages },
-                });
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Image
+            {editedBlock.content.images.length < 20 && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const newImages = [
+                    ...editedBlock.content.images,
+                    { url: "", alt: "" },
+                  ];
+                  setEditedBlock({
+                    ...editedBlock,
+                    content: { images: newImages },
+                  });
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Image
+              </Button>
+            )}
+          </FieldGroup>
+
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="outline" onClick={handleCancel}>
+              Cancel
             </Button>
-          )}
-        </div>
-      </div>
-    );
-  }
+            <Button onClick={handleSave}>Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-  return (
-    <div
-      className="relative group cursor-pointer"
-      onClick={() => setIsEditingBlock(true)}
-    >
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {/* WYSIWYG Block Display with hover/select states */}
+      <div
+        className="relative grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 group cursor-pointer transition-all hover:ring-1 hover:ring-[#00d4ff]"
+        onClick={() => {
+          if (onSelect) onSelect();
+          setIsDialogOpen(true);
+        }}
+      >
         {block.content.images.map((image, index) => (
           <div
             key={index}
@@ -193,20 +239,22 @@ export function ImageGalleryBlock({
             />
           </div>
         ))}
+
+        {/* Action Controls on Hover */}
+        <div className="absolute top-2 right-2 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.(block.id);
+            }}
+            className="shadow-lg"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
-        <span className="text-white text-sm font-medium">Click to edit</span>
-        <Button
-          size="sm"
-          variant="destructive"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(block.id);
-          }}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
+    </>
   );
 }

@@ -21,6 +21,7 @@ async function getPage(id: string) {
       metaDescription: true,
       showInFooter: true,
       footerOrder: true,
+      icon: true,
       isPublished: true,
       generationPrompt: true,
       generatedBy: true,

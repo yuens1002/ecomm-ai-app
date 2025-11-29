@@ -53,8 +53,16 @@ export default async function AboutEditorPage() {
   return (
     <AboutEditorClient
       pageId={aboutPage.id}
+      pageSlug={aboutPage.slug}
+      pageTitle={aboutPage.title}
       initialBlocks={blocks}
       isPublished={aboutPage.isPublished}
+      metaDescription={aboutPage.metaDescription}
+      showInHeader={aboutPage.showInHeader}
+      showInFooter={aboutPage.showInFooter}
+      headerOrder={aboutPage.headerOrder}
+      footerOrder={aboutPage.footerOrder}
+      icon={aboutPage.icon}
     />
   );
 }

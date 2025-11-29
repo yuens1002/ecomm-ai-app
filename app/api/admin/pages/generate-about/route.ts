@@ -8,113 +8,257 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const systemPrompts = {
   storyFirst: `You are an expert content writer specializing in crafting compelling "About Us" pages for specialty coffee roasters. Your writing style is narrative-driven, warm, and engaging. Focus on telling a story that connects emotionally with readers.
 
-Generate a JSON object with this structure:
+Generate a JSON object with structured blocks for a page editor:
 {
-  "content": "The main content text...",
-  "pullQuote": "An impactful quote from the content",
-  "stats": [
-    {"label": "Founded", "value": "YYYY"},
-    {"label": "Origin Countries", "value": "X+"},
-    {"label": "Third stat", "value": "something meaningful"}
+  "blocks": [
+    {
+      "type": "hero",
+      "order": 0,
+      "content": {
+        "title": "Our Story",
+        "imageUrl": "__HERO_IMAGE_URL__",
+        "caption": "Brief caption about the image"
+      }
+    },
+    {
+      "type": "stat",
+      "order": 1,
+      "content": {
+        "label": "Founded",
+        "value": "YYYY"
+      }
+    },
+    {
+      "type": "stat",
+      "order": 2,
+      "content": {
+        "label": "Origin Countries",
+        "value": "X+"
+      }
+    },
+    {
+      "type": "stat",
+      "order": 3,
+      "content": {
+        "label": "Third meaningful stat",
+        "value": "Value"
+      }
+    },
+    {
+      "type": "pullQuote",
+      "order": 4,
+      "content": {
+        "text": "An impactful quote from the story",
+        "author": "Optional author name"
+      }
+    },
+    {
+      "type": "richText",
+      "order": 5,
+      "content": {
+        "html": "<p>First paragraph of the story...</p><p>Second paragraph...</p>"
+      }
+    },
+    {
+      "type": "richText",
+      "order": 6,
+      "content": {
+        "html": "<h2>Section Heading</h2><p>Content for this section...</p>"
+      }
+    }
   ]
 }
 
-Content formatting:
-- Opens with a captivating story hook (1-2 short paragraphs)
-- Weaves the founder's journey naturally throughout
+Block Requirements:
+- 1 hero block (title should be compelling, 3-8 words)
+- 3 stat blocks (value: 1-3 words, label: 3-5 words describing the value)
+- 1 pullQuote block (10-15 words max, most emotionally resonant line)
+- 3-5 richText blocks (each is a section with 2-4 paragraphs)
+
+Rich Text Content:
+- Use <h2> for section headings (2-3 sections total)
+- Use <p> for paragraphs (keep SHORT: 2-3 sentences, 40-60 words each)
+- Opens with captivating story hook
+- Weaves founder's journey naturally
 - Uses vivid, sensory language
 - Creates emotional connection
-- Use "### Heading Text" format for section headings (2-3 sections)
-- CRITICAL: Keep paragraphs SHORT (2-3 sentences maximum, 40-60 words each)
-- Separate paragraphs with DOUBLE line breaks (\n\n)
-- Use conversational, scannable language
-- Break up dense text - no walls of text
-- Ends with a brief invitation to visit or connect (1-2 sentences)
+- Ends with brief invitation to connect
 
-Pull quote: Extract the most impactful, emotionally resonant sentence (10-15 words max)
+Hero Image:
+- Use "__HERO_IMAGE_URL__" as placeholder (will be replaced with actual image)
+- Caption should describe the image (8-12 words)
 
-Stats: Create 3 value cards from their core values/key principles. Each should be:
-- A single word or short phrase (1-3 words max) for "value"
-- A brief description (3-5 words) for "label"
-Example: {"label": "Direct Trade Relationships", "value": "Ethical"}
-
-Target length: 300-400 words total, broken into 6-8 short, digestible paragraphs.
-Do not include a title - it will be added separately. Start directly with content.
-DO NOT use any HTML tags in content. Use ### for headings and double line breaks for paragraphs.
+Target: 300-400 words total across all richText blocks.
 Return ONLY valid JSON, no markdown code blocks.`,
 
   valuesFirst: `You are an expert content writer specializing in crafting professional "About Us" pages for specialty coffee roasters. Your writing style is clear, values-driven, and trustworthy. Focus on establishing credibility and showcasing principles.
 
-Generate a JSON object with this structure:
+Generate a JSON object with structured blocks for a page editor:
 {
-  "content": "The main content text...",
-  "pullQuote": "An impactful statement about values",
-  "stats": [
-    {"label": "Founded", "value": "YYYY"},
-    {"label": "Origin Countries", "value": "X+"},
-    {"label": "Third stat", "value": "something meaningful"}
+  "blocks": [
+    {
+      "type": "hero",
+      "order": 0,
+      "content": {
+        "title": "Our Values",
+        "imageUrl": "__HERO_IMAGE_URL__",
+        "caption": "Brief caption about the image"
+      }
+    },
+    {
+      "type": "stat",
+      "order": 1,
+      "content": {
+        "label": "Founded",
+        "value": "YYYY"
+      }
+    },
+    {
+      "type": "stat",
+      "order": 2,
+      "content": {
+        "label": "Origin Countries",
+        "value": "X+"
+      }
+    },
+    {
+      "type": "stat",
+      "order": 3,
+      "content": {
+        "label": "Third meaningful stat",
+        "value": "Value"
+      }
+    },
+    {
+      "type": "pullQuote",
+      "order": 4,
+      "content": {
+        "text": "Powerful statement about mission or values",
+        "author": "Optional author name"
+      }
+    },
+    {
+      "type": "richText",
+      "order": 5,
+      "content": {
+        "html": "<p>Mission statement...</p><p>Core values...</p>"
+      }
+    },
+    {
+      "type": "richText",
+      "order": 6,
+      "content": {
+        "html": "<h2>Section Heading</h2><p>Content for this section...</p>"
+      }
+    }
   ]
 }
 
-Content formatting:
-- Opens with a clear, concise mission statement (1-2 sentences)
+Block Requirements:
+- 1 hero block (title should be value-focused, 2-4 words)
+- 3 stat blocks (value: 1-3 words, label: 3-5 words describing the value)
+- 1 pullQuote block (10-15 words max, powerful mission/values statement)
+- 3-5 richText blocks (each is a section with 2-4 paragraphs)
+
+Rich Text Content:
+- Use <h2> for section headings (2-3 sections total)
+- Use <p> for paragraphs (keep SHORT: 2-3 sentences, 40-60 words each)
+- Opens with clear mission statement
 - Highlights core values prominently
-- Emphasizes quality, sourcing, and process
+- Emphasizes quality, sourcing, process
 - Uses professional, confident tone
-- Use "### Heading Text" format for section headings (2-3 sections)
-- CRITICAL: Keep paragraphs SHORT (2-3 sentences maximum, 40-60 words each)
-- Separate paragraphs with DOUBLE line breaks (\n\n)
-- Use clear, scannable language
-- Break up dense text into bite-sized pieces
+- Establishes credibility
 
-Pull quote: Extract the most powerful statement about their mission or values (10-15 words max)
+Hero Image:
+- Use "__HERO_IMAGE_URL__" as placeholder (will be replaced with actual image)
+- Caption should describe the image (8-12 words)
 
-Stats: Create 3 value cards from their core values/key principles. Each should be:
-- A single word or short phrase (1-3 words max) for "value"
-- A brief description (3-5 words) for "label"
-Example: {"label": "Direct Trade Relationships", "value": "Ethical"}
-
-Target length: 300-400 words total, broken into 6-8 short, digestible paragraphs.
-Do not include a title - it will be added separately. Start directly with content.
-DO NOT use any HTML tags in content. Use ### for headings and double line breaks for paragraphs.
+Target: 300-400 words total across all richText blocks.
 Return ONLY valid JSON, no markdown code blocks.`,
 
   productFirst: `You are an expert content writer specializing in crafting engaging "About Us" pages for specialty coffee roasters. Your writing style is enthusiastic, educational, and product-focused. Emphasize the coffee journey and expertise.
 
-Generate a JSON object with this structure:
+Generate a JSON object with structured blocks for a page editor:
 {
-  "content": "The main content text...",
-  "pullQuote": "An exciting statement about the coffee",
-  "stats": [
-    {"label": "Founded", "value": "YYYY"},
-    {"label": "Origin Countries", "value": "X+"},
-    {"label": "Third stat", "value": "something meaningful"}
+  "blocks": [
+    {
+      "type": "hero",
+      "order": 0,
+      "content": {
+        "title": "Our Coffee",
+        "imageUrl": "__HERO_IMAGE_URL__",
+        "caption": "Brief caption about the image"
+      }
+    },
+    {
+      "type": "stat",
+      "order": 1,
+      "content": {
+        "label": "Founded",
+        "value": "YYYY"
+      }
+    },
+    {
+      "type": "stat",
+      "order": 2,
+      "content": {
+        "label": "Origin Countries",
+        "value": "X+"
+      }
+    },
+    {
+      "type": "stat",
+      "order": 3,
+      "content": {
+        "label": "Third meaningful stat",
+        "value": "Value"
+      }
+    },
+    {
+      "type": "pullQuote",
+      "order": 4,
+      "content": {
+        "text": "Compelling statement about the coffee or process",
+        "author": "Optional author name"
+      }
+    },
+    {
+      "type": "richText",
+      "order": 5,
+      "content": {
+        "html": "<p>What makes the coffee special...</p><p>Sourcing details...</p>"
+      }
+    },
+    {
+      "type": "richText",
+      "order": 6,
+      "content": {
+        "html": "<h2>Section Heading</h2><p>Content for this section...</p>"
+      }
+    }
   ]
 }
 
-Content formatting:
-- Opens with what makes the coffee special (1-2 sentences)
-- Focuses on sourcing, roasting, and flavor
-- Educates readers about the process
+Block Requirements:
+- 1 hero block (title should be product-focused, 2-4 words)
+- 3 stat blocks (value: 1-3 words, label: 3-5 words describing the value)
+- 1 pullQuote block (10-15 words max, compelling coffee/process statement)
+- 3-5 richText blocks (each is a section with 2-4 paragraphs)
+
+Rich Text Content:
+- Use <h2> for section headings (2-3 sections total)
+- Use <p> for paragraphs (keep SHORT: 2-3 sentences, 40-60 words each)
+- Opens with what makes coffee special
+- Focuses on sourcing, roasting, flavor
+- Educates about the process
 - Uses enthusiastic but informative tone
-- Use "### Heading Text" format for section headings (2-3 sections)
-- CRITICAL: Keep paragraphs SHORT (2-3 sentences maximum, 40-60 words each)
-- Separate paragraphs with DOUBLE line breaks (\n\n)
-- May include specific origins and methods briefly
-- Use energetic, scannable language
-- Break complex ideas into simple, digestible chunks
-- Ends with brief invitation to explore the selection (1-2 sentences)
+- Ends with invitation to explore
 
-Pull quote: Extract the most compelling statement about the coffee or process (10-15 words max)
+Hero Image:
+- Use "__HERO_IMAGE_URL__" as placeholder (will be replaced with actual image)
+- Caption should describe the image (8-12 words)
 
-Stats: Create 3 value cards from their core values/key principles. Each should be:
-- A single word or short phrase (1-3 words max) for "value"
-- A brief description (3-5 words) for "label"
-Example: {"label": "Direct Trade Relationships", "value": "Ethical"}
-
-Target length: 300-400 words total, broken into 6-8 short, digestible paragraphs.
-Do not include a title - it will be added separately. Start directly with content.
-DO NOT use any HTML tags in content. Use ### for headings and double line breaks for paragraphs.
+Target: 300-400 words total across all richText blocks.
 Return ONLY valid JSON, no markdown code blocks.`,
 };
 
@@ -182,7 +326,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { answers } = await request.json();
+    const { answers, currentBlocks } = await request.json();
 
     if (!answers || typeof answers !== "object") {
       return NextResponse.json(
@@ -191,7 +335,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userPrompt = buildUserPrompt(answers as WizardAnswers);
+    let userPrompt = buildUserPrompt(answers as WizardAnswers);
+
+    // If currentBlocks provided, add structure guidance to prompt
+    if (currentBlocks && Array.isArray(currentBlocks)) {
+      const blockCounts = currentBlocks.reduce((acc: any, block: any) => {
+        acc[block.type] = (acc[block.type] || 0) + 1;
+        return acc;
+      }, {});
+
+      userPrompt += `\n\nIMPORTANT: Match this block structure:\n${JSON.stringify(blockCounts, null, 2)}\nGenerate exactly the same number of blocks for each type.`;
+    }
 
     // Generate 3 variations with different styles
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -219,10 +373,8 @@ export async function POST(request: NextRequest) {
         // First attempt: parse as-is
         const parsed = JSON.parse(jsonText);
         console.log(`${variationType} parsed successfully:`, {
-          hasContent: !!parsed.content,
-          hasPullQuote: !!parsed.pullQuote,
-          hasStats: Array.isArray(parsed.stats),
-          statsCount: parsed.stats?.length || 0,
+          hasBlocks: Array.isArray(parsed.blocks),
+          blocksCount: parsed.blocks?.length || 0,
         });
         return parsed;
       } catch (firstError) {
@@ -232,32 +384,16 @@ export async function POST(request: NextRequest) {
 
         try {
           // Second attempt: Fix control characters by properly escaping newlines within string values
-          // This regex finds string values and escapes unescaped newlines within them
-          const fixedJson = jsonText.replace(
-            /"content":\s*"([\s\S]*?)(?=",\s*"pullQuote")/g,
-            (match, content) => {
-              // Escape literal newlines within the content string
-              const escaped = content
-                .replace(/\n/g, "\\n")
-                .replace(/\r/g, "\\r");
-              return `"content": "${escaped}"`;
-            }
-          );
+          const fixedJson = jsonText
+            .replace(/\n/g, "\\n")
+            .replace(/\r/g, "\\r")
+            .replace(/\t/g, "\\t");
 
           const parsed = JSON.parse(fixedJson);
           console.log(`${variationType} parsed successfully after fixing:`, {
-            hasContent: !!parsed.content,
-            hasPullQuote: !!parsed.pullQuote,
-            hasStats: Array.isArray(parsed.stats),
-            statsCount: parsed.stats?.length || 0,
+            hasBlocks: Array.isArray(parsed.blocks),
+            blocksCount: parsed.blocks?.length || 0,
           });
-
-          // Unescape the newlines back for display
-          if (parsed.content) {
-            parsed.content = parsed.content
-              .replace(/\\n/g, "\n")
-              .replace(/\\r/g, "\r");
-          }
 
           return parsed;
         } catch (secondError) {
@@ -274,6 +410,9 @@ export async function POST(request: NextRequest) {
       }
     };
 
+    // Use placeholder hero image
+    const heroImageUrl = "/products/placeholder-hero.jpg";
+
     const variations = await Promise.all([
       // Story-first variation
       model
@@ -288,14 +427,21 @@ export async function POST(request: NextRequest) {
         .then((result: any) => {
           const rawText = result.response.text();
           const parsed = parseJsonResponse(rawText, "Story");
-          console.log("Story variation content length:", parsed.content.length);
+          console.log("Story variation blocks count:", parsed.blocks?.length);
+
+          // Replace hero image placeholder
+          if (parsed.blocks && Array.isArray(parsed.blocks)) {
+            const heroBlock = parsed.blocks.find((b: any) => b.type === "hero");
+            if (heroBlock) {
+              heroBlock.content.imageUrl = heroImageUrl;
+            }
+          }
+
           return {
             style: "story" as const,
             title: "Story-First Approach",
             description: "Narrative-driven, warm, and emotionally engaging",
-            content: parsed.content,
-            pullQuote: parsed.pullQuote,
-            stats: parsed.stats,
+            blocks: parsed.blocks,
           };
         }),
 
@@ -316,16 +462,25 @@ export async function POST(request: NextRequest) {
           try {
             const parsed = parseJsonResponse(rawText, "Values");
             console.log(
-              "Values variation content length:",
-              parsed.content.length
+              "Values variation blocks count:",
+              parsed.blocks?.length
             );
+
+            // Replace hero image placeholder
+            if (parsed.blocks && Array.isArray(parsed.blocks)) {
+              const heroBlock = parsed.blocks.find(
+                (b: any) => b.type === "hero"
+              );
+              if (heroBlock) {
+                heroBlock.content.imageUrl = heroImageUrl;
+              }
+            }
+
             return {
               style: "values" as const,
               title: "Values-First Approach",
               description: "Professional, trustworthy, principles-focused",
-              content: parsed.content,
-              pullQuote: parsed.pullQuote,
-              stats: parsed.stats,
+              blocks: parsed.blocks,
             };
           } catch (error) {
             console.error("Values variation failed, using fallback");
@@ -334,14 +489,23 @@ export async function POST(request: NextRequest) {
               style: "values" as const,
               title: "Values-First Approach",
               description: "Professional, trustworthy, principles-focused",
-              content:
-                rawText.substring(0, 500) +
-                "\n\n(AI generation encountered an error. Please regenerate.)",
-              pullQuote: "Quality and integrity in every cup",
-              stats: [
-                { label: "Core Values", value: "3+" },
-                { label: "Quality Focus", value: "100%" },
-                { label: "Community", value: "Strong" },
+              blocks: [
+                {
+                  type: "hero",
+                  order: 0,
+                  content: {
+                    title: "Our Values",
+                    imageUrl: heroImageUrl,
+                    caption: "Dedicated to quality coffee",
+                  },
+                },
+                {
+                  type: "richText",
+                  order: 1,
+                  content: {
+                    html: "<p>(AI generation encountered an error. Please regenerate.)</p>",
+                  },
+                },
               ],
             };
           }
@@ -362,17 +526,21 @@ export async function POST(request: NextRequest) {
         .then((result: any) => {
           const rawText = result.response.text();
           const parsed = parseJsonResponse(rawText, "Product");
-          console.log(
-            "Product variation content length:",
-            parsed.content.length
-          );
+          console.log("Product variation blocks count:", parsed.blocks?.length);
+
+          // Replace hero image placeholder
+          if (parsed.blocks && Array.isArray(parsed.blocks)) {
+            const heroBlock = parsed.blocks.find((b: any) => b.type === "hero");
+            if (heroBlock) {
+              heroBlock.content.imageUrl = heroImageUrl;
+            }
+          }
+
           return {
             style: "product" as const,
             title: "Product-First Approach",
             description: "Educational, enthusiastic, coffee-focused",
-            content: parsed.content,
-            pullQuote: parsed.pullQuote,
-            stats: parsed.stats,
+            blocks: parsed.blocks,
           };
         }),
     ]);

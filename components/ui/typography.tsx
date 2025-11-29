@@ -1,16 +1,32 @@
 import { cn } from "@/lib/utils";
+import { ReactNode } from "react";
 
 interface TypographyProps {
   children: React.ReactNode;
   className?: string;
+  isEditing?: boolean;
+  onClick?: () => void;
+  actionButtons?: ReactNode;
 }
 
-export function Typography({ children, className }: TypographyProps) {
+export function Typography({
+  children,
+  className,
+  isEditing = false,
+  onClick,
+  actionButtons,
+}: TypographyProps) {
+  const editingClasses = isEditing
+    ? "relative group cursor-pointer transition-all hover:ring-1 hover:ring-[#00d4ff]"
+    : "";
+
   return (
     <div
+      onClick={onClick}
       className={cn(
         // Base styles
         "text-foreground",
+        editingClasses,
 
         // Headings
         "[&_h1]:text-4xl [&_h1]:font-bold [&_h1]:tracking-tight [&_h1]:mb-6 [&_h1]:mt-8 first:[&_h1]:mt-0",
@@ -53,6 +69,13 @@ export function Typography({ children, className }: TypographyProps) {
       )}
     >
       {children}
+
+      {/* Action Buttons (e.g., delete) */}
+      {isEditing && actionButtons && (
+        <div className="absolute top-2 right-2 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+          {actionButtons}
+        </div>
+      )}
     </div>
   );
 }

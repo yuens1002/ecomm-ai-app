@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.27.0 - 2025-11-29
+
+- **Dynamic Page Navigation**: Configure pages to appear in site header and footer with custom icons and display order
+  - Admin can enable/disable pages in navigation via checkboxes in PageEditor
+  - Custom icon selection from Lucide library (e.g., Coffee, MapPin, Info)
+  - Configurable display order for both header and footer (lower numbers appear first)
+  - Database-driven navigation eliminates need for code changes to add/remove links
+  - Mobile-optimized carousel for stats blocks in two-column layouts
+  - Static page generation for improved performance and SEO
+  - Pages appear as `/pages/{slug}` in navigation menus
+
+## 0.26.12 - 2025-11-27
+
+- **PageEditor Bug Fixes**: Fixed block availability filtering and improved empty state
+  - Fixed `canAddBlock` function calls to pass correct count parameter
+  - Enhanced empty state with better visual design and prominent "Add Your First Block" button
+  - Improved block filtering logic to correctly show available block types
+  - Added graceful handling of legacy HTML content in pages
+
 ## 0.26.11 - 2025-11-27
 
 - **Page Editors with Live Editing**: Created dedicated admin editors for About, Cafe, and FAQ pages
@@ -8,6 +27,7 @@
   - Auto-creates page records on first access with type-specific defaults
   - Updated AdminSidebar with direct links to all 3 page editors
   - Each editor supports inline block editing, reordering, and publish toggle
+  - Created database migration for PageType enum column
 
 ## 0.26.10 - 2025-11-27
 

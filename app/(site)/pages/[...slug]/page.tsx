@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
-import { Typography } from "@/components/ui/typography";
-import { PullQuote } from "@/components/app-components/PullQuote";
-import { StatCard } from "@/components/app-components/StatCard";
+import { getPageBlocks } from "@/lib/blocks/actions";
+import { PageContent } from "./PageContent";
 
 interface PageProps {
   params: Promise<{
@@ -25,6 +24,17 @@ async function getPage(slug: string) {
   });
 
   return page;
+}
+
+export async function generateStaticParams() {
+  const pages = await prisma.page.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+  });
+
+  return pages.map((page) => ({
+    slug: page.slug.split("/"),
+  }));
 }
 
 export async function generateMetadata({
@@ -55,91 +65,21 @@ export default async function Page({ params }: PageProps) {
     notFound();
   }
 
+  // Get blocks for the page
+  const result = await getPageBlocks(page.id);
+  const blocks = "error" in result ? [] : result;
+
+  // Filter out deleted blocks for public view
+  const visibleBlocks = blocks.filter((block) => !block.isDeleted);
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      {page.heroImage && (
-        <div className="relative h-64 w-full md:h-96">
-          <Image
-            src={page.heroImage}
-            alt={page.title}
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-black/30" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <h1 className="text-4xl font-bold text-white md:text-6xl">
-              {page.title}
-            </h1>
-          </div>
-          {/* Image Caption */}
-          {page.generationPrompt &&
-            typeof page.generationPrompt === "object" &&
-            page.generationPrompt !== null &&
-            "heroImageDescription" in page.generationPrompt &&
-            typeof page.generationPrompt.heroImageDescription === "string" && (
-              <Typography>
-                <figcaption className="absolute bottom-4 right-4 bg-black/70 text-white px-4 py-2 rounded-lg max-w-md text-sm">
-                  {page.generationPrompt.heroImageDescription}
-                </figcaption>
-              </Typography>
-            )}
-        </div>
-      )}
-
-      {/* Content Section */}
-      <div className="container mx-auto px-4 py-12">
-        {!page.heroImage && (
-          <h1 className="mb-8 text-4xl font-bold md:text-5xl">{page.title}</h1>
-        )}
-
-        {/* AI-Generated Content with Visual Elements */}
-        {page.generationPrompt &&
-        typeof page.generationPrompt === "object" &&
-        page.generationPrompt !== null &&
-        "pullQuote" in page.generationPrompt &&
-        "stats" in page.generationPrompt ? (
-          <div className="space-y-12">
-            {/* Stats Grid */}
-            {Array.isArray(page.generationPrompt.stats) &&
-              page.generationPrompt.stats.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {page.generationPrompt.stats.map(
-                    (stat: any, index: number) => (
-                      <StatCard
-                        key={index}
-                        label={stat.label}
-                        value={stat.value}
-                      />
-                    )
-                  )}
-                </div>
-              )}
-
-            {/* Two-Column Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-              {/* Left Column - Pull Quote */}
-              <div className="lg:col-span-1">
-                {typeof page.generationPrompt.pullQuote === "string" && (
-                  <PullQuote text={page.generationPrompt.pullQuote} />
-                )}
-              </div>
-
-              {/* Right Column - Main Content */}
-              <div className="lg:col-span-2">
-                <Typography>
-                  <div dangerouslySetInnerHTML={{ __html: page.content }} />
-                </Typography>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Standard Content Layout */
-          <Typography>
-            <div dangerouslySetInnerHTML={{ __html: page.content }} />
-          </Typography>
-        )}
+      <div className="container mx-auto px-4 py-12 max-w-5xl">
+        <PageContent
+          blocks={visibleBlocks}
+          pageType={page.type}
+          pageTitle={page.title}
+        />
 
         {/* Child Pages Grid */}
         {page.children.length > 0 && (

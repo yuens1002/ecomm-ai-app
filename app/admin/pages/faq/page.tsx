@@ -53,8 +53,16 @@ export default async function FaqEditorPage() {
   return (
     <FaqEditorClient
       pageId={faqPage.id}
+      pageSlug={faqPage.slug}
+      pageTitle={faqPage.title}
       initialBlocks={blocks}
       isPublished={faqPage.isPublished}
+      metaDescription={faqPage.metaDescription}
+      showInHeader={faqPage.showInHeader}
+      showInFooter={faqPage.showInFooter}
+      headerOrder={faqPage.headerOrder}
+      footerOrder={faqPage.footerOrder}
+      icon={faqPage.icon}
     />
   );
 }

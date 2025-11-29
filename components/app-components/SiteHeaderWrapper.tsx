@@ -1,6 +1,7 @@
 import { getAllCategories } from "@/lib/data";
 import { auth } from "@/auth";
 import SiteHeader from "@components/app-components/SiteHeader";
+import { getPagesForHeader } from "@/app/actions";
 
 /**
  * SiteHeaderWrapper is a Server Component responsible for fetching global,
@@ -10,11 +11,21 @@ import SiteHeader from "@components/app-components/SiteHeader";
  */
 export default async function SiteHeaderWrapper() {
   // Fetch all data for the navigation menu in parallel
-  const [categories, session] = await Promise.all([getAllCategories(), auth()]);
+  const [categories, session, headerPages] = await Promise.all([
+    getAllCategories(),
+    auth(),
+    getPagesForHeader(),
+  ]);
 
   // Handle case where no categories are found (e.g., first deployment/empty DB)
   if (!categories || categories.length === 0) {
-    return <SiteHeader categoryGroups={{}} user={session?.user || null} />;
+    return (
+      <SiteHeader
+        categoryGroups={{}}
+        user={session?.user || null}
+        pages={headerPages}
+      />
+    );
   }
 
   // Sort categories by order field, then group by label from SiteSettings
@@ -33,8 +44,12 @@ export default async function SiteHeaderWrapper() {
     {} as Record<string, typeof categories>
   );
 
-  // Pass the dynamically grouped categories to the client component
+  // Pass the dynamically grouped categories and pages to the client component
   return (
-    <SiteHeader categoryGroups={categoryGroups} user={session?.user || null} />
+    <SiteHeader
+      categoryGroups={categoryGroups}
+      user={session?.user || null}
+      pages={headerPages}
+    />
   );
 }

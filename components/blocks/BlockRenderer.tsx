@@ -13,8 +13,13 @@ import { ImageGalleryBlock } from "./ImageGalleryBlock";
 interface BlockRendererProps {
   block: Block;
   isEditing: boolean;
-  onUpdate: (block: Block) => void;
-  onDelete: (blockId: string) => void;
+  isSelected?: boolean;
+  canDelete?: boolean;
+  isNew?: boolean;
+  onSelect?: () => void;
+  onUpdate?: (block: Block) => void;
+  onDelete?: (blockId: string) => void;
+  onRestore?: (blockId: string) => void;
 }
 
 /**
@@ -24,10 +29,25 @@ interface BlockRendererProps {
 export function BlockRenderer({
   block,
   isEditing,
+  isSelected,
+  canDelete = true,
+  isNew = false,
+  onSelect,
   onUpdate,
   onDelete,
+  onRestore,
 }: BlockRendererProps) {
-  const commonProps = { block, isEditing, onUpdate, onDelete };
+  const commonProps = {
+    block,
+    isEditing,
+    isSelected,
+    canDelete,
+    isNew,
+    onSelect,
+    onUpdate,
+    onDelete,
+    onRestore,
+  };
 
   switch (block.type) {
     case "hero":

@@ -27,32 +27,20 @@ export async function addBlock(
       return { error: "Invalid block data", details: result.error.format() };
     }
 
-    // Store in database (assuming we'll add a Block model)
-    // For now, we'll update the page's content field with blocks array
-    const page = await prisma.page.findUnique({
-      where: { id: pageId },
-      select: { content: true },
-    });
+    const block = result.data;
 
-    if (!page) {
-      return { error: "Page not found" };
-    }
-
-    // Parse existing blocks or start with empty array
-    let blocks: Block[] = [];
-    try {
-      blocks = page.content ? JSON.parse(page.content) : [];
-    } catch (e) {
-      blocks = [];
-    }
-
-    // Add new block
-    blocks.push(result.data as Block);
-
-    // Update page
-    await prisma.page.update({
-      where: { id: pageId },
-      data: { content: JSON.stringify(blocks) },
+    // Create block in Block table
+    const createdBlock = await prisma.block.create({
+      data: {
+        id: block.id,
+        pageId,
+        type: block.type,
+        order: block.order,
+        content: block.content as any,
+        isDeleted: block.isDeleted || false,
+        originalContent: block.originalContent as any,
+        layoutColumn: block.layoutColumn || "full",
+      },
     });
 
     revalidatePath("/admin/pages");
@@ -71,84 +59,98 @@ export async function updateBlock(pageId: string, blockData: unknown) {
     // Validate with Zod
     const result = blockSchema.safeParse(blockData);
     if (!result.success) {
+      console.error("Block validation failed:", result.error.format());
       return { error: "Invalid block data", details: result.error.format() };
     }
 
     const block = result.data;
 
-    // Get current blocks
-    const page = await prisma.page.findUnique({
-      where: { id: pageId },
-      select: { content: true },
+    console.log("Updating block:", {
+      blockId: block.id,
+      pageId,
+      type: block.type,
+      hasContent: !!block.content,
     });
 
-    if (!page) {
-      return { error: "Page not found" };
-    }
+    // Verify block exists and belongs to this page
+    const existingBlock = await prisma.block.findUnique({
+      where: { id: block.id },
+    });
 
-    let blocks: Block[] = [];
-    try {
-      blocks = page.content ? JSON.parse(page.content) : [];
-    } catch (e) {
-      return { error: "Invalid page content" };
-    }
-
-    // Find and update the block
-    const blockIndex = blocks.findIndex((b) => b.id === block.id);
-    if (blockIndex === -1) {
+    if (!existingBlock) {
+      console.error("Block not found in database:", block.id);
       return { error: "Block not found" };
     }
 
-    blocks[blockIndex] = block;
+    if (existingBlock.pageId !== pageId) {
+      console.error("Block pageId mismatch:", {
+        existingPageId: existingBlock.pageId,
+        requestedPageId: pageId,
+      });
+      return { error: "Block does not belong to this page" };
+    }
 
-    // Update page
-    await prisma.page.update({
-      where: { id: pageId },
-      data: { content: JSON.stringify(blocks) },
+    // Update block in Block table
+    const updatedBlock = await prisma.block.update({
+      where: { id: block.id },
+      data: {
+        type: block.type,
+        order: block.order,
+        content: block.content as any,
+        isDeleted: block.isDeleted,
+        originalContent: block.originalContent as any,
+        layoutColumn: block.layoutColumn,
+      },
     });
 
+    console.log("Block updated successfully:", updatedBlock.id);
     revalidatePath("/admin/pages");
     return { success: true, block };
   } catch (error) {
     console.error("Error updating block:", error);
+    if ((error as any).code === "P2025") {
+      return { error: "Block not found" };
+    }
     return { error: "Failed to update block" };
   }
 }
 
 /**
- * Delete a block
+ * Delete a block (hard delete - permanently removes from database)
  */
 export async function deleteBlock(pageId: string, blockId: string) {
   try {
-    const page = await prisma.page.findUnique({
-      where: { id: pageId },
-      select: { content: true },
+    // Verify block exists and belongs to this page
+    const existingBlock = await prisma.block.findUnique({
+      where: { id: blockId },
     });
 
-    if (!page) {
-      return { error: "Page not found" };
+    if (!existingBlock) {
+      console.error("Block not found in database:", blockId);
+      return { error: "Block not found" };
     }
 
-    let blocks: Block[] = [];
-    try {
-      blocks = page.content ? JSON.parse(page.content) : [];
-    } catch (e) {
-      return { error: "Invalid page content" };
+    if (existingBlock.pageId !== pageId) {
+      console.error("Block pageId mismatch:", {
+        existingPageId: existingBlock.pageId,
+        requestedPageId: pageId,
+      });
+      return { error: "Block does not belong to this page" };
     }
 
-    // Filter out the block
-    blocks = blocks.filter((b) => b.id !== blockId);
-
-    // Update page
-    await prisma.page.update({
-      where: { id: pageId },
-      data: { content: JSON.stringify(blocks) },
+    // Permanently delete from database
+    await prisma.block.delete({
+      where: { id: blockId },
     });
 
+    console.log("Block deleted successfully:", blockId);
     revalidatePath("/admin/pages");
     return { success: true };
   } catch (error) {
     console.error("Error deleting block:", error);
+    if ((error as any).code === "P2025") {
+      return { error: "Block not found" };
+    }
     return { error: "Failed to delete block" };
   }
 }
@@ -207,36 +209,32 @@ export async function reorderBlocks(pageId: string, blockIds: string[]) {
  */
 export async function getPageBlocks(pageId: string): Promise<Block[]> {
   try {
-    const page = await prisma.page.findUnique({
-      where: { id: pageId },
-      select: { content: true },
+    const dbBlocks = await prisma.block.findMany({
+      where: { pageId },
+      orderBy: { order: "asc" },
     });
 
-    if (!page || !page.content) {
-      return [];
-    }
-
-    // Try to parse as JSON, if it fails, it's old HTML content - return empty array
-    let blocks;
-    try {
-      blocks = JSON.parse(page.content);
-    } catch (parseError) {
-      // Content is not JSON (probably old HTML), return empty blocks array
-      console.log("Page content is not JSON, returning empty blocks array");
-      return [];
-    }
-
-    // Validate all blocks
+    // Transform Prisma blocks to Block schema
     const validatedBlocks: Block[] = [];
-    for (const block of blocks) {
+    for (const dbBlock of dbBlocks) {
+      const block = {
+        id: dbBlock.id,
+        type: dbBlock.type as BlockType,
+        order: dbBlock.order,
+        content: dbBlock.content,
+        isDeleted: dbBlock.isDeleted,
+        originalContent: dbBlock.originalContent,
+      };
+
       const result = blockSchema.safeParse(block);
       if (result.success) {
         validatedBlocks.push(result.data);
+      } else {
+        console.error(`Invalid block ${dbBlock.id}:`, result.error);
       }
     }
 
-    // Sort by order
-    return validatedBlocks.sort((a, b) => a.order - b.order);
+    return validatedBlocks;
   } catch (error) {
     console.error("Error getting page blocks:", error);
     return [];

@@ -48,6 +48,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import * as React from "react";
+import { DynamicIcon } from "./DynamicIcon";
 
 const ListItem = React.forwardRef<
   React.ElementRef<"a">,
@@ -89,6 +90,14 @@ function ExpandableList({ items }: ExpandableListProps) {
   );
 }
 
+interface PageLink {
+  id: string;
+  slug: string;
+  title: string;
+  icon: string | null;
+  headerOrder: number | null;
+}
+
 interface SiteHeaderProps {
   categoryGroups: Record<string, Category[]>;
   user: {
@@ -96,13 +105,18 @@ interface SiteHeaderProps {
     email?: string | null;
     image?: string | null;
   } | null;
+  pages: PageLink[];
 }
 
 /**
  * The site-wide header. This is a Client Component because
  * it uses the ThemeSwitcher, which is a Client Component.
  */
-export default function SiteHeader({ categoryGroups, user }: SiteHeaderProps) {
+export default function SiteHeader({
+  categoryGroups,
+  user,
+  pages,
+}: SiteHeaderProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -200,39 +214,29 @@ export default function SiteHeader({ categoryGroups, user }: SiteHeaderProps) {
                 </NavigationMenuContent>
               </NavigationMenuItem>
 
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/about"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      "h-auto flex-col gap-1 px-2 py-2 text-foreground hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
-                    )}
-                  >
-                    <FileText className="w-5 h-5" />
-                    <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
-                      About
-                    </span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/contact"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      "h-auto flex-col gap-1 px-2 py-2 text-foreground hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
-                    )}
-                  >
-                    <Mail className="w-5 h-5" />
-                    <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
-                      Contact
-                    </span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
+              {/* Dynamic Pages from Database */}
+              {pages.map((page) => (
+                <NavigationMenuItem key={page.id}>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href={`/pages/${page.slug}`}
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        "h-auto flex-col gap-1 px-2 py-2 text-foreground hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
+                      )}
+                    >
+                      {page.icon ? (
+                        <DynamicIcon name={page.icon} className="w-5 h-5" />
+                      ) : (
+                        <FileText className="w-5 h-5" />
+                      )}
+                      <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
+                        {page.title}
+                      </span>
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              ))}
             </NavigationMenuList>
           </NavigationMenu>
         </div>
@@ -331,28 +335,24 @@ export default function SiteHeader({ categoryGroups, user }: SiteHeaderProps) {
                       </span>
                     </Link>
                   </SheetClose>
-                  <SheetClose asChild>
-                    <Link
-                      href="/about"
-                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <FileText className="w-5 h-5" />
-                      <span className="text-[10px] uppercase tracking-wide font-medium">
-                        About
-                      </span>
-                    </Link>
-                  </SheetClose>
-                  <SheetClose asChild>
-                    <Link
-                      href="/contact"
-                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <Mail className="w-5 h-5" />
-                      <span className="text-[10px] uppercase tracking-wide font-medium">
-                        Contact
-                      </span>
-                    </Link>
-                  </SheetClose>
+                  {/* Dynamic Pages from Database */}
+                  {pages.map((page) => (
+                    <SheetClose asChild key={page.id}>
+                      <Link
+                        href={`/pages/${page.slug}`}
+                        className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        {page.icon ? (
+                          <DynamicIcon name={page.icon} className="w-5 h-5" />
+                        ) : (
+                          <FileText className="w-5 h-5" />
+                        )}
+                        <span className="text-[10px] uppercase tracking-wide font-medium">
+                          {page.title}
+                        </span>
+                      </Link>
+                    </SheetClose>
+                  ))}
                 </div>
               </div>
               <nav
