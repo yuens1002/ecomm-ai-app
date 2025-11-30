@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { Block, BlockType } from "@/lib/blocks/schemas";
 import {
-  PageType,
   canAddBlock,
   getBlockDisplayName,
   isAtMinimumCount,
   PAGE_LAYOUTS,
 } from "@/lib/page-layouts";
+import { PageType } from "@prisma/client";
 import { LayoutRenderer, BlockHandlers } from "@/lib/page-layouts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -185,13 +185,16 @@ export function PageEditor({
 
     if (result.block) {
       // Update the block with the user's content
-      const finalBlock = { ...result.block, content: blockData.content };
+      const finalBlock = {
+        ...result.block,
+        content: blockData.content,
+      } as Block;
       await updateBlock(pageId, finalBlock);
 
       const newBlocks = [...updatedBlocks, finalBlock].sort(
         (a, b) => a.order - b.order
       );
-      setBlocks(newBlocks);
+      setBlocks(newBlocks as Block[]);
       setPendingBlock(null);
 
       toast({
@@ -355,17 +358,23 @@ export function PageEditor({
     }
   };
 
-  const availableBlocks = layout.allowedBlocks.filter((blockType) => {
-    const currentBlockCounts = blocks.reduce(
-      (acc, block) => {
-        acc[block.type] = (acc[block.type] || 0) + 1;
-        return acc;
-      },
-      {} as Record<BlockType, number>
-    );
+  const availableBlocks = layout.allowedBlocks.filter(
+    (blockType: BlockType) => {
+      const currentBlockCounts = blocks.reduce(
+        (acc, block) => {
+          acc[block.type] = (acc[block.type] || 0) + 1;
+          return acc;
+        },
+        {} as Record<BlockType, number>
+      );
 
-    return canAddBlock(pageType, blockType, currentBlockCounts[blockType] || 0);
-  });
+      return canAddBlock(
+        pageType,
+        blockType,
+        currentBlockCounts[blockType] || 0
+      );
+    }
+  );
   // Open live preview in new tab
   const handleViewLive = () => {
     window.open(`/pages/${pageSlug}`, "_blank");

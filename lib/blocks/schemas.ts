@@ -67,7 +67,7 @@ export const richTextBlockSchema = baseBlockSchema.extend({
   }),
 });
 
-// Location block - physical address (for Cafe page)
+// Location block - comprehensive location section (for Cafe page)
 export const locationBlockSchema = baseBlockSchema.extend({
   type: z.literal("location"),
   content: z.object({
@@ -79,7 +79,27 @@ export const locationBlockSchema = baseBlockSchema.extend({
       .string()
       .min(1, "Address is required")
       .max(500, "Address must be 500 characters or less"),
+    phone: z.string().max(50).optional(),
     googleMapsUrl: z.string().optional(),
+    description: z.string().max(2000).optional(),
+    schedule: z
+      .array(
+        z.object({
+          day: z.string().min(1).max(20),
+          hours: z.string().min(1).max(50), // e.g., "8am - 6pm" or "Closed"
+        })
+      )
+      .optional()
+      .default([]),
+    images: z
+      .array(
+        z.object({
+          url: z.string().min(1),
+          alt: z.string().optional(),
+        })
+      )
+      .optional()
+      .default([]),
   }),
 });
 
@@ -122,6 +142,49 @@ export const imageGalleryBlockSchema = baseBlockSchema.extend({
   }),
 });
 
+// Image Carousel block - simple image-only carousel (for single location)
+export const imageCarouselBlockSchema = baseBlockSchema.extend({
+  type: z.literal("imageCarousel"),
+  content: z.object({
+    includeHero: z.boolean().optional().default(false), // Toggle for hero background
+    heroImageUrl: z.string().optional(), // Optional hero background
+    heroImageAlt: z.string().max(200).optional(),
+    slides: z
+      .array(
+        z.object({
+          url: z.string().min(1, "Image URL is required"),
+          alt: z.string().min(1, "Alt text is required"),
+        })
+      )
+      .min(1, "At least one slide is required"),
+    autoScroll: z.boolean().optional().default(true),
+    intervalSeconds: z.number().min(2).max(10).optional().default(5),
+  }),
+});
+
+// Location Carousel block - location preview carousel with 1-to-1 location blocks (for multi location)
+export const locationCarouselBlockSchema = baseBlockSchema.extend({
+  type: z.literal("locationCarousel"),
+  content: z.object({
+    includeHero: z.boolean().optional().default(false), // Toggle for hero background
+    heroImageUrl: z.string().optional(), // Optional hero background
+    heroImageAlt: z.string().max(200).optional(),
+    slides: z
+      .array(
+        z.object({
+          url: z.string().min(1, "Image URL is required"),
+          alt: z.string().min(1, "Alt text is required"),
+          title: z.string().min(1, "Title is required").max(100),
+          description: z.string().min(1, "Description is required").max(500),
+          locationBlockId: z.string().min(1, "Location block ID is required"), // Required 1-to-1 relationship
+        })
+      )
+      .min(1, "At least one slide is required"),
+    autoScroll: z.boolean().optional().default(true),
+    intervalSeconds: z.number().min(2).max(10).optional().default(5),
+  }),
+});
+
 // Discriminated union of all block types
 export const blockSchema = z.discriminatedUnion("type", [
   heroBlockSchema,
@@ -132,6 +195,8 @@ export const blockSchema = z.discriminatedUnion("type", [
   hoursBlockSchema,
   faqItemBlockSchema,
   imageGalleryBlockSchema,
+  imageCarouselBlockSchema,
+  locationCarouselBlockSchema,
 ]);
 
 // Infer TypeScript types
@@ -144,6 +209,8 @@ export type LocationBlock = z.infer<typeof locationBlockSchema>;
 export type HoursBlock = z.infer<typeof hoursBlockSchema>;
 export type FaqItemBlock = z.infer<typeof faqItemBlockSchema>;
 export type ImageGalleryBlock = z.infer<typeof imageGalleryBlockSchema>;
+export type ImageCarouselBlock = z.infer<typeof imageCarouselBlockSchema>;
+export type LocationCarouselBlock = z.infer<typeof locationCarouselBlockSchema>;
 
 // Block type enum for easier checking
 export type BlockType = Block["type"];
@@ -158,6 +225,8 @@ export const BLOCK_TYPES = {
   HOURS: "hours",
   FAQ_ITEM: "faqItem",
   IMAGE_GALLERY: "imageGallery",
+  IMAGE_CAROUSEL: "imageCarousel",
+  LOCATION_CAROUSEL: "locationCarousel",
 } as const;
 
 // Block metadata for UI labels and descriptions
@@ -196,6 +265,15 @@ export const BLOCK_METADATA: Record<
   imageGallery: {
     name: "Image Gallery",
     description: "Collection of images",
+  },
+  imageCarousel: {
+    name: "Image Carousel",
+    description: "Auto-scrolling image-only carousel (single location)",
+  },
+  locationCarousel: {
+    name: "Location Carousel",
+    description:
+      "Location preview carousel with linked location blocks (multi location)",
   },
 };
 
@@ -255,7 +333,14 @@ export function createBlock(type: BlockType, order: number): Block {
         content: {
           name: "Location Name",
           address: "Click to edit address",
+          phone: "",
           googleMapsUrl: "",
+          description: "",
+          schedule: [
+            { day: "Monday - Friday", hours: "7am - 5pm" },
+            { day: "Saturday - Sunday", hours: "8am - 4pm" },
+          ],
+          images: [],
         },
       };
     case "hours":
@@ -285,6 +370,32 @@ export function createBlock(type: BlockType, order: number): Block {
         type,
         content: {
           images: [],
+        },
+      };
+    case "imageCarousel":
+      return {
+        ...baseBlock,
+        type,
+        content: {
+          includeHero: false,
+          heroImageUrl: undefined,
+          heroImageAlt: undefined,
+          slides: [],
+          autoScroll: true,
+          intervalSeconds: 5,
+        },
+      };
+    case "locationCarousel":
+      return {
+        ...baseBlock,
+        type,
+        content: {
+          includeHero: false,
+          heroImageUrl: undefined,
+          heroImageAlt: undefined,
+          slides: [],
+          autoScroll: true,
+          intervalSeconds: 5,
         },
       };
   }

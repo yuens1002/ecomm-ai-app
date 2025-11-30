@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.28.0 - 2025-11-30
+
+- **Cafe Location Type & Carousel Refactor**: Split carousel architecture and added global location type setting
+  - Created app-wide location type setting (SINGLE vs MULTI) in admin settings with radio group selector
+  - Split carousel into `imageCarousel` and `locationCarousel` block types based on business model
+  - Added optional hero image support to both carousel types with `includeHero` toggle
+  - Built standardized `BlockEditDialog` and `PendingImageUpload` components for consistent editing UI
+
 ## 0.27.0 - 2025-11-29
 
 - **Dynamic Page Navigation**: Configure pages to appear in site header and footer with custom icons and display order

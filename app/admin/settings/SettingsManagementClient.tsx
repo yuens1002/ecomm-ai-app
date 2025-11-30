@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Trash2, Mail, Store } from "lucide-react";
+import { Loader2, Save, Trash2, Mail, Store, MapPin } from "lucide-react";
 import {
   Field,
   FieldContent,
@@ -19,6 +19,8 @@ import SocialLinksSettings from "./SocialLinksSettings";
 import { Textarea } from "@/components/ui/textarea";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import FileUpload from "@/components/app-components/FileUpload";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { LocationType } from "@/lib/app-settings";
 
 interface FooterSettings {
   showHours: boolean;
@@ -44,6 +46,10 @@ interface BrandingSettings {
   storeDescription: string;
   storeLogoUrl: string;
   storeFaviconUrl: string;
+}
+
+interface LocationTypeSettings {
+  locationType: LocationType;
 }
 
 type FieldName =
@@ -128,6 +134,11 @@ export default function SettingsManagementClient() {
       storeLogoUrl: "/logo.svg",
       storeFaviconUrl: "/favicon.ico",
     });
+  const [locationTypeSettings, setLocationTypeSettings] =
+    useState<LocationTypeSettings>({
+      locationType: LocationType.SINGLE,
+    });
+  const [savingLocationType, setSavingLocationType] = useState(false);
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -136,18 +147,21 @@ export default function SettingsManagementClient() {
         emailResponse,
         newsletterResponse,
         brandingResponse,
+        locationTypeResponse,
       ] = await Promise.all([
         fetch("/api/admin/settings/footer-contact"),
         fetch("/api/admin/settings/email"),
         fetch("/api/admin/settings/newsletter"),
         fetch("/api/admin/settings/branding"),
+        fetch("/api/admin/settings/location-type"),
       ]);
 
       if (
         !footerResponse.ok ||
         !emailResponse.ok ||
         !newsletterResponse.ok ||
-        !brandingResponse.ok
+        !brandingResponse.ok ||
+        !locationTypeResponse.ok
       ) {
         throw new Error("Failed to fetch settings");
       }
@@ -156,6 +170,7 @@ export default function SettingsManagementClient() {
       const emailData = await emailResponse.json();
       const newsletterData = await newsletterResponse.json();
       const brandingData = await brandingResponse.json();
+      const locationTypeData = await locationTypeResponse.json();
 
       setSettings(footerData);
       setOriginalSettings(footerData);
@@ -165,6 +180,7 @@ export default function SettingsManagementClient() {
       setOriginalNewsletterSettings(newsletterData);
       setBrandingSettings(brandingData);
       setOriginalBrandingSettings(brandingData);
+      setLocationTypeSettings(locationTypeData);
     } catch {
       toast({
         title: "Error",
@@ -300,6 +316,35 @@ export default function SettingsManagementClient() {
     }
   };
 
+  const handleLocationTypeChange = async (value: LocationType) => {
+    setSavingLocationType(true);
+    try {
+      const response = await fetch("/api/admin/settings/location-type", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locationType: value }),
+      });
+
+      if (!response.ok) throw new Error("Failed to save location type");
+
+      setLocationTypeSettings({ locationType: value });
+
+      toast({
+        title: "Success",
+        description: "Cafe location type updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to save settings",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingLocationType(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -310,6 +355,81 @@ export default function SettingsManagementClient() {
 
   return (
     <div className="space-y-6">
+      {/* Cafe Location Type */}
+      <Card>
+        <CardHeader className="pb-8">
+          <Field orientation="vertical">
+            <FieldContent>
+              <FieldTitle className="text-base font-semibold flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Cafe Location Type
+              </FieldTitle>
+              <FieldDescription>
+                Choose whether your cafe is a single location or has multiple
+                locations. This determines the structure of your Cafe page.
+              </FieldDescription>
+            </FieldContent>
+          </Field>
+        </CardHeader>
+        <CardContent>
+          <RadioGroup
+            value={locationTypeSettings.locationType}
+            onValueChange={(value) =>
+              handleLocationTypeChange(value as LocationType)
+            }
+            disabled={savingLocationType}
+            className="space-y-4"
+          >
+            <div className="flex items-start space-x-3 rounded-lg border p-4 hover:bg-accent/50 transition-colors">
+              <RadioGroupItem
+                value={LocationType.SINGLE}
+                id="location-single"
+                className="mt-0.5"
+              />
+              <div className="space-y-1 flex-1">
+                <Label
+                  htmlFor="location-single"
+                  className="text-base font-medium cursor-pointer"
+                >
+                  Single Location
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Use an image carousel to showcase your cafe's atmosphere,
+                  interior, coffee, and team. Best for single-location
+                  businesses.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3 rounded-lg border p-4 hover:bg-accent/50 transition-colors">
+              <RadioGroupItem
+                value={LocationType.MULTI}
+                id="location-multi"
+                className="mt-0.5"
+              />
+              <div className="space-y-1 flex-1">
+                <Label
+                  htmlFor="location-multi"
+                  className="text-base font-medium cursor-pointer"
+                >
+                  Multiple Locations
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Create individual location blocks with title, description,
+                  address, and image. Each location has its own dedicated
+                  section.
+                </p>
+              </div>
+            </div>
+          </RadioGroup>
+          {savingLocationType && (
+            <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Saving location type...</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Store Branding */}
       <Card>
         <CardHeader className="pb-8">
