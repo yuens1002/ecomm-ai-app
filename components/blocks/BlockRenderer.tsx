@@ -9,6 +9,7 @@ import { LocationBlock } from "./LocationBlock";
 import { HoursBlock } from "./HoursBlock";
 import { FaqItemBlock } from "./FaqItemBlock";
 import { ImageGalleryBlock } from "./ImageGalleryBlock";
+import { CarouselBlock } from "./CarouselBlock";
 
 interface BlockRendererProps {
   block: Block;
@@ -66,6 +67,10 @@ export function BlockRenderer({
       return <FaqItemBlock {...commonProps} block={block} />;
     case "imageGallery":
       return <ImageGalleryBlock {...commonProps} block={block} />;
+    case "imageCarousel":
+      return <CarouselBlock {...commonProps} block={block} />;
+    case "locationCarousel":
+      return <CarouselBlock {...commonProps} block={block} />;
     default:
       return null;
   }

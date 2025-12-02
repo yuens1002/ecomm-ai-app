@@ -99,6 +99,21 @@ async function main() {
     },
   });
 
+  // App-wide location type setting
+  // Set to "SINGLE" for single location (imageCarousel) or "MULTI" for multiple locations (locationCarousel)
+  const LOCATION_TYPE = process.env.SEED_LOCATION_TYPE || "MULTI"; // "SINGLE" or "MULTI"
+
+  await prisma.siteSettings.upsert({
+    where: { key: "app.locationType" },
+    update: { value: LOCATION_TYPE },
+    create: {
+      key: "app.locationType",
+      value: LOCATION_TYPE,
+    },
+  });
+
+  console.log(`✓ Location type set to: ${LOCATION_TYPE}`);
+
   await prisma.siteSettings.upsert({
     where: { key: "store_tagline" },
     update: {},
@@ -1826,35 +1841,341 @@ async function main() {
   });
   console.log("✓ Brewing Guides (parent page)");
 
-  // Café Location Page (optional - stores can customize)
-  await prisma.page.upsert({
+  // Café Location Page with Carousel and Location Blocks
+  const cafePage = await prisma.page.upsert({
     where: { slug: "cafe" },
     update: {},
     create: {
       slug: "cafe",
-      title: "Visit Our Café",
+      title: LOCATION_TYPE === "SINGLE" ? "Visit Our Café" : "Visit Our Cafés",
+      type: "CAFE",
       heroImage: null,
-      content: `
-        <h2>Experience Coffee at Its Best</h2>
-        <p>Visit our café to enjoy freshly roasted coffee in a welcoming atmosphere.</p>
-        
-        <h3>Location</h3>
-        <p>123 Coffee Street<br>Portland, OR 97201</p>
-        
-        <h3>Hours</h3>
-        <p>Monday - Friday: 7:00 AM - 7:00 PM<br>
-        Saturday - Sunday: 8:00 AM - 6:00 PM</p>
-        
-        <p><em>Note: This is example content. Customize this page with your actual location details.</em></p>
-      `,
+      content: "",
       metaDescription:
-        "Visit our café for freshly roasted specialty coffee. Find our location, hours, and what to expect.",
-      showInFooter: false,
-      isPublished: false, // Draft - test publishing workflow
+        LOCATION_TYPE === "SINGLE"
+          ? "Visit our café for freshly roasted specialty coffee. Find our location, hours, and what to expect."
+          : "Visit our café locations for freshly roasted specialty coffee. Find our locations, hours, and what to expect.",
+      showInFooter: true,
+      footerOrder: 3,
+      isPublished: true,
+      publishedAt: new Date(),
       generatedBy: "manual",
     },
   });
-  console.log("✓ Café page (draft)");
+
+  // Create carousel block based on location type
+  if (LOCATION_TYPE === "SINGLE") {
+    // SINGLE location: imageCarousel (atmosphere images only)
+    // Using placeholder images for demo - replace with actual uploads in production
+    await prisma.block.create({
+      data: {
+        pageId: cafePage.id,
+        type: "imageCarousel",
+        order: 0,
+        isDeleted: false,
+        content: {
+          slides: [
+            {
+              url: "https://placehold.co/800x600/8B4513/FFF?text=Cozy+Interior",
+              alt: "Cozy interior seating with natural light",
+            },
+            {
+              url: "https://placehold.co/800x600/654321/FFF?text=Espresso+Bar",
+              alt: "Espresso bar with barista at work",
+            },
+            {
+              url: "https://placehold.co/800x600/A0522D/FFF?text=Outdoor+Patio",
+              alt: "Outdoor patio seating area",
+            },
+            {
+              url: "https://placehold.co/800x600/8B4513/FFF?text=Brewing+Station",
+              alt: "Coffee brewing station and equipment",
+            },
+            {
+              url: "https://placehold.co/800x600/654321/FFF?text=Lounge+Area",
+              alt: "Comfortable lounge area for working",
+            },
+          ],
+          autoScroll: true,
+          intervalSeconds: 5,
+        },
+      },
+    });
+
+    // SINGLE location: One location block with full details
+    await prisma.block.create({
+      data: {
+        pageId: cafePage.id,
+        type: "location",
+        order: 1,
+        isDeleted: false,
+        content: {
+          name: "Artisan Roast Café",
+          address: "427 MARKET STREET\nSAN FRANCISCO, CA 94105",
+          phone: "(415) 555-0142",
+          googleMapsUrl:
+            "https://maps.google.com/?q=427+Market+St+San+Francisco+CA+94105",
+          description:
+            "Welcome to our specialty coffee café in the heart of downtown. Features a full espresso bar, pour-over station, and rotating single-origin offerings. Free WiFi and plenty of seating for remote work or casual meetings.",
+          schedule: [
+            { day: "Monday - Friday", hours: "6:30AM - 7PM" },
+            { day: "Saturday - Sunday", hours: "7AM - 6PM" },
+          ],
+          images: [
+            {
+              url: "https://placehold.co/600x400/8B4513/FFF?text=Cafe+Exterior",
+              alt: "Café exterior storefront",
+            },
+            {
+              url: "https://placehold.co/600x400/654321/FFF?text=Interior+Seating",
+              alt: "Interior seating area",
+            },
+            {
+              url: "https://placehold.co/600x400/A0522D/FFF?text=Espresso+Bar",
+              alt: "Espresso bar close-up",
+            },
+          ],
+        },
+      },
+    });
+
+    await prisma.block.create({
+      data: {
+        pageId: cafePage.id,
+        type: "richText",
+        order: 2,
+        isDeleted: false,
+        content: {
+          html: `
+            <h2>What to Expect</h2>
+            <p>Our café features freshly roasted beans from our local roastery, expert baristas, and a welcoming atmosphere. Whether you're grabbing a quick espresso or settling in for the afternoon, we're here to fuel your day with exceptional coffee.</p>
+            
+            <h3>Ordering & Amenities</h3>
+            <ul>
+              <li>Order at the counter or use our mobile app for pickup</li>
+              <li>Free WiFi throughout the café</li>
+              <li>Oat, almond, and whole milk alternatives available</li>
+              <li>Loyalty rewards program - earn free drinks</li>
+              <li>Private event space available for meetings and gatherings</li>
+            </ul>
+          `,
+        },
+      },
+    });
+
+    console.log("✓ Café page with imageCarousel and single location (SINGLE)");
+  } else {
+    // MULTI location: locationCarousel with location previews
+    // Note: locationBlockId will need to be updated after location blocks are created
+    // Using placeholder images for demo - replace with actual uploads in production
+    const cafeCarousel = await prisma.block.create({
+      data: {
+        pageId: cafePage.id,
+        type: "locationCarousel",
+        order: 0,
+        isDeleted: false,
+        content: {
+          slides: [
+            {
+              url: "https://placehold.co/800x600/654321/FFF?text=Market+Street",
+              alt: "Market Street location with large windows",
+              title: "Market Street",
+              description: "Our flagship location in the heart of the city",
+              locationBlockId: "temp-1",
+            },
+            {
+              url: "https://placehold.co/800x600/8B4513/FFF?text=Pearl+Street",
+              alt: "Pearl Street location interior seating area",
+              title: "Pearl Street",
+              description: "Cozy neighborhood spot with fresh pastries daily",
+              locationBlockId: "temp-2",
+            },
+            {
+              url: "https://placehold.co/800x600/A0522D/FFF?text=Hawthorne+Blvd",
+              alt: "Hawthorne Boulevard cafe with outdoor seating",
+              title: "Hawthorne Boulevard",
+              description:
+                "Relaxed atmosphere perfect for working or meeting friends",
+              locationBlockId: "temp-3",
+            },
+          ],
+          autoScroll: true,
+          intervalSeconds: 5,
+        },
+      },
+    }); // Create Location Blocks for Cafe Page
+    const roastworksBlock = await prisma.block.create({
+      data: {
+        pageId: cafePage.id,
+        type: "location",
+        order: 1,
+        isDeleted: false,
+        content: {
+          name: "Market Street",
+          address: "427 MARKET STREET\nSAN FRANCISCO, CA 94105",
+          phone: "(415) 555-0142",
+          googleMapsUrl:
+            "https://maps.google.com/?q=427+Market+St+San+Francisco+CA+94105",
+          description:
+            "Our flagship location in the heart of downtown. Features a full espresso bar, pour-over station, and rotating single-origin offerings. Free WiFi and plenty of seating for remote work or casual meetings.",
+          schedule: [
+            { day: "Monday - Friday", hours: "6:30AM - 7PM" },
+            { day: "Saturday - Sunday", hours: "7AM - 6PM" },
+          ],
+          images: [
+            {
+              url: "https://placehold.co/600x400/654321/FFF?text=Market+St+Exterior",
+              alt: "Market Street exterior",
+            },
+            {
+              url: "https://placehold.co/600x400/8B4513/FFF?text=Market+St+Interior",
+              alt: "Interior seating area",
+            },
+            {
+              url: "https://placehold.co/600x400/A0522D/FFF?text=Market+St+Bar",
+              alt: "Espresso bar",
+            },
+          ],
+        },
+      },
+    });
+
+    const dailyGrindBlock = await prisma.block.create({
+      data: {
+        pageId: cafePage.id,
+        type: "location",
+        order: 2,
+        isDeleted: false,
+        content: {
+          name: "Pearl Street",
+          address: "1523 PEARL STREET\nBOULDER, CO 80302",
+          phone: "(303) 555-0198",
+          googleMapsUrl:
+            "https://maps.google.com/?q=1523+Pearl+St+Boulder+CO+80302",
+          description:
+            "Cozy neighborhood café known for our house-baked pastries and seasonal coffee selections. Dog-friendly patio seating available. Local art on display monthly.",
+          schedule: [
+            { day: "Monday - Friday", hours: "6AM - 6PM" },
+            { day: "Saturday - Sunday", hours: "7AM - 5PM" },
+          ],
+          images: [
+            {
+              url: "https://placehold.co/600x400/8B4513/FFF?text=Pearl+St+Storefront",
+              alt: "Pearl Street storefront",
+            },
+            {
+              url: "https://placehold.co/600x400/654321/FFF?text=Pearl+St+Pastries",
+              alt: "Pastry display case",
+            },
+            {
+              url: "https://placehold.co/600x400/A0522D/FFF?text=Pearl+St+Patio",
+              alt: "Outdoor patio seating",
+            },
+          ],
+        },
+      },
+    });
+
+    const beanLeafBlock = await prisma.block.create({
+      data: {
+        pageId: cafePage.id,
+        type: "location",
+        order: 3,
+        isDeleted: false,
+        content: {
+          name: "Hawthorne Boulevard",
+          address: "812 SE HAWTHORNE BLVD\nPORTLAND, OR 97214",
+          phone: "(503) 555-0276",
+          googleMapsUrl:
+            "https://maps.google.com/?q=812+SE+Hawthorne+Blvd+Portland+OR+97214",
+          description:
+            "Relaxed atmosphere perfect for studying, working, or catching up with friends. Specialty tea selection alongside our coffee menu. Live acoustic music on Friday evenings.",
+          schedule: [
+            { day: "Monday - Thursday", hours: "7AM - 8PM" },
+            { day: "Friday", hours: "7AM - 10PM" },
+            { day: "Saturday - Sunday", hours: "8AM - 8PM" },
+          ],
+          images: [
+            {
+              url: "https://placehold.co/600x400/A0522D/FFF?text=Hawthorne+Entrance",
+              alt: "Hawthorne Boulevard entrance",
+            },
+            {
+              url: "https://placehold.co/600x400/8B4513/FFF?text=Hawthorne+Seating",
+              alt: "Comfortable seating area",
+            },
+            {
+              url: "https://placehold.co/600x400/654321/FFF?text=Hawthorne+Bar",
+              alt: "Coffee and tea bar",
+            },
+          ],
+        },
+      },
+    });
+
+    await prisma.block.create({
+      data: {
+        pageId: cafePage.id,
+        type: "richText",
+        order: 4,
+        isDeleted: false,
+        content: {
+          html: `
+          <h2>What to Expect</h2>
+          <p>All of our locations feature freshly roasted beans from our local roastery, expert baristas, and a welcoming atmosphere. Whether you're grabbing a quick espresso or settling in for the afternoon, we're here to fuel your day with exceptional coffee.</p>
+          
+          <h3>Ordering & Amenities</h3>
+          <ul>
+            <li>Order at the counter or use our mobile app for pickup</li>
+            <li>Free WiFi at all locations</li>
+            <li>Oat, almond, and whole milk alternatives available</li>
+            <li>Loyalty rewards program - earn free drinks</li>
+            <li>Private event space available (Downtown location only)</li>
+          </ul>
+        `,
+        },
+      },
+    });
+
+    // Update carousel slides with actual location block IDs
+    await prisma.block.update({
+      where: { id: cafeCarousel.id },
+      data: {
+        content: {
+          slides: [
+            {
+              url: "https://placehold.co/800x600/654321/FFF?text=Market+Street",
+              alt: "Market Street location with large windows",
+              title: "Market Street",
+              description: "Our flagship location in the heart of the city",
+              locationBlockId: roastworksBlock.id,
+            },
+            {
+              url: "https://placehold.co/800x600/8B4513/FFF?text=Pearl+Street",
+              alt: "Pearl Street location interior seating area",
+              title: "Pearl Street",
+              description: "Cozy neighborhood spot with fresh pastries daily",
+              locationBlockId: dailyGrindBlock.id,
+            },
+            {
+              url: "https://placehold.co/800x600/A0522D/FFF?text=Hawthorne+Blvd",
+              alt: "Hawthorne Boulevard cafe with outdoor seating",
+              title: "Hawthorne Boulevard",
+              description:
+                "Relaxed atmosphere perfect for working or meeting friends",
+              locationBlockId: beanLeafBlock.id,
+            },
+          ],
+          autoScroll: true,
+          intervalSeconds: 5,
+        },
+      },
+    });
+
+    console.log(
+      "✓ Café page with locationCarousel and location blocks (MULTI)"
+    );
+  }
 
   console.log(`\n✅ All seeding complete!`);
 }

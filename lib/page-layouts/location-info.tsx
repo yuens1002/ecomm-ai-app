@@ -7,32 +7,31 @@ import { Block, BlockType } from "@/lib/blocks/schemas";
  */
 export const locationInfoConfig = {
   allowedBlocks: [
-    "hero",
+    "imageCarousel",
+    "locationCarousel",
     "location",
-    "hours",
-    "imageGallery",
     "richText",
   ] as BlockType[],
   maxBlocks: {
-    hero: 1,
-    location: 1,
-    hours: 1,
-    imageGallery: 3,
+    imageCarousel: 1,
+    locationCarousel: 1,
+    location: 5,
     richText: 10,
   },
-  requiredBlocks: ["hero", "location", "hours"] as BlockType[],
+  requiredBlocks: [] as BlockType[], // No required blocks - will be determined by app setting
 };
 
 /**
  * Slot Mapping: Defines which block types go into which template slots
  */
 const slotMapping = {
-  hero: (blocks: Block[]) => blocks.find((b) => b.type === "hero"),
-  location: (blocks: Block[]) => blocks.find((b) => b.type === "location"),
-  hours: (blocks: Block[]) => blocks.find((b) => b.type === "hours"),
-  galleries: (blocks: Block[]) =>
+  carousel: (blocks: Block[]) =>
+    blocks.find(
+      (b) => b.type === "imageCarousel" || b.type === "locationCarousel"
+    ),
+  locations: (blocks: Block[]) =>
     blocks
-      .filter((b) => b.type === "imageGallery")
+      .filter((b) => b.type === "location")
       .sort((a, b) => a.order - b.order),
   content: (blocks: Block[]) =>
     blocks
@@ -44,47 +43,40 @@ const slotMapping = {
  * Location Info Layout Template
  *
  * Fixed Layout Structure:
- * 1. Hero at top
- * 2. Location & Hours side-by-side
- * 3. Image galleries
- * 4. Rich text content
+ * 1. Carousel at top (auto-scrolling with dot navigation)
+ * 2. Full-width location sections (60% photos / 40% info)
+ * 3. Optional rich text content at bottom
  *
  * Used by: PageType.CAFE
  */
 export const renderLocationInfoLayout: LayoutRenderer = (blocks, handlers) => {
   // Map blocks to template slots
-  const hero = slotMapping.hero(blocks);
-  const location = slotMapping.location(blocks);
-  const hours = slotMapping.hours(blocks);
-  const galleries = slotMapping.galleries(blocks);
+  const carousel = slotMapping.carousel(blocks);
+  const locations = slotMapping.locations(blocks);
   const content = slotMapping.content(blocks);
 
   return (
-    <div className="space-y-8">
-      {/* Slot: Hero */}
-      {hero && renderBlock(hero, handlers)}
-
-      {/* Slot: Location & Hours Side-by-Side */}
-      {(location || hours) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>{location && renderBlock(location, handlers)}</div>
-          <div>{hours && renderBlock(hours, handlers)}</div>
-        </div>
+    <>
+      {/* Slot: Carousel - Full Width */}
+      {carousel && (
+        <div className="w-full pb-8">{renderBlock(carousel, handlers)}</div>
       )}
+      <div className="container mx-auto px-8 pt-12 max-w-5xl space-y-16">
+        {/* Slot: Rich Text Content */}
+        {content.length > 0 && (
+          <div className="space-y-8 border-l-5 pl-8">
+            {content.map((block) => renderBlock(block, handlers))}
+          </div>
+        )}
+        {/* Slot: Location Sections & Content - Contained */}
 
-      {/* Slot: Image Galleries */}
-      {galleries.length > 0 && (
-        <div className="space-y-6">
-          {galleries.map((block) => renderBlock(block, handlers))}
-        </div>
-      )}
-
-      {/* Slot: Rich Text Content */}
-      {content.length > 0 && (
-        <div className="space-y-4">
-          {content.map((block) => renderBlock(block, handlers))}
-        </div>
-      )}
-    </div>
+        {/* Slot: Location Sections (60/40 split) */}
+        {locations.length > 0 && (
+          <div className="space-y-20">
+            {locations.map((block) => renderBlock(block, handlers))}
+          </div>
+        )}
+      </div>
+    </>
   );
 };

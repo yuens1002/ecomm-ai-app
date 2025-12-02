@@ -17,7 +17,7 @@ export function Hero({
 }: HeroProps) {
   return (
     <figure className={className}>
-      <div className="relative h-64 w-full md:h-96 lg:h-128">
+      <div className="relative h-64 w-full sm:h-48 md:h-96 lg:h-128">
         {imageUrl ? (
           <Image
             src={imageUrl}

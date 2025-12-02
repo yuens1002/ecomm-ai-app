@@ -82,6 +82,8 @@ export function getBlockDisplayName(blockType: BlockType): string {
     hours: "Business Hours",
     faqItem: "FAQ Item",
     imageGallery: "Image Gallery",
+    imageCarousel: "Image Carousel",
+    locationCarousel: "Location Carousel",
   };
   return names[blockType];
 }

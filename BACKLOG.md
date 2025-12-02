@@ -117,6 +117,80 @@
 
 ---
 
+### Carousel Infinite Scroll with Manual Dot Controls
+
+**Status**: Backlog  
+**Priority**: Medium  
+**Description**: Fix the location carousel infinite scroll to work seamlessly with manual dot navigation controls without visible jumping or stopping at edges.
+
+**Current State**:
+
+- Carousel uses 5 copies of slides for infinite scroll buffer
+- Auto-scroll works but stops after user interaction
+- Manual dot clicking works but scroll position jumps are visible
+- Repositioning logic causes visible shifts during manual swipes
+- Elongated dots (w-8 active, w-2 inactive) without size animation
+
+**Issues to Resolve**:
+
+1. **Scroll stopping issue**: Carousel stops scrolling after 5th set instead of continuing infinitely
+2. **Visible jumping**: When manually swiping near edges, repositioning causes noticeable jumps
+3. **Dot sync issues**: Active dot indicator doesn't always match visible slide during transitions
+4. **Edge detection**: Current 50px threshold may be too aggressive or not precise enough
+
+**Proposed Solutions to Explore**:
+
+- Investigate using Framer Motion or Motion library for smoother scroll animations
+- Implement smoother repositioning with preserved sub-pixel accuracy
+- Adjust buffer zone thresholds (currently first copy < 0.5, last copy > 4.5)
+- Consider alternative infinite scroll approaches:
+  - CSS scroll-snap with dynamic DOM manipulation
+  - Virtual scrolling with position tracking
+  - Transform-based animation instead of native scroll
+
+**Technical Context**:
+
+- Component: `components/blocks/CarouselBlock.tsx`
+- Current implementation: 5x slide duplication with scroll repositioning
+- Auto-scroll: Disabled after first user interaction
+- Dot controls: Elongated active dot without transition animation
+- Repositioning trigger: `scrollDelta < 1` for settled scroll detection
+
+**Acceptance Criteria**:
+
+- Carousel scrolls infinitely in both directions without stopping
+- No visible jumps or shifts during manual swipes
+- Dot indicators accurately reflect current visible slide
+- Smooth transitions when clicking dots
+- Auto-scroll disabled after user interaction (current behavior OK)
+- Works across all breakpoints (mobile, tablet, desktop)
+
+**Tasks**:
+
+- [ ] Research Motion library capabilities for carousel implementation
+- [ ] Prototype alternative infinite scroll approaches
+- [ ] Test repositioning logic with various scroll speeds
+- [ ] Optimize buffer zone thresholds and detection timing
+- [ ] Implement sub-pixel position preservation during repositioning
+- [ ] Test edge cases: rapid swipes, dot clicking during auto-scroll, hover interactions
+- [ ] Verify behavior on touch devices vs mouse/trackpad
+- [ ] Add performance monitoring to detect scroll jank
+
+**References**:
+
+- Hero background mask: 65% opacity (35% brightness)
+- Left padding: sm:pl-8 (32px), lg:pl-16 (64px)
+- Slide width calculation: `calc((100% - 2rem) / 2.5)` (~2.5 cards visible)
+- Extended slides: `[...slides, ...slides, ...slides, ...slides, ...slides]` (5 copies)
+
+**Notes**:
+
+- Feature was working well at one point but regressed during repositioning refinements
+- May need to revert to simpler approach or completely rethink infinite scroll strategy
+- Consider if infinite scroll is truly needed or if standard carousel with edge limits is acceptable
+
+---
+
 ### AI Image Generation for About Page Wizard
 
 **Status**: Backlog  
