@@ -16,6 +16,33 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+interface GalleryGridProps {
+  images: Array<{ url: string; alt?: string }>;
+  className?: string;
+}
+
+function GalleryGrid({ images, className = "" }: GalleryGridProps) {
+  return (
+    <div
+      className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${className}`}
+    >
+      {images.map((image, index) => (
+        <div
+          key={index}
+          className="relative aspect-4/3 overflow-hidden rounded-lg"
+        >
+          <Image
+            src={image.url}
+            alt={image.alt || `Gallery image ${index + 1}`}
+            fill
+            className="object-cover"
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface ImageGalleryBlockProps {
   block: ImageGalleryBlockType;
   isEditing: boolean;
@@ -46,44 +73,14 @@ export function ImageGalleryBlock({
         blockName="Image Gallery Block"
         onRestore={onRestore}
       >
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {block.content.images.map((image, index) => (
-            <div
-              key={index}
-              className="relative aspect-square overflow-hidden rounded-lg"
-            >
-              <Image
-                src={image.url}
-                alt={image.alt || `Gallery image ${index + 1}`}
-                fill
-                className="object-cover"
-              />
-            </div>
-          ))}
-        </div>
+        <GalleryGrid images={block.content.images} />
       </DeletedBlockOverlay>
     );
   }
 
   // Display mode (non-editing page view)
   if (!isEditing) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {block.content.images.map((image, index) => (
-          <div
-            key={index}
-            className="relative aspect-square overflow-hidden rounded-lg"
-          >
-            <Image
-              src={image.url}
-              alt={image.alt || `Gallery image ${index + 1}`}
-              fill
-              className="object-cover"
-            />
-          </div>
-        ))}
-      </div>
-    );
+    return <GalleryGrid images={block.content.images} />;
   }
 
   // Save changes from dialog
@@ -103,7 +100,7 @@ export function ImageGalleryBlock({
     <>
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="pr-8 flex-shrink-0">
+          <DialogHeader className="pr-8 shrink-0">
             <DialogTitle>Edit Image Gallery Block</DialogTitle>
             <DialogDescription>
               Manage gallery images • {editedBlock.content.images.length} of 20
@@ -220,25 +217,13 @@ export function ImageGalleryBlock({
 
       {/* WYSIWYG Block Display with hover/select states */}
       <div
-        className="relative grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 group cursor-pointer transition-all hover:ring-1 hover:ring-[#00d4ff]"
+        className="relative group cursor-pointer transition-all hover:ring-1 hover:ring-[#00d4ff]"
         onClick={() => {
           if (onSelect) onSelect();
           setIsDialogOpen(true);
         }}
       >
-        {block.content.images.map((image, index) => (
-          <div
-            key={index}
-            className="relative aspect-square overflow-hidden rounded-lg"
-          >
-            <Image
-              src={image.url}
-              alt={image.alt || `Gallery image ${index + 1}`}
-              fill
-              className="object-cover"
-            />
-          </div>
-        ))}
+        <GalleryGrid images={block.content.images} />
 
         {/* Action Controls on Hover */}
         <div className="absolute top-2 right-2 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   images: {
     // We must whitelist the domains we'll be using for our product images.
     // This is a security feature of Next.js Image Optimization.
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       {
         protocol: "https",

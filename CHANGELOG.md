@@ -1,12 +1,14 @@
 # Changelog
 
-## 0.28.0 - 2025-11-30
+## 0.28.0 - 2025-12-02
 
-- **Cafe Location Type & Carousel Refactor**: Split carousel architecture and added global location type setting
-  - Created app-wide location type setting (SINGLE vs MULTI) in admin settings with radio group selector
-  - Split carousel into `imageCarousel` and `locationCarousel` block types based on business model
-  - Added optional hero image support to both carousel types with `includeHero` toggle
-  - Built standardized `BlockEditDialog` and `PendingImageUpload` components for consistent editing UI
+- **Cafe Page with Location Carousel**: Complete cafe page implementation with single and multi-location support
+  - Location carousel with auto-scrolling slides and click-to-scroll navigation
+  - Location blocks with photo galleries, addresses, hours, and contact info
+  - Support for both SINGLE (atmosphere images) and MULTI (location previews) modes
+  - Simplified carousel dialog - removed type-switching for cleaner UX
+  - Placeholder image integration with placehold.co for lean development
+  - Next.js Image optimization with SVG support and security hardening
 
 ## 0.27.0 - 2025-11-29
 

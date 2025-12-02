@@ -1,7 +1,7 @@
 "use client";
 
 import { LocationBlock as LocationBlockType } from "@/lib/blocks/schemas";
-import { MapPin, Trash2, Plus, X, Clock } from "lucide-react";
+import { MapPinned, Trash2, Plus, X, Clock, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldGroup } from "@/components/ui/field";
@@ -453,15 +453,16 @@ function LocationDisplay({
   return (
     <div
       id={locationId}
+      data-block-id={block.id}
       data-location-name={block.content.name}
       className={`relative w-full ${isEditing ? "hover:ring-1 hover:ring-[#00d4ff] transition-all" : ""}`}
     >
-      {/* 60/40 Split Layout - Desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* 60% - Photo Gallery (order-2 on mobile for reverse stack) */}
-        <div className="lg:col-span-3 order-2 lg:order-1">
+      {/* 50/50 Split Layout - md, 60/40 Split Layout - lg+ */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+        {/* Photo Gallery */}
+        <div className="md:col-span-1 lg:col-span-3">
           {hasImages ? (
-            <div className="relative aspect-[4/3] rounded-lg overflow-hidden">
+            <div className="relative aspect-4/3 rounded-lg overflow-hidden">
               <Image
                 src={block.content.images![currentImageIndex].url}
                 alt={
@@ -474,7 +475,7 @@ function LocationDisplay({
 
               {/* Image navigation dots */}
               {block.content.images!.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                <div className="absolute left-1/2 -translate-x-1/2 flex gap-2">
                   {block.content.images!.map((_, index) => (
                     <button
                       key={index}
@@ -494,23 +495,48 @@ function LocationDisplay({
               )}
             </div>
           ) : (
-            <div className="aspect-[4/3] rounded-lg bg-muted flex items-center justify-center">
-              <MapPin className="h-12 w-12 text-muted-foreground" />
+            <div className="aspect-4/3 rounded-lg bg-muted flex items-center justify-center">
+              <MapPinned className="h-12 w-12 text-muted-foreground" />
             </div>
           )}
         </div>
 
-        {/* 40% - Location Info (order-1 on mobile for reverse stack) */}
-        <div className="lg:col-span-2 order-1 lg:order-2 space-y-6">
+        {/* Location Info */}
+        <div className="md:col-span-1 lg:col-span-2 space-y-6">
           <div>
-            <h2 className="text-3xl font-bold mb-2">{block.content.name}</h2>
-            <address className="not-italic text-muted-foreground">
-              {block.content.address}
-            </address>
+            <h2 className="text-3xl font-bold mb-4">{block.content.name}</h2>
+
+            {/* Address with map link */}
+            <div className="flex items-start gap-2 mb-3">
+              <MapPinned className="h-4 w-4 mt-1 text-muted-foreground shrink-0" />
+              {block.content.googleMapsUrl ? (
+                <a
+                  href={block.content.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => isEditing && e.stopPropagation()}
+                  className="text-muted-foreground hover:text-primary hover:underline"
+                >
+                  {block.content.address}
+                </a>
+              ) : (
+                <address className="not-italic text-muted-foreground">
+                  {block.content.address}
+                </address>
+              )}
+            </div>
+
+            {/* Phone */}
             {block.content.phone && (
-              <p className="text-muted-foreground mt-1">
-                {block.content.phone}
-              </p>
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <a
+                  href={`tel:${block.content.phone}`}
+                  className="text-muted-foreground hover:text-primary hover:underline"
+                >
+                  {block.content.phone}
+                </a>
+              </div>
             )}
           </div>
 
@@ -536,22 +562,9 @@ function LocationDisplay({
           {block.content.description && (
             <p className="text-muted-foreground">{block.content.description}</p>
           )}
-
-          {/* Map Link */}
-          {block.content.googleMapsUrl && (
-            <a
-              href={block.content.googleMapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => isEditing && e.stopPropagation()}
-              className="inline-flex items-center gap-2 text-primary hover:underline"
-            >
-              <MapPin className="h-4 w-4" />
-              View on Map
-            </a>
-          )}
         </div>
       </div>
+      ``
     </div>
   );
 }

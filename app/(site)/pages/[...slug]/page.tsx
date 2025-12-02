@@ -74,15 +74,15 @@ export default async function Page({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-12 max-w-5xl">
-        <PageContent
-          blocks={visibleBlocks}
-          pageType={page.type}
-          pageTitle={page.title}
-        />
+      <PageContent
+        blocks={visibleBlocks}
+        pageType={page.type}
+        pageTitle={page.title}
+      />
 
-        {/* Child Pages Grid */}
-        {page.children.length > 0 && (
+      {/* Child Pages Grid */}
+      {page.children.length > 0 && (
+        <div className="container mx-auto px-4 py-12 max-w-5xl">
           <div className="mt-12">
             <h2 className="mb-6 text-2xl font-bold">Explore More</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -114,8 +114,8 @@ export default async function Page({ params }: PageProps) {
               ))}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

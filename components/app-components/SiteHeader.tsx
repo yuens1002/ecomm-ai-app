@@ -132,7 +132,10 @@ export default function SiteHeader({
   }
 
   return (
-    <header className="bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md">
+    <header
+      className="bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md"
+      suppressHydrationWarning
+    >
       <div className="container mx-auto px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12">
         {/* Logo/Title */}
         <Link href="/" className="flex items-center gap-2 text-primary">
@@ -164,7 +167,10 @@ export default function SiteHeader({
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-4">
+        <div
+          className="hidden md:flex items-center space-x-4"
+          suppressHydrationWarning
+        >
           <NavigationMenu>
             <NavigationMenuList>
               <NavigationMenuItem>
@@ -242,7 +248,10 @@ export default function SiteHeader({
         </div>
 
         {/* Right Side Controls */}
-        <div className="flex items-center space-x-4 ml-auto">
+        <div
+          className="flex items-center space-x-4 ml-auto"
+          suppressHydrationWarning
+        >
           {/* Search Dialog */}
           <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
             <DialogTrigger asChild>

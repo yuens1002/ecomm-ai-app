@@ -56,23 +56,27 @@ export const renderLocationInfoLayout: LayoutRenderer = (blocks, handlers) => {
   const content = slotMapping.content(blocks);
 
   return (
-    <div className="space-y-8">
-      {/* Slot: Carousel */}
-      {carousel && renderBlock(carousel, handlers)}
-
-      {/* Slot: Location Sections (60/40 split) */}
-      {locations.length > 0 && (
-        <div className="space-y-8">
-          {locations.map((block) => renderBlock(block, handlers))}
-        </div>
+    <>
+      {/* Slot: Carousel - Full Width */}
+      {carousel && (
+        <div className="w-full pb-8">{renderBlock(carousel, handlers)}</div>
       )}
+      <div className="container mx-auto px-8 pt-12 max-w-5xl space-y-16">
+        {/* Slot: Rich Text Content */}
+        {content.length > 0 && (
+          <div className="space-y-8 border-l-5 pl-8">
+            {content.map((block) => renderBlock(block, handlers))}
+          </div>
+        )}
+        {/* Slot: Location Sections & Content - Contained */}
 
-      {/* Slot: Rich Text Content */}
-      {content.length > 0 && (
-        <div className="space-y-4 max-w-4xl mx-auto">
-          {content.map((block) => renderBlock(block, handlers))}
-        </div>
-      )}
-    </div>
+        {/* Slot: Location Sections (60/40 split) */}
+        {locations.length > 0 && (
+          <div className="space-y-20">
+            {locations.map((block) => renderBlock(block, handlers))}
+          </div>
+        )}
+      </div>
+    </>
   );
 };

@@ -189,13 +189,24 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
   }, [currentSlideIndex, slides.length]);
 
   const handleSlideClick = (slide: any) => {
-    if (slide.type === "locationPreview" && slide.locationBlockName) {
-      // Scroll to location block
-      const element = document.getElementById(
-        `location-${slide.locationBlockName.toLowerCase().replace(/\s+/g, "-")}`
+    if (block.type === "locationCarousel" && slide.locationBlockId) {
+      // Use the locationBlockId to find the corresponding location block
+      const element = document.querySelector(
+        `[data-block-id="${slide.locationBlockId}"]`
       );
+
       if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        // Get the absolute position of the element
+        const elementRect = element.getBoundingClientRect();
+        const absoluteElementTop = elementRect.top + window.pageYOffset;
+
+        // Scroll to the element position with breathing room at the top
+        const targetPosition = absoluteElementTop - 100;
+
+        window.scrollTo({
+          top: targetPosition,
+          behavior: "smooth",
+        });
       }
     }
   };
@@ -210,66 +221,75 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Carousel Container */}
-      <div className="overflow-hidden">
-        <div
-          ref={scrollContainerRef}
-          className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-          style={{
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-          }}
-        >
-          {slides.map((slide: any, index: number) => (
-            <div
-              key={index}
-              className="shrink-0 snap-start"
-              style={{
-                width: "calc((100% - 2rem) / 2.5)", // ~2.5 cards visible
-                minWidth: "280px",
-              }}
-            >
-              <div
-                className={cn(
-                  "relative group",
-                  slide.type === "locationPreview" &&
-                    slide.locationBlockName &&
-                    "cursor-pointer"
-                )}
-                onClick={() => handleSlideClick(slide)}
-              >
-                {/* Image */}
-                <div className="relative aspect-4/3 bg-gray-200 rounded-lg overflow-hidden">
-                  <Image
-                    src={slide.url}
-                    alt={slide.alt || "Carousel image"}
-                    fill
-                    className="object-cover transition-transform group-hover:scale-105"
-                  />
-                </div>
+      {/* TODO: Add optional hero background image overlay (includeHero, heroImageUrl, heroImageAlt) */}
 
-                {/* Location Preview Content */}
-                {slide.type === "locationPreview" && (
-                  <div className="mt-4 space-y-2">
-                    <h3 className="text-xl font-semibold">{slide.title}</h3>
-                    <p className="text-gray-600">{slide.description}</p>
-                    {slide.locationBlockName && (
-                      <div className="flex items-center text-primary font-medium">
-                        More
-                        <ArrowRight className="w-4 h-4 ml-1" />
-                      </div>
-                    )}
-                  </div>
+      {/* Carousel Container */}
+      {/* TODO: Implement infinite scroll with 5x slide duplication for seamless looping */}
+      <div
+        className="flex px-4 gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+      >
+        {slides.map((slide: any, index: number) => (
+          <div
+            key={index}
+            className="shrink-0 snap-start"
+            style={{
+              width: "calc((100% - 2rem) / 2.5)", // ~2.5 cards visible
+              minWidth: "280px",
+            }}
+          >
+            <div
+              className="relative group cursor-pointer"
+              onClick={
+                block.type === "locationCarousel"
+                  ? () => handleSlideClick(slide)
+                  : undefined
+              }
+            >
+              {/* Image */}
+              <div className="relative aspect-4/3 rounded-lg overflow-hidden">
+                <Image
+                  src={slide.url}
+                  alt={slide.alt || "Carousel image"}
+                  fill
+                  className="object-cover transition-transform group-hover:scale-105"
+                />
+
+                {/* Hours & Location Button - Bottom Right */}
+                {block.type === "locationCarousel" && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSlideClick(slide);
+                    }}
+                    className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-white/90 hover:bg-white text-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
+                  >
+                    Hours & Location
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 )}
               </div>
+
+              {/* Location Preview Content */}
+              {block.type === "locationCarousel" && (
+                <div className="mt-4 space-y-2">
+                  <h3 className="text-xl font-semibold">{slide.title}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {slide.description}
+                  </p>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
       {/* Dot Navigation */}
       {slides.length > 1 && (
-        <div className="flex justify-center gap-2 mt-6">
+        <div className="flex justify-center gap-2 mt-10">
           {slides.map((_: any, index: number) => (
             <button
               key={index}
@@ -324,10 +344,6 @@ function EditCarouselDialog({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showTypeChangeWarning, setShowTypeChangeWarning] = useState(false);
-  const [pendingType, setPendingType] = useState<
-    "image" | "locationPreview" | null
-  >(null);
 
   // Get available location blocks from the page (for existing blocks only)
   const availableLocations = (() => {
@@ -342,96 +358,47 @@ function EditCarouselDialog({
   // Initialize dialog state when opened
   useEffect(() => {
     if (open) {
+      // Determine type from block.type (imageCarousel or locationCarousel)
+      const isLocationCarousel = block.type === "locationCarousel";
+      const slideType = isLocationCarousel ? "locationPreview" : "image";
+      setCarouselType(slideType);
+
       const slides = block.content.slides;
       if (slides.length > 0) {
-        // Determine type from first slide
-        const firstType = (slides[0] as any).type;
-        setCarouselType(firstType);
-
         // Convert slides to units
         const units: SlideUnit[] = slides.map((slide: any) => ({
-          type: slide.type,
+          type: slideType,
           url: slide.url,
           alt: slide.alt,
-          title: slide.type === "locationPreview" ? slide.title : undefined,
-          description:
-            slide.type === "locationPreview" ? slide.description : undefined,
-          locationBlockId:
-            slide.type === "locationPreview"
-              ? slide.locationBlockId
-              : undefined,
+          title: isLocationCarousel ? slide.title : undefined,
+          description: isLocationCarousel ? slide.description : undefined,
+          locationBlockId: isLocationCarousel
+            ? slide.locationBlockId
+            : undefined,
         }));
         setSlideUnits(units);
       } else {
-        // Empty carousel - no type selected yet
-        setCarouselType(null);
-        setSlideUnits([]);
+        // Empty carousel - initialize with one empty slide
+        setSlideUnits([
+          {
+            type: slideType,
+            url: "",
+            alt: "",
+            ...(isLocationCarousel && {
+              title: "",
+              description: "",
+              locationBlockId: undefined,
+            }),
+          },
+        ]);
       }
       setAutoScroll(block.content.autoScroll ?? true);
       setIntervalSeconds(block.content.intervalSeconds ?? 5);
       setErrors({});
-      setShowTypeChangeWarning(false);
-      setPendingType(null);
     }
   }, [open, block]);
 
-  const handleTypeSelect = (type: "image" | "locationPreview") => {
-    // If switching types and we have existing slides, show warning
-    if (carouselType && carouselType !== type && slideUnits.length > 0) {
-      setPendingType(type);
-      setShowTypeChangeWarning(true);
-      return;
-    }
-
-    setCarouselType(type);
-    // Initialize with one empty unit
-    setSlideUnits([
-      {
-        type,
-        url: "",
-        alt: "",
-        ...(type === "locationPreview" && {
-          title: "",
-          description: "",
-          locationBlockId: undefined,
-        }),
-      },
-    ]);
-  };
-
-  const confirmTypeChange = () => {
-    if (!pendingType) return;
-
-    // Converting from image to locationPreview: Create new location blocks
-    if (pendingType === "locationPreview") {
-      const convertedUnits: SlideUnit[] = slideUnits.map((unit) => ({
-        type: "locationPreview",
-        url: unit.url,
-        alt: unit.alt,
-        title: unit.alt || "New Location", // Use alt as default title
-        description: "",
-        locationBlockId: `temp-${Date.now()}-${Math.random()}`, // Temporary ID, will create on save
-      }));
-      setSlideUnits(convertedUnits);
-    } else {
-      // Converting from locationPreview to image: Keep images, lose location data
-      const convertedUnits: SlideUnit[] = slideUnits.map((unit) => ({
-        type: "image",
-        url: unit.url,
-        alt: unit.alt,
-      }));
-      setSlideUnits(convertedUnits);
-    }
-
-    setCarouselType(pendingType);
-    setShowTypeChangeWarning(false);
-    setPendingType(null);
-  };
-
-  const cancelTypeChange = () => {
-    setShowTypeChangeWarning(false);
-    setPendingType(null);
-  };
+  // Type is now immutable - determined by block.type at creation time
 
   const handleAddUnit = (afterIndex?: number) => {
     if (!carouselType) return;
@@ -634,9 +601,7 @@ function EditCarouselDialog({
       onUpdate({
         ...block,
         content: {
-          includeHero: block.content.includeHero || false,
-          heroImageUrl: block.content.heroImageUrl,
-          heroImageAlt: block.content.heroImageAlt,
+          includeHero: false, // Hero feature removed but field required by schema
           slides: slidesWithUrls as any,
           autoScroll,
           intervalSeconds,
@@ -669,9 +634,9 @@ function EditCarouselDialog({
         <DialogHeader className="pr-8 shrink-0">
           <DialogTitle>Edit Carousel</DialogTitle>
           <DialogDescription>
-            {carouselType
-              ? `${carouselType === "image" ? "Image" : "Location"} carousel - add slides and configure settings`
-              : "Choose carousel type to begin"}
+            {carouselType === "locationPreview"
+              ? "Location carousel - add slides and configure settings"
+              : "Image carousel - add slides and configure settings"}
           </DialogDescription>
         </DialogHeader>
 
@@ -709,89 +674,7 @@ function EditCarouselDialog({
               )}
             </div>
 
-            {/* Type Selection - always shown */}
-            <div className="space-y-4 border-b pb-6">
-              <Label>Carousel Type *</Label>
-              <p className="text-sm text-muted-foreground">
-                Choose the type of slides for this carousel. All slides must be
-                the same type.
-                {carouselType &&
-                  " Changing the type will convert existing slides."}
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => handleTypeSelect("image")}
-                  className={cn(
-                    "p-6 border-2 rounded-lg transition-colors text-left",
-                    carouselType === "image"
-                      ? "border-primary bg-primary/10"
-                      : "hover:border-primary hover:bg-primary/5"
-                  )}
-                >
-                  <h3 className="font-semibold mb-2">Image Carousel</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Visual-only images without text overlays
-                  </p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTypeSelect("locationPreview")}
-                  className={cn(
-                    "p-6 border-2 rounded-lg transition-colors text-left",
-                    carouselType === "locationPreview"
-                      ? "border-primary bg-primary/10"
-                      : "hover:border-primary hover:bg-primary/5"
-                  )}
-                >
-                  <h3 className="font-semibold mb-2">Location Carousel</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Location previews with titles, descriptions, and location
-                    blocks
-                  </p>
-                </button>
-              </div>
-            </div>
-
-            {/* Type Change Warning Dialog */}
-            {showTypeChangeWarning && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-md mx-4">
-                  <h3 className="font-semibold text-lg mb-2">
-                    Change Carousel Type?
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    {pendingType === "locationPreview" ? (
-                      <>
-                        Converting to <strong>Location Carousel</strong> will:
-                        <ul className="list-disc list-inside mt-2 space-y-1">
-                          <li>Create a new location block for each slide</li>
-                          <li>Use existing image and alt text</li>
-                          <li>Require you to fill in location details</li>
-                        </ul>
-                      </>
-                    ) : (
-                      <>
-                        Converting to <strong>Image Carousel</strong> will:
-                        <ul className="list-disc list-inside mt-2 space-y-1">
-                          <li>Keep existing images</li>
-                          <li>Remove all location block associations</li>
-                          <li>Delete orphaned location blocks</li>
-                        </ul>
-                      </>
-                    )}
-                  </p>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={cancelTypeChange}>
-                      Cancel
-                    </Button>
-                    <Button onClick={confirmTypeChange}>Convert Slides</Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Slide Units - shown after type selection */}
+            {/* Slide Units */}
             {carouselType && (
               <div className="space-y-4">
                 <h3 className="font-semibold">Slides ({slideUnits.length})</h3>
