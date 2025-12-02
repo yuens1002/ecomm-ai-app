@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import Image from "next/image";
+import { CarouselDots } from "@/components/app-components/CarouselDots";
 import {
   Dialog,
   DialogContent,
@@ -475,23 +476,12 @@ function LocationDisplay({
 
               {/* Image navigation dots */}
               {block.content.images!.length > 1 && (
-                <div className="absolute left-1/2 -translate-x-1/2 flex gap-2">
-                  {block.content.images!.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentImageIndex(index);
-                      }}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        index === currentImageIndex
-                          ? "bg-white w-8"
-                          : "bg-white/50 hover:bg-white/75"
-                      }`}
-                      aria-label={`View image ${index + 1}`}
-                    />
-                  ))}
-                </div>
+                <CarouselDots
+                  total={block.content.images!.length}
+                  currentIndex={currentImageIndex}
+                  onDotClick={(index) => setCurrentImageIndex(index)}
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2"
+                />
               )}
             </div>
           ) : (

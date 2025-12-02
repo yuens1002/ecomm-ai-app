@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.28.1 - 2025-12-02
+
+- **Animated Carousel Navigation Dots**: Enhanced carousel UX with smooth animations and improved visibility
+  - Reusable CarouselDots component with Framer Motion animations
+  - Active dot elongates smoothly with 0.3s easeInOut transition
+  - Semi-transparent background with backdrop blur for visibility on any image
+  - Fixed scroll navigation - clicking dots now properly scrolls carousel
+  - Applied to both image carousels and location gallery dots
+  - Positioned at bottom center with proper spacing
+
 ## 0.28.0 - 2025-12-02
 
 - **Cafe Page with Location Carousel**: Complete cafe page implementation with single and multi-location support
