@@ -30,6 +30,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { PendingImageUpload } from "@/components/ui/PendingImageUpload";
+import { CarouselDots } from "@/components/app-components/CarouselDots";
 
 type CarouselBlockType = ImageCarouselBlock | LocationCarouselBlock;
 
@@ -226,6 +227,7 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
       {/* Carousel Container */}
       {/* TODO: Implement infinite scroll with 5x slide duplication for seamless looping */}
       <div
+        ref={scrollContainerRef}
         className="flex px-4 gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide"
         style={{
           scrollbarWidth: "none",
@@ -289,20 +291,12 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
 
       {/* Dot Navigation */}
       {slides.length > 1 && (
-        <div className="flex justify-center gap-2 mt-10">
-          {slides.map((_: any, index: number) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlideIndex(index)}
-              className={cn(
-                "w-2 h-2 rounded-full transition-all",
-                index === currentSlideIndex
-                  ? "bg-primary w-8"
-                  : "bg-gray-300 hover:bg-gray-400"
-              )}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
+        <div className="flex justify-center mt-10">
+          <CarouselDots
+            total={slides.length}
+            currentIndex={currentSlideIndex}
+            onDotClick={setCurrentSlideIndex}
+          />
         </div>
       )}
     </div>
