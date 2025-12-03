@@ -8,13 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { EditableBlockWrapper } from "./EditableBlockWrapper";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { BlockDialog } from "./BlockDialog";
 
 interface HoursBlockProps {
   block: HoursBlockType;
@@ -99,101 +93,34 @@ export function HoursBlock({
   // Edit mode with dialog
   return (
     <>
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="pr-8 flex-shrink-0">
-            <DialogTitle>Edit Hours Block</DialogTitle>
-            <DialogDescription>
-              Update your business hours schedule •{" "}
-              {editedBlock.content.schedule.length} of 7 rows
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="overflow-y-auto flex-1 -mx-6 px-6">
-            <FieldGroup>
-              {editedBlock.content.schedule.map((item, index) => (
-                <div key={index} className="grid grid-cols-2 gap-3">
-                  <Field>
-                    <FieldLabel htmlFor={`hours-days-${block.id}-${index}`}>
-                      Days
-                    </FieldLabel>
-                    <Input
-                      id={`hours-days-${block.id}-${index}`}
-                      value={item.day}
-                      onChange={(e) => {
-                        const newSchedule = [...editedBlock.content.schedule];
-                        newSchedule[index] = { ...item, day: e.target.value };
-                        setEditedBlock({
-                          ...editedBlock,
-                          content: {
-                            ...editedBlock.content,
-                            schedule: newSchedule,
-                          },
-                        });
-                      }}
-                      placeholder="Mon-Fri"
-                      maxLength={50}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor={`hours-time-${block.id}-${index}`}>
-                      Hours
-                    </FieldLabel>
-                    <div className="flex gap-2">
-                      <Input
-                        id={`hours-time-${block.id}-${index}`}
-                        value={item.hours}
-                        onChange={(e) => {
-                          const newSchedule = [...editedBlock.content.schedule];
-                          newSchedule[index] = {
-                            ...item,
-                            hours: e.target.value,
-                          };
-                          setEditedBlock({
-                            ...editedBlock,
-                            content: {
-                              ...editedBlock.content,
-                              schedule: newSchedule,
-                            },
-                          });
-                        }}
-                        placeholder="9am - 5pm"
-                        maxLength={50}
-                      />
-                      {editedBlock.content.schedule.length > 1 && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            const newSchedule =
-                              editedBlock.content.schedule.filter(
-                                (_, i) => i !== index
-                              );
-                            setEditedBlock({
-                              ...editedBlock,
-                              content: {
-                                ...editedBlock.content,
-                                schedule: newSchedule,
-                              },
-                            });
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </Field>
-                </div>
-              ))}
-              {editedBlock.content.schedule.length < 7 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const newSchedule = [
-                      ...editedBlock.content.schedule,
-                      { day: "", hours: "" },
-                    ];
+      <BlockDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        title="Edit Hours Block"
+        description={`Update your business hours schedule • ${editedBlock.content.schedule.length} of 7 rows`}
+        size="md"
+        footer={
+          <>
+            <Button variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>Save</Button>
+          </>
+        }
+      >
+        <FieldGroup>
+          {editedBlock.content.schedule.map((item, index) => (
+            <div key={index} className="grid grid-cols-2 gap-3">
+              <Field>
+                <FieldLabel htmlFor={`hours-days-${block.id}-${index}`}>
+                  Days
+                </FieldLabel>
+                <Input
+                  id={`hours-days-${block.id}-${index}`}
+                  value={item.day}
+                  onChange={(e) => {
+                    const newSchedule = [...editedBlock.content.schedule];
+                    newSchedule[index] = { ...item, day: e.target.value };
                     setEditedBlock({
                       ...editedBlock,
                       content: {
@@ -202,22 +129,83 @@ export function HoursBlock({
                       },
                     });
                   }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Row
-                </Button>
-              )}
-            </FieldGroup>
-          </div>
-
-          <div className="flex justify-end gap-2 mt-6 flex-shrink-0">
-            <Button variant="outline" onClick={handleCancel}>
-              Cancel
+                  placeholder="Mon-Fri"
+                  maxLength={50}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor={`hours-time-${block.id}-${index}`}>
+                  Hours
+                </FieldLabel>
+                <div className="flex gap-2">
+                  <Input
+                    id={`hours-time-${block.id}-${index}`}
+                    value={item.hours}
+                    onChange={(e) => {
+                      const newSchedule = [...editedBlock.content.schedule];
+                      newSchedule[index] = {
+                        ...item,
+                        hours: e.target.value,
+                      };
+                      setEditedBlock({
+                        ...editedBlock,
+                        content: {
+                          ...editedBlock.content,
+                          schedule: newSchedule,
+                        },
+                      });
+                    }}
+                    placeholder="9am - 5pm"
+                    maxLength={50}
+                  />
+                  {editedBlock.content.schedule.length > 1 && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        const newSchedule = editedBlock.content.schedule.filter(
+                          (_, i) => i !== index
+                        );
+                        setEditedBlock({
+                          ...editedBlock,
+                          content: {
+                            ...editedBlock.content,
+                            schedule: newSchedule,
+                          },
+                        });
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </Field>
+            </div>
+          ))}
+          {editedBlock.content.schedule.length < 7 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const newSchedule = [
+                  ...editedBlock.content.schedule,
+                  { day: "", hours: "" },
+                ];
+                setEditedBlock({
+                  ...editedBlock,
+                  content: {
+                    ...editedBlock.content,
+                    schedule: newSchedule,
+                  },
+                });
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Row
             </Button>
-            <Button onClick={handleSave}>Save</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          )}
+        </FieldGroup>
+      </BlockDialog>
 
       {/* WYSIWYG Block Display with hover/select states */}
       <EditableBlockWrapper

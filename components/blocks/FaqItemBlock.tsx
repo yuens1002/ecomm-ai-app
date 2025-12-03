@@ -14,13 +14,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { BlockDialog } from "./BlockDialog";
 
 interface FaqItemBlockProps {
   block: FaqItemBlockType;
@@ -101,70 +95,63 @@ export function FaqItemBlock({
   // Edit mode with dialog
   return (
     <>
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="pr-8 flex-shrink-0">
-            <DialogTitle>Edit FAQ Item Block</DialogTitle>
-            <DialogDescription>
-              Update the question and answer •{" "}
-              {editedBlock.content.answer.length} of 1000 characters
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="overflow-y-auto flex-1 -mx-6 px-6">
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor={`faq-question-${block.id}`}>
-                  Question
-                </FieldLabel>
-                <Input
-                  id={`faq-question-${block.id}`}
-                  value={editedBlock.content.question}
-                  onChange={(e) =>
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: {
-                        ...editedBlock.content,
-                        question: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="What is your question?"
-                  maxLength={200}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor={`faq-answer-${block.id}`}>
-                  Answer
-                </FieldLabel>
-                <Textarea
-                  id={`faq-answer-${block.id}`}
-                  value={editedBlock.content.answer}
-                  onChange={(e) =>
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: {
-                        ...editedBlock.content,
-                        answer: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="Provide a detailed answer..."
-                  rows={4}
-                  maxLength={1000}
-                />
-              </Field>
-            </FieldGroup>
-          </div>
-
-          <div className="flex justify-end gap-2 mt-6 flex-shrink-0">
+      <BlockDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        title="Edit FAQ Item Block"
+        description={`Update the question and answer • ${editedBlock.content.answer.length} of 1000 characters`}
+        size="md"
+        footer={
+          <>
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
             <Button onClick={handleSave}>Save</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      >
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor={`faq-question-${block.id}`}>
+              Question
+            </FieldLabel>
+            <Input
+              id={`faq-question-${block.id}`}
+              value={editedBlock.content.question}
+              onChange={(e) =>
+                setEditedBlock({
+                  ...editedBlock,
+                  content: {
+                    ...editedBlock.content,
+                    question: e.target.value,
+                  },
+                })
+              }
+              placeholder="What is your question?"
+              maxLength={200}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`faq-answer-${block.id}`}>Answer</FieldLabel>
+            <Textarea
+              id={`faq-answer-${block.id}`}
+              value={editedBlock.content.answer}
+              onChange={(e) =>
+                setEditedBlock({
+                  ...editedBlock,
+                  content: {
+                    ...editedBlock.content,
+                    answer: e.target.value,
+                  },
+                })
+              }
+              placeholder="Provide a detailed answer..."
+              rows={4}
+              maxLength={1000}
+            />
+          </Field>
+        </FieldGroup>
+      </BlockDialog>
 
       {/* WYSIWYG Block Display with hover/select states */}
       <EditableBlockWrapper

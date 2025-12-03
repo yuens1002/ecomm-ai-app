@@ -12,13 +12,7 @@ import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import Image from "next/image";
 import { ImageCarousel } from "@/components/app-components/ImageCarousel";
 import { EditableBlockWrapper } from "./EditableBlockWrapper";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { BlockDialog } from "./BlockDialog";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 
 interface LocationBlockProps {
@@ -145,269 +139,261 @@ export function LocationBlock({
   // Edit mode with dialog
   return (
     <>
-      <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="pr-8 flex-shrink-0">
-            <DialogTitle>Edit Location</DialogTitle>
-            <DialogDescription>
-              Configure location details, hours, photos, and description
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="overflow-y-auto flex-1 -mx-6 px-6">
-            <FieldGroup>
-              {/* Basic Info */}
-              <Field>
-                <FormHeading
-                  htmlFor="location-name"
-                  label="Location Name"
-                  required={true}
-                  validationType={errors.name ? "error" : undefined}
-                  errorMessage={errors.name}
-                />
-                <Input
-                  id="location-name"
-                  value={editedBlock.content.name}
-                  onChange={(e) => {
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: { ...editedBlock.content, name: e.target.value },
-                    });
-                    if (errors.name) setErrors({ ...errors, name: undefined });
-                  }}
-                  placeholder="e.g., Downtown Location"
-                  maxLength={100}
-                  className={errors.name ? "border-destructive" : ""}
-                />
-              </Field>
-
-              <Field>
-                <FormHeading
-                  htmlFor="location-address"
-                  label="Address"
-                  required={true}
-                  validationType={errors.address ? "error" : undefined}
-                  errorMessage={errors.address}
-                />
-                <Textarea
-                  id="location-address"
-                  value={editedBlock.content.address}
-                  onChange={(e) => {
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: {
-                        ...editedBlock.content,
-                        address: e.target.value,
-                      },
-                    });
-                    if (errors.address)
-                      setErrors({ ...errors, address: undefined });
-                  }}
-                  placeholder="123 Main St&#10;City, State 12345"
-                  rows={3}
-                  maxLength={500}
-                  className={errors.address ? "border-destructive" : ""}
-                />
-              </Field>
-
-              <Field>
-                <FormHeading htmlFor="location-phone" label="Phone" />
-                <Input
-                  id="location-phone"
-                  value={editedBlock.content.phone || ""}
-                  onChange={(e) =>
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: {
-                        ...editedBlock.content,
-                        phone: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="(555) 123-4567"
-                  maxLength={50}
-                />
-              </Field>
-
-              <Field>
-                <FormHeading htmlFor="location-maps" label="Google Maps URL" />
-                <Input
-                  id="location-maps"
-                  value={editedBlock.content.googleMapsUrl || ""}
-                  onChange={(e) =>
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: {
-                        ...editedBlock.content,
-                        googleMapsUrl: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="https://maps.google.com/..."
-                />
-              </Field>
-
-              {/* Description */}
-              <Field>
-                <FormHeading
-                  htmlFor="location-description"
-                  label="Description"
-                />
-                <Textarea
-                  id="location-description"
-                  value={editedBlock.content.description || ""}
-                  onChange={(e) =>
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: {
-                        ...editedBlock.content,
-                        description: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="Describe this location..."
-                  rows={4}
-                  maxLength={2000}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {(editedBlock.content.description || "").length}/2000
-                  characters
-                </p>
-              </Field>
-
-              {/* Hours */}
-              <Field>
-                <FormHeading htmlFor="location-hours" label="Hours" />
-                <div className="space-y-2">
-                  {editedBlock.content.schedule?.map((entry, index) => (
-                    <div key={index} className="flex gap-2">
-                      <Input
-                        value={entry.day}
-                        onChange={(e) => {
-                          const newSchedule = [
-                            ...(editedBlock.content.schedule || []),
-                          ];
-                          newSchedule[index] = {
-                            ...entry,
-                            day: e.target.value,
-                          };
-                          setEditedBlock({
-                            ...editedBlock,
-                            content: {
-                              ...editedBlock.content,
-                              schedule: newSchedule,
-                            },
-                          });
-                        }}
-                        placeholder="Day(s)"
-                        className="flex-1"
-                      />
-                      <Input
-                        value={entry.hours}
-                        onChange={(e) => {
-                          const newSchedule = [
-                            ...(editedBlock.content.schedule || []),
-                          ];
-                          newSchedule[index] = {
-                            ...entry,
-                            hours: e.target.value,
-                          };
-                          setEditedBlock({
-                            ...editedBlock,
-                            content: {
-                              ...editedBlock.content,
-                              schedule: newSchedule,
-                            },
-                          });
-                        }}
-                        placeholder="Hours"
-                        className="flex-1"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeHourEntry(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addHourEntry}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Hours
-                  </Button>
-                </div>
-              </Field>
-
-              {/* Images */}
-              <Field>
-                <FormHeading htmlFor="location-photos" label="Photos" />
-                <div className="space-y-4">
-                  {/* Image grid with previews */}
-                  {editedBlock.content.images &&
-                    editedBlock.content.images.length > 0 && (
-                      <div className="grid grid-cols-3 gap-3">
-                        {editedBlock.content.images.map((img, index) => (
-                          <div
-                            key={index}
-                            className="relative aspect-4/3 rounded-lg overflow-hidden border"
-                          >
-                            <Image
-                              src={img.url}
-                              alt={img.alt || "Location photo"}
-                              fill
-                              className="object-cover"
-                            />
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              className="absolute top-2 right-2 h-7 w-7 p-0"
-                              onClick={() => removeImage(index)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                  {/* Upload new image */}
-                  <ImageUpload
-                    onUploadComplete={(url) => {
-                      setEditedBlock({
-                        ...editedBlock,
-                        content: {
-                          ...editedBlock.content,
-                          images: [
-                            ...(editedBlock.content.images || []),
-                            { url, alt: "Location photo" },
-                          ],
-                        },
-                      });
-                    }}
-                    aspectRatio="4/3"
-                    showPreview={false}
-                  />
-                </div>
-              </Field>
-            </FieldGroup>
-          </div>
-
-          <div className="flex justify-end gap-2 mt-6 flex-shrink-0">
+      <BlockDialog
+        open={isDialogOpen}
+        onOpenChange={handleDialogChange}
+        title="Edit Location"
+        description="Configure location details, hours, photos, and description"
+        size="lg"
+        footer={
+          <>
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
             <Button onClick={handleSave}>Save</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      >
+        <FieldGroup>
+          {/* Basic Info */}
+          <Field>
+            <FormHeading
+              htmlFor="location-name"
+              label="Location Name"
+              required={true}
+              validationType={errors.name ? "error" : undefined}
+              errorMessage={errors.name}
+            />
+            <Input
+              id="location-name"
+              value={editedBlock.content.name}
+              onChange={(e) => {
+                setEditedBlock({
+                  ...editedBlock,
+                  content: { ...editedBlock.content, name: e.target.value },
+                });
+                if (errors.name) setErrors({ ...errors, name: undefined });
+              }}
+              placeholder="e.g., Downtown Location"
+              maxLength={100}
+              className={errors.name ? "border-destructive" : ""}
+            />
+          </Field>
+
+          <Field>
+            <FormHeading
+              htmlFor="location-address"
+              label="Address"
+              required={true}
+              validationType={errors.address ? "error" : undefined}
+              errorMessage={errors.address}
+            />
+            <Textarea
+              id="location-address"
+              value={editedBlock.content.address}
+              onChange={(e) => {
+                setEditedBlock({
+                  ...editedBlock,
+                  content: {
+                    ...editedBlock.content,
+                    address: e.target.value,
+                  },
+                });
+                if (errors.address)
+                  setErrors({ ...errors, address: undefined });
+              }}
+              placeholder="123 Main St&#10;City, State 12345"
+              rows={3}
+              maxLength={500}
+              className={errors.address ? "border-destructive" : ""}
+            />
+          </Field>
+
+          <Field>
+            <FormHeading htmlFor="location-phone" label="Phone" />
+            <Input
+              id="location-phone"
+              value={editedBlock.content.phone || ""}
+              onChange={(e) =>
+                setEditedBlock({
+                  ...editedBlock,
+                  content: {
+                    ...editedBlock.content,
+                    phone: e.target.value,
+                  },
+                })
+              }
+              placeholder="(555) 123-4567"
+              maxLength={50}
+            />
+          </Field>
+
+          <Field>
+            <FormHeading htmlFor="location-maps" label="Google Maps URL" />
+            <Input
+              id="location-maps"
+              value={editedBlock.content.googleMapsUrl || ""}
+              onChange={(e) =>
+                setEditedBlock({
+                  ...editedBlock,
+                  content: {
+                    ...editedBlock.content,
+                    googleMapsUrl: e.target.value,
+                  },
+                })
+              }
+              placeholder="https://maps.google.com/..."
+            />
+          </Field>
+
+          {/* Description */}
+          <Field>
+            <FormHeading htmlFor="location-description" label="Description" />
+            <Textarea
+              id="location-description"
+              value={editedBlock.content.description || ""}
+              onChange={(e) =>
+                setEditedBlock({
+                  ...editedBlock,
+                  content: {
+                    ...editedBlock.content,
+                    description: e.target.value,
+                  },
+                })
+              }
+              placeholder="Describe this location..."
+              rows={4}
+              maxLength={2000}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              {(editedBlock.content.description || "").length}/2000 characters
+            </p>
+          </Field>
+
+          {/* Hours */}
+          <Field>
+            <FormHeading htmlFor="location-hours" label="Hours" />
+            <div className="space-y-2">
+              {editedBlock.content.schedule?.map((entry, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={entry.day}
+                    onChange={(e) => {
+                      const newSchedule = [
+                        ...(editedBlock.content.schedule || []),
+                      ];
+                      newSchedule[index] = {
+                        ...entry,
+                        day: e.target.value,
+                      };
+                      setEditedBlock({
+                        ...editedBlock,
+                        content: {
+                          ...editedBlock.content,
+                          schedule: newSchedule,
+                        },
+                      });
+                    }}
+                    placeholder="Day(s)"
+                    className="flex-1"
+                  />
+                  <Input
+                    value={entry.hours}
+                    onChange={(e) => {
+                      const newSchedule = [
+                        ...(editedBlock.content.schedule || []),
+                      ];
+                      newSchedule[index] = {
+                        ...entry,
+                        hours: e.target.value,
+                      };
+                      setEditedBlock({
+                        ...editedBlock,
+                        content: {
+                          ...editedBlock.content,
+                          schedule: newSchedule,
+                        },
+                      });
+                    }}
+                    placeholder="Hours"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeHourEntry(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addHourEntry}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Hours
+              </Button>
+            </div>
+          </Field>
+
+          {/* Images */}
+          <Field>
+            <FormHeading htmlFor="location-photos" label="Photos" />
+            <div className="space-y-4">
+              {/* Image grid with previews */}
+              {editedBlock.content.images &&
+                editedBlock.content.images.length > 0 && (
+                  <div className="grid grid-cols-3 gap-3">
+                    {editedBlock.content.images.map((img, index) => (
+                      <div
+                        key={index}
+                        className="relative aspect-4/3 rounded-lg overflow-hidden border"
+                      >
+                        <Image
+                          src={img.url}
+                          alt={img.alt || "Location photo"}
+                          fill
+                          className="object-cover"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-2 right-2 h-7 w-7 p-0"
+                          onClick={() => removeImage(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+              {/* Upload new image */}
+              <ImageUpload
+                onUploadComplete={(url) => {
+                  setEditedBlock({
+                    ...editedBlock,
+                    content: {
+                      ...editedBlock.content,
+                      images: [
+                        ...(editedBlock.content.images || []),
+                        { url, alt: "Location photo" },
+                      ],
+                    },
+                  });
+                }}
+                aspectRatio="4/3"
+                showPreview={false}
+              />
+            </div>
+          </Field>
+        </FieldGroup>
+      </BlockDialog>
 
       {/* Editing mode - clickable card */}
       <EditableBlockWrapper

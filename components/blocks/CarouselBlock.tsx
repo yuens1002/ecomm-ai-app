@@ -6,14 +6,7 @@ import {
   LocationCarouselBlock,
 } from "@/lib/blocks/schemas";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { BlockDialog } from "./BlockDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -684,97 +677,93 @@ function EditCarouselDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="pr-8 shrink-0">
-          <DialogTitle>Edit Carousel</DialogTitle>
-          <DialogDescription>
-            {carouselType === "locationPreview"
-              ? "Location carousel - add slides and configure settings"
-              : "Image carousel - add slides and configure settings"}
-          </DialogDescription>
-        </DialogHeader>
-
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto pr-2 -mr-2">
-          <div className="space-y-6">
-            {/* Carousel Settings - shown first */}
-            <div className="space-y-4 border-b pb-6">
-              <h3 className="font-semibold">Carousel Settings</h3>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="autoScroll">Auto-scroll</Label>
-                <Switch
-                  id="autoScroll"
-                  checked={autoScroll}
-                  onCheckedChange={setAutoScroll}
-                />
-              </div>
-
-              {autoScroll && (
-                <div>
-                  <Label htmlFor="intervalSeconds">
-                    Interval: {intervalSeconds} seconds
-                  </Label>
-                  <Input
-                    id="intervalSeconds"
-                    type="range"
-                    min={2}
-                    max={10}
-                    value={intervalSeconds}
-                    onChange={(e) => setIntervalSeconds(Number(e.target.value))}
-                    className="mt-2"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Slide Units */}
-            {carouselType && (
-              <div className="space-y-4">
-                <h3 className="font-semibold">Slides ({slideUnits.length})</h3>
-
-                {/* Slide Units Grid */}
-                <div className="space-y-4">
-                  {slideUnits.map((unit, index) => (
-                    <SlideUnitCard
-                      key={index}
-                      unit={unit}
-                      index={index}
-                      type={carouselType}
-                      isFirst={index === 0}
-                      isLast={index === slideUnits.length - 1}
-                      canDelete={slideUnits.length > 1 || index > 0}
-                      availableLocations={availableLocations}
-                      errors={errors}
-                      onImageSelect={(file) => handleImageSelect(index, file)}
-                      onRemoveImage={() => handleRemoveImage(index)}
-                      onFieldChange={(field, value) =>
-                        handleFieldChange(index, field, value)
-                      }
-                      onMoveUp={() => handleMoveUp(index)}
-                      onMoveDown={() => handleMoveDown(index)}
-                      onRemove={() => handleRemoveUnit(index)}
-                      onAdd={() => handleAddUnit(index)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-2 pt-4 border-t shrink-0">
+    <BlockDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Edit Carousel"
+      description={
+        carouselType === "locationPreview"
+          ? "Location carousel - add slides and configure settings"
+          : "Image carousel - add slides and configure settings"
+      }
+      size="xl"
+      footer={
+        <>
           <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={isSaving || !carouselType}>
             {isSaving ? "Saving..." : "Save"}
           </Button>
+        </>
+      }
+    >
+      <div className="space-y-6">
+        {/* Carousel Settings - shown first */}
+        <div className="space-y-4 border-b pb-6">
+          <h3 className="font-semibold">Carousel Settings</h3>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="autoScroll">Auto-scroll</Label>
+            <Switch
+              id="autoScroll"
+              checked={autoScroll}
+              onCheckedChange={setAutoScroll}
+            />
+          </div>
+
+          {autoScroll && (
+            <div>
+              <Label htmlFor="intervalSeconds">
+                Interval: {intervalSeconds} seconds
+              </Label>
+              <Input
+                id="intervalSeconds"
+                type="range"
+                min={2}
+                max={10}
+                value={intervalSeconds}
+                onChange={(e) => setIntervalSeconds(Number(e.target.value))}
+                className="mt-2"
+              />
+            </div>
+          )}
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Slide Units */}
+        {carouselType && (
+          <div className="space-y-4">
+            <h3 className="font-semibold">Slides ({slideUnits.length})</h3>
+
+            {/* Slide Units Grid */}
+            <div className="space-y-4">
+              {slideUnits.map((unit, index) => (
+                <SlideUnitCard
+                  key={index}
+                  unit={unit}
+                  index={index}
+                  type={carouselType}
+                  isFirst={index === 0}
+                  isLast={index === slideUnits.length - 1}
+                  canDelete={slideUnits.length > 1 || index > 0}
+                  availableLocations={availableLocations}
+                  errors={errors}
+                  onImageSelect={(file) => handleImageSelect(index, file)}
+                  onRemoveImage={() => handleRemoveImage(index)}
+                  onFieldChange={(field, value) =>
+                    handleFieldChange(index, field, value)
+                  }
+                  onMoveUp={() => handleMoveUp(index)}
+                  onMoveDown={() => handleMoveDown(index)}
+                  onRemove={() => handleRemoveUnit(index)}
+                  onAdd={() => handleAddUnit(index)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </BlockDialog>
   );
 }
 

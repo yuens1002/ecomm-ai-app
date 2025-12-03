@@ -13,13 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { BlockDialog } from "./BlockDialog";
 
 interface RichTextBlockProps {
   block: RichTextBlockType;
@@ -133,61 +127,57 @@ export function RichTextBlock({
   // Edit mode with dialog
   return (
     <>
-      <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="pr-8 flex-shrink-0">
-            <DialogTitle>
-              {isNew
-                ? `Add ${BLOCK_METADATA.richText.name}`
-                : `Edit ${BLOCK_METADATA.richText.name}`}
-            </DialogTitle>
-            <DialogDescription>
-              {BLOCK_METADATA.richText.description}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="overflow-y-auto flex-1 -mx-6 px-6">
-            <Field>
-              <FormHeading
-                htmlFor="rich-text-content"
-                label="Content"
-                required={true}
-                validationType={errors.html ? "error" : undefined}
-                isDirty={
-                  errors.html
-                    ? true
-                    : editedBlock.content.html !== block.content.html &&
-                      editedBlock.content.html !== ""
-                }
-                errorMessage={errors.html}
-              />
-              <RichTextEditor
-                content={editedBlock.content.html}
-                onChange={(html) => {
-                  setEditedBlock({
-                    ...editedBlock,
-                    content: { ...editedBlock.content, html },
-                  });
-                  if (errors.html) setErrors({ html: undefined });
-                }}
-                placeholder="Start typing your content..."
-                className={errors.html ? "border-destructive" : ""}
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Use the toolbar to format your content. Supports headings, bold,
-                italic, lists, and links.
-              </p>
-            </Field>
-          </div>
-
-          <div className="flex justify-end gap-2 mt-6 flex-shrink-0">
+      <BlockDialog
+        open={isDialogOpen}
+        onOpenChange={handleDialogChange}
+        title={
+          isNew
+            ? `Add ${BLOCK_METADATA.richText.name}`
+            : `Edit ${BLOCK_METADATA.richText.name}`
+        }
+        description={BLOCK_METADATA.richText.description}
+        size="lg"
+        footer={
+          <>
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
             <Button onClick={handleSave}>{isNew ? "Add" : "Save"}</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      >
+        <Field>
+          <FormHeading
+            htmlFor="rich-text-content"
+            label="Content"
+            required={true}
+            validationType={errors.html ? "error" : undefined}
+            isDirty={
+              errors.html
+                ? true
+                : editedBlock.content.html !== block.content.html &&
+                  editedBlock.content.html !== ""
+            }
+            errorMessage={errors.html}
+          />
+          <RichTextEditor
+            content={editedBlock.content.html}
+            onChange={(html) => {
+              setEditedBlock({
+                ...editedBlock,
+                content: { ...editedBlock.content, html },
+              });
+              if (errors.html) setErrors({ html: undefined });
+            }}
+            placeholder="Start typing your content..."
+            className={errors.html ? "border-destructive" : ""}
+          />
+          <p className="text-xs text-muted-foreground mt-2">
+            Use the toolbar to format your content. Supports headings, bold,
+            italic, lists, and links.
+          </p>
+        </Field>
+      </BlockDialog>
 
       {/* WYSIWYG Block Display with hover/select states */}
       <Typography

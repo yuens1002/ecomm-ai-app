@@ -12,13 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { BlockDialog } from "./BlockDialog";
 
 interface PullQuoteBlockProps {
   block: PullQuoteBlockType;
@@ -79,72 +73,68 @@ export function PullQuoteBlock({
   // Edit mode with dialog
   return (
     <>
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="pr-8 flex-shrink-0">
-            <DialogTitle>Edit {BLOCK_METADATA.pullQuote.name}</DialogTitle>
-            <DialogDescription>
-              {BLOCK_METADATA.pullQuote.description}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="overflow-y-auto flex-1 -mx-6 px-6">
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor={`quote-text-${block.id}`}>
-                  Quote Text
-                </FieldLabel>
-                <Textarea
-                  id={`quote-text-${block.id}`}
-                  value={editedBlock.content.text}
-                  onChange={(e) =>
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: { ...editedBlock.content, text: e.target.value },
-                    })
-                  }
-                  placeholder="Enter quote text..."
-                  rows={4}
-                  maxLength={500}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {editedBlock.content.text.length}/500 characters
-                </p>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor={`quote-author-${block.id}`}>
-                  Author (Optional)
-                </FieldLabel>
-                <Input
-                  id={`quote-author-${block.id}`}
-                  value={editedBlock.content.author || ""}
-                  onChange={(e) =>
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: {
-                        ...editedBlock.content,
-                        author: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="e.g., Founder"
-                  maxLength={100}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {(editedBlock.content.author || "").length}/100 characters
-                </p>
-              </Field>
-            </FieldGroup>
-          </div>
-
-          <div className="flex justify-end gap-2 mt-6 flex-shrink-0">
+      <BlockDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        title={`Edit ${BLOCK_METADATA.pullQuote.name}`}
+        description={BLOCK_METADATA.pullQuote.description}
+        size="md"
+        footer={
+          <>
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
             <Button onClick={handleSave}>Save</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      >
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor={`quote-text-${block.id}`}>
+              Quote Text
+            </FieldLabel>
+            <Textarea
+              id={`quote-text-${block.id}`}
+              value={editedBlock.content.text}
+              onChange={(e) =>
+                setEditedBlock({
+                  ...editedBlock,
+                  content: { ...editedBlock.content, text: e.target.value },
+                })
+              }
+              placeholder="Enter quote text..."
+              rows={4}
+              maxLength={500}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              {editedBlock.content.text.length}/500 characters
+            </p>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`quote-author-${block.id}`}>
+              Author (Optional)
+            </FieldLabel>
+            <Input
+              id={`quote-author-${block.id}`}
+              value={editedBlock.content.author || ""}
+              onChange={(e) =>
+                setEditedBlock({
+                  ...editedBlock,
+                  content: {
+                    ...editedBlock.content,
+                    author: e.target.value,
+                  },
+                })
+              }
+              placeholder="e.g., Founder"
+              maxLength={100}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              {(editedBlock.content.author || "").length}/100 characters
+            </p>
+          </Field>
+        </FieldGroup>
+      </BlockDialog>
 
       {/* WYSIWYG Block Display with hover/select states */}
       <PullQuote

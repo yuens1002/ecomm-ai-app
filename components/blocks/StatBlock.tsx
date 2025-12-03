@@ -13,13 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { BlockDialog } from "./BlockDialog";
 
 interface StatBlockProps {
   block: StatBlockType;
@@ -127,104 +121,98 @@ export function StatBlock({
   // Edit mode with dialog
   return (
     <>
-      <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="pr-8 flex-shrink-0">
-            <DialogTitle>
-              {isNew
-                ? `Add ${BLOCK_METADATA.stat.name}`
-                : `Edit ${BLOCK_METADATA.stat.name}`}
-            </DialogTitle>
-            <DialogDescription>
-              {BLOCK_METADATA.stat.description}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="overflow-y-auto flex-1 -mx-6 px-6">
-            <FieldGroup>
-              <Field>
-                <FormHeading
-                  htmlFor={`stat-value-${block.id}`}
-                  label="Value"
-                  required={true}
-                  validationType={errors.value ? "error" : undefined}
-                  isDirty={
-                    errors.value
-                      ? true
-                      : editedBlock.content.value !== block.content.value &&
-                        editedBlock.content.value !== ""
-                  }
-                  errorMessage={errors.value}
-                />
-                <Input
-                  id={`stat-value-${block.id}`}
-                  value={editedBlock.content.value}
-                  onChange={(e) => {
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: {
-                        ...editedBlock.content,
-                        value: e.target.value,
-                      },
-                    });
-                    if (errors.value)
-                      setErrors({ ...errors, value: undefined });
-                  }}
-                  placeholder="e.g., 25+"
-                  maxLength={50}
-                  className={errors.value ? "border-destructive" : ""}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {editedBlock.content.value.length}/50 characters
-                </p>
-              </Field>
-              <Field>
-                <FormHeading
-                  htmlFor={`stat-label-${block.id}`}
-                  label="Label"
-                  required={true}
-                  validationType={errors.label ? "error" : undefined}
-                  isDirty={
-                    errors.label
-                      ? true
-                      : editedBlock.content.label !== block.content.label &&
-                        editedBlock.content.label !== ""
-                  }
-                  errorMessage={errors.label}
-                />
-                <Input
-                  id={`stat-label-${block.id}`}
-                  value={editedBlock.content.label}
-                  onChange={(e) => {
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: {
-                        ...editedBlock.content,
-                        label: e.target.value,
-                      },
-                    });
-                    if (errors.label)
-                      setErrors({ ...errors, label: undefined });
-                  }}
-                  placeholder="e.g., Years of Experience"
-                  maxLength={50}
-                  className={errors.label ? "border-destructive" : ""}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {editedBlock.content.label.length}/50 characters
-                </p>
-              </Field>
-            </FieldGroup>
-          </div>
-
-          <div className="flex justify-end gap-2 mt-6 flex-shrink-0">
+      <BlockDialog
+        open={isDialogOpen}
+        onOpenChange={handleDialogChange}
+        title={
+          isNew
+            ? `Add ${BLOCK_METADATA.stat.name}`
+            : `Edit ${BLOCK_METADATA.stat.name}`
+        }
+        description={BLOCK_METADATA.stat.description}
+        size="md"
+        footer={
+          <>
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
             <Button onClick={handleSave}>{isNew ? "Add" : "Save"}</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      >
+        <FieldGroup>
+          <Field>
+            <FormHeading
+              htmlFor={`stat-value-${block.id}`}
+              label="Value"
+              required={true}
+              validationType={errors.value ? "error" : undefined}
+              isDirty={
+                errors.value
+                  ? true
+                  : editedBlock.content.value !== block.content.value &&
+                    editedBlock.content.value !== ""
+              }
+              errorMessage={errors.value}
+            />
+            <Input
+              id={`stat-value-${block.id}`}
+              value={editedBlock.content.value}
+              onChange={(e) => {
+                setEditedBlock({
+                  ...editedBlock,
+                  content: {
+                    ...editedBlock.content,
+                    value: e.target.value,
+                  },
+                });
+                if (errors.value) setErrors({ ...errors, value: undefined });
+              }}
+              placeholder="e.g., 25+"
+              maxLength={50}
+              className={errors.value ? "border-destructive" : ""}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              {editedBlock.content.value.length}/50 characters
+            </p>
+          </Field>
+          <Field>
+            <FormHeading
+              htmlFor={`stat-label-${block.id}`}
+              label="Label"
+              required={true}
+              validationType={errors.label ? "error" : undefined}
+              isDirty={
+                errors.label
+                  ? true
+                  : editedBlock.content.label !== block.content.label &&
+                    editedBlock.content.label !== ""
+              }
+              errorMessage={errors.label}
+            />
+            <Input
+              id={`stat-label-${block.id}`}
+              value={editedBlock.content.label}
+              onChange={(e) => {
+                setEditedBlock({
+                  ...editedBlock,
+                  content: {
+                    ...editedBlock.content,
+                    label: e.target.value,
+                  },
+                });
+                if (errors.label) setErrors({ ...errors, label: undefined });
+              }}
+              placeholder="e.g., Years of Experience"
+              maxLength={50}
+              className={errors.label ? "border-destructive" : ""}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              {editedBlock.content.label.length}/50 characters
+            </p>
+          </Field>
+        </FieldGroup>
+      </BlockDialog>
 
       {/* WYSIWYG Block Display with hover/select states */}
       <StatCard

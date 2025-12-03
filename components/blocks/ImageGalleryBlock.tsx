@@ -9,13 +9,7 @@ import { Trash2, Plus, Upload } from "lucide-react";
 import { useState } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { EditableBlockWrapper } from "./EditableBlockWrapper";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { BlockDialog } from "./BlockDialog";
 
 interface GalleryGridProps {
   images: Array<{ url: string; alt?: string }>;
@@ -103,122 +97,117 @@ export function ImageGalleryBlock({
   // Edit mode with dialog
   return (
     <>
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="pr-8 shrink-0">
-            <DialogTitle>Edit Image Gallery Block</DialogTitle>
-            <DialogDescription>
-              Manage gallery images • {editedBlock.content.images.length} of 20
-              images
-            </DialogDescription>
-          </DialogHeader>
-
-          <FieldGroup>
-            {editedBlock.content.images.map((image, index) => (
-              <div key={index} className="border rounded-lg p-3 space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-semibold">
-                    Image {index + 1}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      const newImages = editedBlock.content.images.filter(
-                        (_, i) => i !== index
-                      );
-                      setEditedBlock({
-                        ...editedBlock,
-                        content: { images: newImages },
-                      });
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-                <Field>
-                  <FieldLabel htmlFor={`gallery-url-${block.id}-${index}`}>
-                    Image URL
-                  </FieldLabel>
-                  <div className="flex gap-2">
-                    <Input
-                      id={`gallery-url-${block.id}-${index}`}
-                      value={image.url}
-                      onChange={(e) => {
-                        const newImages = [...editedBlock.content.images];
-                        newImages[index] = { ...image, url: e.target.value };
-                        setEditedBlock({
-                          ...editedBlock,
-                          content: { images: newImages },
-                        });
-                      }}
-                      placeholder="/images/gallery-1.jpg"
-                    />
-                    <Button variant="outline" size="icon">
-                      <Upload className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor={`gallery-alt-${block.id}-${index}`}>
-                    Alt Text
-                  </FieldLabel>
-                  <Input
-                    id={`gallery-alt-${block.id}-${index}`}
-                    value={image.alt || ""}
-                    onChange={(e) => {
-                      const newImages = [...editedBlock.content.images];
-                      newImages[index] = { ...image, alt: e.target.value };
-                      setEditedBlock({
-                        ...editedBlock,
-                        content: { images: newImages },
-                      });
-                    }}
-                    placeholder="Describe the image..."
-                    maxLength={200}
-                  />
-                </Field>
-                {image.url && (
-                  <div className="relative h-32 w-full rounded overflow-hidden">
-                    <Image
-                      src={image.url}
-                      alt="Preview"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {editedBlock.content.images.length < 20 && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const newImages = [
-                    ...editedBlock.content.images,
-                    { url: "", alt: "" },
-                  ];
-                  setEditedBlock({
-                    ...editedBlock,
-                    content: { images: newImages },
-                  });
-                }}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Image
-              </Button>
-            )}
-          </FieldGroup>
-
-          <div className="flex justify-end gap-2 mt-6">
+      <BlockDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        title="Edit Image Gallery Block"
+        description={`Manage gallery images • ${editedBlock.content.images.length} of 20 images`}
+        size="lg"
+        footer={
+          <>
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
             <Button onClick={handleSave}>Save</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      >
+        <FieldGroup>
+          {editedBlock.content.images.map((image, index) => (
+            <div key={index} className="border rounded-lg p-3 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-semibold">Image {index + 1}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    const newImages = editedBlock.content.images.filter(
+                      (_, i) => i !== index
+                    );
+                    setEditedBlock({
+                      ...editedBlock,
+                      content: { images: newImages },
+                    });
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+              <Field>
+                <FieldLabel htmlFor={`gallery-url-${block.id}-${index}`}>
+                  Image URL
+                </FieldLabel>
+                <div className="flex gap-2">
+                  <Input
+                    id={`gallery-url-${block.id}-${index}`}
+                    value={image.url}
+                    onChange={(e) => {
+                      const newImages = [...editedBlock.content.images];
+                      newImages[index] = { ...image, url: e.target.value };
+                      setEditedBlock({
+                        ...editedBlock,
+                        content: { images: newImages },
+                      });
+                    }}
+                    placeholder="/images/gallery-1.jpg"
+                  />
+                  <Button variant="outline" size="icon">
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor={`gallery-alt-${block.id}-${index}`}>
+                  Alt Text
+                </FieldLabel>
+                <Input
+                  id={`gallery-alt-${block.id}-${index}`}
+                  value={image.alt || ""}
+                  onChange={(e) => {
+                    const newImages = [...editedBlock.content.images];
+                    newImages[index] = { ...image, alt: e.target.value };
+                    setEditedBlock({
+                      ...editedBlock,
+                      content: { images: newImages },
+                    });
+                  }}
+                  placeholder="Describe the image..."
+                  maxLength={200}
+                />
+              </Field>
+              {image.url && (
+                <div className="relative h-32 w-full rounded overflow-hidden">
+                  <Image
+                    src={image.url}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+
+          {editedBlock.content.images.length < 20 && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                const newImages = [
+                  ...editedBlock.content.images,
+                  { url: "", alt: "" },
+                ];
+                setEditedBlock({
+                  ...editedBlock,
+                  content: { images: newImages },
+                });
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Image
+            </Button>
+          )}
+        </FieldGroup>
+      </BlockDialog>
 
       {/* WYSIWYG Block Display with hover/select states */}
       <EditableBlockWrapper
