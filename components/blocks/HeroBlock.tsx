@@ -12,6 +12,8 @@ import { Hero } from "@/components/app-components/Hero";
 import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import { BlockDialog } from "./BlockDialog";
 import { ImageField } from "@/components/app-components/ImageField";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { useValidation } from "@/hooks/useFormDialog";
 
 interface HeroBlockProps {
   block: HeroBlockType;
@@ -36,11 +38,20 @@ export function HeroBlock({
 }: HeroBlockProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editedBlock, setEditedBlock] = useState(block);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [errors, setErrors] = useState<{ title?: string; imageUrl?: string }>(
-    {}
-  );
+
+  // Use validation hook for error state and toast
+  const { errors, hasErrors, clearError, clearAllErrors, showValidationError } =
+    useValidation<{ title?: string; imageUrl?: string }>();
+
+  // Use shared image upload hook
+  const {
+    pendingFile,
+    previewUrl,
+    isDirty: isImageDirty,
+    handleFileSelect: handleImageSelect,
+    uploadFile,
+    reset: resetImage,
+  } = useImageUpload({ currentUrl: block.content.imageUrl });
 
   // Sync editedBlock with block prop when it changes (after save)
   useEffect(() => {
@@ -90,40 +101,26 @@ export function HeroBlock({
       fieldErrors.imageUrl = "Image is required";
     }
 
-    if (Object.keys(fieldErrors).length > 0) {
-      setErrors(fieldErrors);
+    // Show toast and set errors if validation fails
+    if (!showValidationError(fieldErrors)) {
       return;
     }
 
-    setErrors({});
     let finalBlock = editedBlock;
 
-    // Upload pending file if exists
+    // Upload pending file if exists (hook handles old image cleanup)
     if (pendingFile) {
       try {
-        const formData = new FormData();
-        formData.append("file", pendingFile);
-        formData.append("oldPath", block.content.imageUrl);
-
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error("Upload failed");
+        const newPath = await uploadFile();
+        if (newPath) {
+          finalBlock = {
+            ...editedBlock,
+            content: {
+              ...editedBlock.content,
+              imageUrl: newPath,
+            },
+          };
         }
-
-        const data = await response.json();
-
-        // Update with the actual uploaded path
-        finalBlock = {
-          ...editedBlock,
-          content: {
-            ...editedBlock.content,
-            imageUrl: data.path,
-          },
-        };
       } catch (error) {
         console.error("Upload error:", error);
         alert("Failed to upload image. Please try again.");
@@ -132,23 +129,14 @@ export function HeroBlock({
     }
 
     onUpdate?.(finalBlock);
-    setPendingFile(null);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
     setIsDialogOpen(false);
   };
 
   // Cancel changes
   const handleCancel = () => {
     setEditedBlock(block);
-    setPendingFile(null);
-    setErrors({});
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
+    resetImage();
+    clearAllErrors();
     setIsDialogOpen(false);
   };
 
@@ -166,7 +154,9 @@ export function HeroBlock({
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave} disabled={hasErrors}>
+              Save
+            </Button>
           </>
         }
       >
@@ -191,7 +181,7 @@ export function HeroBlock({
                     title: e.target.value,
                   },
                 });
-                if (errors.title) setErrors({ ...errors, title: undefined });
+                if (errors.title) clearError("title");
               }}
               placeholder="e.g., About Our Roastery"
               maxLength={100}
@@ -208,52 +198,29 @@ export function HeroBlock({
             value={editedBlock.content.imageUrl}
             pendingFile={pendingFile}
             previewUrl={previewUrl}
-            onFileSelect={(file, preview) => {
-              setPendingFile(file);
-              setPreviewUrl(preview);
-              if (errors.imageUrl)
-                setErrors({ ...errors, imageUrl: undefined });
-            }}
-            onClear={() => {
-              setPendingFile(null);
-              if (previewUrl) URL.revokeObjectURL(previewUrl);
-              setPreviewUrl(null);
-              setEditedBlock({
-                ...editedBlock,
-                content: { ...editedBlock.content, imageUrl: "" },
-              });
+            onFileSelect={(file, imageFieldPreview) => {
+              try {
+                handleImageSelect(file, imageFieldPreview);
+                if (errors.imageUrl) clearError("imageUrl");
+              } catch (err) {
+                alert(err instanceof Error ? err.message : "Invalid file");
+              }
             }}
             error={errors.imageUrl}
             isDirty={
               editedBlock.content.imageUrl !== block.content.imageUrl ||
-              pendingFile !== null
+              isImageDirty
             }
-            previewAlt={editedBlock.content.imageAlt || "Hero preview"}
+            showAltText
+            altText={editedBlock.content.imageAlt || ""}
+            onAltTextChange={(alt) =>
+              setEditedBlock({
+                ...editedBlock,
+                content: { ...editedBlock.content, imageAlt: alt },
+              })
+            }
+            altTextMaxLength={200}
           />
-          <Field>
-            <FormHeading
-              htmlFor={`hero-alt-${block.id}`}
-              label="Image Alt Text"
-            />
-            <Input
-              id={`hero-alt-${block.id}`}
-              value={editedBlock.content.imageAlt || ""}
-              onChange={(e) =>
-                setEditedBlock({
-                  ...editedBlock,
-                  content: {
-                    ...editedBlock.content,
-                    imageAlt: e.target.value,
-                  },
-                })
-              }
-              placeholder="Describe the image..."
-              maxLength={200}
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              {(editedBlock.content.imageAlt || "").length}/200 characters
-            </p>
-          </Field>
           <Field>
             <FormHeading htmlFor={`hero-caption-${block.id}`} label="Caption" />
             <Input

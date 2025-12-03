@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.29.2 - 2025-12-04
+
+- **DRY Image Upload & Validation System**: Centralized hooks and reusable components for consistent image handling across all block dialogs
+  - Created `useImageUpload` and `useMultiImageUpload` hooks with deferred upload pattern, auto-sync, and cleanup
+  - Added `useValidation` hook for centralized error toast notifications and save button disable on validation failure
+  - Built reusable `ImageCard` component with position controls (move up/down, add after, delete) and highlight animation
+  - Highlight-pulse animation scrolls to and highlights newly added items for better UX
+
 ## 0.29.1 - 2025-12-03
 
 - **Form Field Standardization**: Consistent UI across all block dialogs

@@ -147,3 +147,20 @@ We define CSS variables for each theme.
     display: none;
   }
 }
+
+/* Highlight animation for newly added items */
+@keyframes highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 oklch(0.6 0.15 250 / 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 4px oklch(0.6 0.15 250 / 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 0 oklch(0.6 0.15 250 / 0);
+  }
+}
+
+.animate-highlight-pulse {
+  animation: highlight-pulse 0.6s ease-out 2;
+}

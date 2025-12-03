@@ -7,13 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
-import Image from "next/image";
 import { ImageCarousel } from "@/components/app-components/ImageCarousel";
 import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import { BlockDialog } from "./BlockDialog";
-import { ImageUpload } from "@/components/ui/ImageUpload";
+import { ImageListField } from "@/components/app-components/ImageListField";
+import { useMultiImageUpload } from "@/hooks/useImageUpload";
 
 interface LocationBlockProps {
   block: LocationBlockType;
@@ -39,6 +39,26 @@ export function LocationBlock({
   const [errors, setErrors] = useState<{ [key: string]: string | undefined }>(
     {}
   );
+
+  // Use shared multi-image upload hook
+  const {
+    uploadAll,
+    reset: resetImages,
+    // ImageListField compatibility
+    imageListFieldImages,
+    pendingFilesMap,
+    handleImageListFieldFileSelect,
+    handleImageListFieldChange,
+  } = useMultiImageUpload({
+    currentImages: block.content.images || [],
+    minImages: 1,
+    maxImages: 10,
+  });
+
+  // Sync editedBlock when block prop changes (after save)
+  useEffect(() => {
+    setEditedBlock(block);
+  }, [block]);
 
   // Deleted/disabled state
   if (block.isDeleted) {
@@ -68,23 +88,42 @@ export function LocationBlock({
     if (!editedBlock.content.address?.trim()) {
       newErrors.address = "Address is required";
     }
+    if (!editedBlock.content.googleMapsUrl?.trim()) {
+      newErrors.googleMapsUrl = "Google Maps URL is required";
+    } else {
+      try {
+        new URL(editedBlock.content.googleMapsUrl);
+      } catch {
+        newErrors.googleMapsUrl = "Must be a valid URL";
+      }
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   // Save changes from dialog
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateBlock()) return;
 
-    // No need to upload images - they're uploaded immediately on selection
-    // Just save the edited block
-    onUpdate?.(editedBlock);
-    setIsDialogOpen(false);
+    try {
+      // Upload all pending files (hook handles old image cleanup)
+      const uploadedImages = await uploadAll();
+
+      onUpdate?.({
+        ...editedBlock,
+        content: { ...editedBlock.content, images: uploadedImages },
+      });
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Failed to upload images. Please try again.");
+    }
   };
 
   // Cancel changes
   const handleCancel = () => {
+    resetImages();
     setEditedBlock(block);
     setErrors({});
     setIsDialogOpen(false);
@@ -121,17 +160,6 @@ export function LocationBlock({
         ...editedBlock.content,
         schedule:
           editedBlock.content.schedule?.filter((_, i) => i !== index) || [],
-      },
-    });
-  };
-
-  // Remove image
-  const removeImage = (index: number) => {
-    setEditedBlock({
-      ...editedBlock,
-      content: {
-        ...editedBlock.content,
-        images: editedBlock.content.images?.filter((_, i) => i !== index) || [],
       },
     });
   };
@@ -247,10 +275,13 @@ export function LocationBlock({
             <FormHeading
               htmlFor="location-maps"
               label="Google Maps URL"
+              required
               isDirty={
                 (editedBlock.content.googleMapsUrl || "") !==
                 (block.content.googleMapsUrl || "")
               }
+              validationType={errors.googleMapsUrl ? "error" : undefined}
+              errorMessage={errors.googleMapsUrl}
             />
             <Input
               id="location-maps"
@@ -265,7 +296,11 @@ export function LocationBlock({
                 })
               }
               placeholder="https://maps.google.com/..."
+              className={errors.googleMapsUrl ? "border-destructive" : ""}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Open Google Maps, search your address, click Share → Copy link
+            </p>
           </Field>
 
           {/* Description */}
@@ -372,57 +407,15 @@ export function LocationBlock({
           </Field>
 
           {/* Images */}
-          <Field>
-            <FormHeading htmlFor="location-photos" label="Photos" />
-            <div className="space-y-4">
-              {/* Image grid with previews */}
-              {editedBlock.content.images &&
-                editedBlock.content.images.length > 0 && (
-                  <div className="grid grid-cols-3 gap-3">
-                    {editedBlock.content.images.map((img, index) => (
-                      <div
-                        key={index}
-                        className="relative aspect-4/3 rounded-lg overflow-hidden border"
-                      >
-                        <Image
-                          src={img.url}
-                          alt={img.alt || "Location photo"}
-                          fill
-                          className="object-cover"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-2 right-2 h-7 w-7 p-0"
-                          onClick={() => removeImage(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-              {/* Upload new image */}
-              <ImageUpload
-                onUploadComplete={(url) => {
-                  setEditedBlock({
-                    ...editedBlock,
-                    content: {
-                      ...editedBlock.content,
-                      images: [
-                        ...(editedBlock.content.images || []),
-                        { url, alt: "Location photo" },
-                      ],
-                    },
-                  });
-                }}
-                aspectRatio="4/3"
-                showPreview={false}
-              />
-            </div>
-          </Field>
+          <ImageListField
+            label="Photos"
+            required
+            minImages={1}
+            images={imageListFieldImages}
+            onChange={handleImageListFieldChange}
+            pendingFiles={pendingFilesMap}
+            onFileSelect={handleImageListFieldFileSelect}
+          />
         </FieldGroup>
       </BlockDialog>
 

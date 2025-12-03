@@ -46,7 +46,11 @@ export function FormHeading({
 }: FormHeadingProps) {
   const style = validationStyles[validationType];
   const message = errorMessage || style.defaultMessage;
-  const showIndicator = isDirty || (validationType === "required" && required);
+  // Show indicator when: dirty, required field indicator needed, or has error
+  const showIndicator =
+    isDirty ||
+    (validationType === "required" && required) ||
+    (validationType === "error" && errorMessage);
 
   // If htmlFor is provided, render as proper label; otherwise just styled text
   const LabelContent = (

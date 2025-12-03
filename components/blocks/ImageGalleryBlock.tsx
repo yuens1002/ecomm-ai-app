@@ -7,10 +7,12 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Upload } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import { BlockDialog } from "./BlockDialog";
+import { useMultiImageUpload } from "@/hooks/useImageUpload";
+import { ImageCard } from "@/components/app-components/ImageCard";
 
 interface GalleryGridProps {
   images: Array<{ url: string; alt?: string }>;
@@ -64,9 +66,33 @@ export function ImageGalleryBlock({
 }: ImageGalleryBlockProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editedBlock, setEditedBlock] = useState(block);
-  const [pendingFiles, setPendingFiles] = useState<
-    Map<number, { file: File; previewUrl: string }>
-  >(new Map());
+
+  // Use shared multi-image upload hook
+  const {
+    images,
+    addImage,
+    addImageAfter,
+    removeImage,
+    moveUp,
+    moveDown,
+    handleFileSelect: handleImageSelect,
+    updateAlt,
+    uploadAll,
+    reset: resetImages,
+    canAdd,
+    canRemove,
+    highlightedIndex,
+    setCardRef,
+  } = useMultiImageUpload({
+    currentImages: block.content.images,
+    minImages: 0,
+    maxImages: 20,
+  });
+
+  // Sync editedBlock with block prop when it changes (after save)
+  useEffect(() => {
+    setEditedBlock(block);
+  }, [block]);
 
   // Deleted/disabled state
   if (block.isDeleted) {
@@ -86,79 +112,26 @@ export function ImageGalleryBlock({
     return <GalleryGrid images={block.content.images} />;
   }
 
-  // Handle file selection for an image
-  const handleFileSelect = (index: number, file: File) => {
-    // Validate file
-    if (file.size > 5 * 1024 * 1024) {
-      alert("File size must be less than 5MB");
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      alert("File must be an image");
-      return;
-    }
-
-    // Clean up old preview URL if exists
-    const oldPending = pendingFiles.get(index);
-    if (oldPending) {
-      URL.revokeObjectURL(oldPending.previewUrl);
-    }
-
-    // Create preview URL
-    const previewUrl = URL.createObjectURL(file);
-    setPendingFiles(new Map(pendingFiles.set(index, { file, previewUrl })));
-  };
-
   // Save changes from dialog
   const handleSave = async () => {
-    // Upload any pending files
-    const updatedImages = await Promise.all(
-      editedBlock.content.images.map(async (image, index) => {
-        const pending = pendingFiles.get(index);
-        if (pending) {
-          try {
-            const formData = new FormData();
-            formData.append("file", pending.file);
-            if (image.url) {
-              formData.append("oldPath", image.url);
-            }
+    try {
+      // Upload all pending files (hook handles old image cleanup)
+      const uploadedImages = await uploadAll();
 
-            const response = await fetch("/api/upload", {
-              method: "POST",
-              body: formData,
-            });
-
-            if (!response.ok) {
-              throw new Error("Upload failed");
-            }
-
-            const data = await response.json();
-            return { ...image, url: data.path };
-          } catch (error) {
-            console.error("Upload error:", error);
-            return image;
-          }
-        }
-        return image;
-      })
-    );
-
-    // Clean up preview URLs
-    pendingFiles.forEach((pending) => URL.revokeObjectURL(pending.previewUrl));
-    setPendingFiles(new Map());
-
-    onUpdate?.({
-      ...editedBlock,
-      content: { images: updatedImages },
-    });
-    setIsDialogOpen(false);
+      onUpdate?.({
+        ...editedBlock,
+        content: { images: uploadedImages },
+      });
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Failed to upload images. Please try again.");
+    }
   };
 
   // Cancel changes
   const handleCancel = () => {
-    // Clean up preview URLs
-    pendingFiles.forEach((pending) => URL.revokeObjectURL(pending.previewUrl));
-    setPendingFiles(new Map());
+    resetImages();
     setEditedBlock(block);
     setIsDialogOpen(false);
   };
@@ -170,7 +143,7 @@ export function ImageGalleryBlock({
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         title="Edit Image Gallery Block"
-        description={`Manage gallery images • ${editedBlock.content.images.length} of 20 images`}
+        description={`Manage gallery images • ${images.length} of 20 images`}
         size="lg"
         footer={
           <>
@@ -182,49 +155,31 @@ export function ImageGalleryBlock({
         }
       >
         <FieldGroup>
-          {editedBlock.content.images.map((image, index) => {
-            const pending = pendingFiles.get(index);
-            const displayUrl = pending?.previewUrl || image.url;
+          {images.map((image, index) => {
+            const displayUrl = image.previewUrl || image.url;
 
             return (
-              <div key={index} className="border rounded-lg p-3 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold">
-                    Image {index + 1}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      // Clean up pending if exists
-                      const oldPending = pendingFiles.get(index);
-                      if (oldPending) {
-                        URL.revokeObjectURL(oldPending.previewUrl);
-                        const newPending = new Map(pendingFiles);
-                        newPending.delete(index);
-                        setPendingFiles(newPending);
-                      }
-
-                      const newImages = editedBlock.content.images.filter(
-                        (_, i) => i !== index
-                      );
-                      setEditedBlock({
-                        ...editedBlock,
-                        content: { images: newImages },
-                      });
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
+              <ImageCard
+                key={index}
+                ref={(el) => setCardRef(index, el)}
+                index={index}
+                total={images.length}
+                label="Image"
+                isHighlighted={highlightedIndex === index}
+                canAdd={canAdd}
+                canDelete={canRemove}
+                onMoveUp={() => moveUp(index)}
+                onMoveDown={() => moveDown(index)}
+                onAdd={() => addImageAfter(index)}
+                onRemove={() => removeImage(index)}
+              >
                 {/* Image Preview & Upload */}
-                <div className="relative h-32 w-full rounded-lg overflow-hidden border">
+                <div className="relative h-32 w-full rounded-lg overflow-hidden border mb-3">
                   {displayUrl ? (
                     <>
-                      {pending ? (
+                      {image.previewUrl ? (
                         <img
-                          src={pending.previewUrl}
+                          src={image.previewUrl}
                           alt="Preview"
                           className="w-full h-full object-cover"
                         />
@@ -244,7 +199,17 @@ export function ImageGalleryBlock({
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) handleFileSelect(index, file);
+                            if (file) {
+                              try {
+                                handleImageSelect(index, file);
+                              } catch (err) {
+                                alert(
+                                  err instanceof Error
+                                    ? err.message
+                                    : "Invalid file"
+                                );
+                              }
+                            }
                           }}
                         />
                       </label>
@@ -261,7 +226,17 @@ export function ImageGalleryBlock({
                         className="hidden"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) handleFileSelect(index, file);
+                          if (file) {
+                            try {
+                              handleImageSelect(index, file);
+                            } catch (err) {
+                              alert(
+                                err instanceof Error
+                                  ? err.message
+                                  : "Invalid file"
+                              );
+                            }
+                          }
                         }}
                       />
                     </label>
@@ -280,14 +255,7 @@ export function ImageGalleryBlock({
                   <Input
                     id={`gallery-alt-${block.id}-${index}`}
                     value={image.alt || ""}
-                    onChange={(e) => {
-                      const newImages = [...editedBlock.content.images];
-                      newImages[index] = { ...image, alt: e.target.value };
-                      setEditedBlock({
-                        ...editedBlock,
-                        content: { images: newImages },
-                      });
-                    }}
+                    onChange={(e) => updateAlt(index, e.target.value)}
                     placeholder="Describe the image..."
                     maxLength={200}
                   />
@@ -295,24 +263,13 @@ export function ImageGalleryBlock({
                     {(image.alt || "").length}/200 characters
                   </p>
                 </Field>
-              </div>
+              </ImageCard>
             );
           })}
 
-          {editedBlock.content.images.length < 20 && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                const newImages = [
-                  ...editedBlock.content.images,
-                  { url: "", alt: "" },
-                ];
-                setEditedBlock({
-                  ...editedBlock,
-                  content: { images: newImages },
-                });
-              }}
-            >
+          {/* Empty state - show Add button only when no images */}
+          {images.length === 0 && (
+            <Button variant="outline" onClick={addImage}>
               <Plus className="h-4 w-4 mr-2" />
               Add Image
             </Button>

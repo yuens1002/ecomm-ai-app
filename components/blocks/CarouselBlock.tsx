@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, forwardRef } from "react";
 import {
   ImageCarouselBlock,
   LocationCarouselBlock,
@@ -18,13 +18,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Pencil, Plus, X, ArrowRight, Trash2 } from "lucide-react";
+import { Pencil, Plus, ArrowRight, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
-import { PendingImageUpload } from "@/components/ui/PendingImageUpload";
+import { ImageField } from "@/components/app-components/ImageField";
+import { ImageCard } from "@/components/app-components/ImageCard";
 import { CarouselDots } from "@/components/app-components/CarouselDots";
 import { EditableBlockWrapper } from "./EditableBlockWrapper";
+import { useMultiImageUpload } from "@/hooks/useImageUpload";
+import { useValidation } from "@/hooks/useFormDialog";
 
 type CarouselBlockType = ImageCarouselBlock | LocationCarouselBlock;
 
@@ -324,15 +327,11 @@ interface EditCarouselDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type SlideUnit = {
-  type: "image" | "locationPreview";
-  url: string;
-  alt: string;
-  title?: string;
-  description?: string;
-  locationBlockId?: string; // Required for locationPreview (1-to-1 relationship)
-  pendingFile?: File;
-  previewUrl?: string;
+// Metadata for location carousel slides (separate from image data managed by hook)
+type SlideMetadata = {
+  title: string;
+  description: string;
+  locationBlockId: string;
 };
 
 function EditCarouselDialog({
@@ -341,10 +340,35 @@ function EditCarouselDialog({
   open,
   onOpenChange,
 }: EditCarouselDialogProps) {
-  const [carouselType, setCarouselType] = useState<
-    "image" | "locationPreview" | null
-  >(null);
-  const [slideUnits, setSlideUnits] = useState<SlideUnit[]>([]);
+  const isLocationCarousel = block.type === "locationCarousel";
+
+  // Extract images from slides for the hook
+  const currentImages = block.content.slides.map((slide: any) => ({
+    url: slide.url,
+    alt: slide.alt,
+  }));
+
+  // Use shared multi-image upload hook for image handling
+  const {
+    images,
+    addImage,
+    addImageAfter,
+    removeImage,
+    moveUp,
+    moveDown,
+    handleFileSelect,
+    updateAlt,
+    uploadAll,
+    reset: resetImages,
+    canAdd,
+  } = useMultiImageUpload({
+    currentImages,
+    minImages: 1,
+    maxImages: 20,
+  });
+
+  // Separate state for location carousel metadata (title, description, locationBlockId)
+  const [slideMetadata, setSlideMetadata] = useState<SlideMetadata[]>([]);
   const [autoScroll, setAutoScroll] = useState(
     block.content.autoScroll ?? true
   );
@@ -352,311 +376,210 @@ function EditCarouselDialog({
     block.content.intervalSeconds ?? 5
   );
   const [isSaving, setIsSaving] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Get available location blocks from the page (for existing blocks only)
-  const availableLocations = (() => {
-    if (typeof document === "undefined") return [];
-    const locationElements = document.querySelectorAll("[data-location-id]");
-    return Array.from(locationElements).map((el) => ({
-      id: el.getAttribute("data-location-id") || "",
-      name: el.getAttribute("data-location-name") || "",
-    }));
-  })();
+  // Use validation hook for error state and toast
+  const { errors, hasErrors, clearError, clearAllErrors, showValidationError } =
+    useValidation<Record<string, string>>();
 
-  // Initialize dialog state when opened
+  // Track newly added slide for highlight animation
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+  const slideRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  // Initialize metadata when dialog opens
   useEffect(() => {
-    if (open) {
-      // Determine type from block.type (imageCarousel or locationCarousel)
-      const isLocationCarousel = block.type === "locationCarousel";
-      const slideType = isLocationCarousel ? "locationPreview" : "image";
-      setCarouselType(slideType);
-
-      const slides = block.content.slides;
+    if (open && isLocationCarousel) {
+      const slides = block.content.slides as any[];
       if (slides.length > 0) {
-        // Convert slides to units
-        const units: SlideUnit[] = slides.map((slide: any) => ({
-          type: slideType,
-          url: slide.url,
-          alt: slide.alt,
-          title: isLocationCarousel ? slide.title : undefined,
-          description: isLocationCarousel ? slide.description : undefined,
-          locationBlockId: isLocationCarousel
-            ? slide.locationBlockId
-            : undefined,
-        }));
-        setSlideUnits(units);
+        setSlideMetadata(
+          slides.map((slide) => ({
+            title: slide.title || "",
+            description: slide.description || "",
+            locationBlockId:
+              slide.locationBlockId || `temp-${Date.now()}-${Math.random()}`,
+          }))
+        );
       } else {
-        // Empty carousel - initialize with one empty slide
-        setSlideUnits([
+        setSlideMetadata([
           {
-            type: slideType,
-            url: "",
-            alt: "",
-            ...(isLocationCarousel && {
-              title: "",
-              description: "",
-              locationBlockId: undefined,
-            }),
+            title: "",
+            description: "",
+            locationBlockId: `temp-${Date.now()}-${Math.random()}`,
           },
         ]);
       }
+    }
+    if (open) {
       setAutoScroll(block.content.autoScroll ?? true);
       setIntervalSeconds(block.content.intervalSeconds ?? 5);
-      setErrors({});
+      clearAllErrors();
     }
-  }, [open, block]);
+  }, [open, block, isLocationCarousel]);
 
-  // Type is now immutable - determined by block.type at creation time
-
-  const handleAddUnit = (afterIndex?: number) => {
-    if (!carouselType) return;
-
-    const newUnit: SlideUnit = {
-      type: carouselType,
-      url: "",
-      alt: "",
-      ...(carouselType === "locationPreview" && {
-        title: "",
-        description: "",
-        locationBlockId: `temp-${Date.now()}-${Math.random()}`, // Temporary ID for new location block
-      }),
-    };
-
-    if (afterIndex !== undefined) {
-      // Insert after specific index
-      const updated = [...slideUnits];
-      updated.splice(afterIndex + 1, 0, newUnit);
-      setSlideUnits(updated);
-    } else {
-      // Add to end
-      setSlideUnits([...slideUnits, newUnit]);
+  // Keep metadata array in sync with images array length
+  const handleAddSlide = () => {
+    const newIndex = images.length;
+    addImage();
+    if (isLocationCarousel) {
+      setSlideMetadata((prev) => [
+        ...prev,
+        {
+          title: "",
+          description: "",
+          locationBlockId: `temp-${Date.now()}-${Math.random()}`,
+        },
+      ]);
     }
+    // Highlight and scroll to new slide
+    setHighlightedIndex(newIndex);
+    setTimeout(() => {
+      slideRefs.current
+        .get(newIndex)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+    setTimeout(() => setHighlightedIndex(null), 1500);
   };
 
-  const handleRemoveUnit = (index: number) => {
-    const unitToRemove = slideUnits[index];
-
-    // If it's a location preview with a location block, we'll mark it for deletion
-    // (The actual deletion happens in the parent page editor, not here)
-    // For now, just remove from slides
-
-    const updated = slideUnits.filter((_, i) => i !== index);
-    setSlideUnits(updated);
-
-    // Note: If locationBlockId is a real ID (not temp-*),
-    // the parent component should handle cascading delete
-  };
-
-  const handleMoveUp = (index: number) => {
-    if (index > 0) {
-      const updated = [...slideUnits];
-      [updated[index - 1], updated[index]] = [
-        updated[index],
-        updated[index - 1],
-      ];
-      setSlideUnits(updated);
+  const handleAddSlideAfter = (index: number) => {
+    const newIndex = index + 1;
+    addImageAfter(index);
+    if (isLocationCarousel) {
+      setSlideMetadata((prev) => {
+        const updated = [...prev];
+        updated.splice(index + 1, 0, {
+          title: "",
+          description: "",
+          locationBlockId: `temp-${Date.now()}-${Math.random()}`,
+        });
+        return updated;
+      });
     }
+    // Highlight and scroll to new slide
+    setHighlightedIndex(newIndex);
+    setTimeout(() => {
+      slideRefs.current
+        .get(newIndex)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+    setTimeout(() => setHighlightedIndex(null), 1500);
   };
 
-  const handleMoveDown = (index: number) => {
-    if (index < slideUnits.length - 1) {
-      const updated = [...slideUnits];
-      [updated[index], updated[index + 1]] = [
-        updated[index + 1],
-        updated[index],
-      ];
-      setSlideUnits(updated);
+  const handleRemoveSlide = (index: number) => {
+    removeImage(index);
+    if (isLocationCarousel) {
+      setSlideMetadata((prev) => prev.filter((_, i) => i !== index));
     }
   };
 
-  const handleImageSelect = (index: number, file: File) => {
-    const updated = [...slideUnits];
-
-    // Create preview URL
-    if (updated[index].previewUrl) {
-      URL.revokeObjectURL(updated[index].previewUrl!);
+  const handleMoveSlideUp = (index: number) => {
+    moveUp(index);
+    if (isLocationCarousel && index > 0) {
+      setSlideMetadata((prev) => {
+        const updated = [...prev];
+        [updated[index - 1], updated[index]] = [
+          updated[index],
+          updated[index - 1],
+        ];
+        return updated;
+      });
     }
-    const previewUrl = URL.createObjectURL(file);
-
-    updated[index] = {
-      ...updated[index],
-      pendingFile: file,
-      previewUrl,
-    };
-    setSlideUnits(updated);
   };
 
-  const handleRemoveImage = (index: number) => {
-    const updated = [...slideUnits];
-    if (updated[index].previewUrl) {
-      URL.revokeObjectURL(updated[index].previewUrl!);
+  const handleMoveSlideDown = (index: number) => {
+    moveDown(index);
+    if (isLocationCarousel && index < slideMetadata.length - 1) {
+      setSlideMetadata((prev) => {
+        const updated = [...prev];
+        [updated[index], updated[index + 1]] = [
+          updated[index + 1],
+          updated[index],
+        ];
+        return updated;
+      });
     }
-    updated[index] = {
-      ...updated[index],
-      url: "",
-      pendingFile: undefined,
-      previewUrl: undefined,
-    };
-    setSlideUnits(updated);
   };
 
-  const handleFieldChange = (
+  const updateMetadata = (
     index: number,
-    field: keyof SlideUnit,
-    value: any
+    field: keyof SlideMetadata,
+    value: string
   ) => {
-    const updated = [...slideUnits];
-    updated[index] = {
-      ...updated[index],
-      [field]: value,
-    };
-    setSlideUnits(updated);
+    setSlideMetadata((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
 
   const validateSlides = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    slideUnits.forEach((unit, index) => {
+    images.forEach((image, index) => {
       // Check image
-      if (!unit.url && !unit.pendingFile) {
+      if (!image.url && !image.pendingFile) {
         newErrors[`${index}-image`] = "Image is required";
       }
 
       // Check alt text
-      if (!unit.alt.trim()) {
+      if (!image.alt.trim()) {
         newErrors[`${index}-alt`] = "Alt text is required";
       }
 
       // Check location preview fields
-      if (unit.type === "locationPreview") {
-        if (!unit.title?.trim()) {
+      if (isLocationCarousel) {
+        const meta = slideMetadata[index];
+        if (!meta?.title?.trim()) {
           newErrors[`${index}-title`] = "Title is required";
         }
-        if (!unit.description?.trim()) {
+        if (!meta?.description?.trim()) {
           newErrors[`${index}-description`] = "Description is required";
-        }
-        if (!unit.locationBlockId) {
-          newErrors[`${index}-location`] = "Location block ID is required";
         }
       }
     });
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const uploadImage = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to upload image");
-    }
-
-    const data = await response.json();
-    return data.path; // API returns "path" not "url"
+    // Show toast and set errors if validation fails
+    return showValidationError(newErrors);
   };
 
   const handleSave = async () => {
-    console.log("CarouselBlock - handleSave called");
-    if (!onUpdate || !carouselType) {
-      console.log(
-        "CarouselBlock - Early return: onUpdate:",
-        !!onUpdate,
-        "carouselType:",
-        carouselType
-      );
-      return;
-    }
+    if (!onUpdate) return;
 
-    // Validate all slides
-    console.log("CarouselBlock - Validating slides...");
-    if (!validateSlides()) {
-      console.log("CarouselBlock - Validation failed");
-      return;
-    }
+    if (!validateSlides()) return;
 
     setIsSaving(true);
 
     try {
-      console.log("CarouselBlock - slideUnits before processing:", slideUnits);
+      // Upload all pending images (hook handles old image cleanup)
+      const uploadedImages = await uploadAll();
 
-      // Upload all pending images
-      const slidesWithUrls = await Promise.all(
-        slideUnits.map(async (unit, index) => {
-          console.log(`Processing unit ${index}:`, {
-            url: unit.url,
-            hasPendingFile: !!unit.pendingFile,
-            alt: unit.alt,
-          });
-          let imageUrl = unit.url;
+      // Build slides array with images + metadata
+      const slides = uploadedImages.map((img, index) => {
+        if (isLocationCarousel) {
+          const meta = slideMetadata[index];
+          return {
+            url: img.url,
+            alt: img.alt,
+            title: meta?.title || "",
+            description: meta?.description || "",
+            locationBlockId: meta?.locationBlockId || "",
+          };
+        }
+        return {
+          url: img.url,
+          alt: img.alt,
+        };
+      });
 
-          // Upload pending file if exists
-          if (unit.pendingFile) {
-            console.log(`Uploading image for unit ${index}...`);
-            try {
-              imageUrl = await uploadImage(unit.pendingFile);
-              console.log(`Upload success for unit ${index}:`, imageUrl);
-            } catch (error) {
-              console.error(`Upload failed for unit ${index}:`, error);
-              throw error;
-            }
-          }
-
-          console.log(`Final imageUrl for unit ${index}:`, imageUrl);
-
-          // Clean up preview URL
-          if (unit.previewUrl) {
-            URL.revokeObjectURL(unit.previewUrl);
-          }
-
-          // Build slide based on carousel type
-          if (unit.type === "locationPreview") {
-            return {
-              url: imageUrl,
-              alt: unit.alt,
-              title: unit.title!,
-              description: unit.description!,
-              locationBlockId: unit.locationBlockId!,
-            };
-          } else {
-            return {
-              url: imageUrl,
-              alt: unit.alt,
-            };
-          }
-        })
-      );
-
-      // Update block
-      // Note: Parent component should handle:
-      // 1. Creating new location blocks for temp-* IDs
-      // 2. Deleting orphaned location blocks
-      // 3. Updating existing location blocks
       const updatedBlock = {
         ...block,
         content: {
-          includeHero: false, // Hero feature removed but field required by schema
-          slides: slidesWithUrls as any,
+          includeHero: false,
+          slides: slides as any,
           autoScroll,
           intervalSeconds,
         },
       };
 
-      console.log(
-        "CarouselBlock - Saving block with type:",
-        updatedBlock.type,
-        updatedBlock
-      );
-
       onUpdate(updatedBlock);
-
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to save carousel:", error);
@@ -667,12 +590,19 @@ function EditCarouselDialog({
   };
 
   const handleCancel = () => {
-    // Clean up preview URLs
-    slideUnits.forEach((unit) => {
-      if (unit.previewUrl) {
-        URL.revokeObjectURL(unit.previewUrl);
-      }
-    });
+    resetImages();
+    clearAllErrors();
+    if (isLocationCarousel) {
+      // Reset metadata to original
+      const slides = block.content.slides as any[];
+      setSlideMetadata(
+        slides.map((slide) => ({
+          title: slide.title || "",
+          description: slide.description || "",
+          locationBlockId: slide.locationBlockId || "",
+        }))
+      );
+    }
     onOpenChange(false);
   };
 
@@ -682,7 +612,7 @@ function EditCarouselDialog({
       onOpenChange={onOpenChange}
       title="Edit Carousel"
       description={
-        carouselType === "locationPreview"
+        isLocationCarousel
           ? "Location carousel - add slides and configure settings"
           : "Image carousel - add slides and configure settings"
       }
@@ -692,7 +622,7 @@ function EditCarouselDialog({
           <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || !carouselType}>
+          <Button onClick={handleSave} disabled={isSaving || hasErrors}>
             {isSaving ? "Saving..." : "Save"}
           </Button>
         </>
@@ -731,237 +661,214 @@ function EditCarouselDialog({
           )}
         </div>
 
-        {/* Slide Units */}
-        {carouselType && (
-          <div className="space-y-4">
-            <h3 className="font-semibold">Slides ({slideUnits.length})</h3>
+        {/* Slides */}
+        <div className="space-y-4">
+          <h3 className="font-semibold">Slides ({images.length})</h3>
 
-            {/* Slide Units Grid */}
-            <div className="space-y-4">
-              {slideUnits.map((unit, index) => (
-                <SlideUnitCard
-                  key={index}
-                  unit={unit}
-                  index={index}
-                  type={carouselType}
-                  isFirst={index === 0}
-                  isLast={index === slideUnits.length - 1}
-                  canDelete={slideUnits.length > 1 || index > 0}
-                  availableLocations={availableLocations}
-                  errors={errors}
-                  onImageSelect={(file) => handleImageSelect(index, file)}
-                  onRemoveImage={() => handleRemoveImage(index)}
-                  onFieldChange={(field, value) =>
-                    handleFieldChange(index, field, value)
+          {/* Slide Cards */}
+          <div className="space-y-4">
+            {images.map((image, index) => (
+              <SlideCard
+                key={index}
+                ref={(el) => {
+                  if (el) slideRefs.current.set(index, el);
+                  else slideRefs.current.delete(index);
+                }}
+                image={image}
+                metadata={isLocationCarousel ? slideMetadata[index] : undefined}
+                index={index}
+                total={images.length}
+                isLocationCarousel={isLocationCarousel}
+                canDelete={images.length > 1}
+                canAdd={canAdd}
+                isHighlighted={highlightedIndex === index}
+                errors={errors}
+                onFileSelect={(file) => {
+                  try {
+                    handleFileSelect(index, file);
+                    clearError(`${index}-image`);
+                  } catch (err) {
+                    alert(err instanceof Error ? err.message : "Invalid file");
                   }
-                  onMoveUp={() => handleMoveUp(index)}
-                  onMoveDown={() => handleMoveDown(index)}
-                  onRemove={() => handleRemoveUnit(index)}
-                  onAdd={() => handleAddUnit(index)}
-                />
-              ))}
-            </div>
+                }}
+                onAltChange={(alt) => {
+                  updateAlt(index, alt);
+                  clearError(`${index}-alt`);
+                }}
+                onMetadataChange={(field, value) => {
+                  updateMetadata(index, field, value);
+                  clearError(`${index}-${field}`);
+                }}
+                onMoveUp={() => handleMoveSlideUp(index)}
+                onMoveDown={() => handleMoveSlideDown(index)}
+                onRemove={() => handleRemoveSlide(index)}
+                onAdd={() => handleAddSlideAfter(index)}
+              />
+            ))}
           </div>
-        )}
+        </div>
       </div>
     </BlockDialog>
   );
 }
 
-interface SlideUnitCardProps {
-  unit: SlideUnit;
+interface SlideCardProps {
+  image: {
+    url: string;
+    alt: string;
+    pendingFile?: File;
+    previewUrl?: string;
+  };
+  metadata?: {
+    title: string;
+    description: string;
+    locationBlockId: string;
+  };
   index: number;
-  type: "image" | "locationPreview";
-  isFirst: boolean;
-  isLast: boolean;
+  total: number;
+  isLocationCarousel: boolean;
   canDelete: boolean;
-  availableLocations: { id: string; name: string }[];
+  canAdd: boolean;
+  isHighlighted?: boolean;
   errors: Record<string, string>;
-  onImageSelect: (file: File) => void;
-  onRemoveImage: () => void;
-  onFieldChange: (field: keyof SlideUnit, value: any) => void;
+  onFileSelect: (file: File) => void;
+  onAltChange: (alt: string) => void;
+  onMetadataChange: (
+    field: "title" | "description" | "locationBlockId",
+    value: string
+  ) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onRemove: () => void;
   onAdd: () => void;
 }
 
-function SlideUnitCard({
-  unit,
-  index,
-  type,
-  isFirst,
-  isLast,
-  canDelete,
-  availableLocations,
-  errors,
-  onImageSelect,
-  onRemoveImage,
-  onFieldChange,
-  onMoveUp,
-  onMoveDown,
-  onRemove,
-  onAdd,
-}: SlideUnitCardProps) {
-  const displayUrl = unit.previewUrl || unit.url;
-  const isNewLocation = unit.locationBlockId?.startsWith("temp-");
+const SlideCard = forwardRef<HTMLDivElement, SlideCardProps>(function SlideCard(
+  {
+    image,
+    metadata,
+    index,
+    total,
+    isLocationCarousel,
+    canDelete,
+    canAdd,
+    isHighlighted,
+    errors,
+    onFileSelect,
+    onAltChange,
+    onMetadataChange,
+    onMoveUp,
+    onMoveDown,
+    onRemove,
+    onAdd,
+  },
+  ref
+) {
+  const isNewLocation = metadata?.locationBlockId?.startsWith("temp-");
 
   return (
-    <div className="border rounded-lg p-4 bg-card">
-      {/* Header with position controls */}
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-sm font-medium text-muted-foreground">
-          Slide {index + 1}
-          {type === "locationPreview" && (
-            <span className="ml-2 text-xs text-primary">
-              {isNewLocation
-                ? "(New Location Block)"
-                : "(Linked to Location Block)"}
-            </span>
-          )}
-        </span>
-        <div className="flex gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onMoveUp}
-            disabled={isFirst}
-          >
-            <span className="sr-only">Move slide up</span>↑
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onMoveDown}
-            disabled={isLast}
-          >
-            <span className="sr-only">Move slide down</span>↓
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={onAdd}>
-            <span className="sr-only">Add slide after this one</span>
-            <Plus className="w-4 h-4" />
-          </Button>
-          {canDelete && (
-            <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
-              <span className="sr-only">Delete slide</span>
-              <Trash2 className="w-4 h-4 text-destructive" />
-            </Button>
-          )}
-        </div>
+    <ImageCard
+      ref={ref}
+      index={index}
+      total={total}
+      label="Slide"
+      labelSuffix={
+        isLocationCarousel && (
+          <span className="ml-2 text-xs text-primary">
+            {isNewLocation
+              ? "(New Location Block)"
+              : "(Linked to Location Block)"}
+          </span>
+        )
+      }
+      isHighlighted={isHighlighted}
+      canAdd={canAdd}
+      canDelete={canDelete}
+      onMoveUp={onMoveUp}
+      onMoveDown={onMoveDown}
+      onAdd={onAdd}
+      onRemove={onRemove}
+    >
+      <div className="space-y-4">
+        <ImageField
+          id={`slide-image-${index}`}
+          label="Image"
+          required
+          value={image.url}
+          pendingFile={image.pendingFile}
+          previewUrl={image.previewUrl}
+          onFileSelect={onFileSelect}
+          error={errors[`${index}-image`]}
+          showAltText
+          altText={image.alt}
+          onAltTextChange={onAltChange}
+          altTextError={errors[`${index}-alt`]}
+          altTextMaxLength={200}
+        />
+
+        {/* Location Preview Fields */}
+        {isLocationCarousel && metadata && (
+          <>
+            <div>
+              <FormHeading
+                htmlFor={`title-${index}`}
+                label="Title"
+                required
+                validationType={errors[`${index}-title`] ? "error" : undefined}
+                errorMessage={errors[`${index}-title`]}
+              />
+              <Input
+                id={`title-${index}`}
+                value={metadata.title}
+                onChange={(e) => onMetadataChange("title", e.target.value)}
+                placeholder="e.g., Downtown Roastery"
+                maxLength={100}
+                className={errors[`${index}-title`] ? "border-destructive" : ""}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {metadata.title.length}/100 characters
+              </p>
+            </div>
+
+            <div>
+              <FormHeading
+                htmlFor={`description-${index}`}
+                label="Description"
+                required
+                validationType={
+                  errors[`${index}-description`] ? "error" : undefined
+                }
+                errorMessage={errors[`${index}-description`]}
+              />
+              <Textarea
+                id={`description-${index}`}
+                value={metadata.description}
+                onChange={(e) =>
+                  onMetadataChange("description", e.target.value)
+                }
+                placeholder="Brief description of the location"
+                maxLength={500}
+                rows={3}
+                className={
+                  errors[`${index}-description`] ? "border-destructive" : ""
+                }
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {metadata.description.length}/500 characters
+              </p>
+            </div>
+
+            <div className="rounded-md bg-muted p-3">
+              <p className="text-sm text-muted-foreground">
+                <strong>Location Block:</strong>{" "}
+                {isNewLocation
+                  ? "A new location block will be created when you save this carousel."
+                  : "This slide is linked to an existing location block. Edit location details in the location block itself."}
+              </p>
+            </div>
+          </>
+        )}
       </div>
-
-      {/* Two-column layout: Image left, Fields right */}
-      <div className="grid grid-cols-5 gap-4">
-        {/* Left: Image (2 columns) */}
-        <div className="col-span-2">
-          <FormHeading
-            label="Image"
-            required
-            validationType={errors[`${index}-image`] ? "error" : undefined}
-            errorMessage={errors[`${index}-image`]}
-          />
-          <PendingImageUpload
-            onImageSelect={onImageSelect}
-            currentImageUrl={unit.url}
-            currentFile={unit.pendingFile}
-            onRemove={onRemoveImage}
-            aspectRatio="4/3"
-            maxSizeMB={5}
-          />
-        </div>
-
-        {/* Right: Fields (3 columns) */}
-        <div className="col-span-3 space-y-4">
-          {/* Alt Text */}
-          <div>
-            <FormHeading
-              htmlFor={`alt-${index}`}
-              label="Alt Text"
-              required
-              validationType={errors[`${index}-alt`] ? "error" : undefined}
-              errorMessage={errors[`${index}-alt`]}
-            />
-            <Input
-              id={`alt-${index}`}
-              value={unit.alt}
-              onChange={(e) => onFieldChange("alt", e.target.value)}
-              placeholder="Descriptive text for accessibility"
-              maxLength={200}
-              className={errors[`${index}-alt`] ? "border-destructive" : ""}
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              {unit.alt.length}/200 characters
-            </p>
-          </div>
-
-          {/* Location Preview Fields */}
-          {type === "locationPreview" && (
-            <>
-              <div>
-                <FormHeading
-                  htmlFor={`title-${index}`}
-                  label="Title"
-                  required
-                  validationType={
-                    errors[`${index}-title`] ? "error" : undefined
-                  }
-                  errorMessage={errors[`${index}-title`]}
-                />
-                <Input
-                  id={`title-${index}`}
-                  value={unit.title || ""}
-                  onChange={(e) => onFieldChange("title", e.target.value)}
-                  placeholder="e.g., Downtown Roastery"
-                  maxLength={100}
-                  className={
-                    errors[`${index}-title`] ? "border-destructive" : ""
-                  }
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {(unit.title || "").length}/100 characters
-                </p>
-              </div>
-
-              <div>
-                <FormHeading
-                  htmlFor={`description-${index}`}
-                  label="Description"
-                  required
-                  validationType={
-                    errors[`${index}-description`] ? "error" : undefined
-                  }
-                  errorMessage={errors[`${index}-description`]}
-                />
-                <Textarea
-                  id={`description-${index}`}
-                  value={unit.description || ""}
-                  onChange={(e) => onFieldChange("description", e.target.value)}
-                  placeholder="Brief description of the location"
-                  maxLength={500}
-                  rows={3}
-                  className={
-                    errors[`${index}-description`] ? "border-destructive" : ""
-                  }
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {(unit.description || "").length}/500 characters
-                </p>
-              </div>
-
-              <div className="rounded-md bg-muted p-3">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Location Block:</strong>{" "}
-                  {isNewLocation
-                    ? "A new location block will be created when you save this carousel."
-                    : "This slide is linked to an existing location block. Edit location details in the location block itself."}
-                </p>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+    </ImageCard>
   );
-}
+});

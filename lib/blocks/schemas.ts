@@ -80,7 +80,10 @@ export const locationBlockSchema = baseBlockSchema.extend({
       .min(1, "Address is required")
       .max(500, "Address must be 500 characters or less"),
     phone: z.string().max(50).optional(),
-    googleMapsUrl: z.string().optional(),
+    googleMapsUrl: z
+      .string()
+      .min(1, "Google Maps URL is required")
+      .url("Must be a valid URL"),
     description: z.string().max(2000).optional(),
     schedule: z
       .array(
@@ -94,12 +97,11 @@ export const locationBlockSchema = baseBlockSchema.extend({
     images: z
       .array(
         z.object({
-          url: z.string().min(1),
-          alt: z.string().optional(),
+          url: z.string().min(1, "Image URL is required"),
+          alt: z.string().min(1, "Alt text is required").max(125),
         })
       )
-      .optional()
-      .default([]),
+      .min(1, "At least one image is required"),
   }),
 });
 
@@ -340,7 +342,7 @@ export function createBlock(type: BlockType, order: number): Block {
             { day: "Monday - Friday", hours: "7am - 5pm" },
             { day: "Saturday - Sunday", hours: "8am - 4pm" },
           ],
-          images: [],
+          images: [{ url: "/placeholder-location.jpg", alt: "Location photo" }],
         },
       };
     case "hours":
