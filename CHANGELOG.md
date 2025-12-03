@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.29.0 - 2025-12-03
+
+- **Location Setup with Dynamic Cafe Page Configuration**: Complete cafe page management with automatic layout switching based on business structure
+  - Location Setup in site settings allows switching between single and multiple location modes
+  - Automatic cafe page reset when changing location type with user-friendly warning dialog
+  - Single location mode: Photo gallery carousel, one location section, welcome message
+  - Multiple location mode: Interactive location carousel with navigation, dedicated sections per location, welcome message
+  - EditableBlockWrapper component provides consistent hover effects and edit controls across all blocks
+  - ImageCarousel shared component for single-image display with dot navigation
+  - LocationBlock improvements: Clickable address (opens Google Maps) and phone links
+  - Fixed image upload API response field name (path → url) for carousel compatibility
+  - Enhanced seed data with realistic content for both location types
+  - Reseed API with automatic image cleanup when switching location types
+
 ## 0.28.1 - 2025-12-02
 
 - **Animated Carousel Navigation Dots**: Enhanced carousel UX with smooth animations and improved visibility
