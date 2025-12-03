@@ -91,10 +91,13 @@ export function CarouselBlock({
           }}
         >
           <p className="text-gray-500 mb-4">No slides in carousel</p>
-          <Button variant="outline" onClick={(e) => {
-            e.stopPropagation();
-            setIsDialogOpen(true);
-          }}>
+          <Button
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsDialogOpen(true);
+            }}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Slides
           </Button>
