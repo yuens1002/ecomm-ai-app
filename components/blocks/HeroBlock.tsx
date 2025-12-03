@@ -1,17 +1,17 @@
 "use client";
 
 import { HeroBlock as HeroBlockType } from "@/lib/blocks/schemas";
-import Image from "next/image";
 import { Input } from "@/components/ui/input";
-import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
+import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
-import { Upload, Trash2, ImageIcon } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { Hero } from "@/components/app-components/Hero";
 import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import { BlockDialog } from "./BlockDialog";
+import { ImageField } from "@/components/app-components/ImageField";
 
 interface HeroBlockProps {
   block: HeroBlockType;
@@ -201,68 +201,40 @@ export function HeroBlock({
               {editedBlock.content.title.length}/100 characters
             </p>
           </Field>
+          <ImageField
+            id={`hero-image-${block.id}`}
+            label="Image"
+            required={true}
+            value={editedBlock.content.imageUrl}
+            pendingFile={pendingFile}
+            previewUrl={previewUrl}
+            onFileSelect={(file, preview) => {
+              setPendingFile(file);
+              setPreviewUrl(preview);
+              if (errors.imageUrl)
+                setErrors({ ...errors, imageUrl: undefined });
+            }}
+            onClear={() => {
+              setPendingFile(null);
+              if (previewUrl) URL.revokeObjectURL(previewUrl);
+              setPreviewUrl(null);
+              setEditedBlock({
+                ...editedBlock,
+                content: { ...editedBlock.content, imageUrl: "" },
+              });
+            }}
+            error={errors.imageUrl}
+            isDirty={
+              editedBlock.content.imageUrl !== block.content.imageUrl ||
+              pendingFile !== null
+            }
+            previewAlt={editedBlock.content.imageAlt || "Hero preview"}
+          />
           <Field>
             <FormHeading
-              htmlFor={`hero-image-${block.id}`}
-              label="Image URL"
-              required={true}
-              validationType={errors.imageUrl ? "error" : undefined}
-              isDirty={
-                editedBlock.content.imageUrl !== block.content.imageUrl ||
-                pendingFile !== null
-              }
-              errorMessage={errors.imageUrl}
+              htmlFor={`hero-alt-${block.id}`}
+              label="Image Alt Text"
             />
-            <div className="flex gap-2">
-              <Input
-                id={`hero-image-${block.id}`}
-                value={
-                  pendingFile
-                    ? `/images/${pendingFile.name}`
-                    : editedBlock.content.imageUrl
-                }
-                readOnly
-                placeholder="Click upload button to select an image"
-                className={`cursor-default ${errors.imageUrl ? "border-destructive" : ""}`}
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() =>
-                  document.getElementById(`hero-file-${block.id}`)?.click()
-                }
-                type="button"
-              >
-                <Upload className="h-4 w-4" />
-              </Button>
-              <input
-                id={`hero-file-${block.id}`}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-
-                  // Store the file for later upload
-                  setPendingFile(file);
-
-                  // Create preview URL
-                  const objectUrl = URL.createObjectURL(file);
-                  setPreviewUrl(objectUrl);
-
-                  // Don't set imageUrl yet - it will be set after successful upload
-                  // Just clear any image error
-                  if (errors.imageUrl)
-                    setErrors({ ...errors, imageUrl: undefined });
-                }}
-              />
-            </div>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor={`hero-alt-${block.id}`}>
-              Image Alt Text
-            </FieldLabel>
             <Input
               id={`hero-alt-${block.id}`}
               value={editedBlock.content.imageAlt || ""}
@@ -283,9 +255,7 @@ export function HeroBlock({
             </p>
           </Field>
           <Field>
-            <FieldLabel htmlFor={`hero-caption-${block.id}`}>
-              Caption
-            </FieldLabel>
+            <FormHeading htmlFor={`hero-caption-${block.id}`} label="Caption" />
             <Input
               id={`hero-caption-${block.id}`}
               value={editedBlock.content.caption || ""}
@@ -306,37 +276,6 @@ export function HeroBlock({
             </p>
           </Field>
         </FieldGroup>
-
-        <div className="mt-6">
-          <h3 className="text-sm font-semibold mb-3">Image Preview</h3>
-          {previewUrl || editedBlock.content.imageUrl ? (
-            <div className="relative h-48 w-full rounded-lg overflow-hidden border">
-              {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Image
-                  src={editedBlock.content.imageUrl}
-                  alt="Preview"
-                  fill
-                  className="object-cover"
-                />
-              )}
-            </div>
-          ) : (
-            <div className="relative h-48 w-full rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center bg-muted/10">
-              <div className="text-center">
-                <ImageIcon className="h-12 w-12 text-muted-foreground/40 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  No image selected
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
       </BlockDialog>
 
       {/* WYSIWYG Block Display with hover/select states */}

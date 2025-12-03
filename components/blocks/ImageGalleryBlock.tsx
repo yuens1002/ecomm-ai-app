@@ -3,7 +3,8 @@
 import { ImageGalleryBlock as ImageGalleryBlockType } from "@/lib/blocks/schemas";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
-import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
+import { Field, FieldGroup } from "@/components/ui/field";
+import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Upload } from "lucide-react";
 import { useState } from "react";
@@ -63,6 +64,9 @@ export function ImageGalleryBlock({
 }: ImageGalleryBlockProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editedBlock, setEditedBlock] = useState(block);
+  const [pendingFiles, setPendingFiles] = useState<
+    Map<number, { file: File; previewUrl: string }>
+  >(new Map());
 
   // Deleted/disabled state
   if (block.isDeleted) {
@@ -82,14 +86,79 @@ export function ImageGalleryBlock({
     return <GalleryGrid images={block.content.images} />;
   }
 
+  // Handle file selection for an image
+  const handleFileSelect = (index: number, file: File) => {
+    // Validate file
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size must be less than 5MB");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      alert("File must be an image");
+      return;
+    }
+
+    // Clean up old preview URL if exists
+    const oldPending = pendingFiles.get(index);
+    if (oldPending) {
+      URL.revokeObjectURL(oldPending.previewUrl);
+    }
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setPendingFiles(new Map(pendingFiles.set(index, { file, previewUrl })));
+  };
+
   // Save changes from dialog
-  const handleSave = () => {
-    onUpdate?.(editedBlock);
+  const handleSave = async () => {
+    // Upload any pending files
+    const updatedImages = await Promise.all(
+      editedBlock.content.images.map(async (image, index) => {
+        const pending = pendingFiles.get(index);
+        if (pending) {
+          try {
+            const formData = new FormData();
+            formData.append("file", pending.file);
+            if (image.url) {
+              formData.append("oldPath", image.url);
+            }
+
+            const response = await fetch("/api/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (!response.ok) {
+              throw new Error("Upload failed");
+            }
+
+            const data = await response.json();
+            return { ...image, url: data.path };
+          } catch (error) {
+            console.error("Upload error:", error);
+            return image;
+          }
+        }
+        return image;
+      })
+    );
+
+    // Clean up preview URLs
+    pendingFiles.forEach((pending) => URL.revokeObjectURL(pending.previewUrl));
+    setPendingFiles(new Map());
+
+    onUpdate?.({
+      ...editedBlock,
+      content: { images: updatedImages },
+    });
     setIsDialogOpen(false);
   };
 
   // Cancel changes
   const handleCancel = () => {
+    // Clean up preview URLs
+    pendingFiles.forEach((pending) => URL.revokeObjectURL(pending.previewUrl));
+    setPendingFiles(new Map());
     setEditedBlock(block);
     setIsDialogOpen(false);
   };
@@ -113,80 +182,122 @@ export function ImageGalleryBlock({
         }
       >
         <FieldGroup>
-          {editedBlock.content.images.map((image, index) => (
-            <div key={index} className="border rounded-lg p-3 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-semibold">Image {index + 1}</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    const newImages = editedBlock.content.images.filter(
-                      (_, i) => i !== index
-                    );
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: { images: newImages },
-                    });
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-              <Field>
-                <FieldLabel htmlFor={`gallery-url-${block.id}-${index}`}>
-                  Image URL
-                </FieldLabel>
-                <div className="flex gap-2">
-                  <Input
-                    id={`gallery-url-${block.id}-${index}`}
-                    value={image.url}
-                    onChange={(e) => {
-                      const newImages = [...editedBlock.content.images];
-                      newImages[index] = { ...image, url: e.target.value };
+          {editedBlock.content.images.map((image, index) => {
+            const pending = pendingFiles.get(index);
+            const displayUrl = pending?.previewUrl || image.url;
+
+            return (
+              <div key={index} className="border rounded-lg p-3 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold">
+                    Image {index + 1}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      // Clean up pending if exists
+                      const oldPending = pendingFiles.get(index);
+                      if (oldPending) {
+                        URL.revokeObjectURL(oldPending.previewUrl);
+                        const newPending = new Map(pendingFiles);
+                        newPending.delete(index);
+                        setPendingFiles(newPending);
+                      }
+
+                      const newImages = editedBlock.content.images.filter(
+                        (_, i) => i !== index
+                      );
                       setEditedBlock({
                         ...editedBlock,
                         content: { images: newImages },
                       });
                     }}
-                    placeholder="/images/gallery-1.jpg"
-                  />
-                  <Button variant="outline" size="icon">
-                    <Upload className="h-4 w-4" />
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor={`gallery-alt-${block.id}-${index}`}>
-                  Alt Text
-                </FieldLabel>
-                <Input
-                  id={`gallery-alt-${block.id}-${index}`}
-                  value={image.alt || ""}
-                  onChange={(e) => {
-                    const newImages = [...editedBlock.content.images];
-                    newImages[index] = { ...image, alt: e.target.value };
-                    setEditedBlock({
-                      ...editedBlock,
-                      content: { images: newImages },
-                    });
-                  }}
-                  placeholder="Describe the image..."
-                  maxLength={200}
-                />
-              </Field>
-              {image.url && (
-                <div className="relative h-32 w-full rounded overflow-hidden">
-                  <Image
-                    src={image.url}
-                    alt="Preview"
-                    fill
-                    className="object-cover"
-                  />
+
+                {/* Image Preview & Upload */}
+                <div className="relative h-32 w-full rounded-lg overflow-hidden border">
+                  {displayUrl ? (
+                    <>
+                      {pending ? (
+                        <img
+                          src={pending.previewUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Image
+                          src={image.url}
+                          alt="Preview"
+                          fill
+                          className="object-cover"
+                        />
+                      )}
+                      <label className="absolute inset-0 flex items-center justify-center cursor-pointer bg-black/0 hover:bg-black/40 transition-colors group">
+                        <Upload className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileSelect(index, file);
+                          }}
+                        />
+                      </label>
+                    </>
+                  ) : (
+                    <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors border-2 border-dashed border-muted-foreground/25 rounded-lg">
+                      <Upload className="h-8 w-8 text-muted-foreground/40 mb-1" />
+                      <span className="text-sm text-muted-foreground">
+                        Upload Image
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileSelect(index, file);
+                        }}
+                      />
+                    </label>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+
+                <Field>
+                  <FormHeading
+                    htmlFor={`gallery-alt-${block.id}-${index}`}
+                    label="Alt Text"
+                    isDirty={
+                      (image.alt || "") !==
+                      (block.content.images[index]?.alt || "")
+                    }
+                  />
+                  <Input
+                    id={`gallery-alt-${block.id}-${index}`}
+                    value={image.alt || ""}
+                    onChange={(e) => {
+                      const newImages = [...editedBlock.content.images];
+                      newImages[index] = { ...image, alt: e.target.value };
+                      setEditedBlock({
+                        ...editedBlock,
+                        content: { images: newImages },
+                      });
+                    }}
+                    placeholder="Describe the image..."
+                    maxLength={200}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {(image.alt || "").length}/200 characters
+                  </p>
+                </Field>
+              </div>
+            );
+          })}
 
           {editedBlock.content.images.length < 20 && (
             <Button

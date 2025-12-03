@@ -7,7 +7,8 @@ import {
 import { PullQuote } from "@/components/app-components/PullQuote";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
+import { Field, FieldGroup } from "@/components/ui/field";
+import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -90,9 +91,12 @@ export function PullQuoteBlock({
       >
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor={`quote-text-${block.id}`}>
-              Quote Text
-            </FieldLabel>
+            <FormHeading
+              htmlFor={`quote-text-${block.id}`}
+              label="Quote Text"
+              required={true}
+              isDirty={editedBlock.content.text !== block.content.text}
+            />
             <Textarea
               id={`quote-text-${block.id}`}
               value={editedBlock.content.text}
@@ -111,9 +115,14 @@ export function PullQuoteBlock({
             </p>
           </Field>
           <Field>
-            <FieldLabel htmlFor={`quote-author-${block.id}`}>
-              Author (Optional)
-            </FieldLabel>
+            <FormHeading
+              htmlFor={`quote-author-${block.id}`}
+              label="Author"
+              isDirty={
+                (editedBlock.content.author || "") !==
+                (block.content.author || "")
+              }
+            />
             <Input
               id={`quote-author-${block.id}`}
               value={editedBlock.content.author || ""}

@@ -569,6 +569,48 @@
 
 ## Low Priority
 
+### Evaluate FileUpload Component Usage & Deprecation
+
+**Status**: Backlog  
+**Priority**: Low  
+**Description**: The `FileUpload` component (`components/app-components/FileUpload.tsx`) was created for icon uploads in admin settings. With the new standardized `ImageField` component for block dialogs, evaluate whether FileUpload should be deprecated or kept for icon-specific use cases.
+
+**Current Usage**:
+
+- `app/admin/settings/SettingsManagementClient.tsx` - favicon and logo uploads
+- `app/admin/settings/SocialLinksSettings.tsx` - social platform icon uploads
+
+**Key Differences**:
+
+| Feature       | FileUpload                   | ImageField                   |
+| ------------- | ---------------------------- | ---------------------------- |
+| API Endpoint  | `/api/admin/upload-icon`     | `/api/upload`                |
+| Upload Timing | Immediate                    | Deferred (on save)           |
+| Preview       | Inline small                 | Full preview area            |
+| Use Case      | Small icons (favicon, logos) | Hero images, gallery images  |
+| Max Size      | 2MB                          | 5MB (configurable)           |
+| Pattern       | "Choose File" button         | Hidden input + Upload button |
+
+**Recommendation**: Keep both components:
+
+- **FileUpload**: For icon uploads (settings, social links) - immediate upload, small files
+- **ImageField**: For content images (blocks, pages) - deferred upload, larger files, integrated preview
+
+**Tasks**:
+
+- [ ] Document intended use cases for each component
+- [ ] Add JSDoc comments clarifying when to use each
+- [ ] Consider renaming `FileUpload` to `IconUpload` for clarity
+- [ ] Verify both components follow accessibility best practices
+
+**Notes**:
+
+- FileUpload uses InputGroup pattern which may be preferred for settings forms
+- ImageField uses FormHeading for consistent validation UI in block dialogs
+- No immediate need to deprecate - serve different purposes
+
+---
+
 ### About Page Not Restored After Seed
 
 **Status**: To Fix  

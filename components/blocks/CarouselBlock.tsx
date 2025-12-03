@@ -8,8 +8,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { BlockDialog } from "./BlockDialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FormHeading } from "@/components/ui/app/FormHeading";
 import {
   Select,
   SelectContent,
@@ -704,7 +704,7 @@ function EditCarouselDialog({
           <h3 className="font-semibold">Carousel Settings</h3>
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="autoScroll">Auto-scroll</Label>
+            <FormHeading htmlFor="autoScroll" label="Auto-scroll" />
             <Switch
               id="autoScroll"
               checked={autoScroll}
@@ -714,9 +714,10 @@ function EditCarouselDialog({
 
           {autoScroll && (
             <div>
-              <Label htmlFor="intervalSeconds">
-                Interval: {intervalSeconds} seconds
-              </Label>
+              <FormHeading
+                htmlFor="intervalSeconds"
+                label={`Interval: ${intervalSeconds} seconds`}
+              />
               <Input
                 id="intervalSeconds"
                 type="range"
@@ -855,14 +856,12 @@ function SlideUnitCard({
       <div className="grid grid-cols-5 gap-4">
         {/* Left: Image (2 columns) */}
         <div className="col-span-2">
-          <Label className="mb-2 block">
-            Image *{" "}
-            {errors[`${index}-image`] && (
-              <span className="text-destructive text-xs ml-1">
-                ({errors[`${index}-image`]})
-              </span>
-            )}
-          </Label>
+          <FormHeading
+            label="Image"
+            required
+            validationType={errors[`${index}-image`] ? "error" : undefined}
+            errorMessage={errors[`${index}-image`]}
+          />
           <PendingImageUpload
             onImageSelect={onImageSelect}
             currentImageUrl={unit.url}
@@ -877,14 +876,13 @@ function SlideUnitCard({
         <div className="col-span-3 space-y-4">
           {/* Alt Text */}
           <div>
-            <Label htmlFor={`alt-${index}`}>
-              Alt Text *{" "}
-              {errors[`${index}-alt`] && (
-                <span className="text-destructive text-xs ml-1">
-                  ({errors[`${index}-alt`]})
-                </span>
-              )}
-            </Label>
+            <FormHeading
+              htmlFor={`alt-${index}`}
+              label="Alt Text"
+              required
+              validationType={errors[`${index}-alt`] ? "error" : undefined}
+              errorMessage={errors[`${index}-alt`]}
+            />
             <Input
               id={`alt-${index}`}
               value={unit.alt}
@@ -893,20 +891,24 @@ function SlideUnitCard({
               maxLength={200}
               className={errors[`${index}-alt`] ? "border-destructive" : ""}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              {unit.alt.length}/200 characters
+            </p>
           </div>
 
           {/* Location Preview Fields */}
           {type === "locationPreview" && (
             <>
               <div>
-                <Label htmlFor={`title-${index}`}>
-                  Title *{" "}
-                  {errors[`${index}-title`] && (
-                    <span className="text-destructive text-xs ml-1">
-                      ({errors[`${index}-title`]})
-                    </span>
-                  )}
-                </Label>
+                <FormHeading
+                  htmlFor={`title-${index}`}
+                  label="Title"
+                  required
+                  validationType={
+                    errors[`${index}-title`] ? "error" : undefined
+                  }
+                  errorMessage={errors[`${index}-title`]}
+                />
                 <Input
                   id={`title-${index}`}
                   value={unit.title || ""}
@@ -917,17 +919,21 @@ function SlideUnitCard({
                     errors[`${index}-title`] ? "border-destructive" : ""
                   }
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(unit.title || "").length}/100 characters
+                </p>
               </div>
 
               <div>
-                <Label htmlFor={`description-${index}`}>
-                  Description *{" "}
-                  {errors[`${index}-description`] && (
-                    <span className="text-destructive text-xs ml-1">
-                      ({errors[`${index}-description`]})
-                    </span>
-                  )}
-                </Label>
+                <FormHeading
+                  htmlFor={`description-${index}`}
+                  label="Description"
+                  required
+                  validationType={
+                    errors[`${index}-description`] ? "error" : undefined
+                  }
+                  errorMessage={errors[`${index}-description`]}
+                />
                 <Textarea
                   id={`description-${index}`}
                   value={unit.description || ""}
@@ -939,6 +945,9 @@ function SlideUnitCard({
                     errors[`${index}-description`] ? "border-destructive" : ""
                   }
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(unit.description || "").length}/500 characters
+                </p>
               </div>
 
               <div className="rounded-md bg-muted p-3">

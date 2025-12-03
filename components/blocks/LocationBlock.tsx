@@ -162,6 +162,7 @@ export function LocationBlock({
               label="Location Name"
               required={true}
               validationType={errors.name ? "error" : undefined}
+              isDirty={editedBlock.content.name !== block.content.name}
               errorMessage={errors.name}
             />
             <Input
@@ -178,6 +179,9 @@ export function LocationBlock({
               maxLength={100}
               className={errors.name ? "border-destructive" : ""}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              {editedBlock.content.name.length}/100 characters
+            </p>
           </Field>
 
           <Field>
@@ -186,6 +190,7 @@ export function LocationBlock({
               label="Address"
               required={true}
               validationType={errors.address ? "error" : undefined}
+              isDirty={editedBlock.content.address !== block.content.address}
               errorMessage={errors.address}
             />
             <Textarea
@@ -207,10 +212,20 @@ export function LocationBlock({
               maxLength={500}
               className={errors.address ? "border-destructive" : ""}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              {editedBlock.content.address.length}/500 characters
+            </p>
           </Field>
 
           <Field>
-            <FormHeading htmlFor="location-phone" label="Phone" />
+            <FormHeading
+              htmlFor="location-phone"
+              label="Phone"
+              isDirty={
+                (editedBlock.content.phone || "") !==
+                (block.content.phone || "")
+              }
+            />
             <Input
               id="location-phone"
               value={editedBlock.content.phone || ""}
@@ -229,7 +244,14 @@ export function LocationBlock({
           </Field>
 
           <Field>
-            <FormHeading htmlFor="location-maps" label="Google Maps URL" />
+            <FormHeading
+              htmlFor="location-maps"
+              label="Google Maps URL"
+              isDirty={
+                (editedBlock.content.googleMapsUrl || "") !==
+                (block.content.googleMapsUrl || "")
+              }
+            />
             <Input
               id="location-maps"
               value={editedBlock.content.googleMapsUrl || ""}
@@ -248,7 +270,14 @@ export function LocationBlock({
 
           {/* Description */}
           <Field>
-            <FormHeading htmlFor="location-description" label="Description" />
+            <FormHeading
+              htmlFor="location-description"
+              label="Description"
+              isDirty={
+                (editedBlock.content.description || "") !==
+                (block.content.description || "")
+              }
+            />
             <Textarea
               id="location-description"
               value={editedBlock.content.description || ""}
@@ -296,6 +325,7 @@ export function LocationBlock({
                     }}
                     placeholder="Day(s)"
                     className="flex-1"
+                    maxLength={50}
                   />
                   <Input
                     value={entry.hours}
@@ -317,6 +347,7 @@ export function LocationBlock({
                     }}
                     placeholder="Hours"
                     className="flex-1"
+                    maxLength={50}
                   />
                   <Button
                     type="button"

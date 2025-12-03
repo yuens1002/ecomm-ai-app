@@ -3,11 +3,17 @@ import { FieldLabel, FieldError } from "@/components/ui/field";
 type ValidationType = "dirty" | "required" | "error";
 
 interface FormHeadingProps {
-  htmlFor: string;
+  /** ID of the form element this label is for (optional for standalone labels) */
+  htmlFor?: string;
+  /** Label text to display */
   label: string;
+  /** Whether the field value has been modified */
   isDirty?: boolean;
+  /** Type of validation indicator to show */
   validationType?: ValidationType;
+  /** Custom error message to display */
   errorMessage?: string;
+  /** Whether the field is required (shows * indicator) */
   required?: boolean;
 }
 
@@ -42,12 +48,23 @@ export function FormHeading({
   const message = errorMessage || style.defaultMessage;
   const showIndicator = isDirty || (validationType === "required" && required);
 
+  // If htmlFor is provided, render as proper label; otherwise just styled text
+  const LabelContent = (
+    <>
+      {label}
+      {required && <span className="text-destructive ml-1">*</span>}
+    </>
+  );
+
   return (
     <div className="flex items-center justify-start min-h-5 gap-2">
-      <FieldLabel htmlFor={htmlFor}>
-        {label}
-        {required && <span className="text-destructive ml-1">*</span>}
-      </FieldLabel>
+      {htmlFor ? (
+        <FieldLabel htmlFor={htmlFor}>{LabelContent}</FieldLabel>
+      ) : (
+        <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+          {LabelContent}
+        </span>
+      )}
       {showIndicator && (
         <FieldError className={style.className}>
           <div

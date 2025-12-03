@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.29.1 - 2025-12-03
+
+- **Form Field Standardization**: Consistent UI across all block dialogs
+  - Created ImageField component for standardized image uploads with deferred upload pattern
+  - All blocks now use FormHeading with validation states (dirty, error, required)
+  - Added character counts and isDirty tracking to all text fields
+  - FormHeading htmlFor now optional for standalone labels (e.g., switches)
+
 ## 0.29.0 - 2025-12-03
 
 - **Location Setup with Dynamic Cafe Page Configuration**: Complete cafe page management with automatic layout switching based on business structure

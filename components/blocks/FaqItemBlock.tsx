@@ -3,7 +3,8 @@
 import { FaqItemBlock as FaqItemBlockType } from "@/lib/blocks/schemas";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
+import { Field, FieldGroup } from "@/components/ui/field";
+import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
 import { Trash2, ChevronDown } from "lucide-react";
 import { EditableBlockWrapper } from "./EditableBlockWrapper";
@@ -112,9 +113,12 @@ export function FaqItemBlock({
       >
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor={`faq-question-${block.id}`}>
-              Question
-            </FieldLabel>
+            <FormHeading
+              htmlFor={`faq-question-${block.id}`}
+              label="Question"
+              required={true}
+              isDirty={editedBlock.content.question !== block.content.question}
+            />
             <Input
               id={`faq-question-${block.id}`}
               value={editedBlock.content.question}
@@ -130,9 +134,17 @@ export function FaqItemBlock({
               placeholder="What is your question?"
               maxLength={200}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              {editedBlock.content.question.length}/200 characters
+            </p>
           </Field>
           <Field>
-            <FieldLabel htmlFor={`faq-answer-${block.id}`}>Answer</FieldLabel>
+            <FormHeading
+              htmlFor={`faq-answer-${block.id}`}
+              label="Answer"
+              required={true}
+              isDirty={editedBlock.content.answer !== block.content.answer}
+            />
             <Textarea
               id={`faq-answer-${block.id}`}
               value={editedBlock.content.answer}
@@ -149,6 +161,9 @@ export function FaqItemBlock({
               rows={4}
               maxLength={1000}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              {editedBlock.content.answer.length}/1000 characters
+            </p>
           </Field>
         </FieldGroup>
       </BlockDialog>

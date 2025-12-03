@@ -3,7 +3,8 @@
 import { HoursBlock as HoursBlockType } from "@/lib/blocks/schemas";
 import { Clock, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
+import { Field, FieldGroup } from "@/components/ui/field";
+import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
@@ -112,9 +113,13 @@ export function HoursBlock({
           {editedBlock.content.schedule.map((item, index) => (
             <div key={index} className="grid grid-cols-2 gap-3">
               <Field>
-                <FieldLabel htmlFor={`hours-days-${block.id}-${index}`}>
-                  Days
-                </FieldLabel>
+                <FormHeading
+                  htmlFor={`hours-days-${block.id}-${index}`}
+                  label="Days"
+                  isDirty={
+                    item.day !== (block.content.schedule[index]?.day || "")
+                  }
+                />
                 <Input
                   id={`hours-days-${block.id}-${index}`}
                   value={item.day}
@@ -134,9 +139,13 @@ export function HoursBlock({
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor={`hours-time-${block.id}-${index}`}>
-                  Hours
-                </FieldLabel>
+                <FormHeading
+                  htmlFor={`hours-time-${block.id}-${index}`}
+                  label="Hours"
+                  isDirty={
+                    item.hours !== (block.content.schedule[index]?.hours || "")
+                  }
+                />
                 <div className="flex gap-2">
                   <Input
                     id={`hours-time-${block.id}-${index}`}
