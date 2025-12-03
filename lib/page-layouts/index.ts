@@ -27,7 +27,11 @@ export {
 // Individual layout configs
 export { singleColumnConfig } from "./single-column";
 export { twoColumnConfig } from "./two-column";
-export { locationInfoConfig } from "./location-info";
+export {
+  locationInfoConfig,
+  getFilteredAllowedBlocks,
+  getRequiredBlocks,
+} from "./location-info";
 export { accordionConfig } from "./accordion";
 
 import { PageType } from "@prisma/client";

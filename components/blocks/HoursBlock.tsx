@@ -7,6 +7,7 @@ import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
+import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import {
   Dialog,
   DialogContent,
@@ -219,12 +220,25 @@ export function HoursBlock({
       </Dialog>
 
       {/* WYSIWYG Block Display with hover/select states */}
-      <div
-        className="relative flex flex-col gap-4 rounded-lg border p-6 group cursor-pointer transition-all hover:ring-1 hover:ring-[#00d4ff]"
-        onClick={() => {
+      <EditableBlockWrapper
+        onEdit={() => {
           if (onSelect) onSelect();
           setIsDialogOpen(true);
         }}
+        editButtons={
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.(block.id);
+            }}
+            className="shadow-lg"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        }
+        className="flex flex-col gap-4 rounded-lg border p-6"
       >
         <div className="flex items-center gap-3">
           <Clock className="h-5 w-5 text-primary" />
@@ -238,22 +252,7 @@ export function HoursBlock({
             </div>
           ))}
         </div>
-
-        {/* Action Controls on Hover */}
-        <div className="absolute top-2 right-2 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete?.(block.id);
-            }}
-            className="shadow-lg"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      </EditableBlockWrapper>
     </>
   );
 }

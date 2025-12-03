@@ -56,10 +56,19 @@ export async function addBlock(
  */
 export async function updateBlock(pageId: string, blockData: unknown) {
   try {
+    console.log(
+      "updateBlock - Received blockData:",
+      JSON.stringify(blockData, null, 2)
+    );
+
     // Validate with Zod
     const result = blockSchema.safeParse(blockData);
     if (!result.success) {
       console.error("Block validation failed:", result.error.format());
+      console.error(
+        "Block validation errors (detailed):",
+        JSON.stringify(result.error.flatten(), null, 2)
+      );
       return { error: "Invalid block data", details: result.error.format() };
     }
 

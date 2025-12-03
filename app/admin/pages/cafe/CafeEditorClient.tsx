@@ -7,6 +7,7 @@ import { PageType } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { LocationType } from "@/lib/app-settings";
 
 interface CafeEditorClientProps {
   pageId: string;
@@ -20,6 +21,7 @@ interface CafeEditorClientProps {
   headerOrder: number | null;
   footerOrder: number | null;
   icon: string | null;
+  locationType: LocationType;
 }
 
 export default function CafeEditorClient({
@@ -34,6 +36,7 @@ export default function CafeEditorClient({
   headerOrder,
   footerOrder,
   icon,
+  locationType,
 }: CafeEditorClientProps) {
   const router = useRouter();
   const [isPublished, setIsPublished] = useState(initialIsPublished);
@@ -108,6 +111,7 @@ export default function CafeEditorClient({
       headerOrder={headerOrder}
       footerOrder={footerOrder}
       icon={icon}
+      locationType={locationType}
       onPublishToggle={handlePublishToggle}
       onMetadataUpdate={handleMetadataUpdate}
     />

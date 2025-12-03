@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { PendingImageUpload } from "@/components/ui/PendingImageUpload";
 import { CarouselDots } from "@/components/app-components/CarouselDots";
+import { EditableBlockWrapper } from "./EditableBlockWrapper";
 
 type CarouselBlockType = ImageCarouselBlock | LocationCarouselBlock;
 
@@ -76,48 +77,48 @@ export function CarouselBlock({
   // Empty state in edit mode
   if (block.content.slides.length === 0) {
     return (
-      <div
-        className={cn(
-          "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-          isSelected
-            ? "border-primary bg-primary/5"
-            : "border-gray-300 hover:border-gray-400"
-        )}
-        onClick={onSelect}
-      >
-        <p className="text-gray-500 mb-4">No slides in carousel</p>
+      <>
+        <div
+          className={cn(
+            "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
+            isSelected
+              ? "border-primary bg-primary/5"
+              : "border-gray-300 hover:border-gray-400"
+          )}
+          onClick={() => {
+            if (onSelect) onSelect();
+            setIsDialogOpen(true);
+          }}
+        >
+          <p className="text-gray-500 mb-4">No slides in carousel</p>
+          <Button variant="outline" onClick={(e) => {
+            e.stopPropagation();
+            setIsDialogOpen(true);
+          }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Slides
+          </Button>
+        </div>
         <EditCarouselDialog
           block={block}
           onUpdate={onUpdate}
-          trigger={
-            <Button variant="outline" onClick={(e) => e.stopPropagation()}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Slides
-            </Button>
-          }
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
         />
-      </div>
+      </>
     );
   }
 
   // Edit mode with content
   return (
-    <div
-      className={cn(
-        "relative rounded-lg transition-all cursor-pointer",
-        isSelected && "ring-2 ring-primary ring-offset-2"
-      )}
-      onClick={onSelect}
-    >
-      {/* Carousel Display */}
-      <CarouselDisplay block={block} />
-
-      {/* Edit Controls Overlay */}
-      <div className="absolute top-4 right-4 z-10 flex gap-2">
-        <EditCarouselDialog
-          block={block}
-          onUpdate={onUpdate}
-          trigger={
+    <>
+      <EditableBlockWrapper
+        onEdit={() => {
+          if (onSelect) onSelect();
+          setIsDialogOpen(true);
+        }}
+        editButtons={
+          <>
             <Button
               size="sm"
               variant="secondary"
@@ -126,22 +127,31 @@ export function CarouselBlock({
               <Pencil className="w-4 h-4 mr-2" />
               Edit
             </Button>
-          }
-        />
-        {onDelete && (
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(block.id);
-            }}
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
-    </div>
+            {onDelete && (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(block.id);
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </>
+        }
+      >
+        <CarouselDisplay block={block} isEditing={true} />
+      </EditableBlockWrapper>
+
+      <EditCarouselDialog
+        block={block}
+        onUpdate={onUpdate}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+      />
+    </>
   );
 }
 
@@ -149,7 +159,13 @@ export function CarouselBlock({
  * Carousel Display Component
  * Handles the visual presentation and auto-scroll logic
  */
-function CarouselDisplay({ block }: { block: CarouselBlockType }) {
+function CarouselDisplay({
+  block,
+  isEditing = false,
+}: {
+  block: CarouselBlockType;
+  isEditing?: boolean;
+}) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -218,7 +234,9 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
 
   return (
     <div
-      className="relative w-full"
+      className={`relative w-full ${
+        isEditing ? "hover:ring-1 hover:ring-[#00d4ff] transition-all" : ""
+      }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -306,7 +324,8 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
 interface EditCarouselDialogProps {
   block: CarouselBlockType;
   onUpdate?: (block: CarouselBlockType) => void;
-  trigger: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 type SlideUnit = {
@@ -323,9 +342,9 @@ type SlideUnit = {
 function EditCarouselDialog({
   block,
   onUpdate,
-  trigger,
+  open,
+  onOpenChange,
 }: EditCarouselDialogProps) {
-  const [open, setOpen] = useState(false);
   const [carouselType, setCarouselType] = useState<
     "image" | "locationPreview" | null
   >(null);
@@ -545,45 +564,77 @@ function EditCarouselDialog({
     }
 
     const data = await response.json();
-    return data.url;
+    return data.path; // API returns "path" not "url"
   };
 
   const handleSave = async () => {
-    if (!onUpdate || !carouselType) return;
+    console.log("CarouselBlock - handleSave called");
+    if (!onUpdate || !carouselType) {
+      console.log(
+        "CarouselBlock - Early return: onUpdate:",
+        !!onUpdate,
+        "carouselType:",
+        carouselType
+      );
+      return;
+    }
 
     // Validate all slides
+    console.log("CarouselBlock - Validating slides...");
     if (!validateSlides()) {
+      console.log("CarouselBlock - Validation failed");
       return;
     }
 
     setIsSaving(true);
 
     try {
+      console.log("CarouselBlock - slideUnits before processing:", slideUnits);
+
       // Upload all pending images
       const slidesWithUrls = await Promise.all(
-        slideUnits.map(async (unit) => {
+        slideUnits.map(async (unit, index) => {
+          console.log(`Processing unit ${index}:`, {
+            url: unit.url,
+            hasPendingFile: !!unit.pendingFile,
+            alt: unit.alt,
+          });
           let imageUrl = unit.url;
 
           // Upload pending file if exists
           if (unit.pendingFile) {
-            imageUrl = await uploadImage(unit.pendingFile);
+            console.log(`Uploading image for unit ${index}...`);
+            try {
+              imageUrl = await uploadImage(unit.pendingFile);
+              console.log(`Upload success for unit ${index}:`, imageUrl);
+            } catch (error) {
+              console.error(`Upload failed for unit ${index}:`, error);
+              throw error;
+            }
           }
+
+          console.log(`Final imageUrl for unit ${index}:`, imageUrl);
 
           // Clean up preview URL
           if (unit.previewUrl) {
             URL.revokeObjectURL(unit.previewUrl);
           }
 
-          return {
-            type: unit.type,
-            url: imageUrl,
-            alt: unit.alt,
-            ...(unit.type === "locationPreview" && {
+          // Build slide based on carousel type
+          if (unit.type === "locationPreview") {
+            return {
+              url: imageUrl,
+              alt: unit.alt,
               title: unit.title!,
               description: unit.description!,
-              locationBlockId: unit.locationBlockId!, // Required for locationPreview
-            }),
-          };
+              locationBlockId: unit.locationBlockId!,
+            };
+          } else {
+            return {
+              url: imageUrl,
+              alt: unit.alt,
+            };
+          }
         })
       );
 
@@ -592,7 +643,7 @@ function EditCarouselDialog({
       // 1. Creating new location blocks for temp-* IDs
       // 2. Deleting orphaned location blocks
       // 3. Updating existing location blocks
-      onUpdate({
+      const updatedBlock = {
         ...block,
         content: {
           includeHero: false, // Hero feature removed but field required by schema
@@ -600,9 +651,17 @@ function EditCarouselDialog({
           autoScroll,
           intervalSeconds,
         },
-      });
+      };
 
-      setOpen(false);
+      console.log(
+        "CarouselBlock - Saving block with type:",
+        updatedBlock.type,
+        updatedBlock
+      );
+
+      onUpdate(updatedBlock);
+
+      onOpenChange(false);
     } catch (error) {
       console.error("Failed to save carousel:", error);
       alert("Failed to save carousel. Please try again.");
@@ -618,12 +677,11 @@ function EditCarouselDialog({
         URL.revokeObjectURL(unit.previewUrl);
       }
     });
-    setOpen(false);
+    onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="pr-8 shrink-0">
           <DialogTitle>Edit Carousel</DialogTitle>

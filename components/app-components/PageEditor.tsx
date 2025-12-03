@@ -7,9 +7,11 @@ import {
   getBlockDisplayName,
   isAtMinimumCount,
   PAGE_LAYOUTS,
+  getFilteredAllowedBlocks,
 } from "@/lib/page-layouts";
 import { LayoutRenderer, BlockHandlers } from "@/lib/page-layouts";
 import { PageType } from "@prisma/client";
+import { LocationType } from "@/lib/app-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -72,6 +74,7 @@ interface PageEditorProps {
   footerOrder?: number | null;
   headerOrder?: number | null;
   icon?: string | null;
+  locationType?: LocationType; // Optional - only needed for CAFE pages
   onPublishToggle?: () => Promise<void>;
   onSave?: () => void;
   onMetadataUpdate?: (data: {
@@ -99,6 +102,7 @@ export function PageEditor({
   footerOrder,
   headerOrder,
   icon,
+  locationType,
   onPublishToggle,
   onSave,
   onMetadataUpdate,
@@ -211,9 +215,15 @@ export function PageEditor({
   };
 
   const handleUpdateBlock = async (updatedBlock: Block) => {
+    console.log(
+      "PageEditor - handleUpdateBlock called with:",
+      JSON.stringify(updatedBlock, null, 2)
+    );
+
     const result = await updateBlock(pageId, updatedBlock);
 
     if ("error" in result) {
+      console.error("PageEditor - Update block error:", result);
       toast({
         title: "Error updating block",
         description: result.error,
@@ -366,23 +376,23 @@ export function PageEditor({
     }
   };
 
-  const availableBlocks = layout.allowedBlocks.filter(
-    (blockType: BlockType) => {
-      const currentBlockCounts = blocks.reduce(
-        (acc, block) => {
-          acc[block.type] = (acc[block.type] || 0) + 1;
-          return acc;
-        },
-        {} as Record<BlockType, number>
-      );
+  // Get allowed blocks - filtered by location type for CAFE pages
+  const baseAllowedBlocks =
+    pageType === PageType.CAFE && locationType
+      ? getFilteredAllowedBlocks(locationType)
+      : layout.allowedBlocks;
 
-      return canAddBlock(
-        pageType,
-        blockType,
-        currentBlockCounts[blockType] || 0
-      );
-    }
-  );
+  const availableBlocks = baseAllowedBlocks.filter((blockType: BlockType) => {
+    const currentBlockCounts = blocks.reduce(
+      (acc, block) => {
+        acc[block.type] = (acc[block.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<BlockType, number>
+    );
+
+    return canAddBlock(pageType, blockType, currentBlockCounts[blockType] || 0);
+  });
   // Open live preview in new tab
   const handleViewLive = () => {
     window.open(`/pages/${pageSlug}`, "_blank");

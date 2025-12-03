@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import CafeEditorClient from "./CafeEditorClient";
 import { getPageBlocks } from "@/lib/blocks/actions";
+import { getLocationType } from "@/lib/app-settings";
 
 export default async function CafeEditorPage() {
   const session = await auth();
@@ -50,6 +51,9 @@ export default async function CafeEditorPage() {
   const result = await getPageBlocks(cafePage.id);
   const blocks = "error" in result ? [] : result;
 
+  // Get location type for dynamic block filtering
+  const locationType = await getLocationType();
+
   return (
     <CafeEditorClient
       pageId={cafePage.id}
@@ -63,6 +67,7 @@ export default async function CafeEditorPage() {
       headerOrder={cafePage.headerOrder}
       footerOrder={cafePage.footerOrder}
       icon={cafePage.icon}
+      locationType={locationType}
     />
   );
 }

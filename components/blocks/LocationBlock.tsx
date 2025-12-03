@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import Image from "next/image";
-import { CarouselDots } from "@/components/app-components/CarouselDots";
+import { ImageCarousel } from "@/components/app-components/ImageCarousel";
+import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import {
   Dialog,
   DialogContent,
@@ -409,30 +410,29 @@ export function LocationBlock({
       </Dialog>
 
       {/* Editing mode - clickable card */}
-      <div
-        className="cursor-pointer group"
-        onClick={() => {
+      <EditableBlockWrapper
+        onEdit={() => {
           if (onSelect) onSelect();
           setIsDialogOpen(true);
         }}
+        editButtons={
+          onDelete && (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(block.id);
+              }}
+              className="shadow-lg"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )
+        }
       >
         <LocationDisplay block={block} isEditing={true} />
-
-        {/* Action Buttons on Hover */}
-        <div className="absolute top-4 right-4 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete?.(block.id);
-            }}
-            className="shadow-lg"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      </EditableBlockWrapper>
     </>
   );
 }
@@ -445,9 +445,6 @@ function LocationDisplay({
   block: LocationBlockType;
   isEditing?: boolean;
 }) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const hasImages = block.content.images && block.content.images.length > 0;
-
   // Create ID for anchor linking from carousel
   const locationId = `location-${block.content.name.toLowerCase().replace(/\s+/g, "-")}`;
 
@@ -462,33 +459,14 @@ function LocationDisplay({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
         {/* Photo Gallery */}
         <div className="md:col-span-1 lg:col-span-3">
-          {hasImages ? (
-            <div className="relative aspect-4/3 rounded-lg overflow-hidden">
-              <Image
-                src={block.content.images![currentImageIndex].url}
-                alt={
-                  block.content.images![currentImageIndex].alt ||
-                  block.content.name
-                }
-                fill
-                className="object-cover"
-              />
-
-              {/* Image navigation dots */}
-              {block.content.images!.length > 1 && (
-                <CarouselDots
-                  total={block.content.images!.length}
-                  currentIndex={currentImageIndex}
-                  onDotClick={(index) => setCurrentImageIndex(index)}
-                  className="absolute bottom-4 left-1/2 -translate-x-1/2"
-                />
-              )}
-            </div>
-          ) : (
-            <div className="aspect-4/3 rounded-lg bg-muted flex items-center justify-center">
+          <ImageCarousel
+            images={block.content.images || []}
+            aspectRatio="4/3"
+            defaultAlt={block.content.name}
+            fallbackIcon={
               <MapPinned className="h-12 w-12 text-muted-foreground" />
-            </div>
-          )}
+            }
+          />
         </div>
 
         {/* Location Info */}
@@ -499,21 +477,18 @@ function LocationDisplay({
             {/* Address with map link */}
             <div className="flex items-start gap-2 mb-3">
               <MapPinned className="h-4 w-4 mt-1 text-muted-foreground shrink-0" />
-              {block.content.googleMapsUrl ? (
-                <a
-                  href={block.content.googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => isEditing && e.stopPropagation()}
-                  className="text-muted-foreground hover:text-primary hover:underline"
-                >
-                  {block.content.address}
-                </a>
-              ) : (
-                <address className="not-italic text-muted-foreground">
-                  {block.content.address}
-                </address>
-              )}
+              <a
+                href={
+                  block.content.googleMapsUrl ||
+                  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(block.content.address)}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => isEditing && e.stopPropagation()}
+                className="text-muted-foreground hover:text-primary hover:underline"
+              >
+                {block.content.address}
+              </a>
             </div>
 
             {/* Phone */}

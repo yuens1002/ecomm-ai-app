@@ -1,9 +1,17 @@
 import { LayoutRenderer } from "./types";
 import { renderBlock } from "./render-block";
 import { Block, BlockType } from "@/lib/blocks/schemas";
+import { LocationType } from "@/lib/app-settings";
 
 /**
  * Location Info Layout Configuration
+ *
+ * NOTE: This config allows BOTH carousel types because the location type
+ * setting is determined at runtime via app settings. The actual allowed/required
+ * blocks are filtered dynamically based on the location type.
+ *
+ * The page is shipped pre-populated with blocks - admin only edits what's there.
+ * No "Add Block" dropdown needed - blocks are managed in-place (edit/delete only).
  */
 export const locationInfoConfig = {
   allowedBlocks: [
@@ -13,13 +21,47 @@ export const locationInfoConfig = {
     "richText",
   ] as BlockType[],
   maxBlocks: {
-    imageCarousel: 1,
+    imageCarousel: 1, // Only 1 carousel
     locationCarousel: 1,
-    location: 5,
-    richText: 10,
+    richText: 1, // Only 1 richText block
+    // location: unlimited (no max)
   },
-  requiredBlocks: [] as BlockType[], // No required blocks - will be determined by app setting
+  requiredBlocks: [] as BlockType[], // Use getRequiredBlocks() for dynamic requirements
 };
+
+/**
+ * Get dynamically filtered allowed blocks based on location type
+ * Used by PageEditor to determine which blocks can exist on the page
+ */
+export function getFilteredAllowedBlocks(
+  locationType: LocationType
+): BlockType[] {
+  const isSingle = locationType === LocationType.SINGLE;
+  return locationInfoConfig.allowedBlocks.filter((blockType) => {
+    // Filter out the carousel type that doesn't match the location type
+    if (blockType === "imageCarousel" && !isSingle) return false;
+    if (blockType === "locationCarousel" && isSingle) return false;
+    return true;
+  });
+}
+
+/**
+ * Get required blocks based on location type
+ * These blocks must exist on the page (at least 1 of each type)
+ *
+ * - SINGLE location: imageCarousel (1), location (unlimited), richText (unlimited)
+ * - MULTI location: locationCarousel (1), location (unlimited), richText (unlimited)
+ *
+ * Admin can add as many locations and richText blocks as needed.
+ */
+export function getRequiredBlocks(locationType: LocationType): BlockType[] {
+  const isSingle = locationType === LocationType.SINGLE;
+  return [
+    isSingle ? "imageCarousel" : "locationCarousel",
+    "location",
+    "richText",
+  ] as BlockType[];
+}
 
 /**
  * Slot Mapping: Defines which block types go into which template slots

@@ -7,7 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Trash2, Mail, Store, MapPin } from "lucide-react";
+import {
+  Loader2,
+  Save,
+  Trash2,
+  Mail,
+  Store,
+  MapPin,
+  TriangleAlert,
+} from "lucide-react";
 import {
   Field,
   FieldContent,
@@ -20,6 +28,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import FileUpload from "@/components/app-components/FileUpload";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { LocationType } from "@/lib/app-settings";
 
 interface FooterSettings {
@@ -138,6 +155,8 @@ export default function SettingsManagementClient() {
     useState<LocationTypeSettings>({
       locationType: LocationType.SINGLE,
     });
+  const [pendingLocationType, setPendingLocationType] =
+    useState<LocationType | null>(null);
   const [savingLocationType, setSavingLocationType] = useState(false);
 
   const fetchSettings = useCallback(async () => {
@@ -316,22 +335,46 @@ export default function SettingsManagementClient() {
     }
   };
 
-  const handleLocationTypeChange = async (value: LocationType) => {
+  const handleLocationTypeChange = (value: LocationType) => {
+    // If changing from current value, show warning dialog
+    if (value !== locationTypeSettings.locationType) {
+      setPendingLocationType(value);
+    }
+  };
+
+  const confirmLocationTypeChange = async () => {
+    if (!pendingLocationType) return;
+
     setSavingLocationType(true);
     try {
-      const response = await fetch("/api/admin/settings/location-type", {
-        method: "PUT",
+      // Save location type setting
+      const settingsResponse = await fetch(
+        "/api/admin/settings/location-type",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ locationType: pendingLocationType }),
+        }
+      );
+
+      if (!settingsResponse.ok) throw new Error("Failed to save location type");
+
+      // Reseed cafe page with new defaults
+      const reseedResponse = await fetch("/api/admin/pages/cafe/reseed", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locationType: value }),
+        body: JSON.stringify({ locationType: pendingLocationType }),
       });
 
-      if (!response.ok) throw new Error("Failed to save location type");
+      if (!reseedResponse.ok) throw new Error("Failed to reset cafe page");
 
-      setLocationTypeSettings({ locationType: value });
+      setLocationTypeSettings({ locationType: pendingLocationType });
+      setPendingLocationType(null);
 
       toast({
         title: "Success",
-        description: "Cafe location type updated successfully",
+        description:
+          "Location setup updated and the cafe page reset successfully",
       });
     } catch (error) {
       toast({
@@ -355,81 +398,6 @@ export default function SettingsManagementClient() {
 
   return (
     <div className="space-y-6">
-      {/* Cafe Location Type */}
-      <Card>
-        <CardHeader className="pb-8">
-          <Field orientation="vertical">
-            <FieldContent>
-              <FieldTitle className="text-base font-semibold flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Cafe Location Type
-              </FieldTitle>
-              <FieldDescription>
-                Choose whether your cafe is a single location or has multiple
-                locations. This determines the structure of your Cafe page.
-              </FieldDescription>
-            </FieldContent>
-          </Field>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup
-            value={locationTypeSettings.locationType}
-            onValueChange={(value) =>
-              handleLocationTypeChange(value as LocationType)
-            }
-            disabled={savingLocationType}
-            className="space-y-4"
-          >
-            <div className="flex items-start space-x-3 rounded-lg border p-4 hover:bg-accent/50 transition-colors">
-              <RadioGroupItem
-                value={LocationType.SINGLE}
-                id="location-single"
-                className="mt-0.5"
-              />
-              <div className="space-y-1 flex-1">
-                <Label
-                  htmlFor="location-single"
-                  className="text-base font-medium cursor-pointer"
-                >
-                  Single Location
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Use an image carousel to showcase your cafe's atmosphere,
-                  interior, coffee, and team. Best for single-location
-                  businesses.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3 rounded-lg border p-4 hover:bg-accent/50 transition-colors">
-              <RadioGroupItem
-                value={LocationType.MULTI}
-                id="location-multi"
-                className="mt-0.5"
-              />
-              <div className="space-y-1 flex-1">
-                <Label
-                  htmlFor="location-multi"
-                  className="text-base font-medium cursor-pointer"
-                >
-                  Multiple Locations
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Create individual location blocks with title, description,
-                  address, and image. Each location has its own dedicated
-                  section.
-                </p>
-              </div>
-            </div>
-          </RadioGroup>
-          {savingLocationType && (
-            <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Saving location type...</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Store Branding */}
       <Card>
         <CardHeader className="pb-8">
@@ -673,6 +641,81 @@ export default function SettingsManagementClient() {
               </FieldDescription>
             </Field>
           </FieldGroup>
+        </CardContent>
+      </Card>
+
+      {/* Cafe Location Type */}
+      <Card>
+        <CardHeader className="pb-8">
+          <Field orientation="vertical">
+            <FieldContent>
+              <FieldTitle className="text-base font-semibold flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Location Setup
+              </FieldTitle>
+              <FieldDescription>
+                Select your business structure to automatically configure the
+                optimal layout for your Cafe page
+              </FieldDescription>
+            </FieldContent>
+          </Field>
+        </CardHeader>
+        <CardContent>
+          <RadioGroup
+            value={locationTypeSettings.locationType}
+            onValueChange={(value) =>
+              handleLocationTypeChange(value as LocationType)
+            }
+            disabled={savingLocationType}
+            className="space-y-4"
+          >
+            <div className="flex items-start space-x-3 rounded-lg border p-4 hover:bg-accent/50 transition-colors">
+              <RadioGroupItem
+                value={LocationType.SINGLE}
+                id="location-single"
+                className="mt-0.5"
+              />
+              <div className="space-y-1 flex-1">
+                <Label
+                  htmlFor="location-single"
+                  className="text-base font-medium cursor-pointer"
+                >
+                  Single Location
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Use an image carousel to showcase your cafe&apos;s atmosphere,
+                  interior, coffee, and team. Best for single-location
+                  businesses.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3 rounded-lg border p-4 hover:bg-accent/50 transition-colors">
+              <RadioGroupItem
+                value={LocationType.MULTI}
+                id="location-multi"
+                className="mt-0.5"
+              />
+              <div className="space-y-1 flex-1">
+                <Label
+                  htmlFor="location-multi"
+                  className="text-base font-medium cursor-pointer"
+                >
+                  Multiple Locations
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Create individual location blocks with title, description,
+                  address, and image. Each location has its own dedicated
+                  section.
+                </p>
+              </div>
+            </div>
+          </RadioGroup>
+          {savingLocationType && (
+            <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Saving location type...</span>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -1097,6 +1140,58 @@ export default function SettingsManagementClient() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={pendingLocationType !== null}
+        onOpenChange={(open) => !open && setPendingLocationType(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <TriangleAlert className="h-5 w-5" />
+              All current cafe page content will be deleted
+            </AlertDialogTitle>
+          </AlertDialogHeader>
+          <div className="space-y-3 py-4">
+            <p className="text-sm text-muted-foreground">
+              {pendingLocationType === LocationType.SINGLE
+                ? "Switching to single location will set up your cafe page with:"
+                : "Switching to multiple locations will set up your cafe page with:"}
+            </p>
+            <ul className="list-disc pl-6 space-y-1 text-sm text-muted-foreground">
+              {pendingLocationType === LocationType.SINGLE ? (
+                <>
+                  <li>Photo gallery to showcase your cafe atmosphere</li>
+                  <li>One location section with address, hours, and details</li>
+                  <li>Welcome message and amenities information</li>
+                </>
+              ) : (
+                <>
+                  <li>Interactive carousel to navigate between locations</li>
+                  <li>
+                    Dedicated section for each location with photos, address,
+                    and hours
+                  </li>
+                  <li>Welcome message and amenities information</li>
+                </>
+              )}
+            </ul>
+            <p className="text-sm text-muted-foreground">
+              You can customize all content, add photos, and update details
+              after the reset.
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmLocationTypeChange}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Reset Cafe Page
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

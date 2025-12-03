@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Plus, Upload } from "lucide-react";
 import { useState } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
+import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +22,11 @@ interface GalleryGridProps {
   className?: string;
 }
 
-function GalleryGrid({ images, className = "" }: GalleryGridProps) {
+/**
+ * Reusable image grid component
+ * Displays multiple images in a responsive grid layout
+ */
+export function GalleryGrid({ images, className = "" }: GalleryGridProps) {
   return (
     <div
       className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${className}`}
@@ -216,17 +221,12 @@ export function ImageGalleryBlock({
       </Dialog>
 
       {/* WYSIWYG Block Display with hover/select states */}
-      <div
-        className="relative group cursor-pointer transition-all hover:ring-1 hover:ring-[#00d4ff]"
-        onClick={() => {
+      <EditableBlockWrapper
+        onEdit={() => {
           if (onSelect) onSelect();
           setIsDialogOpen(true);
         }}
-      >
-        <GalleryGrid images={block.content.images} />
-
-        {/* Action Controls on Hover */}
-        <div className="absolute top-2 right-2 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        editButtons={
           <Button
             size="sm"
             variant="destructive"
@@ -238,8 +238,10 @@ export function ImageGalleryBlock({
           >
             <Trash2 className="h-4 w-4" />
           </Button>
-        </div>
-      </div>
+        }
+      >
+        <GalleryGrid images={block.content.images} />
+      </EditableBlockWrapper>
     </>
   );
 }

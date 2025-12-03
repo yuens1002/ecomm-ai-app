@@ -7,3 +7,4 @@ export { HoursBlock } from "./HoursBlock";
 export { FaqItemBlock } from "./FaqItemBlock";
 export { ImageGalleryBlock } from "./ImageGalleryBlock";
 export { CarouselBlock } from "./CarouselBlock";
+export { EditableBlockWrapper } from "./EditableBlockWrapper";

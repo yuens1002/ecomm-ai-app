@@ -569,6 +569,47 @@
 
 ## Low Priority
 
+### About Page Not Restored After Seed
+
+**Status**: To Fix  
+**Priority**: Low  
+**Description**: The About page is not properly restored after running the database seed command, requiring investigation before merging CMS features into main.
+
+**Current Behavior**:
+
+- Running seed command does not recreate About page
+- Other pages (Cafe, etc.) may be affected as well
+- Issue discovered during CMS block feature development
+
+**Impact**:
+
+- Developers need functional About page after seeding
+- QA/testing workflows interrupted
+- Demo environments may be incomplete
+
+**Investigation Needed**:
+
+- [ ] Check if About page blocks are included in seed.ts
+- [ ] Verify page creation logic in seed file
+- [ ] Test seed command and verify all pages exist after
+- [ ] Check if issue affects other CMS pages
+- [ ] Ensure page metadata (title, slug, published status) properly set
+
+**Tasks**:
+
+- [ ] Debug seed.ts to identify why About page not created
+- [ ] Fix seed logic to properly create About page with blocks
+- [ ] Test full seed → verify About page exists and is accessible
+- [ ] Document any special seeding requirements for CMS pages
+
+**Notes**:
+
+- This should be resolved before merging fix/cms-blocks branch into main
+- May be related to recent CMS block system changes
+- Low priority as it only affects development/demo environments
+
+---
+
 ### Add Store Name to Settings Model
 
 **Status**: Backlog  

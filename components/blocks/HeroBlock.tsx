@@ -10,6 +10,7 @@ import { Upload, Trash2, ImageIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { Hero } from "@/components/app-components/Hero";
+import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import {
   Dialog,
   DialogContent,
@@ -349,23 +350,13 @@ export function HeroBlock({
       </Dialog>
 
       {/* WYSIWYG Block Display with hover/select states */}
-      <div
-        className="relative group cursor-pointer transition-all hover:ring-1 hover:ring-[#00d4ff]"
-        onClick={() => {
+      <EditableBlockWrapper
+        onEdit={() => {
           if (onSelect) onSelect();
           setIsDialogOpen(true);
         }}
-      >
-        <Hero
-          title={block.content.title || "Untitled"}
-          imageUrl={block.content.imageUrl}
-          imageAlt={block.content.imageAlt}
-          caption={block.content.caption}
-        />
-
-        {/* Action Controls on Hover */}
-        {canDelete && (
-          <div className="absolute top-4 right-4 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        editButtons={
+          canDelete && (
             <Button
               size="sm"
               variant="destructive"
@@ -377,9 +368,16 @@ export function HeroBlock({
             >
               <Trash2 className="h-4 w-4" />
             </Button>
-          </div>
-        )}
-      </div>
+          )
+        }
+      >
+        <Hero
+          title={block.content.title || "Untitled"}
+          imageUrl={block.content.imageUrl}
+          imageAlt={block.content.imageAlt}
+          caption={block.content.caption}
+        />
+      </EditableBlockWrapper>
     </>
   );
 }

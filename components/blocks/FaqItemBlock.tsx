@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Trash2, ChevronDown } from "lucide-react";
+import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import { useState } from "react";
 import {
   Collapsible,
@@ -166,22 +167,12 @@ export function FaqItemBlock({
       </Dialog>
 
       {/* WYSIWYG Block Display with hover/select states */}
-      <Collapsible
-        className="relative group cursor-pointer transition-all hover:ring-1 hover:ring-[#00d4ff]"
-        onClick={() => {
+      <EditableBlockWrapper
+        onEdit={() => {
           if (onSelect) onSelect();
           setIsDialogOpen(true);
         }}
-      >
-        <div className="border rounded-lg">
-          <CollapsibleTrigger className="flex w-full items-center justify-between p-4 font-medium pointer-events-none">
-            {block.content.question}
-            <ChevronDown className="h-4 w-4" />
-          </CollapsibleTrigger>
-        </div>
-
-        {/* Action Controls on Hover */}
-        <div className="absolute top-2 right-2 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        editButtons={
           <Button
             size="sm"
             variant="destructive"
@@ -193,8 +184,17 @@ export function FaqItemBlock({
           >
             <Trash2 className="h-4 w-4" />
           </Button>
-        </div>
-      </Collapsible>
+        }
+      >
+        <Collapsible>
+          <div className="border rounded-lg">
+            <CollapsibleTrigger className="flex w-full items-center justify-between p-4 font-medium pointer-events-none">
+              {block.content.question}
+              <ChevronDown className="h-4 w-4" />
+            </CollapsibleTrigger>
+          </div>
+        </Collapsible>
+      </EditableBlockWrapper>
     </>
   );
 }
