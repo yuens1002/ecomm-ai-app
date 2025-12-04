@@ -6,16 +6,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
-import { Trash2, ChevronDown } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import { useState } from "react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { BlockDialog } from "./BlockDialog";
+import { FaqAccordionItem } from "@/components/app-components/FaqAccordionItem";
 
 interface FaqItemBlockProps {
   block: FaqItemBlockType;
@@ -38,7 +34,6 @@ export function FaqItemBlock({
 }: FaqItemBlockProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editedBlock, setEditedBlock] = useState(block);
-  const [isOpen, setIsOpen] = useState(false);
 
   // Deleted/disabled state
   if (block.isDeleted) {
@@ -48,14 +43,10 @@ export function FaqItemBlock({
         blockName="FAQ Item Block"
         onRestore={onRestore}
       >
-        <Collapsible>
-          <div className="border rounded-lg">
-            <CollapsibleTrigger className="flex w-full items-center justify-between p-4 font-medium pointer-events-none">
-              {block.content.question}
-              <ChevronDown className="h-4 w-4" />
-            </CollapsibleTrigger>
-          </div>
-        </Collapsible>
+        <FaqAccordionItem
+          question={block.content.question}
+          answer={block.content.answer}
+        />
       </DeletedBlockOverlay>
     );
   }
@@ -63,21 +54,11 @@ export function FaqItemBlock({
   // Display mode (non-editing page view)
   if (!isEditing) {
     return (
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="border rounded-lg">
-          <CollapsibleTrigger className="flex w-full items-center justify-between p-4 font-medium hover:bg-muted/50 transition-colors">
-            {block.content.question}
-            <ChevronDown
-              className={`h-4 w-4 transition-transform ${
-                isOpen ? "rotate-180" : ""
-              }`}
-            />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="px-4 pb-4 text-muted-foreground">
-            {block.content.answer}
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
+      <FaqAccordionItem
+        question={block.content.question}
+        answer={block.content.answer}
+        isInteractive
+      />
     );
   }
 
@@ -188,14 +169,10 @@ export function FaqItemBlock({
           </Button>
         }
       >
-        <Collapsible>
-          <div className="border rounded-lg">
-            <CollapsibleTrigger className="flex w-full items-center justify-between p-4 font-medium pointer-events-none">
-              {block.content.question}
-              <ChevronDown className="h-4 w-4" />
-            </CollapsibleTrigger>
-          </div>
-        </Collapsible>
+        <FaqAccordionItem
+          question={block.content.question}
+          answer={block.content.answer}
+        />
       </EditableBlockWrapper>
     </>
   );
