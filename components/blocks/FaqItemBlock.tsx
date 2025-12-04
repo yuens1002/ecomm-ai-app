@@ -6,10 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
-import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import { useState, useEffect } from "react";
-import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { BlockDialog } from "./BlockDialog";
 import { FaqAccordionItem } from "@/components/app-components/FaqAccordionItem";
 import { useValidation } from "@/hooks/useFormDialog";
@@ -17,23 +14,24 @@ import { useValidation } from "@/hooks/useFormDialog";
 interface FaqItemBlockProps {
   block: FaqItemBlockType;
   isEditing: boolean;
-  isSelected?: boolean;
-  onSelect?: () => void;
   onUpdate?: (block: FaqItemBlockType) => void;
-  onDelete?: (blockId: string) => void;
-  onRestore?: (blockId: string) => void;
+  // Dialog control from BlockRenderer
+  isDialogOpen?: boolean;
+  onDialogOpenChange?: (open: boolean) => void;
 }
 
 export function FaqItemBlock({
   block,
   isEditing,
-  isSelected = false,
-  onSelect,
   onUpdate,
-  onDelete,
-  onRestore,
+  isDialogOpen = false,
+  onDialogOpenChange,
 }: FaqItemBlockProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // For backward compatibility, use internal state if not controlled
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false);
+  const dialogOpen = onDialogOpenChange ? isDialogOpen : internalDialogOpen;
+  const setDialogOpen = onDialogOpenChange || setInternalDialogOpen;
+
   const [editedBlock, setEditedBlock] = useState(block);
 
   // Use validation hook for error state and toast
@@ -45,23 +43,8 @@ export function FaqItemBlock({
     setEditedBlock(block);
   }, [block]);
 
-  // Deleted/disabled state
-  if (block.isDeleted) {
-    return (
-      <DeletedBlockOverlay
-        blockId={block.id}
-        blockName="FAQ Item Block"
-        onRestore={onRestore}
-      >
-        <FaqAccordionItem
-          question={block.content.question}
-          answer={block.content.answer}
-        />
-      </DeletedBlockOverlay>
-    );
-  }
-
   // Display mode (non-editing page view)
+  // BlockRenderer handles deleted state and wrapper
   if (!isEditing) {
     return (
       <FaqAccordionItem
@@ -91,22 +74,22 @@ export function FaqItemBlock({
     }
 
     onUpdate?.(editedBlock);
-    setIsDialogOpen(false);
+    setDialogOpen(false);
   };
 
   // Cancel changes
   const handleCancel = () => {
     setEditedBlock(block);
     clearAllErrors();
-    setIsDialogOpen(false);
+    setDialogOpen(false);
   };
 
   // Edit mode with dialog
   return (
     <>
       <BlockDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
         title="Edit FAQ Item Block"
         description={`Update the question and answer • ${editedBlock.content.answer.length} of 1000 characters`}
         size="md"
@@ -186,31 +169,11 @@ export function FaqItemBlock({
         </FieldGroup>
       </BlockDialog>
 
-      {/* WYSIWYG Block Display with hover/select states */}
-      <EditableBlockWrapper
-        onEdit={() => {
-          if (onSelect) onSelect();
-          setIsDialogOpen(true);
-        }}
-        editButtons={
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete?.(block.id);
-            }}
-            className="shadow-lg"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        }
-      >
-        <FaqAccordionItem
-          question={block.content.question}
-          answer={block.content.answer}
-        />
-      </EditableBlockWrapper>
+      {/* Display content - wrapper handled by BlockRenderer */}
+      <FaqAccordionItem
+        question={block.content.question}
+        answer={block.content.answer}
+      />
     </>
   );
 }

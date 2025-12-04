@@ -10,22 +10,13 @@ import { BlockDialog } from "./BlockDialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormHeading } from "@/components/ui/app/FormHeading";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Pencil, Plus, ArrowRight, Trash2 } from "lucide-react";
+import { Plus, ArrowRight, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { ImageField } from "@/components/app-components/ImageField";
 import { ImageCard } from "@/components/app-components/ImageCard";
 import { CarouselDots } from "@/components/app-components/CarouselDots";
-import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import { useMultiImageUpload } from "@/hooks/useImageUpload";
 import { useValidation } from "@/hooks/useFormDialog";
 
@@ -34,64 +25,43 @@ type CarouselBlockType = ImageCarouselBlock | LocationCarouselBlock;
 interface CarouselBlockProps {
   block: CarouselBlockType;
   isEditing: boolean;
-  isSelected?: boolean;
-  onSelect?: () => void;
+  isNew?: boolean;
   onUpdate?: (block: CarouselBlockType) => void;
-  onDelete?: (blockId: string) => void;
-  onRestore?: (blockId: string) => void;
+  // Dialog control from BlockRenderer
+  isDialogOpen?: boolean;
+  onDialogOpenChange?: (open: boolean) => void;
 }
 
 export function CarouselBlock({
   block,
   isEditing,
-  isSelected = false,
-  onSelect,
+  isNew = false,
   onUpdate,
-  onDelete,
-  onRestore,
+  isDialogOpen = false,
+  onDialogOpenChange,
 }: CarouselBlockProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // For backward compatibility, use internal state if not controlled
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false);
+  const dialogOpen = onDialogOpenChange ? isDialogOpen : internalDialogOpen;
+  const setDialogOpen = onDialogOpenChange || setInternalDialogOpen;
 
-  // Deleted/disabled state
-  if (block.isDeleted) {
-    return (
-      <DeletedBlockOverlay
-        blockId={block.id}
-        blockName="Carousel"
-        onRestore={onRestore}
-      >
-        <CarouselDisplay block={block} />
-      </DeletedBlockOverlay>
-    );
-  }
-
-  // Display mode (non-editing page view)
+  // Display mode (non-editing page view) or editing display
+  // BlockRenderer handles the wrapper and deleted state
   if (!isEditing) {
     return <CarouselDisplay block={block} />;
   }
 
-  // Empty state in edit mode
+  // Empty state in edit mode - just show prompt (wrapper handled by BlockRenderer)
   if (block.content.slides.length === 0) {
     return (
       <>
-        <div
-          className={cn(
-            "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-            isSelected
-              ? "border-primary bg-primary/5"
-              : "border-gray-300 hover:border-gray-400"
-          )}
-          onClick={() => {
-            if (onSelect) onSelect();
-            setIsDialogOpen(true);
-          }}
-        >
+        <div className="border-2 border-dashed rounded-lg p-8 text-center">
           <p className="text-gray-500 mb-4">No slides in carousel</p>
           <Button
             variant="outline"
             onClick={(e) => {
               e.stopPropagation();
-              setIsDialogOpen(true);
+              setDialogOpen(true);
             }}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -101,54 +71,22 @@ export function CarouselBlock({
         <EditCarouselDialog
           block={block}
           onUpdate={onUpdate}
-          open={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
         />
       </>
     );
   }
 
-  // Edit mode with content
+  // Edit mode with content - just display + dialog (wrapper handled by BlockRenderer)
   return (
     <>
-      <EditableBlockWrapper
-        onEdit={() => {
-          if (onSelect) onSelect();
-          setIsDialogOpen(true);
-        }}
-        editButtons={
-          <>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Pencil className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
-            {onDelete && (
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(block.id);
-                }}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            )}
-          </>
-        }
-      >
-        <CarouselDisplay block={block} isEditing={true} />
-      </EditableBlockWrapper>
-
+      <CarouselDisplay block={block} isEditing={true} />
       <EditCarouselDialog
         block={block}
         onUpdate={onUpdate}
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
       />
     </>
   );
@@ -641,19 +579,19 @@ function EditCarouselDialog({
           </div>
 
           {autoScroll && (
-            <div>
+            <div className="flex items-center justify-between">
               <FormHeading
                 htmlFor="intervalSeconds"
-                label={`Interval: ${intervalSeconds} seconds`}
+                label="Interval (seconds)"
               />
               <Input
                 id="intervalSeconds"
-                type="range"
+                type="number"
                 min={2}
                 max={10}
                 value={intervalSeconds}
                 onChange={(e) => setIntervalSeconds(Number(e.target.value))}
-                className="mt-2"
+                className="w-16 h-8"
               />
             </div>
           )}

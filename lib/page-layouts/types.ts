@@ -12,6 +12,8 @@ export interface BlockHandlers {
   onSelect: (blockId: string) => void;
   onAddBlock?: (blockType: BlockType, afterBlockId?: string) => void;
   selectedBlockId: string | null;
+  /** Function to check if a block can be deleted (not at minimum count) */
+  canDeleteBlock?: (block: Block) => boolean;
 }
 
 /**

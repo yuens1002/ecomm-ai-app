@@ -9,12 +9,18 @@ import { BlockHandlers } from "./types";
  */
 export function renderBlock(block: Block, handlers?: BlockHandlers) {
   if (handlers) {
+    // Check if this block can be deleted
+    const canDelete = handlers.canDeleteBlock
+      ? handlers.canDeleteBlock(block)
+      : true;
+
     return (
       <BlockRenderer
         key={block.id}
         block={block}
         isEditing={true}
         isSelected={handlers.selectedBlockId === block.id}
+        canDelete={canDelete}
         onSelect={() => handlers.onSelect(block.id)}
         onUpdate={handlers.onUpdate}
         onDelete={handlers.onDelete}

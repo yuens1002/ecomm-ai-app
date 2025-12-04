@@ -10,70 +10,39 @@ import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { Field } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
+import { useState } from "react";
 import { BlockDialog } from "./BlockDialog";
 
 interface RichTextBlockProps {
   block: RichTextBlockType;
   isEditing: boolean;
-  isSelected?: boolean;
-  canDelete?: boolean;
   isNew?: boolean;
-  onSelect?: () => void;
   onUpdate?: (block: RichTextBlockType) => void;
   onDelete?: (blockId: string) => void;
-  onRestore?: (blockId: string) => void;
+  // Dialog control from BlockRenderer
+  isDialogOpen?: boolean;
+  onDialogOpenChange?: (open: boolean) => void;
 }
 
 export function RichTextBlock({
   block,
   isEditing,
-  isSelected = false,
-  canDelete = true,
   isNew = false,
-  onSelect,
   onUpdate,
   onDelete,
-  onRestore,
+  isDialogOpen = false,
+  onDialogOpenChange,
 }: RichTextBlockProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // For backward compatibility, use internal state if not controlled
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false);
+  const dialogOpen = onDialogOpenChange ? isDialogOpen : internalDialogOpen;
+  const setDialogOpen = onDialogOpenChange || setInternalDialogOpen;
+
   const [editedBlock, setEditedBlock] = useState<RichTextBlockType>(block);
   const [errors, setErrors] = useState<{ html?: string }>({});
-  const [hasOpenedOnce, setHasOpenedOnce] = useState(false);
-
-  // Auto-open dialog when block is selected (for newly added blocks)
-  useEffect(() => {
-    if (isSelected && isEditing && !hasOpenedOnce) {
-      // For new blocks, clear the default values to show placeholder
-      if (isNew) {
-        setEditedBlock({
-          ...block,
-          content: { html: "" },
-        });
-      }
-      setIsDialogOpen(true);
-      setHasOpenedOnce(true);
-    }
-  }, [isSelected, isEditing, isNew, block, hasOpenedOnce]);
-
-  // Deleted/disabled state
-  if (block.isDeleted) {
-    return (
-      <DeletedBlockOverlay
-        blockId={block.id}
-        blockName="Rich Text Block"
-        onRestore={onRestore}
-      >
-        <Typography>
-          <div dangerouslySetInnerHTML={{ __html: block.content.html }} />
-        </Typography>
-      </DeletedBlockOverlay>
-    );
-  }
 
   // Display mode (non-editing page view)
+  // BlockRenderer handles deleted state and wrapper
   if (!isEditing) {
     return (
       <Typography>
@@ -102,7 +71,7 @@ export function RichTextBlock({
 
     setErrors({});
     onUpdate?.(editedBlock);
-    setIsDialogOpen(false);
+    setDialogOpen(false);
   };
 
   // Cancel changes - if new block, delete it; otherwise just revert
@@ -111,7 +80,7 @@ export function RichTextBlock({
       onDelete?.(block.id);
     } else {
       setEditedBlock(block);
-      setIsDialogOpen(false);
+      setDialogOpen(false);
     }
   };
 
@@ -120,7 +89,7 @@ export function RichTextBlock({
     if (!open) {
       handleCancel();
     } else {
-      setIsDialogOpen(open);
+      setDialogOpen(open);
     }
   };
 
@@ -128,7 +97,7 @@ export function RichTextBlock({
   return (
     <>
       <BlockDialog
-        open={isDialogOpen}
+        open={dialogOpen}
         onOpenChange={handleDialogChange}
         title={
           isNew
@@ -179,29 +148,8 @@ export function RichTextBlock({
         </Field>
       </BlockDialog>
 
-      {/* WYSIWYG Block Display with hover/select states */}
-      <Typography
-        isEditing={true}
-        onClick={() => {
-          if (onSelect) onSelect();
-          setIsDialogOpen(true);
-        }}
-        actionButtons={
-          canDelete ? (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete?.(block.id);
-              }}
-              className="shadow-lg"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          ) : undefined
-        }
-      >
+      {/* Display content - wrapper handled by BlockRenderer */}
+      <Typography>
         <div dangerouslySetInnerHTML={{ __html: block.content.html }} />
       </Typography>
     </>

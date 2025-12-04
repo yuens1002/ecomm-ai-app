@@ -141,11 +141,22 @@ export function ImageField({
 
   // Determine what to display
   const displayUrl = previewUrl || value;
-  const displayPath = pendingFile
-    ? pendingFile.name
-    : value
-      ? value.split("/").pop() || value
-      : "";
+
+  // Format display path to be human-readable
+  const getDisplayPath = () => {
+    if (pendingFile) return pendingFile.name;
+    if (!value) return "";
+
+    // For placehold.co URLs, show "Placeholder image"
+    if (value.includes("placehold.co")) {
+      return "Placeholder image";
+    }
+
+    // For uploaded files, show just the filename
+    return value.split("/").pop() || value;
+  };
+
+  const displayPath = getDisplayPath();
 
   return (
     <FieldGroup>

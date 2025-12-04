@@ -1,45 +1,52 @@
 "use client";
 
 import { LocationBlock as LocationBlockType } from "@/lib/blocks/schemas";
-import { MapPinned, Trash2, Plus, X, Phone } from "lucide-react";
+import { MapPinned, Plus, X, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
 import React, { useState, useEffect } from "react";
-import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { ImageCarousel } from "@/components/app-components/ImageCarousel";
-import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import { BlockDialog } from "./BlockDialog";
 import { ImageListField } from "@/components/app-components/ImageListField";
 import { useMultiImageUpload } from "@/hooks/useImageUpload";
 import { HoursCard } from "@/components/app-components/HoursCard";
+import { useValidation } from "@/hooks/useFormDialog";
 
 interface LocationBlockProps {
   block: LocationBlockType;
   isEditing: boolean;
-  isSelected?: boolean;
-  onSelect?: () => void;
+  isNew?: boolean;
   onUpdate?: (block: LocationBlockType) => void;
-  onDelete?: (blockId: string) => void;
-  onRestore?: (blockId: string) => void;
+  // Dialog control from BlockRenderer
+  isDialogOpen?: boolean;
+  onDialogOpenChange?: (open: boolean) => void;
 }
 
 export function LocationBlock({
   block,
   isEditing,
-  isSelected = false,
-  onSelect,
+  isNew = false,
   onUpdate,
-  onDelete,
-  onRestore,
+  isDialogOpen = false,
+  onDialogOpenChange,
 }: LocationBlockProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // For backward compatibility, use internal state if not controlled
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false);
+  const dialogOpen = onDialogOpenChange ? isDialogOpen : internalDialogOpen;
+  const setDialogOpen = onDialogOpenChange || setInternalDialogOpen;
+
   const [editedBlock, setEditedBlock] = useState(block);
-  const [errors, setErrors] = useState<{ [key: string]: string | undefined }>(
-    {}
-  );
+
+  // Use validation hook for error state and toast
+  const { errors, hasErrors, clearError, clearAllErrors, showValidationError } =
+    useValidation<{
+      name?: string;
+      address?: string;
+      googleMapsUrl?: string;
+    }>();
 
   // Use shared multi-image upload hook
   const {
@@ -61,51 +68,41 @@ export function LocationBlock({
     setEditedBlock(block);
   }, [block]);
 
-  // Deleted/disabled state
-  if (block.isDeleted) {
-    return (
-      <DeletedBlockOverlay
-        blockId={block.id}
-        blockName="Location"
-        onRestore={onRestore}
-      >
-        <LocationDisplay block={block} />
-      </DeletedBlockOverlay>
-    );
-  }
-
   // Display mode (non-editing page view)
+  // BlockRenderer handles deleted state and wrapper
   if (!isEditing) {
     return <LocationDisplay block={block} />;
   }
 
-  // Validation
-  const validateBlock = (): boolean => {
-    const newErrors: { [key: string]: string | undefined } = {};
+  // Save changes from dialog
+  const handleSave = async () => {
+    // Validate required fields
+    const fieldErrors: {
+      name?: string;
+      address?: string;
+      googleMapsUrl?: string;
+    } = {};
 
     if (!editedBlock.content.name?.trim()) {
-      newErrors.name = "Location name is required";
+      fieldErrors.name = "Location name is required";
     }
     if (!editedBlock.content.address?.trim()) {
-      newErrors.address = "Address is required";
+      fieldErrors.address = "Address is required";
     }
     if (!editedBlock.content.googleMapsUrl?.trim()) {
-      newErrors.googleMapsUrl = "Google Maps URL is required";
+      fieldErrors.googleMapsUrl = "Google Maps URL is required";
     } else {
       try {
         new URL(editedBlock.content.googleMapsUrl);
       } catch {
-        newErrors.googleMapsUrl = "Must be a valid URL";
+        fieldErrors.googleMapsUrl = "Must be a valid URL";
       }
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Save changes from dialog
-  const handleSave = async () => {
-    if (!validateBlock()) return;
+    // Show toast and set errors if validation fails
+    if (!showValidationError(fieldErrors)) {
+      return;
+    }
 
     try {
       // Upload all pending files (hook handles old image cleanup)
@@ -115,7 +112,7 @@ export function LocationBlock({
         ...editedBlock,
         content: { ...editedBlock.content, images: uploadedImages },
       });
-      setIsDialogOpen(false);
+      setDialogOpen(false);
     } catch (error) {
       console.error("Upload error:", error);
       alert("Failed to upload images. Please try again.");
@@ -126,8 +123,8 @@ export function LocationBlock({
   const handleCancel = () => {
     resetImages();
     setEditedBlock(block);
-    setErrors({});
-    setIsDialogOpen(false);
+    clearAllErrors();
+    setDialogOpen(false);
   };
 
   // Handle dialog close
@@ -135,7 +132,7 @@ export function LocationBlock({
     if (!open) {
       handleCancel();
     } else {
-      setIsDialogOpen(open);
+      setDialogOpen(open);
     }
   };
 
@@ -169,7 +166,7 @@ export function LocationBlock({
   return (
     <>
       <BlockDialog
-        open={isDialogOpen}
+        open={dialogOpen}
         onOpenChange={handleDialogChange}
         title="Edit Location"
         description="Configure location details, hours, photos, and description"
@@ -179,7 +176,9 @@ export function LocationBlock({
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave} disabled={hasErrors}>
+              Save
+            </Button>
           </>
         }
       >
@@ -202,7 +201,7 @@ export function LocationBlock({
                   ...editedBlock,
                   content: { ...editedBlock.content, name: e.target.value },
                 });
-                if (errors.name) setErrors({ ...errors, name: undefined });
+                if (errors.name) clearError("name");
               }}
               placeholder="e.g., Downtown Location"
               maxLength={100}
@@ -233,8 +232,7 @@ export function LocationBlock({
                     address: e.target.value,
                   },
                 });
-                if (errors.address)
-                  setErrors({ ...errors, address: undefined });
+                if (errors.address) clearError("address");
               }}
               placeholder="123 Main St&#10;City, State 12345"
               rows={3}
@@ -287,15 +285,16 @@ export function LocationBlock({
             <Input
               id="location-maps"
               value={editedBlock.content.googleMapsUrl || ""}
-              onChange={(e) =>
+              onChange={(e) => {
                 setEditedBlock({
                   ...editedBlock,
                   content: {
                     ...editedBlock.content,
                     googleMapsUrl: e.target.value,
                   },
-                })
-              }
+                });
+                if (errors.googleMapsUrl) clearError("googleMapsUrl");
+              }}
               placeholder="https://maps.google.com/..."
               className={errors.googleMapsUrl ? "border-destructive" : ""}
             />
@@ -420,30 +419,8 @@ export function LocationBlock({
         </FieldGroup>
       </BlockDialog>
 
-      {/* Editing mode - clickable card */}
-      <EditableBlockWrapper
-        onEdit={() => {
-          if (onSelect) onSelect();
-          setIsDialogOpen(true);
-        }}
-        editButtons={
-          onDelete && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(block.id);
-              }}
-              className="shadow-lg"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )
-        }
-      >
-        <LocationDisplay block={block} isEditing={true} />
-      </EditableBlockWrapper>
+      {/* Display content - wrapper handled by BlockRenderer */}
+      <LocationDisplay block={block} isEditing={true} />
     </>
   );
 }

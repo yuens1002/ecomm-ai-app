@@ -41,7 +41,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Eye, Plus, Settings, X } from "lucide-react";
+import { Eye, Plus, Save, Settings, X } from "lucide-react";
 import {
   DynamicIcon,
   COMMON_PAGE_ICONS,
@@ -381,6 +381,17 @@ export function PageEditor({
     window.open(`/pages/${pageSlug}`, "_blank");
   };
 
+  // Check if a block can be deleted (not at minimum count)
+  const canDeleteBlock = (block: Block): boolean => {
+    // Count how many active blocks of this type exist
+    const activeBlocksOfType = blocks.filter(
+      (b) => b.type === block.type && !b.isDeleted
+    ).length;
+
+    // If at minimum, can't delete
+    return !isAtMinimumCount(pageType, block.type, activeBlocksOfType);
+  };
+
   // Block handlers to pass to layout renderer
   const blockHandlers: BlockHandlers & {
     pendingBlock: { type: BlockType; afterBlockId?: string } | null;
@@ -396,6 +407,7 @@ export function PageEditor({
     pendingBlock,
     onConfirmAddBlock: handleConfirmAddBlock,
     onCancelAddBlock: handleCancelAddBlock,
+    canDeleteBlock,
   };
 
   return (
@@ -449,7 +461,7 @@ export function PageEditor({
                   <div className="grid grid-cols-1 lg:grid-cols-[280px_auto_1fr] gap-8">
                     {/* Left Column - Controls */}
                     <div className="space-y-6">
-                      <div className="space-y-4">
+                      <div>
                         <div className="flex items-center justify-between">
                           <Label
                             htmlFor="published"
@@ -463,93 +475,89 @@ export function PageEditor({
                             onCheckedChange={setPublished}
                           />
                         </div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground mt-1">
                           Make this page publicly visible
                         </p>
                       </div>
 
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         <h4 className="text-sm font-medium">Show Page Link</h4>
-                        <div className="space-y-3">
-                          <div className="space-y-2">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox
-                                id="show-header"
-                                checked={showInHeader}
-                                onCheckedChange={(checked) =>
-                                  setShowInHeader(checked === true)
-                                }
-                              />
-                              <Label
-                                htmlFor="show-header"
-                                className="text-sm cursor-pointer"
-                              >
-                                Site Header
-                              </Label>
-                            </div>
-                            {showInHeader && (
-                              <div className="ml-6">
-                                <Label
-                                  htmlFor="header-order"
-                                  className="text-xs text-muted-foreground"
-                                >
-                                  Display Order
-                                </Label>
-                                <Input
-                                  id="header-order"
-                                  type="number"
-                                  min="0"
-                                  value={headerOrderValue}
-                                  onChange={(e) =>
-                                    setHeaderOrderValue(
-                                      parseInt(e.target.value) || 0
-                                    )
-                                  }
-                                  className="mt-1 w-20"
-                                />
-                              </div>
-                            )}
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox
-                                id="show-footer"
-                                checked={showFooter}
-                                onCheckedChange={(checked) =>
-                                  setShowFooter(checked === true)
-                                }
-                              />
-                              <Label
-                                htmlFor="show-footer"
-                                className="text-sm cursor-pointer"
-                              >
-                                Site Footer
-                              </Label>
-                            </div>
-                            {showFooter && (
-                              <div className="ml-6">
-                                <Label
-                                  htmlFor="footer-order"
-                                  className="text-xs text-muted-foreground"
-                                >
-                                  Display Order
-                                </Label>
-                                <Input
-                                  id="footer-order"
-                                  type="number"
-                                  min="0"
-                                  value={footerOrderValue}
-                                  onChange={(e) =>
-                                    setFooterOrderValue(
-                                      parseInt(e.target.value) || 0
-                                    )
-                                  }
-                                  className="mt-1 w-20"
-                                />
-                              </div>
-                            )}
-                          </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="show-header"
+                            checked={showInHeader}
+                            onCheckedChange={(checked) =>
+                              setShowInHeader(checked === true)
+                            }
+                          />
+                          <Label
+                            htmlFor="show-header"
+                            className="text-sm cursor-pointer"
+                          >
+                            Site Header
+                          </Label>
                         </div>
+                        {showInHeader && (
+                          <div className="flex items-center justify-between">
+                            <Label
+                              htmlFor="header-order"
+                              className="text-sm font-medium"
+                            >
+                              Display Order
+                            </Label>
+                            <Input
+                              id="header-order"
+                              type="number"
+                              min="0"
+                              value={headerOrderValue}
+                              onChange={(e) =>
+                                setHeaderOrderValue(
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                              className="w-16 h-8"
+                            />
+                          </div>
+                        )}
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="show-footer"
+                            checked={showFooter}
+                            onCheckedChange={(checked) =>
+                              setShowFooter(checked === true)
+                            }
+                          />
+                          <Label
+                            htmlFor="show-footer"
+                            className="text-sm cursor-pointer"
+                          >
+                            Site Footer
+                          </Label>
+                        </div>
+                        {showFooter && (
+                          <div className="flex items-center justify-between">
+                            <Label
+                              htmlFor="footer-order"
+                              className="text-sm font-medium"
+                            >
+                              Display Order
+                            </Label>
+                            <Input
+                              id="footer-order"
+                              type="number"
+                              min="0"
+                              value={footerOrderValue}
+                              onChange={(e) =>
+                                setFooterOrderValue(
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                              className="w-16 h-8"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
 

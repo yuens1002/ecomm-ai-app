@@ -7,6 +7,7 @@
   - Migrated all blocks to `useValidation` hook for consistent error handling and toast notifications
   - Fixed LocationBlock stray backticks typo
   - Updated `cms-blocks-architecture.md` with required development standards for new blocks
+- **UX: Delayed "Unsaved changes" indicator**: FormHeading now waits 30 seconds before showing the dirty indicator, reducing noise while actively editing and only reminding users who may have forgotten to save
 
 ## 0.29.2 - 2025-12-04
 

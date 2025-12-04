@@ -5,11 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { Hero } from "@/components/app-components/Hero";
-import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import { BlockDialog } from "./BlockDialog";
 import { ImageField } from "@/components/app-components/ImageField";
 import { useImageUpload } from "@/hooks/useImageUpload";
@@ -18,25 +15,24 @@ import { useValidation } from "@/hooks/useFormDialog";
 interface HeroBlockProps {
   block: HeroBlockType;
   isEditing: boolean;
-  isSelected?: boolean;
-  canDelete?: boolean;
-  onSelect?: () => void;
   onUpdate?: (block: HeroBlockType) => void;
-  onDelete?: (blockId: string) => void;
-  onRestore?: (blockId: string) => void;
+  // Dialog control from BlockRenderer
+  isDialogOpen?: boolean;
+  onDialogOpenChange?: (open: boolean) => void;
 }
 
 export function HeroBlock({
   block,
   isEditing,
-  isSelected = false,
-  canDelete = true,
-  onSelect,
   onUpdate,
-  onDelete,
-  onRestore,
+  isDialogOpen = false,
+  onDialogOpenChange,
 }: HeroBlockProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // For backward compatibility, use internal state if not controlled
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false);
+  const dialogOpen = onDialogOpenChange ? isDialogOpen : internalDialogOpen;
+  const setDialogOpen = onDialogOpenChange || setInternalDialogOpen;
+
   const [editedBlock, setEditedBlock] = useState(block);
 
   // Use validation hook for error state and toast
@@ -58,25 +54,8 @@ export function HeroBlock({
     setEditedBlock(block);
   }, [block]);
 
-  // Deleted/disabled state
-  if (block.isDeleted) {
-    return (
-      <DeletedBlockOverlay
-        blockId={block.id}
-        blockName="Hero Block"
-        onRestore={onRestore}
-      >
-        <Hero
-          title={block.content.title || "Untitled"}
-          imageUrl={block.content.imageUrl}
-          imageAlt={block.content.imageAlt}
-          caption={block.content.caption}
-        />
-      </DeletedBlockOverlay>
-    );
-  }
-
   // Display mode (non-editing page view)
+  // BlockRenderer handles deleted state and wrapper
   if (!isEditing) {
     return (
       <Hero
@@ -129,7 +108,7 @@ export function HeroBlock({
     }
 
     onUpdate?.(finalBlock);
-    setIsDialogOpen(false);
+    setDialogOpen(false);
   };
 
   // Cancel changes
@@ -137,15 +116,15 @@ export function HeroBlock({
     setEditedBlock(block);
     resetImage();
     clearAllErrors();
-    setIsDialogOpen(false);
+    setDialogOpen(false);
   };
 
   // Edit mode with dialog
   return (
     <>
       <BlockDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
         title="Edit Hero"
         description="Update the hero banner image, title, and caption"
         size="md"
@@ -245,35 +224,13 @@ export function HeroBlock({
         </FieldGroup>
       </BlockDialog>
 
-      {/* WYSIWYG Block Display with hover/select states */}
-      <EditableBlockWrapper
-        onEdit={() => {
-          if (onSelect) onSelect();
-          setIsDialogOpen(true);
-        }}
-        editButtons={
-          canDelete && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete?.(block.id);
-              }}
-              className="shadow-lg"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )
-        }
-      >
-        <Hero
-          title={block.content.title || "Untitled"}
-          imageUrl={block.content.imageUrl}
-          imageAlt={block.content.imageAlt}
-          caption={block.content.caption}
-        />
-      </EditableBlockWrapper>
+      {/* Display content - wrapper handled by BlockRenderer */}
+      <Hero
+        title={block.content.title || "Untitled"}
+        imageUrl={block.content.imageUrl}
+        imageAlt={block.content.imageAlt}
+        caption={block.content.caption}
+      />
     </>
   );
 }

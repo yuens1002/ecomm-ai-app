@@ -10,34 +10,31 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { BlockDialog } from "./BlockDialog";
 import { useValidation } from "@/hooks/useFormDialog";
 
 interface PullQuoteBlockProps {
   block: PullQuoteBlockType;
   isEditing: boolean;
-  isSelected?: boolean;
-  canDelete?: boolean;
-  onSelect?: () => void;
   onUpdate?: (block: PullQuoteBlockType) => void;
-  onDelete?: (blockId: string) => void;
-  onRestore?: (blockId: string) => void;
+  // Dialog control from BlockRenderer
+  isDialogOpen?: boolean;
+  onDialogOpenChange?: (open: boolean) => void;
 }
 
 export function PullQuoteBlock({
   block,
   isEditing,
-  isSelected = false,
-  canDelete = true,
-  onSelect,
   onUpdate,
-  onDelete,
-  onRestore,
+  isDialogOpen = false,
+  onDialogOpenChange,
 }: PullQuoteBlockProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // For backward compatibility, use internal state if not controlled
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false);
+  const dialogOpen = onDialogOpenChange ? isDialogOpen : internalDialogOpen;
+  const setDialogOpen = onDialogOpenChange || setInternalDialogOpen;
+
   const [editedBlock, setEditedBlock] = useState(block);
 
   // Use validation hook for error state and toast
@@ -49,20 +46,8 @@ export function PullQuoteBlock({
     setEditedBlock(block);
   }, [block]);
 
-  // Deleted/disabled state
-  if (block.isDeleted) {
-    return (
-      <DeletedBlockOverlay
-        blockId={block.id}
-        blockName="Pull Quote Block"
-        onRestore={onRestore}
-      >
-        <PullQuote text={block.content.text} author={block.content.author} />
-      </DeletedBlockOverlay>
-    );
-  }
-
   // Display mode (non-editing page view)
+  // BlockRenderer handles deleted state and wrapper
   if (!isEditing) {
     return (
       <PullQuote text={block.content.text} author={block.content.author} />
@@ -84,22 +69,22 @@ export function PullQuoteBlock({
     }
 
     onUpdate?.(editedBlock);
-    setIsDialogOpen(false);
+    setDialogOpen(false);
   };
 
   // Cancel changes
   const handleCancel = () => {
     setEditedBlock(block);
     clearAllErrors();
-    setIsDialogOpen(false);
+    setDialogOpen(false);
   };
 
   // Edit mode with dialog
   return (
     <>
       <BlockDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
         title={`Edit ${BLOCK_METADATA.pullQuote.name}`}
         description={BLOCK_METADATA.pullQuote.description}
         size="md"
@@ -174,31 +159,8 @@ export function PullQuoteBlock({
         </FieldGroup>
       </BlockDialog>
 
-      {/* WYSIWYG Block Display with hover/select states */}
-      <PullQuote
-        text={block.content.text}
-        author={block.content.author}
-        isEditing={true}
-        onClick={() => {
-          if (onSelect) onSelect();
-          setIsDialogOpen(true);
-        }}
-        actionButtons={
-          canDelete ? (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete?.(block.id);
-              }}
-              className="shadow-lg"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          ) : undefined
-        }
-      />
+      {/* Display content - wrapper handled by BlockRenderer */}
+      <PullQuote text={block.content.text} author={block.content.author} />
     </>
   );
 }

@@ -7,7 +7,6 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { BlockDialog } from "./BlockDialog";
 import { HoursCard } from "@/components/app-components/HoursCard";
 import { useValidation } from "@/hooks/useFormDialog";
@@ -15,23 +14,24 @@ import { useValidation } from "@/hooks/useFormDialog";
 interface HoursBlockProps {
   block: HoursBlockType;
   isEditing: boolean;
-  isSelected?: boolean;
-  onSelect?: () => void;
   onUpdate?: (block: HoursBlockType) => void;
-  onDelete?: (blockId: string) => void;
-  onRestore?: (blockId: string) => void;
+  // Dialog control from BlockRenderer
+  isDialogOpen?: boolean;
+  onDialogOpenChange?: (open: boolean) => void;
 }
 
 export function HoursBlock({
   block,
   isEditing,
-  isSelected = false,
-  onSelect,
   onUpdate,
-  onDelete,
-  onRestore,
+  isDialogOpen = false,
+  onDialogOpenChange,
 }: HoursBlockProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // For backward compatibility, use internal state if not controlled
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false);
+  const dialogOpen = onDialogOpenChange ? isDialogOpen : internalDialogOpen;
+  const setDialogOpen = onDialogOpenChange || setInternalDialogOpen;
+
   const [editedBlock, setEditedBlock] = useState(block);
 
   // Use validation hook for error state and toast
@@ -43,20 +43,8 @@ export function HoursBlock({
     setEditedBlock(block);
   }, [block]);
 
-  // Deleted/disabled state
-  if (block.isDeleted) {
-    return (
-      <DeletedBlockOverlay
-        blockId={block.id}
-        blockName="Hours Block"
-        onRestore={onRestore}
-      >
-        <HoursCard schedule={block.content.schedule} />
-      </DeletedBlockOverlay>
-    );
-  }
-
   // Display mode (non-editing page view)
+  // BlockRenderer handles deleted state and wrapper
   if (!isEditing) {
     return <HoursCard schedule={block.content.schedule} />;
   }
@@ -94,22 +82,22 @@ export function HoursBlock({
             : [{ day: "", hours: "" }],
       },
     });
-    setIsDialogOpen(false);
+    setDialogOpen(false);
   };
 
   // Cancel changes
   const handleCancel = () => {
     setEditedBlock(block);
     clearAllErrors();
-    setIsDialogOpen(false);
+    setDialogOpen(false);
   };
 
   // Edit mode with dialog
   return (
     <>
       <BlockDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
         title="Edit Hours Block"
         description={`Update your business hours schedule • ${editedBlock.content.schedule.length} of 7 rows`}
         size="md"
@@ -236,28 +224,8 @@ export function HoursBlock({
         </FieldGroup>
       </BlockDialog>
 
-      {/* WYSIWYG Block Display with hover/select states */}
-      <HoursCard
-        schedule={block.content.schedule}
-        isEditing={true}
-        onClick={() => {
-          if (onSelect) onSelect();
-          setIsDialogOpen(true);
-        }}
-        actionButtons={
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete?.(block.id);
-            }}
-            className="shadow-lg"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        }
-      />
+      {/* Display content - wrapper handled by BlockRenderer */}
+      <HoursCard schedule={block.content.schedule} />
     </>
   );
 }

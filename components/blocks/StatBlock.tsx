@@ -7,71 +7,42 @@ import {
 } from "@/lib/blocks/schemas";
 import { StatCard } from "@/components/app-components/StatCard";
 import { Input } from "@/components/ui/input";
-import { Field, FieldGroup, FieldError } from "@/components/ui/field";
+import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { BlockDialog } from "./BlockDialog";
 
 interface StatBlockProps {
   block: StatBlockType;
   isEditing: boolean;
-  isSelected?: boolean;
-  canDelete?: boolean;
   isNew?: boolean;
-  onSelect?: () => void;
   onUpdate?: (block: StatBlockType) => void;
   onDelete?: (blockId: string) => void;
-  onRestore?: (blockId: string) => void;
+  // Dialog control from BlockRenderer
+  isDialogOpen?: boolean;
+  onDialogOpenChange?: (open: boolean) => void;
 }
 
 export function StatBlock({
   block,
   isEditing,
-  isSelected = false,
-  canDelete = true,
   isNew = false,
-  onSelect,
   onUpdate,
   onDelete,
-  onRestore,
+  isDialogOpen = false,
+  onDialogOpenChange,
 }: StatBlockProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // For backward compatibility, use internal state if not controlled
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false);
+  const dialogOpen = onDialogOpenChange ? isDialogOpen : internalDialogOpen;
+  const setDialogOpen = onDialogOpenChange || setInternalDialogOpen;
+
   const [editedBlock, setEditedBlock] = useState<StatBlockType>(block);
   const [errors, setErrors] = useState<{ value?: string; label?: string }>({});
-  const [hasOpenedOnce, setHasOpenedOnce] = useState(false);
-
-  // Auto-open dialog when block is selected (for newly added blocks)
-  useEffect(() => {
-    if (isSelected && isEditing && !hasOpenedOnce) {
-      // For new blocks, clear the default values to show empty fields
-      if (isNew) {
-        setEditedBlock({
-          ...block,
-          content: { value: "", label: "" },
-        });
-      }
-      setIsDialogOpen(true);
-      setHasOpenedOnce(true);
-    }
-  }, [isSelected, isEditing, isNew, block, hasOpenedOnce]);
-
-  // Deleted/disabled state
-  if (block.isDeleted) {
-    return (
-      <DeletedBlockOverlay
-        blockId={block.id}
-        blockName="Stat Block"
-        onRestore={onRestore}
-      >
-        <StatCard label={block.content.label} value={block.content.value} />
-      </DeletedBlockOverlay>
-    );
-  }
 
   // Display mode (non-editing page view)
+  // BlockRenderer handles deleted state and wrapper
   if (!isEditing) {
     return <StatCard label={block.content.label} value={block.content.value} />;
   }
@@ -96,7 +67,7 @@ export function StatBlock({
 
     setErrors({});
     onUpdate?.(editedBlock);
-    setIsDialogOpen(false);
+    setDialogOpen(false);
   };
 
   // Cancel changes - if new block, delete it; otherwise just revert
@@ -105,7 +76,7 @@ export function StatBlock({
       onDelete?.(block.id);
     } else {
       setEditedBlock(block);
-      setIsDialogOpen(false);
+      setDialogOpen(false);
     }
   };
 
@@ -114,7 +85,7 @@ export function StatBlock({
     if (!open) {
       handleCancel();
     } else {
-      setIsDialogOpen(open);
+      setDialogOpen(open);
     }
   };
 
@@ -122,7 +93,7 @@ export function StatBlock({
   return (
     <>
       <BlockDialog
-        open={isDialogOpen}
+        open={dialogOpen}
         onOpenChange={handleDialogChange}
         title={
           isNew
@@ -214,31 +185,8 @@ export function StatBlock({
         </FieldGroup>
       </BlockDialog>
 
-      {/* WYSIWYG Block Display with hover/select states */}
-      <StatCard
-        label={block.content.label}
-        value={block.content.value}
-        isEditing={true}
-        onClick={() => {
-          if (onSelect) onSelect();
-          setIsDialogOpen(true);
-        }}
-        actionButtons={
-          canDelete ? (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete?.(block.id);
-              }}
-              className="shadow-lg"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          ) : undefined
-        }
-      />
+      {/* Display content - wrapper handled by BlockRenderer */}
+      <StatCard label={block.content.label} value={block.content.value} />
     </>
   );
 }

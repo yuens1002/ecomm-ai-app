@@ -6,10 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Upload } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useState, useEffect } from "react";
-import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
-import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import { BlockDialog } from "./BlockDialog";
 import { useMultiImageUpload } from "@/hooks/useImageUpload";
 import { ImageCard } from "@/components/app-components/ImageCard";
@@ -48,23 +46,24 @@ export function GalleryGrid({ images, className = "" }: GalleryGridProps) {
 interface ImageGalleryBlockProps {
   block: ImageGalleryBlockType;
   isEditing: boolean;
-  isSelected?: boolean;
-  onSelect?: () => void;
   onUpdate?: (block: ImageGalleryBlockType) => void;
-  onDelete?: (blockId: string) => void;
-  onRestore?: (blockId: string) => void;
+  // Dialog control from BlockRenderer
+  isDialogOpen?: boolean;
+  onDialogOpenChange?: (open: boolean) => void;
 }
 
 export function ImageGalleryBlock({
   block,
   isEditing,
-  isSelected = false,
-  onSelect,
   onUpdate,
-  onDelete,
-  onRestore,
+  isDialogOpen = false,
+  onDialogOpenChange,
 }: ImageGalleryBlockProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // For backward compatibility, use internal state if not controlled
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false);
+  const dialogOpen = onDialogOpenChange ? isDialogOpen : internalDialogOpen;
+  const setDialogOpen = onDialogOpenChange || setInternalDialogOpen;
+
   const [editedBlock, setEditedBlock] = useState(block);
 
   // Use shared multi-image upload hook
@@ -94,20 +93,8 @@ export function ImageGalleryBlock({
     setEditedBlock(block);
   }, [block]);
 
-  // Deleted/disabled state
-  if (block.isDeleted) {
-    return (
-      <DeletedBlockOverlay
-        blockId={block.id}
-        blockName="Image Gallery Block"
-        onRestore={onRestore}
-      >
-        <GalleryGrid images={block.content.images} />
-      </DeletedBlockOverlay>
-    );
-  }
-
   // Display mode (non-editing page view)
+  // BlockRenderer handles deleted state and wrapper
   if (!isEditing) {
     return <GalleryGrid images={block.content.images} />;
   }
@@ -122,7 +109,7 @@ export function ImageGalleryBlock({
         ...editedBlock,
         content: { images: uploadedImages },
       });
-      setIsDialogOpen(false);
+      setDialogOpen(false);
     } catch (error) {
       console.error("Upload error:", error);
       alert("Failed to upload images. Please try again.");
@@ -133,15 +120,15 @@ export function ImageGalleryBlock({
   const handleCancel = () => {
     resetImages();
     setEditedBlock(block);
-    setIsDialogOpen(false);
+    setDialogOpen(false);
   };
 
   // Edit mode with dialog
   return (
     <>
       <BlockDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
         title="Edit Image Gallery Block"
         description={`Manage gallery images • ${images.length} of 20 images`}
         size="lg"
@@ -277,28 +264,8 @@ export function ImageGalleryBlock({
         </FieldGroup>
       </BlockDialog>
 
-      {/* WYSIWYG Block Display with hover/select states */}
-      <EditableBlockWrapper
-        onEdit={() => {
-          if (onSelect) onSelect();
-          setIsDialogOpen(true);
-        }}
-        editButtons={
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete?.(block.id);
-            }}
-            className="shadow-lg"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        }
-      >
-        <GalleryGrid images={block.content.images} />
-      </EditableBlockWrapper>
+      {/* Display content - wrapper handled by BlockRenderer */}
+      <GalleryGrid images={block.content.images} />
     </>
   );
 }
