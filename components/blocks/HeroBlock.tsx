@@ -16,6 +16,8 @@ interface HeroBlockProps {
   block: HeroBlockType;
   isEditing: boolean;
   onUpdate?: (block: HeroBlockType) => void;
+  /** Page slug for organizing uploaded images */
+  pageSlug?: string;
   // Dialog control from BlockRenderer
   isDialogOpen?: boolean;
   onDialogOpenChange?: (open: boolean) => void;
@@ -25,6 +27,7 @@ export function HeroBlock({
   block,
   isEditing,
   onUpdate,
+  pageSlug,
   isDialogOpen = false,
   onDialogOpenChange,
 }: HeroBlockProps) {
@@ -47,7 +50,7 @@ export function HeroBlock({
     handleFileSelect: handleImageSelect,
     uploadFile,
     reset: resetImage,
-  } = useImageUpload({ currentUrl: block.content.imageUrl });
+  } = useImageUpload({ currentUrl: block.content.imageUrl, pageSlug });
 
   // Sync editedBlock with block prop when it changes (after save)
   useEffect(() => {

@@ -73,16 +73,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Delete image files from disk
+    // Delete image files from disk (best effort - files may already be deleted)
     const publicDir = join(process.cwd(), "public");
     for (const imageUrl of imageUrls) {
       try {
         const filePath = join(publicDir, imageUrl);
         await unlink(filePath);
         console.log(`Deleted image: ${filePath}`);
-      } catch (error) {
-        // Ignore errors if file doesn't exist or can't be deleted
-        console.warn(`Could not delete image ${imageUrl}:`, error);
+      } catch (error: unknown) {
+        // Only warn for unexpected errors, not "file not found"
+        if (
+          error &&
+          typeof error === "object" &&
+          "code" in error &&
+          error.code !== "ENOENT"
+        ) {
+          console.warn(`Could not delete image ${imageUrl}:`, error);
+        }
       }
     }
 
@@ -148,14 +155,19 @@ export async function POST(request: NextRequest) {
               name: "Our Cafe",
               address: "123 Main Street\nYour City, ST 12345",
               phone: "(555) 123-4567",
-              googleMapsUrl: "",
+              googleMapsUrl: "https://maps.google.com/?q=123+Main+Street",
               description:
                 "Welcome to our specialty coffee café in the heart of downtown. Features a full espresso bar, pour-over station, and rotating single-origin offerings. Free WiFi and plenty of seating for remote work or casual meetings.",
               schedule: [
                 { day: "Mon-Fri", hours: "7am - 7pm" },
                 { day: "Sat-Sun", hours: "8am - 6pm" },
               ],
-              images: [],
+              images: [
+                {
+                  url: "https://placehold.co/600x400/8B4513/FFF?text=Cafe+Interior",
+                  alt: "Cafe interior with cozy seating",
+                },
+              ],
             },
           },
         ],
@@ -218,14 +230,19 @@ export async function POST(request: NextRequest) {
               name: "Downtown",
               address: "123 Main Street\nYour City, ST 12345",
               phone: "(555) 123-4567",
-              googleMapsUrl: "",
+              googleMapsUrl: "https://maps.google.com/?q=123+Main+Street",
               description:
                 "Our flagship location with ample seating and parking.",
               schedule: [
                 { day: "Mon-Fri", hours: "6am - 8pm" },
                 { day: "Sat-Sun", hours: "7am - 8pm" },
               ],
-              images: [],
+              images: [
+                {
+                  url: "https://placehold.co/600x400/654321/FFF?text=Downtown+Interior",
+                  alt: "Downtown location interior",
+                },
+              ],
             },
           },
           {
@@ -237,13 +254,18 @@ export async function POST(request: NextRequest) {
               name: "Uptown",
               address: "456 Oak Avenue\nYour City, ST 12345",
               phone: "(555) 987-6543",
-              googleMapsUrl: "",
+              googleMapsUrl: "https://maps.google.com/?q=456+Oak+Avenue",
               description: "Cozy neighborhood location with outdoor seating.",
               schedule: [
                 { day: "Mon-Fri", hours: "7am - 7pm" },
                 { day: "Sat-Sun", hours: "8am - 6pm" },
               ],
-              images: [],
+              images: [
+                {
+                  url: "https://placehold.co/600x400/A0522D/FFF?text=Uptown+Interior",
+                  alt: "Uptown location interior",
+                },
+              ],
             },
           },
         ],

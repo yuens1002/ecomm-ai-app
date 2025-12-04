@@ -79,6 +79,7 @@ interface PageEditorProps {
   onMetadataUpdate?: (data: {
     title: string;
     metaDescription: string;
+    isPublished?: boolean;
     showInHeader?: boolean;
     showInFooter?: boolean;
     headerOrder?: number | null;
@@ -116,6 +117,7 @@ export function PageEditor({
   const [title, setTitle] = useState(pageTitle);
   const [description, setDescription] = useState(metaDescription || "");
   const [published, setPublished] = useState(isPublished || false);
+  const [savedPublished, setSavedPublished] = useState(isPublished || false); // Tracks last saved state
   const [showInHeader, setShowInHeader] = useState(
     initialShowInHeader || false
   );
@@ -337,12 +339,14 @@ export function PageEditor({
       await onMetadataUpdate({
         title,
         metaDescription: description,
+        isPublished: published,
         showInHeader,
         showInFooter: showFooter,
         headerOrder: headerOrderValue,
         footerOrder: footerOrderValue,
         icon: iconValue || null,
       });
+      setSavedPublished(published); // Update saved state on success
       setIsEditingMetadata(false);
       toast({
         title: "Settings updated",
@@ -377,8 +381,12 @@ export function PageEditor({
     return canAddBlock(pageType, blockType, currentBlockCounts[blockType] || 0);
   });
   // Open live preview in new tab
+  // Use savedPublished state (last saved DB state) not published state (UI toggle)
   const handleViewLive = () => {
-    window.open(`/pages/${pageSlug}`, "_blank");
+    const url = savedPublished
+      ? `/pages/${pageSlug}`
+      : `/pages/${pageSlug}?preview=true`;
+    window.open(url, "_blank");
   };
 
   // Check if a block can be deleted (not at minimum count)
@@ -408,6 +416,7 @@ export function PageEditor({
     onConfirmAddBlock: handleConfirmAddBlock,
     onCancelAddBlock: handleCancelAddBlock,
     canDeleteBlock,
+    pageSlug,
   };
 
   return (
@@ -418,9 +427,14 @@ export function PageEditor({
           <h2 className="text-lg font-semibold">
             {pageType.charAt(0).toUpperCase() + pageType.slice(1)} Page Editor
           </h2>
-          <Button variant="outline" size="sm" onClick={handleViewLive}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleViewLive}
+            disabled={isEditingMetadata}
+          >
             <Eye className="h-4 w-4 mr-2" />
-            View Live
+            {savedPublished ? "Live Preview" : "Preview"}
           </Button>
         </div>
 
@@ -430,6 +444,7 @@ export function PageEditor({
               variant="outline"
               size="sm"
               onClick={() => setIsEditingMetadata(!isEditingMetadata)}
+              disabled={isEditingMetadata}
             >
               <Settings className="h-4 w-4 mr-2" />
               Settings

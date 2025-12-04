@@ -21,6 +21,7 @@ export function renderBlock(block: Block, handlers?: BlockHandlers) {
         isEditing={true}
         isSelected={handlers.selectedBlockId === block.id}
         canDelete={canDelete}
+        pageSlug={handlers.pageSlug}
         onSelect={() => handlers.onSelect(block.id)}
         onUpdate={handlers.onUpdate}
         onDelete={handlers.onDelete}

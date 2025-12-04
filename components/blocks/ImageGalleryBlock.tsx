@@ -47,6 +47,8 @@ interface ImageGalleryBlockProps {
   block: ImageGalleryBlockType;
   isEditing: boolean;
   onUpdate?: (block: ImageGalleryBlockType) => void;
+  /** Page slug for organizing uploaded images */
+  pageSlug?: string;
   // Dialog control from BlockRenderer
   isDialogOpen?: boolean;
   onDialogOpenChange?: (open: boolean) => void;
@@ -56,6 +58,7 @@ export function ImageGalleryBlock({
   block,
   isEditing,
   onUpdate,
+  pageSlug,
   isDialogOpen = false,
   onDialogOpenChange,
 }: ImageGalleryBlockProps) {
@@ -86,6 +89,7 @@ export function ImageGalleryBlock({
     currentImages: block.content.images,
     minImages: 0,
     maxImages: 20,
+    pageSlug,
   });
 
   // Sync editedBlock with block prop when it changes (after save)

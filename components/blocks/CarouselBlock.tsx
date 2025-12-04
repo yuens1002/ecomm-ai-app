@@ -25,6 +25,8 @@ interface CarouselBlockProps {
   block: CarouselBlockType;
   isEditing: boolean;
   onUpdate?: (block: CarouselBlockType) => void;
+  /** Page slug for organizing uploaded images */
+  pageSlug?: string;
   // Dialog control from BlockRenderer
   isDialogOpen?: boolean;
   onDialogOpenChange?: (open: boolean) => void;
@@ -34,6 +36,7 @@ export function CarouselBlock({
   block,
   isEditing,
   onUpdate,
+  pageSlug,
   isDialogOpen = false,
   onDialogOpenChange,
 }: CarouselBlockProps) {
@@ -70,6 +73,7 @@ export function CarouselBlock({
           onUpdate={onUpdate}
           open={dialogOpen}
           onOpenChange={setDialogOpen}
+          pageSlug={pageSlug}
         />
       </>
     );
@@ -84,6 +88,7 @@ export function CarouselBlock({
         onUpdate={onUpdate}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        pageSlug={pageSlug}
       />
     </>
   );
@@ -252,6 +257,7 @@ interface EditCarouselDialogProps {
   onUpdate?: (block: CarouselBlockType) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  pageSlug?: string;
 }
 
 // Metadata for location carousel slides (separate from image data managed by hook)
@@ -266,6 +272,7 @@ function EditCarouselDialog({
   onUpdate,
   open,
   onOpenChange,
+  pageSlug,
 }: EditCarouselDialogProps) {
   const isLocationCarousel = block.type === "locationCarousel";
 
@@ -292,6 +299,7 @@ function EditCarouselDialog({
     currentImages,
     minImages: 1,
     maxImages: 20,
+    pageSlug,
   });
 
   // Separate state for location carousel metadata (title, description, locationBlockId)

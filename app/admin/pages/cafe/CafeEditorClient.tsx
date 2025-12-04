@@ -82,6 +82,7 @@ export default function CafeEditorClient({
     headerOrder?: number | null;
     footerOrder?: number | null;
     icon?: string | null;
+    isPublished?: boolean;
   }) => {
     const response = await fetch(`/api/pages/${pageId}`, {
       method: "PATCH",

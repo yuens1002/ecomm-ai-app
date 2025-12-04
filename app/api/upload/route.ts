@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, unlink } from "fs/promises";
+import { writeFile, unlink, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 
@@ -8,6 +8,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const oldPath = formData.get("oldPath") as string | null;
+    const pageSlug = formData.get("pageSlug") as string | null;
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -25,15 +26,28 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now();
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
     const filename = `${timestamp}-${sanitizedName}`;
-    const filepath = path.join(process.cwd(), "public", "images", filename);
+
+    // Determine directory: /pages/[pageSlug]/ if provided, otherwise /images/
+    const subDir = pageSlug ? `pages/${pageSlug}` : "images";
+    const dirPath = path.join(process.cwd(), "public", subDir);
+
+    // Ensure directory exists
+    if (!existsSync(dirPath)) {
+      await mkdir(dirPath, { recursive: true });
+    }
+
+    const filepath = path.join(dirPath, filename);
 
     // Convert file to buffer and save
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     await writeFile(filepath, buffer);
 
-    // Delete old file if it exists and is in our images directory
-    if (oldPath && oldPath.startsWith("/images/")) {
+    // Delete old file if it exists and is in our managed directories
+    if (
+      oldPath &&
+      (oldPath.startsWith("/pages/") || oldPath.startsWith("/images/"))
+    ) {
       const oldFilepath = path.join(process.cwd(), "public", oldPath);
       if (existsSync(oldFilepath)) {
         try {
@@ -47,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      path: `/images/${filename}`,
+      path: `/${subDir}/${filename}`,
     });
   } catch (error) {
     console.error("Upload error:", error);
@@ -63,7 +77,11 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const imagePath = searchParams.get("path");
 
-    if (!imagePath || !imagePath.startsWith("/images/")) {
+    // Allow deletion from /pages/ or /images/ directories
+    if (
+      !imagePath ||
+      (!imagePath.startsWith("/images/") && !imagePath.startsWith("/pages/"))
+    ) {
       return NextResponse.json({ error: "Invalid path" }, { status: 400 });
     }
 

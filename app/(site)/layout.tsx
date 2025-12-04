@@ -1,5 +1,7 @@
 import SiteHeaderWrapper from "@/components/app-components/SiteHeaderWrapper";
 import SiteFooter from "@components/app-components/SiteFooter";
+import { SiteBannerProvider } from "@/hooks/useSiteBanner";
+import { SiteBannerPortal } from "@/components/app-components/SiteBannerPortal";
 
 /**
  * Layout for all customer-facing (site) routes.
@@ -11,15 +13,20 @@ export default function SiteLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative flex min-h-screen flex-col">
-      {/* Site header */}
-      <SiteHeaderWrapper />
+    <SiteBannerProvider>
+      <div className="relative flex min-h-screen flex-col">
+        {/* Banner portal - renders above header when active */}
+        <SiteBannerPortal />
 
-      {/* Page content */}
-      <main className="flex-1 w-full">{children}</main>
+        {/* Site header */}
+        <SiteHeaderWrapper />
 
-      {/* Site footer */}
-      <SiteFooter />
-    </div>
+        {/* Page content */}
+        <main className="flex-1 w-full">{children}</main>
+
+        {/* Site footer */}
+        <SiteFooter />
+      </div>
+    </SiteBannerProvider>
   );
 }

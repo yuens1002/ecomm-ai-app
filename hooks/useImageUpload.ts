@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 interface UseImageUploadOptions {
   /** Current saved URL from the database */
   currentUrl: string;
+  /** Page slug for organizing uploads into /pages/[pageSlug]/ */
+  pageSlug?: string;
   /** Callback when upload completes successfully */
   onUploadComplete?: (newPath: string) => void;
 }
@@ -49,6 +51,7 @@ interface UseImageUploadReturn {
  */
 export function useImageUpload({
   currentUrl,
+  pageSlug,
   onUploadComplete,
 }: UseImageUploadOptions): UseImageUploadReturn {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -110,6 +113,11 @@ export function useImageUpload({
     const formData = new FormData();
     formData.append("file", pendingFile);
 
+    // Pass page slug for directory organization
+    if (pageSlug) {
+      formData.append("pageSlug", pageSlug);
+    }
+
     // Pass original URL for cleanup (only local files, not external URLs)
     if (originalUrl && originalUrl.startsWith("/")) {
       formData.append("oldPath", originalUrl);
@@ -139,7 +147,7 @@ export function useImageUpload({
 
     onUploadComplete?.(newPath);
     return newPath;
-  }, [pendingFile, originalUrl, previewUrl, onUploadComplete]);
+  }, [pendingFile, originalUrl, previewUrl, pageSlug, onUploadComplete]);
 
   const reset = useCallback(() => {
     if (previewUrl) {
@@ -190,6 +198,8 @@ interface UseMultiImageUploadOptions {
   minImages?: number;
   /** Maximum number of images allowed */
   maxImages?: number;
+  /** Page slug for organizing uploads into /pages/[pageSlug]/ */
+  pageSlug?: string;
 }
 
 interface UseMultiImageUploadReturn {
@@ -268,6 +278,7 @@ export function useMultiImageUpload({
   currentImages,
   minImages = 0,
   maxImages = 20,
+  pageSlug,
 }: UseMultiImageUploadOptions): UseMultiImageUploadReturn {
   const [images, setImages] = useState<ImageItem[]>(() =>
     currentImages.map((img) => ({
@@ -444,6 +455,11 @@ export function useMultiImageUpload({
         const formData = new FormData();
         formData.append("file", img.pendingFile);
 
+        // Pass page slug for directory organization
+        if (pageSlug) {
+          formData.append("pageSlug", pageSlug);
+        }
+
         // Pass original URL for cleanup (only local files)
         if (img.originalUrl && img.originalUrl.startsWith("/")) {
           formData.append("oldPath", img.originalUrl);
@@ -470,7 +486,7 @@ export function useMultiImageUpload({
     );
 
     return results;
-  }, [images]);
+  }, [images, pageSlug]);
 
   const reset = useCallback(() => {
     // Clean up preview URLs

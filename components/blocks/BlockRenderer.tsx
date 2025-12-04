@@ -22,6 +22,8 @@ interface BlockRendererProps {
   isSelected?: boolean;
   canDelete?: boolean;
   isNew?: boolean;
+  /** Page slug for organizing uploaded images into /pages/[pageSlug]/ */
+  pageSlug?: string;
   onSelect?: () => void;
   onUpdate?: (block: Block) => void;
   onDelete?: (blockId: string) => void;
@@ -38,6 +40,7 @@ export function BlockRenderer({
   isEditing,
   canDelete = true,
   isNew = false,
+  pageSlug,
   onSelect,
   onUpdate,
   onDelete,
@@ -50,6 +53,7 @@ export function BlockRenderer({
     block,
     isEditing,
     isNew,
+    pageSlug,
     onUpdate,
     // Dialog control - blocks will use these to manage their edit dialog
     isDialogOpen,
@@ -126,6 +130,7 @@ export function BlockRenderer({
         onSelect?.();
         setIsDialogOpen(true);
       }}
+      disabled={isDialogOpen}
       rightButtons={
         <>
           <Button

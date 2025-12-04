@@ -377,7 +377,10 @@ export function PageEditor({
   );
   // Open live preview in new tab
   const handleViewLive = () => {
-    window.open(`/pages/${pageSlug}`, "_blank");
+    const url = published
+      ? `/pages/${pageSlug}`
+      : `/pages/${pageSlug}?preview=true`;
+    window.open(url, "_blank");
   };
 
   // Block handlers to pass to layout renderer
@@ -395,6 +398,7 @@ export function PageEditor({
     pendingBlock,
     onConfirmAddBlock: handleConfirmAddBlock,
     onCancelAddBlock: handleCancelAddBlock,
+    pageSlug,
   };
 
   return (
@@ -407,7 +411,7 @@ export function PageEditor({
           </h2>
           <Button variant="outline" size="sm" onClick={handleViewLive}>
             <Eye className="h-4 w-4 mr-2" />
-            View Live
+            {published ? "Live Preview" : "Preview"}
           </Button>
         </div>
 

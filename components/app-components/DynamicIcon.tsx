@@ -3,6 +3,9 @@
 import { icons, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Export the type for icon names
+export type IconName = keyof typeof icons;
+
 interface DynamicIconProps {
   name: string;
   className?: string;

@@ -19,6 +19,8 @@ interface LocationBlockProps {
   block: LocationBlockType;
   isEditing: boolean;
   onUpdate?: (block: LocationBlockType) => void;
+  /** Page slug for organizing uploaded images */
+  pageSlug?: string;
   // Dialog control from BlockRenderer
   isDialogOpen?: boolean;
   onDialogOpenChange?: (open: boolean) => void;
@@ -28,6 +30,7 @@ export function LocationBlock({
   block,
   isEditing,
   onUpdate,
+  pageSlug,
   isDialogOpen = false,
   onDialogOpenChange,
 }: LocationBlockProps) {
@@ -59,6 +62,7 @@ export function LocationBlock({
     currentImages: block.content.images || [],
     minImages: 1,
     maxImages: 10,
+    pageSlug,
   });
 
   // Sync editedBlock when block prop changes (after save)

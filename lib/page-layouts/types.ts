@@ -14,6 +14,8 @@ export interface BlockHandlers {
   selectedBlockId: string | null;
   /** Function to check if a block can be deleted (not at minimum count) */
   canDeleteBlock?: (block: Block) => boolean;
+  /** Page slug for organizing uploaded images into /pages/[pageSlug]/ */
+  pageSlug?: string;
 }
 
 /**

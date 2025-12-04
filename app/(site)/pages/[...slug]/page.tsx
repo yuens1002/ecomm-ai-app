@@ -5,10 +5,15 @@ import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
 import { getPageBlocks } from "@/lib/blocks/actions";
 import { PageContent } from "./PageContent";
+import { isAdmin } from "@/lib/admin";
+import { PreviewBannerSetter } from "@/components/app-components/PreviewBannerSetter";
 
 interface PageProps {
   params: Promise<{
     slug: string[];
+  }>;
+  searchParams: Promise<{
+    preview?: string;
   }>;
 }
 
@@ -56,13 +61,31 @@ export async function generateMetadata({
   };
 }
 
-export default async function Page({ params }: PageProps) {
+export default async function Page({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const { preview } = await searchParams;
   const pageSlug = slug.join("/");
   const page = await getPage(pageSlug);
 
-  if (!page || !page.isPublished) {
+  // Check if this is a preview request
+  const isPreviewMode = preview === "true";
+
+  // If page doesn't exist, 404
+  if (!page) {
     notFound();
+  }
+
+  // If page is not published
+  if (!page.isPublished) {
+    // Allow preview for admins only
+    if (isPreviewMode) {
+      const adminUser = await isAdmin();
+      if (!adminUser) {
+        notFound();
+      }
+    } else {
+      notFound();
+    }
   }
 
   // Get blocks for the page
@@ -72,8 +95,14 @@ export default async function Page({ params }: PageProps) {
   // Filter out deleted blocks for public view
   const visibleBlocks = blocks.filter((block) => !block.isDeleted);
 
+  // Show preview banner for unpublished pages
+  const showPreviewBanner = !page.isPublished && isPreviewMode;
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Set preview banner in SiteHeader via context */}
+      <PreviewBannerSetter show={showPreviewBanner} />
+
       <PageContent
         blocks={visibleBlocks}
         pageType={page.type}

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.29.5 - 2025-12-04
+
+- **Preview Mode for Unpublished Pages**: Admin users can preview unpublished pages via `?preview=true` query param with visual banner indicator
+- **Reusable SiteBanner System**: Created `SiteBanner` component with variants (preview, promo, info, warning, error) and context-based `SiteBannerPortal` for dynamic banners
+- **PageSlug-based Image Uploads**: Images now upload to `/public/pages/[pageSlug]/` directories for better organization; cleanup handles both old and new paths
+- **Fixed Reseed Route**: Corrected invalid default values (empty googleMapsUrl, images array) that violated block schema validation
+
 ## 0.29.4 - 2025-12-04
 
 - **Block Wrapper Centralization (Option B)**: Complete architectural refactor for consistent edit/delete controls

@@ -26,6 +26,12 @@ export const locationInfoConfig = {
     richText: 1, // Only 1 richText block
     // location: unlimited (no max)
   },
+  minBlocks: {
+    imageCarousel: 1, // Required for SINGLE location
+    locationCarousel: 1, // Required for MULTI location
+    location: 1, // At least 1 location required
+    richText: 1, // At least 1 richText required
+  },
   requiredBlocks: [] as BlockType[], // Use getRequiredBlocks() for dynamic requirements
 };
 
@@ -101,7 +107,9 @@ export const renderLocationInfoLayout: LayoutRenderer = (blocks, handlers) => {
     <>
       {/* Slot: Carousel - Full Width */}
       {carousel && (
-        <div className="w-full pb-8">{renderBlock(carousel, handlers)}</div>
+        <div className="w-full pt-4 pb-8">
+          {renderBlock(carousel, handlers)}
+        </div>
       )}
       <div className="container mx-auto px-8 pt-12 max-w-5xl space-y-16">
         {/* Slot: Rich Text Content */}
@@ -114,7 +122,7 @@ export const renderLocationInfoLayout: LayoutRenderer = (blocks, handlers) => {
 
         {/* Slot: Location Sections (60/40 split) */}
         {locations.length > 0 && (
-          <div className="space-y-20">
+          <div className="space-y-20 pb-16">
             {locations.map((block) => renderBlock(block, handlers))}
           </div>
         )}

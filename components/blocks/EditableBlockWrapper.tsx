@@ -14,6 +14,8 @@ interface EditableBlockWrapperProps {
   editButtons?: ReactNode;
   className?: string;
   showHoverEffect?: boolean;
+  /** When true, clicking the wrapper won't trigger onEdit (useful when dialog is open) */
+  disabled?: boolean;
 }
 
 /**
@@ -32,9 +34,21 @@ export function EditableBlockWrapper({
   editButtons,
   className,
   showHoverEffect = true,
+  disabled = false,
 }: EditableBlockWrapperProps) {
   // Support legacy editButtons prop
   const right = rightButtons || editButtons;
+
+  const handleClick = (e: React.MouseEvent) => {
+    // Don't trigger edit if clicking on a portal (like dialog overlay)
+    // or if the target is not within this wrapper
+    const target = e.target as HTMLElement;
+    const isFromPortal = !e.currentTarget.contains(target);
+
+    if (!disabled && !isFromPortal && onEdit) {
+      onEdit();
+    }
+  };
 
   return (
     <div
@@ -44,7 +58,7 @@ export function EditableBlockWrapper({
           "group transition-all hover:ring-1 hover:ring-[#00d4ff]",
         className
       )}
-      onClick={onEdit}
+      onClick={handleClick}
     >
       {/* Block Content */}
       {children}
