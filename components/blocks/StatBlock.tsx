@@ -44,7 +44,13 @@ export function StatBlock({
   // Display mode (non-editing page view)
   // BlockRenderer handles deleted state and wrapper
   if (!isEditing) {
-    return <StatCard label={block.content.label} value={block.content.value} />;
+    return (
+      <StatCard
+        label={block.content.label}
+        value={block.content.value}
+        emoji={block.content.emoji}
+      />
+    );
   }
 
   // Save changes from dialog
@@ -182,11 +188,42 @@ export function StatBlock({
               {editedBlock.content.label.length}/50 characters
             </p>
           </Field>
+          <Field>
+            <FormHeading
+              htmlFor={`stat-emoji-${block.id}`}
+              label="Emoji"
+              required={false}
+              isDirty={editedBlock.content.emoji !== block.content.emoji}
+            />
+            <Input
+              id={`stat-emoji-${block.id}`}
+              value={editedBlock.content.emoji || ""}
+              onChange={(e) => {
+                setEditedBlock({
+                  ...editedBlock,
+                  content: {
+                    ...editedBlock.content,
+                    emoji: e.target.value || undefined,
+                  },
+                });
+              }}
+              placeholder="e.g., 📅 🌍 ☕"
+              maxLength={10}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Optional emoji to display instead of icon. Leave empty to
+              auto-select based on label.
+            </p>
+          </Field>
         </FieldGroup>
       </BlockDialog>
 
       {/* Display content - wrapper handled by BlockRenderer */}
-      <StatCard label={block.content.label} value={block.content.value} />
+      <StatCard
+        label={block.content.label}
+        value={block.content.value}
+        emoji={block.content.emoji}
+      />
     </>
   );
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.29.6 - 2025-12-04
+
+- **Add Block Dialog**: New `PendingBlockDialog` component opens form with empty fields when clicking "Add" buttons; creates block in DB only on confirm (no wasted trips)
+- **Stat Block Emoji Fix**: Admin edit mode now shows emoji instead of auto-icon (was missing emoji prop)
+- **PullQuote Delete Button Removed**: Required blocks (hero, richText, pullQuote) now consistently have no delete button
+- **Updated baseline-browser-mapping**: Removed build warning spam
+
 ## 0.29.5 - 2025-12-04
 
 - **Preview Mode for Unpublished Pages**: Admin users can preview unpublished pages via `?preview=true` query param with visual banner indicator

@@ -44,6 +44,7 @@ export const statBlockSchema = baseBlockSchema.extend({
       .trim()
       .min(1, "Value is required")
       .max(50, "Value must be 50 characters or less"),
+    emoji: z.string().max(10).optional(), // Optional emoji to display instead of icon
   }),
 });
 

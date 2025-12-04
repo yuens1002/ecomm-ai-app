@@ -125,6 +125,7 @@ export const renderTwoColumnLayout: LayoutRenderer = (blocks, handlers) => {
   const canDeleteStat = activeStatsCount > 3; // Min is 3
   const canDeleteHero = false; // Hero is always required (max 1)
   const canDeleteRichText = false; // Rich text is now required (min 1, max 1)
+  const canDeletePullQuote = false; // Pull quote is required (max 1)
 
   return (
     <div className="space-y-8">
@@ -263,7 +264,7 @@ export const renderTwoColumnLayout: LayoutRenderer = (blocks, handlers) => {
                 block={leftSidebar}
                 isEditing={true}
                 isSelected={handlers?.selectedBlockId === leftSidebar.id}
-                canDelete={true}
+                canDelete={canDeletePullQuote}
                 onSelect={() => handlers?.onSelect(leftSidebar.id)}
                 onUpdate={handlers?.onUpdate}
                 onDelete={handlers?.onDelete}

@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 interface StatCardProps {
   label: string;
   value: string;
+  emoji?: string; // Optional emoji to display instead of icon
   icon?: LucideIcon;
   className?: string;
   isEditing?: boolean;
@@ -34,6 +35,7 @@ const getIconForLabel = (label: string): LucideIcon => {
 export function StatCard({
   label,
   value,
+  emoji,
   icon,
   className = "",
   isEditing = false,
@@ -53,7 +55,13 @@ export function StatCard({
       className={`${baseClasses} ${editingClasses} ${className}`}
       onClick={onClick}
     >
-      <Icon className="h-8 w-8 text-primary mb-3 shrink-0" />
+      {emoji ? (
+        <span className="text-4xl mb-3" role="img" aria-label={label}>
+          {emoji}
+        </span>
+      ) : (
+        <Icon className="h-8 w-8 text-primary mb-3 shrink-0" />
+      )}
       <div className="text-3xl font-bold text-foreground mb-1 overflow-hidden text-ellipsis line-clamp-2 w-full">
         {value}
       </div>

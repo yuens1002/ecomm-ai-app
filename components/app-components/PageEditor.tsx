@@ -59,6 +59,7 @@ import {
   deleteBlock,
   reorderBlocks,
 } from "@/lib/blocks/actions";
+import { PendingBlockDialog } from "@/components/blocks/PendingBlockDialog";
 
 interface PageEditorProps {
   pageId: string;
@@ -645,6 +646,16 @@ export function PageEditor({
           layoutRenderer(blocks, blockHandlers)
         )}
       </div>
+
+      {/* Dialog for adding new blocks */}
+      {pendingBlock && (
+        <PendingBlockDialog
+          blockType={pendingBlock.type}
+          isOpen={!!pendingBlock}
+          onConfirm={handleConfirmAddBlock}
+          onCancel={handleCancelAddBlock}
+        />
+      )}
     </>
   );
 }
