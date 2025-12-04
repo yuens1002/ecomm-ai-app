@@ -233,9 +233,7 @@ function CarouselDisplay({
 
   return (
     <div
-      className={`relative w-full ${
-        isEditing ? "hover:ring-1 hover:ring-[#00d4ff] transition-all" : ""
-      }`}
+      className="relative w-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

@@ -29,7 +29,8 @@ export function EditableBlockWrapper({
     <div
       className={cn(
         "relative cursor-pointer",
-        showHoverEffect && "group",
+        showHoverEffect &&
+          "group transition-all hover:ring-1 hover:ring-[#00d4ff]",
         className
       )}
       onClick={onEdit}

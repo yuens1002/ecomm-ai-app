@@ -1,15 +1,15 @@
 "use client";
 
 import { HoursBlock as HoursBlockType } from "@/lib/blocks/schemas";
-import { Clock, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
-import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import { BlockDialog } from "./BlockDialog";
+import { HoursCard } from "@/components/app-components/HoursCard";
 
 interface HoursBlockProps {
   block: HoursBlockType;
@@ -41,42 +41,14 @@ export function HoursBlock({
         blockName="Hours Block"
         onRestore={onRestore}
       >
-        <div className="flex flex-col gap-4 rounded-lg border p-6">
-          <div className="flex items-center gap-3">
-            <Clock className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-lg">Hours</h3>
-          </div>
-          <div className="grid gap-2">
-            {block.content.schedule.map((item, index) => (
-              <div key={index} className="flex justify-between">
-                <span className="text-muted-foreground">{item.day}</span>
-                <span className="font-medium">{item.hours}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <HoursCard schedule={block.content.schedule} />
       </DeletedBlockOverlay>
     );
   }
 
   // Display mode (non-editing page view)
   if (!isEditing) {
-    return (
-      <div className="flex flex-col gap-4 rounded-lg border p-6">
-        <div className="flex items-center gap-3">
-          <Clock className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold text-lg">Hours</h3>
-        </div>
-        <div className="grid gap-2">
-          {block.content.schedule.map((item, index) => (
-            <div key={index} className="flex justify-between">
-              <span className="text-muted-foreground">{item.day}</span>
-              <span className="font-medium">{item.hours}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <HoursCard schedule={block.content.schedule} />;
   }
 
   // Save changes from dialog
@@ -217,12 +189,14 @@ export function HoursBlock({
       </BlockDialog>
 
       {/* WYSIWYG Block Display with hover/select states */}
-      <EditableBlockWrapper
-        onEdit={() => {
+      <HoursCard
+        schedule={block.content.schedule}
+        isEditing={true}
+        onClick={() => {
           if (onSelect) onSelect();
           setIsDialogOpen(true);
         }}
-        editButtons={
+        actionButtons={
           <Button
             size="sm"
             variant="destructive"
@@ -235,21 +209,7 @@ export function HoursBlock({
             <Trash2 className="h-4 w-4" />
           </Button>
         }
-        className="flex flex-col gap-4 rounded-lg border p-6"
-      >
-        <div className="flex items-center gap-3">
-          <Clock className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold text-lg">Hours</h3>
-        </div>
-        <div className="grid gap-2">
-          {block.content.schedule.map((item, index) => (
-            <div key={index} className="flex justify-between">
-              <span className="text-muted-foreground">{item.day}</span>
-              <span className="font-medium">{item.hours}</span>
-            </div>
-          ))}
-        </div>
-      </EditableBlockWrapper>
+      />
     </>
   );
 }

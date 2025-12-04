@@ -463,7 +463,7 @@ function LocationDisplay({
       id={locationId}
       data-block-id={block.id}
       data-location-name={block.content.name}
-      className={`relative w-full ${isEditing ? "hover:ring-1 hover:ring-[#00d4ff] transition-all" : ""}`}
+      className="relative w-full"
     >
       {/* 50/50 Split Layout - md, 60/40 Split Layout - lg+ */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
