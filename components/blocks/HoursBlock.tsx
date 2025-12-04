@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DeletedBlockOverlay } from "./DeletedBlockOverlay";
 import { BlockDialog } from "./BlockDialog";
 import { HoursCard } from "@/components/app-components/HoursCard";
+import { useValidation } from "@/hooks/useFormDialog";
 
 interface HoursBlockProps {
   block: HoursBlockType;
@@ -33,6 +34,15 @@ export function HoursBlock({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editedBlock, setEditedBlock] = useState(block);
 
+  // Use validation hook for error state and toast
+  const { errors, hasErrors, clearError, clearAllErrors, showValidationError } =
+    useValidation<{ schedule?: string }>();
+
+  // Sync editedBlock with block prop when it changes (after save)
+  useEffect(() => {
+    setEditedBlock(block);
+  }, [block]);
+
   // Deleted/disabled state
   if (block.isDeleted) {
     return (
@@ -53,13 +63,44 @@ export function HoursBlock({
 
   // Save changes from dialog
   const handleSave = () => {
-    onUpdate?.(editedBlock);
+    // Validate: at least one row with both day and hours filled
+    const fieldErrors: { schedule?: string } = {};
+
+    const hasValidRow = editedBlock.content.schedule.some(
+      (item) => item.day.trim() && item.hours.trim()
+    );
+
+    if (!hasValidRow) {
+      fieldErrors.schedule = "At least one row with day and hours is required";
+    }
+
+    // Show toast and set errors if validation fails
+    if (!showValidationError(fieldErrors)) {
+      return;
+    }
+
+    // Filter out completely empty rows before saving
+    const cleanedSchedule = editedBlock.content.schedule.filter(
+      (item) => item.day.trim() || item.hours.trim()
+    );
+
+    onUpdate?.({
+      ...editedBlock,
+      content: {
+        ...editedBlock.content,
+        schedule:
+          cleanedSchedule.length > 0
+            ? cleanedSchedule
+            : [{ day: "", hours: "" }],
+      },
+    });
     setIsDialogOpen(false);
   };
 
   // Cancel changes
   const handleCancel = () => {
     setEditedBlock(block);
+    clearAllErrors();
     setIsDialogOpen(false);
   };
 
@@ -77,11 +118,16 @@ export function HoursBlock({
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave} disabled={hasErrors}>
+              Save
+            </Button>
           </>
         }
       >
         <FieldGroup>
+          {errors.schedule && (
+            <p className="text-sm text-destructive">{errors.schedule}</p>
+          )}
           {editedBlock.content.schedule.map((item, index) => (
             <div key={index} className="grid grid-cols-2 gap-3">
               <Field>
@@ -105,6 +151,7 @@ export function HoursBlock({
                         schedule: newSchedule,
                       },
                     });
+                    if (errors.schedule) clearError("schedule");
                   }}
                   placeholder="Mon-Fri"
                   maxLength={50}
@@ -135,6 +182,7 @@ export function HoursBlock({
                           schedule: newSchedule,
                         },
                       });
+                      if (errors.schedule) clearError("schedule");
                     }}
                     placeholder="9am - 5pm"
                     maxLength={50}
