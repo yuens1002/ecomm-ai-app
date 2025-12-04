@@ -138,6 +138,77 @@ We define CSS variables for each theme.
   }
 }
 
+/* Global prose typography - apply .prose class to content blocks */
+@layer components {
+  .prose {
+    @apply text-foreground;
+
+    /* Headings */
+    & h1 {
+      @apply text-4xl font-bold tracking-tight mb-6 mt-8 first:mt-0;
+    }
+    & h2 {
+      @apply text-3xl font-semibold tracking-tight mb-4 mt-8 first:mt-0;
+    }
+    & h3 {
+      @apply text-2xl font-semibold tracking-tight mb-3 mt-6;
+    }
+    & h4 {
+      @apply text-xl font-semibold mb-2 mt-4;
+    }
+    & h5 {
+      @apply text-lg font-semibold mb-2 mt-4;
+    }
+    & h6 {
+      @apply text-base font-semibold mb-2 mt-4;
+    }
+
+    /* Paragraphs */
+    & p {
+      @apply text-base leading-7 mb-4 last:mb-0 text-muted-foreground;
+    }
+
+    /* Lists */
+    & ul {
+      @apply list-disc ml-6 mb-4 space-y-2;
+    }
+    & ol {
+      @apply list-decimal ml-6 mb-4 space-y-2;
+    }
+    & li {
+      @apply text-muted-foreground leading-7;
+    }
+
+    /* Links */
+    & a {
+      @apply text-primary underline underline-offset-4 hover:text-primary/80;
+    }
+
+    /* Blockquotes */
+    & blockquote {
+      @apply border-l-4 border-primary pl-4 italic my-4 text-muted-foreground;
+    }
+
+    /* Code */
+    & code {
+      @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono;
+    }
+
+    /* Strong and emphasis */
+    & strong {
+      @apply font-semibold text-foreground;
+    }
+    & em {
+      @apply italic;
+    }
+
+    /* Horizontal rule */
+    & hr {
+      @apply border-t border-border my-8;
+    }
+  }
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;

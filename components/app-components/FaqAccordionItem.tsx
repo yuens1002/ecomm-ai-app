@@ -62,9 +62,7 @@ export function FaqAccordionItem({
   }
 
   // Static/Edit mode - collapsed preview only
-  const editingClasses = isEditing
-    ? "relative group cursor-pointer"
-    : "";
+  const editingClasses = isEditing ? "relative group cursor-pointer" : "";
 
   return (
     <div className={`${editingClasses} ${className}`} onClick={onClick}>

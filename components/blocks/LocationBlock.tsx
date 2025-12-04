@@ -482,12 +482,15 @@ function LocationDisplay({
 
         {/* Location Info */}
         <div className="md:col-span-1 lg:col-span-2 space-y-6">
-          <div>
-            <h2 className="text-3xl font-bold mb-4">{block.content.name}</h2>
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold">{block.content.name}</h2>
 
             {/* Address with map link */}
-            <div className="flex items-start gap-2 mb-3">
-              <MapPinned className="h-4 w-4 mt-1 text-muted-foreground shrink-0" />
+            <Button
+              asChild
+              variant="link"
+              className="p-0 h-auto text-lg text-muted-foreground justify-start has-[>svg]:px-0 whitespace-normal text-left"
+            >
               <a
                 href={
                   block.content.googleMapsUrl ||
@@ -496,23 +499,24 @@ function LocationDisplay({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => isEditing && e.stopPropagation()}
-                className="text-muted-foreground hover:text-primary hover:underline"
               >
+                <MapPinned className="h-4 w-4 shrink-0" />
                 {block.content.address}
               </a>
-            </div>
+            </Button>
 
             {/* Phone */}
             {block.content.phone && (
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <a
-                  href={`tel:${block.content.phone}`}
-                  className="text-muted-foreground hover:text-primary hover:underline"
-                >
+              <Button
+                asChild
+                variant="link"
+                className="p-0 h-auto text-lg text-muted-foreground justify-start has-[>svg]:px-0 whitespace-normal text-left"
+              >
+                <a href={`tel:${block.content.phone}`}>
+                  <Phone className="h-4 w-4" />
                   {block.content.phone}
                 </a>
-              </div>
+              </Button>
             )}
           </div>
 
@@ -523,7 +527,9 @@ function LocationDisplay({
 
           {/* Description */}
           {block.content.description && (
-            <p className="text-muted-foreground">{block.content.description}</p>
+            <div className="prose">
+              <p>{block.content.description}</p>
+            </div>
           )}
         </div>
       </div>

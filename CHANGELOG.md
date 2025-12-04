@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.29.3 - 2025-12-04
+
+- **Block Component Architecture Standardization**: Complete separation of concerns across all CMS blocks
+  - Extracted `HoursCard` and `FaqAccordionItem` presentational components to app-components
+  - Migrated all blocks to `useValidation` hook for consistent error handling and toast notifications
+  - Fixed LocationBlock stray backticks typo
+  - Updated `cms-blocks-architecture.md` with required development standards for new blocks
+
 ## 0.29.2 - 2025-12-04
 
 - **DRY Image Upload & Validation System**: Centralized hooks and reusable components for consistent image handling across all block dialogs
