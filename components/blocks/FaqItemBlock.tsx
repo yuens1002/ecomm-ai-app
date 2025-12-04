@@ -1,6 +1,9 @@
 "use client";
 
-import { FaqItemBlock as FaqItemBlockType } from "@/lib/blocks/schemas";
+import {
+  FaqItemBlock as FaqItemBlockType,
+  FAQ_CATEGORIES,
+} from "@/lib/blocks/schemas";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldGroup } from "@/components/ui/field";
@@ -10,6 +13,13 @@ import { useState, useEffect } from "react";
 import { BlockDialog } from "./BlockDialog";
 import { FaqAccordionItem } from "@/components/app-components/FaqAccordionItem";
 import { useValidation } from "@/hooks/useFormDialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FaqItemBlockProps {
   block: FaqItemBlockType;
@@ -164,6 +174,40 @@ export function FaqItemBlock({
             />
             <p className="text-xs text-muted-foreground mt-1">
               {editedBlock.content.answer.length}/1000 characters
+            </p>
+          </Field>
+          <Field>
+            <FormHeading
+              htmlFor={`faq-category-${block.id}`}
+              label="Category"
+              required={true}
+              isDirty={editedBlock.content.category !== block.content.category}
+            />
+            <Select
+              value={editedBlock.content.category || "general"}
+              onValueChange={(value) => {
+                setEditedBlock({
+                  ...editedBlock,
+                  content: {
+                    ...editedBlock.content,
+                    category: value as typeof editedBlock.content.category,
+                  },
+                });
+              }}
+            >
+              <SelectTrigger id={`faq-category-${block.id}`}>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {FAQ_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Group this FAQ under a category for easier navigation
             </p>
           </Field>
         </FieldGroup>

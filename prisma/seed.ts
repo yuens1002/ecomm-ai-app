@@ -1788,24 +1788,16 @@ async function main() {
 
   console.log("\nCreating CMS pages...");
 
-  // About Page
-  await prisma.page.upsert({
+  // About Page (Block-based using two-column layout)
+  const aboutPage = await prisma.page.upsert({
     where: { slug: "about" },
     update: {},
     create: {
       slug: "about",
       title: "About Us",
-      heroImage: "/logo.svg",
-      content: `
-        <h2>Our Story</h2>
-        <p>Welcome to our specialty coffee roastery. This page will be customized with your unique brand story using our AI-powered wizard.</p>
-        
-        <h2>Our Values</h2>
-        <p>Quality, sustainability, and community are at the heart of everything we do.</p>
-        
-        <h2>Visit Us</h2>
-        <p>Stop by our roastery to experience the art of coffee roasting firsthand.</p>
-      `,
+      type: "ABOUT",
+      heroImage: null,
+      content: "",
       metaDescription:
         "Learn about our specialty coffee roastery, our values, and our commitment to quality.",
       showInFooter: true,
@@ -1815,7 +1807,84 @@ async function main() {
       generatedBy: "manual",
     },
   });
-  console.log("✓ About page");
+
+  // Delete existing blocks for About page before creating new ones
+  await prisma.block.deleteMany({
+    where: { pageId: aboutPage.id },
+  });
+
+  // Hero block for About page
+  await prisma.block.create({
+    data: {
+      pageId: aboutPage.id,
+      type: "hero",
+      order: 0,
+      isDeleted: false,
+      content: {
+        heading: "Our Story",
+        imageUrl: "https://placehold.co/1920x800/8B4513/FFF?text=Our+Story",
+        imageAlt: "Artisan Roast coffee roastery",
+        caption: "Crafting exceptional coffee experiences since 2015",
+      },
+    },
+  });
+
+  // Stat blocks for About page (3 required)
+  const aboutStats = [
+    { emoji: "☕", value: "10,000+", label: "Cups Served Daily" },
+    { emoji: "🌍", value: "12", label: "Origin Countries" },
+    { emoji: "⭐", value: "4.9", label: "Customer Rating" },
+  ];
+
+  for (let i = 0; i < aboutStats.length; i++) {
+    await prisma.block.create({
+      data: {
+        pageId: aboutPage.id,
+        type: "stat",
+        order: i + 1,
+        isDeleted: false,
+        content: aboutStats[i],
+      },
+    });
+  }
+
+  // Pull Quote block for About page
+  await prisma.block.create({
+    data: {
+      pageId: aboutPage.id,
+      type: "pullQuote",
+      order: 4,
+      isDeleted: false,
+      content: {
+        text: "Every cup tells a story — from the hands that picked the cherries to the moment it reaches yours.",
+        author: "Our Founding Philosophy",
+      },
+    },
+  });
+
+  // Rich Text block for About page
+  await prisma.block.create({
+    data: {
+      pageId: aboutPage.id,
+      type: "richText",
+      order: 5,
+      isDeleted: false,
+      content: {
+        html: `
+          <h2>Our Journey</h2>
+          <p>What started as a small passion project in a garage has grown into a beloved specialty coffee roastery. We source our beans directly from farmers across 12 countries, ensuring fair trade practices and exceptional quality at every step.</p>
+          
+          <h3>Our Commitment</h3>
+          <p>Quality, sustainability, and community are at the heart of everything we do. We roast in small batches to bring out the unique flavor profiles of each origin, and we're proud to support the farmers and communities who make our coffee possible.</p>
+          
+          <h3>Visit Us</h3>
+          <p>Stop by our roastery to experience the art of coffee roasting firsthand. Our team is always happy to share a cup and talk about what makes specialty coffee special.</p>
+        `,
+      },
+    },
+  });
+
+  console.log("✓ About page with blocks (hero, 3 stats, pullQuote, richText)");
 
   // Brewing Guides (Parent Page)
   const brewingGuides = await prisma.page.upsert({
@@ -2176,6 +2245,205 @@ async function main() {
       "✓ Café page with locationCarousel and location blocks (MULTI)"
     );
   }
+
+  // FAQ Page with template data
+  console.log("\nCreating FAQ page...");
+  const faqPage = await prisma.page.upsert({
+    where: { slug: "faq" },
+    update: {},
+    create: {
+      slug: "faq",
+      title: "Frequently Asked Questions",
+      type: "FAQ",
+      heroImage: null,
+      content: "",
+      metaDescription:
+        "Find answers to common questions about our coffee, orders, shipping, returns, and more.",
+      showInFooter: true,
+      footerOrder: 4,
+      isPublished: true,
+      publishedAt: new Date(),
+      generatedBy: "manual",
+    },
+  });
+
+  // Delete existing blocks for FAQ page before creating new ones
+  await prisma.block.deleteMany({
+    where: { pageId: faqPage.id },
+  });
+
+  // Hero block for FAQ page
+  await prisma.block.create({
+    data: {
+      pageId: faqPage.id,
+      type: "hero",
+      order: 0,
+      isDeleted: false,
+      content: {
+        heading: "Frequently Asked Questions",
+        imageUrl: "https://placehold.co/1920x800/654321/FFF?text=FAQ",
+        imageAlt: "Coffee beans background",
+        caption:
+          "Find answers to common questions about our coffee, orders, shipping, and more.",
+      },
+    },
+  });
+
+  // FAQ items - seeded with template data organized by category
+  const faqItems = [
+    // General
+    {
+      category: "general",
+      question: "What makes your coffee special?",
+      answer:
+        "We source our beans directly from small-batch farmers around the world, ensuring fair trade practices and exceptional quality. Each batch is roasted in small quantities to bring out the unique flavor profiles of each origin.",
+    },
+    {
+      category: "general",
+      question: "Do you offer coffee subscriptions?",
+      answer:
+        "Yes! We offer flexible subscription plans that deliver fresh-roasted coffee to your door on a schedule that works for you. You can choose weekly, bi-weekly, or monthly deliveries, and easily pause, skip, or cancel anytime.",
+    },
+    {
+      category: "general",
+      question: "Do you offer wholesale or bulk pricing?",
+      answer:
+        "Yes, we work with cafés, restaurants, and offices. Please contact us through our wholesale inquiry form for pricing and minimum order requirements.",
+    },
+    // Orders
+    {
+      category: "orders",
+      question: "How do I place an order?",
+      answer:
+        "Simply browse our products, add items to your cart, and proceed to checkout. You can check out as a guest or create an account to track your orders and earn rewards.",
+    },
+    {
+      category: "orders",
+      question: "Can I modify or cancel my order?",
+      answer:
+        "We begin processing orders quickly! If you need to modify or cancel, please contact us immediately. Once an order has shipped, it cannot be changed, but you may be able to return it after delivery.",
+    },
+    {
+      category: "orders",
+      question: "What payment methods do you accept?",
+      answer:
+        "We accept all major credit cards (Visa, Mastercard, American Express, Discover), as well as Apple Pay, Google Pay, and Shop Pay for a faster checkout experience.",
+    },
+    {
+      category: "orders",
+      question: "How do I track my order?",
+      answer:
+        "Once your order ships, you'll receive an email with tracking information. You can also log into your account to view order status and tracking details at any time.",
+    },
+    // Shipping
+    {
+      category: "shipping",
+      question: "How long does shipping take?",
+      answer:
+        "Standard shipping typically takes 3-5 business days within the continental US. Expedited shipping options are available at checkout for faster delivery.",
+    },
+    {
+      category: "shipping",
+      question: "How much does shipping cost?",
+      answer:
+        "Shipping rates are calculated at checkout based on your location and order weight. We offer free standard shipping on orders over $50!",
+    },
+    {
+      category: "shipping",
+      question: "Do you offer local pickup?",
+      answer:
+        "Yes! You can select local pickup at checkout if you're in our area. We'll notify you when your order is ready for pickup at our roastery.",
+    },
+    {
+      category: "shipping",
+      question: "What if my package is lost or damaged?",
+      answer:
+        "Contact us right away! We'll work with the carrier to locate your package or file a claim. In most cases, we can ship a replacement or issue a refund.",
+    },
+    // Returns
+    {
+      category: "returns",
+      question: "What is your return policy?",
+      answer:
+        "We want you to love your coffee! If you're not satisfied, contact us within 30 days of delivery. We'll make it right with an exchange, store credit, or refund.",
+    },
+    {
+      category: "returns",
+      question: "Can I return opened coffee?",
+      answer:
+        "Yes—we stand behind our products. If you're not satisfied with the taste, reach out and we'll work with you to find a coffee you'll love or provide a refund.",
+    },
+    {
+      category: "returns",
+      question: "How do I start a return?",
+      answer:
+        "Contact our support team through the Contact page or email us. We'll provide instructions and, if needed, a prepaid return label. Refunds are typically processed within 5-7 business days after we receive the return.",
+    },
+    // Products
+    {
+      category: "products",
+      question: "How should I store my coffee?",
+      answer:
+        "Store your coffee in a cool, dark place in an airtight container. Avoid the refrigerator or freezer, as moisture can affect the flavor. For best taste, use within 2-4 weeks of the roast date.",
+    },
+    {
+      category: "products",
+      question: "What grind sizes do you offer?",
+      answer:
+        "We offer whole bean (recommended for freshness), coarse (French press), medium (drip/pour-over), and fine (espresso). Select your preferred grind at checkout.",
+    },
+    {
+      category: "products",
+      question: "Do you have decaf options?",
+      answer:
+        "Yes! We offer Swiss Water Process decaf that maintains great flavor with 99.9% of caffeine removed. Check our product listings for current decaf offerings.",
+    },
+    {
+      category: "products",
+      question: "What roast levels do you offer?",
+      answer:
+        "We roast from light to dark. Light roasts highlight origin flavors, medium roasts balance brightness and body, and dark roasts offer bold, rich flavors. Product pages describe each coffee's roast level.",
+    },
+    // Account
+    {
+      category: "account",
+      question: "How do I create an account?",
+      answer:
+        "Click 'Sign In' at the top of the page and select 'Create Account.' You can also create an account during checkout. An account lets you track orders, manage subscriptions, and save favorites.",
+    },
+    {
+      category: "account",
+      question: "I forgot my password. How do I reset it?",
+      answer:
+        "Click 'Sign In,' then 'Forgot Password.' Enter your email address and we'll send you a link to reset your password. Check your spam folder if you don't see the email.",
+    },
+    {
+      category: "account",
+      question: "How do I manage my subscription?",
+      answer:
+        "Log into your account and go to the Subscriptions section. From there, you can change frequency, update products, skip shipments, or cancel anytime.",
+    },
+  ];
+
+  // Create FAQ item blocks
+  for (let i = 0; i < faqItems.length; i++) {
+    const faq = faqItems[i];
+    await prisma.block.create({
+      data: {
+        pageId: faqPage.id,
+        type: "faqItem",
+        order: i + 1,
+        isDeleted: false,
+        content: {
+          question: faq.question,
+          answer: faq.answer,
+          category: faq.category,
+        },
+      },
+    });
+  }
+
+  console.log(`✓ FAQ page with ${faqItems.length} FAQ items`);
 
   console.log(`\n✅ All seeding complete!`);
 }

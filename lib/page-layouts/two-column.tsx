@@ -128,7 +128,7 @@ export const renderTwoColumnLayout: LayoutRenderer = (blocks, handlers) => {
   const canDeletePullQuote = false; // Pull quote is required (max 1)
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-16">
       {/* Slot: Hero */}
       {hero ? (
         isEditing ? (
@@ -165,7 +165,7 @@ export const renderTwoColumnLayout: LayoutRenderer = (blocks, handlers) => {
       {(stats.length > 0 || (isEditing && canAddStat)) && (
         <>
           {/* Mobile: Carousel */}
-          <div className="md:hidden">
+          <div className="px-4 md:hidden">
             <Carousel
               opts={{
                 align: "start",
@@ -217,7 +217,7 @@ export const renderTwoColumnLayout: LayoutRenderer = (blocks, handlers) => {
           </div>
 
           {/* Desktop: Grid */}
-          <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+          <div className="px-4 hidden md:grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
             {isEditing
               ? stats.map((block) => (
                   <BlockWithAddButton
@@ -295,7 +295,7 @@ export const renderTwoColumnLayout: LayoutRenderer = (blocks, handlers) => {
         </div>
 
         {/* Slot: Main Content */}
-        <div className="lg:col-span-2">
+        <div className="px-4 md:pr-4 lg:pl-0 lg:col-span-2">
           {mainContent.length > 0 ? (
             isEditing ? (
               <BlockRenderer

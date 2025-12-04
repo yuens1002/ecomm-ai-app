@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.30.0 - 2025-12-04
+
+- **FAQ Page**: New FAQ page type with accordion layout, category grouping, search/filter, and expand/collapse functionality
+  - `FaqPageContent`: Public display with search bar, category tabs, grouped accordions
+  - `FaqItemBlock`: Individual FAQ blocks with question, answer, and category selector
+  - `FaqAccordionItem`: Reusable accordion component with animated chevron
+  - Fixed categories: Orders, Shipping, Returns, Products, Subscriptions, Account, General
+  - Accordion layout supports hero + up to 50 FAQ items
+- **Hero Block Improvements**: Renamed `title` to `heading`, made optional for image-only heroes
+- **Seed Updates**: About and FAQ pages now use block-based architecture with placeholder images
+
 ## 0.29.6 - 2025-12-04
 
 - **Add Block Dialog**: New `PendingBlockDialog` component opens form with empty fields when clicking "Add" buttons; creates block in DB only on confirm (no wasted trips)

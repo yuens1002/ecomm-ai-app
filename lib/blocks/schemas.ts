@@ -20,10 +20,10 @@ const baseBlockSchema = z.object({
 export const heroBlockSchema = baseBlockSchema.extend({
   type: z.literal("hero"),
   content: z.object({
-    title: z
+    heading: z
       .string()
-      .min(1, "Title is required")
-      .max(100, "Title must be 100 characters or less"),
+      .max(100, "Heading must be 100 characters or less")
+      .optional(),
     imageUrl: z.string().min(1, "Image URL is required"),
     imageAlt: z.string().max(200).optional(),
     caption: z.string().max(500).optional(),
@@ -120,12 +120,36 @@ export const hoursBlockSchema = baseBlockSchema.extend({
   }),
 });
 
-// FAQ item block - question and answer pair
+// FAQ Categories for grouping questions
+export const FAQ_CATEGORIES = [
+  { id: "orders", label: "Orders & Payments", icon: "CreditCard" },
+  { id: "shipping", label: "Shipping & Delivery", icon: "Truck" },
+  { id: "returns", label: "Returns & Refunds", icon: "RotateCcw" },
+  { id: "products", label: "Products & Coffee", icon: "Coffee" },
+  { id: "subscriptions", label: "Subscriptions", icon: "RefreshCw" },
+  { id: "account", label: "Account & Privacy", icon: "User" },
+  { id: "general", label: "General", icon: "HelpCircle" },
+] as const;
+
+export type FaqCategoryId = (typeof FAQ_CATEGORIES)[number]["id"];
+
+// FAQ item block - question and answer pair with category
 export const faqItemBlockSchema = baseBlockSchema.extend({
   type: z.literal("faqItem"),
   content: z.object({
     question: z.string().max(200),
     answer: z.string().max(2000),
+    category: z
+      .enum([
+        "orders",
+        "shipping",
+        "returns",
+        "products",
+        "subscriptions",
+        "account",
+        "general",
+      ])
+      .default("general"),
   }),
 });
 
@@ -298,7 +322,7 @@ export function createBlock(type: BlockType, order: number): Block {
         ...baseBlock,
         type,
         content: {
-          title: "Add your title here",
+          heading: "",
           imageUrl: "/placeholder-hero.jpg",
           imageAlt: "Hero image",
           caption: "",
@@ -365,6 +389,7 @@ export function createBlock(type: BlockType, order: number): Block {
         content: {
           question: "Click to add your question",
           answer: "Click to add your answer",
+          category: "general",
         },
       };
     case "imageGallery":

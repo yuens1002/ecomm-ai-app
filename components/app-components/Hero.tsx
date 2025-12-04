@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 interface HeroProps {
-  title: string;
+  heading?: string;
   imageUrl?: string;
   imageAlt?: string;
   caption?: string;
@@ -9,7 +9,7 @@ interface HeroProps {
 }
 
 export function Hero({
-  title,
+  heading,
   imageUrl,
   imageAlt,
   caption,
@@ -21,7 +21,7 @@ export function Hero({
         {imageUrl ? (
           <Image
             src={imageUrl}
-            alt={imageAlt || title}
+            alt={imageAlt || heading || "Hero image"}
             fill
             className="object-cover"
             priority
@@ -30,12 +30,16 @@ export function Hero({
           <div className="absolute inset-0 bg-linear-to-br from-gray-800 to-gray-900" />
         )}
         <div className="absolute inset-0 bg-black/30" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <h1 className="text-5xl md:text-7xl font-bold text-white">{title}</h1>
-        </div>
+        {heading && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <h1 className="text-5xl md:text-7xl font-bold text-white">
+              {heading}
+            </h1>
+          </div>
+        )}
       </div>
       {caption && (
-        <figcaption className="text-sm text-muted-foreground text-right mt-2 italic">
+        <figcaption className="text-sm text-muted-foreground text-right mt-2 pr-4 italic">
           {caption}
         </figcaption>
       )}

@@ -62,7 +62,7 @@ export function HeroBlock({
   if (!isEditing) {
     return (
       <Hero
-        title={block.content.title}
+        heading={block.content.heading}
         imageUrl={block.content.imageUrl}
         imageAlt={block.content.imageAlt}
         caption={block.content.caption}
@@ -73,11 +73,7 @@ export function HeroBlock({
   // Save changes from dialog
   const handleSave = async () => {
     // Validate required fields
-    const fieldErrors: { title?: string; imageUrl?: string } = {};
-
-    if (!editedBlock.content.title.trim()) {
-      fieldErrors.title = "Title is required";
-    }
+    const fieldErrors: { imageUrl?: string } = {};
 
     if (!editedBlock.content.imageUrl.trim() && !pendingFile) {
       fieldErrors.imageUrl = "Image is required";
@@ -145,32 +141,27 @@ export function HeroBlock({
         <FieldGroup>
           <Field>
             <FormHeading
-              htmlFor={`hero-title-${block.id}`}
-              label="Title"
-              required={true}
-              validationType={errors.title ? "error" : undefined}
-              isDirty={editedBlock.content.title !== block.content.title}
-              errorMessage={errors.title}
+              htmlFor={`hero-heading-${block.id}`}
+              label="Heading"
+              isDirty={editedBlock.content.heading !== block.content.heading}
             />
             <Input
-              id={`hero-title-${block.id}`}
-              value={editedBlock.content.title}
+              id={`hero-heading-${block.id}`}
+              value={editedBlock.content.heading || ""}
               onChange={(e) => {
                 setEditedBlock({
                   ...editedBlock,
                   content: {
                     ...editedBlock.content,
-                    title: e.target.value,
+                    heading: e.target.value,
                   },
                 });
-                if (errors.title) clearError("title");
               }}
-              placeholder="e.g., About Our Roastery"
+              placeholder="e.g., About Our Roastery (optional)"
               maxLength={100}
-              className={errors.title ? "border-destructive" : ""}
             />
             <p className="text-xs text-muted-foreground mt-1">
-              {editedBlock.content.title.length}/100 characters
+              {(editedBlock.content.heading || "").length}/100 characters
             </p>
           </Field>
           <ImageField
@@ -229,7 +220,7 @@ export function HeroBlock({
 
       {/* Display content - wrapper handled by BlockRenderer */}
       <Hero
-        title={block.content.title || "Untitled"}
+        heading={block.content.heading}
         imageUrl={block.content.imageUrl}
         imageAlt={block.content.imageAlt}
         caption={block.content.caption}

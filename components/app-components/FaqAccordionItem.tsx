@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import {
   Collapsible,
@@ -16,6 +16,8 @@ interface FaqAccordionItemProps {
   isInteractive?: boolean;
   /** Edit mode styling (for CMS editing) */
   isEditing?: boolean;
+  /** Force the item to be open (for "Expand All" feature) */
+  forceOpen?: boolean;
   onClick?: () => void;
   actionButtons?: ReactNode;
 }
@@ -35,10 +37,16 @@ export function FaqAccordionItem({
   className = "",
   isInteractive = false,
   isEditing = false,
+  forceOpen = false,
   onClick,
   actionButtons,
 }: FaqAccordionItemProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Sync with forceOpen prop
+  useEffect(() => {
+    setIsOpen(forceOpen);
+  }, [forceOpen]);
 
   // Interactive mode - full accordion functionality
   if (isInteractive) {

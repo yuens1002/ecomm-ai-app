@@ -11,6 +11,7 @@ import {
   richTextBlockSchema,
   heroBlockSchema,
   faqItemBlockSchema,
+  FAQ_CATEGORIES,
   StatBlock as StatBlockType,
   PullQuoteBlock as PullQuoteBlockType,
   RichTextBlock as RichTextBlockType,
@@ -24,6 +25,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface PendingBlockDialogProps {
   blockType: BlockType;
@@ -190,12 +198,12 @@ function createEmptyBlock(type: BlockType): Block {
     case "hero":
       return {
         ...base,
-        content: { title: "", imageUrl: "", imageAlt: "", caption: "" },
+        content: { heading: "", imageUrl: "", imageAlt: "", caption: "" },
       } as HeroBlockType;
     case "faqItem":
       return {
         ...base,
-        content: { question: "", answer: "" },
+        content: { question: "", answer: "", category: "general" },
       } as FaqItemBlockType;
     default:
       return base;
@@ -424,29 +432,18 @@ function HeroForm({
   return (
     <FieldGroup>
       <Field>
-        <FormHeading
-          htmlFor="new-hero-title"
-          label="Title"
-          required={true}
-          validationType={errors.title ? "error" : undefined}
-          errorMessage={errors.title}
-        />
+        <FormHeading htmlFor="new-hero-heading" label="Heading" />
         <Input
-          id="new-hero-title"
-          value={block.content.title}
+          id="new-hero-heading"
+          value={block.content.heading || ""}
           onChange={(e) => {
             setBlock({
               ...block,
-              content: { ...block.content, title: e.target.value },
+              content: { ...block.content, heading: e.target.value },
             });
-            if (errors.title) {
-              const { title, ...rest } = errors;
-              setErrors(rest);
-            }
           }}
-          placeholder="e.g., Welcome to Our Story"
+          placeholder="e.g., Welcome to Our Story (optional)"
           maxLength={100}
-          className={errors.title ? "border-destructive" : ""}
           autoFocus
         />
       </Field>
@@ -558,6 +555,39 @@ function FaqItemForm({
           maxLength={2000}
           className={errors.answer ? "border-destructive" : ""}
         />
+      </Field>
+      <Field>
+        <FormHeading
+          htmlFor="new-faq-category"
+          label="Category"
+          required={true}
+        />
+        <Select
+          value={block.content.category || "general"}
+          onValueChange={(value) => {
+            setBlock({
+              ...block,
+              content: {
+                ...block.content,
+                category: value as typeof block.content.category,
+              },
+            });
+          }}
+        >
+          <SelectTrigger id="new-faq-category">
+            <SelectValue placeholder="Select a category" />
+          </SelectTrigger>
+          <SelectContent>
+            {FAQ_CATEGORIES.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground mt-1">
+          Group this FAQ under a category for easier navigation
+        </p>
       </Field>
     </FieldGroup>
   );
