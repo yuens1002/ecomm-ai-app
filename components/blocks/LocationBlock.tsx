@@ -1,7 +1,7 @@
 "use client";
 
 import { LocationBlock as LocationBlockType } from "@/lib/blocks/schemas";
-import { MapPinned, Trash2, Plus, X, Clock, Phone } from "lucide-react";
+import { MapPinned, Trash2, Plus, X, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldGroup } from "@/components/ui/field";
@@ -14,6 +14,7 @@ import { EditableBlockWrapper } from "./EditableBlockWrapper";
 import { BlockDialog } from "./BlockDialog";
 import { ImageListField } from "@/components/app-components/ImageListField";
 import { useMultiImageUpload } from "@/hooks/useImageUpload";
+import { HoursCard } from "@/components/app-components/HoursCard";
 
 interface LocationBlockProps {
   block: LocationBlockType;
@@ -517,20 +518,7 @@ function LocationDisplay({
 
           {/* Hours */}
           {block.content.schedule && block.content.schedule.length > 0 && (
-            <div>
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Hours
-              </h3>
-              <div className="space-y-1">
-                {block.content.schedule.map((entry, index) => (
-                  <div key={index} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{entry.day}</span>
-                    <span className="font-medium">{entry.hours}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <HoursCard schedule={block.content.schedule} variant="inline" />
           )}
 
           {/* Description */}
@@ -539,7 +527,6 @@ function LocationDisplay({
           )}
         </div>
       </div>
-      ``
     </div>
   );
 }
