@@ -36,7 +36,6 @@ interface BlockRendererProps {
 export function BlockRenderer({
   block,
   isEditing,
-  isSelected,
   canDelete = true,
   isNew = false,
   onSelect,

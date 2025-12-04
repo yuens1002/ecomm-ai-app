@@ -11,9 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Switch } from "@/components/ui/switch";
-import { Plus, ArrowRight, Trash2 } from "lucide-react";
+import { Plus, ArrowRight } from "lucide-react";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
 import { ImageField } from "@/components/app-components/ImageField";
 import { ImageCard } from "@/components/app-components/ImageCard";
 import { CarouselDots } from "@/components/app-components/CarouselDots";
@@ -25,7 +24,6 @@ type CarouselBlockType = ImageCarouselBlock | LocationCarouselBlock;
 interface CarouselBlockProps {
   block: CarouselBlockType;
   isEditing: boolean;
-  isNew?: boolean;
   onUpdate?: (block: CarouselBlockType) => void;
   // Dialog control from BlockRenderer
   isDialogOpen?: boolean;
@@ -35,7 +33,6 @@ interface CarouselBlockProps {
 export function CarouselBlock({
   block,
   isEditing,
-  isNew = false,
   onUpdate,
   isDialogOpen = false,
   onDialogOpenChange,
@@ -81,7 +78,7 @@ export function CarouselBlock({
   // Edit mode with content - just display + dialog (wrapper handled by BlockRenderer)
   return (
     <>
-      <CarouselDisplay block={block} isEditing={true} />
+      <CarouselDisplay block={block} />
       <EditCarouselDialog
         block={block}
         onUpdate={onUpdate}
@@ -96,13 +93,7 @@ export function CarouselBlock({
  * Carousel Display Component
  * Handles the visual presentation and auto-scroll logic
  */
-function CarouselDisplay({
-  block,
-  isEditing = false,
-}: {
-  block: CarouselBlockType;
-  isEditing?: boolean;
-}) {
+function CarouselDisplay({ block }: { block: CarouselBlockType }) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -350,30 +341,6 @@ function EditCarouselDialog({
       clearAllErrors();
     }
   }, [open, block, isLocationCarousel]);
-
-  // Keep metadata array in sync with images array length
-  const handleAddSlide = () => {
-    const newIndex = images.length;
-    addImage();
-    if (isLocationCarousel) {
-      setSlideMetadata((prev) => [
-        ...prev,
-        {
-          title: "",
-          description: "",
-          locationBlockId: `temp-${Date.now()}-${Math.random()}`,
-        },
-      ]);
-    }
-    // Highlight and scroll to new slide
-    setHighlightedIndex(newIndex);
-    setTimeout(() => {
-      slideRefs.current
-        .get(newIndex)
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 50);
-    setTimeout(() => setHighlightedIndex(null), 1500);
-  };
 
   const handleAddSlideAfter = (index: number) => {
     const newIndex = index + 1;

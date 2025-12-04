@@ -18,7 +18,6 @@ import { useValidation } from "@/hooks/useFormDialog";
 interface LocationBlockProps {
   block: LocationBlockType;
   isEditing: boolean;
-  isNew?: boolean;
   onUpdate?: (block: LocationBlockType) => void;
   // Dialog control from BlockRenderer
   isDialogOpen?: boolean;
@@ -28,7 +27,6 @@ interface LocationBlockProps {
 export function LocationBlock({
   block,
   isEditing,
-  isNew = false,
   onUpdate,
   isDialogOpen = false,
   onDialogOpenChange,
