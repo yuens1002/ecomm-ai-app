@@ -41,7 +41,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Save, Eye, Plus, Settings, X } from "lucide-react";
+import { Eye, Plus, Settings, X } from "lucide-react";
 import {
   DynamicIcon,
   COMMON_PAGE_ICONS,
@@ -76,7 +76,6 @@ interface PageEditorProps {
   icon?: string | null;
   locationType?: LocationType; // Optional - only needed for CAFE pages
   onPublishToggle?: () => Promise<void>;
-  onSave?: () => void;
   onMetadataUpdate?: (data: {
     title: string;
     metaDescription: string;
@@ -104,7 +103,6 @@ export function PageEditor({
   icon,
   locationType,
   onPublishToggle,
-  onSave,
   onMetadataUpdate,
 }: PageEditorProps) {
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
@@ -331,21 +329,6 @@ export function PageEditor({
     });
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      // Blocks are already saved individually via update/add/delete actions
-      // This is just to trigger any parent component refresh
-      toast({
-        title: "Page saved",
-        description: "Your changes have been saved.",
-      });
-      onSave?.();
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const handleMetadataSave = async () => {
     if (!onMetadataUpdate) return;
 
@@ -440,10 +423,6 @@ export function PageEditor({
               Settings
             </Button>
           )}
-          <Button onClick={handleSave} disabled={isSaving} size="sm">
-            <Save className="h-4 w-4 mr-2" />
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
         </div>
       </div>
 
