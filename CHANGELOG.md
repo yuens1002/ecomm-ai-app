@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.29.4 - 2025-12-04
+
+- **Block Wrapper Centralization (Option B)**: Complete architectural refactor for consistent edit/delete controls
+  - `BlockRenderer` now wraps all blocks with `EditableBlockWrapper` when in editing mode
+  - Deleted state overlay handled centrally in `BlockRenderer` instead of individual blocks
+  - Dialog state controlled via `isDialogOpen`/`onDialogOpenChange` props from `BlockRenderer`
+  - Removed redundant `EditableBlockWrapper`, `DeletedBlockOverlay`, and action button handling from all blocks
+  - Simplified block components to just render display content + dialog (no wrapper logic)
+  - Added `canDeleteBlock` handler to `BlockHandlers` for per-block delete control
+  - Updated blocks: CarouselBlock, LocationBlock, HeroBlock, FaqItemBlock, ImageGalleryBlock, StatBlock, HoursBlock, PullQuoteBlock, RichTextBlock
+  - Net reduction: 16 files changed, 461 insertions, 703 deletions (-242 lines)
+
 ## 0.29.3 - 2025-12-04
 
 - **Block Component Architecture Standardization**: Complete separation of concerns across all CMS blocks
