@@ -1,4 +1,5 @@
 import { FieldLabel, FieldError } from "@/components/ui/field";
+import { useDebouncedDirty } from "@/hooks/useDebouncedDirty";
 
 type ValidationType = "dirty" | "required" | "error";
 
@@ -15,6 +16,8 @@ interface FormHeadingProps {
   errorMessage?: string;
   /** Whether the field is required (shows * indicator) */
   required?: boolean;
+  /** Delay in ms before showing "unsaved changes" indicator (default: 30000ms) */
+  dirtyDelay?: number;
 }
 
 const validationStyles = {
@@ -43,12 +46,16 @@ export function FormHeading({
   validationType = "dirty",
   errorMessage,
   required = false,
+  dirtyDelay = 30000,
 }: FormHeadingProps) {
+  // Delay showing dirty indicator so it only appears if user forgets to save
+  const showDirty = useDebouncedDirty(isDirty, dirtyDelay);
+
   const style = validationStyles[validationType];
   const message = errorMessage || style.defaultMessage;
-  // Show indicator when: dirty, required field indicator needed, or has error
+  // Show indicator when: dirty (after delay), required field indicator needed, or has error
   const showIndicator =
-    isDirty ||
+    showDirty ||
     (validationType === "required" && required) ||
     (validationType === "error" && errorMessage);
 
