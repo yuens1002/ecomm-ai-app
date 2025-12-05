@@ -17,7 +17,7 @@ interface DeletedBlockOverlayProps {
  */
 export function DeletedBlockOverlay({
   blockId,
-  blockName,
+  blockName: _blockName,
   onRestore,
   children,
 }: DeletedBlockOverlayProps) {

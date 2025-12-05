@@ -8,7 +8,7 @@ import { join } from "path";
  * Reseed the about page with default blocks
  * POST /api/admin/pages/about/reseed
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     await requireAdmin();
 

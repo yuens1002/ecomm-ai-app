@@ -1220,7 +1220,7 @@ export async function POST(req: NextRequest) {
             const storeNameSetting = await prisma.siteSettings.findUnique({
               where: { key: "store_name" },
             });
-            const storeName = storeNameSetting?.value || "Artisan Roast";
+            const _storeName = storeNameSetting?.value || "Artisan Roast";
 
             // Send merchant notification email only
             try {

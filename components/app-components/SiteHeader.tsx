@@ -14,7 +14,6 @@ import {
   Home,
   User,
   Search,
-  Mail,
   FileText,
   ChevronDown,
 } from "lucide-react";

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Upload, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Field, FieldGroup, FieldDescription } from "@/components/ui/field";
+import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 
 interface ImageFieldProps {

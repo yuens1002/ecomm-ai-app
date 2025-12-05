@@ -301,7 +301,7 @@ function EditCarouselDialog({
   // Use shared multi-image upload hook for image handling
   const {
     images,
-    addImage,
+    addImage: _addImage,
     addImageAfter,
     removeImage,
     moveUp,

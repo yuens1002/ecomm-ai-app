@@ -54,7 +54,7 @@ function BlockWithAddButton({
   canAdd,
   canDelete,
   blockType,
-  afterText,
+  afterText: _afterText,
 }: {
   block: Block;
   handlers: BlockHandlers;

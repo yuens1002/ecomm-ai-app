@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Block,
   BlockType,
@@ -270,7 +270,7 @@ function StatForm({
               content: { ...block.content, value: e.target.value },
             });
             if (errors.value) {
-              const { value, ...rest } = errors;
+              const { value: _value, ...rest } = errors;
               setErrors(rest);
             }
           }}
@@ -300,7 +300,7 @@ function StatForm({
               content: { ...block.content, label: e.target.value },
             });
             if (errors.label) {
-              const { label, ...rest } = errors;
+              const { label: _label, ...rest } = errors;
               setErrors(rest);
             }
           }}
@@ -362,7 +362,7 @@ function PullQuoteForm({
               content: { ...block.content, text: e.target.value },
             });
             if (errors.text) {
-              const { text, ...rest } = errors;
+              const { text: _text, ...rest } = errors;
               setErrors(rest);
             }
           }}
@@ -473,7 +473,7 @@ function HeroForm({
               content: { ...block.content, imageUrl: e.target.value },
             });
             if (errors.imageUrl) {
-              const { imageUrl, ...rest } = errors;
+              const { imageUrl: _imageUrl, ...rest } = errors;
               setErrors(rest);
             }
           }}
@@ -528,7 +528,7 @@ function FaqItemForm({
               content: { ...block.content, question: e.target.value },
             });
             if (errors.question) {
-              const { question, ...rest } = errors;
+              const { question: _question, ...rest } = errors;
               setErrors(rest);
             }
           }}
@@ -555,7 +555,7 @@ function FaqItemForm({
               content: { ...block.content, answer: e.target.value },
             });
             if (errors.answer) {
-              const { answer, ...rest } = errors;
+              const { answer: _answer, ...rest } = errors;
               setErrors(rest);
             }
           }}

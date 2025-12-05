@@ -31,7 +31,7 @@ export async function addBlock(
     const block = result.data;
 
     // Create block in Block table
-    const createdBlock = await prisma.block.create({
+    const _createdBlock = await prisma.block.create({
       data: {
         id: block.id,
         pageId,
@@ -39,7 +39,9 @@ export async function addBlock(
         order: block.order,
         content: block.content as Prisma.InputJsonValue,
         isDeleted: block.isDeleted || false,
-        originalContent: block.originalContent ? (block.originalContent as Prisma.InputJsonValue) : undefined,
+        originalContent: block.originalContent
+          ? (block.originalContent as Prisma.InputJsonValue)
+          : undefined,
         layoutColumn: block.layoutColumn || "full",
       },
     });
@@ -108,7 +110,9 @@ export async function updateBlock(pageId: string, blockData: unknown) {
         order: block.order,
         content: block.content as Prisma.InputJsonValue,
         isDeleted: block.isDeleted,
-        originalContent: block.originalContent ? (block.originalContent as Prisma.InputJsonValue) : undefined,
+        originalContent: block.originalContent
+          ? (block.originalContent as Prisma.InputJsonValue)
+          : undefined,
         layoutColumn: block.layoutColumn,
       },
     });

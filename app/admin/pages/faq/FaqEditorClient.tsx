@@ -37,7 +37,7 @@ export default function FaqEditorClient({
 }: FaqEditorClientProps) {
   const router = useRouter();
   const [isPublished, setIsPublished] = useState(initialIsPublished);
-  const [isToggling, setIsToggling] = useState(false);
+  const [_isToggling, setIsToggling] = useState(false);
 
   const handlePublishToggle = async () => {
     setIsToggling(true);

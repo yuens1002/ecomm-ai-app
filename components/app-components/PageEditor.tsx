@@ -26,25 +26,14 @@ import {
 } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
   Eye,
-  Plus,
   Save,
   Settings,
   X,
@@ -53,15 +42,9 @@ import {
 } from "lucide-react";
 import {
   DynamicIcon,
-  COMMON_PAGE_ICONS,
   getAvailableIcons,
+  COMMON_PAGE_ICONS,
 } from "@/components/app-components/DynamicIcon";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 import {
   Popover,
@@ -413,17 +396,6 @@ export function PageEditor({
       ? getFilteredAllowedBlocks(locationType)
       : layout.allowedBlocks;
 
-  const availableBlocks = baseAllowedBlocks.filter((blockType: BlockType) => {
-    const currentBlockCounts = blocks.reduce(
-      (acc, block) => {
-        acc[block.type] = (acc[block.type] || 0) + 1;
-        return acc;
-      },
-      {} as Record<BlockType, number>
-    );
-
-    return canAddBlock(pageType, blockType, currentBlockCounts[blockType] || 0);
-  });
   // Open live preview in new tab
   // Use savedPublished state (last saved DB state) not published state (UI toggle)
   const handleViewLive = () => {
@@ -681,7 +653,7 @@ export function PageEditor({
                                     </CommandItem>
                                     {filteredIcons
                                       .slice(0, 50)
-                                      .map((iconName) => (
+                                      .map((iconName: string) => (
                                         <CommandItem
                                           key={iconName}
                                           value={iconName}

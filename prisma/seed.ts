@@ -1887,7 +1887,7 @@ async function main() {
   console.log("✓ About page with blocks (hero, 3 stats, pullQuote, richText)");
 
   // Brewing Guides (Parent Page)
-  const brewingGuides = await prisma.page.upsert({
+  const _brewingGuides = await prisma.page.upsert({
     where: { slug: "brewing" },
     update: {},
     create: {

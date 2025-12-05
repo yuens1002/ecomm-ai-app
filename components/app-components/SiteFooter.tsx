@@ -8,7 +8,6 @@ import SocialLinks from "./SocialLinks";
 import FooterCategories from "./FooterCategories";
 import FooterAccountLinks from "./FooterAccountLinks";
 import { getPagesForFooter } from "@/app/actions";
-import { DynamicIcon } from "./DynamicIcon";
 
 /**
  * Get branding settings from database
@@ -222,15 +221,6 @@ export default async function SiteFooter() {
 
   // Check if current user is admin for footer links
   const session = await auth();
-  let isAdmin = false;
-
-  if (session?.user?.email) {
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { isAdmin: true },
-    });
-    isAdmin = user?.isAdmin || false;
-  }
 
   return (
     <footer className="bg-secondary text-secondary-foreground border-t">

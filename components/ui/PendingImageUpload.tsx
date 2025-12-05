@@ -22,7 +22,7 @@ interface PendingImageUploadProps {
 export function PendingImageUpload({
   onImageSelect,
   currentImageUrl,
-  currentFile,
+  currentFile: _currentFile,
   onRemove,
   aspectRatio = "video",
   maxSizeMB = 5,

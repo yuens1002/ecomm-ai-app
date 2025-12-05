@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSiteBanner } from "@/hooks/useSiteBanner";
 import { SiteBanner } from "./SiteBanner";
 
@@ -9,7 +9,7 @@ import { SiteBanner } from "./SiteBanner";
  * Renders only after mount to prevent hydration mismatch.
  */
 export function SiteBannerPortal() {
-  const [mounted, setMounted] = useState(true); // Set to true directly, no effect needed
+  const [mounted] = useState(true); // Set to true directly, no effect needed
   const [isDismissed, setIsDismissed] = useState(false);
   const [lastBannerMessage, setLastBannerMessage] = useState<
     string | undefined
