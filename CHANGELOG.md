@@ -12,6 +12,10 @@
 
 - **CI Env Defaults**: `build-safe-main` workflow now provides dummy `STRIPE_SECRET_KEY`/`RESEND_API_KEY`/`RESEND_FROM_EMAIL` fallbacks to prevent build failures when secrets are not present in CI.
 
+## 0.32.4 - 2025-12-05
+
+- **CI Build Cache**: `build-safe-main` restores/saves Next.js/Turbopack cache (`.next/cache`, `.turbo`) to speed up repeated CI builds.
+
 ## 0.32.0 - 2025-12-05
 
 - **CMS Seeds Modularization**: Split CMS seeding into focused About/Café/FAQ functions with refreshed multi-location copy and consistent block rebuilds for both single and multi layouts.

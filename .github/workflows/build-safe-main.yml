@@ -24,6 +24,16 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Restore Next.js cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+            .turbo
+          key: ${{ runner.os }}-next-cache-${{ hashFiles('package-lock.json', 'next.config.ts', 'next.config.js', 'tsconfig.json') }}
+          restore-keys: |
+            ${{ runner.os }}-next-cache-
+
       - name: Install dependencies
         run: npm ci
 
