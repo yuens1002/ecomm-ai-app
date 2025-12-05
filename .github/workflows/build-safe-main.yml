@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || 'sk_test_dummy' }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_test_dummy' }}
+      RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL || 'orders@example.com' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
