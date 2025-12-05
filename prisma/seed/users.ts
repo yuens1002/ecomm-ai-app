@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 export async function seedUsers(prisma: PrismaClient) {
   console.log("  👥 Creating demo users...");
@@ -8,11 +9,13 @@ export async function seedUsers(prisma: PrismaClient) {
       email: "demo@artisanroast.com",
       name: "Demo User",
       isAdmin: false,
+      password: "ixcF8ZV3FnGaBJ&#8j",
     },
     {
       email: "admin@artisanroast.com",
       name: "Admin User",
       isAdmin: true,
+      password: "ivcF8ZV3FnGaBJ&#8j",
     },
     {
       email: "sarah.coffee@example.com",
@@ -32,10 +35,19 @@ export async function seedUsers(prisma: PrismaClient) {
   ];
 
   for (const userData of demoUsers) {
+    const passwordHash = userData.password
+      ? await bcrypt.hash(userData.password, 10)
+      : undefined;
+
     await prisma.user.upsert({
       where: { email: userData.email },
-      update: {},
-      create: userData,
+      update: passwordHash ? { passwordHash } : {},
+      create: {
+        email: userData.email,
+        name: userData.name,
+        isAdmin: userData.isAdmin,
+        ...(passwordHash ? { passwordHash } : {}),
+      },
     });
     console.log(`    ✓ ${userData.name} (${userData.email})`);
   }

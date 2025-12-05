@@ -203,6 +203,22 @@ git checkout main
 git merge feat/integration-auth
 ```
 
+### Build & Backup Gate (major merges to integration/main)
+
+For major bodies of work merging to integration or main, run the integrity pipeline before merging:
+
+```bash
+npm run build:safe
+```
+
+This executes:
+
+- `npm run check:backup-models` – verifies Prisma models are covered by backups (fails fast on schema drift)
+- `npm run db:backup` – creates a fresh JSON backup (timestamped + latest alias)
+- `npm run build` – typecheck and production build
+
+If the model check fails, the backup and build do not run. Fix schema/table list alignment, rerun `build:safe`, then merge.
+
 ### Quality Assurance Before Commit
 
 **Always run before committing:**

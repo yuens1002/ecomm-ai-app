@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.32.0 - 2025-12-05
+
+- **CMS Seeds Modularization**: Split CMS seeding into focused About/Café/FAQ functions with refreshed multi-location copy and consistent block rebuilds for both single and multi layouts.
+- **Demo Credentials Hardening**: Seeded demo/admin accounts now hash passwords with bcrypt to align with auth expectations while keeping existing demo profiles intact.
+- **Backup & Restore Guidance**: Expanded seed README with restore usage, integrity checks, selective seeding tips, and drift mitigation notes to keep environments recoverable.
+- **Safety Automation**: Added `build-safe-main` GitHub workflow to run `npm run build:safe` (schema coverage → backup → build) and documented the gate in the commit procedure for main merges.
+
 ## 0.31.0 - 2025-12-05
 
 - **Modular Seed System**: Complete database seeding architecture overhaul with 7 focused modules

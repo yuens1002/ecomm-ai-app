@@ -1,15 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
-export async function seedCmsPages(prisma: PrismaClient) {
-  console.log("  📄 Creating CMS pages...");
-
-  // Get location type setting
-  const locationTypeSetting = await prisma.siteSettings.findUnique({
-    where: { key: "app.locationType" },
-  });
-  const LOCATION_TYPE = locationTypeSetting?.value || "MULTI";
-
-  // About Page
+export async function seedAboutPage(prisma: PrismaClient) {
   const aboutPage = await prisma.page.upsert({
     where: { slug: "about" },
     update: {},
@@ -29,10 +20,8 @@ export async function seedCmsPages(prisma: PrismaClient) {
     },
   });
 
-  // Clear existing blocks
   await prisma.block.deleteMany({ where: { pageId: aboutPage.id } });
 
-  // About page blocks
   await prisma.block.create({
     data: {
       pageId: aboutPage.id,
@@ -101,8 +90,12 @@ export async function seedCmsPages(prisma: PrismaClient) {
   });
 
   console.log("    ✓ About page with blocks");
+}
 
-  // Café Page
+export async function seedCafePage(
+  prisma: PrismaClient,
+  LOCATION_TYPE: string
+) {
   const cafePage = await prisma.page.upsert({
     where: { slug: "cafe" },
     update: {},
@@ -124,11 +117,9 @@ export async function seedCmsPages(prisma: PrismaClient) {
     },
   });
 
-  // Clear existing blocks
   await prisma.block.deleteMany({ where: { pageId: cafePage.id } });
 
   if (LOCATION_TYPE === "SINGLE") {
-    // Single location setup
     await prisma.block.create({
       data: {
         pageId: cafePage.id,
@@ -177,7 +168,7 @@ export async function seedCmsPages(prisma: PrismaClient) {
           googleMapsUrl:
             "https://maps.google.com/?q=427+Market+St+San+Francisco+CA+94105",
           description:
-            "Welcome to our specialty coffee café in the heart of downtown...",
+            "Discover where the magic happens at our Market Street Roastery. With an on-site roaster and expert baristas, we serve the freshest coffee in the city. Relax in our spacious café and let the scent of freshly roasted beans awaken your senses.",
           schedule: [
             { day: "Monday - Friday", hours: "6:30AM - 7PM" },
             { day: "Saturday - Sunday", hours: "7AM - 6PM" },
@@ -201,173 +192,176 @@ export async function seedCmsPages(prisma: PrismaClient) {
     });
 
     console.log("    ✓ Café page (single location)");
-  } else {
-    // Multi-location setup
-    const carouselBlock = await prisma.block.create({
-      data: {
-        pageId: cafePage.id,
-        type: "locationCarousel",
-        order: 0,
-        isDeleted: false,
-        content: {
-          slides: [
-            {
-              url: "https://placehold.co/800x600/654321/FFF?text=Market+Street",
-              alt: "Market Street location",
-              title: "Market Street",
-              description: "Our flagship location",
-              locationBlockId: "temp-1",
-            },
-            {
-              url: "https://placehold.co/800x600/8B4513/FFF?text=Pearl+Street",
-              alt: "Pearl Street location",
-              title: "Pearl Street",
-              description: "Cozy neighborhood spot",
-              locationBlockId: "temp-2",
-            },
-            {
-              url: "https://placehold.co/800x600/A0522D/FFF?text=Hawthorne+Blvd",
-              alt: "Hawthorne Boulevard cafe",
-              title: "Hawthorne Boulevard",
-              description: "Relaxed atmosphere",
-              locationBlockId: "temp-3",
-            },
-          ],
-          autoScroll: true,
-          intervalSeconds: 5,
-        },
-      },
-    });
-
-    // Create location blocks
-    const locations = [
-      {
-        name: "Market Street",
-        address: "427 MARKET STREET\nSAN FRANCISCO, CA 94105",
-        phone: "(415) 555-0142",
-        mapsUrl:
-          "https://maps.google.com/?q=427+Market+St+San+Francisco+CA+94105",
-        description: "Our flagship location in the heart of downtown...",
-        schedule: [
-          { day: "Monday - Friday", hours: "6:30AM - 7PM" },
-          { day: "Saturday - Sunday", hours: "7AM - 6PM" },
-        ],
-        images: [
-          {
-            url: "https://placehold.co/600x400/654321/FFF?text=Market+St+Exterior",
-            alt: "Market Street exterior",
-          },
-          {
-            url: "https://placehold.co/600x400/8B4513/FFF?text=Market+St+Interior",
-            alt: "Interior seating",
-          },
-          {
-            url: "https://placehold.co/600x400/A0522D/FFF?text=Market+St+Bar",
-            alt: "Espresso bar",
-          },
-        ],
-      },
-      {
-        name: "Pearl Street",
-        address: "1523 PEARL STREET\nBOULDER, CO 80302",
-        phone: "(303) 555-0198",
-        mapsUrl: "https://maps.google.com/?q=1523+Pearl+St+Boulder+CO+80302",
-        description:
-          "Cozy neighborhood café known for our house-baked pastries...",
-        schedule: [
-          { day: "Monday - Friday", hours: "6AM - 6PM" },
-          { day: "Saturday - Sunday", hours: "7AM - 5PM" },
-        ],
-        images: [
-          {
-            url: "https://placehold.co/600x400/8B4513/FFF?text=Pearl+St+Storefront",
-            alt: "Pearl Street storefront",
-          },
-          {
-            url: "https://placehold.co/600x400/654321/FFF?text=Pearl+St+Pastries",
-            alt: "Pastry display",
-          },
-          {
-            url: "https://placehold.co/600x400/A0522D/FFF?text=Pearl+St+Patio",
-            alt: "Outdoor patio",
-          },
-        ],
-      },
-      {
-        name: "Hawthorne Boulevard",
-        address: "812 SE HAWTHORNE BLVD\nPORTLAND, OR 97214",
-        phone: "(503) 555-0276",
-        mapsUrl:
-          "https://maps.google.com/?q=812+SE+Hawthorne+Blvd+Portland+OR+97214",
-        description:
-          "Relaxed atmosphere perfect for studying, working, or meeting friends...",
-        schedule: [
-          { day: "Monday - Thursday", hours: "7AM - 8PM" },
-          { day: "Friday", hours: "7AM - 10PM" },
-          { day: "Saturday - Sunday", hours: "8AM - 8PM" },
-        ],
-        images: [
-          {
-            url: "https://placehold.co/600x400/A0522D/FFF?text=Hawthorne+Entrance",
-            alt: "Hawthorne Boulevard entrance",
-          },
-          {
-            url: "https://placehold.co/600x400/8B4513/FFF?text=Hawthorne+Seating",
-            alt: "Comfortable seating",
-          },
-          {
-            url: "https://placehold.co/600x400/654321/FFF?text=Hawthorne+Bar",
-            alt: "Coffee and tea bar",
-          },
-        ],
-      },
-    ];
-
-    const locationBlocks = [];
-    for (let i = 0; i < locations.length; i++) {
-      const location = locations[i];
-      const block = await prisma.block.create({
-        data: {
-          pageId: cafePage.id,
-          type: "location",
-          order: i + 1,
-          isDeleted: false,
-          content: {
-            name: location.name,
-            address: location.address,
-            phone: location.phone,
-            googleMapsUrl: location.mapsUrl,
-            description: location.description,
-            schedule: location.schedule,
-            images: location.images,
-          },
-        },
-      });
-      locationBlocks.push(block);
-    }
-
-    // Update carousel with actual block IDs
-    await prisma.block.update({
-      where: { id: carouselBlock.id },
-      data: {
-        content: {
-          slides: locationBlocks.map((block, index) => ({
-            url: locations[index].images[0].url,
-            alt: locations[index].images[0].alt,
-            title: locations[index].name,
-            description: locations[index].description.split(".")[0] + ".",
-            locationBlockId: block.id,
-          })),
-          autoScroll: true,
-          intervalSeconds: 5,
-        },
-      },
-    });
-
-    console.log("    ✓ Café page (multi-location)");
+    return;
   }
 
-  // FAQ Page
+  const carouselBlock = await prisma.block.create({
+    data: {
+      pageId: cafePage.id,
+      type: "locationCarousel",
+      order: 0,
+      isDeleted: false,
+      content: {
+        slides: [
+          {
+            url: "https://placehold.co/800x600/654321/FFF?text=Market+Street",
+            alt: "Market Street location",
+            title: "Market Street",
+            description:
+              "427 MARKET STREET\nSAN FRANCISCO, CA 94105\n\nExperience the energy of our vibrant downtown flagship, offering rare single-origin coffees in a sleek, modern setting.",
+            locationBlockId: "temp-1",
+          },
+          {
+            url: "https://placehold.co/800x600/8B4513/FFF?text=Pearl+Street",
+            alt: "Pearl Street location",
+            title: "Pearl Street",
+            description:
+              "1523 PEARL STREET\nBOULDER, CO 80302\n\nEnjoy a cozy retreat on historic Pearl Street, known for its welcoming atmosphere and delicious house-baked pastries.",
+            locationBlockId: "temp-2",
+          },
+          {
+            url: "https://placehold.co/800x600/A0522D/FFF?text=Hawthorne+Blvd",
+            alt: "Hawthorne Boulevard cafe",
+            title: "Hawthorne Boulevard",
+            description:
+              "812 SE HAWTHORNE BLVD\nPORTLAND, OR 97214\n\nSettle into our spacious Hawthorne hub, a relaxed creative haven designed for students, remote workers, and friends.",
+            locationBlockId: "temp-3",
+          },
+        ],
+        autoScroll: true,
+        intervalSeconds: 5,
+      },
+    },
+  });
+
+  const locations = [
+    {
+      name: "Market Street",
+      address: "427 MARKET STREET\nSAN FRANCISCO, CA 94105",
+      phone: "(415) 555-0142",
+      mapsUrl:
+        "https://maps.google.com/?q=427+Market+St+San+Francisco+CA+94105",
+      description:
+        "Step into the energy of downtown San Francisco at our flagship Market Street location. This vibrant hub is designed for the urban professional, offering a sleek modern aesthetic and our complete selection of rare, single-origin coffees to fuel your busy day.",
+      schedule: [
+        { day: "Monday - Friday", hours: "6:30AM - 7PM" },
+        { day: "Saturday - Sunday", hours: "7AM - 6PM" },
+      ],
+      images: [
+        {
+          url: "https://placehold.co/600x400/654321/FFF?text=Market+St+Exterior",
+          alt: "Market Street exterior",
+        },
+        {
+          url: "https://placehold.co/600x400/8B4513/FFF?text=Market+St+Interior",
+          alt: "Interior seating",
+        },
+        {
+          url: "https://placehold.co/600x400/A0522D/FFF?text=Market+St+Bar",
+          alt: "Espresso bar",
+        },
+      ],
+    },
+    {
+      name: "Pearl Street",
+      address: "1523 PEARL STREET\nBOULDER, CO 80302",
+      phone: "(303) 555-0198",
+      mapsUrl: "https://maps.google.com/?q=1523+Pearl+St+Boulder+CO+80302",
+      description:
+        "Discover a cozy retreat on Boulder’s historic Pearl Street. Known for our delicious house-baked pastries and welcoming neighborhood vibe, this café is the perfect place to warm up. Enjoy a handcrafted latte on our patio or relax inside with friends.",
+      schedule: [
+        { day: "Monday - Friday", hours: "6AM - 6PM" },
+        { day: "Saturday - Sunday", hours: "7AM - 5PM" },
+      ],
+      images: [
+        {
+          url: "https://placehold.co/600x400/8B4513/FFF?text=Pearl+St+Storefront",
+          alt: "Pearl Street storefront",
+        },
+        {
+          url: "https://placehold.co/600x400/654321/FFF?text=Pearl+St+Pastries",
+          alt: "Pastry display",
+        },
+        {
+          url: "https://placehold.co/600x400/A0522D/FFF?text=Pearl+St+Patio",
+          alt: "Outdoor patio",
+        },
+      ],
+    },
+    {
+      name: "Hawthorne Boulevard",
+      address: "812 SE HAWTHORNE BLVD\nPORTLAND, OR 97214",
+      phone: "(503) 555-0276",
+      mapsUrl:
+        "https://maps.google.com/?q=812+SE+Hawthorne+Blvd+Portland+OR+97214",
+      description:
+        "Immerse yourself in Portland’s creative spirit at our Hawthorne Boulevard café. With spacious seating and a relaxed atmosphere, it is the ultimate destination for students and remote workers. Settle in for a productive afternoon or a casual meetup in this community hub.",
+      schedule: [
+        { day: "Monday - Thursday", hours: "7AM - 8PM" },
+        { day: "Friday", hours: "7AM - 10PM" },
+        { day: "Saturday - Sunday", hours: "8AM - 8PM" },
+      ],
+      images: [
+        {
+          url: "https://placehold.co/600x400/A0522D/FFF?text=Hawthorne+Entrance",
+          alt: "Hawthorne Boulevard entrance",
+        },
+        {
+          url: "https://placehold.co/600x400/8B4513/FFF?text=Hawthorne+Seating",
+          alt: "Comfortable seating",
+        },
+        {
+          url: "https://placehold.co/600x400/654321/FFF?text=Hawthorne+Bar",
+          alt: "Coffee and tea bar",
+        },
+      ],
+    },
+  ];
+
+  const locationBlocks = [];
+  for (let i = 0; i < locations.length; i++) {
+    const location = locations[i];
+    const block = await prisma.block.create({
+      data: {
+        pageId: cafePage.id,
+        type: "location",
+        order: i + 1,
+        isDeleted: false,
+        content: {
+          name: location.name,
+          address: location.address,
+          phone: location.phone,
+          googleMapsUrl: location.mapsUrl,
+          description: location.description,
+          schedule: location.schedule,
+          images: location.images,
+        },
+      },
+    });
+    locationBlocks.push(block);
+  }
+
+  await prisma.block.update({
+    where: { id: carouselBlock.id },
+    data: {
+      content: {
+        slides: locationBlocks.map((block, index) => ({
+          url: locations[index].images[0].url,
+          alt: locations[index].images[0].alt,
+          title: locations[index].name,
+          description: locations[index].description.split(".")[0] + ".",
+          locationBlockId: block.id,
+        })),
+        autoScroll: true,
+        intervalSeconds: 5,
+      },
+    },
+  });
+
+  console.log("    ✓ Café page (multi-location)");
+}
+
+export async function seedFaqPage(prisma: PrismaClient) {
   const faqPage = await prisma.page.upsert({
     where: { slug: "faq" },
     update: {},
@@ -387,10 +381,8 @@ export async function seedCmsPages(prisma: PrismaClient) {
     },
   });
 
-  // Clear existing blocks
   await prisma.block.deleteMany({ where: { pageId: faqPage.id } });
 
-  // FAQ hero
   await prisma.block.create({
     data: {
       pageId: faqPage.id,
@@ -407,7 +399,6 @@ export async function seedCmsPages(prisma: PrismaClient) {
     },
   });
 
-  // FAQ items
   const faqItems = [
     {
       category: "general",
@@ -450,5 +441,19 @@ export async function seedCmsPages(prisma: PrismaClient) {
   }
 
   console.log(`    ✓ FAQ page with ${faqItems.length} FAQ items`);
+}
+
+export async function seedCmsPages(prisma: PrismaClient) {
+  console.log("  📄 Creating CMS pages...");
+
+  const locationTypeSetting = await prisma.siteSettings.findUnique({
+    where: { key: "app.locationType" },
+  });
+  const LOCATION_TYPE = locationTypeSetting?.value || "MULTI";
+
+  await seedAboutPage(prisma);
+  await seedCafePage(prisma, LOCATION_TYPE);
+  await seedFaqPage(prisma);
+
   console.log("  ✅ CMS pages created");
 }
