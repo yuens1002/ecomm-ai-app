@@ -77,7 +77,7 @@ export default function SelectVariationClient() {
   const [variations, setVariations] = useState<Variation[]>([]);
   const [selectedStyle, setSelectedStyle] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
-  const [wizardAnswers, setWizardAnswers] = useState<any>(null);
+  const [wizardAnswers, setWizardAnswers] = useState<Record<string, string> | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [selectedEditField, setSelectedEditField] = useState<string>("");
   const [isEditingCaption, setIsEditingCaption] = useState(false);

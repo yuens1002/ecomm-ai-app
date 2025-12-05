@@ -35,7 +35,7 @@ interface EditPageClientProps {
     footerOrder: number | null;
     icon: string | null;
     isPublished: boolean;
-    generationPrompt: any;
+    generationPrompt: string | null;
     generatedBy: string | null;
   };
 }
@@ -222,7 +222,7 @@ export default function EditPageClient({ page }: EditPageClientProps) {
                       <p className="text-xs font-medium mb-2">Stats Cards:</p>
                       <div className="text-xs space-y-1">
                         {page.generationPrompt.stats.map(
-                          (stat: any, i: number) => (
+                          (stat: { value: string; label: string }, i: number) => (
                             <div key={i} className="flex gap-2">
                               <span className="font-semibold">
                                 {stat.value}
@@ -240,7 +240,7 @@ export default function EditPageClient({ page }: EditPageClientProps) {
                   <div>
                     <p className="text-xs font-medium mb-1">Pull Quote:</p>
                     <p className="text-xs italic text-muted-foreground">
-                      "{page.generationPrompt.pullQuote}"
+                      &ldquo;{page.generationPrompt.pullQuote}&rdquo;
                     </p>
                   </div>
                 )}

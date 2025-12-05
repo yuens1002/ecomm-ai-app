@@ -138,7 +138,7 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
     }
   }, [currentSlideIndex, slides.length]);
 
-  const handleSlideClick = (slide: any) => {
+  const handleSlideClick = (slide: { locationBlockId?: string; url?: string }) => {
     if (block.type === "locationCarousel" && slide.locationBlockId) {
       // Use the locationBlockId to find the corresponding location block
       const element = document.querySelector(

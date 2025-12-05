@@ -42,7 +42,8 @@ export function StatCard({
   onClick,
   actionButtons,
 }: StatCardProps) {
-  const Icon = icon || getIconForLabel(label);
+  // Get icon component outside of JSX to avoid creating components during render
+  const IconComponent = icon || getIconForLabel(label);
 
   const baseClasses =
     "flex flex-col items-center justify-center text-center p-6 bg-muted/50 rounded-lg border border-border h-full";
@@ -60,7 +61,7 @@ export function StatCard({
           {emoji}
         </span>
       ) : (
-        <Icon className="h-8 w-8 text-primary mb-3 shrink-0" />
+        <IconComponent className="h-8 w-8 text-primary mb-3 shrink-0" />
       )}
       <div className="text-3xl font-bold text-foreground mb-1 overflow-hidden text-ellipsis line-clamp-2 w-full">
         {value}

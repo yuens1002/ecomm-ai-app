@@ -44,7 +44,7 @@ export async function PATCH(
     }
 
     // Build the update data object dynamically
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (isPublished !== undefined) updateData.isPublished = isPublished;
     if (title !== undefined) updateData.title = title;
     if (metaDescription !== undefined)

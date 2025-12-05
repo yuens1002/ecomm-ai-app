@@ -187,7 +187,7 @@ export default function AIWizardClient({
 
   const handleNext = () => {
     const currentAnswer = answers[currentQuestion.id as keyof WizardAnswers];
-    const isOptional = (currentQuestion as any).optional;
+    const isOptional = 'optional' in currentQuestion && (currentQuestion as { optional?: boolean }).optional;
 
     if (!isOptional && (!currentAnswer || currentAnswer.trim() === "")) {
       toast({

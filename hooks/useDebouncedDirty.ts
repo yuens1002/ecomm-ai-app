@@ -24,8 +24,8 @@ export function useDebouncedDirty(
   useEffect(() => {
     // If not dirty, immediately clear the indicator
     if (!isDirty) {
-      setDebouncedDirty(false);
-      return;
+      const timeoutId = setTimeout(() => setDebouncedDirty(false), 0);
+      return () => clearTimeout(timeoutId);
     }
 
     // If dirty, set a timer to show the indicator after delay

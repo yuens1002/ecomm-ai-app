@@ -72,7 +72,7 @@ export async function PATCH(
     }
 
     // Update the page
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       publishedAt,
     };
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -71,10 +72,10 @@ export default function AdminHeader({ user }: AdminHeaderProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <a href="/account" className="cursor-pointer">
+              <Link href="/account" className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
                 Account Settings
-              </a>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

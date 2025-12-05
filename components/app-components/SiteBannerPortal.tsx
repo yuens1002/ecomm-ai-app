@@ -11,6 +11,7 @@ import { SiteBanner } from "./SiteBanner";
 export function SiteBannerPortal() {
   const [mounted, setMounted] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [lastBannerMessage, setLastBannerMessage] = useState<string | undefined>();
   const { banner } = useSiteBanner();
 
   useEffect(() => {
@@ -18,9 +19,10 @@ export function SiteBannerPortal() {
   }, []);
 
   // Reset dismissed state when banner changes
-  useEffect(() => {
+  if (banner?.message !== lastBannerMessage) {
+    setLastBannerMessage(banner?.message);
     setIsDismissed(false);
-  }, [banner?.message]);
+  }
 
   // Don't render anything during SSR or if no banner
   if (!mounted || !banner || isDismissed) {

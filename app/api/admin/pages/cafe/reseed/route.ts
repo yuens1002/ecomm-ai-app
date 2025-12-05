@@ -43,11 +43,11 @@ export async function POST(request: NextRequest) {
     // Extract all image URLs from blocks
     const imageUrls: string[] = [];
     for (const block of existingBlocks) {
-      const content = block.content as any;
+      const content = block.content as Record<string, unknown>;
 
       // Image carousel slides
-      if (block.type === "imageCarousel" && content.slides) {
-        content.slides.forEach((slide: any) => {
+      if (block.type === "imageCarousel" && Array.isArray(content.slides)) {
+        content.slides.forEach((slide: { url?: string }) => {
           if (slide.url && slide.url.startsWith("/")) {
             imageUrls.push(slide.url);
           }
@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Location carousel slides
-      if (block.type === "locationCarousel" && content.slides) {
-        content.slides.forEach((slide: any) => {
+      if (block.type === "locationCarousel" && Array.isArray(content.slides)) {
+        content.slides.forEach((slide: { url?: string }) => {
           if (slide.url && slide.url.startsWith("/")) {
             imageUrls.push(slide.url);
           }
@@ -64,8 +64,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Location block images
-      if (block.type === "location" && content.images) {
-        content.images.forEach((img: any) => {
+      if (block.type === "location" && Array.isArray(content.images)) {
+        content.images.forEach((img: { url?: string }) => {
           if (img.url && img.url.startsWith("/")) {
             imageUrls.push(img.url);
           }

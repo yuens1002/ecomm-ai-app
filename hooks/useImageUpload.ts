@@ -328,13 +328,16 @@ export function useMultiImageUpload({
       prevCurrentImagesRef.current = currentImagesKey;
       // Only sync if we haven't made local changes
       // This handles the case after a successful save
-      setImages(
-        currentImages.map((img) => ({
-          url: img.url,
-          alt: img.alt,
-          originalUrl: img.url,
-        }))
-      );
+      const timeoutId = setTimeout(() => {
+        setImages(
+          currentImages.map((img) => ({
+            url: img.url,
+            alt: img.alt,
+            originalUrl: img.url,
+          }))
+        );
+      }, 0);
+      return () => clearTimeout(timeoutId);
     }
     // We intentionally only depend on currentImages here
     // The comparison logic handles avoiding unnecessary updates

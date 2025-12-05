@@ -34,7 +34,7 @@ interface NavItem {
   title: string;
   href: string;
   icon: React.ElementType;
-  order: number;
+  order?: number;
 }
 
 interface NavSection {
@@ -87,7 +87,7 @@ function buildContentSection(pages: Page[]): NavSection {
   }
 
   // Sort by order
-  items.sort((a, b) => a.order - b.order);
+  items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   return {
     title: "Pages",

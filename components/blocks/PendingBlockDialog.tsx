@@ -58,12 +58,15 @@ export function PendingBlockDialog({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Reset when dialog opens with new type
-  useEffect(() => {
-    if (isOpen) {
-      setEditedBlock(createEmptyBlock(blockType));
-      setErrors({});
-    }
-  }, [isOpen, blockType]);
+  const [lastOpenState, setLastOpenState] = useState({ isOpen: false, blockType: '' });
+  
+  if (isOpen && (!lastOpenState.isOpen || lastOpenState.blockType !== blockType)) {
+    setLastOpenState({ isOpen, blockType });
+    setEditedBlock(createEmptyBlock(blockType));
+    setErrors({});
+  } else if (!isOpen && lastOpenState.isOpen) {
+    setLastOpenState({ isOpen: false, blockType: '' });
+  }
 
   const metadata = BLOCK_METADATA[blockType];
 
