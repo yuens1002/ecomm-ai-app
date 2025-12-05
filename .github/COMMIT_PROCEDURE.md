@@ -184,12 +184,14 @@ Before every commit:
 ### Branching Strategy
 
 **Feature Development Workflow:**
+
 - Use `feat/feature-name` for new features
 - Use `fix/issue-description` for bug fixes
 - Merge feature branches to `feat/integration-branch` for testing
 - Merge integration branch to `main` when ready for release
 
 **Example:**
+
 ```bash
 # Feature development
 git checkout -b feat/add-user-authentication
@@ -204,6 +206,7 @@ git merge feat/integration-auth
 ### Quality Assurance Before Commit
 
 **Always run before committing:**
+
 ```bash
 npm i                    # Install dependencies
 npm run precheck        # TypeScript + ESLint
@@ -215,11 +218,13 @@ npm run build          # Production build verification
 ### Version Synchronization
 
 **Keep versions in sync:**
+
 - Update `package.json` version to match CHANGELOG.md
 - Create git tags for releases: `git tag v0.x.y && git push --tags`
 - Ensure all version references are consistent
 
 **Example:**
+
 ```bash
 # After updating CHANGELOG.md to v0.31.0
 npm version 0.31.0 --no-git-tag-version  # Updates package.json only
@@ -232,12 +237,14 @@ git push && git push --tags
 ### Documentation Updates
 
 **When to update documentation:**
+
 - New features: Update relevant docs (API docs, user guides)
 - Code quality changes: Update `CODE_QUALITY_STANDARDS.md`
 - Architecture changes: Update relevant architecture docs
 - Breaking changes: Update migration guides
 
 **Commit docs separately or with features:**
+
 ```bash
 git commit -m "docs: update API documentation for new endpoints"
 ```
@@ -245,12 +252,14 @@ git commit -m "docs: update API documentation for new endpoints"
 ### Large Feature Development
 
 **For complex features:**
+
 - Break into smaller, logical commits
 - Use incremental commits with clear progression
 - Update changelog progressively
 - Consider feature flags for gradual rollouts
 
 **Example progression:**
+
 ```bash
 git commit -m "feat: add user authentication skeleton (v0.31.0)"
 git commit -m "feat: implement login/logout flow (v0.31.0)"
@@ -260,15 +269,17 @@ git commit -m "feat: add password reset functionality (v0.31.0)"
 ### Code Review Integration
 
 **Before merging to main:**
+
 - Ensure all commits follow this procedure
 - Verify changelog entries are accurate and detailed
 - Check that version numbers are properly incremented
 - Confirm automated tests pass
 
 **AI Assistant Workflow:**
-- Request changelog updates: *"Update the changelog with a summary"*
-- Confirm procedure: *"Follow the standard commit procedure"*
-- Review before push: *"Show me the changelog entry and commit message"*
+
+- Request changelog updates: _"Update the changelog with a summary"_
+- Confirm procedure: _"Follow the standard commit procedure"_
+- Review before push: _"Show me the changelog entry and commit message"_
 
 ---
 
