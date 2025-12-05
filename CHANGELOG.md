@@ -4,6 +4,10 @@
 
 - **CI Resilience**: `check:backup-models` now skips gracefully when `dev-tools/check-backup-models.ts` is absent, preventing build-safe workflow failures on environments without private dev tools.
 
+## 0.32.2 - 2025-12-05
+
+- **CI Resilience (Backup)**: `db:backup` now skips gracefully when `dev-tools/backup-database.ts` is absent so build-safe can run in environments without private backup tooling.
+
 ## 0.32.0 - 2025-12-05
 
 - **CMS Seeds Modularization**: Split CMS seeding into focused About/Café/FAQ functions with refreshed multi-location copy and consistent block rebuilds for both single and multi layouts.
