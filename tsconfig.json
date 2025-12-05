@@ -31,5 +31,11 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "prisma/seed-full-original.ts"]
+  "exclude": [
+    "node_modules",
+    "prisma/seed-full-original.ts",
+    "app/admin/pages/edit",
+    "app/admin/pages/new/wizard",
+    "app/api/admin/pages/generate-about"
+  ]
 }

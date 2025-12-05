@@ -339,10 +339,13 @@ export async function POST(request: NextRequest) {
 
     // If currentBlocks provided, add structure guidance to prompt
     if (currentBlocks && Array.isArray(currentBlocks)) {
-      const blockCounts = currentBlocks.reduce((acc: Record<string, number>, block: { type: string }) => {
-        acc[block.type] = (acc[block.type] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      const blockCounts = currentBlocks.reduce(
+        (acc: Record<string, number>, block: { type: string }) => {
+          acc[block.type] = (acc[block.type] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
       userPrompt += `\n\nIMPORTANT: Match this block structure:\n${JSON.stringify(blockCounts, null, 2)}\nGenerate exactly the same number of blocks for each type.`;
     }

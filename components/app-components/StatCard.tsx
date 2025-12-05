@@ -1,35 +1,35 @@
-import { LucideIcon, Calendar, MapPin, Award } from "lucide-react";
 import { ReactNode } from "react";
+import { DynamicIcon } from "./DynamicIcon";
 
 interface StatCardProps {
   label: string;
   value: string;
   emoji?: string; // Optional emoji to display instead of icon
-  icon?: LucideIcon;
+  icon?: string; // Icon name for DynamicIcon
   className?: string;
   isEditing?: boolean;
   onClick?: () => void;
   actionButtons?: ReactNode;
 }
 
-// Map common labels to icons
-const getIconForLabel = (label: string): LucideIcon => {
+// Map common labels to icon names
+const getIconNameForLabel = (label: string): string => {
   const lowerLabel = label.toLowerCase();
   if (
     lowerLabel.includes("found") ||
     lowerLabel.includes("year") ||
     lowerLabel.includes("since")
   ) {
-    return Calendar;
+    return "Calendar";
   }
   if (
     lowerLabel.includes("origin") ||
     lowerLabel.includes("countr") ||
     lowerLabel.includes("region")
   ) {
-    return MapPin;
+    return "MapPin";
   }
-  return Award;
+  return "Award";
 };
 
 export function StatCard({
@@ -42,9 +42,6 @@ export function StatCard({
   onClick,
   actionButtons,
 }: StatCardProps) {
-  // Get icon component outside of JSX to avoid creating components during render
-  const IconComponent = icon || getIconForLabel(label);
-
   const baseClasses =
     "flex flex-col items-center justify-center text-center p-6 bg-muted/50 rounded-lg border border-border h-full";
   const editingClasses = isEditing
@@ -61,7 +58,10 @@ export function StatCard({
           {emoji}
         </span>
       ) : (
-        <IconComponent className="h-8 w-8 text-primary mb-3 shrink-0" />
+        <DynamicIcon
+          name={icon || getIconNameForLabel(label)}
+          className="h-8 w-8 text-primary mb-3 shrink-0"
+        />
       )}
       <div className="text-3xl font-bold text-foreground mb-1 overflow-hidden text-ellipsis line-clamp-2 w-full">
         {value}

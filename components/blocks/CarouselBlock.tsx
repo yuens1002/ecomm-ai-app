@@ -138,7 +138,10 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
     }
   }, [currentSlideIndex, slides.length]);
 
-  const handleSlideClick = (slide: { locationBlockId?: string; url?: string }) => {
+  const handleSlideClick = (slide: {
+    locationBlockId?: string;
+    url?: string;
+  }) => {
     if (block.type === "locationCarousel" && slide.locationBlockId) {
       // Use the locationBlockId to find the corresponding location block
       const element = document.querySelector(
@@ -183,59 +186,70 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
           msOverflowStyle: "none",
         }}
       >
-        {slides.map((slide: any, index: number) => (
-          <div
-            key={index}
-            className="shrink-0 snap-start"
-            style={{
-              width: "calc((100% - 2rem) / 2.5)", // ~2.5 cards visible
-              minWidth: "280px",
-            }}
-          >
+        {slides.map(
+          (
+            slide: {
+              url: string;
+              alt: string;
+              title?: string;
+              description?: string;
+              locationBlockId?: string;
+            },
+            index: number
+          ) => (
             <div
-              className="relative group cursor-pointer"
-              onClick={
-                block.type === "locationCarousel"
-                  ? () => handleSlideClick(slide)
-                  : undefined
-              }
+              key={index}
+              className="shrink-0 snap-start"
+              style={{
+                width: "calc((100% - 2rem) / 2.5)", // ~2.5 cards visible
+                minWidth: "280px",
+              }}
             >
-              {/* Image */}
-              <div className="relative aspect-4/3 rounded-lg overflow-hidden">
-                <Image
-                  src={slide.url}
-                  alt={slide.alt || "Carousel image"}
-                  fill
-                  className="object-cover transition-transform group-hover:scale-105"
-                />
+              <div
+                className="relative group cursor-pointer"
+                onClick={
+                  block.type === "locationCarousel"
+                    ? () => handleSlideClick(slide)
+                    : undefined
+                }
+              >
+                {/* Image */}
+                <div className="relative aspect-4/3 rounded-lg overflow-hidden">
+                  <Image
+                    src={slide.url}
+                    alt={slide.alt || "Carousel image"}
+                    fill
+                    className="object-cover transition-transform group-hover:scale-105"
+                  />
 
-                {/* Hours & Location Button - Bottom Right */}
+                  {/* Hours & Location Button - Bottom Right */}
+                  {block.type === "locationCarousel" && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSlideClick(slide);
+                      }}
+                      className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-white/90 hover:bg-white text-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
+                    >
+                      Hours & Location
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Location Preview Content */}
                 {block.type === "locationCarousel" && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSlideClick(slide);
-                    }}
-                    className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-white/90 hover:bg-white text-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
-                  >
-                    Hours & Location
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                  <div className="mt-4 space-y-2">
+                    <h3 className="text-xl font-semibold">{slide.title}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {slide.description}
+                    </p>
+                  </div>
                 )}
               </div>
-
-              {/* Location Preview Content */}
-              {block.type === "locationCarousel" && (
-                <div className="mt-4 space-y-2">
-                  <h3 className="text-xl font-semibold">{slide.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {slide.description}
-                  </p>
-                </div>
-              )}
             </div>
-          </div>
-        ))}
+          )
+        )}
       </div>
 
       {/* Dot Navigation */}
@@ -277,10 +291,12 @@ function EditCarouselDialog({
   const isLocationCarousel = block.type === "locationCarousel";
 
   // Extract images from slides for the hook
-  const currentImages = block.content.slides.map((slide: any) => ({
-    url: slide.url,
-    alt: slide.alt,
-  }));
+  const currentImages = block.content.slides.map(
+    (slide: { url: string; alt: string }) => ({
+      url: slide.url,
+      alt: slide.alt,
+    })
+  );
 
   // Use shared multi-image upload hook for image handling
   const {
@@ -323,7 +339,11 @@ function EditCarouselDialog({
   // Initialize metadata when dialog opens
   useEffect(() => {
     if (open && isLocationCarousel) {
-      const slides = block.content.slides as any[];
+      const slides = block.content.slides as Array<{
+        title?: string;
+        description?: string;
+        locationBlockId?: string;
+      }>;
       if (slides.length > 0) {
         setSlideMetadata(
           slides.map((slide) => ({
@@ -484,13 +504,21 @@ function EditCarouselDialog({
         ...block,
         content: {
           includeHero: false,
-          slides: slides as any,
+          slides: isLocationCarousel
+            ? (slides as Array<{
+                url: string;
+                alt: string;
+                title: string;
+                description: string;
+                locationBlockId: string;
+              }>)
+            : (slides as Array<{ url: string; alt: string }>),
           autoScroll,
           intervalSeconds,
         },
       };
 
-      onUpdate(updatedBlock);
+      onUpdate(updatedBlock as typeof block);
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to save carousel:", error);
@@ -505,7 +533,11 @@ function EditCarouselDialog({
     clearAllErrors();
     if (isLocationCarousel) {
       // Reset metadata to original
-      const slides = block.content.slides as any[];
+      const slides = block.content.slides as Array<{
+        title?: string;
+        description?: string;
+        locationBlockId?: string;
+      }>;
       setSlideMetadata(
         slides.map((slide) => ({
           title: slide.title || "",

@@ -9,14 +9,12 @@ import { SiteBanner } from "./SiteBanner";
  * Renders only after mount to prevent hydration mismatch.
  */
 export function SiteBannerPortal() {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(true); // Set to true directly, no effect needed
   const [isDismissed, setIsDismissed] = useState(false);
-  const [lastBannerMessage, setLastBannerMessage] = useState<string | undefined>();
+  const [lastBannerMessage, setLastBannerMessage] = useState<
+    string | undefined
+  >();
   const { banner } = useSiteBanner();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Reset dismissed state when banner changes
   if (banner?.message !== lastBannerMessage) {

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { blockSchema, Block, BlockType, createBlock } from "./schemas";
 
 /**
@@ -36,9 +37,9 @@ export async function addBlock(
         pageId,
         type: block.type,
         order: block.order,
-        content: block.content as any,
+        content: block.content as Prisma.InputJsonValue,
         isDeleted: block.isDeleted || false,
-        originalContent: block.originalContent as any,
+        originalContent: block.originalContent ? (block.originalContent as Prisma.InputJsonValue) : undefined,
         layoutColumn: block.layoutColumn || "full",
       },
     });
@@ -105,9 +106,9 @@ export async function updateBlock(pageId: string, blockData: unknown) {
       data: {
         type: block.type,
         order: block.order,
-        content: block.content as any,
+        content: block.content as Prisma.InputJsonValue,
         isDeleted: block.isDeleted,
-        originalContent: block.originalContent as any,
+        originalContent: block.originalContent ? (block.originalContent as Prisma.InputJsonValue) : undefined,
         layoutColumn: block.layoutColumn,
       },
     });
@@ -117,7 +118,12 @@ export async function updateBlock(pageId: string, blockData: unknown) {
     return { success: true, block };
   } catch (error) {
     console.error("Error updating block:", error);
-    if ((error as any).code === "P2025") {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "P2025"
+    ) {
       return { error: "Block not found" };
     }
     return { error: "Failed to update block" };
@@ -157,7 +163,12 @@ export async function deleteBlock(pageId: string, blockId: string) {
     return { success: true };
   } catch (error) {
     console.error("Error deleting block:", error);
-    if ((error as any).code === "P2025") {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "P2025"
+    ) {
       return { error: "Block not found" };
     }
     return { error: "Failed to delete block" };

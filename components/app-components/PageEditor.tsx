@@ -779,7 +779,9 @@ export function PageEditor({
         {blocks.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <p className="text-lg mb-2">No blocks yet</p>
-            <p className="text-sm">Click "Add Block" above to get started</p>
+            <p className="text-sm">
+              Click &ldquo;Add Block&rdquo; above to get started
+            </p>
           </div>
         ) : (
           layoutRenderer(blocks, blockHandlers)

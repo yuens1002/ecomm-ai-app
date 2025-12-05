@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutRenderer } from "./types";
+import { LayoutRenderer, BlockHandlers } from "./types";
 import { Block, BlockType, BLOCK_METADATA } from "@/lib/blocks/schemas";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -57,7 +57,7 @@ function BlockWithAddButton({
   afterText,
 }: {
   block: Block;
-  handlers: any;
+  handlers: BlockHandlers;
   canAdd: boolean;
   canDelete: boolean;
   blockType: BlockType;

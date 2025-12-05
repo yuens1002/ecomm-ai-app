@@ -288,7 +288,9 @@ export async function POST(request: NextRequest) {
       });
 
       if (carousel && locationBlocks.length >= 2) {
-        const carouselContent = carousel.content as any;
+        const carouselContent = carousel.content as {
+          slides: Array<{ locationBlockId?: string; url: string; alt: string }>;
+        };
         carouselContent.slides[0].locationBlockId = locationBlocks[0].id;
         carouselContent.slides[1].locationBlockId = locationBlocks[1].id;
 
