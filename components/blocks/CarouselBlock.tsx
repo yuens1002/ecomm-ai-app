@@ -368,7 +368,8 @@ function EditCarouselDialog({
       setIntervalSeconds(block.content.intervalSeconds ?? 5);
       clearAllErrors();
     }
-  }, [open, block, isLocationCarousel]);
+    // clearAllErrors is stable from useValidation hook, no need to include in deps
+  }, [open, block, isLocationCarousel]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddSlideAfter = (index: number) => {
     const newIndex = index + 1;

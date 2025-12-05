@@ -208,6 +208,7 @@ export function ImageField({
           {displayUrl ? (
             previewUrl ? (
               // Pending file preview (uses object URL)
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={previewUrl}
                 alt={altText || "Preview"}

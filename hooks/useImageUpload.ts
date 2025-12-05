@@ -352,7 +352,7 @@ export function useMultiImageUpload({
         }
       });
     };
-  }, []); // Only on unmount
+  }, [images]); // Include images to ensure cleanup of all current preview URLs
 
   const addImage = useCallback(() => {
     if (images.length >= maxImages) return;

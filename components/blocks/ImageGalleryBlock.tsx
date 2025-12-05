@@ -169,6 +169,7 @@ export function ImageGalleryBlock({
                   {displayUrl ? (
                     <>
                       {image.previewUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={image.previewUrl}
                           alt="Preview"

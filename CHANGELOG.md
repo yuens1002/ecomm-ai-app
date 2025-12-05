@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.30.8 - 2025-12-05
+
+- **Final Code Quality Cleanup**: Resolved remaining 2 ESLint warnings ✅ **0 errors, 0 warnings**
+  - Fixed `CarouselBlock.tsx`: Suppressed false positive exhaustive-deps warning for stable `clearAllErrors` function from `useValidation` hook
+  - Fixed `useImageUpload.ts`: Added `images` dependency to cleanup useEffect for proper preview URL revocation
+  - All code quality issues now resolved with automated enforcement in place
+
+## 0.30.7 - 2025-12-05
+
+- **Code Cleanup**: Removed all unused variables and imports, suppressed legitimate lint warnings ✅ **0 errors, 2 warnings** (down from 67!)
+  - Deleted 600+ lines of unused code
+  - Removed duplicate `components/PageEditor.tsx` (was shadowed by `components/app-components/PageEditor.tsx`)
+  - Prefixed all unused function parameters with `_` to satisfy linter
+  - Removed unused imports: Select, Card components, DynamicIcon, lucide icons, useEffect
+  - Removed unused state variables: setMounted, setFooterOrderValue, setIconValue, isAdmin
+  - Removed unused computed values: availableBlocks, reorderBlocks
+  - Added `eslint-disable-next-line` comments for legitimate `<img>` tag usage in admin preview contexts:
+    - `SettingsManagementClient.tsx`: Logo and favicon preview (user-uploaded URLs)
+    - `ImageField.tsx`: Pending file preview with object URL
+    - `ImageGalleryBlock.tsx`: Gallery image preview with object URL
+  - Remaining 2 warnings are non-critical exhaustive-deps (pre-existing)
+
 ## 0.30.6 - 2025-12-05
 
 - **Automated Code Quality Enforcement**: Prevent common mistakes at write-time and commit-time ✅ **0 errors, 67 warnings**

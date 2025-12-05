@@ -571,6 +571,7 @@ export default function SettingsManagementClient() {
               <div className="space-y-2">
                 {brandingSettings.storeLogoUrl && (
                   <div className="flex items-center gap-3 p-3 border rounded-md bg-muted/50">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={brandingSettings.storeLogoUrl}
                       alt="Store logo preview"
@@ -611,6 +612,7 @@ export default function SettingsManagementClient() {
               <div className="space-y-2">
                 {brandingSettings.storeFaviconUrl && (
                   <div className="flex items-center gap-3 p-3 border rounded-md bg-muted/50">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={brandingSettings.storeFaviconUrl}
                       alt="Favicon preview"
