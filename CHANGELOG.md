@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.30.9 - 2025-12-05
+
+- **Documentation Enhancement**: Improved commit procedure with practical suggestions
+  - Added branching strategy guidelines (feature → integration → main workflow)
+  - Included quality assurance steps (npm i, precheck, build before commits)
+  - Added version synchronization best practices
+  - Documented documentation update guidelines
+  - Provided large feature development strategies
+  - Enhanced AI assistant workflow integration
+
 ## 0.30.8 - 2025-12-05
 
 - **Final Code Quality Cleanup**: Resolved remaining 2 ESLint warnings ✅ **0 errors, 0 warnings**
