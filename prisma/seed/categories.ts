@@ -21,7 +21,7 @@ export async function seedCategories(prisma: PrismaClient) {
   }
 
   // Collection Categories
-  const catBlends = await prisma.category.upsert({
+  const _catBlends = await prisma.category.upsert({
     where: { slug: "blends" },
     update: {},
     create: {
@@ -32,7 +32,7 @@ export async function seedCategories(prisma: PrismaClient) {
     },
   });
 
-  const catSingleOrigin = await prisma.category.upsert({
+  const _catSingleOrigin = await prisma.category.upsert({
     where: { slug: "single-origin" },
     update: {},
     create: {
@@ -43,7 +43,7 @@ export async function seedCategories(prisma: PrismaClient) {
     },
   });
 
-  const catMicroLot = await prisma.category.upsert({
+  const _catMicroLot = await prisma.category.upsert({
     where: { slug: "micro-lot" },
     update: {},
     create: {
@@ -55,7 +55,7 @@ export async function seedCategories(prisma: PrismaClient) {
   });
 
   // Roast Level Categories
-  const catDark = await prisma.category.upsert({
+  const _catDark = await prisma.category.upsert({
     where: { slug: "dark-roast" },
     update: {},
     create: {
@@ -66,7 +66,7 @@ export async function seedCategories(prisma: PrismaClient) {
     },
   });
 
-  const catMedium = await prisma.category.upsert({
+  const _catMedium = await prisma.category.upsert({
     where: { slug: "medium-roast" },
     update: {},
     create: {
@@ -77,7 +77,7 @@ export async function seedCategories(prisma: PrismaClient) {
     },
   });
 
-  const catLight = await prisma.category.upsert({
+  const _catLight = await prisma.category.upsert({
     where: { slug: "light-roast" },
     update: {},
     create: {

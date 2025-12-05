@@ -1,12 +1,7 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
 
-import {
-  PrismaClient,
-  PurchaseType,
-  BillingInterval,
-  RoastLevel,
-} from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { neonConfig } from "@neondatabase/serverless";
 import ws from "ws";

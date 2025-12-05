@@ -210,7 +210,7 @@ export async function seedSyntheticData(prisma: PrismaClient) {
       const shippingAmount = randomInt(0, 1500); // $0-15 shipping
       const totalAmount = subtotal + taxAmount + shippingAmount;
 
-      const order = await prisma.order.create({
+      const _order = await prisma.order.create({
         data: {
           userId: user.id,
           status: "SHIPPED",

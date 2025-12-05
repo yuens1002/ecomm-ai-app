@@ -3,20 +3,20 @@ import { PrismaClient } from "@prisma/client";
 export async function seedSettings(prisma: PrismaClient) {
   console.log("  📋 Creating site settings...");
 
-  // Category labels
-  const labelRoasts = await prisma.siteSettings.upsert({
+  // Category labels (used by categories.ts)
+  const _labelRoasts = await prisma.siteSettings.upsert({
     where: { key: "label_roasts" },
     update: {},
     create: { key: "label_roasts", value: "Roasts" },
   });
 
-  const labelOrigins = await prisma.siteSettings.upsert({
+  const _labelOrigins = await prisma.siteSettings.upsert({
     where: { key: "label_origins" },
     update: {},
     create: { key: "label_origins", value: "Origins" },
   });
 
-  const labelCollections = await prisma.siteSettings.upsert({
+  const _labelCollections = await prisma.siteSettings.upsert({
     where: { key: "label_collections" },
     update: {},
     create: { key: "label_collections", value: "Collections" },
@@ -27,7 +27,7 @@ export async function seedSettings(prisma: PrismaClient) {
     update: {},
     create: {
       key: "defaultCategoryLabel",
-      value: labelCollections.id,
+      value: _labelCollections.id,
     },
   });
 

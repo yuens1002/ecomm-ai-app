@@ -1,4 +1,4 @@
-import { PrismaClient, RoastLevel } from "@prisma/client";
+import { PrismaClient, RoastLevel, Category } from "@prisma/client";
 
 export async function seedProducts(prisma: PrismaClient) {
   console.log("  🛒 Creating products...");
@@ -59,7 +59,7 @@ export async function seedProducts(prisma: PrismaClient) {
     "Hawaii",
   ];
 
-  const originCategories: Record<string, any> = {};
+  const originCategories: Record<string, Category | null> = {};
   for (const origin of origins) {
     const slug = origin.toLowerCase().replace(/\s+/g, "-");
     originCategories[origin] = await prisma.category.findUnique({
@@ -1440,10 +1440,10 @@ export async function seedProducts(prisma: PrismaClient) {
       include: { variants: true },
     });
 
-    let product;
+    let _product;
     if (existingProduct) {
       // Update existing product (don't touch variants to avoid FK constraints)
-      product = await prisma.product.update({
+      _product = await prisma.product.update({
         where: { slug: productData.slug },
         data: {
           name: productData.name,
@@ -1466,7 +1466,7 @@ export async function seedProducts(prisma: PrismaClient) {
       });
     } else {
       // Create new product with variants
-      product = await prisma.product.create({
+      _product = await prisma.product.create({
         data: {
           name: productData.name,
           slug: productData.slug,
