@@ -117,6 +117,214 @@
 
 ---
 
+### Legacy Content Block for Static Demo Pages
+
+**Status**: Backlog  
+**Priority**: Medium  
+**Description**: Create a virtual "legacy content" block type that automatically wraps static HTML content from the `Page.content` field, making it visible and editable in the PageEditor alongside real blocks.
+
+**Context**:
+
+We have two types of pages during development:
+
+- **Demo pages** (developer use): Static HTML in `content` field for quick demos
+- **CMS pages** (shop owner use): Flexible block system for production
+
+Currently, pages with `content` but no blocks show "Content coming soon" because the block renderer expects blocks. This implementation bridges the gap by treating legacy content as a virtual block.
+
+**Proposed Solution**:
+
+Automatically generate a virtual "legacyContent" block when:
+
+- `blocks.length === 0` AND
+- `page.content` exists and is not empty
+
+This virtual block:
+
+- ✅ Shows up in PageEditor like any other block
+- ✅ Renders the static HTML content
+- ✅ Can be edited via dialog (update `page.content` field)
+- ✅ Can be deleted (prompts migration to real blocks)
+- ✅ Uses existing block rendering infrastructure
+
+**Implementation Steps**:
+
+1. **Add legacyContent block type to schema**
+
+   ```typescript
+   // lib/blocks/schemas.ts
+   type: z.enum([
+     "hero",
+     "stat",
+     "pullQuote",
+     "richText",
+     "location",
+     "hours",
+     "faqItem",
+     "imageGallery",
+     "imageCarousel",
+     "locationCarousel",
+     "legacyContent", // ← Add this
+   ]);
+   ```
+
+2. **Create virtual block in getPageBlocks**
+
+   ```typescript
+   // lib/blocks/actions.ts - getPageBlocks()
+   export async function getPageBlocks(pageId: string) {
+     const blocks = await prisma.block.findMany({...});
+
+     // If no blocks, check for legacy content
+     if (blocks.length === 0) {
+       const page = await prisma.page.findUnique({
+         where: { id: pageId },
+         select: { content: true },
+       });
+
+       if (page?.content?.trim()) {
+         return [{
+           id: `legacy-${pageId}`,
+           pageId,
+           type: 'legacyContent',
+           order: 0,
+           content: { html: page.content },
+           isDeleted: false,
+           createdAt: new Date(),
+           updatedAt: new Date(),
+         }];
+       }
+     }
+
+     return blocks;
+   }
+   ```
+
+3. **Create LegacyContentBlock component**
+
+   ```typescript
+   // components/blocks/LegacyContentBlock.tsx
+   export function LegacyContentBlock({ block }: BlockProps) {
+     return (
+       <div className="container mx-auto px-4 py-8 max-w-4xl">
+         <div
+           className="prose prose-lg dark:prose-invert max-w-none"
+           dangerouslySetInnerHTML={{ __html: block.content.html }}
+         />
+       </div>
+     );
+   }
+   ```
+
+4. **Add to BlockRenderer**
+
+   ```typescript
+   // components/blocks/BlockRenderer.tsx
+   switch (block.type) {
+     // ... existing cases
+     case 'legacyContent':
+       return <LegacyContentBlock {...blockProps} block={block} />;
+   ```
+
+5. **Create LegacyContentDialog for editing**
+
+   ```typescript
+   // components/block-dialogs/LegacyContentDialog.tsx
+   // - Textarea for HTML editing
+   // - Warning badge: "Legacy Content - Consider migrating to blocks"
+   // - "Delete & Migrate" button (removes content, allows adding real blocks)
+   // - Updates page.content field via API
+   ```
+
+6. **Handle legacy block updates**
+
+   ```typescript
+   // app/api/blocks/route.ts
+   if (block.type === "legacyContent") {
+     // Update page.content instead of block table
+     await prisma.page.update({
+       where: { id: block.pageId },
+       data: { content: block.content.html },
+     });
+     return NextResponse.json({ success: true });
+   }
+   ```
+
+7. **Handle legacy block deletion**
+   ```typescript
+   // Delete legacy block = clear page.content
+   if (block.type === "legacyContent") {
+     await prisma.page.update({
+       where: { id: pageId },
+       data: { content: null },
+     });
+   }
+   ```
+
+**Benefits**:
+
+- No separate rendering logic - uses existing block system
+- Legacy content visible in editor (not hidden)
+- Easy migration path: delete legacy block → add real blocks
+- Consistent UX: everything is a block
+- Shop owners can understand and manage legacy content
+- No changes to public-facing page rendering
+
+**Edge Cases**:
+
+- **Virtual block ID**: Use `legacy-${pageId}` to avoid DB conflicts
+- **Block ordering**: Legacy block always order 0, real blocks start at 1
+- **Mixed content**: Once ANY real block is added, legacy block disappears
+- **Edit dialog**: Include "Migrate to Blocks" wizard that converts HTML to richText block
+
+**Migration Wizard (Future Enhancement)**:
+
+When user clicks "Migrate to Blocks":
+
+1. Parse HTML into semantic sections (headings, paragraphs, images)
+2. Auto-create appropriate blocks (hero, richText, imageGallery)
+3. Delete legacy block (clear `page.content`)
+4. Show success message with created blocks
+
+**Files to Modify**:
+
+1. `lib/blocks/schemas.ts` - Add 'legacyContent' to block type enum
+2. `lib/blocks/actions.ts` - Generate virtual block in getPageBlocks
+3. `components/blocks/LegacyContentBlock.tsx` - New component
+4. `components/blocks/BlockRenderer.tsx` - Add case for legacyContent
+5. `components/block-dialogs/LegacyContentDialog.tsx` - New dialog
+6. `app/api/blocks/route.ts` - Handle legacy block CRUD operations
+7. `components/app-components/PageEditor.tsx` - Handle legacy block type in UI
+
+**Acceptance Criteria**:
+
+- ✅ Pages with `content` but no blocks show legacy content block in editor
+- ✅ Legacy block renders HTML correctly in public view
+- ✅ Can edit HTML via dialog and save to `page.content`
+- ✅ Can delete legacy block (clears `page.content`)
+- ✅ Adding real blocks alongside legacy block works
+- ✅ Once real blocks exist, legacy block no longer appears
+- ✅ Warning badge indicates this is temporary/legacy content
+- ✅ Dark mode prose styling works correctly
+- ✅ No impact on pages that already use blocks
+
+**Testing Checklist**:
+
+- [ ] Demo page (About) shows legacy block in editor
+- [ ] Can edit legacy block HTML and save changes
+- [ ] Can delete legacy block, content cleared from DB
+- [ ] Adding real block makes legacy block disappear
+- [ ] Empty page (no content, no blocks) shows "Add Block" button
+- [ ] Page with real blocks doesn't show legacy block
+- [ ] Public view renders legacy content correctly
+- [ ] Dark mode works with prose styling
+
+**Estimated Effort**: 3-4 hours
+
+**Future Removal**: Before production, audit all pages and migrate legacy content to blocks, then remove legacyContent block type entirely.
+
+---
+
 ### Carousel Infinite Scroll with Manual Dot Controls
 
 **Status**: Backlog  

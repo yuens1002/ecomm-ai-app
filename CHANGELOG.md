@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.30.3 - 2025-12-05
+
+- **Page Icon Selection**: Admins can now assign Lucide icons to pages for display in navigation
+  - Added searchable icon picker to PageEditor with 1000+ Lucide icons
+  - Icons display in header navigation and mobile menu (not footer)
+  - Human-readable icon names ("Circle Question Mark" vs "CircleQuestionMark")
+  - Uses shadcn Command (combobox) + Popover components
+- **AdminSidebar Ordering**: Content pages now sort by their header/footer order settings
+  - Pages shown in AdminSidebar reflect their navigation order
+  - Header pages listed first, footer pages second, unassigned pages last
+- **Mobile Navigation Enhancement**: Dynamic pages with icons now appear at bottom of mobile menu
+  - Visual separator between coffee categories and page links
+  - Left-aligned icons with consistent spacing
+- **Documentation**: Added demo pages architecture documentation
+  - Explains separation between demo pages (developer tool) and CMS pages (product feature)
+  - Documents legacy content block implementation plan (backlog)
+
+## 0.30.2 - 2025-12-04
+
+- **LINK Page Management**: Admin interface for managing navigation links to hardcoded pages
+  - Add url field to Page model for external/internal link destinations
+- Add LINK page type to PageType enum
+- Include missing migration file for LINK page type changes
+- Update LinkPageEditorClient to use FieldLabel pattern (shadcn convention)
+- Add LINK page type handling in layouts configuration
+- Update SiteHeader types to include url and type fields"
+
 ## 0.30.1 - 2025-12-04
 
 - **LINK Page Management**: Admin interface for managing navigation links to hardcoded pages

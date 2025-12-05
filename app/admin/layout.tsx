@@ -48,6 +48,10 @@ export default async function AdminLayout({
       slug: true,
       title: true,
       type: true,
+      showInHeader: true,
+      showInFooter: true,
+      headerOrder: true,
+      footerOrder: true,
     },
     orderBy: { title: "asc" },
   });

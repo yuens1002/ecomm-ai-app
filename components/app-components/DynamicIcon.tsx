@@ -73,7 +73,7 @@ export const COMMON_PAGE_ICONS = [
   "Phone",
   "Mail",
   "Info",
-  "HelpCircle",
+  "CircleQuestionMark",
   "Users",
   "ShoppingBag",
   "Calendar",

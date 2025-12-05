@@ -24,12 +24,17 @@ interface Page {
   slug: string;
   title: string;
   type: PageType;
+  showInHeader: boolean;
+  showInFooter: boolean;
+  headerOrder: number | null;
+  footerOrder: number | null;
 }
 
 interface NavItem {
   title: string;
   href: string;
   icon: React.ElementType;
+  order: number;
 }
 
 interface NavSection {
@@ -40,37 +45,52 @@ interface NavSection {
 function buildContentSection(pages: Page[]): NavSection {
   const items: NavItem[] = [];
 
-  // Add CMS pages (ABOUT, CAFE, FAQ)
+  // Build items with order for sorting
   for (const page of pages) {
+    // Determine sort order: prioritize header order, fallback to footer order, then use high number
+    const order =
+      page.showInHeader && page.headerOrder !== null
+        ? page.headerOrder
+        : page.showInFooter && page.footerOrder !== null
+          ? page.footerOrder + 1000 // Add offset to keep footer items after header items
+          : 9999; // Pages not in nav go to bottom
+
     if (page.type === "ABOUT") {
       items.push({
-        title: "About Page",
+        title: "About",
         href: "/admin/pages/about",
         icon: FileText,
+        order,
       });
     } else if (page.type === "CAFE") {
       items.push({
-        title: "Cafe Page",
+        title: "Cafe",
         href: "/admin/pages/cafe",
         icon: FileText,
+        order,
       });
     } else if (page.type === "FAQ") {
       items.push({
-        title: "FAQ Page",
+        title: "FAQ",
         href: "/admin/pages/faq",
         icon: FileText,
+        order,
       });
     } else if (page.type === "LINK") {
       items.push({
         title: page.title,
         href: `/admin/pages/link/${page.slug}`,
         icon: ExternalLink,
+        order,
       });
     }
   }
 
+  // Sort by order
+  items.sort((a, b) => a.order - b.order);
+
   return {
-    title: "Content",
+    title: "Pages",
     items,
   };
 }
@@ -212,7 +232,7 @@ export default function AdminSidebar({ pages }: { pages: Page[] }) {
                       )}
                       title={collapsed ? item.title : undefined}
                     >
-                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      <Icon className="h-5 w-5 shrink-0" />
                       {!collapsed && (
                         <span className="flex-1">{item.title}</span>
                       )}

@@ -354,7 +354,7 @@ export default function SiteHeader({
                     </SheetDescription>
                   </SheetHeader>
                 </div>
-                <div className="flex gap-2 justify-center w-full">
+                <div className="flex gap-2 w-full">
                   <SheetClose asChild>
                     <Link
                       href="/"
@@ -377,28 +377,6 @@ export default function SiteHeader({
                       </span>
                     </Link>
                   </SheetClose>
-                  {/* Dynamic Pages from Database */}
-                  {pages.map((page) => (
-                    <SheetClose asChild key={page.id}>
-                      <Link
-                        href={
-                          page.type === "LINK" && page.url
-                            ? page.url
-                            : `/pages/${page.slug}`
-                        }
-                        className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      >
-                        {page.icon ? (
-                          <DynamicIcon name={page.icon} className="w-5 h-5" />
-                        ) : (
-                          <FileText className="w-5 h-5" />
-                        )}
-                        <span className="text-[10px] uppercase tracking-wide font-medium">
-                          {page.title}
-                        </span>
-                      </Link>
-                    </SheetClose>
-                  ))}
                 </div>
               </div>
               <nav
@@ -438,6 +416,39 @@ export default function SiteHeader({
                     </ul>
                   </div>
                 ))}
+
+                {/* Dynamic Pages */}
+                {pages.length > 0 && (
+                  <div className="mb-6 pt-4 border-t border-border">
+                    <ul className="space-y-1">
+                      {pages.map((page) => (
+                        <li key={page.id}>
+                          <SheetClose asChild>
+                            <Button
+                              variant="ghost"
+                              asChild
+                              className="w-full justify-start font-normal"
+                            >
+                              <Link
+                                href={
+                                  page.type === "LINK" && page.url
+                                    ? page.url
+                                    : `/pages/${page.slug}`
+                                }
+                                className="flex items-center gap-2"
+                              >
+                                {page.icon && (
+                                  <DynamicIcon name={page.icon} size={16} />
+                                )}
+                                {page.title}
+                              </Link>
+                            </Button>
+                          </SheetClose>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </nav>
               <div className="px-6 pb-6 mt-auto">
                 <SheetClose asChild>

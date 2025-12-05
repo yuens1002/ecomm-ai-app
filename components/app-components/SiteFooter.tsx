@@ -267,7 +267,7 @@ export default async function SiteFooter() {
           }`}
         >
           {/* Quick Links */}
-          <div className="space-y-4">
+          <div className="">
             <h3 className="text-lg font-semibold">
               {brandingSettings.footerQuickLinksHeading}
             </h3>
@@ -289,11 +289,8 @@ export default async function SiteFooter() {
                         ? page.url
                         : `/pages/${page.slug}`
                     }
-                    className="text-sm hover:underline hover:text-primary transition-colors inline-flex items-center gap-2"
+                    className="text-sm hover:underline hover:text-primary transition-colors"
                   >
-                    {page.icon && (
-                      <DynamicIcon name={page.icon} className="w-4 h-4" />
-                    )}
                     {page.title}
                   </Link>
                 </li>

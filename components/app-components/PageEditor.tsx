@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Block, BlockType } from "@/lib/blocks/schemas";
+import { cn } from "@/lib/utils";
 import {
   canAddBlock,
   getBlockDisplayName,
@@ -41,10 +42,19 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Eye, Plus, Save, Settings, X } from "lucide-react";
+import {
+  Eye,
+  Plus,
+  Save,
+  Settings,
+  X,
+  ChevronsUpDown,
+  Check,
+} from "lucide-react";
 import {
   DynamicIcon,
   COMMON_PAGE_ICONS,
+  getAvailableIcons,
 } from "@/components/app-components/DynamicIcon";
 import {
   DropdownMenu,
@@ -52,6 +62,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
 import {
   addBlock,
@@ -126,7 +150,26 @@ export function PageEditor({
   const [headerOrderValue, setHeaderOrderValue] = useState(headerOrder || 0);
   const [footerOrderValue, setFooterOrderValue] = useState(footerOrder || 0);
   const [iconValue, setIconValue] = useState(icon || "");
+  const [iconOpen, setIconOpen] = useState(false);
+  const [iconSearch, setIconSearch] = useState("");
   const { toast } = useToast();
+
+  // Convert PascalCase to readable format (e.g., "CircleQuestionMark" -> "Circle Question Mark")
+  const formatIconName = (name: string) => {
+    return name.replace(/([A-Z])/g, " $1").trim();
+  };
+
+  // Get all available icons and filter based on search
+  const allIcons = useMemo(() => getAvailableIcons(), []);
+  const filteredIcons = useMemo(() => {
+    if (!iconSearch) return COMMON_PAGE_ICONS;
+    const search = iconSearch.toLowerCase();
+    return allIcons.filter(
+      (icon) =>
+        icon.toLowerCase().includes(search) ||
+        formatIconName(icon).toLowerCase().includes(search)
+    );
+  }, [iconSearch, allIcons]);
 
   const layout = PAGE_LAYOUTS[pageType];
 
@@ -474,7 +517,7 @@ export function PageEditor({
                     Manage page title and meta description for search engines
                   </FieldDescription>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-[280px_auto_1fr] gap-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-[350px_auto_1fr] gap-8">
                     {/* Left Column - Controls */}
                     <div className="space-y-6">
                       <div>
@@ -575,6 +618,102 @@ export function PageEditor({
                           </div>
                         )}
                       </div>
+
+                      {(showInHeader || showFooter) && (
+                        <div className="flex space-x-4 items-center justify-between">
+                          <Label
+                            htmlFor="link-icon"
+                            className="text-sm font-medium whitespace-nowrap"
+                          >
+                            Link Icon
+                          </Label>
+                          <Popover open={iconOpen} onOpenChange={setIconOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                id="link-icon"
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={iconOpen}
+                                className="justify-between bg-transparent"
+                              >
+                                <div className="flex items-center gap-2 truncate">
+                                  {iconValue ? (
+                                    <>
+                                      <DynamicIcon name={iconValue} size={16} />
+                                      <span className="truncate">
+                                        {formatIconName(iconValue)}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    "Pick an icon or none..."
+                                  )}
+                                </div>
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="p-0">
+                              <Command shouldFilter={false}>
+                                <CommandInput
+                                  placeholder="Search icons..."
+                                  value={iconSearch}
+                                  onValueChange={setIconSearch}
+                                />
+                                <CommandEmpty>No icon found.</CommandEmpty>
+                                <CommandList>
+                                  <CommandGroup>
+                                    <CommandItem
+                                      value="none"
+                                      onSelect={() => {
+                                        setIconValue("");
+                                        setIconSearch("");
+                                        setIconOpen(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          !iconValue
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        )}
+                                      />
+                                      None
+                                    </CommandItem>
+                                    {filteredIcons
+                                      .slice(0, 50)
+                                      .map((iconName) => (
+                                        <CommandItem
+                                          key={iconName}
+                                          value={iconName}
+                                          onSelect={() => {
+                                            setIconValue(iconName);
+                                            setIconSearch("");
+                                            setIconOpen(false);
+                                          }}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              iconValue === iconName
+                                                ? "opacity-100"
+                                                : "opacity-0"
+                                            )}
+                                          />
+                                          <DynamicIcon
+                                            name={iconName}
+                                            size={16}
+                                            className="mr-2"
+                                          />
+                                          {formatIconName(iconName)}
+                                        </CommandItem>
+                                      ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      )}
                     </div>
 
                     <div className="hidden lg:block">
