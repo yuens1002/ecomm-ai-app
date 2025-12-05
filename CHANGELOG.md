@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.31.0 - 2025-12-05
+
+- **Modular Seed System**: Complete database seeding architecture overhaul with 7 focused modules
+  - Transformed monolithic 2459-line seed.ts into maintainable modules (settings, categories, products, users, cms-pages, synthetic-data)
+  - Migrated complete 30-product specialty coffee catalog with variants and pricing
+  - Added comprehensive synthetic data generation (user activities, orders, newsletter subscribers) for realistic testing
+  - Implemented dependency-ordered execution with upsert operations for safe re-seeding
+  - Fixed foreign key constraint issues for reliable database population
+  - Updated package.json seed script to use new modular orchestrator
+  - Created comprehensive README.md with usage instructions and troubleshooting
+
 ## 0.30.9 - 2025-12-05
 
 - **Documentation Enhancement**: Improved commit procedure with practical suggestions
