@@ -40,10 +40,22 @@ export default async function AdminLayout({
     redirect("/unauthorized");
   }
 
+  // Fetch all published pages for sidebar navigation
+  const pages = await prisma.page.findMany({
+    where: { isPublished: true },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      type: true,
+    },
+    orderBy: { title: "asc" },
+  });
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
-      <AdminSidebar />
+      <AdminSidebar pages={pages} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">

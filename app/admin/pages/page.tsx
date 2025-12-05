@@ -148,7 +148,7 @@ export default async function AdminPagesPage() {
                         </Button>
                       )}
                       <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/admin/pages/${page.id}/edit`}>Edit</Link>
+                        <Link href={`/admin/pages/edit/${page.id}`}>Edit</Link>
                       </Button>
                     </div>
                   </TableCell>

@@ -252,7 +252,11 @@ export default function SiteHeader({
                 <NavigationMenuItem key={page.id}>
                   <NavigationMenuLink asChild>
                     <Link
-                      href={`/pages/${page.slug}`}
+                      href={
+                        page.type === "LINK" && page.url
+                          ? page.url
+                          : `/pages/${page.slug}`
+                      }
                       className={cn(
                         navigationMenuTriggerStyle(),
                         "h-auto flex-col gap-1 px-2 py-2 text-foreground hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
@@ -375,7 +379,11 @@ export default function SiteHeader({
                   {pages.map((page) => (
                     <SheetClose asChild key={page.id}>
                       <Link
-                        href={`/pages/${page.slug}`}
+                        href={
+                          page.type === "LINK" && page.url
+                            ? page.url
+                            : `/pages/${page.slug}`
+                        }
                         className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       >
                         {page.icon ? (

@@ -540,4 +540,5 @@ enum PageType {
   ABOUT
   CAFE
   FAQ
+  LINK // Navigation-only entry for hardcoded routes (About, Contact)
 }

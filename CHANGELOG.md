@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.30.1 - 2025-12-04
+
+- **LINK Page Management**: Admin interface for managing navigation links to hardcoded pages
+  - Created `/admin/pages/link/[slug]` route for LINK page settings (show/hide in header/footer, display order, URLs)
+  - AdminSidebar now dynamically displays LINK pages from database with ExternalLink icons
+  - Updated SiteHeader and SiteFooter to use `url` field for LINK pages instead of hardcoded paths
+  - Fixed route conflicts by moving edit pages from `/admin/pages/[id]/edit` to `/admin/pages/edit/[id]`
+
 ## 0.30.0 - 2025-12-04
 
 - **FAQ Page**: New FAQ page type with accordion layout, category grouping, search/filter, and expand/collapse functionality

@@ -284,7 +284,11 @@ export default async function SiteFooter() {
               {footerPages.map((page) => (
                 <li key={page.id}>
                   <Link
-                    href={`/pages/${page.slug}`}
+                    href={
+                      page.type === "LINK" && page.url
+                        ? page.url
+                        : `/pages/${page.slug}`
+                    }
                     className="text-sm hover:underline hover:text-primary transition-colors inline-flex items-center gap-2"
                   >
                     {page.icon && (

@@ -14,8 +14,17 @@ import {
   Settings,
   BarChart3,
   ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 import { useState } from "react";
+import { PageType } from "@prisma/client";
+
+interface Page {
+  id: string;
+  slug: string;
+  title: string;
+  type: PageType;
+}
 
 interface NavItem {
   title: string;
@@ -28,7 +37,45 @@ interface NavSection {
   items: NavItem[];
 }
 
-const navSections: NavSection[] = [
+function buildContentSection(pages: Page[]): NavSection {
+  const items: NavItem[] = [];
+
+  // Add CMS pages (ABOUT, CAFE, FAQ)
+  for (const page of pages) {
+    if (page.type === "ABOUT") {
+      items.push({
+        title: "About Page",
+        href: "/admin/pages/about",
+        icon: FileText,
+      });
+    } else if (page.type === "CAFE") {
+      items.push({
+        title: "Cafe Page",
+        href: "/admin/pages/cafe",
+        icon: FileText,
+      });
+    } else if (page.type === "FAQ") {
+      items.push({
+        title: "FAQ Page",
+        href: "/admin/pages/faq",
+        icon: FileText,
+      });
+    } else if (page.type === "LINK") {
+      items.push({
+        title: page.title,
+        href: `/admin/pages/link/${page.slug}`,
+        icon: ExternalLink,
+      });
+    }
+  }
+
+  return {
+    title: "Content",
+    items,
+  };
+}
+
+const staticNavSections: NavSection[] = [
   {
     title: "Dashboard",
     items: [
@@ -41,26 +88,6 @@ const navSections: NavSection[] = [
         title: "Analytics",
         href: "/admin/analytics",
         icon: BarChart3,
-      },
-    ],
-  },
-  {
-    title: "Content",
-    items: [
-      {
-        title: "About Page",
-        href: "/admin/pages/about",
-        icon: FileText,
-      },
-      {
-        title: "Cafe Page",
-        href: "/admin/pages/cafe",
-        icon: FileText,
-      },
-      {
-        title: "FAQ Page",
-        href: "/admin/pages/faq",
-        icon: FileText,
       },
     ],
   },
@@ -111,9 +138,16 @@ const navSections: NavSection[] = [
   },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ pages }: { pages: Page[] }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+
+  // Build navigation sections with dynamic Content section
+  const navSections: NavSection[] = [
+    staticNavSections[0], // Dashboard
+    buildContentSection(pages), // Content (dynamic)
+    ...staticNavSections.slice(1), // E-commerce, Users, Settings
+  ];
 
   return (
     <aside

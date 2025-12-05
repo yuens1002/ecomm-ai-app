@@ -19,6 +19,8 @@ export async function getPagesForHeader() {
         title: true,
         icon: true,
         headerOrder: true,
+        url: true,
+        type: true,
       },
       orderBy: [
         { headerOrder: { sort: "asc", nulls: "last" } },
@@ -49,6 +51,8 @@ export async function getPagesForFooter() {
         title: true,
         icon: true,
         footerOrder: true,
+        url: true,
+        type: true,
       },
       orderBy: [
         { footerOrder: { sort: "asc", nulls: "last" } },

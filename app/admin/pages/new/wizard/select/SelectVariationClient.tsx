@@ -357,7 +357,7 @@ export default function SelectVariationClient() {
               description: "About page updated! Review and publish when ready.",
             });
 
-            router.push(`/admin/pages/${updatedPage.id}/edit`);
+            router.push(`/admin/pages/edit/${updatedPage.id}`);
             return;
           }
         }
@@ -372,7 +372,7 @@ export default function SelectVariationClient() {
         description: "About page created! Review and publish when ready.",
       });
 
-      router.push(`/admin/pages/${page.id}/edit`);
+      router.push(`/admin/pages/edit/${page.id}`);
     } catch (error) {
       toast({
         title: "Error",
