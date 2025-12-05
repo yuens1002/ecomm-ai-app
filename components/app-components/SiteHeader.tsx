@@ -9,14 +9,7 @@ import { ShoppingCart } from "@components/app-components/ShoppingCart";
 import { UserMenu } from "@components/app-components/UserMenu";
 import { Category } from "@/lib/types";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import {
-  Menu,
-  Home,
-  User,
-  Search,
-  FileText,
-  ChevronDown,
-} from "lucide-react";
+import { Menu, Home, User, Search, FileText, ChevronDown } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuContent,

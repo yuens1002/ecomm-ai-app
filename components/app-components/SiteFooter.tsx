@@ -220,7 +220,7 @@ export default async function SiteFooter() {
     newsletterSettings.enabled || socialLinksSettings.enabled;
 
   // Check if current user is admin for footer links
-  const session = await auth();
+  await auth();
 
   return (
     <footer className="bg-secondary text-secondary-foreground border-t">

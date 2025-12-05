@@ -25,21 +25,11 @@ import {
   FieldDescription,
 } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Eye,
-  Save,
-  Settings,
-  X,
-  ChevronsUpDown,
-  Check,
-} from "lucide-react";
+import { Eye, Save, Settings, X, ChevronsUpDown, Check } from "lucide-react";
 import {
   DynamicIcon,
   getAvailableIcons,
@@ -60,12 +50,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
-import {
-  addBlock,
-  updateBlock,
-  deleteBlock,
-  reorderBlocks,
-} from "@/lib/blocks/actions";
+import { addBlock, updateBlock, deleteBlock } from "@/lib/blocks/actions";
 import { PendingBlockDialog } from "@/components/blocks/PendingBlockDialog";
 
 interface PageEditorProps {
@@ -111,7 +96,7 @@ export function PageEditor({
   headerOrder,
   icon,
   locationType,
-  onPublishToggle,
+  onPublishToggle: _onPublishToggle,
   onMetadataUpdate,
 }: PageEditorProps) {
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
@@ -391,7 +376,7 @@ export function PageEditor({
   };
 
   // Get allowed blocks - filtered by location type for CAFE pages
-  const baseAllowedBlocks =
+  const _baseAllowedBlocks =
     pageType === PageType.CAFE && locationType
       ? getFilteredAllowedBlocks(locationType)
       : layout.allowedBlocks;
