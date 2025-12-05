@@ -98,6 +98,8 @@ interface PageLink {
   title: string;
   icon: string | null;
   headerOrder: number | null;
+  type: string;
+  url: string | null;
 }
 
 interface BannerConfig {

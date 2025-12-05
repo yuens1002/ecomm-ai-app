@@ -9,6 +9,7 @@ import { ArrowLeft, Save, Loader2, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import {
   Field,
+  FieldLabel,
   FieldGroup,
   FieldSet,
   FieldLegend,
@@ -127,7 +128,8 @@ export default function LinkPageEditorClient({
           </FieldDescription>
 
           <FieldGroup>
-            <Field label="Title" htmlFor="title">
+            <Field>
+              <FieldLabel htmlFor="title">Title</FieldLabel>
               <Input
                 id="title"
                 value={title}
@@ -136,7 +138,8 @@ export default function LinkPageEditorClient({
               />
             </Field>
 
-            <Field label="Destination URL" htmlFor="url">
+            <Field>
+              <FieldLabel htmlFor="url">Destination URL</FieldLabel>
               <Input
                 id="url"
                 value={url}
@@ -148,7 +151,8 @@ export default function LinkPageEditorClient({
               </p>
             </Field>
 
-            <Field label="Icon (optional)" htmlFor="icon">
+            <Field>
+              <FieldLabel htmlFor="icon">Icon (optional)</FieldLabel>
               <Input
                 id="icon"
                 value={icon}
@@ -160,7 +164,10 @@ export default function LinkPageEditorClient({
               </p>
             </Field>
 
-            <Field label="Meta Description" htmlFor="metaDescription">
+            <Field>
+              <FieldLabel htmlFor="metaDescription">
+                Meta Description
+              </FieldLabel>
               <Input
                 id="metaDescription"
                 value={metaDescription}
@@ -192,7 +199,8 @@ export default function LinkPageEditorClient({
             </div>
 
             {showInHeader && (
-              <Field label="Header Order" htmlFor="headerOrder">
+              <Field>
+                <FieldLabel htmlFor="headerOrder">Header Order</FieldLabel>
                 <Input
                   id="headerOrder"
                   type="number"
@@ -219,7 +227,8 @@ export default function LinkPageEditorClient({
             </div>
 
             {showInFooter && (
-              <Field label="Footer Order" htmlFor="footerOrder">
+              <Field>
+                <FieldLabel htmlFor="footerOrder">Footer Order</FieldLabel>
                 <Input
                   id="footerOrder"
                   type="number"

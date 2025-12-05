@@ -26,6 +26,11 @@ export const PAGE_LAYOUTS: Record<PageType, PageLayoutConfig> = {
   [PageType.ABOUT]: twoColumnConfig,
   [PageType.CAFE]: locationInfoConfig,
   [PageType.FAQ]: accordionConfig,
+  [PageType.LINK]: {
+    allowedBlocks: [],
+    maxBlocks: {},
+    requiredBlocks: [],
+  },
 };
 
 // Legacy string-based page types for backward compatibility
