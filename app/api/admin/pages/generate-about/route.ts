@@ -2,265 +2,139 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { readFile } from "fs/promises";
+import path from "path";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-const systemPrompts = {
-  storyFirst: `You are an expert content writer specializing in crafting compelling "About Us" pages for specialty coffee roasters. Your writing style is narrative-driven, warm, and engaging. Focus on telling a story that connects emotionally with readers.
+// Main text generation model (available per docs list: Gemini 2.5 Flash)
+const MODEL_NAME = "gemini-2.5-flash";
+// Vision-capable model for alt text; Gemini 2.0 Flash supports image inputs
+const ALT_MODEL_NAME = "gemini-2.0-flash";
 
-Generate a JSON object with structured blocks for a page editor:
-{
-  "blocks": [
-    {
-      "type": "hero",
-      "order": 0,
-      "content": {
-        "title": "Our Story",
-        "imageUrl": "__HERO_IMAGE_URL__",
-        "caption": "Brief caption about the image"
-      }
-    },
-    {
-      "type": "stat",
-      "order": 1,
-      "content": {
-        "label": "Founded",
-        "value": "YYYY"
-      }
-    },
-    {
-      "type": "stat",
-      "order": 2,
-      "content": {
-        "label": "Origin Countries",
-        "value": "X+"
-      }
-    },
-    {
-      "type": "stat",
-      "order": 3,
-      "content": {
-        "label": "Third meaningful stat",
-        "value": "Value"
-      }
-    },
-    {
-      "type": "pullQuote",
-      "order": 4,
-      "content": {
-        "text": "An impactful quote from the story",
-        "author": "Optional author name"
-      }
-    },
-    {
-      "type": "richText",
-      "order": 5,
-      "content": {
-        "html": "<p>First paragraph of the story...</p><p>Second paragraph...</p>"
-      }
-    },
-    {
-      "type": "richText",
-      "order": 6,
-      "content": {
-        "html": "<h2>Section Heading</h2><p>Content for this section...</p>"
-      }
-    }
-  ]
+type Tone =
+  | "warm"
+  | "friendly"
+  | "professional"
+  | "bold"
+  | "approachable"
+  | "educational";
+
+type LengthPreference = "short" | "medium" | "long";
+
+interface PromptOptions {
+  tone: Tone;
+  lengthPreference: LengthPreference;
+  statCount: number;
 }
 
-Block Requirements:
-- 1 hero block (title should be compelling, 3-8 words)
-- 3 stat blocks (value: 1-3 words, label: 3-5 words describing the value)
-- 1 pullQuote block (10-15 words max, most emotionally resonant line)
-- 3-5 richText blocks (each is a section with 2-4 paragraphs)
-
-Rich Text Content:
-- Use <h2> for section headings (2-3 sections total)
-- Use <p> for paragraphs (keep SHORT: 2-3 sentences, 40-60 words each)
-- Opens with captivating story hook
-- Weaves founder's journey naturally
-- Uses vivid, sensory language
-- Creates emotional connection
-- Ends with brief invitation to connect
-
-Hero Image:
-- Use "__HERO_IMAGE_URL__" as placeholder (will be replaced with actual image)
-- Caption should describe the image (8-12 words)
-
-Target: 300-400 words total across all richText blocks.
-Return ONLY valid JSON, no markdown code blocks.`,
-
-  valuesFirst: `You are an expert content writer specializing in crafting professional "About Us" pages for specialty coffee roasters. Your writing style is clear, values-driven, and trustworthy. Focus on establishing credibility and showcasing principles.
-
-Generate a JSON object with structured blocks for a page editor:
-{
-  "blocks": [
-    {
-      "type": "hero",
-      "order": 0,
-      "content": {
-        "title": "Our Values",
-        "imageUrl": "__HERO_IMAGE_URL__",
-        "caption": "Brief caption about the image"
-      }
-    },
-    {
-      "type": "stat",
-      "order": 1,
-      "content": {
-        "label": "Founded",
-        "value": "YYYY"
-      }
-    },
-    {
-      "type": "stat",
-      "order": 2,
-      "content": {
-        "label": "Origin Countries",
-        "value": "X+"
-      }
-    },
-    {
-      "type": "stat",
-      "order": 3,
-      "content": {
-        "label": "Third meaningful stat",
-        "value": "Value"
-      }
-    },
-    {
-      "type": "pullQuote",
-      "order": 4,
-      "content": {
-        "text": "Powerful statement about mission or values",
-        "author": "Optional author name"
-      }
-    },
-    {
-      "type": "richText",
-      "order": 5,
-      "content": {
-        "html": "<p>Mission statement...</p><p>Core values...</p>"
-      }
-    },
-    {
-      "type": "richText",
-      "order": 6,
-      "content": {
-        "html": "<h2>Section Heading</h2><p>Content for this section...</p>"
-      }
-    }
-  ]
-}
-
-Block Requirements:
-- 1 hero block (title should be value-focused, 2-4 words)
-- 3 stat blocks (value: 1-3 words, label: 3-5 words describing the value)
-- 1 pullQuote block (10-15 words max, powerful mission/values statement)
-- 3-5 richText blocks (each is a section with 2-4 paragraphs)
-
-Rich Text Content:
-- Use <h2> for section headings (2-3 sections total)
-- Use <p> for paragraphs (keep SHORT: 2-3 sentences, 40-60 words each)
-- Opens with clear mission statement
-- Highlights core values prominently
-- Emphasizes quality, sourcing, process
-- Uses professional, confident tone
-- Establishes credibility
-
-Hero Image:
-- Use "__HERO_IMAGE_URL__" as placeholder (will be replaced with actual image)
-- Caption should describe the image (8-12 words)
-
-Target: 300-400 words total across all richText blocks.
-Return ONLY valid JSON, no markdown code blocks.`,
-
-  productFirst: `You are an expert content writer specializing in crafting engaging "About Us" pages for specialty coffee roasters. Your writing style is enthusiastic, educational, and product-focused. Emphasize the coffee journey and expertise.
-
-Generate a JSON object with structured blocks for a page editor:
-{
-  "blocks": [
-    {
-      "type": "hero",
-      "order": 0,
-      "content": {
-        "title": "Our Coffee",
-        "imageUrl": "__HERO_IMAGE_URL__",
-        "caption": "Brief caption about the image"
-      }
-    },
-    {
-      "type": "stat",
-      "order": 1,
-      "content": {
-        "label": "Founded",
-        "value": "YYYY"
-      }
-    },
-    {
-      "type": "stat",
-      "order": 2,
-      "content": {
-        "label": "Origin Countries",
-        "value": "X+"
-      }
-    },
-    {
-      "type": "stat",
-      "order": 3,
-      "content": {
-        "label": "Third meaningful stat",
-        "value": "Value"
-      }
-    },
-    {
-      "type": "pullQuote",
-      "order": 4,
-      "content": {
-        "text": "Compelling statement about the coffee or process",
-        "author": "Optional author name"
-      }
-    },
-    {
-      "type": "richText",
-      "order": 5,
-      "content": {
-        "html": "<p>What makes the coffee special...</p><p>Sourcing details...</p>"
-      }
-    },
-    {
-      "type": "richText",
-      "order": 6,
-      "content": {
-        "html": "<h2>Section Heading</h2><p>Content for this section...</p>"
-      }
-    }
-  ]
-}
-
-Block Requirements:
-- 1 hero block (title should be product-focused, 2-4 words)
-- 3 stat blocks (value: 1-3 words, label: 3-5 words describing the value)
-- 1 pullQuote block (10-15 words max, compelling coffee/process statement)
-- 3-5 richText blocks (each is a section with 2-4 paragraphs)
-
-Rich Text Content:
-- Use <h2> for section headings (2-3 sections total)
-- Use <p> for paragraphs (keep SHORT: 2-3 sentences, 40-60 words each)
-- Opens with what makes coffee special
-- Focuses on sourcing, roasting, flavor
-- Educates about the process
-- Uses enthusiastic but informative tone
-- Ends with invitation to explore
-
-Hero Image:
-- Use "__HERO_IMAGE_URL__" as placeholder (will be replaced with actual image)
-- Caption should describe the image (8-12 words)
-
-Target: 300-400 words total across all richText blocks.
-Return ONLY valid JSON, no markdown code blocks.`,
+const DEFAULT_OPTIONS: PromptOptions = {
+  tone: "friendly",
+  lengthPreference: "medium",
+  statCount: 3,
 };
+
+const STYLE_METADATA = {
+  story: {
+    title: "Our Story",
+    description:
+      "Narrative-driven, warm, and emotionally engaging; lean on founder journey.",
+  },
+  values: {
+    title: "Our Values",
+    description:
+      "Professional, trustworthy, principles-focused; open with mission and proof points.",
+  },
+  product: {
+    title: "Our Coffee",
+    description:
+      "Enthusiastic, educational, coffee-focused; highlight sourcing, craft, and flavor.",
+  },
+};
+
+const LENGTH_TARGETS: Record<
+  LengthPreference,
+  { label: string; words: string }
+> = {
+  short: { label: "short", words: "220-320" },
+  medium: { label: "medium", words: "320-500" },
+  long: { label: "long", words: "500-700" },
+};
+
+function buildSystemPrompt(
+  style: keyof typeof STYLE_METADATA,
+  options: PromptOptions
+): string {
+  const { statCount, tone, lengthPreference } = options;
+  const lengthTarget = LENGTH_TARGETS[lengthPreference];
+  const statLabel = `${statCount} stat blocks (value: 1-3 words, label: 3-5 words; hard limit ${statCount})`;
+
+  return `You are an expert content writer specializing in crafting compelling "About Us" pages for specialty coffee roasters.
+
+Tone: ${tone}. Style focus: ${STYLE_METADATA[style].description}
+Target length: ${lengthTarget.words} words (overall), concise paragraphs.
+
+Generate a JSON object with structured blocks for a page editor:
+{
+  "metaDescription": "SEO description 140-160 characters, plain text",
+  "blocks": [
+    {
+      "type": "hero",
+      "order": 0,
+      "content": {
+        "title": "${STYLE_METADATA[style].title}",
+        "imageUrl": "__HERO_IMAGE_URL__",
+        "caption": "Brief caption about the image"
+      }
+    },
+    { "type": "stat", "order": 1, "content": { "label": "Founded", "value": "YYYY" } },
+    { "type": "stat", "order": 2, "content": { "label": "Origin Countries", "value": "X+" } },
+    { "type": "stat", "order": 3, "content": { "label": "Third meaningful stat", "value": "Value" } },
+    {
+      "type": "pullQuote",
+      "order": 4,
+      "content": {
+        "text": "Impactful line from the story/mission",
+        "author": "Optional author name"
+      }
+    },
+    {
+      "type": "richText",
+      "order": 5,
+      "content": {
+        "html": "<p>Opening hook...</p><p>Next paragraph...</p>"
+      }
+    },
+    {
+      "type": "richText",
+      "order": 6,
+      "content": {
+        "html": "<h2>Section Heading</h2><p>Content for this section...</p>"
+      }
+    }
+  ]
+}
+
+Block Requirements:
+- 1 hero block (title: 2-6 words, compelling)
+- ${statLabel}
+- 1 pullQuote block (10-18 words max, most resonant line)
+- 3-5 richText blocks (2-4 paragraphs each, paragraphs 40-70 words)
+- 3-5 richText blocks (2-4 paragraphs each, paragraphs 40-70 words)
+- Include metaDescription at root (140-160 characters, no HTML)
+
+Rich Text Content:
+- Use <h2> for section headings (2-3 sections total)
+- Use <p> for paragraphs (keep SHORT: 2-3 sentences)
+- Tailor to the chosen style (${style})
+- Use the provided tone consistently
+
+Hero Image:
+- Use "__HERO_IMAGE_URL__" as placeholder (will be replaced with actual image)
+- Caption should describe the image (8-14 words)
+
+Return ONLY valid JSON, no markdown code blocks.`;
+}
 
 interface WizardAnswers {
   businessName: string;
@@ -273,9 +147,17 @@ interface WizardAnswers {
   keyValues: string;
   communityRole: string;
   futureVision: string;
+  heroImageUrl?: string | null;
+  heroImageDescription?: string | null;
+  previousHeroImageUrl?: string | null;
 }
 
-function buildUserPrompt(answers: WizardAnswers): string {
+function buildUserPrompt(
+  answers: WizardAnswers,
+  lengthPreference: LengthPreference
+): string {
+  const lengthTarget = LENGTH_TARGETS[lengthPreference];
+
   return `Generate an About page for ${answers.businessName} based on these details:
 
 **Founding Story:**
@@ -305,7 +187,124 @@ ${answers.communityRole}
 **Future Vision:**
 ${answers.futureVision}
 
-Generate a compelling, authentic About page that reflects these unique characteristics. The content should be 300-500 words, well-structured with HTML headings and paragraphs, and match the brand personality described above.`;
+Generate a compelling, authentic About page that reflects these unique characteristics. The content should be ${lengthTarget.words} words, well-structured with HTML headings and paragraphs, and match the brand personality described above.`;
+}
+
+function isTone(value: unknown): value is Tone {
+  return (
+    typeof value === "string" &&
+    [
+      "warm",
+      "friendly",
+      "professional",
+      "bold",
+      "approachable",
+      "educational",
+    ].includes(value)
+  );
+}
+
+function isLengthPreference(value: unknown): value is LengthPreference {
+  return (
+    typeof value === "string" && ["short", "medium", "long"].includes(value)
+  );
+}
+
+function resolveOptions(
+  incoming: Partial<PromptOptions>,
+  currentBlocks?: Array<{ type?: string }>
+): PromptOptions {
+  const resolved: PromptOptions = { ...DEFAULT_OPTIONS };
+
+  if (isTone(incoming.tone)) {
+    resolved.tone = incoming.tone;
+  }
+
+  if (isLengthPreference(incoming.lengthPreference)) {
+    resolved.lengthPreference = incoming.lengthPreference;
+  }
+
+  if (
+    typeof incoming.statCount === "number" &&
+    !Number.isNaN(incoming.statCount)
+  ) {
+    resolved.statCount = Math.min(
+      6,
+      Math.max(1, Math.floor(incoming.statCount))
+    );
+  }
+
+  if (currentBlocks && Array.isArray(currentBlocks)) {
+    const statCount = currentBlocks.filter((b) => b?.type === "stat").length;
+    if (statCount > 0) {
+      resolved.statCount = Math.min(6, Math.max(1, statCount));
+    }
+  }
+
+  return resolved;
+}
+
+function isLocalImageUrl(url?: string | null): url is string {
+  return !!url && url.startsWith("/");
+}
+
+function getMimeTypeFromPath(filePath: string): string {
+  const ext = filePath.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "png":
+      return "image/png";
+    case "webp":
+      return "image/webp";
+    case "gif":
+      return "image/gif";
+    case "jpg":
+    case "jpeg":
+    default:
+      return "image/jpeg";
+  }
+}
+
+async function generateAltTextFromLocalImage(
+  imageUrl: string,
+  hint?: string | null
+): Promise<string | null> {
+  try {
+    const fullPath = path.join(
+      process.cwd(),
+      "public",
+      imageUrl.replace(/^\//, "")
+    );
+    const buffer = await readFile(fullPath);
+    const base64 = buffer.toString("base64");
+
+    const model = genAI.getGenerativeModel({ model: ALT_MODEL_NAME });
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              inlineData: {
+                data: base64,
+                mimeType: getMimeTypeFromPath(imageUrl),
+              },
+            },
+            {
+              text: `Write a concise, accessible alt text (max 18 words) describing this image. Avoid opinions; be specific. ${
+                hint ? `Context: ${hint}` : ""
+              }`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const text = result.response.text().trim();
+    return text.replace(/^"|"$/g, "");
+  } catch (error) {
+    console.error("Alt text generation failed:", error);
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -326,7 +325,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { answers, currentBlocks } = await request.json();
+    const {
+      answers,
+      currentBlocks,
+      tone,
+      lengthPreference,
+      statCount,
+      heroImageUrl: requestHeroImageUrl,
+      heroImageDescription: requestHeroImageDescription,
+      previousHeroImageUrl: requestPreviousHeroImageUrl,
+    } = await request.json();
+
+    const promptOptions = resolveOptions(
+      { tone, lengthPreference, statCount },
+      currentBlocks
+    );
+
+    const systemPrompts = {
+      storyFirst: buildSystemPrompt("story", promptOptions),
+      valuesFirst: buildSystemPrompt("values", promptOptions),
+      productFirst: buildSystemPrompt("product", promptOptions),
+    };
 
     if (!answers || typeof answers !== "object") {
       return NextResponse.json(
@@ -335,7 +354,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let userPrompt = buildUserPrompt(answers as WizardAnswers);
+    const typedAnswers = answers as WizardAnswers;
+
+    const heroImageUrlFromAnswers =
+      typedAnswers.heroImageUrl || requestHeroImageUrl || null;
+    const previousHeroImageUrl =
+      typedAnswers.previousHeroImageUrl || requestPreviousHeroImageUrl || null;
+    const providedHeroAlt =
+      typedAnswers.heroImageDescription || requestHeroImageDescription || null;
+
+    const resolvedHeroImageUrl =
+      heroImageUrlFromAnswers || "/products/placeholder-hero.jpg";
+
+    const urlChanged =
+      !!heroImageUrlFromAnswers &&
+      !!previousHeroImageUrl &&
+      heroImageUrlFromAnswers !== previousHeroImageUrl;
+
+    let heroAltText: string | null = null;
+    if (providedHeroAlt && !urlChanged) {
+      heroAltText = providedHeroAlt;
+    } else if (
+      isLocalImageUrl(heroImageUrlFromAnswers) &&
+      (!providedHeroAlt || urlChanged)
+    ) {
+      heroAltText = await generateAltTextFromLocalImage(
+        heroImageUrlFromAnswers,
+        providedHeroAlt
+      );
+    }
+
+    let userPrompt = buildUserPrompt(
+      typedAnswers,
+      promptOptions.lengthPreference
+    );
 
     // If currentBlocks provided, add structure guidance to prompt
     if (currentBlocks && Array.isArray(currentBlocks)) {
@@ -351,7 +403,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate 3 variations with different styles
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
     // Helper to parse JSON from Gemini response (strips markdown code blocks)
     const parseJsonResponse = (rawText: string, variationType: string) => {
@@ -413,9 +465,6 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    // Use placeholder hero image
-    const heroImageUrl = "/products/placeholder-hero.jpg";
-
     const variations = await Promise.all([
       // Story-first variation
       model
@@ -428,24 +477,68 @@ export async function POST(request: NextRequest) {
           ],
         })
         .then((result: any) => {
-          const rawText = result.response.text();
-          const parsed = parseJsonResponse(rawText, "Story");
-          console.log("Story variation blocks count:", parsed.blocks?.length);
+          try {
+            const rawText = result.response.text();
+            const parsed = parseJsonResponse(rawText, "Story");
+            console.log("Story variation blocks count:", parsed.blocks?.length);
 
-          // Replace hero image placeholder
-          if (parsed.blocks && Array.isArray(parsed.blocks)) {
-            const heroBlock = parsed.blocks.find((b: any) => b.type === "hero");
-            if (heroBlock) {
-              heroBlock.content.imageUrl = heroImageUrl;
+            const metaDescription =
+              typeof parsed.metaDescription === "string"
+                ? parsed.metaDescription
+                : null;
+
+            // Replace hero image placeholder
+            if (parsed.blocks && Array.isArray(parsed.blocks)) {
+              const heroBlock = parsed.blocks.find(
+                (b: any) => b.type === "hero"
+              );
+              if (heroBlock?.content) {
+                heroBlock.content.imageUrl = resolvedHeroImageUrl;
+                if (heroAltText) {
+                  heroBlock.content.altText = heroAltText;
+                }
+              }
             }
-          }
 
-          return {
-            style: "story" as const,
-            title: "Story-First Approach",
-            description: "Narrative-driven, warm, and emotionally engaging",
-            blocks: parsed.blocks,
-          };
+            return {
+              style: "story" as const,
+              title: "Story-First Approach",
+              description: "Narrative-driven, warm, and emotionally engaging",
+              heroImageUrl: resolvedHeroImageUrl,
+              heroAltText,
+              metaDescription,
+              blocks: parsed.blocks,
+            };
+          } catch (error) {
+            console.error("Story variation failed, using fallback", error);
+            return {
+              style: "story" as const,
+              title: "Story-First Approach",
+              description: "Narrative-driven, warm, and emotionally engaging",
+              heroImageUrl: resolvedHeroImageUrl,
+              heroAltText,
+              metaDescription: null,
+              blocks: [
+                {
+                  type: "hero",
+                  order: 0,
+                  content: {
+                    title: "Our Story",
+                    imageUrl: resolvedHeroImageUrl,
+                    altText: heroAltText || undefined,
+                    caption: "Discover our journey",
+                  },
+                },
+                {
+                  type: "richText",
+                  order: 1,
+                  content: {
+                    html: "<p>(AI generation encountered an error. Please regenerate.)</p>",
+                  },
+                },
+              ],
+            };
+          }
         }),
 
       // Values-first variation
@@ -469,13 +562,21 @@ export async function POST(request: NextRequest) {
               parsed.blocks?.length
             );
 
+            const metaDescription =
+              typeof parsed.metaDescription === "string"
+                ? parsed.metaDescription
+                : null;
+
             // Replace hero image placeholder
             if (parsed.blocks && Array.isArray(parsed.blocks)) {
               const heroBlock = parsed.blocks.find(
                 (b: any) => b.type === "hero"
               );
-              if (heroBlock) {
-                heroBlock.content.imageUrl = heroImageUrl;
+              if (heroBlock?.content) {
+                heroBlock.content.imageUrl = resolvedHeroImageUrl;
+                if (heroAltText) {
+                  heroBlock.content.altText = heroAltText;
+                }
               }
             }
 
@@ -483,6 +584,9 @@ export async function POST(request: NextRequest) {
               style: "values" as const,
               title: "Values-First Approach",
               description: "Professional, trustworthy, principles-focused",
+              heroImageUrl: resolvedHeroImageUrl,
+              heroAltText,
+              metaDescription,
               blocks: parsed.blocks,
             };
           } catch (error) {
@@ -492,13 +596,17 @@ export async function POST(request: NextRequest) {
               style: "values" as const,
               title: "Values-First Approach",
               description: "Professional, trustworthy, principles-focused",
+              heroImageUrl: resolvedHeroImageUrl,
+              heroAltText,
+              metaDescription: null,
               blocks: [
                 {
                   type: "hero",
                   order: 0,
                   content: {
                     title: "Our Values",
-                    imageUrl: heroImageUrl,
+                    imageUrl: resolvedHeroImageUrl,
+                    altText: heroAltText || undefined,
                     caption: "Dedicated to quality coffee",
                   },
                 },
@@ -527,24 +635,71 @@ export async function POST(request: NextRequest) {
           ],
         })
         .then((result: any) => {
-          const rawText = result.response.text();
-          const parsed = parseJsonResponse(rawText, "Product");
-          console.log("Product variation blocks count:", parsed.blocks?.length);
+          try {
+            const rawText = result.response.text();
+            const parsed = parseJsonResponse(rawText, "Product");
+            console.log(
+              "Product variation blocks count:",
+              parsed.blocks?.length
+            );
 
-          // Replace hero image placeholder
-          if (parsed.blocks && Array.isArray(parsed.blocks)) {
-            const heroBlock = parsed.blocks.find((b: any) => b.type === "hero");
-            if (heroBlock) {
-              heroBlock.content.imageUrl = heroImageUrl;
+            const metaDescription =
+              typeof parsed.metaDescription === "string"
+                ? parsed.metaDescription
+                : null;
+
+            // Replace hero image placeholder
+            if (parsed.blocks && Array.isArray(parsed.blocks)) {
+              const heroBlock = parsed.blocks.find(
+                (b: any) => b.type === "hero"
+              );
+              if (heroBlock?.content) {
+                heroBlock.content.imageUrl = resolvedHeroImageUrl;
+                if (heroAltText) {
+                  heroBlock.content.altText = heroAltText;
+                }
+              }
             }
-          }
 
-          return {
-            style: "product" as const,
-            title: "Product-First Approach",
-            description: "Educational, enthusiastic, coffee-focused",
-            blocks: parsed.blocks,
-          };
+            return {
+              style: "product" as const,
+              title: "Product-First Approach",
+              description: "Educational, enthusiastic, coffee-focused",
+              heroImageUrl: resolvedHeroImageUrl,
+              heroAltText,
+              metaDescription,
+              blocks: parsed.blocks,
+            };
+          } catch (error) {
+            console.error("Product variation failed, using fallback", error);
+            return {
+              style: "product" as const,
+              title: "Product-First Approach",
+              description: "Educational, enthusiastic, coffee-focused",
+              heroImageUrl: resolvedHeroImageUrl,
+              heroAltText,
+              metaDescription: null,
+              blocks: [
+                {
+                  type: "hero",
+                  order: 0,
+                  content: {
+                    title: "Our Coffee",
+                    imageUrl: resolvedHeroImageUrl,
+                    altText: heroAltText || undefined,
+                    caption: "Coffee crafted with care",
+                  },
+                },
+                {
+                  type: "richText",
+                  order: 1,
+                  content: {
+                    html: "<p>(AI generation encountered an error. Please regenerate.)</p>",
+                  },
+                },
+              ],
+            };
+          }
         }),
     ]);
 
