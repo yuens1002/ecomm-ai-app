@@ -201,7 +201,7 @@ export function PageEditor({
       setAiAnswers(initialWizardAnswers);
       aiAnswersInitializedRef.current = true;
     }
-  }, [initialWizardAnswers]);
+  }, [initialWizardAnswers, setAiAnswers]);
 
   const stripHtml = (html?: string | null) => {
     if (!html) return "";
@@ -242,7 +242,7 @@ export function PageEditor({
       previousHeroImageUrl:
         prev.previousHeroImageUrl || heroBlock?.content.imageUrl || null,
     }));
-  }, [aiAnswers, blocks, initialBlocks, pageTitle]);
+  }, [aiAnswers, blocks, initialBlocks, pageTitle, setAiAnswers]);
   const [iconOpen, setIconOpen] = useState(false);
   const [iconSearch, setIconSearch] = useState("");
   const { toast } = useToast();
