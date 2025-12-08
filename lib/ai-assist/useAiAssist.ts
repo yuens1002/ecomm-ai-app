@@ -2,7 +2,9 @@ import {
   Dispatch,
   SetStateAction,
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { Block } from "@/lib/blocks/schemas";
@@ -16,7 +18,8 @@ import {
 
 export type UseAiAssistOptions = {
   pageId: string;
-  initialAnswers: WizardAnswers;
+  initialAnswers?: WizardAnswers;
+  fallbackAnswers?: WizardAnswers | (() => WizardAnswers);
   onApplied?: (result: {
     blocks?: Block[];
     metaDescription?: string | null;
@@ -69,9 +72,34 @@ const ensureSingleRichText = (blocks: GeneratedBlock[]): GeneratedBlock[] => {
 export function useAiAssist({
   pageId,
   initialAnswers,
+  fallbackAnswers,
   onApplied,
 }: UseAiAssistOptions): UseAiAssistState {
-  const [answers, setAnswers] = useState<WizardAnswers>(initialAnswers);
+  const resolveFallbackAnswers = useCallback(() => {
+    if (typeof fallbackAnswers === "function") return fallbackAnswers();
+    return fallbackAnswers || null;
+  }, [fallbackAnswers]);
+
+  const emptyAnswers: WizardAnswers = {
+    businessName: "",
+    foundingStory: "",
+    uniqueApproach: "",
+    coffeeSourcing: "",
+    roastingPhilosophy: "",
+    targetAudience: "",
+    brandPersonality: "",
+    keyValues: "",
+    communityRole: "",
+    futureVision: "",
+    heroImageUrl: null,
+    heroImageDescription: null,
+    previousHeroImageUrl: null,
+  };
+
+  const [answers, setAnswers] = useState<WizardAnswers>(() => {
+    return initialAnswers ?? resolveFallbackAnswers() ?? emptyAnswers;
+  });
+  const hasSeededInitialAnswersRef = useRef(false);
   const [selectedField, setSelectedField] = useState<keyof WizardAnswers | "">(
     ""
   );
@@ -84,6 +112,13 @@ export function useAiAssist({
   const [cachedAnswersKey, setCachedAnswersKey] = useState<string | null>(null);
 
   const sortedAnswersKey = useMemo(() => buildAnswersKey(answers), [answers]);
+
+  useEffect(() => {
+    if (!initialAnswers) return;
+    if (hasSeededInitialAnswersRef.current) return;
+    setAnswers(initialAnswers);
+    hasSeededInitialAnswersRef.current = true;
+  }, [initialAnswers]);
 
   const applyVariation = useCallback(
     async (

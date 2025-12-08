@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-type DialogSize = "sm" | "md" | "lg" | "xl";
+type DialogSize = "sm" | "md" | "lg" | "xl" | "2xl";
 
 interface BlockDialogProps {
   open: boolean;
@@ -25,7 +25,9 @@ const sizeClasses: Record<DialogSize, string> = {
   sm: "max-w-lg",
   md: "max-w-2xl",
   lg: "max-w-4xl",
-  xl: "max-w-5xl",
+  // Use important utilities to override the base sm:max-w-lg from DialogContent
+  xl: "!max-w-5xl sm:!max-w-5xl",
+  "2xl": "!max-w-[72rem] sm:!max-w-[72rem]",
 };
 
 /**

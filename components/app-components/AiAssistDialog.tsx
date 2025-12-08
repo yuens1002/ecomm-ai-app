@@ -31,7 +31,7 @@ export function AiAssistDialog({
       onOpenChange={onOpenChange}
       title={title}
       description={description}
-      size="lg"
+      size="xl"
       footer={footer}
     >
       <div
