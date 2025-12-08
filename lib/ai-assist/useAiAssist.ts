@@ -291,7 +291,8 @@ export function useAiAssist({
       }
 
       const appliedBlocks =
-        (resultJson.blocks as Block[] | undefined) || incomingBlocks;
+        (resultJson.blocks as Block[] | undefined) ||
+        (incomingBlocks as unknown as Block[]);
 
       onApplied?.({
         blocks: appliedBlocks,
@@ -332,10 +333,8 @@ export function useAiAssist({
       selectedField: field,
       preferredStyle,
     }: RegenerateParams) => {
-      const fingerprint = buildContentFingerprint(
-        answers,
-        field || selectedField
-      );
+      const resolvedField = field ?? (selectedField || undefined);
+      const fingerprint = buildContentFingerprint(answers, resolvedField);
       const styleChoice = preferredStyle || selectedStyle;
       const blockSnapshot = buildBlockSnapshot(blocks);
 
@@ -376,7 +375,7 @@ export function useAiAssist({
         const saveState = async () => {
           const nextState: StoredState = {
             answers,
-            selectedField: field || selectedField || "",
+            selectedField: resolvedField || "",
             selectedStyle: preferredStyle || selectedStyle,
           };
           setPersistedState(nextState);
@@ -481,14 +480,14 @@ export function useAiAssist({
           heroImageDescription,
           preferredStyle: styleChoice,
         };
-        if (field) {
-          payload.selectedField = field;
+        if (resolvedField) {
+          payload.selectedField = resolvedField;
         }
 
         logAi("Calling generate-about", {
           pageId,
           preferredStyle: styleChoice,
-          selectedField: field,
+          selectedField: resolvedField,
           answersPresent: !!answers,
         });
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.33.2 - 2025-12-08
+
+- **AI Assist persistence & caching**: Added `/api/admin/pages/[id]/ai-state` for storing selected style/answers, improved localStorage hydration, fingerprinting, and block snapshots to reuse cached variations safely.
+- **AI Assist UX polish**: Dialog now closes after regenerate, reset draft on close, and regeneration skips when content/style unchanged; improved logging with dev-default toggle.
+- **Toast behavior & styling**: Auto-dismiss toasts after 5s, inverted toast theme with plain "X" close, and consistent Radix viewport padding.
+- **Minor fixes**: Resolved type issues in `useAiAssist` application path to align with block types.
+
 ## 0.33.1 - 2025-12-08
 
 - **AI Assist client rename**: Replaced `AiAssistShell` with `AiAssistClient`, extracted fallback answer defaults, and wired `PageEditor`/dialog components to the new client wrapper for clearer ownership of AI state.
