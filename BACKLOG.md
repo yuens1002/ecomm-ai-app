@@ -117,6 +117,26 @@
 
 ---
 
+### Persist AI Wizard Answers
+
+**Status**: Backlog  
+**Priority**: Medium  
+**Description**: Save AI About wizard answers to the database so merchants can resume, reuse cached generations, and audit what was sent to the model.
+
+**Tasks**:
+
+- [ ] Add Prisma model for stored wizard answers linked to page/user (timestamps, latest flag)
+- [ ] Persist answers on regenerate and when dialog closes
+- [ ] Preload saved answers in AI Assist dialog; show "last saved" state
+- [ ] Add admin view to inspect/download prior answer sets
+- [ ] Migration + seed: none needed beyond model creation
+
+**Acceptance Criteria**:
+
+- Answers auto-save and reload across sessions
+- Regeneration cache can key off persisted answers
+- Admins can view historical answer sets for compliance/debugging
+
 ### Legacy Content Block for Static Demo Pages
 
 **Status**: Backlog  

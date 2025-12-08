@@ -364,6 +364,27 @@ model Block {
   @@index([order])
 }
 
+model AiTokenUsage {
+  id               String   @id @default(cuid())
+  modelId          String
+  provider         String? // e.g., gemini, openai, anthropic
+  feature          String? // logical feature name, e.g., about-assist
+  route            String? // API route used
+  pageId           String? // optional page linkage
+  actorType        String? // admin, customer, system
+  status           String? // success or error code
+  promptTokens     Int?
+  completionTokens Int?
+  latencyMs        Int?
+  tokens           Int? // per-request total (optional)
+  createdAt        DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([modelId, provider, createdAt])
+  @@index([feature, createdAt])
+  @@index([provider, modelId, createdAt])
+}
+
 enum PurchaseType {
   ONE_TIME
   SUBSCRIPTION

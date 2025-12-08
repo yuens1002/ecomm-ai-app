@@ -124,7 +124,7 @@ export const renderTwoColumnLayout: LayoutRenderer = (blocks, handlers) => {
   const activeStatsCount = stats.filter((s) => !s.isDeleted).length;
   const canDeleteStat = activeStatsCount > 3; // Min is 3
   const canDeleteHero = false; // Hero is always required (max 1)
-  const canDeleteRichText = false; // Rich text is now required (min 1, max 1)
+  const canDeleteRichText = false; // single required rich text block
   const canDeletePullQuote = false; // Pull quote is required (max 1)
 
   return (

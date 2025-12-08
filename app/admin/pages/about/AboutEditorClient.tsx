@@ -3,6 +3,7 @@
 import { PageEditor } from "@/components/app-components/PageEditor";
 import { Block } from "@/lib/blocks/schemas";
 import { renderTwoColumnLayout } from "@/lib/page-layouts";
+import { WizardAnswers } from "@/lib/api-schemas/generate-about";
 import { PageType } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -20,6 +21,7 @@ interface AboutEditorClientProps {
   headerOrder: number | null;
   footerOrder: number | null;
   icon: string | null;
+  initialWizardAnswers?: WizardAnswers;
 }
 
 export default function AboutEditorClient({
@@ -34,6 +36,7 @@ export default function AboutEditorClient({
   headerOrder,
   footerOrder,
   icon,
+  initialWizardAnswers,
 }: AboutEditorClientProps) {
   const router = useRouter();
   const [isPublished, setIsPublished] = useState(initialIsPublished);
@@ -42,7 +45,8 @@ export default function AboutEditorClient({
   const handlePublishToggle = async () => {
     setIsToggling(true);
     try {
-      const response = await fetch(`/api/pages/${pageId}`, {
+      // pageId is loaded in page.tsx from the About page record
+      const response = await fetch(`/api/admin/pages/${pageId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isPublished: !isPublished }),
@@ -80,7 +84,8 @@ export default function AboutEditorClient({
     footerOrder?: number | null;
     icon?: string | null;
   }) => {
-    const response = await fetch(`/api/pages/${pageId}`, {
+    // Same pageId from page.tsx About page lookup
+    const response = await fetch(`/api/admin/pages/${pageId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -108,6 +113,7 @@ export default function AboutEditorClient({
       headerOrder={headerOrder}
       footerOrder={footerOrder}
       icon={icon}
+      initialWizardAnswers={initialWizardAnswers}
       onPublishToggle={handlePublishToggle}
       onMetadataUpdate={handleMetadataUpdate}
     />

@@ -4,6 +4,12 @@
 
 An interactive Q&A wizard that guides store owners through creating their About page content, then uses AI (Gemini) to generate compelling, authentic brand storytelling based on their responses.
 
+**API endpoint (server):** `/api/admin/pages/about/generate-about`
+
+- Main text model: `gemini-2.5-flash`
+- Alt-text model: `gemini-2.0-flash`
+- Request schema: `GenerateAboutRequest` / `generateAboutRequestSchema` (`@/lib/api-schemas/generate-about`)
+
 ## User Flow
 
 ```

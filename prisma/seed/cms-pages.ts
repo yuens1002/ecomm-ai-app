@@ -38,7 +38,7 @@ export async function seedAboutPage(prisma: PrismaClient) {
   });
 
   const aboutStats = [
-    { emoji: "☕", value: "10,000+", label: "Cups Served Daily" },
+    { emoji: "☕", value: "250+", label: "Cups Served Daily" },
     { emoji: "🌍", value: "12", label: "Origin Countries" },
     { emoji: "⭐", value: "4.9", label: "Customer Rating" },
   ];
