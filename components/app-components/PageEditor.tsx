@@ -52,12 +52,10 @@ import {
 import { AboutAnswerEditor } from "@/components/app-components/AboutAnswerEditor";
 import { AiAssistDialog } from "@/components/app-components/AiAssistDialog";
 import {
-  GenerateAboutRequest,
-  GenerateAboutResponse,
-  GeneratedRichTextBlock,
   GeneratedVariation,
   WizardAnswers,
 } from "@/lib/api-schemas/generate-about";
+import { useAiAssist } from "@/lib/ai-assist/useAiAssist";
 
 import {
   Popover,
@@ -172,30 +170,30 @@ export function PageEditor({
   const [footerOrderValue, setFooterOrderValue] = useState(footerOrder || 0);
   const [iconValue, setIconValue] = useState(icon || "");
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
-  const [aiSelectedField, setAiSelectedField] = useState<
-    keyof WizardAnswers | ""
-  >("");
-  const [aiAnswers, setAiAnswers] = useState<WizardAnswers>(
-    () => initialWizardAnswers || fallbackWizardAnswers
-  );
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const [aiSelectedStyle, setAiSelectedStyle] =
-    useState<GeneratedVariation["style"]>("story");
-  const [aiCachedAnswersKey, setAiCachedAnswersKey] = useState<string | null>(
-    null
-  );
-  const [aiCachedVariations, setAiCachedVariations] = useState<
-    GeneratedVariation[]
-  >([]);
-  const [aiTokenUsage, setAiTokenUsage] = useState<Record<
-    string,
-    number | null
-  > | null>(null);
 
-  const buildAnswersKey = (answers: WizardAnswers) => {
-    const keys = Object.keys(answers).sort();
-    return JSON.stringify(answers, keys as Array<keyof WizardAnswers>);
-  };
+  const {
+    answers: aiAnswers,
+    setAnswers: setAiAnswers,
+    selectedField: aiSelectedField,
+    setSelectedField: setAiSelectedField,
+    selectedStyle: aiSelectedStyle,
+    setSelectedStyle: setAiSelectedStyle,
+    isRegenerating,
+    cachedVariations: aiCachedVariations,
+    regenerate: regenerateAiContent,
+  } = useAiAssist({
+    pageId,
+    initialAnswers: initialWizardAnswers || fallbackWizardAnswers,
+    onApplied: ({ blocks: appliedBlocks, metaDescription: appliedMeta }) => {
+      if (appliedBlocks?.length) {
+        setBlocks([...appliedBlocks].sort((a, b) => a.order - b.order));
+      }
+      if (typeof appliedMeta === "string") {
+        setDescription(appliedMeta);
+      }
+      setAiDialogOpen(false);
+    },
+  });
 
   useEffect(() => {
     // Re-seed answers if they arrive later (e.g., server-fetched defaults) but avoid clobbering user edits
@@ -517,87 +515,24 @@ export function PageEditor({
     window.open(url, "_blank");
   };
 
-  type GenerateAboutPayload = GenerateAboutRequest & {
-    preferredStyle?: GeneratedVariation["style"];
-    selectedField?: keyof WizardAnswers;
-  };
-
   const handleAiRegenerate = async (field?: keyof WizardAnswers) => {
-    if (!aiAnswers) return;
-
-    setIsRegenerating(true);
+    const heroBlock = blocks.find(
+      (block): block is HeroBlock => isHeroBlock(block) && !block.isDeleted
+    );
 
     try {
-      const answersKey = buildAnswersKey(aiAnswers);
-
-      // If nothing changed and we have cached variations, reuse them to avoid a round trip
-      if (aiCachedAnswersKey === answersKey && aiCachedVariations.length > 0) {
-        const cachedChoice =
-          aiCachedVariations.find((v) => v.style === aiSelectedStyle) ||
-          aiCachedVariations[0];
-
-        if (!cachedChoice) {
-          throw new Error("Cached variations missing; please regenerate.");
-        }
-
-        if (aiTokenUsage) {
-          console.log("Cached token usage", aiTokenUsage);
-        }
-
-        await applyVariation(cachedChoice);
-        return;
-      }
-
-      const heroBlock = blocks.find(
-        (block): block is HeroBlock => isHeroBlock(block) && !block.isDeleted
-      );
-
-      const payload: GenerateAboutPayload = {
-        answers: aiAnswers,
-        currentBlocks: blocks
-          .filter((block) => !block.isDeleted)
-          .map((block) => ({ type: block.type })),
+      await regenerateAiContent({
+        blocks: blocks.filter((block) => !block.isDeleted),
         heroImageUrl: heroBlock?.content.imageUrl,
         heroImageDescription:
           heroBlock?.content.imageAlt || heroBlock?.content.caption,
-      };
-      // Use selected style to bias the variation we apply
-      payload.preferredStyle = aiSelectedStyle;
-      if (field) {
-        // Include a hint for future partial regenerations if backend supports it
-        payload.selectedField = field;
-      }
-
-      const response = await fetch("/api/admin/pages/about/generate-about", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        selectedField: field,
+        preferredStyle: aiSelectedStyle,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to regenerate content");
-      }
-
-      const data: GenerateAboutResponse = await response.json();
-      console.log("AI about response", data);
-      setAiTokenUsage((data.tokens as Record<string, number | null>) || null);
-      if (data.tokens) {
-        console.log("Token usage", data.tokens);
-      }
-
-      const variations = data.variations || [];
-      const chosen =
-        variations.find((v) => v.style === aiSelectedStyle) || variations[0];
-
-      if (!chosen) {
-        throw new Error("No variations returned from AI");
-      }
-
-      setAiCachedAnswersKey(answersKey);
-      setAiCachedVariations(variations);
-
-      await applyVariation(chosen);
+      toast({
+        title: "Variation applied",
+        description: "Page updated with regenerated content.",
+      });
     } catch (error) {
       toast({
         title: "Generation error",
@@ -607,82 +542,7 @@ export function PageEditor({
             : "Failed to regenerate content",
         variant: "destructive",
       });
-    } finally {
-      setIsRegenerating(false);
     }
-  };
-  type ReplaceBlocksResponse = {
-    success?: boolean;
-    blocks?: Block[];
-    metaDescription?: string | null;
-    error?: string;
-  };
-
-  const applyVariation = async (variation: GeneratedVariation) => {
-    const heroBlock = blocks.find(
-      (block): block is HeroBlock => isHeroBlock(block) && !block.isDeleted
-    );
-
-    // Merge multiple richText blocks into one for backward compatibility with layouts that expect a single content block
-    const incomingBlocks = variation.blocks || [];
-    const richTextBlocks = incomingBlocks
-      .filter((b): b is GeneratedRichTextBlock => b.type === "richText")
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-    const mergedBlocks = (() => {
-      if (richTextBlocks.length <= 1) return incomingBlocks;
-
-      const mergedHtml = richTextBlocks
-        .map((b) => b.content?.html || "")
-        .filter(Boolean)
-        .join("\n\n");
-
-      const first = richTextBlocks[0];
-      const mergedRichText = {
-        ...first,
-        content: { ...(first.content || {}), html: mergedHtml },
-      };
-
-      return [
-        ...incomingBlocks.filter((b) => b.type !== "richText"),
-        mergedRichText,
-      ];
-    })();
-
-    const response = await fetch(`/api/admin/pages/${pageId}/replace-blocks`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        blocks: mergedBlocks,
-        metaDescription: variation.metaDescription,
-        heroImageUrl: heroBlock?.content.imageUrl,
-        heroAltText: heroBlock?.content.imageAlt || heroBlock?.content.caption,
-      }),
-    });
-
-    const resultJson: ReplaceBlocksResponse = await response
-      .json()
-      .catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(resultJson.error || "Failed to apply variation");
-    }
-
-    const updatedBlocks = resultJson.blocks;
-    if (updatedBlocks?.length) {
-      setBlocks([...updatedBlocks].sort((a, b) => a.order - b.order));
-    }
-    if (typeof resultJson.metaDescription === "string") {
-      setDescription(resultJson.metaDescription);
-    }
-
-    toast({
-      title: "Variation applied",
-      description: "Page updated with regenerated content.",
-    });
-
-    setAiDialogOpen(false);
-    // Avoid full reload to preserve cached AI results; rely on client state/refresh elsewhere if needed
   };
 
   // Check if a block can be deleted (not at minimum count)
@@ -760,12 +620,7 @@ export function PageEditor({
 
       <AiAssistDialog
         open={aiDialogOpen}
-        onOpenChange={(open) => {
-          setAiDialogOpen(open);
-          if (!open) {
-            setIsRegenerating(false);
-          }
-        }}
+        onOpenChange={setAiDialogOpen}
         title="AI Assist"
         description="Choose a variation and/or update answers to regenerate About page content."
         contentClassName="overflow-hidden"
