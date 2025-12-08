@@ -6,7 +6,8 @@ import * as React from "react";
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
+// Auto-hide toasts after 5s to avoid lingering indefinitely.
+const TOAST_REMOVE_DELAY = 5000;
 
 type ToasterToast = ToastProps & {
   id: string;
@@ -14,8 +15,6 @@ type ToasterToast = ToastProps & {
   description?: React.ReactNode;
   action?: ToastActionElement;
 };
-
-
 
 let count = 0;
 
@@ -153,6 +152,11 @@ function toast({ ...props }: Toast) {
       },
     },
   });
+
+  // Ensure auto-dismiss runs even if the toast stays open.
+  setTimeout(() => {
+    dismiss();
+  }, TOAST_REMOVE_DELAY);
 
   return {
     id: id,

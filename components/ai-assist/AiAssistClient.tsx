@@ -45,8 +45,8 @@ export function AiAssistClient({
     selectedStyle: aiSelectedStyle,
     setSelectedStyle: setAiSelectedStyle,
     isRegenerating,
-    cachedVariations: aiCachedVariations,
     regenerate: regenerateAiContent,
+    resetDraft,
   } = useAiAssist({
     pageId,
     initialAnswers: initialWizardAnswers,
@@ -100,6 +100,12 @@ export function AiAssistClient({
   }, [aiAnswers, blocks, heroBlock, pageTitle, setAiAnswers]);
 
   const handleAiRegenerate = async (field?: keyof WizardAnswers) => {
+    console.log("[AI Assist] handleAiRegenerate called", {
+      pageId,
+      field,
+      selectedStyle: aiSelectedStyle,
+      blocks: blocks.length,
+    });
     try {
       await regenerateAiContent({
         blocks: blocks.filter((block) => !block.isDeleted),
@@ -113,7 +119,9 @@ export function AiAssistClient({
         title: "Variation applied",
         description: "Page updated with regenerated content.",
       });
+      onOpenChange(false);
     } catch (error) {
+      console.error("[AI Assist] handleAiRegenerate error", error);
       toast({
         title: "Generation error",
         description:
@@ -123,19 +131,31 @@ export function AiAssistClient({
         variant: "destructive",
       });
     }
+    console.log("[AI Assist] handleAiRegenerate completed", { pageId });
+  };
+
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      resetDraft();
+    }
+    onOpenChange(nextOpen);
   };
 
   return (
     <AiAssistDialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleDialogOpenChange}
       title="AI Assist"
       description="Choose a variation and/or update answers to regenerate About page content."
       contentClassName="overflow-hidden"
       footer={
         <div className="space-y-2">
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="outline"
+              onClick={() => handleDialogOpenChange(false)}
+              disabled={isRegenerating}
+            >
               Cancel
             </Button>
             <Button
@@ -146,10 +166,6 @@ export function AiAssistClient({
               {isRegenerating ? "Regenerating..." : "Regenerate*"}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground text-right">
-            * Regeneration rewrites the About page using these answers. For
-            one-off block edits, adjust blocks directly in the editor.
-          </p>
         </div>
       }
     >
@@ -159,7 +175,6 @@ export function AiAssistClient({
         onSelectedFieldChange={setAiSelectedField}
         selectedStyle={aiSelectedStyle}
         onSelectedStyleChange={setAiSelectedStyle}
-        cachedVariations={aiCachedVariations}
         isRegenerating={isRegenerating}
       />
     </AiAssistDialog>
