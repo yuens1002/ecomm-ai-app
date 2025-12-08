@@ -47,6 +47,7 @@ export function StatCard({
   const editingClasses = isEditing
     ? "relative group cursor-pointer transition-all hover:ring-1 hover:ring-[#00d4ff]"
     : "";
+  const iconName = icon || getIconNameForLabel(label);
 
   return (
     <div
@@ -59,8 +60,8 @@ export function StatCard({
         </span>
       ) : (
         <DynamicIcon
-          name={icon || getIconNameForLabel(label)}
-          className="h-8 w-8 text-primary mb-3 shrink-0"
+          name={iconName}
+          className="h-8 w-8 mb-3 text-muted-foreground"
         />
       )}
       <div className="text-3xl font-bold text-foreground mb-1 overflow-hidden text-ellipsis line-clamp-2 w-full">

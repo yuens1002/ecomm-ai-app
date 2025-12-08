@@ -18,9 +18,9 @@ We pass structured behavioral data + full product catalog directly to Gemini in 
     purchaseHistory: ["Ethiopian Yirgacheffe", "Kenya AA", ...],
     recentViews: ["Panama Geisha", "Colombia Geisha", ...],
     searchHistory: ["fruity coffee", "light roast", ...],
-    preferences: { 
-      roastLevel: "LIGHT", 
-      topTastingNotes: ["berry", "citrus", "floral"] 
+    preferences: {
+      roastLevel: "LIGHT",
+      topTastingNotes: ["berry", "citrus", "floral"]
     }
   },
   productCatalog: [
@@ -35,6 +35,7 @@ We pass structured behavioral data + full product catalog directly to Gemini in 
 ### Why We DON'T Need RAG
 
 **RAG (Retrieval-Augmented Generation)** would add:
+
 - Vector database (Pinecone, Weaviate, pgvector)
 - Embedding model (OpenAI, Cohere, local)
 - Retrieval layer with similarity search
@@ -95,6 +96,7 @@ const recommendations = await gemini.generate({
 ```
 
 **Benefits of Hybrid**:
+
 - Retrieval handles scale (500+ products → 20 candidates)
 - LLM provides reasoning and personalization
 - Best of both worlds
@@ -113,11 +115,13 @@ const recommendations = await gemini.generate({
 ### Performance Characteristics
 
 **Current Approach:**
+
 - Latency: ~1-2s (single Gemini API call)
 - Cost: ~$0.001 per recommendation (input + output tokens)
 - Scalability: Up to ~100 products before token limits
 
 **With RAG (if needed):**
+
 - Latency: ~2-3s (embed + retrieve + generate)
 - Cost: ~$0.002 per recommendation (embed + LLM)
 - Scalability: Unlimited products (retrieval step filters)
@@ -150,6 +154,7 @@ Personalized recommendations
 **RAG is a tool for scale, not a requirement for intelligence.**
 
 Our 30-product catalog allows us to leverage Gemini's **native reasoning** without the complexity of retrieval systems. This demonstrates:
+
 - Understanding of when to use advanced techniques
 - Pragmatic engineering (right tool for the job)
 - Production-ready code without over-engineering
@@ -157,6 +162,12 @@ Our 30-product catalog allows us to leverage Gemini's **native reasoning** witho
 **If asked in interview**: "We evaluated RAG but determined it was unnecessary for our catalog size. With 30 products (~2-3K tokens), we can pass the full context directly, which is simpler, faster, and equally effective. We'd consider RAG if we scaled beyond 100+ products or added rich content that exceeded token limits."
 
 ---
+
+## Token Logging & Naming
+
+- `feature`: short, kebab-case, stable per capability (e.g., `about-assist`). Keep consistent across routes/models so dashboards/alerts aggregate cleanly; avoid extra `-ai-` prefixes unless needed for disambiguation.
+- About page assistant stays `about-assist` even if the About page is renamed; the `feature` tags the capability, while `route` captures the specific endpoint. If we introduce a different capability (e.g., a new page type), create a new feature name instead of renaming the old one so historical metrics remain relatable.
+- Nullable fields today: `pageId` (no reliable page identifier passed yet), `promptTokens`/`completionTokens` (Gemini only returns `totalTokenCount`). We keep them for forward compatibility with providers that expose splits and future per-page reporting.
 
 ## References
 

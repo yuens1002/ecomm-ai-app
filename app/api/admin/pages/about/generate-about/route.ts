@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { createHash } from "crypto";
 import { readFile } from "fs/promises";
 import path from "path";
 import {
@@ -16,10 +17,11 @@ import {
 } from "@/lib/api-schemas/generate-about";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const FEATURE_NAME = "about-assist";
 
-// Main text generation model (available per docs list: Gemini 2.5 Flash)
+// Main text generation model (Gemini 2.5 Flash per docs)
 const MODEL_NAME = "gemini-2.5-flash";
-// Vision-capable model for alt text; Gemini 2.0 Flash supports image inputs
+// Vision-capable model for alt text
 const ALT_MODEL_NAME = "gemini-2.0-flash";
 
 interface PromptOptions {
@@ -51,7 +53,6 @@ const STYLE_METADATA = {
       "Enthusiastic, educational, coffee-focused; highlight sourcing, craft, and flavor.",
   },
 };
-
 const LENGTH_TARGETS: Record<
   LengthPreference,
   { label: string; words: string }
@@ -60,6 +61,57 @@ const LENGTH_TARGETS: Record<
   medium: { label: "medium", words: "320-500" },
   long: { label: "long", words: "500-700" },
 };
+
+function stableSerialize(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(stableSerialize);
+  }
+  if (value && typeof value === "object") {
+    return Object.keys(value)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, key) => {
+        acc[key] = stableSerialize((value as Record<string, unknown>)[key]);
+        return acc;
+      }, {});
+  }
+  return value;
+}
+
+function stableStringify(value: unknown): string {
+  return JSON.stringify(stableSerialize(value));
+}
+
+function hashSha256(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function normalizeBlocks(
+  blocks?: Array<{
+    type?: string;
+    order?: number;
+    content?: Record<string, unknown>;
+  }>
+): Array<{
+  type?: string;
+  order: number | null;
+  content?: Record<string, unknown>;
+}> | null {
+  if (!blocks || !Array.isArray(blocks)) return null;
+  const mapped = blocks.map((block) => ({
+    type: block?.type,
+    order:
+      typeof block?.order === "number" && Number.isFinite(block.order)
+        ? block.order
+        : null,
+    content: block?.content,
+  }));
+
+  return mapped.sort((a, b) => {
+    const aOrder = a.order ?? 0;
+    const bOrder = b.order ?? 0;
+    return aOrder - bOrder;
+  });
+}
 
 function buildSystemPrompt(
   style: keyof typeof STYLE_METADATA,
@@ -87,9 +139,9 @@ Generate a JSON object with structured blocks for a page editor:
         "caption": "Brief caption about the image"
       }
     },
-    { "type": "stat", "order": 1, "content": { "label": "Founded", "value": "YYYY" } },
-    { "type": "stat", "order": 2, "content": { "label": "Origin Countries", "value": "X+" } },
-    { "type": "stat", "order": 3, "content": { "label": "Third meaningful stat", "value": "Value" } },
+    { "type": "stat", "order": 1, "content": { "label": "Founded", "value": "YYYY", "emoji": "📅" } },
+    { "type": "stat", "order": 2, "content": { "label": "Origin Countries", "value": "X+", "emoji": "🌍" } },
+    { "type": "stat", "order": 3, "content": { "label": "Community Impact", "value": "Concise stat", "emoji": "🤝" } },
     {
       "type": "pullQuote",
       "order": 4,
@@ -117,17 +169,17 @@ Generate a JSON object with structured blocks for a page editor:
 
 Block Requirements:
 - 1 hero block (title: 2-6 words, compelling)
-- ${statLabel}
+- ${statLabel} and each stat MUST include an "emoji" field with a single emoji character
 - 1 pullQuote block (10-18 words max, most resonant line)
-- 3-5 richText blocks (2-4 paragraphs each, paragraphs 40-70 words)
-- 3-5 richText blocks (2-4 paragraphs each, paragraphs 40-70 words)
+-- 1 richText block containing the full story/sections (3-5 paragraphs total, paragraphs 40-70 words)
 - Include metaDescription at root (140-160 characters, no HTML)
 
 Rich Text Content:
-- Use <h2> for section headings (2-3 sections total)
-- Use <p> for paragraphs (keep SHORT: 2-3 sentences)
-- Tailor to the chosen style (${style})
-- Use the provided tone consistently
+- MUST return real HTML strings; do NOT escape or markdown. Allowed tags: <h2>, <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>, <a>.
+- Use a single richText block to hold all sections; structure with <h2> section headings (2-3 sections) and optional <h3> subsections inside that one block.
+- Use <p> for paragraphs (2-3 sentences each) and include line breaks via multiple <p> tags, not \n.
+- Optional concise bullet lists with <ul>/<li> where helpful.
+- Tailor to the chosen style (${style}) and use the provided tone consistently.
 
 Hero Image:
 - Use "__HERO_IMAGE_URL__" as placeholder (will be replaced with actual image)
@@ -248,11 +300,18 @@ function getMimeTypeFromPath(filePath: string): string {
   }
 }
 
+type AltTextResult = {
+  altText: string | null;
+  tokens: number | null;
+  latencyMs: number | null;
+};
+
 async function generateAltTextFromLocalImage(
   imageUrl: string,
   hint?: string | null
-): Promise<string | null> {
+): Promise<AltTextResult> {
   try {
+    const startedAt = Date.now();
     const fullPath = path.join(
       process.cwd(),
       "public",
@@ -260,7 +319,6 @@ async function generateAltTextFromLocalImage(
     );
     const buffer = await readFile(fullPath);
     const base64 = buffer.toString("base64");
-
     const model = genAI.getGenerativeModel({ model: ALT_MODEL_NAME });
     const result = await model.generateContent({
       contents: [
@@ -284,14 +342,19 @@ async function generateAltTextFromLocalImage(
     });
 
     const text = result.response.text().trim();
-    return text.replace(/^"|"$/g, "");
+    return {
+      altText: text.replace(/^"|"$/g, ""),
+      tokens: result.response?.usageMetadata?.totalTokenCount ?? null,
+      latencyMs: Date.now() - startedAt,
+    };
   } catch (error) {
     console.error("Alt text generation failed:", error);
-    return null;
+    return { altText: null, tokens: null, latencyMs: null };
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
   try {
     const session = await auth();
 
@@ -299,7 +362,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { isAdmin: true },
@@ -331,6 +393,9 @@ export async function POST(request: NextRequest) {
       heroImageUrl: requestHeroImageUrl,
       heroImageDescription: requestHeroImageDescription,
       previousHeroImageUrl: requestPreviousHeroImageUrl,
+      previousAnswersFingerprint,
+      previousContentFingerprint,
+      forceRegenerate,
     } = requestBody;
 
     const promptOptions = resolveOptions(
@@ -352,33 +417,114 @@ export async function POST(request: NextRequest) {
     }
 
     const typedAnswers = answers as WizardAnswers;
+    const currentHeroBlock = currentBlocks?.find(
+      (b): b is GeneratedHeroBlock => b?.type === "hero"
+    );
+
+    const currentHeroImageUrl = currentHeroBlock?.content?.imageUrl;
+    const currentHeroAlt =
+      currentHeroBlock?.content?.altText || currentHeroBlock?.content?.imageAlt;
 
     const heroImageUrlFromAnswers =
-      typedAnswers.heroImageUrl || requestHeroImageUrl || null;
+      typedAnswers.heroImageUrl ||
+      requestHeroImageUrl ||
+      currentHeroImageUrl ||
+      null;
+
     const previousHeroImageUrl =
       typedAnswers.previousHeroImageUrl || requestPreviousHeroImageUrl || null;
+
     const providedHeroAlt =
-      typedAnswers.heroImageDescription || requestHeroImageDescription || null;
+      typedAnswers.heroImageDescription ||
+      requestHeroImageDescription ||
+      currentHeroAlt ||
+      null;
+
+    const answersFingerprint = hashSha256(stableStringify(typedAnswers));
+    const contentFingerprint = hashSha256(
+      stableStringify(normalizeBlocks(currentBlocks))
+    );
+
+    const shouldRegenerate =
+      forceRegenerate === true ||
+      answersFingerprint !== (previousAnswersFingerprint || null) ||
+      contentFingerprint !== (previousContentFingerprint || null);
+
+    if (!shouldRegenerate) {
+      console.log("[about-assist] cache hit, skipping regeneration", {
+        answersFingerprint,
+        contentFingerprint,
+      });
+
+      return NextResponse.json({
+        regenerated: false,
+        reason: "unchanged",
+        variations: [],
+        answers: typedAnswers,
+        tokens: null,
+        fingerprints: {
+          answers: answersFingerprint,
+          content: contentFingerprint,
+        },
+      });
+    }
 
     const resolvedHeroImageUrl =
       heroImageUrlFromAnswers || "/products/placeholder-hero.jpg";
 
     const urlChanged =
       !!heroImageUrlFromAnswers &&
-      !!previousHeroImageUrl &&
-      heroImageUrlFromAnswers !== previousHeroImageUrl;
+      ((!!previousHeroImageUrl &&
+        heroImageUrlFromAnswers !== previousHeroImageUrl) ||
+        (!!currentHeroImageUrl &&
+          heroImageUrlFromAnswers !== currentHeroImageUrl) ||
+        (!previousHeroImageUrl && !currentHeroImageUrl));
 
     let heroAltText: string | null = null;
+    let altTokens: number | null = null;
+    let altLatencyMs: number | null = null;
+    let altGenerated = false;
+
+    console.log("[about-assist] hero inputs", {
+      requestHeroImageUrl,
+      currentHeroImageUrl,
+      previousHeroImageUrl,
+      heroImageUrlFromAnswers,
+      providedHeroAlt,
+      currentHeroAlt,
+      urlChanged,
+      isLocal: heroImageUrlFromAnswers
+        ? isLocalImageUrl(heroImageUrlFromAnswers)
+        : false,
+    });
+
     if (providedHeroAlt && !urlChanged) {
       heroAltText = providedHeroAlt;
+      console.log("[about-assist] reuse provided alt", {
+        reason: "providedAltAndUrlUnchanged",
+      });
     } else if (
-      isLocalImageUrl(heroImageUrlFromAnswers) &&
-      (!providedHeroAlt || urlChanged)
+      heroImageUrlFromAnswers &&
+      isLocalImageUrl(heroImageUrlFromAnswers)
     ) {
-      heroAltText = await generateAltTextFromLocalImage(
+      const altResult = await generateAltTextFromLocalImage(
         heroImageUrlFromAnswers,
         providedHeroAlt
       );
+      heroAltText = altResult.altText;
+      altTokens = altResult.tokens;
+      altLatencyMs = altResult.latencyMs;
+      altGenerated = true;
+      console.log("[about-assist] generated alt", {
+        heroImageUrlFromAnswers,
+        altTokens,
+        altLatencyMs,
+      });
+    } else {
+      console.log("[about-assist] skipped alt generation", {
+        heroImageUrlFromAnswers,
+        reason: heroImageUrlFromAnswers ? "non-local-image" : "no-hero-image",
+      });
     }
 
     let userPrompt = buildUserPrompt(
@@ -386,7 +532,6 @@ export async function POST(request: NextRequest) {
       promptOptions.lengthPreference
     );
 
-    // If currentBlocks provided, add structure guidance to prompt
     if (currentBlocks && Array.isArray(currentBlocks)) {
       const blockCounts = currentBlocks.reduce(
         (acc: Record<string, number>, block: { type: string }) => {
@@ -399,10 +544,8 @@ export async function POST(request: NextRequest) {
       userPrompt += `\n\nIMPORTANT: Match this block structure:\n${JSON.stringify(blockCounts, null, 2)}\nGenerate exactly the same number of blocks for each type.`;
     }
 
-    // Generate 3 variations with different styles
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
-    // Helper to parse JSON from Gemini response (strips markdown code blocks)
     type ParsedResponse = {
       metaDescription?: string | null;
       blocks?: GeneratedBlock[];
@@ -416,21 +559,18 @@ export async function POST(request: NextRequest) {
       console.log(rawText.substring(0, 500));
 
       let jsonText = rawText.trim();
-      // Remove markdown code blocks if present
       if (jsonText.startsWith("```json")) {
         jsonText = jsonText.replace(/^```json\s*/, "").replace(/\s*```$/, "");
       } else if (jsonText.startsWith("```")) {
         jsonText = jsonText.replace(/^```\s*/, "").replace(/\s*```$/, "");
       }
 
-      // Try to find JSON object if response has extra text
       const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         jsonText = jsonMatch[0];
       }
 
       try {
-        // First attempt: parse as-is
         const parsed = JSON.parse(jsonText) as ParsedResponse;
         console.log(`${variationType} parsed successfully:`, {
           hasBlocks: Array.isArray(parsed.blocks),
@@ -443,7 +583,6 @@ export async function POST(request: NextRequest) {
         );
 
         try {
-          // Second attempt: Fix control characters by properly escaping newlines within string values
           const fixedJson = jsonText
             .replace(/\n/g, "\\n")
             .replace(/\r/g, "\\r")
@@ -470,252 +609,196 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    const variations = await Promise.all([
-      // Story-first variation
-      model
-        .generateContent({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: systemPrompts.storyFirst + "\n\n" + userPrompt }],
-            },
-          ],
-        })
-        .then((result) => {
-          try {
-            const rawText = result.response.text();
-            const parsed = parseJsonResponse(rawText, "Story");
-            console.log("Story variation blocks count:", parsed.blocks?.length);
+    const runVariation = async (
+      label: "story" | "values" | "product",
+      prompt: string,
+      title: string,
+      description: string
+    ) => {
+      const result = await model.generateContent({
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: prompt + "\n\n" + userPrompt }],
+          },
+        ],
+      });
 
-            const metaDescription =
-              typeof parsed.metaDescription === "string"
-                ? parsed.metaDescription
-                : null;
+      const usageTokens = result?.response?.usageMetadata?.totalTokenCount;
 
-            // Replace hero image placeholder
-            if (parsed.blocks && Array.isArray(parsed.blocks)) {
-              const heroBlock = parsed.blocks.find(
-                (b): b is GeneratedHeroBlock => b.type === "hero"
-              );
-              if (heroBlock?.content) {
-                heroBlock.content.imageUrl = resolvedHeroImageUrl;
-                if (heroAltText) {
-                  heroBlock.content.altText = heroAltText;
-                }
-              }
+      try {
+        const rawText = result.response.text();
+        const parsed = parseJsonResponse(rawText, title);
+        console.log(`${title} blocks count:`, parsed.blocks?.length);
+
+        const metaDescription =
+          typeof parsed.metaDescription === "string"
+            ? parsed.metaDescription
+            : null;
+
+        if (parsed.blocks && Array.isArray(parsed.blocks)) {
+          const heroBlock = parsed.blocks.find(
+            (b): b is GeneratedHeroBlock => b.type === "hero"
+          );
+          if (heroBlock?.content) {
+            heroBlock.content.imageUrl = resolvedHeroImageUrl;
+            if (heroAltText) {
+              heroBlock.content.altText = heroAltText;
             }
-
-            return {
-              style: "story" as const,
-              title: "Story-First Approach",
-              description: "Narrative-driven, warm, and emotionally engaging",
-              heroImageUrl: resolvedHeroImageUrl,
-              heroAltText,
-              metaDescription,
-              blocks: parsed.blocks,
-            };
-          } catch (error) {
-            console.error("Story variation failed, using fallback", error);
-            return {
-              style: "story" as const,
-              title: "Story-First Approach",
-              description: "Narrative-driven, warm, and emotionally engaging",
-              heroImageUrl: resolvedHeroImageUrl,
-              heroAltText,
-              metaDescription: null,
-              blocks: [
-                {
-                  type: "hero",
-                  order: 0,
-                  content: {
-                    title: "Our Story",
-                    imageUrl: resolvedHeroImageUrl,
-                    altText: heroAltText || undefined,
-                    caption: "Discover our journey",
-                  },
-                },
-                {
-                  type: "richText",
-                  order: 1,
-                  content: {
-                    html: "<p>(AI generation encountered an error. Please regenerate.)</p>",
-                  },
-                },
-              ],
-            };
           }
-        }),
+        }
 
-      // Values-first variation
-      model
-        .generateContent({
-          contents: [
-            {
-              role: "user",
-              parts: [
-                { text: systemPrompts.valuesFirst + "\n\n" + userPrompt },
-              ],
-            },
-          ],
-        })
-        .then((result) => {
-          const rawText = result.response.text();
-          try {
-            const parsed = parseJsonResponse(rawText, "Values");
-            console.log(
-              "Values variation blocks count:",
-              parsed.blocks?.length
-            );
-
-            const metaDescription =
-              typeof parsed.metaDescription === "string"
-                ? parsed.metaDescription
-                : null;
-
-            // Replace hero image placeholder
-            if (parsed.blocks && Array.isArray(parsed.blocks)) {
-              const heroBlock = parsed.blocks.find(
-                (b): b is GeneratedHeroBlock => b.type === "hero"
-              );
-              if (heroBlock?.content) {
-                heroBlock.content.imageUrl = resolvedHeroImageUrl;
-                if (heroAltText) {
-                  heroBlock.content.altText = heroAltText;
-                }
-              }
-            }
-
-            return {
-              style: "values" as const,
-              title: "Values-First Approach",
-              description: "Professional, trustworthy, principles-focused",
-              heroImageUrl: resolvedHeroImageUrl,
-              heroAltText,
-              metaDescription,
-              blocks: parsed.blocks,
-            };
-          } catch (error) {
-            console.error("Values variation failed, using fallback");
-            // Return a fallback structure if parsing fails
-            return {
-              style: "values" as const,
-              title: "Values-First Approach",
-              description: "Professional, trustworthy, principles-focused",
-              heroImageUrl: resolvedHeroImageUrl,
-              heroAltText,
-              metaDescription: null,
-              blocks: [
-                {
-                  type: "hero",
-                  order: 0,
-                  content: {
-                    title: "Our Values",
-                    imageUrl: resolvedHeroImageUrl,
-                    altText: heroAltText || undefined,
-                    caption: "Dedicated to quality coffee",
-                  },
+        return {
+          variation: {
+            style: label,
+            title,
+            description,
+            heroImageUrl: resolvedHeroImageUrl,
+            heroAltText,
+            metaDescription,
+            blocks: parsed.blocks,
+          },
+          tokens: usageTokens ?? null,
+        } as const;
+      } catch (error) {
+        console.error(`${title} variation failed, using fallback`, error);
+        return {
+          variation: {
+            style: label,
+            title,
+            description,
+            heroImageUrl: resolvedHeroImageUrl,
+            heroAltText,
+            metaDescription: null,
+            blocks: [
+              {
+                type: "hero",
+                order: 0,
+                content: {
+                  title,
+                  imageUrl: resolvedHeroImageUrl,
+                  altText: heroAltText || undefined,
+                  caption: "(Regenerate to refresh content)",
                 },
-                {
-                  type: "richText",
-                  order: 1,
-                  content: {
-                    html: "<p>(AI generation encountered an error. Please regenerate.)</p>",
-                  },
+              },
+              {
+                type: "richText",
+                order: 1,
+                content: {
+                  html: "<p>(AI generation encountered an error. Please regenerate.)</p>",
                 },
-              ],
-            };
-          }
-        }),
+              },
+            ],
+          },
+          tokens: usageTokens ?? null,
+        } as const;
+      }
+    };
 
-      // Product-first variation
-      model
-        .generateContent({
-          contents: [
-            {
-              role: "user",
-              parts: [
-                { text: systemPrompts.productFirst + "\n\n" + userPrompt },
-              ],
-            },
-          ],
-        })
-        .then((result) => {
-          try {
-            const rawText = result.response.text();
-            const parsed = parseJsonResponse(rawText, "Product");
-            console.log(
-              "Product variation blocks count:",
-              parsed.blocks?.length
-            );
-
-            const metaDescription =
-              typeof parsed.metaDescription === "string"
-                ? parsed.metaDescription
-                : null;
-
-            // Replace hero image placeholder
-            if (parsed.blocks && Array.isArray(parsed.blocks)) {
-              const heroBlock = parsed.blocks.find(
-                (b): b is GeneratedHeroBlock => b.type === "hero"
-              );
-              if (heroBlock?.content) {
-                heroBlock.content.imageUrl = resolvedHeroImageUrl;
-                if (heroAltText) {
-                  heroBlock.content.altText = heroAltText;
-                }
-              }
-            }
-
-            return {
-              style: "product" as const,
-              title: "Product-First Approach",
-              description: "Educational, enthusiastic, coffee-focused",
-              heroImageUrl: resolvedHeroImageUrl,
-              heroAltText,
-              metaDescription,
-              blocks: parsed.blocks,
-            };
-          } catch (error) {
-            console.error("Product variation failed, using fallback", error);
-            return {
-              style: "product" as const,
-              title: "Product-First Approach",
-              description: "Educational, enthusiastic, coffee-focused",
-              heroImageUrl: resolvedHeroImageUrl,
-              heroAltText,
-              metaDescription: null,
-              blocks: [
-                {
-                  type: "hero",
-                  order: 0,
-                  content: {
-                    title: "Our Coffee",
-                    imageUrl: resolvedHeroImageUrl,
-                    altText: heroAltText || undefined,
-                    caption: "Coffee crafted with care",
-                  },
-                },
-                {
-                  type: "richText",
-                  order: 1,
-                  content: {
-                    html: "<p>(AI generation encountered an error. Please regenerate.)</p>",
-                  },
-                },
-              ],
-            };
-          }
-        }),
+    const [storyResult, valuesResult, productResult] = await Promise.all([
+      runVariation(
+        "story",
+        systemPrompts.storyFirst,
+        "Story-First Approach",
+        "Narrative-driven, warm, and emotionally engaging"
+      ),
+      runVariation(
+        "values",
+        systemPrompts.valuesFirst,
+        "Values-First Approach",
+        "Professional, trustworthy, principles-focused"
+      ),
+      runVariation(
+        "product",
+        systemPrompts.productFirst,
+        "Product-First Approach",
+        "Educational, enthusiastic, coffee-focused"
+      ),
     ]);
 
+    const variations = [
+      storyResult.variation,
+      valuesResult.variation,
+      productResult.variation,
+    ];
+
+    const tokens: Record<"story" | "values" | "product", number | null> = {
+      story: storyResult.tokens,
+      values: valuesResult.tokens,
+      product: productResult.tokens,
+    };
+
+    // Persist token usage for future reporting; do not block main flow if logging fails
+    try {
+      const duration = Date.now() - startedAt;
+      const mainTokens = Object.values(tokens).reduce<number>((sum, count) => {
+        return sum + (typeof count === "number" ? count : 0);
+      }, 0);
+
+      const tokenRows = [
+        {
+          modelId: MODEL_NAME,
+          provider: "gemini",
+          feature: FEATURE_NAME,
+          route: "/api/admin/pages/about/generate-about",
+          actorType: "admin",
+          status: "success",
+          promptTokens: null,
+          completionTokens: null,
+          tokens: mainTokens,
+          latencyMs: duration,
+        },
+        {
+          modelId: ALT_MODEL_NAME,
+          provider: "gemini",
+          feature: FEATURE_NAME,
+          route: "/api/admin/pages/about/generate-about",
+          actorType: "admin",
+          status: altGenerated ? "success" : "skipped",
+          promptTokens: null,
+          completionTokens: null,
+          tokens: altGenerated ? (altTokens ?? 0) : 0,
+          latencyMs: altGenerated ? altLatencyMs : null,
+        },
+      ];
+
+      console.log("/generate-about token log rows", tokenRows);
+
+      await prisma.aiTokenUsage.createMany({ data: tokenRows });
+    } catch (tokenError) {
+      console.warn("Token usage logging skipped", tokenError);
+    }
+
+    // Debug the outgoing payload to inspect richText HTML
+    try {
+      const debugSample = variations.map((v) => ({
+        style: v.style,
+        metaDescription: v.metaDescription,
+        richTextBlocks: v.blocks?.filter(
+          (b): b is GeneratedRichTextBlock => b.type === "richText"
+        ),
+      }));
+      console.log(
+        "/api/admin/pages/about/generate-about response sample:",
+        JSON.stringify(debugSample, null, 2)
+      );
+    } catch (logError) {
+      console.warn("Debug log failed", logError);
+    }
+
     return NextResponse.json({
+      regenerated: true,
       variations,
-      answers, // Include answers for reference
+      answers: typedAnswers,
+      tokens,
+      fingerprints: {
+        answers: answersFingerprint,
+        content: contentFingerprint,
+      },
     });
   } catch (error) {
     console.error("Error generating About page:", error);
 
-    // Check if it's a rate limit error
     const errorMessage = error instanceof Error ? error.message : "";
     const isRateLimitError =
       errorMessage.includes("429") ||

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.33.0 - 2025-12-07
+
+- **About AI Assist (fingerprints & reuse)**: `generate-about` now validates requests via zod schema, computes stable answers/content fingerprints to short-circuit unchanged runs, preserves hero alt reuse, and logs Gemini token usage per provider/feature for reporting.
+- **Admin AI workflow**: Added `AiAssistDialog` and `AboutAnswerEditor` to `PageEditor` with style picker, answer editing, and cached variations; applies chosen variation through the new replace-blocks API without full page reload.
+- **Block replacement API**: New `/api/admin/pages/[id]/replace-blocks` endpoint normalizes incoming blocks, enforces hero/image requirements, and swaps page blocks transactionally before updating meta descriptions.
+- **Schema & migrations**: Introduced `AiTokenUsage` Prisma model with indices plus migrations to store provider/feature/latency/token fields; generation route writes token rows for main and alt-text calls.
+- **Seeds & docs**: Updated About page seed stats (250+ cups daily), documented the about generator endpoint/models, and refreshed AI recommendations architecture notes on feature naming and nullable token fields.
+
 ## 0.32.1 - 2025-12-05
 
 - **CI Resilience**: `check:backup-models` now skips gracefully when `dev-tools/check-backup-models.ts` is absent, preventing build-safe workflow failures on environments without private dev tools.
