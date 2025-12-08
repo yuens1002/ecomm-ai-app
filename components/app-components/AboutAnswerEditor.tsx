@@ -243,9 +243,9 @@ export function AboutAnswerEditor({
                 [activeSelectedField]: e.target.value,
               })
             }
-            placeholder={selectedField ? "Edit your answer..." : ""}
+            placeholder={activeSelectedField ? "Edit your answer..." : ""}
             className="min-h-[160px] h-[160px] text-sm"
-            disabled={!selectedField || isRegenerating}
+            disabled={!activeSelectedField || isRegenerating}
           />
         )}
       </InputGroup>

@@ -1,12 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Block,
-  BlockType,
-  HeroBlock,
-  RichTextBlock,
-} from "@/lib/blocks/schemas";
+import { useMemo, useState } from "react";
+import { Block, BlockType } from "@/lib/blocks/schemas";
 import { cn } from "@/lib/utils";
 import {
   canAddBlock,
@@ -42,22 +37,14 @@ import {
   ChevronsUpDown,
   Check,
   Sparkles,
-  Loader2,
 } from "lucide-react";
 import {
   DynamicIcon,
   getAvailableIcons,
   COMMON_PAGE_ICONS,
 } from "@/components/app-components/DynamicIcon";
-import { AboutAnswerEditor } from "@/components/app-components/AboutAnswerEditor";
-import { AiAssistDialog } from "@/components/app-components/AiAssistDialog";
-import {
-  GenerateAboutRequest,
-  GenerateAboutResponse,
-  GeneratedRichTextBlock,
-  GeneratedVariation,
-  WizardAnswers,
-} from "@/lib/api-schemas/generate-about";
+import { AiAssistClient } from "@/components/ai-assist/AiAssistClient";
+import { WizardAnswers } from "@/lib/api-schemas/generate-about";
 
 import {
   Popover,
@@ -75,11 +62,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { addBlock, updateBlock, deleteBlock } from "@/lib/blocks/actions";
 import { PendingBlockDialog } from "@/components/blocks/PendingBlockDialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-
-const isHeroBlock = (block: Block): block is HeroBlock => block.type === "hero";
-const isRichTextBlock = (block: Block): block is RichTextBlock =>
-  block.type === "richText";
 
 interface PageEditorProps {
   pageId: string;
@@ -129,29 +111,6 @@ export function PageEditor({
   onPublishToggle: _onPublishToggle,
   onMetadataUpdate,
 }: PageEditorProps) {
-  const aiAnswersInitializedRef = useRef(false);
-  const fallbackWizardAnswers: WizardAnswers = {
-    businessName: pageTitle || "",
-    foundingStory:
-      "Our team started roasting to share vibrant, origin-forward coffees with our community.",
-    uniqueApproach:
-      "Small-batch roasting with meticulous profiles to highlight sweetness and clarity.",
-    coffeeSourcing:
-      "Long-term relationships with trusted importers and producers across Central and East Africa.",
-    roastingPhilosophy: "Light roasts to highlight origin characteristics",
-    targetAudience:
-      "Coffee enthusiasts who appreciate traceable, thoughtfully roasted single origins and blends.",
-    brandPersonality: "friendly",
-    keyValues:
-      "Quality, transparency, community, sustainability, and hospitality.",
-    communityRole:
-      "We host public cuppings, donate to local food programs, and collaborate with neighborhood makers.",
-    futureVision:
-      "Grow responsible sourcing partnerships and open more educational community events.",
-    heroImageUrl: null,
-    heroImageDescription: null,
-    previousHeroImageUrl: null,
-  };
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [pendingBlock, setPendingBlock] = useState<{
@@ -172,79 +131,8 @@ export function PageEditor({
   const [footerOrderValue, setFooterOrderValue] = useState(footerOrder || 0);
   const [iconValue, setIconValue] = useState(icon || "");
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
-  const [aiSelectedField, setAiSelectedField] = useState<
-    keyof WizardAnswers | ""
-  >("");
-  const [aiAnswers, setAiAnswers] = useState<WizardAnswers>(
-    () => initialWizardAnswers || fallbackWizardAnswers
-  );
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const [aiSelectedStyle, setAiSelectedStyle] =
-    useState<GeneratedVariation["style"]>("story");
-  const [aiCachedAnswersKey, setAiCachedAnswersKey] = useState<string | null>(
-    null
-  );
-  const [aiCachedVariations, setAiCachedVariations] = useState<
-    GeneratedVariation[]
-  >([]);
-  const [aiTokenUsage, setAiTokenUsage] = useState<Record<
-    string,
-    number | null
-  > | null>(null);
 
-  const buildAnswersKey = (answers: WizardAnswers) => {
-    const keys = Object.keys(answers).sort();
-    return JSON.stringify(answers, keys as Array<keyof WizardAnswers>);
-  };
-
-  useEffect(() => {
-    // Re-seed answers if they arrive later (e.g., server-fetched defaults) but avoid clobbering user edits
-    if (initialWizardAnswers && !aiAnswersInitializedRef.current) {
-      setAiAnswers(initialWizardAnswers);
-      aiAnswersInitializedRef.current = true;
-    }
-  }, [initialWizardAnswers]);
-
-  const stripHtml = (html?: string | null) => {
-    if (!html) return "";
-    return html
-      .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
-      .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  };
-
-  useEffect(() => {
-    // If answers are still blank, seed them from existing page content for context
-    const hasUserEdits = Object.values(aiAnswers).some((v) => v);
-    if (hasUserEdits) return;
-
-    const heroBlock = initialBlocks.find(
-      (b): b is HeroBlock => isHeroBlock(b) && !b.isDeleted
-    );
-    const richTextBlocks = blocks
-      .filter((b): b is RichTextBlock => isRichTextBlock(b) && !b.isDeleted)
-      .sort((a, b) => a.order - b.order);
-
-    const firstText = stripHtml(richTextBlocks[0]?.content.html).slice(0, 600);
-    const secondText = stripHtml(richTextBlocks[1]?.content.html).slice(0, 400);
-
-    setAiAnswers((prev) => ({
-      ...prev,
-      businessName: prev.businessName || pageTitle || "",
-      foundingStory: prev.foundingStory || firstText,
-      uniqueApproach: prev.uniqueApproach || secondText,
-      heroImageUrl: prev.heroImageUrl || heroBlock?.content.imageUrl || null,
-      heroImageDescription:
-        prev.heroImageDescription ||
-        heroBlock?.content.imageAlt ||
-        heroBlock?.content.caption ||
-        null,
-      previousHeroImageUrl:
-        prev.previousHeroImageUrl || heroBlock?.content.imageUrl || null,
-    }));
-  }, [aiAnswers, blocks, initialBlocks, pageTitle]);
+  // AI Assist state lives inside AiAssistClient
   const [iconOpen, setIconOpen] = useState(false);
   const [iconSearch, setIconSearch] = useState("");
   const { toast } = useToast();
@@ -517,174 +405,6 @@ export function PageEditor({
     window.open(url, "_blank");
   };
 
-  type GenerateAboutPayload = GenerateAboutRequest & {
-    preferredStyle?: GeneratedVariation["style"];
-    selectedField?: keyof WizardAnswers;
-  };
-
-  const handleAiRegenerate = async (field?: keyof WizardAnswers) => {
-    if (!aiAnswers) return;
-
-    setIsRegenerating(true);
-
-    try {
-      const answersKey = buildAnswersKey(aiAnswers);
-
-      // If nothing changed and we have cached variations, reuse them to avoid a round trip
-      if (aiCachedAnswersKey === answersKey && aiCachedVariations.length > 0) {
-        const cachedChoice =
-          aiCachedVariations.find((v) => v.style === aiSelectedStyle) ||
-          aiCachedVariations[0];
-
-        if (!cachedChoice) {
-          throw new Error("Cached variations missing; please regenerate.");
-        }
-
-        if (aiTokenUsage) {
-          console.log("Cached token usage", aiTokenUsage);
-        }
-
-        await applyVariation(cachedChoice);
-        return;
-      }
-
-      const heroBlock = blocks.find(
-        (block): block is HeroBlock => isHeroBlock(block) && !block.isDeleted
-      );
-
-      const payload: GenerateAboutPayload = {
-        answers: aiAnswers,
-        currentBlocks: blocks
-          .filter((block) => !block.isDeleted)
-          .map((block) => ({ type: block.type })),
-        heroImageUrl: heroBlock?.content.imageUrl,
-        heroImageDescription:
-          heroBlock?.content.imageAlt || heroBlock?.content.caption,
-      };
-      // Use selected style to bias the variation we apply
-      payload.preferredStyle = aiSelectedStyle;
-      if (field) {
-        // Include a hint for future partial regenerations if backend supports it
-        payload.selectedField = field;
-      }
-
-      const response = await fetch("/api/admin/pages/about/generate-about", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to regenerate content");
-      }
-
-      const data: GenerateAboutResponse = await response.json();
-      console.log("AI about response", data);
-      setAiTokenUsage((data.tokens as Record<string, number | null>) || null);
-      if (data.tokens) {
-        console.log("Token usage", data.tokens);
-      }
-
-      const variations = data.variations || [];
-      const chosen =
-        variations.find((v) => v.style === aiSelectedStyle) || variations[0];
-
-      if (!chosen) {
-        throw new Error("No variations returned from AI");
-      }
-
-      setAiCachedAnswersKey(answersKey);
-      setAiCachedVariations(variations);
-
-      await applyVariation(chosen);
-    } catch (error) {
-      toast({
-        title: "Generation error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to regenerate content",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
-  type ReplaceBlocksResponse = {
-    success?: boolean;
-    blocks?: Block[];
-    metaDescription?: string | null;
-    error?: string;
-  };
-
-  const applyVariation = async (variation: GeneratedVariation) => {
-    const heroBlock = blocks.find(
-      (block): block is HeroBlock => isHeroBlock(block) && !block.isDeleted
-    );
-
-    // Merge multiple richText blocks into one for backward compatibility with layouts that expect a single content block
-    const incomingBlocks = variation.blocks || [];
-    const richTextBlocks = incomingBlocks
-      .filter((b): b is GeneratedRichTextBlock => b.type === "richText")
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-    const mergedBlocks = (() => {
-      if (richTextBlocks.length <= 1) return incomingBlocks;
-
-      const mergedHtml = richTextBlocks
-        .map((b) => b.content?.html || "")
-        .filter(Boolean)
-        .join("\n\n");
-
-      const first = richTextBlocks[0];
-      const mergedRichText = {
-        ...first,
-        content: { ...(first.content || {}), html: mergedHtml },
-      };
-
-      return [
-        ...incomingBlocks.filter((b) => b.type !== "richText"),
-        mergedRichText,
-      ];
-    })();
-
-    const response = await fetch(`/api/admin/pages/${pageId}/replace-blocks`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        blocks: mergedBlocks,
-        metaDescription: variation.metaDescription,
-        heroImageUrl: heroBlock?.content.imageUrl,
-        heroAltText: heroBlock?.content.imageAlt || heroBlock?.content.caption,
-      }),
-    });
-
-    const resultJson: ReplaceBlocksResponse = await response
-      .json()
-      .catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(resultJson.error || "Failed to apply variation");
-    }
-
-    const updatedBlocks = resultJson.blocks;
-    if (updatedBlocks?.length) {
-      setBlocks([...updatedBlocks].sort((a, b) => a.order - b.order));
-    }
-    if (typeof resultJson.metaDescription === "string") {
-      setDescription(resultJson.metaDescription);
-    }
-
-    toast({
-      title: "Variation applied",
-      description: "Page updated with regenerated content.",
-    });
-
-    setAiDialogOpen(false);
-    // Avoid full reload to preserve cached AI results; rely on client state/refresh elsewhere if needed
-  };
-
   // Check if a block can be deleted (not at minimum count)
   const canDeleteBlock = (block: Block): boolean => {
     // Count how many active blocks of this type exist
@@ -758,129 +478,25 @@ export function PageEditor({
         </div>
       </div>
 
-      <AiAssistDialog
+      <AiAssistClient
         open={aiDialogOpen}
-        onOpenChange={(open) => {
-          setAiDialogOpen(open);
-          if (!open) {
-            setIsRegenerating(false);
+        onOpenChange={setAiDialogOpen}
+        pageId={pageId}
+        pageTitle={pageTitle}
+        blocks={blocks}
+        initialWizardAnswers={initialWizardAnswers}
+        onApplied={({
+          blocks: appliedBlocks,
+          metaDescription: appliedMeta,
+        }) => {
+          if (appliedBlocks?.length) {
+            setBlocks([...appliedBlocks].sort((a, b) => a.order - b.order));
+          }
+          if (typeof appliedMeta === "string") {
+            setDescription(appliedMeta);
           }
         }}
-        title="AI Assist"
-        description="Choose a variation and/or update answers to regenerate About page content."
-        contentClassName="overflow-hidden"
-        footer={
-          <div className="space-y-2">
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setAiDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="default"
-                onClick={() => handleAiRegenerate(aiSelectedField || undefined)}
-                disabled={isRegenerating}
-              >
-                {isRegenerating ? "Regenerating..." : "Regenerate*"}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground text-right">
-              * Regeneration rewrites the About page using these answers. For
-              one-off block edits, adjust blocks directly in the editor.
-            </p>
-          </div>
-        }
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-3 min-h-[140px]">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold">Variations</h4>
-              <span className="text-xs text-muted-foreground">
-                {isRegenerating
-                  ? "Generating new options..."
-                  : "Pick a style and regenerate"}
-              </span>
-            </div>
-
-            {isRegenerating ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Crafting fresh options…</span>
-              </div>
-            ) : (
-              <RadioGroup
-                value={aiSelectedStyle}
-                onValueChange={(val) =>
-                  setAiSelectedStyle(val as GeneratedVariation["style"])
-                }
-                className="space-y-3"
-              >
-                {["story", "values", "product"].map((style) => (
-                  <label
-                    key={style}
-                    className={cn(
-                      "flex gap-3 rounded-lg border p-3 hover:border-primary/50",
-                      aiSelectedStyle === style
-                        ? "border-primary bg-primary/5"
-                        : "border-border"
-                    )}
-                  >
-                    <RadioGroupItem value={style} />
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                          {style}
-                        </span>
-                        <span className="text-sm font-semibold">
-                          {style === "story"
-                            ? "Story-first"
-                            : style === "values"
-                              ? "Values-forward"
-                              : "Product-first"}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-3">
-                        {style === "story"
-                          ? "Narrative, warm, founder journey focus"
-                          : style === "values"
-                            ? "Principles-led, trustworthy, mission first"
-                            : "Coffee-forward, educational, craft-driven"}
-                      </p>
-                    </div>
-                  </label>
-                ))}
-              </RadioGroup>
-            )}
-
-            {aiCachedVariations.length > 0 && !isRegenerating && (
-              <div className="rounded-lg border p-3 space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Cached variations (titles)
-                </p>
-                <ul className="space-y-1 text-sm text-muted-foreground">
-                  {aiCachedVariations.map((v, idx) => (
-                    <li key={`${v.style}-${idx}`} className="line-clamp-1">
-                      {v.title}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <p className="text-sm text-muted-foreground pb-4">
-              Edit these answers to guide the AI when regenerating your About
-              page content.
-            </p>
-            <AboutAnswerEditor
-              answers={aiAnswers}
-              onAnswersChange={setAiAnswers}
-              onSelectedFieldChange={setAiSelectedField}
-              isRegenerating={isRegenerating}
-            />
-          </div>
-        </div>
-      </AiAssistDialog>
+      />
 
       {/* SEO Metadata Panel */}
       {isEditingMetadata && onMetadataUpdate && (

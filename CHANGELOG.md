@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.33.1 - 2025-12-08
+
+- **AI Assist client rename**: Replaced `AiAssistShell` with `AiAssistClient`, extracted fallback answer defaults, and wired `PageEditor`/dialog components to the new client wrapper for clearer ownership of AI state.
+- **AI Assist refactor**: Moved orchestration into `useAiAssist`, reused the shared `BlockDialog` shell in `AiAssistDialog`, simplified `PageEditor` to rely on the hook (single richText path, no merge), tightened effect deps, and validated via pre-commit lint/typecheck.
+
 ## 0.33.0 - 2025-12-07
 
 - **About AI Assist (fingerprints & reuse)**: `generate-about` now validates requests via zod schema, computes stable answers/content fingerprints to short-circuit unchanged runs, preserves hero alt reuse, and logs Gemini token usage per provider/feature for reporting.

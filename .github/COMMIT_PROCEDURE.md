@@ -203,6 +203,14 @@ git checkout main
 git merge feat/integration-auth
 ```
 
+### Tagging When Using an Integration Branch
+
+- Keep tags on `main` only; treat the integration branch as tagless staging.
+- Each feature branch should bump CHANGELOG + `package.json` with its target version before merge.
+- Merge feature → integration for testing, then integration → main.
+- After each merge to main, create an annotated tag on the main merge commit: `git tag -a vX.Y.Z -m "<summary>"` and `git push origin vX.Y.Z`.
+- If multiple feature branches land sequentially, tag each version in order as they hit main; use `git tag --sort=creatordate` to confirm chronology.
+
 ### Build & Backup Gate (major merges to integration/main)
 
 For major bodies of work merging to integration or main, run the integrity pipeline before merging:
