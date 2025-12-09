@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.34.0 - 2025-12-09
+
+- **Docker deploy tooling**: Added multi-stage Dockerfile and docker-compose with Postgres, runtime build + migrate, and volumes for data/uploads.
+- **Health & env checks**: Introduced `/api/health` with env/DB/Stripe/Resend checks and `lib/validate-env.ts` for required/optional vars.
+- **Runbooks**: Added `.env.docker.example` and `docs/docker-smoke-test.md`; linked installation guide to the Docker smoke checklist.
+
 ## 0.33.5 - 2025-12-09
 
 - **Prisma adapter safety**: Moved `LocationType` to a client-safe module to keep Prisma/pg out of browser bundles and updated all imports accordingly.

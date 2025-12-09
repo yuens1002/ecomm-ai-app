@@ -55,6 +55,7 @@ next-env.d.ts
 /lib/generated/prisma
 
 # Internal planning documents (not for public repo)
+# Keep tracked files staged explicitly with -f when needed
 /docs/*-internal-*.md
 
 # Development tooling scripts (not needed for production)
