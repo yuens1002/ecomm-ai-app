@@ -28,7 +28,10 @@ export function AiAssistContent({
   return (
     <div className="relative grid grid-cols-1 md:grid-cols-[0.4fr_0.6fr] gap-6">
       {isRegenerating && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <div
+          data-testid="ai-assist-overlay"
+          className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+        >
           <div className="flex items-center gap-3 rounded-md border px-4 py-3 shadow-sm bg-card/90">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
             <span className="text-sm font-medium text-foreground">

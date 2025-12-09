@@ -2,6 +2,14 @@
 
 ## High Priority
 
+### Testing – AI Assist About (must-do)
+
+- [ ] API happy paths: `/api/admin/pages/[id]/replace-blocks`, `/api/admin/pages/[id]/ai-state` (200/401/409-ish) via Jest + supertest or Next route harness.
+- [ ] AI Assist hook: `useAiAssist` caching/fingerprint, skip-on-same-state, cache reuse, `resetDraft`; mock fetch/localStorage to avoid network/state leaks.
+- [ ] UI smoke: `AiAssistClient`/`AiAssistContent` renders, disables buttons while regenerating, shows spinner overlay, auto-close on success.
+- [ ] E2E smoke: Admin logs in, opens About page editor, triggers regenerate, sees toast, blocks update, dialog closes.
+- [ ] Toast regressions: auto-dismiss after ~5s and manual close stays accessible.
+
 ---
 
 ### Admin-Specific Sign-In Page

@@ -471,6 +471,7 @@ export function PageEditor({
             variant="default"
             size="sm"
             onClick={() => setAiDialogOpen(true)}
+            disabled={isEditingMetadata}
           >
             <Sparkles className="h-4 w-4 mr-2" />
             AI Assist

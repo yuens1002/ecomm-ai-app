@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.33.3 - 2025-12-09
+
+- **AI Assist test coverage**: Added overlay/data-testid for regeneration state, adjusted radio interactions, and expanded client/cache route tests to align with current hook props and replace-blocks/ai-state handlers.
+- **Activity tracking stability**: Kept fetch-error handling silent in tests to avoid noisy output while preserving failure logging in implementation.
+- **CI workflow housekeeping**: Ensured build-safe main pipeline remains aligned with current env defaults and test expectations after AI Assist updates.
+
 ## 0.33.2 - 2025-12-08
 
 - **AI Assist persistence & caching**: Added `/api/admin/pages/[id]/ai-state` for storing selected style/answers, improved localStorage hydration, fingerprinting, and block snapshots to reuse cached variations safely.
