@@ -1,7 +1,16 @@
 import { PrismaClient, RoastLevel, Category } from "@prisma/client";
 
+const getProductSeedMode = () => {
+  const raw = (process.env.SEED_PRODUCT_MODE ?? "full").toLowerCase();
+  if (["minimal", "lean", "tiny", "demo"].includes(raw)) return "minimal";
+  return "full";
+};
+
 export async function seedProducts(prisma: PrismaClient) {
-  console.log("  🛒 Creating products...");
+  const productSeedMode = getProductSeedMode();
+  const isMinimal = productSeedMode === "minimal";
+
+  console.log(`  🛒 Creating products... (mode: ${productSeedMode})`);
 
   // Get category references
   const catBlends = await prisma.category.findUnique({
@@ -22,6 +31,9 @@ export async function seedProducts(prisma: PrismaClient) {
   const catLight = await prisma.category.findUnique({
     where: { slug: "light-roast" },
   });
+  const catMerch = await prisma.category.findUnique({
+    where: { slug: "merch" },
+  });
 
   if (
     !catBlends ||
@@ -32,6 +44,10 @@ export async function seedProducts(prisma: PrismaClient) {
     !catLight
   ) {
     throw new Error("Required categories not found. Run seedCategories first.");
+  }
+
+  if (isMinimal && !catMerch) {
+    throw new Error("Merch category not found. Run seedCategories first.");
   }
 
   // Get origin categories
@@ -1390,23 +1406,66 @@ export async function seedProducts(prisma: PrismaClient) {
     },
   ];
 
-  // Create products
-  for (const item of coffeeData) {
-    const { product: productData, categories: categoryLinks } = item;
+  const minimalData = [
+    coffeeData[0],
+    {
+      product: {
+        name: "Artisan Canvas Tote",
+        slug: "artisan-canvas-tote",
+        description:
+          "Heavyweight canvas tote for bean runs and local deliveries. 16oz canvas, reinforced handles, fits two 2lb bags plus extras.",
+        origin: [],
+        tastingNotes: [],
+        isOrganic: false,
+        isFeatured: true,
+        featuredOrder: 99,
+        images: {
+          create: [
+            {
+              url: "https://placehold.co/600x400/D9B166/0F0B05.png?text=Canvas+Tote",
+              altText: "Artisan Roast canvas tote bag",
+              order: 1,
+            },
+          ],
+        },
+        variants: {
+          create: [
+            {
+              name: "One Size",
+              weightInGrams: 0,
+              stockQuantity: 50,
+              purchaseOptions: {
+                create: [{ type: "ONE_TIME" as const, priceInCents: 2200 }],
+              },
+            },
+          ],
+        },
+      },
+      categories: catMerch
+        ? [{ categoryId: catMerch.id, isPrimary: true }]
+        : [],
+    },
+  ];
 
-    // Determine roast level
+  const productsToSeed = isMinimal ? minimalData : coffeeData;
+
+  // Create products
+  for (const item of productsToSeed) {
+    const { product: productInput, categories: categoryLinks } = item;
+
+    // Determine roast level (non-coffee merch stays MEDIUM default)
     let roastLevel: RoastLevel = RoastLevel.MEDIUM;
-    if (categoryLinks.some((l) => l.categoryId === catDark.id)) {
+    if (categoryLinks.some((l) => l.categoryId === catDark?.id)) {
       roastLevel = RoastLevel.DARK;
-    } else if (categoryLinks.some((l) => l.categoryId === catLight.id)) {
+    } else if (categoryLinks.some((l) => l.categoryId === catLight?.id)) {
       roastLevel = RoastLevel.LIGHT;
     }
 
-    // Determine categories based on origin
+    // Determine categories based on origin; allow explicit categoryLinks for non-coffee
     const newCategories: Array<{ categoryId: string; isPrimary: boolean }> = [];
-    const origins = productData.origin;
+    const origins = productInput.origin;
     const isMicroLot = categoryLinks.some(
-      (l) => l.categoryId === catMicroLot.id
+      (l) => l.categoryId === catMicroLot?.id
     );
 
     if (origins.length === 1) {
@@ -1416,17 +1475,23 @@ export async function seedProducts(prisma: PrismaClient) {
       } else {
         newCategories.push({ categoryId: catSingleOrigin.id, isPrimary: true });
       }
+    } else if (origins.length > 1) {
+      newCategories.push({ categoryId: catBlends.id, isPrimary: true });
+    } else if (categoryLinks.length > 0) {
+      newCategories.push(...categoryLinks);
     } else {
       newCategories.push({ categoryId: catBlends.id, isPrimary: true });
     }
 
-    // Add roast level as secondary
-    if (roastLevel === RoastLevel.DARK) {
-      newCategories.push({ categoryId: catDark.id, isPrimary: false });
-    } else if (roastLevel === RoastLevel.LIGHT) {
-      newCategories.push({ categoryId: catLight.id, isPrimary: false });
-    } else {
-      newCategories.push({ categoryId: catMedium.id, isPrimary: false });
+    // Add roast level as secondary for coffee items only (origin data present)
+    if (origins.length > 0) {
+      if (roastLevel === RoastLevel.DARK) {
+        newCategories.push({ categoryId: catDark.id, isPrimary: false });
+      } else if (roastLevel === RoastLevel.LIGHT) {
+        newCategories.push({ categoryId: catLight.id, isPrimary: false });
+      } else {
+        newCategories.push({ categoryId: catMedium.id, isPrimary: false });
+      }
     }
 
     // Add micro lot if applicable
@@ -1436,7 +1501,7 @@ export async function seedProducts(prisma: PrismaClient) {
 
     // Check if product exists
     const existingProduct = await prisma.product.findUnique({
-      where: { slug: productData.slug },
+      where: { slug: productInput.slug },
       include: { variants: true },
     });
 
@@ -1444,19 +1509,19 @@ export async function seedProducts(prisma: PrismaClient) {
     if (existingProduct) {
       // Update existing product (don't touch variants to avoid FK constraints)
       _product = await prisma.product.update({
-        where: { slug: productData.slug },
+        where: { slug: productInput.slug },
         data: {
-          name: productData.name,
-          description: productData.description,
-          origin: productData.origin,
-          tastingNotes: productData.tastingNotes,
-          isOrganic: productData.isOrganic,
-          isFeatured: productData.isFeatured,
-          featuredOrder: productData.featuredOrder,
+          name: productInput.name,
+          description: productInput.description,
+          origin: productInput.origin,
+          tastingNotes: productInput.tastingNotes,
+          isOrganic: productInput.isOrganic,
+          isFeatured: productInput.isFeatured,
+          featuredOrder: productInput.featuredOrder,
           roastLevel,
           images: {
             deleteMany: {},
-            create: productData.images.create,
+            create: productInput.images.create,
           },
           categories: {
             deleteMany: {},
@@ -1468,17 +1533,17 @@ export async function seedProducts(prisma: PrismaClient) {
       // Create new product with variants
       _product = await prisma.product.create({
         data: {
-          name: productData.name,
-          slug: productData.slug,
-          description: productData.description,
-          origin: productData.origin,
-          tastingNotes: productData.tastingNotes,
-          isOrganic: productData.isOrganic,
-          isFeatured: productData.isFeatured,
-          featuredOrder: productData.featuredOrder,
+          name: productInput.name,
+          slug: productInput.slug,
+          description: productInput.description,
+          origin: productInput.origin,
+          tastingNotes: productInput.tastingNotes,
+          isOrganic: productInput.isOrganic,
+          isFeatured: productInput.isFeatured,
+          featuredOrder: productInput.featuredOrder,
           roastLevel,
-          images: productData.images,
-          variants: productData.variants,
+          images: productInput.images,
+          variants: productInput.variants,
           categories: {
             create: newCategories,
           },
@@ -1487,5 +1552,7 @@ export async function seedProducts(prisma: PrismaClient) {
     }
   }
 
-  console.log(`    ✓ Seeded ${coffeeData.length} specialty coffee products`);
+  console.log(
+    `    ✓ Seeded ${productsToSeed.length} products (mode: ${productSeedMode})`
+  );
 }

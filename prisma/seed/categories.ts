@@ -32,6 +32,18 @@ export async function seedCategories(prisma: PrismaClient) {
     },
   });
 
+  const _catMerch = await prisma.category.upsert({
+    where: { slug: "merch" },
+    update: {},
+    create: {
+      name: "Merch",
+      slug: "merch",
+      labelSettingId: labelCollections.id,
+      order: 25,
+      showPurchaseOptions: true,
+    },
+  });
+
   const _catSingleOrigin = await prisma.category.upsert({
     where: { slug: "single-origin" },
     update: {},

@@ -1,22 +1,50 @@
+/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires */
 import { config } from "dotenv";
+// Ensure node-api engine is used even if env sets client/edge; set before PrismaClient loads.
+process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
+process.env.PRISMA_GENERATE_ENGINE_TYPE = "library";
 config({ path: ".env.local" });
+process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
+process.env.PRISMA_GENERATE_ENGINE_TYPE = "library";
 
-import {
+import { PrismaNeon } from "@prisma/adapter-neon";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
+import { Pool } from "pg";
+
+const {
   PrismaClient,
   PurchaseType,
   BillingInterval,
   RoastLevel,
-} from "@prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import { neonConfig } from "@neondatabase/serverless";
-import ws from "ws";
+} = require("@prisma/client");
 
-neonConfig.webSocketConstructor = ws;
+const shouldUseNeonAdapter = () => {
+  const adapterEnv = process.env.DATABASE_ADAPTER?.toLowerCase();
+  if (adapterEnv === "neon") return true;
+  if (adapterEnv === "postgres" || adapterEnv === "standard") return false;
+  return process.env.DATABASE_URL?.includes("neon.tech") ?? false;
+};
 
-const connectionString = process.env.DATABASE_URL!;
-// const pool = new Pool({ connectionString });
-const adapter = new PrismaNeon({ connectionString });
-const prisma = new PrismaClient({ adapter });
+const createPrismaClient = () => {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL is required to run seeds");
+  }
+
+  if (!shouldUseNeonAdapter()) {
+    const pool = new Pool({ connectionString });
+    const adapter = new PrismaPg(pool);
+    return new PrismaClient({ adapter });
+  }
+
+  neonConfig.webSocketConstructor = ws;
+  const adapter = new PrismaNeon({ connectionString });
+  return new PrismaClient({ adapter });
+};
+
+const prisma = createPrismaClient();
 
 async function main() {
   console.log(`Start seeding with 30 specialty coffee products...`);
@@ -1669,7 +1697,7 @@ async function main() {
     const { product: productData, categories: categoryLinks } = item;
 
     // Determine roast level from old categories
-    let roastLevel: RoastLevel = RoastLevel.MEDIUM; // Default
+    let roastLevel = RoastLevel.MEDIUM; // Default
     if (categoryLinks.some((l) => l.categoryId === catDark.id)) {
       roastLevel = RoastLevel.DARK;
     } else if (categoryLinks.some((l) => l.categoryId === catLight.id)) {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.33.4 - 2025-12-09
+
+- **Clean-install seed toggles**: Added env flags to skip synthetic data (`SEED_INCLUDE_SYNTHETIC=false`) and user seeding (`SEED_INCLUDE_USERS=false`) for owner-first admin creation.
+- **Minimal product mode**: Introduced `SEED_PRODUCT_MODE=minimal` to seed just two demo items (coffee + merch) while keeping full catalog as default.
+- **Merch support**: Seeded a `merch` category to classify non-coffee product in minimal mode.
+- **Adapter-neutral seeding**: Maintained Neon/Postgres adapter detection across seed entry to keep single-build compatibility.
+
 ## 0.33.3 - 2025-12-09
 
 - **AI Assist test coverage**: Added overlay/data-testid for regeneration state, adjusted radio interactions, and expanded client/cache route tests to align with current hook props and replace-blocks/ai-state handlers.
