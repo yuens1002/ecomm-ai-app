@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.33.5 - 2025-12-09
+
+- **Prisma adapter safety**: Moved `LocationType` to a client-safe module to keep Prisma/pg out of browser bundles and updated all imports accordingly.
+- **Admin/bootstrap tooling**: Added `npm run setup` and `npm run create-admin` to provision schemas, seeds, and owner/admin accounts in one command; exposed CRUD smoke test via `npm run db:smoke`.
+- **Install docs polish**: Documented explicit copy/paste commands for switching between Neon and local Postgres, including env toggles and setup runbook.
+
 ## 0.33.4 - 2025-12-09
 
 - **Clean-install seed toggles**: Added env flags to skip synthetic data (`SEED_INCLUDE_SYNTHETIC=false`) and user seeding (`SEED_INCLUDE_USERS=false`) for owner-first admin creation.

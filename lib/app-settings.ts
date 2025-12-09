@@ -4,11 +4,7 @@
  */
 
 import { prisma } from "./prisma";
-
-export enum LocationType {
-  SINGLE = "SINGLE",
-  MULTI = "MULTI",
-}
+import { LocationType } from "./location-type";
 
 const APP_SETTINGS_KEYS = {
   LOCATION_TYPE: "app.locationType",

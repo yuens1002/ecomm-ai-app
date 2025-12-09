@@ -7,7 +7,7 @@ import { PageType } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
-import { LocationType } from "@/lib/app-settings";
+import { LocationType } from "@/lib/location-type";
 
 interface CafeEditorClientProps {
   pageId: string;

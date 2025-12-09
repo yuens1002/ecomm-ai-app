@@ -12,7 +12,7 @@ import {
 } from "@/lib/page-layouts";
 import { LayoutRenderer, BlockHandlers } from "@/lib/page-layouts";
 import { PageType } from "@prisma/client";
-import { LocationType } from "@/lib/app-settings";
+import { LocationType } from "@/lib/location-type";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";

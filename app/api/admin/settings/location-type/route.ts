@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getLocationType,
-  setLocationType,
-  LocationType,
-} from "@/lib/app-settings";
+import { getLocationType, setLocationType } from "@/lib/app-settings";
+import { LocationType } from "@/lib/location-type";
 import { requireAdmin } from "@/lib/admin";
 
 export async function GET() {

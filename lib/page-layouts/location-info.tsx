@@ -1,7 +1,7 @@
 import { LayoutRenderer } from "./types";
 import { renderBlock } from "./render-block";
 import { Block, BlockType } from "@/lib/blocks/schemas";
-import { LocationType } from "@/lib/app-settings";
+import { LocationType } from "@/lib/location-type";
 
 /**
  * Location Info Layout Configuration

@@ -37,7 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LocationType } from "@/lib/app-settings";
+import { LocationType } from "@/lib/location-type";
 
 interface FooterSettings {
   showHours: boolean;

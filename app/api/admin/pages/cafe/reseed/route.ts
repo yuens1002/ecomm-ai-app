@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { LocationType } from "@/lib/app-settings";
+import { LocationType } from "@/lib/location-type";
 import { unlink } from "fs/promises";
 import { join } from "path";
 

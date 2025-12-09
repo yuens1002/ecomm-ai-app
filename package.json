@@ -1,6 +1,6 @@
 {
   "name": "artisan-roast",
-  "version": "0.33.4",
+  "version": "0.33.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -19,7 +19,10 @@
     "test:ci": "jest --ci",
     "db:backup": "node -e \"const { execSync } = require('child_process'); const fs = require('fs'); const script = 'dev-tools/backup-database.ts'; if (fs.existsSync(script)) { execSync('npx tsx ' + script, { stdio: 'inherit' }); } else { console.log('Skipping db backup (', script, 'not present).'); }\"",
     "db:restore": "tsx dev-tools/restore-database.ts",
-    "db:safe-migrate": "tsx dev-tools/safe-migrate.ts"
+    "db:safe-migrate": "tsx dev-tools/safe-migrate.ts",
+    "db:smoke": "tsx dev-tools/smoke-crud.ts",
+    "create-admin": "tsx scripts/create-admin.ts",
+    "setup": "tsx scripts/setup.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
