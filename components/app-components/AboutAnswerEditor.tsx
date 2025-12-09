@@ -211,7 +211,7 @@ export function AboutAnswerEditor({
           </InputGroupButton>
         </InputGroupAddon>
         {activeSelectedField && selectFieldOptions[activeSelectedField] ? (
-          <div className="p-3 w-full flex items-start min-h-[160px]">
+          <div className="p-3 w-full flex items-start min-h-40">
             <Select
               value={(answers[activeSelectedField] as string) || ""}
               onValueChange={(val) =>
@@ -244,7 +244,7 @@ export function AboutAnswerEditor({
               })
             }
             placeholder={activeSelectedField ? "Edit your answer..." : ""}
-            className="min-h-[160px] h-[160px] text-sm"
+            className="min-h-40 h-40 text-sm"
             disabled={!activeSelectedField || isRegenerating}
           />
         )}

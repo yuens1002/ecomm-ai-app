@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.34.1 - 2025-12-09
+
+- **Product weight enforcement**: Made product weight required in Prisma schema/migration, kept variant weight optional, and validated admin form/API while seeding derived weights with safe defaults.
+- **Admin product tests**: Added co-located POST route test for merch creation and weight validation; Jest config now allows API route tests and setup guards Node environments.
+- **UI lint cleanups**: Normalized Tailwind classes in About editor and toast viewport to satisfy style rules.
+
 ## 0.34.0 - 2025-12-09
 
 - **Docker deploy tooling**: Added multi-stage Dockerfile and docker-compose with Postgres, runtime build + migrate, and volumes for data/uploads.

@@ -46,6 +46,22 @@ const createPrismaClient = () => {
 
 const prisma = createPrismaClient();
 
+const deriveProductWeight = (productData: {
+  variants?: {
+    create?: Array<{ weightInGrams?: number | null } | undefined>;
+  };
+}) => {
+  const variantCreates = productData.variants?.create;
+  if (Array.isArray(variantCreates)) {
+    const weights = variantCreates
+      .map((v) => v?.weightInGrams ?? 0)
+      .filter((w) => typeof w === "number" && Number.isFinite(w));
+    const maxWeight = weights.length > 0 ? Math.max(...weights) : 0;
+    if (maxWeight > 0) return maxWeight;
+  }
+  return 500; // fallback shipping weight when variants don't define weight
+};
+
 async function main() {
   console.log(`Start seeding with 30 specialty coffee products...`);
 
@@ -1739,6 +1755,8 @@ async function main() {
       newCategories.push({ categoryId: catMicroLot.id, isPrimary: false });
     }
 
+    const productWeight = deriveProductWeight(productData);
+
     const product = await prisma.product.upsert({
       where: { slug: productData.slug },
       update: {
@@ -1750,11 +1768,13 @@ async function main() {
         roastLevel: roastLevel,
         isFeatured: productData.isFeatured,
         featuredOrder: productData.featuredOrder,
+        weightInGrams: productWeight,
         // We do not update images/variants here to avoid breaking FK constraints with Orders
       },
       create: {
         ...productData,
         roastLevel: roastLevel,
+        weightInGrams: productWeight,
       },
     });
 

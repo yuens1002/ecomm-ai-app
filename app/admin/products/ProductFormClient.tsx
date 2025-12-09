@@ -46,6 +46,7 @@ const formSchema = z.object({
   slug: z.string().min(1, "Slug is required"),
   description: z.string().optional(),
   imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  weightInGrams: z.coerce.number().int().min(1, "Weight is required"),
   isOrganic: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
   categoryIds: z.array(z.string()).default([]),
@@ -69,6 +70,7 @@ export default function ProductFormClient({
       slug: "",
       description: "",
       imageUrl: "",
+      weightInGrams: 0,
       isOrganic: false,
       isFeatured: false,
       categoryIds: [],
@@ -119,6 +121,7 @@ export default function ProductFormClient({
           slug: p.slug,
           description: p.description || "",
           imageUrl: p.images?.[0]?.url || "",
+          weightInGrams: p.weightInGrams ?? 0,
           isOrganic: p.isOrganic,
           isFeatured: p.isFeatured,
           categoryIds: p.categoryIds || [],
@@ -278,6 +281,36 @@ export default function ProductFormClient({
 
               {/* Right Column: Details */}
               <FieldGroup>
+                <FormField
+                  control={form.control}
+                  name="weightInGrams"
+                  render={({ field, fieldState }) => (
+                    <Field>
+                      <FieldLabel>Shipping weight (grams)</FieldLabel>
+                      <Input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={
+                          typeof field.value === "number" ||
+                          typeof field.value === "string"
+                            ? field.value
+                            : ""
+                        }
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === "" ? "" : Number(e.target.value)
+                          )
+                        }
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="description"

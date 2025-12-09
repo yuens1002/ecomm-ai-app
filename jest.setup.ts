@@ -18,27 +18,29 @@ if (!g.Request && typeof globalThis !== "undefined") {
   g.Headers = globalThis.Headers;
 }
 
-// Mock sessionStorage for tests
-const sessionStorageMock = (() => {
-  let store: Record<string, string> = {};
+// Mock sessionStorage for tests when window exists (jsdom)
+if (typeof window !== "undefined") {
+  const sessionStorageMock = (() => {
+    let store: Record<string, string> = {};
 
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
-})();
+    return {
+      getItem: (key: string) => store[key] || null,
+      setItem: (key: string, value: string) => {
+        store[key] = value.toString();
+      },
+      removeItem: (key: string) => {
+        delete store[key];
+      },
+      clear: () => {
+        store = {};
+      },
+    };
+  })();
 
-Object.defineProperty(window, "sessionStorage", {
-  value: sessionStorageMock,
-});
+  Object.defineProperty(window, "sessionStorage", {
+    value: sessionStorageMock,
+  });
+}
 
 // Mock fetch for API calls
 global.fetch = jest.fn();

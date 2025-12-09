@@ -27,7 +27,7 @@ const config = {
   testPathIgnorePatterns: [
     "/node_modules/",
     "/.next/",
-    "/app/api/", // Skip API route tests for now due to Next.js edge runtime complexity
+    "/app/api/(?!.*__tests__/)", // Ignore API route files but allow co-located route tests
     "/lib/__tests__/", // Skip data tests (require live database)
   ],
 };

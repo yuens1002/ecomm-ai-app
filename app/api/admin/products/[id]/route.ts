@@ -73,7 +73,16 @@ export async function PUT(
       isFeatured,
       categoryIds,
       imageUrl,
+      weightInGrams,
     } = body;
+
+    const weight = Number(weightInGrams);
+    if (!Number.isFinite(weight) || weight <= 0) {
+      return NextResponse.json(
+        { error: "Weight is required and must be greater than zero" },
+        { status: 400 }
+      );
+    }
 
     // Transaction to update product and categories
     const product = await prisma.$transaction(async (tx) => {
@@ -86,6 +95,7 @@ export async function PUT(
           description,
           isOrganic,
           isFeatured,
+          weightInGrams: weight,
         },
       });
 

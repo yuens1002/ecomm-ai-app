@@ -6,6 +6,22 @@ const getProductSeedMode = () => {
   return "full";
 };
 
+const deriveProductWeight = (productInput: {
+  variants?: {
+    create?: Array<{ weightInGrams?: number | null } | undefined>;
+  };
+}) => {
+  const variantCreates = productInput.variants?.create;
+  if (Array.isArray(variantCreates)) {
+    const weights = variantCreates
+      .map((v) => v?.weightInGrams ?? 0)
+      .filter((w) => typeof w === "number" && Number.isFinite(w));
+    const maxWeight = weights.length > 0 ? Math.max(...weights) : 0;
+    if (maxWeight > 0) return maxWeight;
+  }
+  return 500; // fallback shipping weight for items without variant weight
+};
+
 export async function seedProducts(prisma: PrismaClient) {
   const productSeedMode = getProductSeedMode();
   const isMinimal = productSeedMode === "minimal";
@@ -1499,6 +1515,8 @@ export async function seedProducts(prisma: PrismaClient) {
       newCategories.push({ categoryId: catMicroLot.id, isPrimary: false });
     }
 
+    const productWeight = deriveProductWeight(productInput);
+
     // Check if product exists
     const existingProduct = await prisma.product.findUnique({
       where: { slug: productInput.slug },
@@ -1518,6 +1536,7 @@ export async function seedProducts(prisma: PrismaClient) {
           isOrganic: productInput.isOrganic,
           isFeatured: productInput.isFeatured,
           featuredOrder: productInput.featuredOrder,
+          weightInGrams: productWeight,
           roastLevel,
           images: {
             deleteMany: {},
@@ -1541,6 +1560,7 @@ export async function seedProducts(prisma: PrismaClient) {
           isOrganic: productInput.isOrganic,
           isFeatured: productInput.isFeatured,
           featuredOrder: productInput.featuredOrder,
+          weightInGrams: productWeight,
           roastLevel,
           images: productInput.images,
           variants: productInput.variants,

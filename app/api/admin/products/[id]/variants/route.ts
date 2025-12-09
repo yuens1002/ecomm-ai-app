@@ -16,11 +16,14 @@ export async function POST(
     const body = await request.json();
     const { name, weightInGrams, stockQuantity } = body;
 
+    const weight = Number(weightInGrams);
+    const parsedWeight = Number.isFinite(weight) && weight > 0 ? weight : null;
+
     const variant = await prisma.productVariant.create({
       data: {
         productId: id,
         name,
-        weightInGrams: parseInt(weightInGrams),
+        weightInGrams: parsedWeight,
         stockQuantity: parseInt(stockQuantity),
       },
       include: {

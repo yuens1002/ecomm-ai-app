@@ -40,7 +40,7 @@ interface PurchaseOption {
 interface Variant {
   id: string;
   name: string;
-  weightInGrams: number;
+  weightInGrams: number | null;
   stockQuantity: number;
   purchaseOptions: PurchaseOption[];
 }
@@ -100,7 +100,7 @@ export default function ProductVariantsClient({
       setEditingVariant(variant);
       setVariantForm({
         name: variant.name,
-        weightInGrams: variant.weightInGrams.toString(),
+        weightInGrams: variant.weightInGrams?.toString() ?? "",
         stockQuantity: variant.stockQuantity.toString(),
       });
     } else {
@@ -253,7 +253,12 @@ export default function ProductVariantsClient({
                 <div>
                   <h4 className="font-semibold text-lg">{variant.name}</h4>
                   <div className="text-sm text-muted-foreground flex gap-4">
-                    <span>Weight: {variant.weightInGrams}g</span>
+                    <span>
+                      Weight:{" "}
+                      {variant.weightInGrams
+                        ? `${variant.weightInGrams}g`
+                        : "-"}
+                    </span>
                     <span>Stock: {variant.stockQuantity}</span>
                   </div>
                 </div>
@@ -389,7 +394,6 @@ export default function ProductVariantsClient({
                     })
                   }
                   placeholder="340"
-                  required
                 />
               </div>
               <div className="space-y-2">
