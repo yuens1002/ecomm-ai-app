@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { config } from "dotenv";
 // Force node-api engine before Prisma client module loads (overrides any env setting client/edge).
 process.env.PRISMA_CLIENT_ENGINE_TYPE = "library";
