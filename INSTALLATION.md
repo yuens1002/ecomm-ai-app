@@ -63,6 +63,7 @@ Visit http://localhost:3000 and sign in with the admin you created.
 - Backups: `npm run db:backup` writes JSON under `dev-tools/backups/`.
 - Adapter auto-detect: Neon vs Postgres is automatic; `DATABASE_ADAPTER=postgres|neon|standard` can force behavior.
 - Images: add hosts in `next.config.ts` if serving media from your CDN/S3.
+- Docker/compose smoke: see `docs/docker-smoke-test.md` for expected build logs, health check (`/api/health`), and persistence checks after `docker compose up --build -d`.
 
 ### Switching between Neon and local Postgres
 
