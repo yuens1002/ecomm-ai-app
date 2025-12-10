@@ -14,17 +14,44 @@ export async function PUT(
 
     const { variantId } = await params;
     const body = await request.json();
-    const { name, weightInGrams, stockQuantity } = body;
+    const { name, weight, stockQuantity } = body;
 
-    const weight = Number(weightInGrams);
-    const parsedWeight = Number.isFinite(weight) && weight > 0 ? weight : null;
+    const existing = await prisma.productVariant.findUnique({
+      where: { id: variantId },
+      include: { product: true },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Variant not found" }, { status: 404 });
+    }
+
+    const providedWeight = Number(weight);
+    const finalWeight =
+      Number.isFinite(providedWeight) && providedWeight > 0
+        ? providedWeight
+        : null;
+    const isCoffee = existing.product.type === "COFFEE";
+
+    if (isCoffee && finalWeight === null) {
+      return NextResponse.json(
+        { error: "Weight is required for coffee variants" },
+        { status: 400 }
+      );
+    }
+
+    if (!isCoffee && weight !== undefined && finalWeight === null) {
+      return NextResponse.json(
+        { error: "Weight must be greater than zero when provided" },
+        { status: 400 }
+      );
+    }
 
     const variant = await prisma.productVariant.update({
       where: { id: variantId },
       data: {
         name,
-        weightInGrams: parsedWeight,
-        stockQuantity: parseInt(stockQuantity),
+        weight: finalWeight,
+        stockQuantity: Number.parseInt(stockQuantity, 10),
       },
       include: {
         purchaseOptions: true,

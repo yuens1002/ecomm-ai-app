@@ -6,8 +6,12 @@ export default async function ProductManagementPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Product Management</h1>
-      <ProductManagementClient />
+      <h1 className="text-3xl font-bold mb-6">Coffee Products</h1>
+      <ProductManagementClient
+        title="Coffee Products"
+        description="Manage coffee products, variants, and pricing"
+        productType="COFFEE"
+      />
     </div>
   );
 }

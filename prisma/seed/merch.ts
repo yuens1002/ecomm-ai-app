@@ -3,7 +3,7 @@ import { PrismaClient, ProductType, RoastLevel } from "@prisma/client";
 interface MerchVariant {
   name: string;
   priceInCents: number;
-  weightInGrams?: number;
+  weight?: number;
   stockQuantity?: number;
 }
 
@@ -30,7 +30,7 @@ const merchItems: MerchItem[] = [
       {
         name: "12oz",
         priceInCents: 1800,
-        weightInGrams: 400,
+        weight: 400,
         stockQuantity: 120,
       },
     ],
@@ -46,7 +46,7 @@ const merchItems: MerchItem[] = [
       {
         name: "16oz",
         priceInCents: 3200,
-        weightInGrams: 350,
+        weight: 350,
         stockQuantity: 80,
       },
     ],
@@ -61,19 +61,19 @@ const merchItems: MerchItem[] = [
       {
         name: "Small",
         priceInCents: 2600,
-        weightInGrams: 250,
+        weight: 250,
         stockQuantity: 60,
       },
       {
         name: "Medium",
         priceInCents: 2600,
-        weightInGrams: 260,
+        weight: 260,
         stockQuantity: 90,
       },
       {
         name: "Large",
         priceInCents: 2600,
-        weightInGrams: 270,
+        weight: 270,
         stockQuantity: 70,
       },
     ],
@@ -98,7 +98,7 @@ export async function seedMerch(prisma: PrismaClient) {
 
     const variants = item.variants.map((variant) => ({
       name: variant.name,
-      weightInGrams: variant.weightInGrams ?? 0,
+      weight: variant.weight ?? 0,
       stockQuantity: variant.stockQuantity ?? 50,
       purchaseOptions: {
         create: [
@@ -107,8 +107,8 @@ export async function seedMerch(prisma: PrismaClient) {
       },
     }));
 
-    const weightInGrams = Math.max(
-      ...variants.map((v) => v.weightInGrams ?? 0),
+    const weight = Math.max(
+      ...variants.map((v) => v.weight ?? 0),
       0
     );
 
@@ -123,7 +123,7 @@ export async function seedMerch(prisma: PrismaClient) {
         isFeatured: item.isFeatured ?? false,
         featuredOrder: item.featuredOrder,
         type: ProductType.MERCH,
-        weightInGrams,
+        weight,
         roastLevel: RoastLevel.MEDIUM,
         images: {
           deleteMany: {},
@@ -142,7 +142,7 @@ export async function seedMerch(prisma: PrismaClient) {
         isFeatured: item.isFeatured ?? false,
         featuredOrder: item.featuredOrder,
         type: ProductType.MERCH,
-        weightInGrams,
+        weight,
         roastLevel: RoastLevel.MEDIUM,
         images: {
           create: [{ url: item.imageUrl, altText: item.name, order: 1 }],

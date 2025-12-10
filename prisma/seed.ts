@@ -48,13 +48,13 @@ const prisma = createPrismaClient();
 
 const deriveProductWeight = (productData: {
   variants?: {
-    create?: Array<{ weightInGrams?: number | null } | undefined>;
+    create?: Array<{ weight?: number | null } | undefined>;
   };
 }) => {
   const variantCreates = productData.variants?.create;
   if (Array.isArray(variantCreates)) {
     const weights = variantCreates
-      .map((v) => v?.weightInGrams ?? 0)
+      .map((v) => v?.weight ?? 0)
       .filter((w) => typeof w === "number" && Number.isFinite(w));
     const maxWeight = weights.length > 0 ? Math.max(...weights) : 0;
     if (maxWeight > 0) return maxWeight;
@@ -413,7 +413,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 150,
               purchaseOptions: {
                 create: [
@@ -437,7 +437,7 @@ async function main() {
             },
             {
               name: "2lb Bag",
-              weightInGrams: 907,
+              weight: 907,
               stockQuantity: 75,
               purchaseOptions: {
                 create: [
@@ -485,7 +485,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 120,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2100 }],
@@ -524,7 +524,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 85,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2400 }],
@@ -563,7 +563,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 95,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2050 }],
@@ -571,7 +571,7 @@ async function main() {
             },
             {
               name: "5lb Bulk Bag",
-              weightInGrams: 2268,
+              weight: 2268,
               stockQuantity: 25,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 12500 }],
@@ -610,7 +610,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 45,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2650 }],
@@ -649,7 +649,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 110,
               purchaseOptions: {
                 create: [
@@ -700,7 +700,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 180,
               purchaseOptions: {
                 create: [
@@ -724,7 +724,7 @@ async function main() {
             },
             {
               name: "2lb Bag",
-              weightInGrams: 907,
+              weight: 907,
               stockQuantity: 90,
               purchaseOptions: {
                 create: [
@@ -772,7 +772,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 130,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2100 }],
@@ -780,7 +780,7 @@ async function main() {
             },
             {
               name: "2lb Bag",
-              weightInGrams: 907,
+              weight: 907,
               stockQuantity: 65,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 5400 }],
@@ -820,7 +820,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 100,
               purchaseOptions: {
                 create: [
@@ -875,7 +875,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 90,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2250 }],
@@ -914,7 +914,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 140,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 1950 }],
@@ -922,7 +922,7 @@ async function main() {
             },
             {
               name: "5lb Bulk Bag",
-              weightInGrams: 2268,
+              weight: 2268,
               stockQuantity: 40,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 11500 }],
@@ -961,7 +961,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 70,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2150 }],
@@ -1000,7 +1000,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 80,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2200 }],
@@ -1039,7 +1039,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 95,
               purchaseOptions: {
                 create: [
@@ -1087,7 +1087,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 75,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2250 }],
@@ -1126,7 +1126,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 50,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2550 }],
@@ -1168,7 +1168,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 110,
               purchaseOptions: {
                 create: [
@@ -1224,7 +1224,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 85,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2650 }],
@@ -1263,7 +1263,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 90,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2400 }],
@@ -1302,7 +1302,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 60,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2500 }],
@@ -1341,7 +1341,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 55,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2450 }],
@@ -1380,7 +1380,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 45,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2600 }],
@@ -1419,7 +1419,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 25,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 4500 }],
@@ -1458,7 +1458,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 30,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 3800 }],
@@ -1497,7 +1497,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 65,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2550 }],
@@ -1536,7 +1536,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 70,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2400 }],
@@ -1575,7 +1575,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 40,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2450 }],
@@ -1614,7 +1614,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 20,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 5200 }],
@@ -1653,7 +1653,7 @@ async function main() {
           create: [
             {
               name: "12oz Bag",
-              weightInGrams: 340,
+              weight: 340,
               stockQuantity: 50,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2350 }],
@@ -1692,7 +1692,7 @@ async function main() {
           create: [
             {
               name: "8oz Bag",
-              weightInGrams: 227,
+              weight: 227,
               stockQuantity: 35,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 4800 }],
@@ -1768,13 +1768,13 @@ async function main() {
         roastLevel: roastLevel,
         isFeatured: productData.isFeatured,
         featuredOrder: productData.featuredOrder,
-        weightInGrams: productWeight,
+        weight: productWeight,
         // We do not update images/variants here to avoid breaking FK constraints with Orders
       },
       create: {
         ...productData,
         roastLevel: roastLevel,
-        weightInGrams: productWeight,
+        weight: productWeight,
       },
     });
 

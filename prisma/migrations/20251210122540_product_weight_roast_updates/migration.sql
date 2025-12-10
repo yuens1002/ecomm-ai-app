@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Product" ALTER COLUMN "roastLevel" DROP NOT NULL,
+ALTER COLUMN "roastLevel" DROP DEFAULT,
+ALTER COLUMN "weightInGrams" DROP NOT NULL,
+ALTER COLUMN "weightInGrams" DROP DEFAULT;

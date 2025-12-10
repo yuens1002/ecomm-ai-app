@@ -20,6 +20,7 @@ import {
 import { Plus, Pencil, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ProductFormClient from "./ProductFormClient";
+import type { ProductType } from "@prisma/client";
 
 interface PurchaseOption {
   type: "ONE_TIME" | "SUBSCRIPTION";
@@ -44,7 +45,17 @@ interface Product {
   variants: Variant[];
 }
 
-export default function ProductManagementClient() {
+interface ProductManagementClientProps {
+  title?: string;
+  description?: string;
+  productType?: ProductType;
+}
+
+export default function ProductManagementClient({
+  title = "Product Management",
+  description = "Manage products and inventory",
+  productType = "COFFEE",
+}: ProductManagementClientProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"list" | "form">("list");
@@ -55,7 +66,9 @@ export default function ProductManagementClient() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const response = await fetch("/api/admin/products");
+      const search = new URLSearchParams();
+      if (productType) search.set("type", productType);
+      const response = await fetch(`/api/admin/products?${search.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch products");
       const data = await response.json();
       setProducts(data.products);
@@ -69,7 +82,7 @@ export default function ProductManagementClient() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [productType, toast]);
 
   useEffect(() => {
     if (view === "list") {
@@ -103,6 +116,7 @@ export default function ProductManagementClient() {
         </Button>
         <ProductFormClient
           productId={selectedProductId}
+          productType={productType}
           onClose={() => {
             setView("list");
             setSelectedProductId(undefined);
@@ -120,8 +134,8 @@ export default function ProductManagementClient() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <div className="space-y-1.5">
-          <CardTitle>Product Management</CardTitle>
-          <CardDescription>Manage products and inventory</CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
         </div>
         <Button
           onClick={() => {

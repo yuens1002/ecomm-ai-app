@@ -10,6 +10,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { ProductType, RoastLevel } from "@prisma/client";
+import {
   Field,
   FieldContent,
   FieldDescription,
@@ -28,6 +36,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
 import ProductVariantsClient from "./ProductVariantsClient";
+import { PRODUCT_TYPES, ROAST_LEVELS } from "@/lib/productEnums";
 
 interface Category {
   id: string;
@@ -39,6 +48,7 @@ interface ProductFormClientProps {
   productId?: string; // If undefined, it's a new product
   onClose?: () => void;
   onSaved?: (id: string) => void;
+  productType?: ProductType;
 }
 
 const formSchema = z.object({
@@ -46,10 +56,20 @@ const formSchema = z.object({
   slug: z.string().min(1, "Slug is required"),
   description: z.string().optional(),
   imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  weightInGrams: z.coerce.number().int().min(1, "Weight is required"),
+  weight: z.union([
+    z.coerce.number().int().positive("Weight must be greater than zero"),
+    z.literal("").transform(() => undefined as unknown as number),
+    z.undefined(),
+  ]),
   isOrganic: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
   categoryIds: z.array(z.string()).default([]),
+  productType: z.enum(PRODUCT_TYPES).default(PRODUCT_TYPES[0]),
+  roastLevel: z.enum(ROAST_LEVELS).default("MEDIUM"),
+  origin: z.string().optional(),
+  variety: z.string().optional(),
+  altitude: z.string().optional(),
+  tastingNotes: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof formSchema>;
@@ -57,6 +77,7 @@ type ProductFormValues = z.infer<typeof formSchema>;
 export default function ProductFormClient({
   productId,
   onSaved,
+  productType = "COFFEE",
 }: ProductFormClientProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(!!productId);
@@ -70,10 +91,16 @@ export default function ProductFormClient({
       slug: "",
       description: "",
       imageUrl: "",
-      weightInGrams: 0,
+      weight: undefined,
       isOrganic: false,
       isFeatured: false,
       categoryIds: [],
+      productType,
+      roastLevel: "MEDIUM",
+      origin: "",
+      variety: "",
+      altitude: "",
+      tastingNotes: "",
     },
   });
 
@@ -121,10 +148,18 @@ export default function ProductFormClient({
           slug: p.slug,
           description: p.description || "",
           imageUrl: p.images?.[0]?.url || "",
-          weightInGrams: p.weightInGrams ?? 0,
+          weight: p.weight ?? undefined,
           isOrganic: p.isOrganic,
           isFeatured: p.isFeatured,
           categoryIds: p.categoryIds || [],
+          productType: p.type || productType,
+          roastLevel: (p.roastLevel as RoastLevel) || "MEDIUM",
+          origin: Array.isArray(p.origin) ? p.origin.join(", ") : "",
+          variety: p.variety || "",
+          altitude: p.altitude || "",
+          tastingNotes: Array.isArray(p.tastingNotes)
+            ? p.tastingNotes.join(", ")
+            : "",
         });
       } catch (error) {
         console.error("Error:", error);
@@ -137,7 +172,7 @@ export default function ProductFormClient({
         setLoading(false);
       }
     },
-    [form, toast]
+    [form, toast, productType]
   );
 
   useEffect(() => {
@@ -147,6 +182,14 @@ export default function ProductFormClient({
     }
   }, [productId, fetchCategories, fetchProduct]);
 
+  const toList = (value?: string | null) =>
+    value
+      ? value
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean)
+      : [];
+
   const onSubmit = async (data: ProductFormValues) => {
     try {
       const url = productId
@@ -155,10 +198,21 @@ export default function ProductFormClient({
 
       const method = productId ? "PUT" : "POST";
 
+      const isCoffee = data.productType === "COFFEE";
+      const payload = {
+        ...data,
+        weight: isCoffee ? (data.weight ?? undefined) : data.weight,
+        origin: isCoffee ? toList(data.origin) : [],
+        tastingNotes: isCoffee ? toList(data.tastingNotes) : [],
+        variety: isCoffee ? data.variety : "",
+        altitude: isCoffee ? data.altitude : "",
+        roastLevel: isCoffee ? data.roastLevel : null,
+      };
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) throw new Error("Failed to save product");
@@ -205,6 +259,12 @@ export default function ProductFormClient({
           <CardTitle>{productId ? "Edit Product" : "New Product"}</CardTitle>
           <CardDescription>
             {productId ? originalName : "Create a new product"}
+            <div className="text-xs text-muted-foreground">
+              Fill out the details for your product and add variants.
+              <br />
+              Tip: keep weight units consistent across your catalog; shipping
+              estimates rely on the weight values you enter.
+            </div>
           </CardDescription>
         </div>
         <Button
@@ -226,6 +286,9 @@ export default function ProductFormClient({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Left Column: Base Info */}
               <FieldGroup>
+                <div className="text-xs font-semibold uppercase text-muted-foreground">
+                  {productType === "COFFEE" ? "Coffee" : "Merch"} Product
+                </div>
                 <FormField
                   control={form.control}
                   name="name"
@@ -283,7 +346,7 @@ export default function ProductFormClient({
               <FieldGroup>
                 <FormField
                   control={form.control}
-                  name="weightInGrams"
+                  name="weight"
                   render={({ field, fieldState }) => (
                     <Field>
                       <FieldLabel>Shipping weight (grams)</FieldLabel>
@@ -310,6 +373,34 @@ export default function ProductFormClient({
                     </Field>
                   )}
                 />
+
+                {productType === "COFFEE" && (
+                  <FormField
+                    control={form.control}
+                    name="roastLevel"
+                    render={({ field, fieldState }) => (
+                      <Field>
+                        <FieldLabel>Roast Level</FieldLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={(val) => field.onChange(val)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ROAST_LEVELS.map((level) => (
+                              <SelectItem key={level} value={level}>
+                                {level.replace("_", " ")}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FieldError errors={[fieldState.error]} />
+                      </Field>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
@@ -368,6 +459,71 @@ export default function ProductFormClient({
                     )}
                   />
                 </FieldGroup>
+
+                {productType === "COFFEE" && (
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="origin"
+                      render={({ field, fieldState }) => (
+                        <Field>
+                          <FieldLabel>Origin(s)</FieldLabel>
+                          <Input
+                            {...field}
+                            placeholder="e.g., Colombia, Ethiopia"
+                          />
+                          <FieldDescription>
+                            Comma-separated list used for coffee origin chips.
+                          </FieldDescription>
+                          <FieldError errors={[fieldState.error]} />
+                        </Field>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="variety"
+                      render={({ field, fieldState }) => (
+                        <Field>
+                          <FieldLabel>Variety</FieldLabel>
+                          <Input {...field} placeholder="e.g., Bourbon" />
+                          <FieldError errors={[fieldState.error]} />
+                        </Field>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="altitude"
+                      render={({ field, fieldState }) => (
+                        <Field>
+                          <FieldLabel>Altitude</FieldLabel>
+                          <Input {...field} placeholder="e.g., 1800m" />
+                          <FieldError errors={[fieldState.error]} />
+                        </Field>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="tastingNotes"
+                      render={({ field, fieldState }) => (
+                        <Field>
+                          <FieldLabel>Tasting Notes</FieldLabel>
+                          <Input
+                            {...field}
+                            placeholder="e.g., Chocolate, Caramel"
+                          />
+                          <FieldDescription>
+                            Comma-separated list for notes shown on product
+                            pages.
+                          </FieldDescription>
+                          <FieldError errors={[fieldState.error]} />
+                        </Field>
+                      )}
+                    />
+                  </div>
+                )}
               </FieldGroup>
             </div>
 

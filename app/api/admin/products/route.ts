@@ -1,20 +1,30 @@
 import { NextResponse } from "next/server";
+import { ProductType, RoastLevel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
 
 // GET /api/admin/products - List all products
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth = await requireAdminApi();
     if (!auth.authorized) {
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const typeParam = searchParams.get("type") as ProductType | null;
+    const productType =
+      typeParam && Object.values(ProductType).includes(typeParam)
+        ? typeParam
+        : null;
+
     const products = await prisma.product.findMany({
+      where: productType ? { type: productType } : undefined,
       select: {
         id: true,
         name: true,
         slug: true,
+        type: true,
         variants: {
           select: {
             name: true,
@@ -91,11 +101,65 @@ export async function POST(request: Request) {
       isFeatured,
       categoryIds,
       imageUrl,
-      weightInGrams,
+      weight,
+      productType,
+      roastLevel,
+      origin,
+      variety,
+      altitude,
+      tastingNotes,
     } = body;
 
-    const weight = Number(weightInGrams);
-    if (!Number.isFinite(weight) || weight <= 0) {
+    const typeToSave =
+      productType && Object.values(ProductType).includes(productType)
+        ? productType
+        : ProductType.COFFEE;
+    const roastLevelToSave =
+      roastLevel && Object.values(RoastLevel).includes(roastLevel)
+        ? roastLevel
+        : undefined;
+
+    const parsedWeight = Number.isFinite(Number(weight))
+      ? Number(weight)
+      : undefined;
+    const hasValidWeight = parsedWeight !== undefined && parsedWeight > 0;
+
+    const isCoffee = typeToSave === ProductType.COFFEE;
+    const originList = Array.isArray(origin)
+      ? origin
+      : typeof origin === "string"
+        ? [origin]
+        : [];
+    const tastingNotesList = Array.isArray(tastingNotes)
+      ? tastingNotes
+      : typeof tastingNotes === "string"
+        ? [tastingNotes]
+        : [];
+
+    const shouldValidateCoffee = productType === ProductType.COFFEE;
+
+    if (shouldValidateCoffee) {
+      if (!roastLevelToSave) {
+        return NextResponse.json(
+          { error: "Roast level is required for coffee products" },
+          { status: 400 }
+        );
+      }
+      if (originList.length === 0) {
+        return NextResponse.json(
+          { error: "At least one origin is required for coffee products" },
+          { status: 400 }
+        );
+      }
+      if (weight !== undefined && !hasValidWeight) {
+        return NextResponse.json(
+          { error: "Weight must be greater than zero when provided" },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (!isCoffee && !hasValidWeight) {
       return NextResponse.json(
         { error: "Weight is required and must be greater than zero" },
         { status: 400 }
@@ -111,7 +175,17 @@ export async function POST(request: Request) {
           description,
           isOrganic,
           isFeatured,
-          weightInGrams: weight,
+          weight: isCoffee
+            ? hasValidWeight
+              ? parsedWeight
+              : undefined
+            : parsedWeight,
+          type: typeToSave,
+          roastLevel: isCoffee ? (roastLevelToSave ?? RoastLevel.MEDIUM) : null,
+          origin: isCoffee ? originList : [],
+          variety: isCoffee ? variety || null : null,
+          altitude: isCoffee ? altitude || null : null,
+          tastingNotes: isCoffee ? tastingNotesList : [],
         },
       });
 

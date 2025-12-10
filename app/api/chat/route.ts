@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       variants: p.variants.map((v) => ({
         id: v.id,
         name: v.name,
-        weightInGrams: v.weightInGrams,
+        weight: v.weight,
         purchaseOptions: v.purchaseOptions.map((po) => ({
           id: po.id,
           type: po.type,

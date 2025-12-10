@@ -40,7 +40,7 @@ interface PurchaseOption {
 interface Variant {
   id: string;
   name: string;
-  weightInGrams: number | null;
+  weight: number | null;
   stockQuantity: number;
   purchaseOptions: PurchaseOption[];
 }
@@ -59,7 +59,7 @@ export default function ProductVariantsClient({
   const [editingVariant, setEditingVariant] = useState<Variant | null>(null);
   const [variantForm, setVariantForm] = useState({
     name: "",
-    weightInGrams: "",
+    weight: "",
     stockQuantity: "",
   });
 
@@ -100,14 +100,14 @@ export default function ProductVariantsClient({
       setEditingVariant(variant);
       setVariantForm({
         name: variant.name,
-        weightInGrams: variant.weightInGrams?.toString() ?? "",
+        weight: variant.weight?.toString() ?? "",
         stockQuantity: variant.stockQuantity.toString(),
       });
     } else {
       setEditingVariant(null);
       setVariantForm({
         name: "",
-        weightInGrams: "",
+        weight: "",
         stockQuantity: "0",
       });
     }
@@ -254,10 +254,7 @@ export default function ProductVariantsClient({
                   <h4 className="font-semibold text-lg">{variant.name}</h4>
                   <div className="text-sm text-muted-foreground flex gap-4">
                     <span>
-                      Weight:{" "}
-                      {variant.weightInGrams
-                        ? `${variant.weightInGrams}g`
-                        : "-"}
+                      Weight: {variant.weight ? `${variant.weight}g` : "-"}
                     </span>
                     <span>Stock: {variant.stockQuantity}</span>
                   </div>
@@ -386,11 +383,11 @@ export default function ProductVariantsClient({
                 <Label>Weight (grams)</Label>
                 <Input
                   type="number"
-                  value={variantForm.weightInGrams}
+                  value={variantForm.weight}
                   onChange={(e) =>
                     setVariantForm({
                       ...variantForm,
-                      weightInGrams: e.target.value,
+                      weight: e.target.value,
                     })
                   }
                   placeholder="340"

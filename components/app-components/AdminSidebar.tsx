@@ -15,9 +15,31 @@ import {
   BarChart3,
   ChevronRight,
   ExternalLink,
+  ToyBrick,
 } from "lucide-react";
 import { useState } from "react";
 import { PageType } from "@prisma/client";
+
+// Mask-based icon so the SVG inherits current text color (works for active state inversion)
+function CoffeeBeanIcon({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn("inline-block h-5 w-5", className)}
+      style={{
+        maskImage: "url(/beans.svg)",
+        WebkitMaskImage: "url(/beans.svg)",
+        maskRepeat: "no-repeat",
+        WebkitMaskRepeat: "no-repeat",
+        maskPosition: "center",
+        WebkitMaskPosition: "center",
+        maskSize: "contain",
+        WebkitMaskSize: "contain",
+        backgroundColor: "currentColor",
+      }}
+    />
+  );
+}
 
 interface Page {
   id: string;
@@ -35,6 +57,8 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   order?: number;
+  isLabel?: boolean;
+  isChild?: boolean;
 }
 
 interface NavSection {
@@ -120,14 +144,22 @@ const staticNavSections: NavSection[] = [
         icon: ShoppingCart,
       },
       {
-        title: "Coffee Products",
-        href: "/admin/products",
+        title: "Products",
+        href: "#products",
         icon: Package,
+        isLabel: true,
       },
       {
-        title: "Merch Products",
+        title: "Coffee",
+        href: "/admin/products",
+        icon: CoffeeBeanIcon,
+        isChild: true,
+      },
+      {
+        title: "Merch",
         href: "/admin/merch",
-        icon: Package,
+        icon: ToyBrick,
+        isChild: true,
       },
       {
         title: "Categories",
@@ -224,6 +256,24 @@ export default function AdminSidebar({ pages }: { pages: Page[] }) {
                     (item.href !== "/admin" && pathname.startsWith(item.href));
                   const Icon = item.icon;
 
+                  if (item.isLabel) {
+                    return (
+                      <div
+                        key={item.title}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+                          collapsed && "justify-center"
+                        )}
+                        title={collapsed ? item.title : undefined}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        {!collapsed && (
+                          <span className="flex-1">{item.title}</span>
+                        )}
+                      </div>
+                    );
+                  }
+
                   return (
                     <Link
                       key={item.href}
@@ -233,7 +283,11 @@ export default function AdminSidebar({ pages }: { pages: Page[] }) {
                         isActive
                           ? "bg-primary text-primary-foreground"
                           : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                        collapsed && "justify-center"
+                        collapsed
+                          ? "justify-center"
+                          : item.isChild
+                            ? "pl-6"
+                            : ""
                       )}
                       title={collapsed ? item.title : undefined}
                     >

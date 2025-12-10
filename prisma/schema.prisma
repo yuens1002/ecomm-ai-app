@@ -12,7 +12,7 @@ model Product {
   name              String
   slug              String                 @unique
   type              ProductType            @default(COFFEE)
-  weightInGrams     Int                    @default(0)
+  weight            Int?
   sku               String?
   description       String?
   tastingNotes      String[]
@@ -22,7 +22,7 @@ model Product {
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
   origin            String[]
-  roastLevel        RoastLevel             @default(MEDIUM)
+  roastLevel        RoastLevel?
   altitude          String?
   variety           String?
   categories        CategoriesOnProducts[]
@@ -74,7 +74,7 @@ model ProductImage {
 model ProductVariant {
   id                String           @id @default(cuid())
   name              String
-  weightInGrams     Int?
+  weight            Int?
   sku               String?
   productId         String
   stockQuantity     Int              @default(0)

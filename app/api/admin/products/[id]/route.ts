@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ProductType, RoastLevel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
 
@@ -73,11 +74,58 @@ export async function PUT(
       isFeatured,
       categoryIds,
       imageUrl,
-      weightInGrams,
+      weight,
+      productType,
+      roastLevel,
+      origin,
+      variety,
+      altitude,
+      tastingNotes,
     } = body;
 
-    const weight = Number(weightInGrams);
-    if (!Number.isFinite(weight) || weight <= 0) {
+    const typeToSave =
+      productType && Object.values(ProductType).includes(productType)
+        ? productType
+        : undefined;
+    const roastLevelToSave =
+      roastLevel && Object.values(RoastLevel).includes(roastLevel)
+        ? roastLevel
+        : undefined;
+
+    const parsedWeight = Number.isFinite(Number(weight))
+      ? Number(weight)
+      : undefined;
+    const hasValidWeight = parsedWeight !== undefined && parsedWeight > 0;
+
+    const targetType = typeToSave ?? ProductType.COFFEE;
+    const isCoffee = targetType === ProductType.COFFEE;
+    if (isCoffee) {
+      const originList = Array.isArray(origin)
+        ? origin
+        : typeof origin === "string"
+          ? [origin]
+          : [];
+      if (!roastLevelToSave) {
+        return NextResponse.json(
+          { error: "Roast level is required for coffee products" },
+          { status: 400 }
+        );
+      }
+      if (originList.length === 0) {
+        return NextResponse.json(
+          { error: "At least one origin is required for coffee products" },
+          { status: 400 }
+        );
+      }
+      if (weight !== undefined && !hasValidWeight) {
+        return NextResponse.json(
+          { error: "Weight must be greater than zero when provided" },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (!isCoffee && !hasValidWeight) {
       return NextResponse.json(
         { error: "Weight is required and must be greater than zero" },
         { status: 400 }
@@ -95,7 +143,37 @@ export async function PUT(
           description,
           isOrganic,
           isFeatured,
-          weightInGrams: weight,
+          weight: isCoffee
+            ? hasValidWeight
+              ? parsedWeight
+              : undefined
+            : parsedWeight,
+          ...(typeToSave ? { type: typeToSave } : {}),
+          ...(targetType === ProductType.COFFEE && roastLevelToSave
+            ? { roastLevel: roastLevelToSave }
+            : {}),
+          ...(targetType === ProductType.MERCH
+            ? {
+                roastLevel: null,
+                origin: [],
+                tastingNotes: [],
+                variety: null,
+                altitude: null,
+              }
+            : {
+                origin: Array.isArray(origin)
+                  ? origin
+                  : typeof origin === "string"
+                    ? [origin]
+                    : [],
+                tastingNotes: Array.isArray(tastingNotes)
+                  ? tastingNotes
+                  : typeof tastingNotes === "string"
+                    ? [tastingNotes]
+                    : [],
+                variety: variety || null,
+                altitude: altitude || null,
+              }),
         },
       });
 
