@@ -2,6 +2,30 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
 
+const LABEL_KEY_MAP: Record<string, string> = {
+  Origins: "label_origins",
+  Roasts: "label_roasts",
+  Collections: "label_collections",
+};
+
+async function resolveLabelSettingId(label?: string) {
+  const key = label ? LABEL_KEY_MAP[label] : undefined;
+  if (key) {
+    const setting = await prisma.siteSettings.findUnique({ where: { key } });
+    if (setting) return setting.id;
+  }
+
+  const defaultLabelSetting = await prisma.siteSettings.findUnique({
+    where: { key: "defaultCategoryLabel" },
+  });
+
+  if (defaultLabelSetting?.value) {
+    return defaultLabelSetting.value;
+  }
+
+  return undefined;
+}
+
 // PUT /api/admin/categories/[id] - Update a category
 export async function PUT(
   req: Request,
@@ -15,17 +39,29 @@ export async function PUT(
 
     const { id } = await params;
     const body = await req.json();
-    const { name, slug } = body;
+    const { name, slug, label } = body;
+
+    const labelSettingId = await resolveLabelSettingId(label);
 
     const category = await prisma.category.update({
       where: { id },
       data: {
         name,
         slug,
+        ...(labelSettingId ? { labelSettingId } : {}),
+      },
+      include: {
+        _count: { select: { products: true } },
+        labelSetting: true,
       },
     });
 
-    return NextResponse.json({ category });
+    return NextResponse.json({
+      category: {
+        ...category,
+        label: category.labelSetting?.value ?? label ?? "Other",
+      },
+    });
   } catch (error) {
     console.error("Error updating category:", error);
     return NextResponse.json(

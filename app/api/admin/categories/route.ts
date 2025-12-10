@@ -2,6 +2,31 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
 
+const LABEL_KEY_MAP: Record<string, string> = {
+  Origins: "label_origins",
+  Roasts: "label_roasts",
+  Collections: "label_collections",
+};
+
+async function resolveLabelSettingId(label?: string) {
+  const key = label ? LABEL_KEY_MAP[label] : undefined;
+  if (key) {
+    const setting = await prisma.siteSettings.findUnique({ where: { key } });
+    if (setting) return setting.id;
+  }
+
+  // Fallback to defaultCategoryLabel which stores the id of the default label setting
+  const defaultLabelSetting = await prisma.siteSettings.findUnique({
+    where: { key: "defaultCategoryLabel" },
+  });
+
+  if (defaultLabelSetting?.value) {
+    return defaultLabelSetting.value;
+  }
+
+  throw new Error("Category label setting not configured");
+}
+
 // GET /api/admin/categories - List all categories
 export async function GET() {
   try {
@@ -16,10 +41,15 @@ export async function GET() {
         _count: {
           select: { products: true },
         },
+        labelSetting: true,
       },
     });
+    const payload = categories.map((category) => ({
+      ...category,
+      label: category.labelSetting?.value ?? "Other",
+    }));
 
-    return NextResponse.json({ categories });
+    return NextResponse.json({ categories: payload });
   } catch (error) {
     console.error("Error fetching categories:", error);
     return NextResponse.json(
@@ -38,7 +68,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { name, slug } = body;
+    const { name, slug, label } = body;
 
     if (!name || !slug) {
       return NextResponse.json(
@@ -47,11 +77,28 @@ export async function POST(req: Request) {
       );
     }
 
-    // TODO: This endpoint needs to be updated to handle labelSettingId
-    // For now, throw an error since the schema has changed
+    const labelSettingId = await resolveLabelSettingId(label);
+
+    const category = await prisma.category.create({
+      data: {
+        name,
+        slug,
+        labelSettingId,
+      },
+      include: {
+        _count: { select: { products: true } },
+        labelSetting: true,
+      },
+    });
+
     return NextResponse.json(
-      { error: "Category creation endpoint needs migration to new schema" },
-      { status: 501 }
+      {
+        category: {
+          ...category,
+          label: category.labelSetting?.value ?? label ?? "Other",
+        },
+      },
+      { status: 201 }
     );
   } catch (error) {
     console.error("Error creating category:", error);

@@ -30,7 +30,7 @@ import {
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-interface Category {
+type Category = {
   id: string;
   name: string;
   slug: string;
@@ -38,7 +38,7 @@ interface Category {
   _count?: {
     products: number;
   };
-}
+};
 
 export default function CategoryManagementClient() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -265,7 +265,7 @@ export default function CategoryManagementClient() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Origins">Origins</SelectItem>
-                  <SelectItem value="Roast Level">Roast Level</SelectItem>
+                  <SelectItem value="Roasts">Roasts</SelectItem>
                   <SelectItem value="Collections">Collections</SelectItem>
                   <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
