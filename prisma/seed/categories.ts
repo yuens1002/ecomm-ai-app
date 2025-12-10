@@ -3,22 +3,26 @@ import { PrismaClient } from "@prisma/client";
 export async function seedCategories(prisma: PrismaClient) {
   console.log("  📂 Creating categories...");
 
-  // First, get the label settings created in settings module
-  const labelCollections = await prisma.siteSettings.findUnique({
-    where: { key: "label_collections" },
+  const labelCollections = await prisma.categoryLabel.upsert({
+    where: { name: "Collections" },
+    update: { order: 0 },
+    create: { name: "Collections", order: 0 },
   });
-  const labelRoasts = await prisma.siteSettings.findUnique({
-    where: { key: "label_roasts" },
+  const labelRoasts = await prisma.categoryLabel.upsert({
+    where: { name: "Roasts" },
+    update: { order: 1 },
+    create: { name: "Roasts", order: 1 },
   });
-  const labelOrigins = await prisma.siteSettings.findUnique({
-    where: { key: "label_origins" },
+  const labelOrigins = await prisma.categoryLabel.upsert({
+    where: { name: "Origins" },
+    update: { order: 2 },
+    create: { name: "Origins", order: 2 },
   });
-
-  if (!labelCollections || !labelRoasts || !labelOrigins) {
-    throw new Error(
-      "Required label settings not found. Run seedSettings first."
-    );
-  }
+  await prisma.categoryLabel.upsert({
+    where: { name: "Unassigned" },
+    update: {},
+    create: { name: "Unassigned", order: 3 },
+  });
 
   // Collection Categories
   const _catBlends = await prisma.category.upsert({
@@ -27,7 +31,6 @@ export async function seedCategories(prisma: PrismaClient) {
     create: {
       name: "Blend",
       slug: "blends",
-      labelSettingId: labelCollections.id,
       order: 20,
     },
   });
@@ -38,7 +41,6 @@ export async function seedCategories(prisma: PrismaClient) {
     create: {
       name: "Merch",
       slug: "merch",
-      labelSettingId: labelCollections.id,
       order: 25,
       showPurchaseOptions: true,
     },
@@ -50,7 +52,6 @@ export async function seedCategories(prisma: PrismaClient) {
     create: {
       name: "Single Origin",
       slug: "single-origin",
-      labelSettingId: labelCollections.id,
       order: 22,
     },
   });
@@ -61,7 +62,6 @@ export async function seedCategories(prisma: PrismaClient) {
     create: {
       name: "Micro Lot",
       slug: "micro-lot",
-      labelSettingId: labelCollections.id,
       order: 21,
     },
   });
@@ -73,7 +73,6 @@ export async function seedCategories(prisma: PrismaClient) {
     create: {
       name: "Dark Roast",
       slug: "dark-roast",
-      labelSettingId: labelRoasts.id,
       order: 3,
     },
   });
@@ -84,7 +83,6 @@ export async function seedCategories(prisma: PrismaClient) {
     create: {
       name: "Medium Roast",
       slug: "medium-roast",
-      labelSettingId: labelRoasts.id,
       order: 2,
     },
   });
@@ -95,7 +93,6 @@ export async function seedCategories(prisma: PrismaClient) {
     create: {
       name: "Light Roast",
       slug: "light-roast",
-      labelSettingId: labelRoasts.id,
       order: 1,
     },
   });
@@ -138,11 +135,38 @@ export async function seedCategories(prisma: PrismaClient) {
       create: {
         name: origin,
         slug,
-        labelSettingId: labelOrigins.id,
         order: 100 + i,
       },
     });
   }
+
+  const attach = async (labelId: string, categoryId: string, order: number) => {
+    await prisma.categoryLabelCategory.upsert({
+      where: {
+        labelId_categoryId: {
+          labelId,
+          categoryId,
+        },
+      },
+      update: { order },
+      create: { labelId, categoryId, order },
+    });
+  };
+
+  await attach(labelCollections.id, _catBlends.id, 0);
+  await attach(labelCollections.id, _catMicroLot.id, 1);
+  await attach(labelCollections.id, _catSingleOrigin.id, 2);
+  await attach(labelCollections.id, _catMerch.id, 3);
+
+  await attach(labelRoasts.id, _catLight.id, 0);
+  await attach(labelRoasts.id, _catMedium.id, 1);
+  await attach(labelRoasts.id, _catDark.id, 2);
+
+  await Promise.all(
+    Object.values(originCategories).map((cat, idx) =>
+      attach(labelOrigins.id, cat.id, idx)
+    )
+  );
 
   console.log("  ✅ Categories created/verified");
 }

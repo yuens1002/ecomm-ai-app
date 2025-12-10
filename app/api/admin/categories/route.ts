@@ -2,60 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
 
-const LABEL_KEY_MAP: Record<string, string> = {
-  Origins: "label_origins",
-  Roasts: "label_roasts",
-  Collections: "label_collections",
-};
-
-const slugifyLabel = (label: string) =>
-  label
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-
-async function resolveLabelSettingId(label?: string) {
-  // 1) Known seeded labels
-  const key = label ? LABEL_KEY_MAP[label] : undefined;
-  if (key) {
-    const setting = await prisma.siteSettings.findUnique({ where: { key } });
-    if (setting) return setting.id;
-  }
-
-  // 2) Existing custom label by value
-  if (label) {
-    const existing = await prisma.siteSettings.findFirst({
-      where: { value: label },
-    });
-    if (existing) return existing.id;
-
-    const slug = slugifyLabel(label) || "custom";
-    const candidateKey = `label_${slug}`;
-
-    // Upsert ensures idempotency if the key already exists
-    const created = await prisma.siteSettings.upsert({
-      where: { key: candidateKey },
-      update: { value: label },
-      create: { key: candidateKey, value: label },
-    });
-    return created.id;
-  }
-
-  // 3) Fallback to defaultCategoryLabel which stores the id of the default label setting
-  const defaultLabelSetting = await prisma.siteSettings.findUnique({
-    where: { key: "defaultCategoryLabel" },
-  });
-
-  if (defaultLabelSetting?.value) {
-    return defaultLabelSetting.value;
-  }
-
-  throw new Error("Category label setting not configured");
-}
-
-// GET /api/admin/categories - List all categories
+// GET /api/admin/categories - List all categories and labels
 export async function GET() {
   try {
     const auth = await requireAdminApi();
@@ -63,29 +10,37 @@ export async function GET() {
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
-    const [categories, groups] = await Promise.all([
+    const [categories, labels] = await Promise.all([
       prisma.category.findMany({
         orderBy: { name: "asc" },
         include: {
           _count: {
             select: { products: true },
           },
-          labelSetting: true,
+          labels: {
+            orderBy: { order: "asc" },
+            include: {
+              label: true,
+            },
+          },
         },
       }),
-      prisma.siteSettings.findMany({
-        where: { key: { startsWith: "label_" } },
-        select: { id: true, key: true, value: true },
-        orderBy: { value: "asc" },
+      prisma.categoryLabel.findMany({
+        orderBy: { order: "asc" },
       }),
     ]);
 
     const payload = categories.map((category) => ({
       ...category,
-      label: category.labelSetting?.value ?? "Other",
+      labels: category.labels.map((entry) => ({
+        id: entry.label.id,
+        name: entry.label.name,
+        icon: entry.label.icon,
+        order: entry.order,
+      })),
     }));
 
-    return NextResponse.json({ categories: payload, groups });
+    return NextResponse.json({ categories: payload, labels });
   } catch (error) {
     console.error("Error fetching categories:", error);
     return NextResponse.json(
@@ -104,7 +59,15 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { name, slug, label } = body;
+    const {
+      name,
+      slug,
+      labelIds = [] as string[],
+    } = body as {
+      name?: string;
+      slug?: string;
+      labelIds?: string[];
+    };
 
     if (!name || !slug) {
       return NextResponse.json(
@@ -113,25 +76,42 @@ export async function POST(req: Request) {
       );
     }
 
-    const labelSettingId = await resolveLabelSettingId(label);
-
     const category = await prisma.category.create({
       data: {
         name,
         slug,
-        labelSettingId,
       },
+    });
+
+    // Attach labels in the provided order (newly added first = index order)
+    if (Array.isArray(labelIds) && labelIds.length > 0) {
+      await prisma.categoryLabelCategory.createMany({
+        data: labelIds.map((labelId, idx) => ({
+          labelId,
+          categoryId: category.id,
+          order: idx,
+        })),
+      });
+    }
+
+    const fresh = await prisma.category.findUnique({
+      where: { id: category.id },
       include: {
         _count: { select: { products: true } },
-        labelSetting: true,
+        labels: { include: { label: true }, orderBy: { order: "asc" } },
       },
     });
 
     return NextResponse.json(
       {
         category: {
-          ...category,
-          label: category.labelSetting?.value ?? label ?? "Other",
+          ...fresh,
+          labels: fresh?.labels.map((entry) => ({
+            id: entry.label.id,
+            name: entry.label.name,
+            icon: entry.label.icon,
+            order: entry.order,
+          })),
         },
       },
       { status: 201 }

@@ -53,27 +53,27 @@ async function getBrandingSettings() {
  * Get all categories grouped by their label for footer navigation
  */
 async function getCategoriesForFooter() {
-  const categories = await prisma.category.findMany({
+  const labels = await prisma.categoryLabel.findMany({
     orderBy: { order: "asc" },
     include: {
-      labelSetting: {
-        select: { value: true },
+      categories: {
+        orderBy: { order: "asc" },
+        include: {
+          category: {
+            select: { name: true, slug: true },
+          },
+        },
       },
     },
   });
 
-  // Group categories by their label
   const grouped: Record<string, { name: string; slug: string }[]> = {};
 
-  categories.forEach((category) => {
-    const label = category.labelSetting.value;
-    if (!grouped[label]) {
-      grouped[label] = [];
-    }
-    grouped[label].push({
-      name: category.name,
-      slug: category.slug,
-    });
+  labels.forEach((label) => {
+    grouped[label.name] = label.categories.map((entry) => ({
+      name: entry.category.name,
+      slug: entry.category.slug,
+    }));
   });
 
   return grouped;

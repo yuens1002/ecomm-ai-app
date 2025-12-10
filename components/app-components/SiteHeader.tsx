@@ -7,7 +7,6 @@ import { useState } from "react";
 import { ThemeSwitcher } from "@components/app-components/ThemeSwitcher";
 import { ShoppingCart } from "@components/app-components/ShoppingCart";
 import { UserMenu } from "@components/app-components/UserMenu";
-import { Category } from "@/lib/types";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Menu, Home, User, Search, FileText, ChevronDown } from "lucide-react";
 import {
@@ -105,8 +104,15 @@ interface BannerConfig {
   };
 }
 
+interface NavCategory {
+  id: string;
+  name: string;
+  slug: string;
+  order: number;
+}
+
 interface SiteHeaderProps {
-  categoryGroups: Record<string, Category[]>;
+  categoryGroups: Record<string, NavCategory[]>;
   user: {
     name?: string | null;
     email?: string | null;

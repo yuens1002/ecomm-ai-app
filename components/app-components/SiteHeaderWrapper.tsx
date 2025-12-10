@@ -1,4 +1,4 @@
-import { getAllCategories } from "@/lib/data";
+import { getCategoryLabelsWithCategories } from "@/lib/data";
 import { auth } from "@/auth";
 import SiteHeader from "@components/app-components/SiteHeader";
 import { getPagesForHeader } from "@/app/actions";
@@ -11,14 +11,14 @@ import { getPagesForHeader } from "@/app/actions";
  */
 export default async function SiteHeaderWrapper() {
   // Fetch all data for the navigation menu in parallel
-  const [categories, session, headerPages] = await Promise.all([
-    getAllCategories(),
+  const [labels, session, headerPages] = await Promise.all([
+    getCategoryLabelsWithCategories(),
     auth(),
     getPagesForHeader(),
   ]);
 
   // Handle case where no categories are found (e.g., first deployment/empty DB)
-  if (!categories || categories.length === 0) {
+  if (!labels || labels.length === 0) {
     return (
       <SiteHeader
         categoryGroups={{}}
@@ -28,20 +28,21 @@ export default async function SiteHeaderWrapper() {
     );
   }
 
-  // Sort categories by order field, then group by label from SiteSettings
-  const sortedCategories = [...categories].sort((a, b) => a.order - b.order);
-
-  // Dynamically group categories by their labelSetting.value (maintaining sort order)
-  const categoryGroups = sortedCategories.reduce(
-    (acc, category) => {
-      const label = category.labelSetting.value;
-      if (!acc[label]) {
-        acc[label] = [];
-      }
-      acc[label].push(category);
+  // Build groups from labels -> categories (already ordered)
+  const categoryGroups = labels.reduce(
+    (acc, label) => {
+      acc[label.name] = label.categories.map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        order: cat.order,
+      }));
       return acc;
     },
-    {} as Record<string, typeof categories>
+    {} as Record<
+      string,
+      { id: string; name: string; slug: string; order: number }[]
+    >
   );
 
   // Pass the dynamically grouped categories and pages to the client component

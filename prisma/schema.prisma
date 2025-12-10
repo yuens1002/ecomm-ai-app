@@ -47,18 +47,37 @@ model CategoriesOnProducts {
 }
 
 model Category {
-  id                  String                 @id @default(cuid())
+  id                  String                  @id @default(cuid())
   name                String
-  slug                String                 @unique
-  kind                CategoryKind           @default(COFFEE)
-  isUsingDefaultLabel Boolean                @default(true)
-  labelSettingId      String
-  order               Int                    @default(0)
-  showPurchaseOptions Boolean                @default(true)
+  slug                String                  @unique
+  kind                CategoryKind            @default(COFFEE)
+  isUsingDefaultLabel Boolean                 @default(true)
+  order               Int                     @default(0)
+  showPurchaseOptions Boolean                 @default(true)
   products            CategoriesOnProducts[]
-  labelSetting        SiteSettings           @relation("CategoryLabel", fields: [labelSettingId], references: [id])
+  labels              CategoryLabelCategory[]
+}
 
-  @@index([labelSettingId])
+model CategoryLabel {
+  id         String                  @id @default(cuid())
+  name       String                  @unique
+  icon       String?
+  order      Int                     @default(0)
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
+  categories CategoryLabelCategory[]
+}
+
+model CategoryLabelCategory {
+  labelId    String
+  categoryId String
+  order      Int           @default(0)
+  label      CategoryLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
+  category   Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([labelId, categoryId])
+  @@index([categoryId])
+  @@index([labelId, order])
 }
 
 model ProductImage {
@@ -101,11 +120,10 @@ model PurchaseOption {
 }
 
 model SiteSettings {
-  id                String     @id @default(cuid())
-  key               String     @unique
-  value             String
-  updatedAt         DateTime   @updatedAt
-  categoriesAsLabel Category[] @relation("CategoryLabel")
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
 }
 
 model User {

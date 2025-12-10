@@ -26,11 +26,6 @@ const productCardIncludes = {
       category: {
         select: {
           slug: true,
-          labelSetting: {
-            select: {
-              value: true,
-            },
-          },
         },
       },
     },
@@ -93,10 +88,9 @@ export async function getProductBySlug(productSlug?: string | null) {
               select: {
                 name: true,
                 slug: true,
-                labelSetting: {
-                  select: {
-                    value: true,
-                  },
+                labels: {
+                  include: { label: true },
+                  orderBy: { order: "asc" },
                 },
               },
             },
@@ -228,9 +222,14 @@ export async function getCategoryBySlug(slug: string) {
         name: true,
         slug: true,
         order: true,
-        labelSettingId: true,
         isUsingDefaultLabel: true,
         showPurchaseOptions: true,
+        labels: {
+          orderBy: { order: "asc" },
+          include: {
+            label: true,
+          },
+        },
       },
     });
     return category;
@@ -278,9 +277,10 @@ export async function getAllCategories() {
         name: true,
         slug: true,
         order: true,
-        labelSetting: {
-          select: {
-            value: true,
+        labels: {
+          orderBy: { order: "asc" },
+          include: {
+            label: true,
           },
         },
       },
@@ -292,6 +292,45 @@ export async function getAllCategories() {
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to fetch categories.");
+  }
+}
+
+export async function getCategoryLabelsWithCategories() {
+  try {
+    const labels = await prisma.categoryLabel.findMany({
+      orderBy: { order: "asc" },
+      include: {
+        categories: {
+          orderBy: { order: "asc" },
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                order: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return labels.map((label) => ({
+      id: label.id,
+      name: label.name,
+      icon: label.icon,
+      order: label.order,
+      categories: label.categories.map((entry) => ({
+        id: entry.category.id,
+        name: entry.category.name,
+        slug: entry.category.slug,
+        order: entry.order,
+      })),
+    }));
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch category labels.");
   }
 }
 
@@ -655,17 +694,18 @@ export async function getAllOrigins() {
   // This function is kept for backward compatibility if needed,
   // but should be replaced by querying categories with labelSetting.value="Origins".
   try {
-    const labelOrigins = await prisma.siteSettings.findUnique({
-      where: { key: "label_origins" },
+    const labels = await prisma.categoryLabel.findMany({
+      where: { name: "Origins" },
+      include: {
+        categories: {
+          orderBy: { order: "asc" },
+          include: { category: { select: { name: true } } },
+        },
+      },
     });
-    if (!labelOrigins) return [];
+    if (!labels.length) return [];
 
-    const categories = await prisma.category.findMany({
-      where: { labelSettingId: labelOrigins.id },
-      select: { name: true },
-      orderBy: { name: "asc" },
-    });
-    return categories.map((c) => c.name);
+    return labels[0].categories.map((c) => c.category.name);
   } catch (error) {
     console.error("Database Error:", error);
     return [];
@@ -678,17 +718,18 @@ export async function getAllOrigins() {
  */
 export async function getRoastLevels() {
   try {
-    const labelRoasts = await prisma.siteSettings.findUnique({
-      where: { key: "label_roasts" },
+    const labels = await prisma.categoryLabel.findMany({
+      where: { name: "Roasts" },
+      include: {
+        categories: {
+          orderBy: { order: "asc" },
+          include: { category: { select: { name: true } } },
+        },
+      },
     });
-    if (!labelRoasts) return [];
+    if (!labels.length) return [];
 
-    const categories = await prisma.category.findMany({
-      where: { labelSettingId: labelRoasts.id },
-      select: { name: true },
-      orderBy: { name: "asc" },
-    });
-    return categories.map((c) => c.name);
+    return labels[0].categories.map((c) => c.category.name);
   } catch (error) {
     console.error("Database Error:", error);
     return [];

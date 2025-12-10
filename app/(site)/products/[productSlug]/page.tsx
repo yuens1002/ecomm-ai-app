@@ -73,9 +73,9 @@ export default async function ProductPage({
   }
 
   // Fetch related products based on the current product's roast level
-  // We use the first category with labelSetting value "Roasts" or fallback to first category
-  const roastCategory = product.categories.find(
-    (c) => c.category.labelSetting?.value === "Roasts"
+  // We use the first category whose label is "Roasts" or fallback to first category
+  const roastCategory = product.categories.find((c) =>
+    c.category.labels?.some((label) => label.label.name === "Roasts")
   )?.category;
   const relatedProducts = await getRelatedProducts(
     product.id,
