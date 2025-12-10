@@ -11,6 +11,7 @@ model Product {
   id            String                 @id @default(cuid())
   name          String
   slug          String                 @unique
+  type          ProductType            @default(COFFEE)
   weightInGrams Int                    @default(0)
   description   String?
   tastingNotes  String[]
@@ -27,6 +28,8 @@ model Product {
   images        ProductImage[]
   tags          ProductTag[]
   variants      ProductVariant[]
+  addOns        ProductAddOn[]         @relation("PrimaryProductAddOn")
+  addOnFor      ProductAddOn[]         @relation("AddOnProduct")
 
   @@index([isFeatured])
 }
@@ -74,6 +77,7 @@ model ProductVariant {
   stockQuantity   Int              @default(0)
   product         Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
   purchaseOptions PurchaseOption[]
+  addOnLinks      ProductAddOn[]   @relation("AddOnVariant")
 
   @@index([productId])
 }
@@ -89,6 +93,24 @@ model PurchaseOption {
   variant              ProductVariant   @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
   @@index([variantId])
+}
+
+model ProductAddOn {
+  id                     String          @id @default(cuid())
+  productId              String
+  addOnProductId         String
+  addOnVariantId         String?
+  discountedPriceInCents Int?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  product                Product         @relation("PrimaryProductAddOn", fields: [productId], references: [id], onDelete: Cascade)
+  addOnProduct           Product         @relation("AddOnProduct", fields: [addOnProductId], references: [id], onDelete: Restrict)
+  addOnVariant           ProductVariant? @relation("AddOnVariant", fields: [addOnVariantId], references: [id], onDelete: Restrict)
+
+  @@unique([productId, addOnProductId, addOnVariantId])
+  @@index([productId])
+  @@index([addOnProductId])
+  @@index([addOnVariantId])
 }
 
 model SiteSettings {
@@ -405,6 +427,11 @@ enum ActivityType {
   SEARCH
   ADD_TO_CART
   REMOVE_FROM_CART
+}
+
+enum ProductType {
+  COFFEE
+  MERCH
 }
 
 enum OrderStatus {

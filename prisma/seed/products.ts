@@ -1,4 +1,9 @@
-import { PrismaClient, RoastLevel, Category } from "@prisma/client";
+import {
+  PrismaClient,
+  RoastLevel,
+  Category,
+  ProductType,
+} from "@prisma/client";
 
 const getProductSeedMode = () => {
   const raw = (process.env.SEED_PRODUCT_MODE ?? "full").toLowerCase();
@@ -1469,6 +1474,9 @@ export async function seedProducts(prisma: PrismaClient) {
   for (const item of productsToSeed) {
     const { product: productInput, categories: categoryLinks } = item;
 
+    const isMerch = categoryLinks.some((l) => l.categoryId === catMerch?.id);
+    const productType = isMerch ? ProductType.MERCH : ProductType.COFFEE;
+
     // Determine roast level (non-coffee merch stays MEDIUM default)
     let roastLevel: RoastLevel = RoastLevel.MEDIUM;
     if (categoryLinks.some((l) => l.categoryId === catDark?.id)) {
@@ -1536,6 +1544,7 @@ export async function seedProducts(prisma: PrismaClient) {
           isOrganic: productInput.isOrganic,
           isFeatured: productInput.isFeatured,
           featuredOrder: productInput.featuredOrder,
+          type: productType,
           weightInGrams: productWeight,
           roastLevel,
           images: {
@@ -1560,6 +1569,7 @@ export async function seedProducts(prisma: PrismaClient) {
           isOrganic: productInput.isOrganic,
           isFeatured: productInput.isFeatured,
           featuredOrder: productInput.featuredOrder,
+          type: productType,
           weightInGrams: productWeight,
           roastLevel,
           images: productInput.images,

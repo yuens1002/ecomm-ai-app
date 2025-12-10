@@ -6,6 +6,10 @@
 - **Admin product tests**: Added co-located POST route test for merch creation and weight validation; Jest config now allows API route tests and setup guards Node environments.
 - **UI lint cleanups**: Normalized Tailwind classes in About editor and toast viewport to satisfy style rules.
 
+## 0.34.2 - 2025-12-09
+
+- **Product add-ons schema**: Added `ProductAddOn` model to link a primary product to multiple add-on products/variants with optional discounted bundle pricing; updated Product/Variant relations and created migration for the new table.
+
 ## 0.34.0 - 2025-12-09
 
 - **Docker deploy tooling**: Added multi-stage Dockerfile and docker-compose with Postgres, runtime build + migrate, and volumes for data/uploads.
