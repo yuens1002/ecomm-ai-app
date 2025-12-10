@@ -20,13 +20,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -40,8 +33,15 @@ type Category = {
   };
 };
 
+type Group = {
+  id: string;
+  key: string;
+  value: string;
+};
+
 export default function CategoryManagementClient() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -60,6 +60,7 @@ export default function CategoryManagementClient() {
       if (!res.ok) throw new Error("Failed to fetch categories");
       const data = await res.json();
       setCategories(data.categories);
+      setGroups(data.groups ?? []);
     } catch {
       toast({
         title: "Error",
@@ -254,22 +255,20 @@ export default function CategoryManagementClient() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="label">Group Label</Label>
-              <Select
+              <Input
+                id="label"
+                list="category-group-suggestions"
                 value={formData.label}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, label: value })
+                onChange={(e) =>
+                  setFormData({ ...formData, label: e.target.value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a group" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Origins">Origins</SelectItem>
-                  <SelectItem value="Roasts">Roasts</SelectItem>
-                  <SelectItem value="Collections">Collections</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="e.g. Holiday Gifts"
+              />
+              <datalist id="category-group-suggestions">
+                {groups.map((group) => (
+                  <option key={group.id} value={group.value} />
+                ))}
+              </datalist>
             </div>
             <DialogFooter>
               <Button

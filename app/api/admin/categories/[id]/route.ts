@@ -8,11 +8,36 @@ const LABEL_KEY_MAP: Record<string, string> = {
   Collections: "label_collections",
 };
 
+const slugifyLabel = (label: string) =>
+  label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+
 async function resolveLabelSettingId(label?: string) {
   const key = label ? LABEL_KEY_MAP[label] : undefined;
   if (key) {
     const setting = await prisma.siteSettings.findUnique({ where: { key } });
     if (setting) return setting.id;
+  }
+
+  if (label) {
+    const existing = await prisma.siteSettings.findFirst({
+      where: { value: label },
+    });
+    if (existing) return existing.id;
+
+    const slug = slugifyLabel(label) || "custom";
+    const candidateKey = `label_${slug}`;
+
+    const created = await prisma.siteSettings.upsert({
+      where: { key: candidateKey },
+      update: { value: label },
+      create: { key: candidateKey, value: label },
+    });
+    return created.id;
   }
 
   const defaultLabelSetting = await prisma.siteSettings.findUnique({

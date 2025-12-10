@@ -8,14 +8,42 @@ const LABEL_KEY_MAP: Record<string, string> = {
   Collections: "label_collections",
 };
 
+const slugifyLabel = (label: string) =>
+  label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+
 async function resolveLabelSettingId(label?: string) {
+  // 1) Known seeded labels
   const key = label ? LABEL_KEY_MAP[label] : undefined;
   if (key) {
     const setting = await prisma.siteSettings.findUnique({ where: { key } });
     if (setting) return setting.id;
   }
 
-  // Fallback to defaultCategoryLabel which stores the id of the default label setting
+  // 2) Existing custom label by value
+  if (label) {
+    const existing = await prisma.siteSettings.findFirst({
+      where: { value: label },
+    });
+    if (existing) return existing.id;
+
+    const slug = slugifyLabel(label) || "custom";
+    const candidateKey = `label_${slug}`;
+
+    // Upsert ensures idempotency if the key already exists
+    const created = await prisma.siteSettings.upsert({
+      where: { key: candidateKey },
+      update: { value: label },
+      create: { key: candidateKey, value: label },
+    });
+    return created.id;
+  }
+
+  // 3) Fallback to defaultCategoryLabel which stores the id of the default label setting
   const defaultLabelSetting = await prisma.siteSettings.findUnique({
     where: { key: "defaultCategoryLabel" },
   });
@@ -35,21 +63,29 @@ export async function GET() {
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
-    const categories = await prisma.category.findMany({
-      orderBy: { name: "asc" },
-      include: {
-        _count: {
-          select: { products: true },
+    const [categories, groups] = await Promise.all([
+      prisma.category.findMany({
+        orderBy: { name: "asc" },
+        include: {
+          _count: {
+            select: { products: true },
+          },
+          labelSetting: true,
         },
-        labelSetting: true,
-      },
-    });
+      }),
+      prisma.siteSettings.findMany({
+        where: { key: { startsWith: "label_" } },
+        select: { id: true, key: true, value: true },
+        orderBy: { value: "asc" },
+      }),
+    ]);
+
     const payload = categories.map((category) => ({
       ...category,
       label: category.labelSetting?.value ?? "Other",
     }));
 
-    return NextResponse.json({ categories: payload });
+    return NextResponse.json({ categories: payload, groups });
   } catch (error) {
     console.error("Error fetching categories:", error);
     return NextResponse.json(
