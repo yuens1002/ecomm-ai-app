@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.34.8 - 2025-12-10
+
+- **Custom category groups**: Admins can type any group label when creating/editing categories; backend auto-creates or reuses label settings and returns group suggestions so storefront grouping matches admin intent.
+
 ## 0.34.6 - 2025-12-10
 
 - **Product disable flag**: Added `Product.isDisabled` with admin toggle, filtered it out of search/recommendations/public product queries, and 404s product pages for disabled items.
