@@ -20,7 +20,7 @@ import {
 import { Plus, Pencil, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ProductFormClient from "./ProductFormClient";
-import type { ProductType } from "@prisma/client";
+import { ProductType } from "@prisma/client";
 
 interface PurchaseOption {
   type: "ONE_TIME" | "SUBSCRIPTION";
@@ -54,7 +54,7 @@ interface ProductManagementClientProps {
 export default function ProductManagementClient({
   title = "Product Management",
   description = "Manage products and inventory",
-  productType = "COFFEE",
+  productType = ProductType.COFFEE,
 }: ProductManagementClientProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);

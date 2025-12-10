@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import clsx from "clsx";
+import { ProductType } from "@prisma/client";
 import { ProductCardProps } from "@/lib/types"; // lib path stays the same
 import { useCartStore } from "@/lib/store/cart-store";
 
@@ -86,11 +87,12 @@ export default function ProductCard({
             <CardTitle className="text-xl overflow-hidden text-ellipsis whitespace-nowrap p-0">
               {product.name}
             </CardTitle>
-            {product.type === "COFFEE" && product.tastingNotes.length > 0 && (
-              <CardDescription className="text-sm italic pt-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                {product.tastingNotes.join(", ")}
-              </CardDescription>
-            )}
+            {product.type === ProductType.COFFEE &&
+              product.tastingNotes.length > 0 && (
+                <CardDescription className="text-sm italic pt-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                  {product.tastingNotes.join(", ")}
+                </CardDescription>
+              )}
           </CardContent>
 
           {/* 3. CardFooter (only shows if purchase options are enabled) */}

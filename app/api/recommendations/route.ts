@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ProductType } from "@prisma/client";
 import { auth } from "@/auth";
 import { getUserRecommendationContext, getTrendingProducts } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
@@ -78,6 +79,7 @@ export async function GET(request: Request) {
 
     // Fetch all products
     const allProducts = await prisma.product.findMany({
+      where: { type: ProductType.COFFEE },
       include: {
         images: {
           orderBy: { order: "asc" },

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ProductType } from "@prisma/client";
 import {
   getProductsForAI,
   getUserRecommendationContext,
@@ -217,7 +218,7 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
 
     // Fallback: If no product matched, use first featured product
     if (!productData) {
-      const featuredProducts = await getFeaturedProducts();
+      const featuredProducts = await getFeaturedProducts(ProductType.COFFEE);
       if (featuredProducts.length > 0) {
         const fallbackProduct = featuredProducts[0];
         productSlug = fallbackProduct.slug;

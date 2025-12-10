@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { ProductType } from "@prisma/client";
 import { FullProductPayload, RelatedProduct, Category } from "@/lib/types";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Button } from "@/components/ui/button";
@@ -211,7 +212,7 @@ export default function ProductClientPage({
 
   // ProductCard now uses cart store directly, no callback needed
 
-  const isCoffee = product.type === "COFFEE";
+  const isCoffee = product.type === ProductType.COFFEE;
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-8">

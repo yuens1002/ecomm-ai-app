@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ProductType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
@@ -37,6 +38,9 @@ export async function GET(request: NextRequest) {
           },
         },
       };
+
+      // Roast filters are coffee-only
+      whereClause.type = ProductType.COFFEE;
     }
 
     if (origin) {

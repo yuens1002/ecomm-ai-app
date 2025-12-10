@@ -1,3 +1,4 @@
+import { ProductType } from "@prisma/client";
 import ProductManagementClient from "../products/ProductManagementClient";
 
 export default function MerchPage() {
@@ -7,7 +8,7 @@ export default function MerchPage() {
       <ProductManagementClient
         title="Merch Products"
         description="Manage merch catalog, variants, and pricing"
-        productType="MERCH"
+        productType={ProductType.MERCH}
       />
     </div>
   );

@@ -1,3 +1,4 @@
+import { ProductType } from "@prisma/client";
 import { prisma } from "./prisma";
 // import { OrderWithItems, OrderItemWithDetails } from "./types";
 
@@ -40,11 +41,12 @@ const productCardIncludes = {
 /**
  * Fetches all products marked as "isFeatured" and orders them.
  */
-export async function getFeaturedProducts() {
+export async function getFeaturedProducts(type?: ProductType) {
   try {
     const products = await prisma.product.findMany({
       where: {
         isFeatured: true,
+        ...(type ? { type } : {}),
       },
       orderBy: {
         featuredOrder: "asc",
@@ -113,10 +115,14 @@ export async function getProductBySlug(productSlug?: string | null) {
 export async function getProductsForAI() {
   try {
     const products = await prisma.product.findMany({
+      where: {
+        type: ProductType.COFFEE,
+      },
       select: {
         name: true,
         slug: true,
         tastingNotes: true,
+        type: true,
       },
     });
     return products;
@@ -137,6 +143,7 @@ export async function getRelatedProducts(
   try {
     const products = await prisma.product.findMany({
       where: {
+        type: ProductType.COFFEE,
         // Filter by the roast level category
         categories: {
           some: {
@@ -311,6 +318,7 @@ export async function getUserPurchaseHistory(userId: string) {
                         slug: true,
                         tastingNotes: true,
                         roastLevel: true,
+                        type: true,
                         categories: {
                           include: {
                             category: true,
@@ -383,6 +391,7 @@ export async function getUserRecentViews(userId: string, limit: number = 10) {
         id: {
           in: uniqueProductIds,
         },
+        type: ProductType.COFFEE,
       },
       select: {
         id: true,
@@ -390,6 +399,7 @@ export async function getUserRecentViews(userId: string, limit: number = 10) {
         slug: true,
         tastingNotes: true,
         roastLevel: true,
+        type: true,
         categories: {
           include: {
             category: true,
@@ -481,32 +491,38 @@ export async function getUserRecommendationContext(userId: string) {
 
     // Extract purchased products
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const purchasedProducts = (purchaseHistory as any).flatMap(
-      (order: {
-        items: Array<{
-          purchaseOption: {
-            variant: {
-              product: {
-                name: string;
-                tastingNotes: string[];
-                roastLevel: string | null;
-                categories: Array<{ category: { name: string; slug: string } }>;
+    const purchasedProducts = (purchaseHistory as any)
+      .flatMap(
+        (order: {
+          items: Array<{
+            purchaseOption: {
+              variant: {
+                product: {
+                  name: string;
+                  tastingNotes: string[];
+                  roastLevel: string | null;
+                  type: ProductType;
+                  categories: Array<{
+                    category: { name: string; slug: string };
+                  }>;
+                };
               };
             };
-          };
-        }>;
-        createdAt: Date;
-      }) =>
-        order.items.map((item) => {
-          return {
-            name: item.purchaseOption.variant.product.name,
-            roastLevel:
-              item.purchaseOption.variant.product.roastLevel || "Medium",
-            tastingNotes: item.purchaseOption.variant.product.tastingNotes,
-            purchasedAt: order.createdAt,
-          };
-        })
-    );
+          }>;
+          createdAt: Date;
+        }) =>
+          order.items.map((item) => {
+            return {
+              name: item.purchaseOption.variant.product.name,
+              roastLevel:
+                item.purchaseOption.variant.product.roastLevel || "Medium",
+              tastingNotes: item.purchaseOption.variant.product.tastingNotes,
+              type: item.purchaseOption.variant.product.type,
+              purchasedAt: order.createdAt,
+            };
+          })
+      )
+      .filter((p: { type: ProductType }) => p.type === ProductType.COFFEE);
 
     // Analyze preferences
     const roastLevelCounts = new Map<string, number>();
@@ -608,6 +624,7 @@ export async function getTrendingProducts(
         id: {
           in: productIds,
         },
+        type: ProductType.COFFEE,
       },
       include: productCardIncludes,
     });

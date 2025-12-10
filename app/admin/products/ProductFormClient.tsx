@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ProductType, RoastLevel } from "@prisma/client";
+import { ProductType, RoastLevel } from "@prisma/client";
 import {
   Field,
   FieldContent,
@@ -77,7 +77,7 @@ type ProductFormValues = z.infer<typeof formSchema>;
 export default function ProductFormClient({
   productId,
   onSaved,
-  productType = "COFFEE",
+  productType = ProductType.COFFEE,
 }: ProductFormClientProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(!!productId);
@@ -198,7 +198,7 @@ export default function ProductFormClient({
 
       const method = productId ? "PUT" : "POST";
 
-      const isCoffee = data.productType === "COFFEE";
+      const isCoffee = data.productType === ProductType.COFFEE;
       const payload = {
         ...data,
         weight: isCoffee ? (data.weight ?? undefined) : data.weight,
@@ -287,7 +287,8 @@ export default function ProductFormClient({
               {/* Left Column: Base Info */}
               <FieldGroup>
                 <div className="text-xs font-semibold uppercase text-muted-foreground">
-                  {productType === "COFFEE" ? "Coffee" : "Merch"} Product
+                  {productType === ProductType.COFFEE ? "Coffee" : "Merch"}{" "}
+                  Product
                 </div>
                 <FormField
                   control={form.control}
@@ -374,7 +375,7 @@ export default function ProductFormClient({
                   )}
                 />
 
-                {productType === "COFFEE" && (
+                {productType === ProductType.COFFEE && (
                   <FormField
                     control={form.control}
                     name="roastLevel"
@@ -460,7 +461,7 @@ export default function ProductFormClient({
                   />
                 </FieldGroup>
 
-                {productType === "COFFEE" && (
+                {productType === ProductType.COFFEE && (
                   <div className="space-y-4">
                     <FormField
                       control={form.control}

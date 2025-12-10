@@ -118,7 +118,7 @@ describe("POST /api/admin/products", () => {
     expect(createProductMock).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          type: "COFFEE",
+          type: ProductType.COFFEE,
           roastLevel: "DARK",
           origin: ["Ethiopia"],
           tastingNotes: ["Citrus", "Floral"],
@@ -182,7 +182,7 @@ describe("POST /api/admin/products", () => {
     expect(createProductMock).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          type: "MERCH",
+          type: ProductType.MERCH,
           roastLevel: null,
           origin: [],
           tastingNotes: [],

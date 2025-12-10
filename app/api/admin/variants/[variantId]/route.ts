@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ProductType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
 
@@ -30,7 +31,7 @@ export async function PUT(
       Number.isFinite(providedWeight) && providedWeight > 0
         ? providedWeight
         : null;
-    const isCoffee = existing.product.type === "COFFEE";
+    const isCoffee = existing.product.type === ProductType.COFFEE;
 
     if (isCoffee && finalWeight === null) {
       return NextResponse.json(

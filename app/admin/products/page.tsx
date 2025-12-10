@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/lib/admin";
+import { ProductType } from "@prisma/client";
 import ProductManagementClient from "./ProductManagementClient";
 
 export default async function ProductManagementPage() {
@@ -10,7 +11,7 @@ export default async function ProductManagementPage() {
       <ProductManagementClient
         title="Coffee Products"
         description="Manage coffee products, variants, and pricing"
-        productType="COFFEE"
+        productType={ProductType.COFFEE}
       />
     </div>
   );
