@@ -5,6 +5,8 @@
 - **Product disable flag**: Added `Product.isDisabled` with admin toggle, filtered it out of search/recommendations/public product queries, and 404s product pages for disabled items.
 - **Order safety**: Checkout and Stripe webhook now block disabled products and enforce variant stock before creating sessions/orders; historical orders still show disabled items for transparency.
 - **Tests**: Added checkout guard tests and purchase-history coverage for disabled products; regenerated Prisma client and applied migration `20251210162204_add_product_disabled_flag`.
+- **Merch catalog & add-ons**: Expanded merch seed to 12 SKUs with featured ordering, bundle add-ons, and default weights/stock; minimal seed mode now keeps a single merch item for clean installs.
+- **Backup coverage**: Included `AddOnLink` and `AiTokenUsage` tables in the backup script so dev snapshots capture add-ons and AI telemetry.
 
 ## 0.34.3 - 2025-12-10
 

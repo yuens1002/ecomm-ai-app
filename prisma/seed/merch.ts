@@ -16,8 +16,13 @@ interface MerchItem {
   featuredOrder?: number;
   variants: MerchVariant[];
 }
+const getMerchSeedMode = () => {
+  const raw = (process.env.SEED_PRODUCT_MODE ?? "full").toLowerCase();
+  if (["minimal", "lean", "tiny", "demo"].includes(raw)) return "minimal";
+  return "full";
+};
 
-const merchItems: MerchItem[] = [
+const merchItemsFull: MerchItem[] = [
   {
     name: "Heritage Diner Mug",
     slug: "heritage-diner-mug",
@@ -78,10 +83,156 @@ const merchItems: MerchItem[] = [
       },
     ],
   },
+  {
+    name: "Origami Air Dripper",
+    slug: "origami-air-dripper",
+    description:
+      "Lightweight ceramic dripper with crisp ribs for fast, bright extractions. Compatible with conical filters.",
+    imageUrl:
+      "https://placehold.co/600x400/D6D0C4/1A1A1A.png?text=Origami+Dripper",
+    variants: [
+      {
+        name: "Single",
+        priceInCents: 4200,
+        weight: 450,
+        stockQuantity: 60,
+      },
+    ],
+  },
+  {
+    name: "Origami Cone Filters (100ct)",
+    slug: "origami-cone-filters",
+    description:
+      "Bleached conical filters sized for Origami. Fast flow and clean cups.",
+    imageUrl:
+      "https://placehold.co/600x400/F8F1E7/0F0B05.png?text=Cone+Filters",
+    variants: [
+      {
+        name: "100 pack",
+        priceInCents: 1200,
+        weight: 200,
+        stockQuantity: 200,
+      },
+    ],
+  },
+  {
+    name: "Fellow Stagg EKG Kettle",
+    slug: "fellow-stagg-ekg-kettle",
+    description:
+      "Precision pour-over kettle with gooseneck control and variable temperature for consistent brews.",
+    imageUrl: "https://placehold.co/600x400/111111/F5F3EF.png?text=Stagg+EKG",
+    isFeatured: true,
+    featuredOrder: 121,
+    variants: [
+      {
+        name: "Matte Black",
+        priceInCents: 16500,
+        weight: 1500,
+        stockQuantity: 20,
+      },
+    ],
+  },
+  {
+    name: "Timemore Black Mirror Scale",
+    slug: "timemore-black-mirror-scale",
+    description:
+      "Responsive brew scale with timer and USB-C charging. Great for pour-over and espresso dialing.",
+    imageUrl:
+      "https://placehold.co/600x400/0C0C0C/FFFFFF.png?text=Timemore+Scale",
+    variants: [
+      {
+        name: "Standard",
+        priceInCents: 9000,
+        weight: 600,
+        stockQuantity: 45,
+      },
+    ],
+  },
+  {
+    name: "Airscape Coffee Canister",
+    slug: "airscape-coffee-canister",
+    description:
+      "Stainless canister with inner lid that pushes air out to keep beans fresher longer.",
+    imageUrl: "https://placehold.co/600x400/D8DDE2/0F172A.png?text=Airscape",
+    variants: [
+      {
+        name: "Medium",
+        priceInCents: 3800,
+        weight: 650,
+        stockQuantity: 90,
+      },
+    ],
+  },
+  {
+    name: "Cold Brew Bottle",
+    slug: "cold-brew-bottle",
+    description:
+      "Durable glass bottle with fine mesh filter for overnight brews. Easy to clean, travel friendly.",
+    imageUrl: "https://placehold.co/600x400/F5F5F5/1A1A1A.png?text=Cold+Brew",
+    variants: [
+      {
+        name: "750ml",
+        priceInCents: 3200,
+        weight: 700,
+        stockQuantity: 70,
+      },
+    ],
+  },
+  {
+    name: "Barista Towel 2-Pack",
+    slug: "barista-towel-2-pack",
+    description:
+      "Lint-free microfiber towels sized for bar cleanup and portafilter prep.",
+    imageUrl:
+      "https://placehold.co/600x400/E5E7EB/111827.png?text=Barista+Towels",
+    variants: [
+      {
+        name: "2 towels",
+        priceInCents: 1400,
+        weight: 250,
+        stockQuantity: 150,
+      },
+    ],
+  },
+  {
+    name: "Cupping Spoon",
+    slug: "cupping-spoon",
+    description:
+      "Stainless steel cupping spoon with deep bowl for sensory sessions and QC.",
+    imageUrl:
+      "https://placehold.co/600x400/111827/F5F3EF.png?text=Cupping+Spoon",
+    variants: [
+      {
+        name: "Single",
+        priceInCents: 900,
+        weight: 120,
+        stockQuantity: 120,
+      },
+    ],
+  },
+  {
+    name: "Enamel Pin Set",
+    slug: "enamel-pin-set",
+    description:
+      "Two-piece enamel pin set with the roastery crest and origin stamp.",
+    imageUrl: "https://placehold.co/600x400/F0F9FF/0F172A.png?text=Enamel+Pins",
+    variants: [
+      {
+        name: "Set of 2",
+        priceInCents: 1200,
+        weight: 100,
+        stockQuantity: 160,
+      },
+    ],
+  },
 ];
 
 export async function seedMerch(prisma: PrismaClient) {
-  console.log("\n🧢 Seeding merch products...");
+  const seedMode = getMerchSeedMode();
+  const merchItems =
+    seedMode === "minimal" ? merchItemsFull.slice(0, 1) : merchItemsFull;
+
+  console.log(`\n🧢 Seeding merch products (${seedMode})...`);
 
   const merchCategory = await prisma.category.findUnique({
     where: { slug: "merch" },
@@ -92,6 +243,11 @@ export async function seedMerch(prisma: PrismaClient) {
     );
     return;
   }
+
+  const productLookup: Record<
+    string,
+    { productId: string; variants: { id: string; name: string }[] }
+  > = {};
 
   for (const item of merchItems) {
     const primaryCategory = { categoryId: merchCategory.id, isPrimary: true };
@@ -107,12 +263,9 @@ export async function seedMerch(prisma: PrismaClient) {
       },
     }));
 
-    const weight = Math.max(
-      ...variants.map((v) => v.weight ?? 0),
-      0
-    );
+    const weight = Math.max(...variants.map((v) => v.weight ?? 0), 0);
 
-    await prisma.product.upsert({
+    const product = await prisma.product.upsert({
       where: { slug: item.slug },
       update: {
         name: item.name,
@@ -150,8 +303,95 @@ export async function seedMerch(prisma: PrismaClient) {
         categories: { create: [primaryCategory] },
         variants: { create: variants },
       },
+      include: { variants: true },
     });
+
+    productLookup[item.slug] = {
+      productId: product.id,
+      variants: product.variants.map((variant) => ({
+        id: variant.id,
+        name: variant.name,
+      })),
+    };
   }
 
   console.log(`  ✓ Seeded ${merchItems.length} merch products`);
+
+  if (seedMode === "minimal") {
+    console.log("  ↷ Skipped add-on links in minimal mode.");
+    return;
+  }
+
+  const addOnLinks: Array<{
+    primarySlug: string;
+    addOnSlug: string;
+    primaryVariantName?: string;
+    addOnVariantName?: string;
+    discountedPriceInCents?: number;
+  }> = [
+    {
+      primarySlug: "origami-air-dripper",
+      addOnSlug: "origami-cone-filters",
+      discountedPriceInCents: 1000,
+    },
+    {
+      primarySlug: "cold-brew-bottle",
+      addOnSlug: "barista-towel-2-pack",
+    },
+    {
+      primarySlug: "fellow-stagg-ekg-kettle",
+      addOnSlug: "barista-towel-2-pack",
+    },
+    {
+      primarySlug: "airscape-coffee-canister",
+      addOnSlug: "enamel-pin-set",
+    },
+  ];
+
+  const productIds = Object.values(productLookup).map((p) => p.productId);
+  if (productIds.length) {
+    await prisma.addOnLink.deleteMany({
+      where: { primaryProductId: { in: productIds } },
+    });
+  }
+
+  const resolveVariant = (
+    slug: string,
+    name?: string
+  ): { productId: string; variantId: string } | null => {
+    const entry = productLookup[slug];
+    if (!entry) return null;
+    if (entry.variants.length === 0) return null;
+    if (!name) {
+      return { productId: entry.productId, variantId: entry.variants[0].id };
+    }
+    const match = entry.variants.find(
+      (variant) => variant.name.toLowerCase() === name.toLowerCase()
+    );
+    return match ? { productId: entry.productId, variantId: match.id } : null;
+  };
+
+  for (const link of addOnLinks) {
+    const primary = resolveVariant(link.primarySlug, link.primaryVariantName);
+    const addOn = resolveVariant(link.addOnSlug, link.addOnVariantName);
+
+    if (!primary || !addOn) {
+      console.log(
+        `  ↷ Skipped add-on link: ${link.primarySlug} → ${link.addOnSlug} (missing product or variant)`
+      );
+      continue;
+    }
+
+    await prisma.addOnLink.create({
+      data: {
+        primaryProductId: primary.productId,
+        addOnProductId: addOn.productId,
+        primaryVariantId: primary.variantId,
+        addOnVariantId: addOn.variantId,
+        discountedPriceInCents: link.discountedPriceInCents,
+      },
+    });
+  }
+
+  console.log(`  ✓ Seeded ${addOnLinks.length} merch add-on links`);
 }
