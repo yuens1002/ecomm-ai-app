@@ -1,5 +1,7 @@
 # Release Workflow
 
+**Tag policy**: All tags **must be annotated**. Avoid lightweight tags (`git tag vX.Y.Z`). Always use `git tag -a vX.Y.Z -m "..."` so tags carry a message and are easy to audit.
+
 ## Documentation Strategy
 
 Our release process separates **public-facing** information from **internal implementation** details:
