@@ -86,9 +86,11 @@ export default function ProductCard({
             <CardTitle className="text-xl overflow-hidden text-ellipsis whitespace-nowrap p-0">
               {product.name}
             </CardTitle>
-            <CardDescription className="text-sm italic pt-1 overflow-hidden text-ellipsis whitespace-nowrap">
-              {product.tastingNotes.join(", ")}
-            </CardDescription>
+            {product.type === "COFFEE" && product.tastingNotes.length > 0 && (
+              <CardDescription className="text-sm italic pt-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                {product.tastingNotes.join(", ")}
+              </CardDescription>
+            )}
           </CardContent>
 
           {/* 3. CardFooter (only shows if purchase options are enabled) */}

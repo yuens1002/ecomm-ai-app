@@ -41,16 +41,13 @@ export function BlockEditDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
         <DialogHeader className="pr-8 shrink-0">
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
 
-        {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto pr-2 -mr-2">{children}</div>
 
-        {/* Action Buttons */}
         <div className="flex justify-end gap-2 pt-4 border-t shrink-0">
           <Button variant="outline" onClick={onCancel} disabled={isSaving}>
             {cancelLabel}

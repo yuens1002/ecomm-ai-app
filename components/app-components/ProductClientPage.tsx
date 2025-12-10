@@ -211,6 +211,8 @@ export default function ProductClientPage({
 
   // ProductCard now uses cart store directly, no callback needed
 
+  const isCoffee = product.type === "COFFEE";
+
   return (
     <div className="container mx-auto px-4 md:px-8 py-8">
       {/* 1. Breadcrumb (Home > Category > Product) */}
@@ -259,15 +261,20 @@ export default function ProductClientPage({
         <div className="w-full flex flex-col space-y-6">
           <h1 className="text-4xl font-bold text-text-base">{product.name}</h1>
 
-          {/* --- UPDATED: Added Origin and Roast Level --- */}
-          <div className="flex flex-col space-y-1">
-            <span className="text-lg text-text-base font-semibold">
-              {product.origin.join(", ")}
-            </span>
-            <span className="text-lg text-text-muted italic">
-              {product.tastingNotes.join(", ")}
-            </span>
-          </div>
+          {isCoffee && (
+            <div className="flex flex-col space-y-1">
+              {product.origin.length > 0 && (
+                <span className="text-lg text-text-base font-semibold">
+                  {product.origin.join(", ")}
+                </span>
+              )}
+              {product.tastingNotes.length > 0 && (
+                <span className="text-lg text-text-muted italic">
+                  {product.tastingNotes.join(", ")}
+                </span>
+              )}
+            </div>
+          )}
 
           <p className="text-text-base leading-relaxed">
             {product.description}

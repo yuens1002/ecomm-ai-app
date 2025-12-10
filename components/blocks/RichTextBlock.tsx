@@ -6,7 +6,7 @@ import {
   richTextBlockSchema,
 } from "@/lib/blocks/schemas";
 import { Typography } from "@/components/ui/typography";
-import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import { RichTextEditor } from "@/components/app-components/RichTextEditor";
 import { Field } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Button } from "@/components/ui/button";

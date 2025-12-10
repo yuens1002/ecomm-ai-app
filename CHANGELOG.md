@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.34.3 - 2025-12-10
+
+- **Unified product catalog**: Collapsed merch into the main `Product` model with `ProductType`, preserved `CategoryKind`, and replaced `ProductAddOn` with a single `AddOnLink` table plus variant SKU support.
+- **Seeds and admin UX**: Added optional `SEED_INCLUDE_MERCH` module for merch upserts, surfaced a merch admin page and sidebar entry, and kept coffee-only fields conditional in product card/detail rendering.
+- **API/tests alignment**: Updated search/recommendations/track-activity tests to current response shapes and query handling; refreshed search input copy and regenerated Prisma client after migration.
+
 ## 0.34.1 - 2025-12-09
 
 - **Product weight enforcement**: Made product weight required in Prisma schema/migration, kept variant weight optional, and validated admin form/API while seeding derived weights with safe defaults.

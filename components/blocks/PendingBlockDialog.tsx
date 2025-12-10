@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
-import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import { RichTextEditor } from "@/components/app-components/RichTextEditor";
 import {
   Select,
   SelectContent,

@@ -9,9 +9,11 @@ const productCardIncludes = {
     take: 1, // Only need the first image
   },
   variants: {
+    orderBy: { name: "asc" as const },
     include: {
       purchaseOptions: {
         where: { type: "ONE_TIME" as const },
+        orderBy: { priceInCents: "asc" as const },
         take: 1, // Only need one price
       },
     },

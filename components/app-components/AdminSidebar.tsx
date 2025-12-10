@@ -120,8 +120,13 @@ const staticNavSections: NavSection[] = [
         icon: ShoppingCart,
       },
       {
-        title: "Products",
+        title: "Coffee Products",
         href: "/admin/products",
+        icon: Package,
+      },
+      {
+        title: "Merch Products",
+        href: "/admin/merch",
         icon: Package,
       },
       {

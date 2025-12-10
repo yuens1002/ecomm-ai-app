@@ -34,29 +34,24 @@ export function PendingImageUpload({
     video: "aspect-video",
     "4/3": "aspect-[4/3]",
     "16/9": "aspect-video",
-  };
+  } as const;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size
     if (file.size > maxSizeMB * 1024 * 1024) {
       alert(`File size must be less than ${maxSizeMB}MB`);
       return;
     }
 
-    // Check file type
     if (!file.type.startsWith("image/")) {
       alert("File must be an image");
       return;
     }
 
-    // Create preview URL
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
-
-    // Pass file to parent
     onImageSelect(file);
   };
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -11,11 +12,10 @@ import {
   ListOrdered,
   Heading2,
   Heading3,
-  LinkIcon,
+  Link as LinkIcon,
   Minus,
 } from "lucide-react";
-import { Button } from "./button";
-import { useCallback } from "react";
+import { Button } from "@/components/ui/button";
 
 interface RichTextEditorProps {
   content: string;
@@ -33,9 +33,7 @@ export function RichTextEditor({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Disable blockquote
         blockquote: false,
-        // Keep everything else enabled
         heading: {
           levels: [1, 2, 3, 4, 5, 6],
         },
@@ -83,7 +81,6 @@ export function RichTextEditor({
 
   return (
     <div className={`border rounded-lg ${className}`}>
-      {/* Toolbar */}
       <div className="flex items-center gap-1 p-2 border-b bg-muted/30 flex-wrap">
         <Button
           type="button"
@@ -165,7 +162,6 @@ export function RichTextEditor({
         </Button>
       </div>
 
-      {/* Editor Content */}
       <EditorContent editor={editor} />
     </div>
   );

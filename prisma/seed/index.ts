@@ -33,6 +33,11 @@ const shouldSeedUsers = () => {
   return raw !== "false" && raw !== "0" && raw !== "no";
 };
 
+const shouldSeedMerch = () => {
+  const raw = (process.env.SEED_INCLUDE_MERCH ?? "true").toLowerCase();
+  return raw !== "false" && raw !== "0" && raw !== "no";
+};
+
 const createPrismaClient = () => {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
@@ -55,6 +60,7 @@ const prisma = createPrismaClient();
 // Import seed modules
 import { seedSettings } from "./settings";
 import { seedCategories } from "./categories";
+import { seedMerch } from "./merch";
 import { seedProducts } from "./products";
 import { seedUsers } from "./users";
 import { seedCmsPages } from "./cms-pages";
@@ -68,6 +74,14 @@ async function main() {
     console.log("📋 Phase 1: Seeding foundation data...");
     await seedSettings(prisma);
     await seedCategories(prisma);
+
+    // Phase 1b: Merch (optional)
+    if (shouldSeedMerch()) {
+      console.log("\n🛍️  Phase 1b: Seeding merch...");
+      await seedMerch(prisma);
+    } else {
+      console.log("\n↷ Phase 1b skipped: SEED_INCLUDE_MERCH is false");
+    }
 
     // Phase 2: Core business data
     console.log("\n🛒 Phase 2: Seeding products...");

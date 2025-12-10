@@ -148,7 +148,7 @@ export default function SearchResults() {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
-          placeholder="Search for coffee..."
+          placeholder="Search for products..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="pl-10"
