@@ -5,7 +5,7 @@ import { ProductType, RoastLevel } from "@prisma/client";
 import {
   buildProductPayload,
   coffeeRequiredFields,
-} from "../../__tests__/productTestUtils";
+} from "../../test-utils/productTestUtils";
 import { PUT } from "../route";
 
 const requireAdminApiMock = jest.fn();

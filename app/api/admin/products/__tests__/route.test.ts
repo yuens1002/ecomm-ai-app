@@ -3,7 +3,10 @@
 import { NextRequest } from "next/server";
 import { ProductType, RoastLevel } from "@prisma/client";
 import { PRODUCT_TYPES } from "@/lib/productEnums";
-import { buildProductPayload, coffeeRequiredFields } from "./productTestUtils";
+import {
+  buildProductPayload,
+  coffeeRequiredFields,
+} from "../test-utils/productTestUtils";
 import { POST } from "../route";
 
 const requireAdminApiMock = jest.fn();
