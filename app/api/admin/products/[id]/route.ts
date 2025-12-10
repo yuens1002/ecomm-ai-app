@@ -72,6 +72,7 @@ export async function PUT(
       description,
       isOrganic,
       isFeatured,
+      isDisabled,
       categoryIds,
       imageUrl,
       weight,
@@ -143,6 +144,7 @@ export async function PUT(
           description,
           isOrganic,
           isFeatured,
+          isDisabled: typeof isDisabled === "boolean" ? isDisabled : undefined,
           weight: isCoffee
             ? hasValidWeight
               ? parsedWeight

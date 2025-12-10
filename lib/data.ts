@@ -46,6 +46,7 @@ export async function getFeaturedProducts(type?: ProductType) {
     const products = await prisma.product.findMany({
       where: {
         isFeatured: true,
+        isDisabled: false,
         ...(type ? { type } : {}),
       },
       orderBy: {
@@ -74,6 +75,7 @@ export async function getProductBySlug(productSlug?: string | null) {
     const product = await prisma.product.findUnique({
       where: {
         slug: productSlug,
+        isDisabled: false,
       },
       include: {
         images: {
@@ -117,6 +119,7 @@ export async function getProductsForAI() {
     const products = await prisma.product.findMany({
       where: {
         type: ProductType.COFFEE,
+        isDisabled: false,
       },
       select: {
         name: true,
@@ -144,6 +147,7 @@ export async function getRelatedProducts(
     const products = await prisma.product.findMany({
       where: {
         type: ProductType.COFFEE,
+        isDisabled: false,
         // Filter by the roast level category
         categories: {
           some: {
@@ -176,6 +180,7 @@ export async function getAllProductSlugs() {
       select: {
         slug: true,
       },
+      where: { isDisabled: false },
     });
 
     // We only need the slug for the static paths
@@ -251,6 +256,7 @@ export async function getProductsByCategorySlug(categorySlug: string) {
             },
           },
         },
+        isDisabled: false,
       },
       include: productCardIncludes, // <-- USE COMMON INCLUDE
     });
@@ -392,6 +398,7 @@ export async function getUserRecentViews(userId: string, limit: number = 10) {
           in: uniqueProductIds,
         },
         type: ProductType.COFFEE,
+        isDisabled: false,
       },
       select: {
         id: true,
@@ -625,6 +632,7 @@ export async function getTrendingProducts(
           in: productIds,
         },
         type: ProductType.COFFEE,
+        isDisabled: false,
       },
       include: productCardIncludes,
     });

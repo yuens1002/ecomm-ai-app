@@ -19,18 +19,24 @@ export async function POST(req: NextRequest) {
     // SECURITY: Validate prices against database server-side
     const { prisma } = await import("@/lib/prisma");
 
-    const purchaseOptionIds = items.map((item: CartItem) => item.purchaseOptionId);
+    const purchaseOptionIds = items.map(
+      (item: CartItem) => item.purchaseOptionId
+    );
     const dbPurchaseOptions = await prisma.purchaseOption.findMany({
       where: {
         id: { in: purchaseOptionIds },
       },
       include: {
         variant: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            stockQuantity: true,
             product: {
               select: {
                 id: true,
                 name: true,
+                isDisabled: true,
                 images: true,
               },
             },
@@ -43,6 +49,37 @@ export async function POST(req: NextRequest) {
     const priceMap = new Map(dbPurchaseOptions.map((po) => [po.id, po]));
 
     // Validate all items exist and build line items with DB prices
+    // Validate availability (disabled products and stock)
+    for (const item of items as CartItem[]) {
+      const dbOption = priceMap.get(item.purchaseOptionId);
+      if (!dbOption) {
+        return NextResponse.json(
+          { error: `Invalid purchase option: ${item.purchaseOptionId}` },
+          { status: 400 }
+        );
+      }
+
+      if (dbOption.variant.product.isDisabled) {
+        return NextResponse.json(
+          {
+            error: `${dbOption.variant.product.name} is unavailable right now. Please remove it from your cart.`,
+            code: "PRODUCT_DISABLED",
+          },
+          { status: 400 }
+        );
+      }
+
+      if (dbOption.variant.stockQuantity < item.quantity) {
+        return NextResponse.json(
+          {
+            error: `${dbOption.variant.product.name} - ${dbOption.variant.name} does not have enough stock for your order.`,
+            code: "INSUFFICIENT_STOCK",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map(
       (item: CartItem) => {
         const dbOption = priceMap.get(item.purchaseOptionId);
@@ -54,11 +91,12 @@ export async function POST(req: NextRequest) {
         const productName = dbOption.variant.product.name;
         const variantName = dbOption.variant.name;
         const imageUrl = dbOption.variant.product.images[0]?.url;
-        
+
         // Convert relative image URLs to absolute URLs for Stripe
-        const absoluteImageUrl = imageUrl && imageUrl.startsWith('/') 
-          ? `${origin}${imageUrl}`
-          : imageUrl;
+        const absoluteImageUrl =
+          imageUrl && imageUrl.startsWith("/")
+            ? `${origin}${imageUrl}`
+            : imageUrl;
 
         // Derive Stripe recurring config directly from PurchaseOption billingInterval fields
         let recurring:
@@ -110,7 +148,9 @@ export async function POST(req: NextRequest) {
     );
 
     // Fetch user's email and selected address if provided
-    let shippingAddressCollection: Stripe.Checkout.SessionCreateParams.ShippingAddressCollection | undefined =
+    let shippingAddressCollection:
+      | Stripe.Checkout.SessionCreateParams.ShippingAddressCollection
+      | undefined =
       deliveryMethod === "DELIVERY" ? { allowed_countries: ["US"] } : undefined;
     let customerEmail: string | undefined;
 
@@ -196,8 +236,8 @@ export async function POST(req: NextRequest) {
 
         // Check if we already have a subscription for this product+variant combo
         // Note: For new subscriptions, we won't have a stripeProductId yet, so we check by productNames match
-        const existingForProductVariant = activeSubs.find(
-          (s) => s.productNames.includes(stripeProductKey)
+        const existingForProductVariant = activeSubs.find((s) =>
+          s.productNames.includes(stripeProductKey)
         );
 
         if (existingForProductVariant) {

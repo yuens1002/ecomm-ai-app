@@ -194,7 +194,7 @@ async function handleSearchProducts(args: {
   const { query, filters } = args;
 
   const whereClause: Prisma.ProductWhereInput = {
-    AND: [],
+    AND: [{ isDisabled: false }],
   };
 
   const andConditions = whereClause.AND as Prisma.ProductWhereInput[];

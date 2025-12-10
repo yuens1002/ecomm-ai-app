@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.34.6 - 2025-12-10
+
+- **Product disable flag**: Added `Product.isDisabled` with admin toggle, filtered it out of search/recommendations/public product queries, and 404s product pages for disabled items.
+- **Order safety**: Checkout and Stripe webhook now block disabled products and enforce variant stock before creating sessions/orders; historical orders still show disabled items for transparency.
+- **Tests**: Added checkout guard tests and purchase-history coverage for disabled products; regenerated Prisma client and applied migration `20251210162204_add_product_disabled_flag`.
+
 ## 0.34.3 - 2025-12-10
 
 - **Unified product catalog**: Collapsed merch into the main `Product` model with `ProductType`, preserved `CategoryKind`, and replaced `ProductAddOn` with a single `AddOnLink` table plus variant SKU support.

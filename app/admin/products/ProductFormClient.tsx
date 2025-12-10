@@ -63,6 +63,7 @@ const formSchema = z.object({
   ]),
   isOrganic: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
+  isDisabled: z.boolean().default(false),
   categoryIds: z.array(z.string()).default([]),
   productType: z.enum(PRODUCT_TYPES).default(PRODUCT_TYPES[0]),
   roastLevel: z.enum(ROAST_LEVELS).default("MEDIUM"),
@@ -94,6 +95,7 @@ export default function ProductFormClient({
       weight: undefined,
       isOrganic: false,
       isFeatured: false,
+      isDisabled: false,
       categoryIds: [],
       productType,
       roastLevel: "MEDIUM",
@@ -151,6 +153,7 @@ export default function ProductFormClient({
           weight: p.weight ?? undefined,
           isOrganic: p.isOrganic,
           isFeatured: p.isFeatured,
+          isDisabled: p.isDisabled ?? false,
           categoryIds: p.categoryIds || [],
           productType: p.type || productType,
           roastLevel: (p.roastLevel as RoastLevel) || "MEDIUM",
@@ -207,6 +210,7 @@ export default function ProductFormClient({
         variety: isCoffee ? data.variety : "",
         altitude: isCoffee ? data.altitude : "",
         roastLevel: isCoffee ? data.roastLevel : null,
+        isDisabled: data.isDisabled,
       };
 
       const response = await fetch(url, {
@@ -454,6 +458,27 @@ export default function ProductFormClient({
                           <FieldLabel>Featured</FieldLabel>
                           <FieldDescription>
                             Show this product on the homepage.
+                          </FieldDescription>
+                        </FieldContent>
+                      </Field>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="isDisabled"
+                    render={({ field }) => (
+                      <Field
+                        orientation="horizontal"
+                        className="rounded-md border p-4"
+                      >
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <FieldContent>
+                          <FieldLabel>Disabled</FieldLabel>
+                          <FieldDescription>
+                            This product is disabled and won&apos;t be visible.
                           </FieldDescription>
                         </FieldContent>
                       </Field>

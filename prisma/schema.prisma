@@ -15,6 +15,7 @@ model Product {
   weight            Int?
   sku               String?
   description       String?
+  isDisabled        Boolean                @default(false)
   tastingNotes      String[]
   isOrganic         Boolean                @default(false)
   isFeatured        Boolean                @default(false)

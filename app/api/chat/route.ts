@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
 
     // Get all products for context
     const products = await prisma.product.findMany({
+      where: { isDisabled: false },
       include: {
         variants: {
           include: {

@@ -79,7 +79,7 @@ export async function GET(request: Request) {
 
     // Fetch all products
     const allProducts = await prisma.product.findMany({
-      where: { type: ProductType.COFFEE },
+      where: { type: ProductType.COFFEE, isDisabled: false },
       include: {
         images: {
           orderBy: { order: "asc" },

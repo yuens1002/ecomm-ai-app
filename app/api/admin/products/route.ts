@@ -25,6 +25,7 @@ export async function GET(request: Request) {
         name: true,
         slug: true,
         type: true,
+        isDisabled: true,
         variants: {
           select: {
             name: true,
@@ -63,6 +64,7 @@ export async function GET(request: Request) {
         id: p.id,
         name: p.name,
         slug: p.slug,
+        isDisabled: p.isDisabled,
         stock: totalStock,
         price: basePrice,
         variants: p.variants.map((v) => ({
@@ -99,6 +101,7 @@ export async function POST(request: Request) {
       description,
       isOrganic,
       isFeatured,
+      isDisabled,
       categoryIds,
       imageUrl,
       weight,
@@ -175,6 +178,7 @@ export async function POST(request: Request) {
           description,
           isOrganic,
           isFeatured,
+          isDisabled: Boolean(isDisabled),
           weight: isCoffee
             ? hasValidWeight
               ? parsedWeight

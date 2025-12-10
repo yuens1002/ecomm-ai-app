@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     // Build the where clause dynamically
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const whereClause: any = {};
+    const whereClause: any = { isDisabled: false };
     let searchQuery = "";
 
     if (query && query.trim().length > 0) {

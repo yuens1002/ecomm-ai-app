@@ -39,6 +39,7 @@ interface Product {
   id: string;
   name: string;
   slug: string;
+  isDisabled?: boolean;
   stock: number;
   price: number;
   categories: string;
@@ -169,7 +170,16 @@ export default function ProductManagementClient({
             ) : (
               products.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <span>{product.name}</span>
+                      {product.isDisabled ? (
+                        <span className="text-xs rounded bg-destructive/10 text-destructive px-2 py-0.5">
+                          Disabled
+                        </span>
+                      ) : null}
+                    </div>
+                  </TableCell>
                   <TableCell>{product.categories || "-"}</TableCell>
                   <TableCell>
                     {product.variants && product.variants.length > 0 ? (

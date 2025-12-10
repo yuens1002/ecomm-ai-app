@@ -185,12 +185,46 @@ export async function POST(req: NextRequest) {
             where: { id: { in: purchaseOptionIds } },
             include: {
               variant: {
-                include: {
+                select: {
+                  id: true,
+                  name: true,
+                  stockQuantity: true,
                   product: true,
                 },
               },
             },
           });
+
+          // Guard disabled products and stock before creating orders
+          for (const item of cartItems) {
+            const option = purchaseOptions.find(
+              (po) => po.id === item.purchaseOptionId
+            );
+            if (!option) {
+              return NextResponse.json(
+                { error: `Invalid purchase option: ${item.purchaseOptionId}` },
+                { status: 400 }
+              );
+            }
+
+            if (option.variant.product.isDisabled) {
+              return NextResponse.json(
+                {
+                  error: `${option.variant.product.name} is unavailable and cannot be purchased.`,
+                },
+                { status: 400 }
+              );
+            }
+
+            if (option.variant.stockQuantity < item.quantity) {
+              return NextResponse.json(
+                {
+                  error: `${option.variant.product.name} - ${option.variant.name} does not have enough stock for this order.`,
+                },
+                { status: 400 }
+              );
+            }
+          }
 
           // Separate items by purchase type
           const oneTimeItems = cartItems.filter((item: WebhookCartItem) => {
