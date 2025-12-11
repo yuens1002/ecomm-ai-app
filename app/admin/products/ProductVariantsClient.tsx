@@ -53,19 +53,18 @@ export default function ProductVariantsClient({
 }) {
   const gramsPerOunce = 28.3495;
 
-  const roundAndConvertWeight = (
-    value: number,
-    fromUnit: WeightUnitOption,
-    toUnit: WeightUnitOption
-  ) => {
-    if (Number.isNaN(value)) return value;
-    if (fromUnit === toUnit) return Math.round(value);
-    const grams =
-      fromUnit === WeightUnitOption.IMPERIAL ? value * gramsPerOunce : value;
-    const converted =
-      toUnit === WeightUnitOption.IMPERIAL ? grams / gramsPerOunce : grams;
-    return Math.round(converted);
-  };
+  const roundAndConvertWeight = useCallback(
+    (value: number, fromUnit: WeightUnitOption, toUnit: WeightUnitOption) => {
+      if (Number.isNaN(value)) return value;
+      if (fromUnit === toUnit) return Math.round(value);
+      const grams =
+        fromUnit === WeightUnitOption.IMPERIAL ? value * gramsPerOunce : value;
+      const converted =
+        toUnit === WeightUnitOption.IMPERIAL ? grams / gramsPerOunce : grams;
+      return Math.round(converted);
+    },
+    [gramsPerOunce]
+  );
 
   const [variants, setVariants] = useState<Variant[]>([]);
   const [loading, setLoading] = useState(true);
