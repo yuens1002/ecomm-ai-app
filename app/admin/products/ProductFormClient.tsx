@@ -56,11 +56,6 @@ const formSchema = z.object({
   slug: z.string().min(1, "Slug is required"),
   description: z.string().optional(),
   imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  weight: z.union([
-    z.coerce.number().int().positive("Weight must be greater than zero"),
-    z.literal("").transform(() => undefined as unknown as number),
-    z.undefined(),
-  ]),
   isOrganic: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
   isDisabled: z.boolean().default(false),
@@ -92,7 +87,6 @@ export default function ProductFormClient({
       slug: "",
       description: "",
       imageUrl: "",
-      weight: undefined,
       isOrganic: false,
       isFeatured: false,
       isDisabled: false,
@@ -150,7 +144,6 @@ export default function ProductFormClient({
           slug: p.slug,
           description: p.description || "",
           imageUrl: p.images?.[0]?.url || "",
-          weight: p.weight ?? undefined,
           isOrganic: p.isOrganic,
           isFeatured: p.isFeatured,
           isDisabled: p.isDisabled ?? false,
@@ -204,7 +197,6 @@ export default function ProductFormClient({
       const isCoffee = data.productType === ProductType.COFFEE;
       const payload = {
         ...data,
-        weight: isCoffee ? (data.weight ?? undefined) : data.weight,
         origin: isCoffee ? toList(data.origin) : [],
         tastingNotes: isCoffee ? toList(data.tastingNotes) : [],
         variety: isCoffee ? data.variety : "",
@@ -265,9 +257,6 @@ export default function ProductFormClient({
             {productId ? originalName : "Create a new product"}
             <div className="text-xs text-muted-foreground">
               Fill out the details for your product and add variants.
-              <br />
-              Tip: keep weight units consistent across your catalog; shipping
-              estimates rely on the weight values you enter.
             </div>
           </CardDescription>
         </div>
@@ -349,36 +338,6 @@ export default function ProductFormClient({
 
               {/* Right Column: Details */}
               <FieldGroup>
-                <FormField
-                  control={form.control}
-                  name="weight"
-                  render={({ field, fieldState }) => (
-                    <Field>
-                      <FieldLabel>Shipping weight (grams)</FieldLabel>
-                      <Input
-                        type="number"
-                        min={1}
-                        step={1}
-                        value={
-                          typeof field.value === "number" ||
-                          typeof field.value === "string"
-                            ? field.value
-                            : ""
-                        }
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === "" ? "" : Number(e.target.value)
-                          )
-                        }
-                        onBlur={field.onBlur}
-                        name={field.name}
-                        ref={field.ref}
-                      />
-                      <FieldError errors={[fieldState.error]} />
-                    </Field>
-                  )}
-                />
-
                 {productType === ProductType.COFFEE && (
                   <FormField
                     control={form.control}

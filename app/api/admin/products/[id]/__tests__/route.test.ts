@@ -117,7 +117,6 @@ describe("PUT /api/admin/products/[id]", () => {
       roastLevel: RoastLevel.DARK,
       origin: ["Kenya"],
       tastingNotes: ["Berry"],
-      weight: 350,
     });
 
     const req = new NextRequest("http://localhost/api/admin/products/prod_1", {
@@ -134,7 +133,6 @@ describe("PUT /api/admin/products/[id]", () => {
           roastLevel: RoastLevel.DARK,
           origin: ["Kenya"],
           tastingNotes: ["Berry"],
-          weight: 350,
         }),
       })
     );

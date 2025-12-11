@@ -108,7 +108,7 @@ const {
   upsertMock,
   categoryLabelCategoryUpdateMock,
   categoryLabelCategoryFindManyMock,
-} = (jest.requireMock("@/lib/prisma").__mocks as {
+} = jest.requireMock("@/lib/prisma").__mocks as {
   prismaMock: PrismaMock;
   createMock: jest.Mock;
   findUniqueMock: jest.Mock;
@@ -121,7 +121,7 @@ const {
   upsertMock: jest.Mock;
   categoryLabelCategoryUpdateMock: jest.Mock;
   categoryLabelCategoryFindManyMock: jest.Mock;
-});
+};
 
 let GET: typeof import("../route").GET;
 let createLabel: typeof import("../route").POST;

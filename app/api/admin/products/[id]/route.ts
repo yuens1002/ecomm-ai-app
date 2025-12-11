@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { ProductType, RoastLevel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
+import { getWeightUnit } from "@/lib/app-settings";
+import { WeightUnitOption, fromGrams, roundToInt } from "@/lib/weight-unit";
 
 // GET /api/admin/products/[id] - Get a single product
 export async function GET(
@@ -37,10 +39,21 @@ export async function GET(
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
+    const currentUnit = await getWeightUnit();
+
     // Transform for form
     const formattedProduct = {
       ...product,
       categoryIds: product.categories.map((c) => c.categoryId),
+      variants: product.variants.map((variant) => ({
+        ...variant,
+        weight:
+          variant.weight === null
+            ? null
+            : roundToInt(
+                fromGrams(variant.weight, currentUnit as WeightUnitOption)
+              ),
+      })),
     };
 
     return NextResponse.json({ product: formattedProduct });
@@ -75,7 +88,6 @@ export async function PUT(
       isDisabled,
       categoryIds,
       imageUrl,
-      weight,
       productType,
       roastLevel,
       origin,
@@ -92,11 +104,6 @@ export async function PUT(
       roastLevel && Object.values(RoastLevel).includes(roastLevel)
         ? roastLevel
         : undefined;
-
-    const parsedWeight = Number.isFinite(Number(weight))
-      ? Number(weight)
-      : undefined;
-    const hasValidWeight = parsedWeight !== undefined && parsedWeight > 0;
 
     const targetType = typeToSave ?? ProductType.COFFEE;
     const isCoffee = targetType === ProductType.COFFEE;
@@ -118,19 +125,6 @@ export async function PUT(
           { status: 400 }
         );
       }
-      if (weight !== undefined && !hasValidWeight) {
-        return NextResponse.json(
-          { error: "Weight must be greater than zero when provided" },
-          { status: 400 }
-        );
-      }
-    }
-
-    if (!isCoffee && !hasValidWeight) {
-      return NextResponse.json(
-        { error: "Weight is required and must be greater than zero" },
-        { status: 400 }
-      );
     }
 
     // Transaction to update product and categories
@@ -145,11 +139,6 @@ export async function PUT(
           isOrganic,
           isFeatured,
           isDisabled: typeof isDisabled === "boolean" ? isDisabled : undefined,
-          weight: isCoffee
-            ? hasValidWeight
-              ? parsedWeight
-              : undefined
-            : parsedWeight,
           ...(typeToSave ? { type: typeToSave } : {}),
           ...(targetType === ProductType.COFFEE && roastLevelToSave
             ? { roastLevel: roastLevelToSave }

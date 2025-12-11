@@ -41,7 +41,7 @@ describe("POST /api/admin/products", () => {
     requireAdminApiMock.mockResolvedValue({ authorized: true });
   });
 
-  it("allows creating a merch product when weight is provided", async () => {
+  it("allows creating a merch product without product-level weight", async () => {
     createProductMock.mockResolvedValue({ id: "prod_123" });
 
     const merchPayload = buildProductPayload(ProductType.MERCH, {
@@ -49,7 +49,6 @@ describe("POST /api/admin/products", () => {
       slug: "canvas-tote",
       description: "Durable tote for beans",
       categoryIds: ["merch-cat"],
-      weight: 450,
     });
 
     const req = new NextRequest("http://localhost/api/admin/products", {
@@ -68,29 +67,11 @@ describe("POST /api/admin/products", () => {
         data: expect.objectContaining({
           name: "Canvas Tote",
           slug: "canvas-tote",
-          weight: 450,
         }),
       })
     );
     expect(createImageMock).toHaveBeenCalled();
     expect(createCategoriesMock).toHaveBeenCalled();
-  });
-
-  it("rejects creation when weight is missing or invalid", async () => {
-    const req = new NextRequest("http://localhost/api/admin/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        buildProductPayload(ProductType.MERCH, { weight: 0 })
-      ),
-    });
-
-    const res = await POST(req);
-    const json = await res.json();
-
-    expect(res.status).toBe(400);
-    expect(json.error).toMatch(/weight is required/i);
-    expect(createProductMock).not.toHaveBeenCalled();
   });
 
   it("persists coffee-specific fields when creating a coffee product", async () => {
@@ -166,7 +147,6 @@ describe("POST /api/admin/products", () => {
           slug: "branded-mug",
           description: "Ceramic mug",
           categoryIds: ["merch-cat"],
-          weight: 500,
           // send coffee fields to confirm they are stripped
           roastLevel: RoastLevel.DARK,
           origin: ["Ethiopia"],

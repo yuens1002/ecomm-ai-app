@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.36.0 - 2025-12-11
+
+- **Canonical weight storage**: Store variant weights in grams and convert on the fly based on the site weight-unit setting; admin product/variant APIs now translate inputs/outputs with rounding helpers to keep UI and DB consistent.
+- **Weight unit UX & safety**: Client components use shared, client-safe enums/guards to avoid Prisma in the browser while reflecting the selected unit across variant dialogs and settings.
+- **Schema & seeds**: Dropped `Product.weight`, made `ProductVariant.weight` required, added a migration for the new shape, and kept seeds configurable via `SEED_WEIGHT_UNIT` (default imperial).
+
 ## 0.35.1 - 2025-12-11
 
 - **Category label tests**: Added API unit coverage for creating/updating labels (optional icon, unique names), attaching/detaching and reordering categories, cross-label attachments, label reorder, and auto-sort; ensures delete detaches categories without fallback labels.

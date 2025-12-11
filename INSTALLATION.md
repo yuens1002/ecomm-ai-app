@@ -68,23 +68,30 @@ Visit http://localhost:3000 and sign in with the admin you created.
 ### Switching between Neon and local Postgres
 
 - Neon (default): keep `.env.local` `DATABASE_URL` pointing to Neon. Clear any shell override with `unset DATABASE_URL` and (optionally) set `DATABASE_ADAPTER=neon`. Start `npm run dev`.
-- Local Postgres: export a local `DATABASE_URL` (e.g. `postgresql://postgres:postgres@localhost:5432/postgres?schema=public`) and set `DATABASE_ADAPTER=postgres` (or `standard`). Start `npm run dev` in that shell.
+- Local Postgres (Docker, single DB `artisan_roast`): export the URL below and force the pg adapter. Start `npm run dev` in that shell (or set `PORT=3001` if you prefer 3001).
 - To flip back to Neon, open a fresh shell (or `unset DATABASE_URL` / `unset DATABASE_ADAPTER`) so `.env.local` wins.
 
 > Docker Compose uses `.env.docker` and ignores your shell exports. Update `DATABASE_URL`, `AUTH_SECRET`, `AUTH_TRUST_HOST=true`, and `NEXTAUTH_URL=http://localhost:3000` there, then `docker compose restart app`. Seed the compose DB via `docker compose exec app sh -c "SEED_PRODUCT_MODE=full SEED_INCLUDE_USERS=true SEED_INCLUDE_SYNTHETIC=true npm run seed"`.
 
-#### Copy-paste commands
+#### Copy-paste commands (local Docker DB: `artisan_roast`)
 
-**Switch to local Postgres (Docker on localhost:5432):**
+Create and seed (first time or reset):
 
 ```bash
 export DATABASE_ADAPTER=postgres
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres?schema=public"
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
 npm run setup -- --email=owner@example.com --password='Changeme123!' --name='Shop Owner' --product-mode=full --seed-users=true --seed-synthetic=true
-npm run dev
 ```
 
-**Switch back to Neon (uses `.env.local`):**
+Run dev against the same DB (example on port 3001):
+
+```bash
+export DATABASE_ADAPTER=postgres
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
+PORT=3001 npm run dev
+```
+
+Switch back to Neon (uses `.env.local`):
 
 ```bash
 unset DATABASE_URL

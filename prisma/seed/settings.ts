@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, WeightUnit } from "@prisma/client";
 
 export async function seedSettings(prisma: PrismaClient) {
   console.log("  📋 Creating site settings...");
@@ -92,6 +92,22 @@ export async function seedSettings(prisma: PrismaClient) {
   });
 
   console.log(`    ✓ Location type set to: ${LOCATION_TYPE}`);
+
+  // Weight unit setting (METRIC | IMPERIAL)
+  const rawWeightUnit = (
+    process.env.SEED_WEIGHT_UNIT || WeightUnit.IMPERIAL
+  ).toUpperCase();
+  const weightUnit =
+    rawWeightUnit === WeightUnit.IMPERIAL
+      ? WeightUnit.IMPERIAL
+      : WeightUnit.METRIC;
+  await prisma.siteSettings.upsert({
+    where: { key: "app.weightUnit" },
+    update: { value: weightUnit },
+    create: { key: "app.weightUnit", value: weightUnit },
+  });
+
+  console.log(`    ✓ Weight unit set to: ${weightUnit}`);
 
   // Store content
   await prisma.siteSettings.upsert({

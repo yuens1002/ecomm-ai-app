@@ -104,7 +104,6 @@ export async function POST(request: Request) {
       isDisabled,
       categoryIds,
       imageUrl,
-      weight,
       productType,
       roastLevel,
       origin,
@@ -121,11 +120,6 @@ export async function POST(request: Request) {
       roastLevel && Object.values(RoastLevel).includes(roastLevel)
         ? roastLevel
         : undefined;
-
-    const parsedWeight = Number.isFinite(Number(weight))
-      ? Number(weight)
-      : undefined;
-    const hasValidWeight = parsedWeight !== undefined && parsedWeight > 0;
 
     const isCoffee = typeToSave === ProductType.COFFEE;
     const originList = Array.isArray(origin)
@@ -154,19 +148,6 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-      if (weight !== undefined && !hasValidWeight) {
-        return NextResponse.json(
-          { error: "Weight must be greater than zero when provided" },
-          { status: 400 }
-        );
-      }
-    }
-
-    if (!isCoffee && !hasValidWeight) {
-      return NextResponse.json(
-        { error: "Weight is required and must be greater than zero" },
-        { status: 400 }
-      );
     }
 
     // Transaction to create product and categories
@@ -179,11 +160,6 @@ export async function POST(request: Request) {
           isOrganic,
           isFeatured,
           isDisabled: Boolean(isDisabled),
-          weight: isCoffee
-            ? hasValidWeight
-              ? parsedWeight
-              : undefined
-            : parsedWeight,
           type: typeToSave,
           roastLevel: isCoffee ? (roastLevelToSave ?? RoastLevel.MEDIUM) : null,
           origin: isCoffee ? originList : [],

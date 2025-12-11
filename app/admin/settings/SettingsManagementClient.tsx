@@ -24,20 +24,21 @@ import {
   FieldTitle,
 } from "@/components/ui/field";
 import SocialLinksSettings from "./SocialLinksSettings";
-import { Textarea } from "@/components/ui/textarea";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import FileUpload from "@/components/app-components/FileUpload";
+import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogAction,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { LocationType } from "@/lib/location-type";
+import { WeightUnitOption, isWeightUnitOption } from "@/lib/weight-unit";
 
 interface FooterSettings {
   showHours: boolean;
@@ -67,6 +68,10 @@ interface BrandingSettings {
 
 interface LocationTypeSettings {
   locationType: LocationType;
+}
+
+interface WeightUnitSettings {
+  weightUnit: WeightUnitOption;
 }
 
 type FieldName =
@@ -158,6 +163,15 @@ export default function SettingsManagementClient() {
   const [pendingLocationType, setPendingLocationType] =
     useState<LocationType | null>(null);
   const [savingLocationType, setSavingLocationType] = useState(false);
+  const [weightUnitSettings, setWeightUnitSettings] =
+    useState<WeightUnitSettings>({
+      weightUnit: WeightUnitOption.METRIC,
+    });
+  const [originalWeightUnitSettings, setOriginalWeightUnitSettings] =
+    useState<WeightUnitSettings>({
+      weightUnit: WeightUnitOption.METRIC,
+    });
+  const [savingWeightUnit, setSavingWeightUnit] = useState(false);
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -167,12 +181,14 @@ export default function SettingsManagementClient() {
         newsletterResponse,
         brandingResponse,
         locationTypeResponse,
+        weightUnitResponse,
       ] = await Promise.all([
         fetch("/api/admin/settings/footer-contact"),
         fetch("/api/admin/settings/email"),
         fetch("/api/admin/settings/newsletter"),
         fetch("/api/admin/settings/branding"),
         fetch("/api/admin/settings/location-type"),
+        fetch("/api/admin/settings/weight-unit"),
       ]);
 
       if (
@@ -180,7 +196,8 @@ export default function SettingsManagementClient() {
         !emailResponse.ok ||
         !newsletterResponse.ok ||
         !brandingResponse.ok ||
-        !locationTypeResponse.ok
+        !locationTypeResponse.ok ||
+        !weightUnitResponse.ok
       ) {
         throw new Error("Failed to fetch settings");
       }
@@ -190,6 +207,10 @@ export default function SettingsManagementClient() {
       const newsletterData = await newsletterResponse.json();
       const brandingData = await brandingResponse.json();
       const locationTypeData = await locationTypeResponse.json();
+      const weightUnitData = await weightUnitResponse.json();
+      const safeWeightUnit = isWeightUnitOption(weightUnitData?.weightUnit)
+        ? weightUnitData.weightUnit
+        : WeightUnitOption.METRIC;
 
       setSettings(footerData);
       setOriginalSettings(footerData);
@@ -200,6 +221,8 @@ export default function SettingsManagementClient() {
       setBrandingSettings(brandingData);
       setOriginalBrandingSettings(brandingData);
       setLocationTypeSettings(locationTypeData);
+      setOriginalWeightUnitSettings({ weightUnit: safeWeightUnit });
+      setWeightUnitSettings({ weightUnit: safeWeightUnit });
     } catch {
       toast({
         title: "Error",
@@ -282,6 +305,34 @@ export default function SettingsManagementClient() {
       });
     } finally {
       setSavingFields({ ...savingFields, [field]: false });
+    }
+  };
+
+  const handleSaveWeightUnit = async (nextUnit: WeightUnitOption) => {
+    setSavingWeightUnit(true);
+    try {
+      const response = await fetch("/api/admin/settings/weight-unit", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weightUnit: nextUnit }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update weight unit");
+
+      setOriginalWeightUnitSettings({ weightUnit: nextUnit });
+      toast({ title: "Saved", description: "Weight unit updated" });
+    } catch (error) {
+      setWeightUnitSettings(originalWeightUnitSettings);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update weight unit",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingWeightUnit(false);
     }
   };
 
@@ -1139,6 +1190,83 @@ export default function SettingsManagementClient() {
                 </div>
               </Field>
             </FieldGroup>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Weight Unit */}
+      <Card>
+        <CardHeader className="pb-4">
+          <Field orientation="vertical">
+            <FieldContent>
+              <FieldTitle className="text-base font-semibold">
+                Shipping Weight Unit
+              </FieldTitle>
+              <FieldDescription>
+                Choose the default unit for shipping calculations.
+              </FieldDescription>
+            </FieldContent>
+          </Field>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <RadioGroup
+            value={weightUnitSettings.weightUnit}
+            onValueChange={(value) =>
+              setWeightUnitSettings({
+                weightUnit: isWeightUnitOption(value)
+                  ? value
+                  : WeightUnitOption.METRIC,
+              })
+            }
+            className="grid gap-3 sm:grid-cols-2"
+          >
+            <label className="flex items-center gap-3 rounded-md border p-3">
+              <RadioGroupItem
+                value={WeightUnitOption.METRIC}
+                id="weight-metric"
+              />
+              <div className="space-y-0.5">
+                <div className="font-medium">Metric (grams)</div>
+                <p className="text-sm text-muted-foreground">
+                  Recommended for EU and most Intl. countries, as well as
+                  Canada.
+                </p>
+              </div>
+            </label>
+            <label className="flex items-center gap-3 rounded-md border p-3">
+              <RadioGroupItem
+                value={WeightUnitOption.IMPERIAL}
+                id="weight-imperial"
+              />
+              <div className="space-y-0.5">
+                <div className="font-medium">Imperial (ounces)</div>
+                <p className="text-sm text-muted-foreground">
+                  Recommended for US postal and other countries using imperial
+                  measurements.
+                </p>
+              </div>
+            </label>
+          </RadioGroup>
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={() =>
+                handleSaveWeightUnit(weightUnitSettings.weightUnit)
+              }
+              className="shrink-0"
+            >
+              {savingWeightUnit ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="ml-2">Saving</span>
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  <span className="ml-2">Save</span>
+                </>
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>

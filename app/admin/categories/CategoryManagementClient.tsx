@@ -19,6 +19,17 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import {
   Pencil,
@@ -28,6 +39,7 @@ import {
   Check,
   X,
   Sparkles,
+  TriangleAlert,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -83,6 +95,8 @@ export default function CategoryManagementClient() {
   const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
   const [labelDraft, setLabelDraft] = useState({ name: "", icon: "" });
   const [insertingAfterId, setInsertingAfterId] = useState<string | null>(null);
+  const [inlineLabel, setInlineLabel] = useState({ name: "", icon: "" });
+  const [isSavingInlineLabel, setIsSavingInlineLabel] = useState(false);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -180,7 +194,6 @@ export default function CategoryManagementClient() {
   }
 
   async function deleteCategory(id: string) {
-    if (!confirm("Are you sure you want to delete this category?")) return;
     const res = await fetch(`/api/admin/categories/${id}`, {
       method: "DELETE",
     });
@@ -268,8 +281,6 @@ export default function CategoryManagementClient() {
   }
 
   async function deleteLabel(id: string) {
-    if (!confirm("Delete this label? Categories will be detached from it."))
-      return;
     const res = await fetch(`/api/admin/category-labels/${id}`, {
       method: "DELETE",
     });
@@ -349,341 +360,547 @@ export default function CategoryManagementClient() {
     fetchData();
   }
 
+  async function createInlineLabel() {
+    if (!inlineLabel.name.trim()) {
+      toast({
+        title: "Name required",
+        description: "Label name cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingInlineLabel(true);
+    try {
+      const res = await fetch(`/api/admin/category-labels`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: inlineLabel.name.trim(),
+          icon: inlineLabel.icon || null,
+        }),
+      });
+
+      if (!res.ok) {
+        toast({
+          title: "Error",
+          description: "Failed to create label",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const data = await res.json();
+      setLabels((prev) => [
+        ...prev,
+        {
+          ...data.label,
+          categories: Array.isArray(data.label?.categories)
+            ? data.label.categories
+            : [],
+        },
+      ]);
+      setCategoryForm((prev) => ({
+        ...prev,
+        labelIds: Array.from(new Set([...prev.labelIds, data.label.id])),
+      }));
+      setInlineLabel({ name: "", icon: "" });
+      toast({ title: "Label added", description: "Attached to this category" });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create label",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingInlineLabel(false);
+    }
+  }
+
   if (isLoading) return <div>Loading...</div>;
 
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="groups">Groups</TabsTrigger>
+          <TabsTrigger value="groups">Labels</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
         </TabsList>
 
         <TabsContent value="groups" className="space-y-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order</TableHead>
-                <TableHead>Label</TableHead>
-                <TableHead>Icon</TableHead>
-                <TableHead>Categories</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {labels.map((label) => (
-                <Fragment key={label.id}>
-                  <TableRow
-                    draggable
-                    onDragStart={() => setDragLabelId(label.id)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => handleLabelDrop(label.id)}
-                    className="align-top"
-                  >
-                    <TableCell className="w-10">
-                      <GripVertical className="h-4 w-4 text-muted-foreground" />
-                    </TableCell>
-                    <TableCell className="w-64">
-                      {editingLabelId === label.id ? (
-                        <div className="flex items-center gap-2">
-                          <Input
-                            value={labelDraft.name}
-                            onChange={(e) =>
-                              setLabelDraft({
-                                ...labelDraft,
-                                name: e.target.value,
-                              })
-                            }
-                            placeholder="Label name"
-                            autoFocus
-                          />
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => saveLabel(label.id)}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={resetLabelDraft}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <button
-                          className="text-left font-medium hover:underline"
-                          onClick={() => startEditLabel(label)}
-                        >
-                          {label.name}
-                        </button>
-                      )}
-                    </TableCell>
-                    <TableCell className="w-48">
-                      {editingLabelId === label.id ? (
-                        <div className="flex items-center gap-2">
-                          <Input
-                            list={`icon-suggestions-${label.id}`}
-                            value={labelDraft.icon}
-                            onChange={(e) =>
-                              setLabelDraft({
-                                ...labelDraft,
-                                icon: e.target.value,
-                              })
-                            }
-                            placeholder="Icon name (optional)"
-                          />
-                          {labelDraft.icon ? (
-                            <DynamicIcon
-                              name={labelDraft.icon}
-                              className="h-5 w-5"
-                            />
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              None
-                            </span>
-                          )}
-                          <datalist id={`icon-suggestions-${label.id}`}>
-                            {ICON_SUGGESTIONS.map((icon) => (
-                              <option
-                                key={`${label.id}-${icon || "none"}`}
-                                value={icon}
-                              />
-                            ))}
-                          </datalist>
-                        </div>
-                      ) : label.icon ? (
-                        <DynamicIcon name={label.icon} className="h-5 w-5" />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          None
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
-                        {label.categories.map((cat) => (
-                          <div
-                            key={cat.id}
-                            draggable
-                            onDragStart={(e) => {
-                              e.stopPropagation();
-                              setDragCategory({
-                                labelId: label.id,
-                                categoryId: cat.id,
-                              });
-                            }}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              if (
-                                dragCategory &&
-                                dragCategory.labelId === label.id
-                              ) {
-                                handleCategoryReorder(
-                                  label.id,
-                                  dragCategory.categoryId,
-                                  cat.id
-                                );
-                              }
-                              setDragCategory(null);
-                            }}
-                            className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-sm"
-                          >
-                            {cat.name}
-                            <button
-                              className="text-muted-foreground hover:text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                detachCategory(label.id, cat.id);
-                              }}
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-2 flex items-center gap-2">
-                        <select
-                          className="h-9 rounded-md border bg-background px-2 text-sm"
-                          value=""
-                          onChange={(e) => {
-                            if (!e.target.value) return;
-                            attachCategory(label.id, e.target.value);
-                          }}
-                        >
-                          <option value="">Add category</option>
-                          {categories
-                            .filter(
-                              (cat) =>
-                                !label.categories.some((lc) => lc.id === cat.id)
-                            )
-                            .map((cat) => (
-                              <option
-                                key={`${label.id}-${cat.id}`}
-                                value={cat.id}
-                              >
-                                {cat.name}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right space-x-2 whitespace-nowrap">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => autoSortLabel(label.id)}
-                        className="inline-flex items-center gap-1"
-                      >
-                        <Sparkles className="h-4 w-4" />
-                        Auto
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => startInsertAfter(label.id)}
-                      >
-                        <Plus className="h-4 w-4 mr-1" /> Add
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => deleteLabel(label.id)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-
-                  {insertingAfterId === label.id && (
-                    <TableRow key={`${label.id}-new`}>
-                      <TableCell />
-                      <TableCell colSpan={4}>
-                        <div className="flex items-center gap-3">
-                          <Input
-                            placeholder="New label name"
-                            value={labelDraft.name}
-                            onChange={(e) =>
-                              setLabelDraft({
-                                ...labelDraft,
-                                name: e.target.value,
-                              })
-                            }
-                            autoFocus
-                          />
-                          <Input
-                            list={`icon-suggestions-new-${label.id}`}
-                            placeholder="Icon name (optional)"
-                            value={labelDraft.icon}
-                            onChange={(e) =>
-                              setLabelDraft({
-                                ...labelDraft,
-                                icon: e.target.value,
-                              })
-                            }
-                          />
-                          {labelDraft.icon ? (
-                            <DynamicIcon
-                              name={labelDraft.icon}
-                              className="h-5 w-5"
-                            />
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              None
-                            </span>
-                          )}
-                          <datalist id={`icon-suggestions-new-${label.id}`}>
-                            {ICON_SUGGESTIONS.map((icon) => (
-                              <option
-                                key={`${label.id}-new-${icon || "none"}`}
-                                value={icon}
-                              />
-                            ))}
-                          </datalist>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => saveLabel(undefined, label.id)}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={resetLabelDraft}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+          {labels.length === 0 ? (
+            <div className="rounded-md border p-6 text-center space-y-4">
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Sparkles className="h-4 w-4 text-muted-foreground" />
+                  Group categories with labels to show on product menu
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Give the label a name (icon optional). You can reorder labels
+                  and their categories, and a category can belong to multiple
+                  labels.
+                </p>
+              </div>
+              <form
+                className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  saveLabel();
+                }}
+              >
+                <Input
+                  className="w-full sm:w-56"
+                  placeholder="Label name"
+                  value={labelDraft.name}
+                  onChange={(e) =>
+                    setLabelDraft({
+                      ...labelDraft,
+                      name: e.target.value,
+                    })
+                  }
+                  autoFocus
+                />
+                <div className="flex w-full items-center justify-center gap-2 sm:w-64">
+                  <Input
+                    className="w-full"
+                    list="icon-suggestions-empty"
+                    placeholder="Icon name (optional)"
+                    value={labelDraft.icon}
+                    onChange={(e) =>
+                      setLabelDraft({
+                        ...labelDraft,
+                        icon: e.target.value,
+                      })
+                    }
+                  />
+                  {labelDraft.icon ? (
+                    <DynamicIcon name={labelDraft.icon} className="h-5 w-5" />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">None</span>
                   )}
-                </Fragment>
-              ))}
-            </TableBody>
-          </Table>
-        </TabsContent>
-
-        <TabsContent value="categories" className="space-y-4">
-          <div className="flex justify-end">
-            <Button onClick={() => openCategoryDialog()}>
-              <Plus className="mr-2 h-4 w-4" /> Add Category
-            </Button>
-          </div>
-          <div className="border rounded-md">
+                  <datalist id="icon-suggestions-empty">
+                    {ICON_SUGGESTIONS.map((icon) => (
+                      <option key={`empty-${icon || "none"}`} value={icon} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="flex gap-2">
+                  <Button type="submit" className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add label
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetLabelDraft}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </form>
+            </div>
+          ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Labels</TableHead>
-                  <TableHead>Products</TableHead>
+                  <TableHead>Order</TableHead>
+                  <TableHead>Label</TableHead>
+                  <TableHead>Icon</TableHead>
+                  <TableHead>Categories</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {categories.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">
-                      {category.name}
-                    </TableCell>
-                    <TableCell>{category.slug}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
-                        {category.labels.map((label) => (
-                          <Badge key={label.id} variant="secondary">
+                {labels.map((label) => (
+                  <Fragment key={label.id}>
+                    <TableRow
+                      draggable
+                      onDragStart={() => setDragLabelId(label.id)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => handleLabelDrop(label.id)}
+                      className="align-top"
+                    >
+                      <TableCell className="w-10">
+                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                      </TableCell>
+                      <TableCell className="w-64">
+                        {editingLabelId === label.id ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={labelDraft.name}
+                              onChange={(e) =>
+                                setLabelDraft({
+                                  ...labelDraft,
+                                  name: e.target.value,
+                                })
+                              }
+                              placeholder="Label name"
+                              autoFocus
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => saveLabel(label.id)}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={resetLabelDraft}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            className="text-left font-medium hover:underline"
+                            onClick={() => startEditLabel(label)}
+                          >
                             {label.name}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>{category._count?.products || 0}</TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openCategoryDialog(category)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive"
-                        onClick={() => deleteCategory(category.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                          </button>
+                        )}
+                      </TableCell>
+                      <TableCell className="w-48">
+                        {editingLabelId === label.id ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              list={`icon-suggestions-${label.id}`}
+                              value={labelDraft.icon}
+                              onChange={(e) =>
+                                setLabelDraft({
+                                  ...labelDraft,
+                                  icon: e.target.value,
+                                })
+                              }
+                              placeholder="Icon name (optional)"
+                            />
+                            {labelDraft.icon ? (
+                              <DynamicIcon
+                                name={labelDraft.icon}
+                                className="h-5 w-5"
+                              />
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                None
+                              </span>
+                            )}
+                            <datalist id={`icon-suggestions-${label.id}`}>
+                              {ICON_SUGGESTIONS.map((icon) => (
+                                <option
+                                  key={`${label.id}-${icon || "none"}`}
+                                  value={icon}
+                                />
+                              ))}
+                            </datalist>
+                          </div>
+                        ) : label.icon ? (
+                          <DynamicIcon name={label.icon} className="h-5 w-5" />
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            None
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-2">
+                          {(label.categories ?? []).map((cat) => (
+                            <div
+                              key={cat.id}
+                              draggable
+                              onDragStart={(e) => {
+                                e.stopPropagation();
+                                setDragCategory({
+                                  labelId: label.id,
+                                  categoryId: cat.id,
+                                });
+                              }}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                if (
+                                  dragCategory &&
+                                  dragCategory.labelId === label.id
+                                ) {
+                                  handleCategoryReorder(
+                                    label.id,
+                                    dragCategory.categoryId,
+                                    cat.id
+                                  );
+                                }
+                                setDragCategory(null);
+                              }}
+                              className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-sm"
+                            >
+                              {cat.name}
+                              <button
+                                className="text-muted-foreground hover:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  detachCategory(label.id, cat.id);
+                                }}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-2 flex items-center gap-2">
+                          <select
+                            className="h-9 rounded-md border bg-background px-2 text-sm"
+                            value=""
+                            onChange={(e) => {
+                              if (!e.target.value) return;
+                              attachCategory(label.id, e.target.value);
+                            }}
+                          >
+                            <option value="">Add category</option>
+                            {categories
+                              .filter(
+                                (cat) =>
+                                  !(label.categories ?? []).some(
+                                    (lc) => lc.id === cat.id
+                                  )
+                              )
+                              .map((cat) => (
+                                <option
+                                  key={`${label.id}-${cat.id}`}
+                                  value={cat.id}
+                                >
+                                  {cat.name}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right space-x-2 whitespace-nowrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => autoSortLabel(label.id)}
+                          className="inline-flex items-center gap-1"
+                        >
+                          <Sparkles className="h-4 w-4" />
+                          Auto
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => startInsertAfter(label.id)}
+                        >
+                          <Plus className="h-4 w-4 mr-1" /> Add
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                                <TriangleAlert className="h-4 w-4" />
+                                Delete label?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Categories attached to this label will stay
+                                published but lose the grouping.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive hover:bg-destructive/90"
+                                onClick={() => deleteLabel(label.id)}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+
+                    {insertingAfterId === label.id && (
+                      <TableRow key={`${label.id}-new`}>
+                        <TableCell />
+                        <TableCell colSpan={4}>
+                          <div className="flex items-center gap-3">
+                            <Input
+                              placeholder="New label name"
+                              value={labelDraft.name}
+                              onChange={(e) =>
+                                setLabelDraft({
+                                  ...labelDraft,
+                                  name: e.target.value,
+                                })
+                              }
+                              autoFocus
+                            />
+                            <Input
+                              list={`icon-suggestions-new-${label.id}`}
+                              placeholder="Icon name (optional)"
+                              value={labelDraft.icon}
+                              onChange={(e) =>
+                                setLabelDraft({
+                                  ...labelDraft,
+                                  icon: e.target.value,
+                                })
+                              }
+                            />
+                            {labelDraft.icon ? (
+                              <DynamicIcon
+                                name={labelDraft.icon}
+                                className="h-5 w-5"
+                              />
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                None
+                              </span>
+                            )}
+                            <datalist id={`icon-suggestions-new-${label.id}`}>
+                              {ICON_SUGGESTIONS.map((icon) => (
+                                <option
+                                  key={`${label.id}-new-${icon || "none"}`}
+                                  value={icon}
+                                />
+                              ))}
+                            </datalist>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => saveLabel(undefined, label.id)}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={resetLabelDraft}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
                 ))}
               </TableBody>
             </Table>
-          </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="categories" className="space-y-4">
+          {categories.length === 0 ? (
+            <div className="rounded-md border p-6 text-center space-y-4">
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Sparkles className="h-4 w-4 text-muted-foreground" />
+                  Create your first category
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Categories group products for menus and navigation. Add one to
+                  start attaching products and labels.
+                </p>
+              </div>
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => openCategoryDialog()}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Category
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-end">
+                <Button onClick={() => openCategoryDialog()}>
+                  <Plus className="mr-2 h-4 w-4" /> Add Category
+                </Button>
+              </div>
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Slug</TableHead>
+                      <TableHead>Labels</TableHead>
+                      <TableHead>Products</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {categories.map((category) => (
+                      <TableRow key={category.id}>
+                        <TableCell className="font-medium">
+                          {category.name}
+                        </TableCell>
+                        <TableCell>{category.slug}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-2">
+                            {category.labels.map((label) => (
+                              <Badge key={label.id} variant="secondary">
+                                {label.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>{category._count?.products || 0}</TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openCategoryDialog(category)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                                  <TriangleAlert className="h-4 w-4" />
+                                  Delete category?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Products assigned to this category will stay
+                                  live but lose the link to it.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive hover:bg-destructive/90"
+                                  onClick={() => deleteCategory(category.id)}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -717,29 +934,117 @@ export default function CategoryManagementClient() {
             </div>
             <div className="space-y-2">
               <Label>Labels</Label>
-              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-md">
-                {labels.map((label) => (
-                  <label
-                    key={label.id}
-                    className="flex items-center gap-2 text-sm"
-                  >
-                    <Checkbox
-                      checked={categoryForm.labelIds.includes(label.id)}
-                      onCheckedChange={(checked) => {
-                        setCategoryForm((prev) => {
-                          const next = new Set(prev.labelIds);
-                          if (checked) next.add(label.id);
-                          else next.delete(label.id);
-                          return { ...prev, labelIds: Array.from(next) };
-                        });
-                      }}
+              <p className="text-sm text-muted-foreground">
+                Pick existing labels below, or create one inline if you need a
+                new group.
+              </p>
+              {labels.length === 0 ? (
+                <div className="flex items-center justify-between rounded-md border p-3 text-sm text-muted-foreground">
+                  <span>No labels yet. Create one to tag this category.</span>
+                </div>
+              ) : (
+                <div
+                  className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-md"
+                  aria-label="Existing labels"
+                >
+                  {labels.map((label) => (
+                    <label
+                      key={label.id}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <Checkbox
+                        checked={categoryForm.labelIds.includes(label.id)}
+                        onCheckedChange={(checked) => {
+                          setCategoryForm((prev) => {
+                            const next = new Set(prev.labelIds);
+                            if (checked) next.add(label.id);
+                            else next.delete(label.id);
+                            return { ...prev, labelIds: Array.from(next) };
+                          });
+                        }}
+                      />
+                      {label.icon ? (
+                        <DynamicIcon name={label.icon} className="h-4 w-4" />
+                      ) : null}
+                      <span>{label.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              <div className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:gap-3">
+                <div className="flex-1 space-y-3">
+                  <div className="space-y-1">
+                    <Label
+                      className="text-xs text-muted-foreground"
+                      htmlFor="inline-label-name"
+                    >
+                      New label name
+                    </Label>
+                    <Input
+                      id="inline-label-name"
+                      placeholder="Add new label"
+                      value={inlineLabel.name}
+                      onChange={(e) =>
+                        setInlineLabel({ ...inlineLabel, name: e.target.value })
+                      }
                     />
-                    {label.icon ? (
-                      <DynamicIcon name={label.icon} className="h-4 w-4" />
-                    ) : null}
-                    <span>{label.name}</span>
-                  </label>
-                ))}
+                  </div>
+                  <div className="space-y-1">
+                    <Label
+                      className="text-xs text-muted-foreground"
+                      htmlFor="inline-label-icon"
+                    >
+                      Icon (optional)
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="inline-label-icon"
+                        className="w-full"
+                        list="icon-suggestions-inline-label"
+                        placeholder="e.g. Beans, Star"
+                        value={inlineLabel.icon}
+                        onChange={(e) =>
+                          setInlineLabel({
+                            ...inlineLabel,
+                            icon: e.target.value,
+                          })
+                        }
+                      />
+                      {inlineLabel.icon ? (
+                        <DynamicIcon
+                          name={inlineLabel.icon}
+                          className="h-5 w-5"
+                        />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          None
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <datalist id="icon-suggestions-inline-label">
+                    {ICON_SUGGESTIONS.map((icon) => (
+                      <option key={`inline-${icon || "none"}`} value={icon} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="flex gap-2 self-start sm:self-center">
+                  <Button
+                    type="button"
+                    onClick={createInlineLabel}
+                    disabled={isSavingInlineLabel}
+                  >
+                    {isSavingInlineLabel ? "Adding..." : "Add label"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setInlineLabel({ name: "", icon: "" })}
+                    disabled={isSavingInlineLabel}
+                  >
+                    Clear
+                  </Button>
+                </div>
               </div>
             </div>
             <DialogFooter>

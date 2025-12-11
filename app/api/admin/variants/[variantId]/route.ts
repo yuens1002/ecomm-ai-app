@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
-import { ProductType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
+import { getWeightUnit } from "@/lib/app-settings";
+import {
+  WeightUnitOption,
+  toGrams,
+  fromGrams,
+  roundToInt,
+} from "@/lib/weight-unit";
 
 export async function PUT(
   request: Request,
@@ -27,31 +33,23 @@ export async function PUT(
     }
 
     const providedWeight = Number(weight);
-    const finalWeight =
-      Number.isFinite(providedWeight) && providedWeight > 0
-        ? providedWeight
-        : null;
-    const isCoffee = existing.product.type === ProductType.COFFEE;
-
-    if (isCoffee && finalWeight === null) {
+    if (!Number.isFinite(providedWeight) || providedWeight <= 0) {
       return NextResponse.json(
-        { error: "Weight is required for coffee variants" },
+        { error: "Weight is required and must be greater than zero" },
         { status: 400 }
       );
     }
 
-    if (!isCoffee && weight !== undefined && finalWeight === null) {
-      return NextResponse.json(
-        { error: "Weight must be greater than zero when provided" },
-        { status: 400 }
-      );
-    }
+    const currentUnit = await getWeightUnit();
+    const weightInGrams = roundToInt(
+      toGrams(providedWeight, currentUnit as WeightUnitOption)
+    );
 
     const variant = await prisma.productVariant.update({
       where: { id: variantId },
       data: {
         name,
-        weight: finalWeight,
+        weight: weightInGrams,
         stockQuantity: Number.parseInt(stockQuantity, 10),
       },
       include: {
@@ -59,7 +57,14 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json({ variant });
+    const responseVariant = {
+      ...variant,
+      weight: roundToInt(
+        fromGrams(variant.weight, currentUnit as WeightUnitOption)
+      ),
+    };
+
+    return NextResponse.json({ variant: responseVariant });
   } catch (error) {
     console.error("Error updating variant:", error);
     return NextResponse.json(

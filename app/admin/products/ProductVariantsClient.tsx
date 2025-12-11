@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Edit, DollarSign, RefreshCw } from "lucide-react";
+import { WeightUnitOption, isWeightUnitOption } from "@/lib/weight-unit";
 
 interface PurchaseOption {
   id: string;
@@ -50,8 +51,29 @@ export default function ProductVariantsClient({
 }: {
   productId: string;
 }) {
+  const gramsPerOunce = 28.3495;
+
+  const roundAndConvertWeight = (
+    value: number,
+    fromUnit: WeightUnitOption,
+    toUnit: WeightUnitOption
+  ) => {
+    if (Number.isNaN(value)) return value;
+    if (fromUnit === toUnit) return Math.round(value);
+    const grams =
+      fromUnit === WeightUnitOption.IMPERIAL ? value * gramsPerOunce : value;
+    const converted =
+      toUnit === WeightUnitOption.IMPERIAL ? grams / gramsPerOunce : grams;
+    return Math.round(converted);
+  };
+
   const [variants, setVariants] = useState<Variant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [weightUnit, setWeightUnit] = useState<WeightUnitOption>(
+    WeightUnitOption.METRIC
+  );
+  const [previousWeightUnit, setPreviousWeightUnit] =
+    useState<WeightUnitOption | null>(null);
   const { toast } = useToast();
 
   // Variant Dialog State
@@ -89,9 +111,57 @@ export default function ProductVariantsClient({
     }
   }, [productId]);
 
+  const fetchWeightUnit = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/settings/weight-unit");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (isWeightUnitOption(data?.weightUnit)) {
+        setPreviousWeightUnit(data.weightUnit);
+        setWeightUnit(data.weightUnit);
+      }
+    } catch (error) {
+      console.error("Error fetching weight unit:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchVariants();
-  }, [fetchVariants]);
+    fetchWeightUnit();
+  }, [fetchVariants, fetchWeightUnit]);
+
+  useEffect(() => {
+    if (!previousWeightUnit || previousWeightUnit === weightUnit) return;
+
+    setVariants((current) =>
+      current.map((variant) => ({
+        ...variant,
+        weight:
+          variant.weight === null
+            ? null
+            : roundAndConvertWeight(
+                variant.weight,
+                previousWeightUnit,
+                weightUnit
+              ),
+      }))
+    );
+
+    setVariantForm((form) => {
+      const numericWeight = Number(form.weight);
+      if (Number.isNaN(numericWeight)) return form;
+      return {
+        ...form,
+        weight: roundAndConvertWeight(
+          numericWeight,
+          previousWeightUnit,
+          weightUnit
+        ).toString(),
+      };
+    });
+
+    setPreviousWeightUnit(weightUnit);
+  }, [previousWeightUnit, weightUnit, roundAndConvertWeight]);
 
   // --- Variant Handlers ---
 
@@ -254,7 +324,10 @@ export default function ProductVariantsClient({
                   <h4 className="font-semibold text-lg">{variant.name}</h4>
                   <div className="text-sm text-muted-foreground flex gap-4">
                     <span>
-                      Weight: {variant.weight ? `${variant.weight}g` : "-"}
+                      Weight:{" "}
+                      {variant.weight
+                        ? `${variant.weight}${weightUnit === WeightUnitOption.IMPERIAL ? " oz" : " g"}`
+                        : "-"}
                     </span>
                     <span>Stock: {variant.stockQuantity}</span>
                   </div>
@@ -380,7 +453,13 @@ export default function ProductVariantsClient({
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Weight (grams)</Label>
+                <Label>
+                  Weight (
+                  {weightUnit === WeightUnitOption.IMPERIAL
+                    ? "ounces"
+                    : "grams"}
+                  )
+                </Label>
                 <Input
                   type="number"
                   value={variantForm.weight}
@@ -390,7 +469,7 @@ export default function ProductVariantsClient({
                       weight: e.target.value,
                     })
                   }
-                  placeholder="340"
+                  placeholder="enter a integer value"
                 />
               </div>
               <div className="space-y-2">

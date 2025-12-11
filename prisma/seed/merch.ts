@@ -263,8 +263,6 @@ export async function seedMerch(prisma: PrismaClient) {
       },
     }));
 
-    const weight = Math.max(...variants.map((v) => v.weight ?? 0), 0);
-
     const product = await prisma.product.upsert({
       where: { slug: item.slug },
       update: {
@@ -276,7 +274,6 @@ export async function seedMerch(prisma: PrismaClient) {
         isFeatured: item.isFeatured ?? false,
         featuredOrder: item.featuredOrder,
         type: ProductType.MERCH,
-        weight,
         roastLevel: RoastLevel.MEDIUM,
         images: {
           deleteMany: {},
@@ -296,7 +293,6 @@ export async function seedMerch(prisma: PrismaClient) {
         isFeatured: item.isFeatured ?? false,
         featuredOrder: item.featuredOrder,
         type: ProductType.MERCH,
-        weight,
         roastLevel: RoastLevel.MEDIUM,
         images: {
           create: [{ url: item.imageUrl, altText: item.name, order: 1 }],

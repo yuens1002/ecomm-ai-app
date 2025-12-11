@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
+import { getWeightUnit } from "@/lib/app-settings";
+import {
+  WeightUnitOption,
+  toGrams,
+  fromGrams,
+  roundToInt,
+} from "@/lib/weight-unit";
 
 export async function POST(
   request: Request,
@@ -16,16 +23,24 @@ export async function POST(
     const body = await request.json();
     const { name, weight, stockQuantity } = body;
 
-    const parsedWeight =
-      Number.isFinite(Number(weight)) && Number(weight) > 0
-        ? Number(weight)
-        : null;
+    const parsedWeight = Number(weight);
+    if (!Number.isFinite(parsedWeight) || parsedWeight <= 0) {
+      return NextResponse.json(
+        { error: "Weight is required and must be greater than zero" },
+        { status: 400 }
+      );
+    }
+
+    const currentUnit = await getWeightUnit();
+    const weightInGrams = roundToInt(
+      toGrams(parsedWeight, currentUnit as WeightUnitOption)
+    );
 
     const variant = await prisma.productVariant.create({
       data: {
         productId: id,
         name,
-        weight: parsedWeight,
+        weight: weightInGrams,
         stockQuantity: parseInt(stockQuantity),
       },
       include: {
@@ -33,7 +48,14 @@ export async function POST(
       },
     });
 
-    return NextResponse.json({ variant });
+    const responseVariant = {
+      ...variant,
+      weight: roundToInt(
+        fromGrams(variant.weight, currentUnit as WeightUnitOption)
+      ),
+    };
+
+    return NextResponse.json({ variant: responseVariant });
   } catch (error) {
     console.error("Error creating variant:", error);
     return NextResponse.json(

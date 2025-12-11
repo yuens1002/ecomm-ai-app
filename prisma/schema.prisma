@@ -12,7 +12,6 @@ model Product {
   name              String
   slug              String                 @unique
   type              ProductType            @default(COFFEE)
-  weight            Int?
   sku               String?
   description       String?
   isDisabled        Boolean                @default(false)
@@ -94,7 +93,7 @@ model ProductImage {
 model ProductVariant {
   id                String           @id @default(cuid())
   name              String
-  weight            Int?
+  weight            Int
   sku               String?
   productId         String
   stockQuantity     Int              @default(0)
@@ -492,6 +491,11 @@ enum RoastLevel {
   LIGHT
   MEDIUM
   DARK
+}
+
+enum WeightUnit {
+  METRIC
+  IMPERIAL
 }
 
 enum TagColor {

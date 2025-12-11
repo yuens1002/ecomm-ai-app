@@ -62,6 +62,7 @@ import { seedSettings } from "./settings";
 import { seedCategories } from "./categories";
 import { seedMerch } from "./merch";
 import { seedProducts } from "./products";
+import { seedMenu } from "./menu";
 import { seedUsers } from "./users";
 import { seedCmsPages } from "./cms-pages";
 import { seedSyntheticData } from "./synthetic-data";
@@ -86,6 +87,10 @@ async function main() {
     // Phase 2: Core business data
     console.log("\n🛒 Phase 2: Seeding products...");
     await seedProducts(prisma);
+
+    // Phase 2b: Align menu (labels, categories, product assignments)
+    console.log("\n🗂️  Phase 2b: Aligning menu structure...");
+    await seedMenu(prisma);
 
     // Phase 3: User data
     if (shouldSeedUsers()) {

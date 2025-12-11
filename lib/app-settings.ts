@@ -3,11 +3,13 @@
  * Manages global app configuration using SiteSettings key-value store
  */
 
+import { WeightUnit } from "@prisma/client";
 import { prisma } from "./prisma";
 import { LocationType } from "./location-type";
 
 const APP_SETTINGS_KEYS = {
   LOCATION_TYPE: "app.locationType",
+  WEIGHT_UNIT: "app.weightUnit",
 } as const;
 
 /**
@@ -20,6 +22,19 @@ export async function getLocationType(): Promise<LocationType> {
   });
 
   return (setting?.value as LocationType) || LocationType.SINGLE; // Default to SINGLE
+}
+
+/**
+ * Get the preferred weight unit
+ * @returns WeightUnit.METRIC or WeightUnit.IMPERIAL
+ */
+export async function getWeightUnit(): Promise<WeightUnit> {
+  const setting = await prisma.siteSettings.findUnique({
+    where: { key: APP_SETTINGS_KEYS.WEIGHT_UNIT },
+  });
+
+  if (setting?.value === WeightUnit.IMPERIAL) return WeightUnit.IMPERIAL;
+  return WeightUnit.METRIC;
 }
 
 /**
@@ -38,12 +53,28 @@ export async function setLocationType(value: LocationType): Promise<void> {
 }
 
 /**
+ * Set the preferred weight unit
+ */
+export async function setWeightUnit(value: WeightUnit): Promise<void> {
+  await prisma.siteSettings.upsert({
+    where: { key: APP_SETTINGS_KEYS.WEIGHT_UNIT },
+    update: { value },
+    create: {
+      key: APP_SETTINGS_KEYS.WEIGHT_UNIT,
+      value,
+    },
+  });
+}
+
+/**
  * Get all app settings
  */
 export async function getAppSettings() {
   const locationType = await getLocationType();
+  const weightUnit = await getWeightUnit();
 
   return {
     locationType,
+    weightUnit,
   };
 }
