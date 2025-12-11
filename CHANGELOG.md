@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.35.1 - 2025-12-11
+
+- **Category label tests**: Added API unit coverage for creating/updating labels (optional icon, unique names), attaching/detaching and reordering categories, cross-label attachments, label reorder, and auto-sort; ensures delete detaches categories without fallback labels.
+
 ## 0.35.0 - 2025-12-10
 
 - **Category labels model**: Replaced `Category.labelSettingId` with `CategoryLabel` + `CategoryLabelCategory` join, added migration `20251210214740_add_category_label_and_join_tables`, and updated Prisma client/seeds to attach default Collections/Roasts/Origins labels.
