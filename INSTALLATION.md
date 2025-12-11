@@ -71,6 +71,8 @@ Visit http://localhost:3000 and sign in with the admin you created.
 - Local Postgres: export a local `DATABASE_URL` (e.g. `postgresql://postgres:postgres@localhost:5432/postgres?schema=public`) and set `DATABASE_ADAPTER=postgres` (or `standard`). Start `npm run dev` in that shell.
 - To flip back to Neon, open a fresh shell (or `unset DATABASE_URL` / `unset DATABASE_ADAPTER`) so `.env.local` wins.
 
+> Docker Compose uses `.env.docker` and ignores your shell exports. Update `DATABASE_URL`, `AUTH_SECRET`, `AUTH_TRUST_HOST=true`, and `NEXTAUTH_URL=http://localhost:3000` there, then `docker compose restart app`. Seed the compose DB via `docker compose exec app sh -c "SEED_PRODUCT_MODE=full SEED_INCLUDE_USERS=true SEED_INCLUDE_SYNTHETIC=true npm run seed"`.
+
 #### Copy-paste commands
 
 **Switch to local Postgres (Docker on localhost:5432):**

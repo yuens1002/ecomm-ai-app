@@ -2,7 +2,7 @@
 
 ## 0.35.0 - 2025-12-10
 
-- **Category labels model**: Replaced `Category.labelSettingId` with `CategoryLabel` + `CategoryLabelCategory` join, added migration `20251210214740_add_category_label_and_join_tables`, and updated Prisma client/seeds to attach default Collections/Roasts/Origins/Unassigned labels.
+- **Category labels model**: Replaced `Category.labelSettingId` with `CategoryLabel` + `CategoryLabelCategory` join, added migration `20251210214740_add_category_label_and_join_tables`, and updated Prisma client/seeds to attach default Collections/Roasts/Origins labels.
 - **Admin label APIs**: New `/api/admin/category-labels` endpoints for CRUD, reorder, attach/detach categories, and per-label auto-sort; category POST/PUT now accept `labelIds` and clean up joins on delete.
 - **Admin UI overhaul**: Category management now has Groups/Categories tabs, inline label add/edit with icon picker, drag-and-drop reorder for labels and category pills, attach/detach controls, and per-label auto sort; category form supports multi-label selection.
 - **Navigation & product UX**: Header/footer menus group categories by labels; product detail selects roast label for related products; data helpers now return label-grouped categories.

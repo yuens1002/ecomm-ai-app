@@ -283,7 +283,8 @@ export async function seedMerch(prisma: PrismaClient) {
           create: [{ url: item.imageUrl, altText: item.name, order: 1 }],
         },
         categories: { deleteMany: {}, create: [primaryCategory] },
-        variants: { deleteMany: {}, create: variants },
+        // Do not delete/recreate variants on update to avoid breaking
+        // existing OrderItem.purchaseOptionId foreign keys.
       },
       create: {
         name: item.name,

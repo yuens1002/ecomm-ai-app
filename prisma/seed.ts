@@ -289,12 +289,6 @@ async function main() {
     create: { name: "Origins", order: 2 },
   });
 
-  await prisma.categoryLabel.upsert({
-    where: { name: "Unassigned" },
-    update: {},
-    create: { name: "Unassigned", order: 3 },
-  });
-
   // --- 3. Create Categories ---
   const catBlends = await prisma.category.upsert({
     where: { slug: "blends" },

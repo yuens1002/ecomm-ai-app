@@ -18,11 +18,6 @@ export async function seedCategories(prisma: PrismaClient) {
     update: { order: 2 },
     create: { name: "Origins", order: 2 },
   });
-  await prisma.categoryLabel.upsert({
-    where: { name: "Unassigned" },
-    update: {},
-    create: { name: "Unassigned", order: 3 },
-  });
 
   // Collection Categories
   const _catBlends = await prisma.category.upsert({

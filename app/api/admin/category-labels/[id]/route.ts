@@ -2,24 +2,6 @@ import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 
-async function ensureUnassignedLabel() {
-  const existing = await prisma.categoryLabel.findUnique({
-    where: { name: "Unassigned" },
-  });
-  if (existing) return existing.id;
-
-  const maxOrder = await prisma.categoryLabel.aggregate({
-    _max: { order: true },
-  });
-  const created = await prisma.categoryLabel.create({
-    data: {
-      name: "Unassigned",
-      order: (maxOrder._max.order ?? 0) + 1,
-    },
-  });
-  return created.id;
-}
-
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -83,45 +65,9 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // find affected categories
-    const assignments = await prisma.categoryLabelCategory.findMany({
-      where: { labelId: id },
-      select: { categoryId: true },
-    });
-
-    const unassignedId = await ensureUnassignedLabel();
-
     await prisma.$transaction(async (tx) => {
-      // remove target label assignments
+      // remove target label assignments (categories simply become unassigned)
       await tx.categoryLabelCategory.deleteMany({ where: { labelId: id } });
-
-      if (assignments.length > 0) {
-        const categoryIds = [...new Set(assignments.map((a) => a.categoryId))];
-
-        // existing orders for unassigned
-        const existing = await tx.categoryLabelCategory.findMany({
-          where: { labelId: unassignedId },
-          select: { categoryId: true, order: true },
-        });
-
-        const existingMap = new Map(
-          existing.map((e) => [e.categoryId, e.order])
-        );
-
-        const startOrder = existing.length;
-        const data = categoryIds
-          .filter((cid) => !existingMap.has(cid))
-          .map((cid, idx) => ({
-            labelId: unassignedId,
-            categoryId: cid,
-            order: startOrder + idx,
-          }));
-
-        if (data.length > 0) {
-          await tx.categoryLabelCategory.createMany({ data });
-        }
-      }
-
       await tx.categoryLabel.delete({ where: { id } });
     });
 

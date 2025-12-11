@@ -268,7 +268,7 @@ export default function CategoryManagementClient() {
   }
 
   async function deleteLabel(id: string) {
-    if (!confirm("Delete this label? Categories will move to Unassigned."))
+    if (!confirm("Delete this label? Categories will be detached from it."))
       return;
     const res = await fetch(`/api/admin/category-labels/${id}`, {
       method: "DELETE",
