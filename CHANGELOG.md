@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.36.1 - 2025-12-11
+
+- **Header hydration fix**: Gated Radix navigation, search dialog, cart, and mobile sheet behind a client-mount flag to eliminate ID mismatches between SSR and client.
+- **Product card safety**: Product links now fall back when category relations are missing, preventing runtime crashes while still honoring incoming category context.
+
 ## 0.36.0 - 2025-12-11
 
 - **Canonical weight storage**: Store variant weights in grams and convert on the fly based on the site weight-unit setting; admin product/variant APIs now translate inputs/outputs with rounding helpers to keep UI and DB consistent.

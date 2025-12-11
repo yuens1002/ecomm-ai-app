@@ -47,12 +47,19 @@ export default function ProductCard({
   const altText =
     product.images[0]?.altText || `A bag of ${product.name} coffee`;
 
-  // Define the destination URL using the product's primary category slug
-  const primaryCategorySlug = product.categories[0].category.slug;
+  // Define the destination URL using the product's primary category slug (fallback-safe)
+  const primaryCategorySlug =
+    categorySlug || product.categories?.[0]?.category?.slug;
 
   // Build URL with optional "from" parameter if user came from a different category
-  let productUrl = `/${primaryCategorySlug}/${product.slug}`;
-  if (categorySlug && categorySlug !== primaryCategorySlug) {
+  let productUrl = primaryCategorySlug
+    ? `/${primaryCategorySlug}/${product.slug}`
+    : `/products/${product.slug}`;
+  if (
+    categorySlug &&
+    primaryCategorySlug &&
+    categorySlug !== primaryCategorySlug
+  ) {
     productUrl += `?from=${encodeURIComponent(categorySlug)}`;
   }
 
