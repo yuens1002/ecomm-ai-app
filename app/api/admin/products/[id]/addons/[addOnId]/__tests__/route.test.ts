@@ -38,7 +38,7 @@ jest.mock("@/lib/prisma", () => {
 });
 
 // Extract mocks after the factory has run
-const { prismaMock, findUniqueMock, deleteMock } =
+const { prismaMock: _prismaMock, findUniqueMock, deleteMock } =
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require("@/lib/prisma").__mocks;
 

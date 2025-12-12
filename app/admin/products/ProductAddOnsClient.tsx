@@ -114,7 +114,6 @@ export default function ProductAddOnsClient({
       setVariants([]);
       setSelectedVariant("__none__");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProduct]);
 
   const handleAdd = async () => {

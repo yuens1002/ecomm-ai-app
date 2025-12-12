@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.2 - 2025-12-12
+
+- **Product add-ons test coverage**: Added comprehensive unit tests for add-ons CRUD API (19 tests covering GET, POST, DELETE endpoints with authentication, validation, error handling, and business logic); fixed ESLint warnings in test files and ProductAddOnsClient.
+
 ## 0.38.1 - 2025-12-12
 
 - **Product add-ons UX refinements**: Replaced product selector with searchable Combobox component, added GET endpoint for variants, reorganized form into single-line layout with inline labels, fixed SelectValue display for variants, improved accessibility by removing unnecessary disabled states.
