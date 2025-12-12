@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.0 - 2025-12-11
+
+- **Product add-ons management**: Added ProductAddOnsClient component and API routes for creating add-on relationships between products, with optional variant-specific links and discounted pricing; integrated into product edit page below variants section.
+
 ## 0.37.0 - 2025-12-11
 
 - **Weight-balanced category menus**: Implemented self-balancing 3-column navigation with CategoryMenuColumns component using greedy weight-based distribution algorithm that keeps label groups semantically together while balancing visual height across columns.

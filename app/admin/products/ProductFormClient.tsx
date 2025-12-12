@@ -36,6 +36,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
 import ProductVariantsClient from "./ProductVariantsClient";
+import ProductAddOnsClient from "./ProductAddOnsClient";
 import { PRODUCT_TYPES, ROAST_LEVELS } from "@/lib/productEnums";
 
 interface Category {
@@ -591,6 +592,13 @@ export default function ProductFormClient({
                 )}
               </div>
             </div>
+
+            {/* Product Add-Ons Section */}
+            {productId && (
+              <div className="mt-6">
+                <ProductAddOnsClient productId={productId} />
+              </div>
+            )}
           </form>
         </Form>
       </CardContent>
