@@ -34,6 +34,7 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label"; // <-- ADDED THIS IMPORT
 import ProductCard from "@components/app-components/ProductCard"; // Re-use our card
 import { AddOnCard } from "@components/app-components/AddOnCard";
+import { ScrollCarousel } from "@components/app-components/ScrollCarousel";
 import { useCartStore } from "@/lib/store/cart-store";
 import { formatBillingInterval, formatPrice } from "@/lib/utils";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
@@ -471,28 +472,31 @@ export default function ProductClientPage({
           >
             {selectedVariant.stockQuantity > 0 ? "Add to Cart" : "Out of Stock"}
           </Button>
+
+          {/* Add-ons Section */}
+          {addOns.length > 0 && (
+            <>
+              <Separator className="my-6" />
+              <div>
+                <h2 className="text-lg font-bold text-left text-text-base mb-6">
+                  You May Also Like
+                </h2>
+
+                <ScrollCarousel slidesPerView={1} noBorder={true}>
+                  {addOns.map((addOn) => (
+                    <AddOnCard
+                      key={`${addOn.product.id}-${addOn.variant.id}`}
+                      addOn={addOn}
+                      weightUnit="g"
+                      onAddToCart={() => handleAddOnToCart(addOn)}
+                    />
+                  ))}
+                </ScrollCarousel>
+              </div>
+            </>
+          )}
         </div>
       </div>
-
-      {/* Add-ons Section */}
-      {addOns.length > 0 && (
-        <div className="my-16">
-          <Separator className="my-12" />
-          <h2 className="text-3xl font-bold text-center text-text-base mb-8">
-            Complete Your Order
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-            {addOns.map((addOn) => (
-              <AddOnCard
-                key={`${addOn.product.id}-${addOn.variant.id}`}
-                addOn={addOn}
-                weightUnit="g"
-                onAddToCart={() => handleAddOnToCart(addOn)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* 3. Related Products Section */}
       <div className="my-16">

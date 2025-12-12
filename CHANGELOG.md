@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Add-ons carousel**: Created reusable ScrollCarousel component with configurable slides-per-view, added carousel to product add-ons section with single slide display, theme-aware dots navigation (noBorder prop), debounced scroll tracking, and full-width slide support.
+
 ## 0.39.0 - 2025-12-12
 
 - **Server actions for add-ons**: Migrated product add-ons to server actions with `getProductAddOns()` fetching data server-side for better performance and type safety; both product routes now render add-ons without client-side API calls.

@@ -332,6 +332,14 @@ export async function seedMerch(prisma: PrismaClient) {
       discountedPriceInCents: 1000,
     },
     {
+      primarySlug: "origami-air-dripper",
+      addOnSlug: "barista-towel-2-pack",
+    },
+    {
+      primarySlug: "origami-air-dripper",
+      addOnSlug: "enamel-pin-set",
+    },
+    {
       primarySlug: "cold-brew-bottle",
       addOnSlug: "barista-towel-2-pack",
     },
