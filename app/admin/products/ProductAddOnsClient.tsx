@@ -133,7 +133,10 @@ export default function ProductAddOnsClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           addOnProductId: selectedProduct,
-          addOnVariantId: selectedVariant && selectedVariant !== "__none__" ? selectedVariant : null,
+          addOnVariantId:
+            selectedVariant && selectedVariant !== "__none__"
+              ? selectedVariant
+              : null,
           discountedPriceInCents: discountedPrice
             ? Math.round(parseFloat(discountedPrice) * 100)
             : null,
@@ -238,7 +241,7 @@ export default function ProductAddOnsClient({
             <Select
               value={selectedVariant}
               onValueChange={setSelectedVariant}
-              disabled={!selectedProduct || variants.length === 0}
+              disabled={!selectedProduct}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Variant (optional)" />
