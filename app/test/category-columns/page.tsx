@@ -92,8 +92,8 @@ export default function CategoryColumnsTestPage() {
             <p className="text-sm font-medium mb-2">How it works:</p>
             <ol className="text-sm space-y-1 list-decimal list-inside text-muted-foreground">
               <li>
-                Calculate weight: Label (1) + Visible Categories (N) + &quot;...more&quot;
-                link (1 if present)
+                Calculate weight: Label (1) + Visible Categories (N) +
+                &quot;...more&quot; link (1 if present)
               </li>
               <li>
                 For each label group, add to column with smallest current weight
@@ -136,9 +136,9 @@ export default function CategoryColumnsTestPage() {
             />
           </div>
           <p className="text-sm text-muted-foreground italic mt-4">
-            Notice: &quot;Huge&quot; label stays together in one column (collapsed with
-            &quot;...more&quot;), while smaller groups fill the remaining columns to
-            balance visual height.
+            Notice: &quot;Huge&quot; label stays together in one column
+            (collapsed with &quot;...more&quot;), while smaller groups fill the
+            remaining columns to balance visual height.
           </p>
         </div>
       </section>
@@ -151,12 +151,12 @@ export default function CategoryColumnsTestPage() {
             <h3 className="font-semibold mb-2">Try these interactions:</h3>
             <ol className="space-y-2 list-decimal list-inside text-sm">
               <li>
-                Expand &quot;ORIGINS&quot; (10 categories) - watch the entire group move to
-                balance columns
+                Expand &quot;ORIGINS&quot; (10 categories) - watch the entire
+                group move to balance columns
               </li>
               <li>
-                Expand &quot;COLLECTIONS&quot; (8 categories) - see dynamic rebalancing
-                across all columns
+                Expand &quot;COLLECTIONS&quot; (8 categories) - see dynamic
+                rebalancing across all columns
               </li>
               <li>
                 Collapse them back - notice groups stay together while
