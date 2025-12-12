@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, ReactNode } from "react";
+import React, { useState, useEffect, useRef, ReactNode } from "react";
 import { CarouselDots } from "./CarouselDots";
 import { cn } from "@/lib/utils";
 
 interface ScrollCarouselProps {
-  children: ReactNode[];
+  children: ReactNode;
   /** Number of slides per view (e.g., 1 for full width, 2.5 for multiple slides) */
   slidesPerView?: number;
   /** Minimum width for each slide */
@@ -28,8 +28,8 @@ export function ScrollCarousel({
   children,
   slidesPerView = 1,
   minWidth,
-  gap = "1rem",
-  padding: _padding = "1rem",
+  gap = "gap-4",
+  padding = "px-4",
   showDots = true,
   autoScroll = false,
   intervalSeconds = 5,
@@ -40,7 +40,9 @@ export function ScrollCarousel({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const autoScrollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const itemCount = children.length;
+  // Convert children to array to handle single child case
+  const childrenArray = Array.isArray(children) ? children : [children];
+  const itemCount = childrenArray.length;
 
   // Auto-scroll logic
   useEffect(() => {
@@ -118,14 +120,15 @@ export function ScrollCarousel({
         ref={scrollContainerRef}
         className={cn(
           "flex overflow-x-auto snap-x snap-mandatory scrollbar-hide",
-          slidesPerView === 1 ? "gap-0" : "gap-4 px-4"
+          slidesPerView === 1 ? "gap-0" : gap,
+          slidesPerView === 1 ? "" : padding
         )}
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
         }}
       >
-        {children.map((child, index) => (
+        {childrenArray.map((child, index) => (
           <div key={index} className="shrink-0 snap-start" style={slideStyle}>
             {child}
           </div>

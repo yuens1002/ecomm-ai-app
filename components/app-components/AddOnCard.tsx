@@ -47,7 +47,7 @@ export function AddOnCard({ addOn, onAddToCart }: AddOnCardProps) {
     "https://placehold.co/300x200/CCCCCC/FFFFFF.png?text=No+Image";
 
   return (
-    <div className="flex flex-row gap-4">
+    <div className="flex flex-row gap-6">
       {/* Image */}
       <div className="relative w-24 h-24 flex-shrink-0 bg-muted rounded">
         <Image

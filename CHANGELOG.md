@@ -4,6 +4,8 @@
 
 - **Add-ons carousel**: Created reusable ScrollCarousel component with configurable slides-per-view, added carousel to product add-ons section with single slide display, theme-aware dots navigation (noBorder prop), debounced scroll tracking, and full-width slide support.
 - **Carousel refactor**: Refactored CarouselBlock to use ScrollCarousel internally, eliminating duplicate scroll logic and centralizing carousel behavior in one reusable component.
+- **ScrollCarousel children handling**: Fixed ScrollCarousel to properly handle React children using `Array.isArray()` check instead of requiring array type, enabling single-child usage; fixed gap/padding props to use Tailwind classes as defaults and actually apply custom values.
+- **Test coverage fixes**: Updated actions.test.ts mock data to match new AddOnLink schema (primaryProductId, addOnProduct, addOnVariant fields); fixed WeightUnit enum mock to use IMPERIAL instead of "ounces"; all 150 tests passing.
 
 ## 0.39.0 - 2025-12-12
 

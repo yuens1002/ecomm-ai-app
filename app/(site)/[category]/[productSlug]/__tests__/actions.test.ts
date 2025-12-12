@@ -75,8 +75,8 @@ describe("getProductAddOns", () => {
         },
       },
       include: expect.objectContaining({
-        targetProduct: expect.any(Object),
-        targetVariant: expect.any(Object),
+        addOnProduct: expect.any(Object),
+        addOnVariant: expect.any(Object),
       }),
     });
   });
@@ -119,28 +119,27 @@ describe("getProductAddOns", () => {
     const mockAddOns = [
       {
         id: "addon-1",
-        sourceProductId: "product-1",
-        targetProductId: "product-2",
-        targetVariantId: "variant-2",
+        primaryProductId: "product-1",
+        addOnProductId: "product-2",
+        addOnVariantId: "variant-2",
         discountedPriceInCents: 1200,
-        targetProduct: {
+        addOnProduct: {
           id: "product-2",
           name: "Sample Mug",
           slug: "sample-mug",
           type: "MERCHANDISE",
           description: "A nice mug",
-          heroImage: "/mug.jpg",
         },
-        targetVariant: {
+        addOnVariant: {
           id: "variant-2",
           name: "Standard",
-          image: null,
-          weightGrams: 500,
-          weightOunces: 17.6,
+          weight: 500,
+          stockQuantity: 10,
           purchaseOptions: [
             {
               id: "po-1",
               priceInCents: 1500,
+              type: "ONE_TIME",
             },
           ],
         },
@@ -160,18 +159,17 @@ describe("getProductAddOns", () => {
         slug: "sample-mug",
         type: "MERCHANDISE",
         description: "A nice mug",
-        heroImage: "/mug.jpg",
       },
       variant: {
         id: "variant-2",
         name: "Standard",
-        image: null,
-        weightGrams: 500,
-        weightOunces: 17.6,
+        weight: 500,
+        stockQuantity: 10,
         purchaseOptions: [
           {
             id: "po-1",
             priceInCents: 1500,
+            type: "ONE_TIME",
           },
         ],
       },
@@ -183,28 +181,27 @@ describe("getProductAddOns", () => {
     const mockAddOns = [
       {
         id: "addon-1",
-        sourceProductId: "product-1",
-        targetProductId: "product-2",
-        targetVariantId: "variant-2",
+        primaryProductId: "product-1",
+        addOnProductId: "product-2",
+        addOnVariantId: "variant-2",
         discountedPriceInCents: null,
-        targetProduct: {
+        addOnProduct: {
           id: "product-2",
           name: "Sample Mug",
           slug: "sample-mug",
           type: "MERCHANDISE",
           description: "A nice mug",
-          heroImage: "/mug.jpg",
         },
-        targetVariant: {
+        addOnVariant: {
           id: "variant-2",
           name: "Standard",
-          image: null,
-          weightGrams: 500,
-          weightOunces: 17.6,
+          weight: 500,
+          stockQuantity: 10,
           purchaseOptions: [
             {
               id: "po-1",
               priceInCents: 1500,
+              type: "ONE_TIME",
             },
           ],
         },
@@ -222,24 +219,22 @@ describe("getProductAddOns", () => {
     const mockAddOns = [
       {
         id: "addon-1",
-        sourceProductId: "product-1",
-        targetProductId: "product-2",
-        targetVariantId: "variant-2",
+        primaryProductId: "product-1",
+        addOnProductId: "product-2",
+        addOnVariantId: "variant-2",
         discountedPriceInCents: 1200,
-        targetProduct: {
+        addOnProduct: {
           id: "product-2",
           name: "Sample Mug",
           slug: "sample-mug",
           type: "MERCHANDISE",
           description: "A nice mug",
-          heroImage: "/mug.jpg",
         },
-        targetVariant: {
+        addOnVariant: {
           id: "variant-2",
           name: "Standard",
-          image: null,
-          weightGrams: 500,
-          weightOunces: 17.6,
+          weight: 500,
+          stockQuantity: 10,
           purchaseOptions: [], // No purchase options
         },
       },
@@ -256,28 +251,27 @@ describe("getProductAddOns", () => {
     const mockAddOns = [
       {
         id: "addon-1",
-        sourceProductId: "product-1",
-        targetProductId: "product-2",
-        targetVariantId: "variant-2",
+        primaryProductId: "product-1",
+        addOnProductId: "product-2",
+        addOnVariantId: "variant-2",
         discountedPriceInCents: 1200,
-        targetProduct: {
+        addOnProduct: {
           id: "product-2",
           name: "Coffee Beans",
           slug: "coffee-beans",
           type: "COFFEE",
           description: "Fresh beans",
-          heroImage: "/beans.jpg",
         },
-        targetVariant: {
+        addOnVariant: {
           id: "variant-2",
           name: "12oz",
-          image: null,
-          weightGrams: 340,
-          weightOunces: 12,
+          weight: 340,
+          stockQuantity: 10,
           purchaseOptions: [
             {
               id: "po-1",
               priceInCents: 1800,
+              type: "ONE_TIME",
             },
           ],
         },
@@ -285,7 +279,7 @@ describe("getProductAddOns", () => {
     ];
 
     prismaMock.addOnLink.findMany.mockResolvedValue(mockAddOns);
-    (getWeightUnit as jest.Mock).mockResolvedValue("ounces");
+    (getWeightUnit as jest.Mock).mockResolvedValue("IMPERIAL");
 
     const result = await getProductAddOns("product-1");
 
@@ -296,48 +290,48 @@ describe("getProductAddOns", () => {
     const mockAddOns = [
       {
         id: "addon-1",
-        sourceProductId: "product-1",
-        targetProductId: "product-2",
-        targetVariantId: "variant-2",
+        primaryProductId: "product-1",
+        addOnProductId: "product-2",
+        addOnVariantId: "variant-2",
         discountedPriceInCents: 1200,
-        targetProduct: {
+        addOnProduct: {
           id: "product-2",
           name: "Mug",
           slug: "mug",
           type: "MERCHANDISE",
           description: "A mug",
-          heroImage: "/mug.jpg",
         },
-        targetVariant: {
+        addOnVariant: {
           id: "variant-2",
           name: "Standard",
-          image: null,
-          weightGrams: 500,
-          weightOunces: 17.6,
-          purchaseOptions: [{ id: "po-1", priceInCents: 1500 }],
+          weight: 500,
+          stockQuantity: 10,
+          purchaseOptions: [
+            { id: "po-1", priceInCents: 1500, type: "ONE_TIME" },
+          ],
         },
       },
       {
         id: "addon-2",
-        sourceProductId: "product-1",
-        targetProductId: "product-3",
-        targetVariantId: "variant-3",
+        primaryProductId: "product-1",
+        addOnProductId: "product-3",
+        addOnVariantId: "variant-3",
         discountedPriceInCents: 800,
-        targetProduct: {
+        addOnProduct: {
           id: "product-3",
           name: "Sticker",
           slug: "sticker",
           type: "MERCHANDISE",
           description: "A sticker",
-          heroImage: "/sticker.jpg",
         },
-        targetVariant: {
+        addOnVariant: {
           id: "variant-3",
           name: "Small",
-          image: null,
-          weightGrams: 10,
-          weightOunces: 0.35,
-          purchaseOptions: [{ id: "po-2", priceInCents: 1000 }],
+          weight: 10,
+          stockQuantity: 10,
+          purchaseOptions: [
+            { id: "po-2", priceInCents: 1000, type: "ONE_TIME" },
+          ],
         },
       },
     ];
@@ -369,7 +363,7 @@ describe("getProductAddOns", () => {
     expect(prismaMock.addOnLink.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         include: expect.objectContaining({
-          targetVariant: expect.objectContaining({
+          addOnVariant: expect.objectContaining({
             select: expect.objectContaining({
               purchaseOptions: expect.objectContaining({
                 where: {
