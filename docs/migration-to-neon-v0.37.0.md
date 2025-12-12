@@ -78,27 +78,21 @@ npx prisma db push
 npx prisma migrate deploy
 ```
 
-## Step 5: Seed Neon Database
+## Step 5: Restore Data from Backup
+
+Instead of seeding, restore your existing data from the backup you created in Step 1:
 
 ```bash
-# Run full seed with all data
-npm run seed
+# Restore from your backup file
+npm run db:restore -- dev-tools/backups/backup-YYYY-MM-DD-HH-MM-SS.json
 
-# Or seed specific modules
-npm run seed:settings
-npm run seed:categories
-npm run seed:products
-npm run seed:pages
+# The script will:
+# 1. Clear existing data (if any)
+# 2. Restore all tables in FK-safe order
+# 3. Preserve all IDs, relationships, and data
 ```
 
-### Seed Configuration Options
-
-```env
-# Control seed behavior
-SEED_LOCATION_TYPE=SINGLE    # or MULTI for multiple café locations
-SEED_WEIGHT_UNIT=imperial    # or metric
-SEED_INCLUDE_MERCH=true      # Include merchandise products
-```
+> **Note**: The restore script handles foreign key dependencies automatically (settings → categories → products → users → pages → orders → etc.)
 
 ## Step 6: Verify Migration
 
@@ -268,9 +262,21 @@ npm run dev
 
 **Solution**: Run `npx prisma db push` or `npx prisma migrate deploy`
 
-### Issue: Seed fails with foreign key errors
+### Issue: Restore fails with foreign key errors
 
-**Solution**: Check seed order in `prisma/seed/index.ts`. Dependencies: settings → categories → products → users → pages
+**Solution**: The restore script handles FK order automatically. If it still fails:
+
+1. Check backup file integrity: `cat backup.json | jq .`
+2. Ensure all migrations are applied: `npx prisma migrate deploy`
+3. Try recreating schema: `npx prisma db push --force-reset` then restore
+
+### Issue: Data mismatch after restore
+
+**Solution**:
+
+1. Verify backup was created from correct database
+2. Check backup timestamp matches expected data state
+3. Compare record counts in backup JSON vs restored database
 
 ### Issue: Slow queries
 
