@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Recommendations URL fix**: Fixed product links in RecommendationsSection to use primary category instead of non-existent "recommendations-personalized" or "recommendations-trending" slugs that created invalid /recommendations/* URLs.
+
 ## 0.38.2 - 2025-12-12
 
 - **Product add-ons test coverage**: Added comprehensive unit tests for add-ons CRUD API (19 tests covering GET, POST, DELETE endpoints with authentication, validation, error handling, and business logic); fixed ESLint warnings in test files and ProductAddOnsClient.

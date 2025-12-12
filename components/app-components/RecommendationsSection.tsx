@@ -165,11 +165,6 @@ export default function RecommendationsSection() {
               key={product.id}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               product={product as any}
-              categorySlug={
-                isPersonalized
-                  ? "recommendations-personalized"
-                  : "recommendations-trending"
-              }
               priority={index === 0} // Load first image eagerly as it's likely LCP
             />
           ))}
