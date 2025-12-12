@@ -45,10 +45,22 @@ export default async function SiteHeaderWrapper() {
     >
   );
 
+  // Build icon mapping for labels
+  const labelIcons = labels.reduce(
+    (acc, label) => {
+      if (label.icon) {
+        acc[label.name] = label.icon;
+      }
+      return acc;
+    },
+    {} as Record<string, string>
+  );
+
   // Pass the dynamically grouped categories and pages to the client component
   return (
     <SiteHeader
       categoryGroups={categoryGroups}
+      labelIcons={labelIcons}
       user={session?.user || null}
       pages={headerPages}
     />

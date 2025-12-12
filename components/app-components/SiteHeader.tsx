@@ -42,6 +42,7 @@ import * as React from "react";
 import { DynamicIcon } from "./DynamicIcon";
 import { SiteBanner, type BannerVariant } from "./SiteBanner";
 import type { IconName } from "./DynamicIcon";
+import { CategoryMenuColumns } from "./CategoryMenuColumns";
 
 const ListItem = React.forwardRef<
   React.ElementRef<"a">,
@@ -68,20 +69,6 @@ const ListItem = React.forwardRef<
   );
 });
 ListItem.displayName = "ListItem";
-
-interface ExpandableListProps {
-  items: { label: string; href: string }[];
-}
-
-function ExpandableList({ items }: ExpandableListProps) {
-  return (
-    <ul className="space-y-1">
-      {items.map((item) => (
-        <ListItem key={item.label} href={item.href} title={item.label} />
-      ))}
-    </ul>
-  );
-}
 
 interface PageLink {
   id: string;
@@ -113,6 +100,7 @@ interface NavCategory {
 
 interface SiteHeaderProps {
   categoryGroups: Record<string, NavCategory[]>;
+  labelIcons?: Record<string, string>;
   user: {
     name?: string | null;
     email?: string | null;
@@ -128,6 +116,7 @@ interface SiteHeaderProps {
  */
 export default function SiteHeader({
   categoryGroups,
+  labelIcons,
   user,
   pages,
   banner,
@@ -227,24 +216,10 @@ export default function SiteHeader({
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <div className="w-[600px] p-6 h-[330px] overflow-y-auto">
-                      <div className="grid grid-cols-3 gap-8">
-                        {/* Dynamically render columns for each category group */}
-                        {Object.entries(categoryGroups).map(
-                          ([label, categories]) => (
-                            <div key={label} className="space-y-3">
-                              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2 px-2">
-                                {label}
-                              </h4>
-                              <ExpandableList
-                                items={categories.map((cat) => ({
-                                  label: cat.name,
-                                  href: `/${cat.slug}`,
-                                }))}
-                              />
-                            </div>
-                          )
-                        )}
-                      </div>
+                      <CategoryMenuColumns
+                        categoryGroups={categoryGroups}
+                        labelIcons={labelIcons}
+                      />
                     </div>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
@@ -392,13 +367,20 @@ export default function SiteHeader({
                       ([label, categories]) => (
                         <div key={label} className="mb-6">
                           <div className="flex items-center gap-2 mb-2 px-4">
-                            <Image
-                              src="/beans.svg"
-                              alt="Coffee"
-                              width={20}
-                              height={20}
-                              className="w-5 h-5 dark:invert"
-                            />
+                            {labelIcons?.[label] ? (
+                              <DynamicIcon
+                                name={labelIcons[label]}
+                                className="w-5 h-5"
+                              />
+                            ) : (
+                              <Image
+                                src="/beans.svg"
+                                alt="Coffee"
+                                width={20}
+                                height={20}
+                                className="w-5 h-5 dark:invert"
+                              />
+                            )}
                             <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
                               {label}
                             </span>
