@@ -114,9 +114,11 @@ async function restoreDatabase(backupFile?: string) {
       "account",
       "session",
       "verificationToken",
-      "siteSettings", // categories reference labelSettingId
+      "siteSettings",
       "address",
+      "categoryLabel", // Must come before category
       "category",
+      "categoryLabelCategory", // Join table after both categoryLabel and category
       "tag",
       "product",
       "productImage",
