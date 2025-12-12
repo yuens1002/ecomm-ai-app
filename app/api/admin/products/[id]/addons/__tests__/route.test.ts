@@ -50,7 +50,13 @@ jest.mock("@/lib/prisma", () => {
 });
 
 // Extract mocks after the factory has run
-const { prismaMock: _prismaMock, findUniqueMock, findManyMock, findFirstMock, createMock } =
+const {
+  prismaMock: _prismaMock,
+  findUniqueMock,
+  findManyMock,
+  findFirstMock,
+  createMock,
+} =
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require("@/lib/prisma").__mocks;
 
@@ -523,9 +529,7 @@ describe("POST /api/admin/products/[id]/addons", () => {
 
   it("handles database errors gracefully", async () => {
     requireAdminApiMock.mockResolvedValue({ authorized: true });
-    findUniqueMock.mockRejectedValue(
-      new Error("Database connection failed")
-    );
+    findUniqueMock.mockRejectedValue(new Error("Database connection failed"));
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/products/prod-1/addons",

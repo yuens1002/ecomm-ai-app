@@ -194,9 +194,7 @@ describe("DELETE /api/admin/products/[id]/addons/[addOnId]", () => {
 
   it("handles database errors gracefully", async () => {
     requireAdminApiMock.mockResolvedValue({ authorized: true });
-    findUniqueMock.mockRejectedValue(
-      new Error("Database connection failed")
-    );
+    findUniqueMock.mockRejectedValue(new Error("Database connection failed"));
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/products/prod-1/addons/addon-1",
