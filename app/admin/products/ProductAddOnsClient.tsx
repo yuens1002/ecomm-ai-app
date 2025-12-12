@@ -57,22 +57,6 @@ export default function ProductAddOnsClient({
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
 
-  // Fetch existing add-ons
-  useEffect(() => {
-    fetchAddOns();
-    fetchAvailableProducts();
-  }, [productId]);
-
-  // Fetch variants when product is selected
-  useEffect(() => {
-    if (selectedProduct) {
-      fetchVariants(selectedProduct);
-    } else {
-      setVariants([]);
-      setSelectedVariant("");
-    }
-  }, [selectedProduct]);
-
   const fetchAddOns = async () => {
     try {
       const res = await fetch(`/api/admin/products/${productId}/addons`);
@@ -113,6 +97,24 @@ export default function ProductAddOnsClient({
       setVariants([]);
     }
   };
+
+  // Fetch existing add-ons
+  useEffect(() => {
+    fetchAddOns();
+    fetchAvailableProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]);
+
+  // Fetch variants when product is selected
+  useEffect(() => {
+    if (selectedProduct) {
+      fetchVariants(selectedProduct);
+    } else {
+      setVariants([]);
+      setSelectedVariant("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProduct]);
 
   const handleAdd = async () => {
     if (!selectedProduct) {
