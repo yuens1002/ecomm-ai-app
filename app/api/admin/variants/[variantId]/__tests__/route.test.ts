@@ -22,6 +22,10 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
+jest.mock("@/lib/app-settings", () => ({
+  getWeightUnit: jest.fn().mockResolvedValue("g"),
+}));
+
 import { PUT } from "../route";
 
 describe("PUT /api/admin/variants/[variantId]", () => {
@@ -71,17 +75,21 @@ describe("PUT /api/admin/variants/[variantId]", () => {
     expect(prismaMocks.updateVariantMock).not.toHaveBeenCalled();
   });
 
-  it("allows non-coffee variant without weight", async () => {
+  it("allows non-coffee variant with weight", async () => {
     prismaMocks.findUniqueMock.mockResolvedValue({
       id: "var_1",
       productId: "prod_1",
       product: { type: ProductType.MERCH },
     });
+    prismaMocks.updateVariantMock.mockResolvedValue({
+      id: "var_1",
+      weight: 100,
+    });
 
     const req = new NextRequest("http://localhost/api/admin/variants/var_1", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "Large", stockQuantity: 1 }),
+      body: JSON.stringify({ name: "Large", stockQuantity: 1, weight: 100 }),
     });
 
     await PUT(req, params);

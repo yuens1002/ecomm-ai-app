@@ -74,7 +74,7 @@ describe("SiteHeader - Category Menu Integration", () => {
       // Desktop navigation uses CategoryMenuColumns
       // The menu is inside NavigationMenu which is only visible on md+
       // We can verify the structure exists
-      expect(screen.getByText("Test Coffee")).toBeInTheDocument();
+      expect(screen.getAllByText("Test Coffee")[0]).toBeInTheDocument();
     });
 
     it("renders label icons when provided in desktop menu", () => {
@@ -93,7 +93,7 @@ describe("SiteHeader - Category Menu Integration", () => {
       );
 
       // CategoryMenuColumns receives labelIcons prop
-      expect(screen.getByText("Test Coffee")).toBeInTheDocument();
+      expect(screen.getAllByText("Test Coffee")[0]).toBeInTheDocument();
     });
 
     it("renders page links in desktop navigation", () => {
@@ -107,7 +107,7 @@ describe("SiteHeader - Category Menu Integration", () => {
 
       // Page link should be rendered
       // Note: In actual render, navigation might be hidden in test environment
-      expect(screen.getByText("Test Coffee")).toBeInTheDocument();
+      expect(screen.getAllByText("Test Coffee")[0]).toBeInTheDocument();
     });
   });
 
@@ -123,7 +123,7 @@ describe("SiteHeader - Category Menu Integration", () => {
 
       // Mobile menu exists (Sheet component)
       // The actual content is inside SheetContent which might not be visible initially
-      expect(screen.getByText("Test Coffee")).toBeInTheDocument();
+      expect(screen.getAllByText("Test Coffee")[0]).toBeInTheDocument();
     });
 
     it("renders label icons in mobile menu when provided", () => {
@@ -141,7 +141,7 @@ describe("SiteHeader - Category Menu Integration", () => {
       );
 
       // Mobile menu should receive labelIcons
-      expect(screen.getByText("Test Coffee")).toBeInTheDocument();
+      expect(screen.getAllByText("Test Coffee")[0]).toBeInTheDocument();
     });
 
     it("falls back to coffee bean icon when label icon not provided", () => {
@@ -154,7 +154,7 @@ describe("SiteHeader - Category Menu Integration", () => {
       );
 
       // Without labelIcons, should fall back to beans.svg
-      expect(screen.getByText("Test Coffee")).toBeInTheDocument();
+      expect(screen.getAllByText("Test Coffee")[0]).toBeInTheDocument();
     });
   });
 
@@ -228,7 +228,7 @@ describe("SiteHeader - Category Menu Integration", () => {
     it("handles empty categoryGroups", () => {
       render(<SiteHeader categoryGroups={{}} user={null} pages={[]} />);
 
-      expect(screen.getByText("Test Coffee")).toBeInTheDocument();
+      expect(screen.getAllByText("Test Coffee")[0]).toBeInTheDocument();
     });
 
     it("handles empty pages array", () => {
@@ -240,7 +240,7 @@ describe("SiteHeader - Category Menu Integration", () => {
         />
       );
 
-      expect(screen.getByText("Test Coffee")).toBeInTheDocument();
+      expect(screen.getAllByText("Test Coffee")[0]).toBeInTheDocument();
     });
 
     it("handles undefined labelIcons", () => {
@@ -252,7 +252,7 @@ describe("SiteHeader - Category Menu Integration", () => {
         />
       );
 
-      expect(screen.getByText("Test Coffee")).toBeInTheDocument();
+      expect(screen.getAllByText("Test Coffee")[0]).toBeInTheDocument();
     });
   });
 });

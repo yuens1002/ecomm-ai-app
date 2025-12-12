@@ -1,0 +1,2728 @@
+
+> artisan-roast@0.37.0 test:ci
+> jest --ci
+
+PASS app/api/checkout/__tests__/route.test.ts
+PASS app/api/admin/products/[id]/__tests__/route.test.ts
+PASS app/api/admin/category-labels/__tests__/route.test.ts
+FAIL app/api/admin/variants/[variantId]/__tests__/route.test.ts
+  ● Console
+
+    console.error
+      Error updating variant: TypeError: Cannot read properties of undefined (reading 'findUnique')
+          at findUnique (D:\DEV\artisan-roast\lib\app-settings.ts:32:45)
+          at PUT (D:\DEV\artisan-roast\app\api\admin\variants\[variantId]\route.ts:43:44)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at Object.<anonymous> (D:\DEV\artisan-roast\app\api\admin\variants\[variantId]\__tests__\route.test.ts:51:5)
+
+    [0m [90m 67 |[39m     [36mreturn[39m [33mNextResponse[39m[33m.[39mjson({ variant[33m:[39m responseVariant })[33m;[39m
+     [90m 68 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 69 |[39m     console[33m.[39merror([32m"Error updating variant:"[39m[33m,[39m error)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 70 |[39m     [36mreturn[39m [33mNextResponse[39m[33m.[39mjson(
+     [90m 71 |[39m       { error[33m:[39m [32m"Failed to update variant"[39m }[33m,[39m
+     [90m 72 |[39m       { status[33m:[39m [35m500[39m }[0m
+
+      at error (app/api/admin/variants/[variantId]/route.ts:69:13)
+      at Object.<anonymous> (app/api/admin/variants/[variantId]/__tests__/route.test.ts:51:5)
+
+  ● PUT /api/admin/variants/[variantId] › uses provided weight for coffee variant
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: ObjectContaining {"data": ObjectContaining {"weight": 340}}
+
+    Number of calls: 0
+
+    [0m [90m 51 |[39m     [36mawait[39m [33mPUT[39m(req[33m,[39m params)[33m;[39m
+     [90m 52 |[39m
+    [31m[1m>[22m[39m[90m 53 |[39m     expect(prismaMocks[33m.[39mupdateVariantMock)[33m.[39mtoHaveBeenCalledWith(
+     [90m    |[39m                                           [31m[1m^[22m[39m
+     [90m 54 |[39m       expect[33m.[39mobjectContaining({
+     [90m 55 |[39m         data[33m:[39m expect[33m.[39mobjectContaining({
+     [90m 56 |[39m           weight[33m:[39m [35m340[39m[33m,[39m[0m
+
+      at Object.toHaveBeenCalledWith (app/api/admin/variants/[variantId]/__tests__/route.test.ts:53:43)
+
+  ● PUT /api/admin/variants/[variantId] › allows non-coffee variant without weight
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+    [0m [90m 87 |[39m     [36mawait[39m [33mPUT[39m(req[33m,[39m params)[33m;[39m
+     [90m 88 |[39m
+    [31m[1m>[22m[39m[90m 89 |[39m     expect(prismaMocks[33m.[39mupdateVariantMock)[33m.[39mtoHaveBeenCalled()[33m;[39m
+     [90m    |[39m                                           [31m[1m^[22m[39m
+     [90m 90 |[39m   })[33m;[39m
+     [90m 91 |[39m })[33m;[39m
+     [90m 92 |[39m[0m
+
+      at Object.toHaveBeenCalled (app/api/admin/variants/[variantId]/__tests__/route.test.ts:89:43)
+
+PASS app/api/admin/products/__tests__/route.test.ts
+PASS app/api/track-activity/__tests__/route.test.ts
+  ● Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (24) from .env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      DEBUG: Loaded .env.local via dotenv
+
+      at Object.log (lib/prisma.ts:17:13)
+
+PASS app/api/recommendations/__tests__/route.test.ts
+  ● Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (24) from .env.local -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      DEBUG: Loaded .env.local via dotenv
+
+      at Object.log (lib/prisma.ts:17:13)
+
+PASS app/api/search/__tests__/route.test.ts
+  ● Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (24) from .env.local -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      DEBUG: Loaded .env.local via dotenv
+
+      at Object.log (lib/prisma.ts:17:13)
+
+PASS hooks/__tests__/useActivityTracking.test.tsx
+PASS lib/ai-assist/useAiAssist.cache.test.tsx
+  ● Console
+
+    console.log
+      [AI Assist] Hook init { pageId: 'page-1' }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Load persisted state effect running { pageId: 'page-1' }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Hydrated cache from localStorage {
+        pageId: 'page-1',
+        variationCount: 1,
+        fingerprintLength: 373,
+        blockSnapshotLength: 61
+      }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Regenerate invoked {
+        pageId: 'page-1',
+        styleChoice: 'story',
+        fingerprintLength: 373,
+        blocks: 1,
+        cachedFingerprintLength: 373,
+        cachedVariations: 1,
+        cachedBlockSnapshotLength: 61,
+        blockSnapshotLength: 61,
+        lastApplied: { fingerprintLength: 0, style: null, blockSnapshotLength: 0 }
+      }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Using cached variations {
+        pageId: 'page-1',
+        styleChoice: 'story',
+        cachedVariations: 1,
+        cachedBlockSnapshotMatches: true
+      }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Applying variation {
+        pageId: 'page-1',
+        styleChoice: 'story',
+        totalVariations: 1,
+        appliedBlockSnapshotLength: 2
+      }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Persisted state to localStorage { pageId: 'page-1', selectedStyle: 'story', selectedField: '' }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Persisted state to API { pageId: 'page-1', selectedStyle: 'story', selectedField: '' }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Persisted cache {
+        pageId: 'page-1',
+        fingerprintLength: 373,
+        variationCount: 1,
+        blockSnapshotLength: 2
+      }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Applied variation and updated cache {
+        pageId: 'page-1',
+        styleChoice: 'story',
+        fingerprintLength: 373,
+        blockSnapshotLength: 2
+      }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Hook init { pageId: 'page-1' }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Load persisted state effect running { pageId: 'page-1' }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Loaded local state { pageId: 'page-1' }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Hydrated cache from localStorage {
+        pageId: 'page-1',
+        variationCount: 1,
+        fingerprintLength: 373,
+        blockSnapshotLength: 2
+      }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Regenerate invoked {
+        pageId: 'page-1',
+        styleChoice: 'story',
+        fingerprintLength: 373,
+        blocks: 1,
+        cachedFingerprintLength: 373,
+        cachedVariations: 1,
+        cachedBlockSnapshotLength: 2,
+        blockSnapshotLength: 61,
+        lastApplied: { fingerprintLength: 0, style: null, blockSnapshotLength: 0 }
+      }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Cache miss or no matching style {
+        pageId: 'page-1',
+        styleChoice: 'story',
+        cachedFingerprintMatches: true,
+        cachedVariations: 1,
+        cachedBlockSnapshotMatches: false
+      }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Calling generate-about {
+        pageId: 'page-1',
+        preferredStyle: 'story',
+        selectedField: undefined,
+        answersPresent: true
+      }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Generated new variations { pageId: 'page-1', styleChoice: 'story', variations: 1 }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Applying variation {
+        pageId: 'page-1',
+        styleChoice: 'story',
+        totalVariations: 1,
+        appliedBlockSnapshotLength: 2
+      }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Persisted state to localStorage { pageId: 'page-1', selectedStyle: 'story', selectedField: '' }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Persisted state to API { pageId: 'page-1', selectedStyle: 'story', selectedField: '' }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Persisted cache {
+        pageId: 'page-1',
+        fingerprintLength: 373,
+        variationCount: 1,
+        blockSnapshotLength: 2
+      }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+    console.log
+      [AI Assist] Applied variation and updated cache {
+        pageId: 'page-1',
+        styleChoice: 'story',
+        fingerprintLength: 373,
+        blockSnapshotLength: 2
+      }
+
+      at log (lib/ai-assist/useAiAssist.ts:76:11)
+
+PASS components/ai-assist/AiAssistClient.test.tsx
+  ● Console
+
+    console.log
+      [AI Assist] handleAiRegenerate called {
+        pageId: 'page-1',
+        field: undefined,
+        selectedStyle: 'values',
+        blocks: 4
+      }
+
+      at log (components/ai-assist/AiAssistClient.tsx:103:13)
+
+    console.log
+      [AI Assist] handleAiRegenerate completed { pageId: 'page-1' }
+
+      at log (components/ai-assist/AiAssistClient.tsx:134:13)
+
+PASS components/ai-assist/AiAssistContent.test.tsx
+PASS components/app-components/__tests__/FooterCategories.integration.test.tsx
+PASS components/app-components/__tests__/CategoryMenuColumns.test.tsx
+FAIL components/app-components/__tests__/SiteHeader.integration.test.tsx
+  ● SiteHeader - Category Menu Integration › Desktop Navigation › renders category groups in desktop navigation menu
+
+    TestingLibraryElementError: Found multiple elements with the text: Test Coffee
+
+    Here are the matching elements:
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-2xl font-bold"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    (If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"container mx-auto px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mclass[39m=[32m"flex items-center gap-2 text-primary"[39m
+              [33mhref[39m=[32m"/"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col items-center lg:hidden"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"hidden lg:flex items-center gap-2"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-2xl font-bold"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</a>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"hidden md:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<nav[39m
+                [33maria-label[39m=[32m"Main"[39m
+                [33mclass[39m=[32m"relative z-10 flex max-w-max flex-1 items-center justify-center"[39m
+                [33mdata-orientation[39m=[32m"horizontal"[39m
+                [33mdir[39m=[32m"ltr"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mstyle[39m=[32m"position: relative;"[39m
+                [36m>[39m
+                  [36m<ul[39m
+                    [33mclass[39m=[32m"group flex flex-1 list-none items-center justify-center space-x-1"[39m
+                    [33mdata-orientation[39m=[32m"horizontal"[39m
+                    [33mdir[39m=[32m"ltr"[39m
+                  [36m>[39m
+                    [36m<li>[39m
+                      [36m<button[39m
+                        [33maria-controls[39m=[32m"radix-_r_0_-content-radix-_r_1_"[39m
+                        [33maria-expanded[39m=[32m"false"[39m
+                        [33mclass[39m=[32m"group inline-flex w-max items-center justify-center rounded-md text-sm font-medium transition-colors focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 group h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden"[39m
+                        [33mdata-radix-collection-item[39m=[32m""[39m
+                        [33mdata-state[39m=[32m"closed"[39m
+                        [33mid[39m=[32m"radix-_r_0_-trigger-radix-_r_1_"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"flex flex-col items-center gap-1"[39m
+                        [36m>[39m
+                          [36m<img[39m
+                            [33malt[39m=[32m"Coffee selections"[39m
+                            [33mclass[39m=[32m"w-5 h-5 dark:invert"[39m
+                            [33mdata-nimg[39m=[32m"1"[39m
+                            [33mdecoding[39m=[32m"async"[39m
+                            [33mheight[39m=[32m"20"[39m
+                            [33mloading[39m=[32m"lazy"[39m
+                            [33msrc[39m=[32m"/beans.svg"[39m
+                            [33mstyle[39m=[32m"color: transparent;"[39m
+                            [33mwidth[39m=[32m"20"[39m
+                          [36m/>[39m
+                          [36m<div[39m
+                            [33mclass[39m=[32m"flex items-center gap-1"[39m
+                          [36m>[39m
+                            [36m<div[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"w-3 h-3"[39m
+                            [36m/>[39m
+                            [36m<span[39m
+                              [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-3"[39m
+                            [36m>[39m
+                              [0mCoffee[0m
+                            [36m</span>[39m
+                            [36m<svg[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"lucide lucide-chevron-down h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                              [33mfill[39m=[32m"none"[39m
+                              [33mheight[39m=[32m"24"[39m
+                              [33mstroke[39m=[32m"currentColor"[39m
+                              [33mstroke-linecap[39m=[32m"round"[39m
+                              [33mstroke-linejoin[39m=[32m"round"[39m
+                              [33mstroke-width[39m=[32m"2"[39m
+                              [33mviewBox[39m=[32m"0 0 24 24"[39m
+                              [33mwidth[39m=[32m"24"[39m
+                              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                            [36m>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                              [36m/>[39m
+                            [36m</svg>[39m
+                          [36m</div>[39m
+                        [36m</div>[39m
+                        [36m<svg[39m
+                          [33maria-hidden[39m=[32m"true"[39m
+                          [33mclass[39m=[32m"lucide lucide-chevron-down relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32...
+
+    [0m [90m 75 |[39m       [90m// The menu is inside NavigationMenu which is only visible on md+[39m
+     [90m 76 |[39m       [90m// We can verify the structure exists[39m
+    [31m[1m>[22m[39m[90m 77 |[39m       expect(screen[33m.[39mgetByText([32m"Test Coffee"[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m    |[39m                     [31m[1m^[22m[39m
+     [90m 78 |[39m     })[33m;[39m
+     [90m 79 |[39m
+     [90m 80 |[39m     it([32m"renders label icons when provided in desktop menu"[39m[33m,[39m () [33m=>[39m {[0m
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getElementError (node_modules/@testing-library/dom/dist/query-helpers.js:20:35)
+      at getMultipleElementsFoundError (node_modules/@testing-library/dom/dist/query-helpers.js:23:10)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+      at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (components/app-components/__tests__/SiteHeader.integration.test.tsx:77:21)
+
+  ● SiteHeader - Category Menu Integration › Desktop Navigation › renders label icons when provided in desktop menu
+
+    TestingLibraryElementError: Found multiple elements with the text: Test Coffee
+
+    Here are the matching elements:
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-2xl font-bold"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    (If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"container mx-auto px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mclass[39m=[32m"flex items-center gap-2 text-primary"[39m
+              [33mhref[39m=[32m"/"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col items-center lg:hidden"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"hidden lg:flex items-center gap-2"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-2xl font-bold"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</a>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"hidden md:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<nav[39m
+                [33maria-label[39m=[32m"Main"[39m
+                [33mclass[39m=[32m"relative z-10 flex max-w-max flex-1 items-center justify-center"[39m
+                [33mdata-orientation[39m=[32m"horizontal"[39m
+                [33mdir[39m=[32m"ltr"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mstyle[39m=[32m"position: relative;"[39m
+                [36m>[39m
+                  [36m<ul[39m
+                    [33mclass[39m=[32m"group flex flex-1 list-none items-center justify-center space-x-1"[39m
+                    [33mdata-orientation[39m=[32m"horizontal"[39m
+                    [33mdir[39m=[32m"ltr"[39m
+                  [36m>[39m
+                    [36m<li>[39m
+                      [36m<button[39m
+                        [33maria-controls[39m=[32m"radix-_r_9_-content-radix-_r_a_"[39m
+                        [33maria-expanded[39m=[32m"false"[39m
+                        [33mclass[39m=[32m"group inline-flex w-max items-center justify-center rounded-md text-sm font-medium transition-colors focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 group h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden"[39m
+                        [33mdata-radix-collection-item[39m=[32m""[39m
+                        [33mdata-state[39m=[32m"closed"[39m
+                        [33mid[39m=[32m"radix-_r_9_-trigger-radix-_r_a_"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"flex flex-col items-center gap-1"[39m
+                        [36m>[39m
+                          [36m<img[39m
+                            [33malt[39m=[32m"Coffee selections"[39m
+                            [33mclass[39m=[32m"w-5 h-5 dark:invert"[39m
+                            [33mdata-nimg[39m=[32m"1"[39m
+                            [33mdecoding[39m=[32m"async"[39m
+                            [33mheight[39m=[32m"20"[39m
+                            [33mloading[39m=[32m"lazy"[39m
+                            [33msrc[39m=[32m"/beans.svg"[39m
+                            [33mstyle[39m=[32m"color: transparent;"[39m
+                            [33mwidth[39m=[32m"20"[39m
+                          [36m/>[39m
+                          [36m<div[39m
+                            [33mclass[39m=[32m"flex items-center gap-1"[39m
+                          [36m>[39m
+                            [36m<div[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"w-3 h-3"[39m
+                            [36m/>[39m
+                            [36m<span[39m
+                              [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-3"[39m
+                            [36m>[39m
+                              [0mCoffee[0m
+                            [36m</span>[39m
+                            [36m<svg[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"lucide lucide-chevron-down h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                              [33mfill[39m=[32m"none"[39m
+                              [33mheight[39m=[32m"24"[39m
+                              [33mstroke[39m=[32m"currentColor"[39m
+                              [33mstroke-linecap[39m=[32m"round"[39m
+                              [33mstroke-linejoin[39m=[32m"round"[39m
+                              [33mstroke-width[39m=[32m"2"[39m
+                              [33mviewBox[39m=[32m"0 0 24 24"[39m
+                              [33mwidth[39m=[32m"24"[39m
+                              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                            [36m>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                              [36m/>[39m
+                            [36m</svg>[39m
+                          [36m</div>[39m
+                        [36m</div>[39m
+                        [36m<svg[39m
+                          [33maria-hidden[39m=[32m"true"[39m
+                          [33mclass[39m=[32m"lucide lucide-chevron-down relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32...
+
+    [0m [90m 94 |[39m
+     [90m 95 |[39m       [90m// CategoryMenuColumns receives labelIcons prop[39m
+    [31m[1m>[22m[39m[90m 96 |[39m       expect(screen[33m.[39mgetByText([32m"Test Coffee"[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m    |[39m                     [31m[1m^[22m[39m
+     [90m 97 |[39m     })[33m;[39m
+     [90m 98 |[39m
+     [90m 99 |[39m     it([32m"renders page links in desktop navigation"[39m[33m,[39m () [33m=>[39m {[0m
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getElementError (node_modules/@testing-library/dom/dist/query-helpers.js:20:35)
+      at getMultipleElementsFoundError (node_modules/@testing-library/dom/dist/query-helpers.js:23:10)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+      at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (components/app-components/__tests__/SiteHeader.integration.test.tsx:96:21)
+
+  ● SiteHeader - Category Menu Integration › Desktop Navigation › renders page links in desktop navigation
+
+    TestingLibraryElementError: Found multiple elements with the text: Test Coffee
+
+    Here are the matching elements:
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-2xl font-bold"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    (If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"container mx-auto px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mclass[39m=[32m"flex items-center gap-2 text-primary"[39m
+              [33mhref[39m=[32m"/"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col items-center lg:hidden"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"hidden lg:flex items-center gap-2"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-2xl font-bold"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</a>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"hidden md:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<nav[39m
+                [33maria-label[39m=[32m"Main"[39m
+                [33mclass[39m=[32m"relative z-10 flex max-w-max flex-1 items-center justify-center"[39m
+                [33mdata-orientation[39m=[32m"horizontal"[39m
+                [33mdir[39m=[32m"ltr"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mstyle[39m=[32m"position: relative;"[39m
+                [36m>[39m
+                  [36m<ul[39m
+                    [33mclass[39m=[32m"group flex flex-1 list-none items-center justify-center space-x-1"[39m
+                    [33mdata-orientation[39m=[32m"horizontal"[39m
+                    [33mdir[39m=[32m"ltr"[39m
+                  [36m>[39m
+                    [36m<li>[39m
+                      [36m<button[39m
+                        [33maria-controls[39m=[32m"radix-_r_i_-content-radix-_r_j_"[39m
+                        [33maria-expanded[39m=[32m"false"[39m
+                        [33mclass[39m=[32m"group inline-flex w-max items-center justify-center rounded-md text-sm font-medium transition-colors focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 group h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden"[39m
+                        [33mdata-radix-collection-item[39m=[32m""[39m
+                        [33mdata-state[39m=[32m"closed"[39m
+                        [33mid[39m=[32m"radix-_r_i_-trigger-radix-_r_j_"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"flex flex-col items-center gap-1"[39m
+                        [36m>[39m
+                          [36m<img[39m
+                            [33malt[39m=[32m"Coffee selections"[39m
+                            [33mclass[39m=[32m"w-5 h-5 dark:invert"[39m
+                            [33mdata-nimg[39m=[32m"1"[39m
+                            [33mdecoding[39m=[32m"async"[39m
+                            [33mheight[39m=[32m"20"[39m
+                            [33mloading[39m=[32m"lazy"[39m
+                            [33msrc[39m=[32m"/beans.svg"[39m
+                            [33mstyle[39m=[32m"color: transparent;"[39m
+                            [33mwidth[39m=[32m"20"[39m
+                          [36m/>[39m
+                          [36m<div[39m
+                            [33mclass[39m=[32m"flex items-center gap-1"[39m
+                          [36m>[39m
+                            [36m<div[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"w-3 h-3"[39m
+                            [36m/>[39m
+                            [36m<span[39m
+                              [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-3"[39m
+                            [36m>[39m
+                              [0mCoffee[0m
+                            [36m</span>[39m
+                            [36m<svg[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"lucide lucide-chevron-down h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                              [33mfill[39m=[32m"none"[39m
+                              [33mheight[39m=[32m"24"[39m
+                              [33mstroke[39m=[32m"currentColor"[39m
+                              [33mstroke-linecap[39m=[32m"round"[39m
+                              [33mstroke-linejoin[39m=[32m"round"[39m
+                              [33mstroke-width[39m=[32m"2"[39m
+                              [33mviewBox[39m=[32m"0 0 24 24"[39m
+                              [33mwidth[39m=[32m"24"[39m
+                              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                            [36m>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                              [36m/>[39m
+                            [36m</svg>[39m
+                          [36m</div>[39m
+                        [36m</div>[39m
+                        [36m<svg[39m
+                          [33maria-hidden[39m=[32m"true"[39m
+                          [33mclass[39m=[32m"lucide lucide-chevron-down relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32...
+
+    [0m [90m 108 |[39m       [90m// Page link should be rendered[39m
+     [90m 109 |[39m       [90m// Note: In actual render, navigation might be hidden in test environment[39m
+    [31m[1m>[22m[39m[90m 110 |[39m       expect(screen[33m.[39mgetByText([32m"Test Coffee"[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 111 |[39m     })[33m;[39m
+     [90m 112 |[39m   })[33m;[39m
+     [90m 113 |[39m[0m
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getElementError (node_modules/@testing-library/dom/dist/query-helpers.js:20:35)
+      at getMultipleElementsFoundError (node_modules/@testing-library/dom/dist/query-helpers.js:23:10)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+      at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (components/app-components/__tests__/SiteHeader.integration.test.tsx:110:21)
+
+  ● SiteHeader - Category Menu Integration › Mobile Navigation › renders category groups in mobile menu
+
+    TestingLibraryElementError: Found multiple elements with the text: Test Coffee
+
+    Here are the matching elements:
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-2xl font-bold"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    (If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"container mx-auto px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mclass[39m=[32m"flex items-center gap-2 text-primary"[39m
+              [33mhref[39m=[32m"/"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col items-center lg:hidden"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"hidden lg:flex items-center gap-2"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-2xl font-bold"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</a>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"hidden md:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<nav[39m
+                [33maria-label[39m=[32m"Main"[39m
+                [33mclass[39m=[32m"relative z-10 flex max-w-max flex-1 items-center justify-center"[39m
+                [33mdata-orientation[39m=[32m"horizontal"[39m
+                [33mdir[39m=[32m"ltr"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mstyle[39m=[32m"position: relative;"[39m
+                [36m>[39m
+                  [36m<ul[39m
+                    [33mclass[39m=[32m"group flex flex-1 list-none items-center justify-center space-x-1"[39m
+                    [33mdata-orientation[39m=[32m"horizontal"[39m
+                    [33mdir[39m=[32m"ltr"[39m
+                  [36m>[39m
+                    [36m<li>[39m
+                      [36m<button[39m
+                        [33maria-controls[39m=[32m"radix-_r_r_-content-radix-_r_s_"[39m
+                        [33maria-expanded[39m=[32m"false"[39m
+                        [33mclass[39m=[32m"group inline-flex w-max items-center justify-center rounded-md text-sm font-medium transition-colors focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 group h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden"[39m
+                        [33mdata-radix-collection-item[39m=[32m""[39m
+                        [33mdata-state[39m=[32m"closed"[39m
+                        [33mid[39m=[32m"radix-_r_r_-trigger-radix-_r_s_"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"flex flex-col items-center gap-1"[39m
+                        [36m>[39m
+                          [36m<img[39m
+                            [33malt[39m=[32m"Coffee selections"[39m
+                            [33mclass[39m=[32m"w-5 h-5 dark:invert"[39m
+                            [33mdata-nimg[39m=[32m"1"[39m
+                            [33mdecoding[39m=[32m"async"[39m
+                            [33mheight[39m=[32m"20"[39m
+                            [33mloading[39m=[32m"lazy"[39m
+                            [33msrc[39m=[32m"/beans.svg"[39m
+                            [33mstyle[39m=[32m"color: transparent;"[39m
+                            [33mwidth[39m=[32m"20"[39m
+                          [36m/>[39m
+                          [36m<div[39m
+                            [33mclass[39m=[32m"flex items-center gap-1"[39m
+                          [36m>[39m
+                            [36m<div[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"w-3 h-3"[39m
+                            [36m/>[39m
+                            [36m<span[39m
+                              [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-3"[39m
+                            [36m>[39m
+                              [0mCoffee[0m
+                            [36m</span>[39m
+                            [36m<svg[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"lucide lucide-chevron-down h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                              [33mfill[39m=[32m"none"[39m
+                              [33mheight[39m=[32m"24"[39m
+                              [33mstroke[39m=[32m"currentColor"[39m
+                              [33mstroke-linecap[39m=[32m"round"[39m
+                              [33mstroke-linejoin[39m=[32m"round"[39m
+                              [33mstroke-width[39m=[32m"2"[39m
+                              [33mviewBox[39m=[32m"0 0 24 24"[39m
+                              [33mwidth[39m=[32m"24"[39m
+                              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                            [36m>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                              [36m/>[39m
+                            [36m</svg>[39m
+                          [36m</div>[39m
+                        [36m</div>[39m
+                        [36m<svg[39m
+                          [33maria-hidden[39m=[32m"true"[39m
+                          [33mclass[39m=[32m"lucide lucide-chevron-down relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32m"round"[39m
+                          [33mstroke-linejoin[39m=[32m"round"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                          [33mviewBox[39m=[32m"0 0 24 24"[39m
+                          [33mwidth[39m=[32m"24"[39m
+                          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</button>[39m
+                    [36m</li>[39m
+                  [36m</ul>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"absolute left-0 top-full flex justify-center"[39m
+                [36m/>[39m
+              [36m</nav>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center space-x-4 ml-auto"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"radix-_r_t_"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-haspopup[39m=[32m"dialog"[39m
+                [33mclass[39m=[32m"items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-9 hidden sm:flex"[39m
+                [33mdata-slot[39m=[32m"dialog-trigger"[39m
+                [33mdata-state[39m=[32m"closed"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-search h-5 w-5"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21 21-4.34-4.34"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"11"[39m
+                    [33mcy[39m=[32m"11"[39m
+                    [33mr[39m=[32m"8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                [36m>[39m
+                  [0mSearch products[0m
+                [36m</span>[39m
+              [36m</button>[39m
+              [36m<div[39m
+                [33mdata-testid[39m=[32m"theme-switcher"[39m
+              [36m>[39m
+                [0mThemeSwitcher[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mdata-testid[39m=[32m"shopping-cart"[39m
+              [36m>[39m
+                [0mShoppingCart[0m
+              [36m</div>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"[39m
+                [33mdata-slot[39m=[32m"button"[39m
+                [33mhref[39m=[32m"/auth/signin"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-user w-4 h-4 lg:mr-2"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"12"[39m
+                    [33mcy[39m=[32m"7"[39m
+                    [33mr[39m=[32m"4"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"hidden lg:inline"[39m
+                [36m>[39m
+                  [0mSign In[0m
+                [36m</span>[39m
+              [36m</a>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"radix-_r_10_"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-haspopup[39m=[32m"dialog"[39m
+                [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 size-9 md:hidden focus-visible:ring-2 focus-visible:ring-primary"[39m
+                [33mdata-slot[39m=[32m"sheet-trigger"[39m
+                [33mdata-state[39m=[32m"closed"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-menu w-6 h-6"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 5h16"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 12h16"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 19h16"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                [36m>[39m
+                  [0mOpen menu[0m
+                [36m</span>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+      [36m</div>[39m
+    [36m</body>[39m
+
+    [0m [90m 124 |[39m       [90m// Mobile menu exists (Sheet component)[39m
+     [90m 125 |[39m       [90m// The actual content is inside SheetContent which might not be visible initially[39m
+    [31m[1m>[22m[39m[90m 126 |[39m       expect(screen[33m.[39mgetByText([32m"Test Coffee"[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 127 |[39m     })[33m;[39m
+     [90m 128 |[39m
+     [90m 129 |[39m     it([32m"renders label icons in mobile menu when provided"[39m[33m,[39m () [33m=>[39m {[0m
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getElementError (node_modules/@testing-library/dom/dist/query-helpers.js:20:35)
+      at getMultipleElementsFoundError (node_modules/@testing-library/dom/dist/query-helpers.js:23:10)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+      at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (components/app-components/__tests__/SiteHeader.integration.test.tsx:126:21)
+
+  ● SiteHeader - Category Menu Integration › Mobile Navigation › renders label icons in mobile menu when provided
+
+    TestingLibraryElementError: Found multiple elements with the text: Test Coffee
+
+    Here are the matching elements:
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-2xl font-bold"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    (If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"container mx-auto px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mclass[39m=[32m"flex items-center gap-2 text-primary"[39m
+              [33mhref[39m=[32m"/"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col items-center lg:hidden"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"hidden lg:flex items-center gap-2"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-2xl font-bold"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</a>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"hidden md:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<nav[39m
+                [33maria-label[39m=[32m"Main"[39m
+                [33mclass[39m=[32m"relative z-10 flex max-w-max flex-1 items-center justify-center"[39m
+                [33mdata-orientation[39m=[32m"horizontal"[39m
+                [33mdir[39m=[32m"ltr"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mstyle[39m=[32m"position: relative;"[39m
+                [36m>[39m
+                  [36m<ul[39m
+                    [33mclass[39m=[32m"group flex flex-1 list-none items-center justify-center space-x-1"[39m
+                    [33mdata-orientation[39m=[32m"horizontal"[39m
+                    [33mdir[39m=[32m"ltr"[39m
+                  [36m>[39m
+                    [36m<li>[39m
+                      [36m<button[39m
+                        [33maria-controls[39m=[32m"radix-_r_13_-content-radix-_r_14_"[39m
+                        [33maria-expanded[39m=[32m"false"[39m
+                        [33mclass[39m=[32m"group inline-flex w-max items-center justify-center rounded-md text-sm font-medium transition-colors focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 group h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden"[39m
+                        [33mdata-radix-collection-item[39m=[32m""[39m
+                        [33mdata-state[39m=[32m"closed"[39m
+                        [33mid[39m=[32m"radix-_r_13_-trigger-radix-_r_14_"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"flex flex-col items-center gap-1"[39m
+                        [36m>[39m
+                          [36m<img[39m
+                            [33malt[39m=[32m"Coffee selections"[39m
+                            [33mclass[39m=[32m"w-5 h-5 dark:invert"[39m
+                            [33mdata-nimg[39m=[32m"1"[39m
+                            [33mdecoding[39m=[32m"async"[39m
+                            [33mheight[39m=[32m"20"[39m
+                            [33mloading[39m=[32m"lazy"[39m
+                            [33msrc[39m=[32m"/beans.svg"[39m
+                            [33mstyle[39m=[32m"color: transparent;"[39m
+                            [33mwidth[39m=[32m"20"[39m
+                          [36m/>[39m
+                          [36m<div[39m
+                            [33mclass[39m=[32m"flex items-center gap-1"[39m
+                          [36m>[39m
+                            [36m<div[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"w-3 h-3"[39m
+                            [36m/>[39m
+                            [36m<span[39m
+                              [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-3"[39m
+                            [36m>[39m
+                              [0mCoffee[0m
+                            [36m</span>[39m
+                            [36m<svg[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"lucide lucide-chevron-down h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                              [33mfill[39m=[32m"none"[39m
+                              [33mheight[39m=[32m"24"[39m
+                              [33mstroke[39m=[32m"currentColor"[39m
+                              [33mstroke-linecap[39m=[32m"round"[39m
+                              [33mstroke-linejoin[39m=[32m"round"[39m
+                              [33mstroke-width[39m=[32m"2"[39m
+                              [33mviewBox[39m=[32m"0 0 24 24"[39m
+                              [33mwidth[39m=[32m"24"[39m
+                              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                            [36m>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                              [36m/>[39m
+                            [36m</svg>[39m
+                          [36m</div>[39m
+                        [36m</div>[39m
+                        [36m<svg[39m
+                          [33maria-hidden[39m=[32m"true"[39m
+                          [33mclass[39m=[32m"lucide lucide-chevron-down relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32m"round"[39m
+                          [33mstroke-linejoin[39m=[32m"round"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                          [33mviewBox[39m=[32m"0 0 24 24"[39m
+                          [33mwidth[39m=[32m"24"[39m
+                          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</button>[39m
+                    [36m</li>[39m
+                  [36m</ul>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"absolute left-0 top-full flex justify-center"[39m
+                [36m/>[39m
+              [36m</nav>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center space-x-4 ml-auto"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"radix-_r_15_"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-haspopup[39m=[32m"dialog"[39m
+                [33mclass[39m=[32m"items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-9 hidden sm:flex"[39m
+                [33mdata-slot[39m=[32m"dialog-trigger"[39m
+                [33mdata-state[39m=[32m"closed"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-search h-5 w-5"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21 21-4.34-4.34"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"11"[39m
+                    [33mcy[39m=[32m"11"[39m
+                    [33mr[39m=[32m"8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                [36m>[39m
+                  [0mSearch products[0m
+                [36m</span>[39m
+              [36m</button>[39m
+              [36m<div[39m
+                [33mdata-testid[39m=[32m"theme-switcher"[39m
+              [36m>[39m
+                [0mThemeSwitcher[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mdata-testid[39m=[32m"shopping-cart"[39m
+              [36m>[39m
+                [0mShoppingCart[0m
+              [36m</div>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"[39m
+                [33mdata-slot[39m=[32m"button"[39m
+                [33mhref[39m=[32m"/auth/signin"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-user w-4 h-4 lg:mr-2"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"12"[39m
+                    [33mcy[39m=[32m"7"[39m
+                    [33mr[39m=[32m"4"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"hidden lg:inline"[39m
+                [36m>[39m
+                  [0mSign In[0m
+                [36m</span>[39m
+              [36m</a>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"radix-_r_18_"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-haspopup[39m=[32m"dialog"[39m
+                [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 size-9 md:hidden focus-visible:ring-2 focus-visible:ring-primary"[39m
+                [33mdata-slot[39m=[32m"sheet-trigger"[39m
+                [33mdata-state[39m=[32m"closed"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-menu w-6 h-6"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 5h16"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 12h16"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 19h16"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                [36m>[39m
+                  [0mOpen menu[0m
+                [36m</span>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+      [36m</div>[39m
+    [36m</body>[39m
+
+    [0m [90m 142 |[39m
+     [90m 143 |[39m       [90m// Mobile menu should receive labelIcons[39m
+    [31m[1m>[22m[39m[90m 144 |[39m       expect(screen[33m.[39mgetByText([32m"Test Coffee"[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 145 |[39m     })[33m;[39m
+     [90m 146 |[39m
+     [90m 147 |[39m     it([32m"falls back to coffee bean icon when label icon not provided"[39m[33m,[39m () [33m=>[39m {[0m
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getElementError (node_modules/@testing-library/dom/dist/query-helpers.js:20:35)
+      at getMultipleElementsFoundError (node_modules/@testing-library/dom/dist/query-helpers.js:23:10)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+      at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (components/app-components/__tests__/SiteHeader.integration.test.tsx:144:21)
+
+  ● SiteHeader - Category Menu Integration › Mobile Navigation › falls back to coffee bean icon when label icon not provided
+
+    TestingLibraryElementError: Found multiple elements with the text: Test Coffee
+
+    Here are the matching elements:
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-2xl font-bold"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    (If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"container mx-auto px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mclass[39m=[32m"flex items-center gap-2 text-primary"[39m
+              [33mhref[39m=[32m"/"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col items-center lg:hidden"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"hidden lg:flex items-center gap-2"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-2xl font-bold"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</a>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"hidden md:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<nav[39m
+                [33maria-label[39m=[32m"Main"[39m
+                [33mclass[39m=[32m"relative z-10 flex max-w-max flex-1 items-center justify-center"[39m
+                [33mdata-orientation[39m=[32m"horizontal"[39m
+                [33mdir[39m=[32m"ltr"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mstyle[39m=[32m"position: relative;"[39m
+                [36m>[39m
+                  [36m<ul[39m
+                    [33mclass[39m=[32m"group flex flex-1 list-none items-center justify-center space-x-1"[39m
+                    [33mdata-orientation[39m=[32m"horizontal"[39m
+                    [33mdir[39m=[32m"ltr"[39m
+                  [36m>[39m
+                    [36m<li>[39m
+                      [36m<button[39m
+                        [33maria-controls[39m=[32m"radix-_r_1b_-content-radix-_r_1c_"[39m
+                        [33maria-expanded[39m=[32m"false"[39m
+                        [33mclass[39m=[32m"group inline-flex w-max items-center justify-center rounded-md text-sm font-medium transition-colors focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 group h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden"[39m
+                        [33mdata-radix-collection-item[39m=[32m""[39m
+                        [33mdata-state[39m=[32m"closed"[39m
+                        [33mid[39m=[32m"radix-_r_1b_-trigger-radix-_r_1c_"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"flex flex-col items-center gap-1"[39m
+                        [36m>[39m
+                          [36m<img[39m
+                            [33malt[39m=[32m"Coffee selections"[39m
+                            [33mclass[39m=[32m"w-5 h-5 dark:invert"[39m
+                            [33mdata-nimg[39m=[32m"1"[39m
+                            [33mdecoding[39m=[32m"async"[39m
+                            [33mheight[39m=[32m"20"[39m
+                            [33mloading[39m=[32m"lazy"[39m
+                            [33msrc[39m=[32m"/beans.svg"[39m
+                            [33mstyle[39m=[32m"color: transparent;"[39m
+                            [33mwidth[39m=[32m"20"[39m
+                          [36m/>[39m
+                          [36m<div[39m
+                            [33mclass[39m=[32m"flex items-center gap-1"[39m
+                          [36m>[39m
+                            [36m<div[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"w-3 h-3"[39m
+                            [36m/>[39m
+                            [36m<span[39m
+                              [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-3"[39m
+                            [36m>[39m
+                              [0mCoffee[0m
+                            [36m</span>[39m
+                            [36m<svg[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"lucide lucide-chevron-down h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                              [33mfill[39m=[32m"none"[39m
+                              [33mheight[39m=[32m"24"[39m
+                              [33mstroke[39m=[32m"currentColor"[39m
+                              [33mstroke-linecap[39m=[32m"round"[39m
+                              [33mstroke-linejoin[39m=[32m"round"[39m
+                              [33mstroke-width[39m=[32m"2"[39m
+                              [33mviewBox[39m=[32m"0 0 24 24"[39m
+                              [33mwidth[39m=[32m"24"[39m
+                              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                            [36m>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                              [36m/>[39m
+                            [36m</svg>[39m
+                          [36m</div>[39m
+                        [36m</div>[39m
+                        [36m<svg[39m
+                          [33maria-hidden[39m=[32m"true"[39m
+                          [33mclass[39m=[32m"lucide lucide-chevron-down relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32m"round"[39m
+                          [33mstroke-linejoin[39m=[32m"round"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                          [33mviewBox[39m=[32m"0 0 24 24"[39m
+                          [33mwidth[39m=[32m"24"[39m
+                          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</button>[39m
+                    [36m</li>[39m
+                  [36m</ul>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"absolute left-0 top-full flex justify-center"[39m
+                [36m/>[39m
+              [36m</nav>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center space-x-4 ml-auto"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"radix-_r_1d_"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-haspopup[39m=[32m"dialog"[39m
+                [33mclass[39m=[32m"items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-9 hidden sm:flex"[39m
+                [33mdata-slot[39m=[32m"dialog-trigger"[39m
+                [33mdata-state[39m=[32m"closed"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-search h-5 w-5"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21 21-4.34-4.34"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"11"[39m
+                    [33mcy[39m=[32m"11"[39m
+                    [33mr[39m=[32m"8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                [36m>[39m
+                  [0mSearch products[0m
+                [36m</span>[39m
+              [36m</button>[39m
+              [36m<div[39m
+                [33mdata-testid[39m=[32m"theme-switcher"[39m
+              [36m>[39m
+                [0mThemeSwitcher[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mdata-testid[39m=[32m"shopping-cart"[39m
+              [36m>[39m
+                [0mShoppingCart[0m
+              [36m</div>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"[39m
+                [33mdata-slot[39m=[32m"button"[39m
+                [33mhref[39m=[32m"/auth/signin"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-user w-4 h-4 lg:mr-2"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"12"[39m
+                    [33mcy[39m=[32m"7"[39m
+                    [33mr[39m=[32m"4"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"hidden lg:inline"[39m
+                [36m>[39m
+                  [0mSign In[0m
+                [36m</span>[39m
+              [36m</a>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"radix-_r_1g_"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-haspopup[39m=[32m"dialog"[39m
+                [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 size-9 md:hidden focus-visible:ring-2 focus-visible:ring-primary"[39m
+                [33mdata-slot[39m=[32m"sheet-trigger"[39m
+                [33mdata-state[39m=[32m"closed"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-menu w-6 h-6"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 5h16"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 12h16"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 19h16"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                [36m>[39m
+                  [0mOpen menu[0m
+                [36m</span>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+      [36m</div>[39m
+    [36m</body>[39m
+
+    [0m [90m 155 |[39m
+     [90m 156 |[39m       [90m// Without labelIcons, should fall back to beans.svg[39m
+    [31m[1m>[22m[39m[90m 157 |[39m       expect(screen[33m.[39mgetByText([32m"Test Coffee"[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 158 |[39m     })[33m;[39m
+     [90m 159 |[39m   })[33m;[39m
+     [90m 160 |[39m[0m
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getElementError (node_modules/@testing-library/dom/dist/query-helpers.js:20:35)
+      at getMultipleElementsFoundError (node_modules/@testing-library/dom/dist/query-helpers.js:23:10)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+      at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (components/app-components/__tests__/SiteHeader.integration.test.tsx:157:21)
+
+  ● SiteHeader - Category Menu Integration › Props Validation › handles empty categoryGroups
+
+    TestingLibraryElementError: Found multiple elements with the text: Test Coffee
+
+    Here are the matching elements:
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-2xl font-bold"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    (If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"container mx-auto px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mclass[39m=[32m"flex items-center gap-2 text-primary"[39m
+              [33mhref[39m=[32m"/"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col items-center lg:hidden"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"hidden lg:flex items-center gap-2"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-2xl font-bold"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</a>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"hidden md:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<nav[39m
+                [33maria-label[39m=[32m"Main"[39m
+                [33mclass[39m=[32m"relative z-10 flex max-w-max flex-1 items-center justify-center"[39m
+                [33mdata-orientation[39m=[32m"horizontal"[39m
+                [33mdir[39m=[32m"ltr"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mstyle[39m=[32m"position: relative;"[39m
+                [36m>[39m
+                  [36m<ul[39m
+                    [33mclass[39m=[32m"group flex flex-1 list-none items-center justify-center space-x-1"[39m
+                    [33mdata-orientation[39m=[32m"horizontal"[39m
+                    [33mdir[39m=[32m"ltr"[39m
+                  [36m>[39m
+                    [36m<li>[39m
+                      [36m<button[39m
+                        [33maria-controls[39m=[32m"radix-_r_2j_-content-radix-_r_2k_"[39m
+                        [33maria-expanded[39m=[32m"false"[39m
+                        [33mclass[39m=[32m"group inline-flex w-max items-center justify-center rounded-md text-sm font-medium transition-colors focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 group h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden"[39m
+                        [33mdata-radix-collection-item[39m=[32m""[39m
+                        [33mdata-state[39m=[32m"closed"[39m
+                        [33mid[39m=[32m"radix-_r_2j_-trigger-radix-_r_2k_"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"flex flex-col items-center gap-1"[39m
+                        [36m>[39m
+                          [36m<img[39m
+                            [33malt[39m=[32m"Coffee selections"[39m
+                            [33mclass[39m=[32m"w-5 h-5 dark:invert"[39m
+                            [33mdata-nimg[39m=[32m"1"[39m
+                            [33mdecoding[39m=[32m"async"[39m
+                            [33mheight[39m=[32m"20"[39m
+                            [33mloading[39m=[32m"lazy"[39m
+                            [33msrc[39m=[32m"/beans.svg"[39m
+                            [33mstyle[39m=[32m"color: transparent;"[39m
+                            [33mwidth[39m=[32m"20"[39m
+                          [36m/>[39m
+                          [36m<div[39m
+                            [33mclass[39m=[32m"flex items-center gap-1"[39m
+                          [36m>[39m
+                            [36m<div[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"w-3 h-3"[39m
+                            [36m/>[39m
+                            [36m<span[39m
+                              [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-3"[39m
+                            [36m>[39m
+                              [0mCoffee[0m
+                            [36m</span>[39m
+                            [36m<svg[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"lucide lucide-chevron-down h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                              [33mfill[39m=[32m"none"[39m
+                              [33mheight[39m=[32m"24"[39m
+                              [33mstroke[39m=[32m"currentColor"[39m
+                              [33mstroke-linecap[39m=[32m"round"[39m
+                              [33mstroke-linejoin[39m=[32m"round"[39m
+                              [33mstroke-width[39m=[32m"2"[39m
+                              [33mviewBox[39m=[32m"0 0 24 24"[39m
+                              [33mwidth[39m=[32m"24"[39m
+                              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                            [36m>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                              [36m/>[39m
+                            [36m</svg>[39m
+                          [36m</div>[39m
+                        [36m</div>[39m
+                        [36m<svg[39m
+                          [33maria-hidden[39m=[32m"true"[39m
+                          [33mclass[39m=[32m"lucide lucide-chevron-down relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32m"round"[39m
+                          [33mstroke-linejoin[39m=[32m"round"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                          [33mviewBox[39m=[32m"0 0 24 24"[39m
+                          [33mwidth[39m=[32m"24"[39m
+                          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</button>[39m
+                    [36m</li>[39m
+                  [36m</ul>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"absolute left-0 top-full flex justify-center"[39m
+                [36m/>[39m
+              [36m</nav>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center space-x-4 ml-auto"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"radix-_r_2l_"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-haspopup[39m=[32m"dialog"[39m
+                [33mclass[39m=[32m"items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-9 hidden sm:flex"[39m
+                [33mdata-slot[39m=[32m"dialog-trigger"[39m
+                [33mdata-state[39m=[32m"closed"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-search h-5 w-5"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21 21-4.34-4.34"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"11"[39m
+                    [33mcy[39m=[32m"11"[39m
+                    [33mr[39m=[32m"8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                [36m>[39m
+                  [0mSearch products[0m
+                [36m</span>[39m
+              [36m</button>[39m
+              [36m<div[39m
+                [33mdata-testid[39m=[32m"theme-switcher"[39m
+              [36m>[39m
+                [0mThemeSwitcher[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mdata-testid[39m=[32m"shopping-cart"[39m
+              [36m>[39m
+                [0mShoppingCart[0m
+              [36m</div>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"[39m
+                [33mdata-slot[39m=[32m"button"[39m
+                [33mhref[39m=[32m"/auth/signin"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-user w-4 h-4 lg:mr-2"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"12"[39m
+                    [33mcy[39m=[32m"7"[39m
+                    [33mr[39m=[32m"4"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"hidden lg:inline"[39m
+                [36m>[39m
+                  [0mSign In[0m
+                [36m</span>[39m
+              [36m</a>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"radix-_r_2o_"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-haspopup[39m=[32m"dialog"[39m
+                [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 size-9 md:hidden focus-visible:ring-2 focus-visible:ring-primary"[39m
+                [33mdata-slot[39m=[32m"sheet-trigger"[39m
+                [33mdata-state[39m=[32m"closed"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-menu w-6 h-6"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 5h16"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 12h16"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 19h16"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                [36m>[39m
+                  [0mOpen menu[0m
+                [36m</span>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+      [36m</div>[39m
+    [36m</body>[39m
+
+    [0m [90m 229 |[39m       render([33m<[39m[33mSiteHeader[39m categoryGroups[33m=[39m{{}} user[33m=[39m{[36mnull[39m} pages[33m=[39m{[]} [33m/[39m[33m>[39m)[33m;[39m
+     [90m 230 |[39m
+    [31m[1m>[22m[39m[90m 231 |[39m       expect(screen[33m.[39mgetByText([32m"Test Coffee"[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 232 |[39m     })[33m;[39m
+     [90m 233 |[39m
+     [90m 234 |[39m     it([32m"handles empty pages array"[39m[33m,[39m () [33m=>[39m {[0m
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getElementError (node_modules/@testing-library/dom/dist/query-helpers.js:20:35)
+      at getMultipleElementsFoundError (node_modules/@testing-library/dom/dist/query-helpers.js:23:10)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+      at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (components/app-components/__tests__/SiteHeader.integration.test.tsx:231:21)
+
+  ● SiteHeader - Category Menu Integration › Props Validation › handles empty pages array
+
+    TestingLibraryElementError: Found multiple elements with the text: Test Coffee
+
+    Here are the matching elements:
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-2xl font-bold"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    (If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"container mx-auto px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mclass[39m=[32m"flex items-center gap-2 text-primary"[39m
+              [33mhref[39m=[32m"/"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col items-center lg:hidden"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"hidden lg:flex items-center gap-2"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-2xl font-bold"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</a>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"hidden md:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<nav[39m
+                [33maria-label[39m=[32m"Main"[39m
+                [33mclass[39m=[32m"relative z-10 flex max-w-max flex-1 items-center justify-center"[39m
+                [33mdata-orientation[39m=[32m"horizontal"[39m
+                [33mdir[39m=[32m"ltr"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mstyle[39m=[32m"position: relative;"[39m
+                [36m>[39m
+                  [36m<ul[39m
+                    [33mclass[39m=[32m"group flex flex-1 list-none items-center justify-center space-x-1"[39m
+                    [33mdata-orientation[39m=[32m"horizontal"[39m
+                    [33mdir[39m=[32m"ltr"[39m
+                  [36m>[39m
+                    [36m<li>[39m
+                      [36m<button[39m
+                        [33maria-controls[39m=[32m"radix-_r_2r_-content-radix-_r_2s_"[39m
+                        [33maria-expanded[39m=[32m"false"[39m
+                        [33mclass[39m=[32m"group inline-flex w-max items-center justify-center rounded-md text-sm font-medium transition-colors focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 group h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden"[39m
+                        [33mdata-radix-collection-item[39m=[32m""[39m
+                        [33mdata-state[39m=[32m"closed"[39m
+                        [33mid[39m=[32m"radix-_r_2r_-trigger-radix-_r_2s_"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"flex flex-col items-center gap-1"[39m
+                        [36m>[39m
+                          [36m<img[39m
+                            [33malt[39m=[32m"Coffee selections"[39m
+                            [33mclass[39m=[32m"w-5 h-5 dark:invert"[39m
+                            [33mdata-nimg[39m=[32m"1"[39m
+                            [33mdecoding[39m=[32m"async"[39m
+                            [33mheight[39m=[32m"20"[39m
+                            [33mloading[39m=[32m"lazy"[39m
+                            [33msrc[39m=[32m"/beans.svg"[39m
+                            [33mstyle[39m=[32m"color: transparent;"[39m
+                            [33mwidth[39m=[32m"20"[39m
+                          [36m/>[39m
+                          [36m<div[39m
+                            [33mclass[39m=[32m"flex items-center gap-1"[39m
+                          [36m>[39m
+                            [36m<div[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"w-3 h-3"[39m
+                            [36m/>[39m
+                            [36m<span[39m
+                              [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-3"[39m
+                            [36m>[39m
+                              [0mCoffee[0m
+                            [36m</span>[39m
+                            [36m<svg[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"lucide lucide-chevron-down h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                              [33mfill[39m=[32m"none"[39m
+                              [33mheight[39m=[32m"24"[39m
+                              [33mstroke[39m=[32m"currentColor"[39m
+                              [33mstroke-linecap[39m=[32m"round"[39m
+                              [33mstroke-linejoin[39m=[32m"round"[39m
+                              [33mstroke-width[39m=[32m"2"[39m
+                              [33mviewBox[39m=[32m"0 0 24 24"[39m
+                              [33mwidth[39m=[32m"24"[39m
+                              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                            [36m>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                              [36m/>[39m
+                            [36m</svg>[39m
+                          [36m</div>[39m
+                        [36m</div>[39m
+                        [36m<svg[39m
+                          [33maria-hidden[39m=[32m"true"[39m
+                          [33mclass[39m=[32m"lucide lucide-chevron-down relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32m"round"[39m
+                          [33mstroke-linejoin[39m=[32m"round"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                          [33mviewBox[39m=[32m"0 0 24 24"[39m
+                          [33mwidth[39m=[32m"24"[39m
+                          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</button>[39m
+                    [36m</li>[39m
+                  [36m</ul>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"absolute left-0 top-full flex justify-center"[39m
+                [36m/>[39m
+              [36m</nav>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center space-x-4 ml-auto"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"radix-_r_2t_"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-haspopup[39m=[32m"dialog"[39m
+                [33mclass[39m=[32m"items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-9 hidden sm:flex"[39m
+                [33mdata-slot[39m=[32m"dialog-trigger"[39m
+                [33mdata-state[39m=[32m"closed"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-search h-5 w-5"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21 21-4.34-4.34"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"11"[39m
+                    [33mcy[39m=[32m"11"[39m
+                    [33mr[39m=[32m"8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                [36m>[39m
+                  [0mSearch products[0m
+                [36m</span>[39m
+              [36m</button>[39m
+              [36m<div[39m
+                [33mdata-testid[39m=[32m"theme-switcher"[39m
+              [36m>[39m
+                [0mThemeSwitcher[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mdata-testid[39m=[32m"shopping-cart"[39m
+              [36m>[39m
+                [0mShoppingCart[0m
+              [36m</div>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"[39m
+                [33mdata-slot[39m=[32m"button"[39m
+                [33mhref[39m=[32m"/auth/signin"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-user w-4 h-4 lg:mr-2"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"12"[39m
+                    [33mcy[39m=[32m"7"[39m
+                    [33mr[39m=[32m"4"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"hidden lg:inline"[39m
+                [36m>[39m
+                  [0mSign In[0m
+                [36m</span>[39m
+              [36m</a>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"radix-_r_30_"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-haspopup[39m=[32m"dialog"[39m
+                [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 size-9 md:hidden focus-visible:ring-2 focus-visible:ring-primary"[39m
+                [33mdata-slot[39m=[32m"sheet-trigger"[39m
+                [33mdata-state[39m=[32m"closed"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-menu w-6 h-6"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 5h16"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 12h16"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 19h16"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                [36m>[39m
+                  [0mOpen menu[0m
+                [36m</span>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+      [36m</div>[39m
+    [36m</body>[39m
+
+    [0m [90m 241 |[39m       )[33m;[39m
+     [90m 242 |[39m
+    [31m[1m>[22m[39m[90m 243 |[39m       expect(screen[33m.[39mgetByText([32m"Test Coffee"[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 244 |[39m     })[33m;[39m
+     [90m 245 |[39m
+     [90m 246 |[39m     it([32m"handles undefined labelIcons"[39m[33m,[39m () [33m=>[39m {[0m
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getElementError (node_modules/@testing-library/dom/dist/query-helpers.js:20:35)
+      at getMultipleElementsFoundError (node_modules/@testing-library/dom/dist/query-helpers.js:23:10)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+      at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (components/app-components/__tests__/SiteHeader.integration.test.tsx:243:21)
+
+  ● SiteHeader - Category Menu Integration › Props Validation › handles undefined labelIcons
+
+    TestingLibraryElementError: Found multiple elements with the text: Test Coffee
+
+    Here are the matching elements:
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    Ignored nodes: comments, script, style
+    [36m<span[39m
+      [33mclass[39m=[32m"text-2xl font-bold"[39m
+    [36m>[39m
+      [0mTest Coffee[0m
+    [36m</span>[39m
+
+    (If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"container mx-auto px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mclass[39m=[32m"flex items-center gap-2 text-primary"[39m
+              [33mhref[39m=[32m"/"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col items-center lg:hidden"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-none mt-1"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"hidden lg:flex items-center gap-2"[39m
+              [36m>[39m
+                [36m<img[39m
+                  [33malt[39m=[32m"Test Coffee Logo"[39m
+                  [33mclass[39m=[32m"w-8 h-8"[39m
+                  [33mdata-nimg[39m=[32m"1"[39m
+                  [33mdecoding[39m=[32m"async"[39m
+                  [33mheight[39m=[32m"32"[39m
+                  [33mloading[39m=[32m"lazy"[39m
+                  [33msrc[39m=[32m"/logo.svg"[39m
+                  [33mstyle[39m=[32m"color: transparent;"[39m
+                  [33mwidth[39m=[32m"32"[39m
+                [36m/>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-2xl font-bold"[39m
+                [36m>[39m
+                  [0mTest Coffee[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</a>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"hidden md:flex items-center space-x-4"[39m
+            [36m>[39m
+              [36m<nav[39m
+                [33maria-label[39m=[32m"Main"[39m
+                [33mclass[39m=[32m"relative z-10 flex max-w-max flex-1 items-center justify-center"[39m
+                [33mdata-orientation[39m=[32m"horizontal"[39m
+                [33mdir[39m=[32m"ltr"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mstyle[39m=[32m"position: relative;"[39m
+                [36m>[39m
+                  [36m<ul[39m
+                    [33mclass[39m=[32m"group flex flex-1 list-none items-center justify-center space-x-1"[39m
+                    [33mdata-orientation[39m=[32m"horizontal"[39m
+                    [33mdir[39m=[32m"ltr"[39m
+                  [36m>[39m
+                    [36m<li>[39m
+                      [36m<button[39m
+                        [33maria-controls[39m=[32m"radix-_r_33_-content-radix-_r_34_"[39m
+                        [33maria-expanded[39m=[32m"false"[39m
+                        [33mclass[39m=[32m"group inline-flex w-max items-center justify-center rounded-md text-sm font-medium transition-colors focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 group h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden"[39m
+                        [33mdata-radix-collection-item[39m=[32m""[39m
+                        [33mdata-state[39m=[32m"closed"[39m
+                        [33mid[39m=[32m"radix-_r_33_-trigger-radix-_r_34_"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"flex flex-col items-center gap-1"[39m
+                        [36m>[39m
+                          [36m<img[39m
+                            [33malt[39m=[32m"Coffee selections"[39m
+                            [33mclass[39m=[32m"w-5 h-5 dark:invert"[39m
+                            [33mdata-nimg[39m=[32m"1"[39m
+                            [33mdecoding[39m=[32m"async"[39m
+                            [33mheight[39m=[32m"20"[39m
+                            [33mloading[39m=[32m"lazy"[39m
+                            [33msrc[39m=[32m"/beans.svg"[39m
+                            [33mstyle[39m=[32m"color: transparent;"[39m
+                            [33mwidth[39m=[32m"20"[39m
+                          [36m/>[39m
+                          [36m<div[39m
+                            [33mclass[39m=[32m"flex items-center gap-1"[39m
+                          [36m>[39m
+                            [36m<div[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"w-3 h-3"[39m
+                            [36m/>[39m
+                            [36m<span[39m
+                              [33mclass[39m=[32m"text-[10px] uppercase tracking-wide font-medium leading-3"[39m
+                            [36m>[39m
+                              [0mCoffee[0m
+                            [36m</span>[39m
+                            [36m<svg[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"lucide lucide-chevron-down h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                              [33mfill[39m=[32m"none"[39m
+                              [33mheight[39m=[32m"24"[39m
+                              [33mstroke[39m=[32m"currentColor"[39m
+                              [33mstroke-linecap[39m=[32m"round"[39m
+                              [33mstroke-linejoin[39m=[32m"round"[39m
+                              [33mstroke-width[39m=[32m"2"[39m
+                              [33mviewBox[39m=[32m"0 0 24 24"[39m
+                              [33mwidth[39m=[32m"24"[39m
+                              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                            [36m>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                              [36m/>[39m
+                            [36m</svg>[39m
+                          [36m</div>[39m
+                        [36m</div>[39m
+                        [36m<svg[39m
+                          [33maria-hidden[39m=[32m"true"[39m
+                          [33mclass[39m=[32m"lucide lucide-chevron-down relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32m"round"[39m
+                          [33mstroke-linejoin[39m=[32m"round"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                          [33mviewBox[39m=[32m"0 0 24 24"[39m
+                          [33mwidth[39m=[32m"24"[39m
+                          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"m6 9 6 6 6-6"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</button>[39m
+                    [36m</li>[39m
+                  [36m</ul>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"absolute left-0 top-full flex justify-center"[39m
+                [36m/>[39m
+              [36m</nav>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center space-x-4 ml-auto"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"radix-_r_35_"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-haspopup[39m=[32m"dialog"[39m
+                [33mclass[39m=[32m"items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-9 hidden sm:flex"[39m
+                [33mdata-slot[39m=[32m"dialog-trigger"[39m
+                [33mdata-state[39m=[32m"closed"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-search h-5 w-5"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21 21-4.34-4.34"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"11"[39m
+                    [33mcy[39m=[32m"11"[39m
+                    [33mr[39m=[32m"8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                [36m>[39m
+                  [0mSearch products[0m
+                [36m</span>[39m
+              [36m</button>[39m
+              [36m<div[39m
+                [33mdata-testid[39m=[32m"theme-switcher"[39m
+              [36m>[39m
+                [0mThemeSwitcher[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mdata-testid[39m=[32m"shopping-cart"[39m
+              [36m>[39m
+                [0mShoppingCart[0m
+              [36m</div>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"[39m
+                [33mdata-slot[39m=[32m"button"[39m
+                [33mhref[39m=[32m"/auth/signin"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-user w-4 h-4 lg:mr-2"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"12"[39m
+                    [33mcy[39m=[32m"7"[39m
+                    [33mr[39m=[32m"4"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"hidden lg:inline"[39m
+                [36m>[39m
+                  [0mSign In[0m
+                [36m</span>[39m
+              [36m</a>[39m
+              [36m<button[39m
+                [33maria-controls[39m=[32m"radix-_r_38_"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-haspopup[39m=[32m"dialog"[39m
+                [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 size-9 md:hidden focus-visible:ring-2 focus-visible:ring-primary"[39m
+                [33mdata-slot[39m=[32m"sheet-trigger"[39m
+                [33mdata-state[39m=[32m"closed"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-menu w-6 h-6"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 5h16"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 12h16"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M4 19h16"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                [36m>[39m
+                  [0mOpen menu[0m
+                [36m</span>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+      [36m</div>[39m
+    [36m</body>[39m
+
+    [0m [90m 253 |[39m       )[33m;[39m
+     [90m 254 |[39m
+    [31m[1m>[22m[39m[90m 255 |[39m       expect(screen[33m.[39mgetByText([32m"Test Coffee"[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 256 |[39m     })[33m;[39m
+     [90m 257 |[39m   })[33m;[39m
+     [90m 258 |[39m })[33m;[39m[0m
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getElementError (node_modules/@testing-library/dom/dist/query-helpers.js:20:35)
+      at getMultipleElementsFoundError (node_modules/@testing-library/dom/dist/query-helpers.js:23:10)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+      at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (components/app-components/__tests__/SiteHeader.integration.test.tsx:255:21)
+
+PASS app/admin/pages/about/AboutEditor.aiassist.test.tsx
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+
+Test Suites: 2 failed, 14 passed, 16 total
+Tests:       11 failed, 100 passed, 111 total
+Snapshots:   0 total
+Time:        6.078 s
+Ran all test suites.
