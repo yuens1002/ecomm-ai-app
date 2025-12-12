@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.39.0 - 2025-12-12
+
+- **Server actions for add-ons**: Migrated product add-ons to server actions with `getProductAddOns()` fetching data server-side for better performance and type safety; both product routes now render add-ons without client-side API calls.
+- **Component co-location**: Moved ProductClientPage from `components/app-components` to route directory following Next.js App Router best practices; added AddOnCard component for displaying add-on products with discount pricing.
+- **Add-ons test coverage**: Created comprehensive test suite for server actions (10 tests covering empty results, filtering, weight conversion, error handling, and ONE_TIME purchase options); all 140 tests passing.
+- **Architecture cleanup**: Removed unused `/api/products/[id]/addons` API route; added formatPrice utility to lib/utils for consistent price formatting across components.
+
 ## 0.38.2 - 2025-12-12
 
 - **Product add-ons test coverage**: Added comprehensive unit tests for add-ons CRUD API (19 tests covering GET, POST, DELETE endpoints with authentication, validation, error handling, and business logic); fixed ESLint warnings in test files and ProductAddOnsClient.

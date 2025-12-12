@@ -33,26 +33,25 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label"; // <-- ADDED THIS IMPORT
 import ProductCard from "@components/app-components/ProductCard"; // Re-use our card
+import { AddOnCard } from "@components/app-components/AddOnCard";
 import { useCartStore } from "@/lib/store/cart-store";
-import { formatBillingInterval } from "@/lib/utils";
+import { formatBillingInterval, formatPrice } from "@/lib/utils";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
+import { AddOnItem } from "./actions";
 
 // Prop interface for this component
 interface ProductClientPageProps {
   product: NonNullable<FullProductPayload>;
   relatedProducts: RelatedProduct[];
   category: Pick<Category, "name" | "slug">; // We only need name and slug
-}
-
-// Helper to format cents to dollars
-function formatPrice(priceInCents: number) {
-  return (priceInCents / 100).toFixed(2);
+  addOns: AddOnItem[];
 }
 
 export default function ProductClientPage({
   product,
   relatedProducts,
   category,
+  addOns,
 }: ProductClientPageProps) {
   const { settings } = useSiteSettings();
   const addItem = useCartStore((state) => state.addItem);
@@ -211,6 +210,30 @@ export default function ProductClientPage({
   };
 
   // ProductCard now uses cart store directly, no callback needed
+
+  // Handle add-on add to cart
+  const handleAddOnToCart = (addOn: AddOnItem) => {
+    const displayImage = "/placeholder-product.png";
+
+    addItem({
+      productId: addOn.product.id,
+      productName: addOn.product.name,
+      productSlug: addOn.product.slug,
+      variantId: addOn.variant.id,
+      variantName: addOn.variant.name,
+      purchaseOptionId: addOn.variant.purchaseOptions[0].id,
+      purchaseType: "ONE_TIME",
+      priceInCents: addOn.discountedPriceInCents,
+      imageUrl: displayImage,
+      quantity: 1,
+    });
+
+    // Track add to cart activity for add-on
+    trackActivity({
+      activityType: "ADD_TO_CART",
+      productId: addOn.product.id,
+    });
+  };
 
   const isCoffee = product.type === ProductType.COFFEE;
 
@@ -450,6 +473,26 @@ export default function ProductClientPage({
           </Button>
         </div>
       </div>
+
+      {/* Add-ons Section */}
+      {addOns.length > 0 && (
+        <div className="my-16">
+          <Separator className="my-12" />
+          <h2 className="text-3xl font-bold text-center text-text-base mb-8">
+            Complete Your Order
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            {addOns.map((addOn) => (
+              <AddOnCard
+                key={`${addOn.product.id}-${addOn.variant.id}`}
+                addOn={addOn}
+                weightUnit="g"
+                onAddToCart={() => handleAddOnToCart(addOn)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 3. Related Products Section */}
       <div className="my-16">

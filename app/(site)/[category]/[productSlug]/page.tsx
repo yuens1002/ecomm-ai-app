@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { getProductBySlug, getRelatedProducts } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
-import ProductClientPage from "@components/app-components/ProductClientPage";
+import ProductClientPage from "./ProductClientPage";
+import { getProductAddOns } from "./actions";
 
 export const revalidate = 3600; // Re-fetch this page in the background, at most once per hour
 
@@ -83,12 +84,16 @@ export default async function ProductPage({
     relatedCategorySlug
   );
 
+  // Fetch add-ons for this product
+  const addOns = await getProductAddOns(product.id);
+
   return (
     // Pass the fetched data as props to the Client Component
     <ProductClientPage
       product={product}
       relatedProducts={relatedProducts}
       category={displayCategory}
+      addOns={addOns}
     />
   );
 }
