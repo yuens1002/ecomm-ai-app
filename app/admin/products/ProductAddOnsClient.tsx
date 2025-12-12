@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Package } from "lucide-react";
@@ -118,11 +119,6 @@ export default function ProductAddOnsClient({
 
   const handleAdd = async () => {
     if (!selectedProduct) {
-      toast({
-        title: "Error",
-        description: "Please select a product",
-        variant: "destructive",
-      });
       return;
     }
 
@@ -219,52 +215,73 @@ export default function ProductAddOnsClient({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Add New Add-On */}
-        <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
-          <h4 className="text-sm font-medium">Add New Add-On</h4>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select product" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableProducts.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.name}
-                    <Badge variant="outline" className="ml-2 text-xs">
-                      {product.type}
-                    </Badge>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="border rounded-lg p-4 bg-muted/20">
+          <div className="flex flex-col sm:flex-row gap-3 items-end">
+            <div className="flex-1 min-w-0">
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                Product
+              </label>
+              <Combobox
+                value={selectedProduct}
+                onValueChange={setSelectedProduct}
+                options={availableProducts.map((product) => ({
+                  value: product.id,
+                  label: product.name,
+                  badge: product.type,
+                }))}
+                placeholder="Select product"
+                searchPlaceholder="Search products..."
+                emptyMessage="No products found"
+              />
+            </div>
 
-            <Select
-              value={selectedVariant}
-              onValueChange={setSelectedVariant}
-              disabled={!selectedProduct}
+            <div className="flex-1 min-w-0">
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                Variant
+              </label>
+              <Select
+                value={selectedVariant}
+                onValueChange={setSelectedVariant}
+                disabled={!selectedProduct}
+              >
+                <SelectTrigger>
+                  <SelectValue>
+                    {selectedVariant === "__none__"
+                      ? "Any variant"
+                      : variants.find((v) => v.id === selectedVariant)?.name ||
+                        "Any variant"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Any variant</SelectItem>
+                  {variants.map((variant) => (
+                    <SelectItem key={variant.id} value={variant.id}>
+                      {variant.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="w-full sm:w-40">
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                Discount
+              </label>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="$0.00"
+                value={discountedPrice}
+                onChange={(e) => setDiscountedPrice(e.target.value)}
+              />
+            </div>
+
+            <Button
+              type="button"
+              onClick={handleAdd}
+              disabled={adding}
+              className="w-full sm:w-auto"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Variant (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">Any variant</SelectItem>
-                {variants.map((variant) => (
-                  <SelectItem key={variant.id} value={variant.id}>
-                    {variant.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="Discounted price (optional)"
-              value={discountedPrice}
-              onChange={(e) => setDiscountedPrice(e.target.value)}
-            />
-
-            <Button onClick={handleAdd} disabled={adding || !selectedProduct}>
               <Plus className="h-4 w-4 mr-2" />
               Add
             </Button>

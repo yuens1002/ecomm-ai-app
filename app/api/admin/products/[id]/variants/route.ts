@@ -9,6 +9,47 @@ import {
   roundToInt,
 } from "@/lib/weight-unit";
 
+// GET /api/admin/products/:id/variants - Get all variants for a product
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = await requireAdminApi();
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    const variants = await prisma.productVariant.findMany({
+      where: { productId: id },
+      include: {
+        purchaseOptions: true,
+      },
+      orderBy: { name: "asc" },
+    });
+
+    const currentUnit = await getWeightUnit();
+
+    // Convert weights from grams to current unit
+    const responseVariants = variants.map((variant) => ({
+      ...variant,
+      weight: roundToInt(
+        fromGrams(variant.weight, currentUnit as WeightUnitOption)
+      ),
+    }));
+
+    return NextResponse.json({ variants: responseVariants });
+  } catch (error) {
+    console.error("Error fetching variants:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch variants" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

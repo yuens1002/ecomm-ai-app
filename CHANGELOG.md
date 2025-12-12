@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.1 - 2025-12-12
+
+- **Product add-ons UX refinements**: Replaced product selector with searchable Combobox component, added GET endpoint for variants, reorganized form into single-line layout with inline labels, fixed SelectValue display for variants, improved accessibility by removing unnecessary disabled states.
+
 ## 0.38.0 - 2025-12-11
 
 - **Product add-ons management**: Added ProductAddOnsClient component and API routes for creating add-on relationships between products, with optional variant-specific links and discounted pricing; integrated into product edit page below variants section.
