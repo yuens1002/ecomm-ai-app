@@ -2,6 +2,99 @@
 
 ## High Priority
 
+### Refactor Client Components to Server Actions Pattern
+
+**Status**: Backlog  
+**Priority**: High  
+**Description**: Modernize client components that use `useEffect` for data fetching to follow Next.js App Router best practices with Server Components and Server Actions. This improves performance (SSR), reduces client-side JavaScript, eliminates useEffect exhaustive-deps warnings, and follows current React/Next.js patterns.
+
+**Current State**:
+- Multiple client components fetch data via `useEffect` + `fetch()` (e.g., ProductAddOnsClient, ProductVariantsClient, CategoryManagementClient)
+- Data fetching happens client-side on mount, causing loading states and unnecessary network requests
+- useCallback hooks used unnecessarily for functions that don't need memoization
+- ESLint exhaustive-deps warnings require ignoring or adding unnecessary dependencies
+
+**Proposed Pattern**:
+1. **Server Component wrapper**: Fetch initial data server-side, pass as props to client component
+2. **Server Actions for mutations**: Use `"use server"` actions for create/update/delete operations
+3. **Client Component focus**: Handle only interactive UI state (form inputs, dialogs, toasts)
+4. **Remove useEffect data fetching**: No more useEffect hooks for initial data loading
+
+**Example Transformation**:
+```tsx
+// Before (Client Component with useEffect)
+"use client"
+function ProductAddOnsClient({ productId }) {
+  const [addOns, setAddOns] = useState([])
+  useEffect(() => {
+    fetch(`/api/admin/products/${productId}/addons`)
+      .then(res => res.json())
+      .then(data => setAddOns(data.addOns))
+  }, [productId])
+  // ...
+}
+
+// After (Server Component + Client Component)
+// Server Component (page.tsx)
+async function ProductAddOnsWrapper({ productId }) {
+  const addOns = await getProductAddOns(productId)
+  const products = await getAvailableProducts()
+  return <ProductAddOnsClient addOns={addOns} products={products} />
+}
+
+// Client Component (handles UI only)
+"use client"
+function ProductAddOnsClient({ addOns, products }) {
+  // Server Actions for mutations
+  async function handleAdd(formData) {
+    "use server"
+    // ...
+  }
+  // ...
+}
+```
+
+**Components to Refactor**:
+- [ ] `ProductAddOnsClient` - useEffect for add-ons, products, variants
+- [ ] `ProductVariantsClient` - useEffect for variants list
+- [ ] `CategoryManagementClient` - useEffect for categories, labels
+- [ ] `ProductFormClient` - useEffect for product data, categories
+- [ ] `ProductManagementClient` - useEffect for products list
+- [ ] `OrdersManagementClient` - useEffect for orders
+- [ ] `UsersManagementClient` - useEffect for users
+- [ ] `NewsletterManagementClient` - useEffect for subscribers
+- [ ] `SettingsManagementClient` - useEffect for settings
+- [ ] `SocialLinksManagementClient` - useEffect for social links
+- [ ] `PagesManagementClient` - useEffect for pages list
+
+**Benefits**:
+- ✅ Faster initial page load (server-rendered data)
+- ✅ Better SEO (data available in HTML)
+- ✅ Reduced client-side JavaScript bundle
+- ✅ No more exhaustive-deps eslint warnings
+- ✅ Follows current Next.js 13+ best practices
+- ✅ Cleaner separation of concerns (data vs UI)
+
+**Migration Strategy**:
+1. Start with simpler components (ProductAddOns, ProductVariants)
+2. Create server-side data fetching utilities (can reuse existing API logic)
+3. Convert API routes to server actions where appropriate
+4. Test each component individually before moving to next
+5. Update tests to reflect new patterns
+
+**Acceptance Criteria**:
+- No client components use `useEffect` for initial data fetching
+- All data fetching happens server-side or via server actions
+- No exhaustive-deps eslint warnings
+- Page load performance improves (measurable via Lighthouse)
+- All existing functionality preserved
+
+**References**:
+- [Next.js Server Actions docs](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)
+- [React useEffect cleanup patterns](https://react.dev/learn/synchronizing-with-effects)
+
+---
+
 ### Testing – AI Assist About (must-do)
 
 - [ ] API happy paths: `/api/admin/pages/[id]/replace-blocks`, `/api/admin/pages/[id]/ai-state` (200/401/409-ish) via Jest + supertest or Next route harness.
