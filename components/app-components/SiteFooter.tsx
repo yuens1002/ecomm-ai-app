@@ -68,15 +68,19 @@ async function getCategoriesForFooter() {
   });
 
   const grouped: Record<string, { name: string; slug: string }[]> = {};
+  const labelIcons: Record<string, string> = {};
 
   labels.forEach((label) => {
     grouped[label.name] = label.categories.map((entry) => ({
       name: entry.category.name,
       slug: entry.category.slug,
     }));
+    if (label.icon) {
+      labelIcons[label.name] = label.icon;
+    }
   });
 
-  return grouped;
+  return { grouped, labelIcons };
 }
 
 /**
@@ -199,7 +203,7 @@ async function getSocialLinksSettings() {
 export default async function SiteFooter() {
   const [
     brandingSettings,
-    categoryGroups,
+    categoriesData,
     socialLinks,
     contactSettings,
     newsletterSettings,
@@ -214,6 +218,8 @@ export default async function SiteFooter() {
     getSocialLinksSettings(),
     getPagesForFooter(),
   ]);
+
+  const { grouped: categoryGroups, labelIcons } = categoriesData;
 
   // Check if third column should be shown
   const showThirdColumn =
@@ -301,6 +307,7 @@ export default async function SiteFooter() {
           {/* Coffee Categories */}
           <FooterCategories
             categoryGroups={categoryGroups}
+            labelIcons={labelIcons}
             heading={brandingSettings.footerCategoriesHeading}
           />
 
