@@ -4,11 +4,9 @@
 
 - **Weight-balanced category menus**: Implemented self-balancing 3-column navigation with CategoryMenuColumns component using greedy weight-based distribution algorithm that keeps label groups semantically together while balancing visual height across columns.
 - **Category label icons**: Added optional icon support to CategoryLabel model, integrated DynamicIcon rendering in header (desktop/mobile), footer, and all navigation menus with uniform padding and vertical alignment.
-- **Dynamic rebalancing**: Expand/collapse interactions (via "...more"/"...less" buttons) trigger automatic column redistribution to maintain visual balance; configurable maxInitialCategories (default 7) per label group.
 - **Comprehensive test coverage**: Added 27 unit tests for CategoryMenuColumns (rendering, icons, expand/collapse, weight distribution, accessibility, edge cases) plus integration tests for SiteHeader and FooterCategories; all tests passing.
-- **Navigation consistency**: Unified category menu behavior across header dropdown, footer columns, and mobile sheet menu with consistent icon fallbacks and link structures.
-- **Documentation**: Created CategoryMenuColumns.README.md with algorithm explanation, usage examples, and COMPARISON.md documenting sequential vs weight-balanced approaches with decision rationale.
-- **Backup/restore scripts**: Updated dev-tools backup/restore to include CategoryLabel and CategoryLabelCategory tables in FK-safe order (fixes missing navigation data after database migration).
+- **Database migration**: Updated backup/restore scripts to include CategoryLabel tables, successfully migrated all data to Neon with proper FK ordering.
+- **Environment indicator**: Enhanced dev badge to show database type (Neon/Local/Postgres) via /api/dev/db-info endpoint for instant connection visibility.
 
 ## 0.36.1 - 2025-12-11
 
