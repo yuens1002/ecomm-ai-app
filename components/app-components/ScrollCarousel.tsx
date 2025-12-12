@@ -29,7 +29,7 @@ export function ScrollCarousel({
   slidesPerView = 1,
   minWidth,
   gap = "1rem",
-  padding = "1rem",
+  padding: _padding = "1rem",
   showDots = true,
   autoScroll = false,
   intervalSeconds = 5,

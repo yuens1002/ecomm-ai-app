@@ -79,10 +79,9 @@ export async function getProductAddOns(
     });
 
     // Filter out add-ons with no valid purchase options
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Note: Variants are guaranteed to exist (products must have at least one variant)
     const validAddOns = addOns.filter(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (addOn: any) => addOn.addOnVariant.purchaseOptions.length > 0
+      (addOn) => addOn.addOnVariant!.purchaseOptions.length > 0
     );
 
     // Get current weight unit setting
@@ -90,9 +89,9 @@ export async function getProductAddOns(
     const isImperial = currentUnit === WeightUnit.IMPERIAL;
 
     // Transform to response format with weight conversion
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return validAddOns.map((addOn: any) => {
-      const variant = addOn.addOnVariant;
+    return validAddOns.map((addOn) => {
+      // Type assertion: variants are guaranteed to exist on products
+      const variant = addOn.addOnVariant!;
       const purchaseOption = variant.purchaseOptions[0];
 
       // Convert weight to current site unit
