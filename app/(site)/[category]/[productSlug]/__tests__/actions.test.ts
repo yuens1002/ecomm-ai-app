@@ -1,6 +1,8 @@
 /** @jest-environment node */
 
 import { getProductAddOns } from "../actions";
+import { prisma } from "@/lib/prisma";
+import { getWeightUnit } from "@/lib/app-settings";
 
 type PrismaMock = {
   addOnLink: {
@@ -45,9 +47,6 @@ jest.mock("@/lib/app-settings", () => ({
   }),
   roundToInt: jest.fn((value: number) => Math.round(value)),
 }));
-
-import { prisma } from "@/lib/prisma";
-import { getWeightUnit } from "@/lib/app-settings";
 
 describe("getProductAddOns", () => {
   let prismaMock: PrismaMock;
