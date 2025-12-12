@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Add-ons carousel**: Created reusable ScrollCarousel component with configurable slides-per-view, added carousel to product add-ons section with single slide display, theme-aware dots navigation (noBorder prop), debounced scroll tracking, and full-width slide support.
+- **Carousel refactor**: Refactored CarouselBlock to use ScrollCarousel internally, eliminating duplicate scroll logic and centralizing carousel behavior in one reusable component.
 
 ## 0.39.0 - 2025-12-12
 

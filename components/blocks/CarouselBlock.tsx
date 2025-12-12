@@ -15,7 +15,7 @@ import { Plus, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { ImageField } from "@/components/app-components/ImageField";
 import { ImageCard } from "@/components/app-components/ImageCard";
-import { CarouselDots } from "@/components/app-components/CarouselDots";
+import { ScrollCarousel } from "@/components/app-components/ScrollCarousel";
 import { useMultiImageUpload } from "@/hooks/useImageUpload";
 import { useValidation } from "@/hooks/useFormDialog";
 
@@ -96,47 +96,10 @@ export function CarouselBlock({
 
 /**
  * Carousel Display Component
- * Handles the visual presentation and auto-scroll logic
+ * Handles the visual presentation using ScrollCarousel
  */
 function CarouselDisplay({ block }: { block: CarouselBlockType }) {
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const autoScrollTimerRef = useRef<NodeJS.Timeout | null>(null);
-
   const { slides, autoScroll, intervalSeconds } = block.content;
-
-  // Auto-scroll logic
-  useEffect(() => {
-    if (!autoScroll || slides.length <= 1 || isHovered) {
-      return;
-    }
-
-    autoScrollTimerRef.current = setInterval(
-      () => {
-        setCurrentSlideIndex((prev) => (prev + 1) % slides.length);
-      },
-      (intervalSeconds || 5) * 1000
-    );
-
-    return () => {
-      if (autoScrollTimerRef.current) {
-        clearInterval(autoScrollTimerRef.current);
-      }
-    };
-  }, [autoScroll, intervalSeconds, slides.length, isHovered]);
-
-  // Scroll to current slide
-  useEffect(() => {
-    if (scrollContainerRef.current && slides.length > 0) {
-      const container = scrollContainerRef.current;
-      const slideWidth = container.scrollWidth / slides.length;
-      container.scrollTo({
-        left: slideWidth * currentSlideIndex,
-        behavior: "smooth",
-      });
-    }
-  }, [currentSlideIndex, slides.length]);
 
   const handleSlideClick = (slide: {
     locationBlockId?: string;
@@ -169,100 +132,69 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
   }
 
   return (
-    <div
-      className="relative w-full"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+    <ScrollCarousel
+      slidesPerView={2.5}
+      minWidth="280px"
+      autoScroll={autoScroll}
+      intervalSeconds={intervalSeconds}
     >
-      {/* TODO: Add optional hero background image overlay (includeHero, heroImageUrl, heroImageAlt) */}
+      {slides.map(
+        (
+          slide: {
+            url: string;
+            alt: string;
+            title?: string;
+            description?: string;
+            locationBlockId?: string;
+          },
+          index: number
+        ) => (
+          <div
+            key={index}
+            className="relative group cursor-pointer"
+            onClick={
+              block.type === "locationCarousel"
+                ? () => handleSlideClick(slide)
+                : undefined
+            }
+          >
+            {/* Image */}
+            <div className="relative aspect-4/3 rounded-lg overflow-hidden">
+              <Image
+                src={slide.url}
+                alt={slide.alt || "Carousel image"}
+                fill
+                className="object-cover transition-transform group-hover:scale-105"
+              />
 
-      {/* Carousel Container */}
-      {/* TODO: Implement infinite scroll with 5x slide duplication for seamless looping */}
-      <div
-        ref={scrollContainerRef}
-        className="flex px-4 gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-        style={{
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
-        }}
-      >
-        {slides.map(
-          (
-            slide: {
-              url: string;
-              alt: string;
-              title?: string;
-              description?: string;
-              locationBlockId?: string;
-            },
-            index: number
-          ) => (
-            <div
-              key={index}
-              className="shrink-0 snap-start"
-              style={{
-                width: "calc((100% - 2rem) / 2.5)", // ~2.5 cards visible
-                minWidth: "280px",
-              }}
-            >
-              <div
-                className="relative group cursor-pointer"
-                onClick={
-                  block.type === "locationCarousel"
-                    ? () => handleSlideClick(slide)
-                    : undefined
-                }
-              >
-                {/* Image */}
-                <div className="relative aspect-4/3 rounded-lg overflow-hidden">
-                  <Image
-                    src={slide.url}
-                    alt={slide.alt || "Carousel image"}
-                    fill
-                    className="object-cover transition-transform group-hover:scale-105"
-                  />
-
-                  {/* Hours & Location Button - Bottom Right */}
-                  {block.type === "locationCarousel" && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSlideClick(slide);
-                      }}
-                      className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-white/90 hover:bg-white text-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
-                    >
-                      Hours & Location
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Location Preview Content */}
-                {block.type === "locationCarousel" && (
-                  <div className="mt-4 space-y-2">
-                    <h3 className="text-xl font-semibold">{slide.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {slide.description}
-                    </p>
-                  </div>
-                )}
-              </div>
+              {/* Hours & Location Button - Bottom Right */}
+              {block.type === "locationCarousel" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSlideClick(slide);
+                  }}
+                  className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-white/90 hover:bg-white text-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
+                >
+                  Hours & Location
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
-          )
-        )}
-      </div>
 
-      {/* Dot Navigation */}
-      {slides.length > 1 && (
-        <div className="flex justify-center mt-10">
-          <CarouselDots
-            total={slides.length}
-            currentIndex={currentSlideIndex}
-            onDotClick={setCurrentSlideIndex}
-          />
-        </div>
+            {/* Location Preview Content */}
+            {block.type === "locationCarousel" && (
+              <div className="mt-4 space-y-2">
+                <h3 className="text-xl font-semibold">{slide.title}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {slide.description}
+                </p>
+              </div>
+            )}
+          </div>
+        )
       )}
-    </div>
+    </ScrollCarousel>
   );
 }
 
