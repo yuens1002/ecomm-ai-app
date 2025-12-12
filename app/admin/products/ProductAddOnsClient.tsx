@@ -51,7 +51,7 @@ export default function ProductAddOnsClient({
   const [addOns, setAddOns] = useState<AddOnLink[]>([]);
   const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>("");
-  const [selectedVariant, setSelectedVariant] = useState<string>("");
+  const [selectedVariant, setSelectedVariant] = useState<string>("__none__");
   const [discountedPrice, setDiscountedPrice] = useState<string>("");
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [loading, setLoading] = useState(false);
@@ -111,7 +111,7 @@ export default function ProductAddOnsClient({
       fetchVariants(selectedProduct);
     } else {
       setVariants([]);
-      setSelectedVariant("");
+      setSelectedVariant("__none__");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProduct]);
@@ -133,7 +133,7 @@ export default function ProductAddOnsClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           addOnProductId: selectedProduct,
-          addOnVariantId: selectedVariant || null,
+          addOnVariantId: selectedVariant && selectedVariant !== "__none__" ? selectedVariant : null,
           discountedPriceInCents: discountedPrice
             ? Math.round(parseFloat(discountedPrice) * 100)
             : null,
@@ -147,7 +147,7 @@ export default function ProductAddOnsClient({
         });
         fetchAddOns();
         setSelectedProduct("");
-        setSelectedVariant("");
+        setSelectedVariant("__none__");
         setDiscountedPrice("");
       } else {
         const error = await res.json();
@@ -244,7 +244,7 @@ export default function ProductAddOnsClient({
                 <SelectValue placeholder="Variant (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Any variant</SelectItem>
+                <SelectItem value="__none__">Any variant</SelectItem>
                 {variants.map((variant) => (
                   <SelectItem key={variant.id} value={variant.id}>
                     {variant.name}
