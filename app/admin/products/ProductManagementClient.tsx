@@ -10,13 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Plus, Pencil, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ProductFormClient from "./ProductFormClient";

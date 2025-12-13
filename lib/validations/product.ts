@@ -25,9 +25,7 @@ const baseProductSchema = z.object({
 
 // Coffee-specific fields schema
 const coffeeFieldsSchema = z.object({
-  roastLevel: z.nativeEnum(RoastLevel, {
-    required_error: "Roast level is required for coffee products",
-  }),
+  roastLevel: z.nativeEnum(RoastLevel),
   origin: z
     .array(z.string().min(1))
     .min(1, "At least one origin is required for coffee products"),

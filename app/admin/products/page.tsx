@@ -10,7 +10,7 @@ export default async function ProductManagementPage() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Coffee Products</h1>
         <p className="text-muted-foreground mt-2">
-          Manage coffee products, variants, and pricing
+          Manage coffee catalog, variants, and pricing
         </p>
       </div>
       <ProductManagementClient productType={ProductType.COFFEE} />

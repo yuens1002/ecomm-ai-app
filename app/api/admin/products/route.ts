@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ProductType, RoastLevel } from "@prisma/client";
+import { ProductType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
 import { productCreateSchema } from "@/lib/validations/product";

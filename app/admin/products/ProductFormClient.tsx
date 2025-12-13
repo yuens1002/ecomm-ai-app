@@ -34,15 +34,23 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Save, ArrowLeft } from "lucide-react";
+import { Save } from "lucide-react";
+import { FormHeading } from "@/components/ui/app/FormHeading";
 import ProductVariantsClient from "./ProductVariantsClient";
 import ProductAddOnsClient from "./ProductAddOnsClient";
-import { PRODUCT_TYPES, ROAST_LEVELS } from "@/lib/productEnums";
+import { ROAST_LEVELS } from "@/lib/productEnums";
+
+interface CategoryLabel {
+  id: string;
+  name: string;
+  icon: string | null;
+  order: number;
+}
 
 interface Category {
   id: string;
   name: string;
-  label: string | null;
+  labels: CategoryLabel[];
 }
 
 interface ProductFormClientProps {
@@ -58,14 +66,18 @@ const formSchema = z
     name: z.string().min(1, "Name is required"),
     slug: z.string().min(1, "Slug is required"),
     description: z.string().optional(),
-    imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-    isOrganic: z.boolean().default(false),
-    isFeatured: z.boolean().default(false),
-    isDisabled: z.boolean().default(false),
-    categoryIds: z.array(z.string()).default([]),
-    productType: z.enum(PRODUCT_TYPES).default(PRODUCT_TYPES[0]),
+    imageUrl: z
+      .string()
+      .url("Must be a valid URL")
+      .optional()
+      .or(z.literal("")),
+    isOrganic: z.boolean(),
+    isFeatured: z.boolean(),
+    isDisabled: z.boolean(),
+    categoryIds: z.array(z.string()),
+    productType: z.nativeEnum(ProductType),
     // Coffee-specific fields
-    roastLevel: z.enum(ROAST_LEVELS).default("MEDIUM"),
+    roastLevel: z.nativeEnum(RoastLevel),
     origin: z.string().optional(),
     variety: z.string().optional(),
     altitude: z.string().optional(),
@@ -89,7 +101,7 @@ type ProductFormValues = z.infer<typeof formSchema>;
 
 export default function ProductFormClient({
   productId,
-  onClose,
+  onClose: _onClose,
   onSaved,
   productType = ProductType.COFFEE,
 }: ProductFormClientProps) {
@@ -253,16 +265,67 @@ export default function ProductFormClient({
     }
   };
 
-  // Group categories by label
-  const categoriesByLabel = categories.reduce(
-    (acc, cat) => {
-      const label = cat.label || "Uncategorized";
-      if (!acc[label]) acc[label] = [];
-      acc[label].push(cat);
-      return acc;
-    },
-    {} as Record<string, Category[]>
-  );
+  // Group categories by their labels (many-to-many relationship)
+  // Deduplicate: show each category only once under its first (lowest order) label
+  type LabelGroup = {
+    labelName: string;
+    labelOrder: number;
+    categories: { category: Category; order: number }[];
+  };
+
+  const labelGroups = new Map<string, LabelGroup>();
+  const unlabeledCategories: Category[] = [];
+  const displayedCategoryIds = new Set<string>();
+
+  categories.forEach((cat) => {
+    if (cat.labels.length === 0) {
+      unlabeledCategories.push(cat);
+    } else {
+      cat.labels.forEach((labelEntry) => {
+        const labelId = labelEntry.id;
+        if (!labelGroups.has(labelId)) {
+          labelGroups.set(labelId, {
+            labelName: labelEntry.name,
+            labelOrder: labelEntry.order,
+            categories: [],
+          });
+        }
+        labelGroups.get(labelId)!.categories.push({
+          category: cat,
+          order: labelEntry.order,
+        });
+      });
+    }
+  });
+
+  // Sort label groups by label order
+  const sortedLabelGroups = Array.from(labelGroups.values())
+    .sort((a, b) => a.labelOrder - b.labelOrder)
+    .map((group) => {
+      // Deduplicate categories within this label group first
+      const seenIds = new Set<string>();
+      const uniqueCategories = group.categories.filter(({ category }) => {
+        if (seenIds.has(category.id)) return false;
+        seenIds.add(category.id);
+        return true;
+      });
+
+      // Sort by order within the label
+      uniqueCategories.sort((a, b) => a.order - b.order);
+
+      return { ...group, categories: uniqueCategories };
+    })
+    .map((group) => {
+      // Deduplicate across labels: filter out categories already shown in earlier labels
+      const filteredCategories = group.categories.filter(({ category }) => {
+        if (displayedCategoryIds.has(category.id)) return false;
+        displayedCategoryIds.add(category.id);
+        return true;
+      });
+
+      return { ...group, categories: filteredCategories };
+    })
+    .filter((group) => group.categories.length > 0); // Remove empty label groups
 
   if (loading) return <div>Loading...</div>;
 
@@ -272,7 +335,9 @@ export default function ProductFormClient({
         <div className="space-y-1.5">
           <CardTitle>{productId ? "Edit Product" : "Add a Product"}</CardTitle>
           <CardDescription>
-            {productId ? originalName : "Fill out the details for your product and add variants"}
+            {productId
+              ? originalName
+              : "Fill out the details for your product and add variants"}
           </CardDescription>
         </div>
         <Button
@@ -291,7 +356,6 @@ export default function ProductFormClient({
       <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Left Column: Basic Information */}
               <FieldGroup>
@@ -306,9 +370,14 @@ export default function ProductFormClient({
                   name="name"
                   render={({ field, fieldState }) => (
                     <Field>
-                      <FieldLabel>Name</FieldLabel>
-                      <Input {...field} />
-                      <FieldError errors={[fieldState.error]} />
+                      <FormHeading
+                        htmlFor="name"
+                        label="Name"
+                        required
+                        validationType={fieldState.error ? "error" : undefined}
+                        errorMessage={fieldState.error?.message}
+                      />
+                      <Input id="name" {...field} />
                     </Field>
                   )}
                 />
@@ -318,9 +387,19 @@ export default function ProductFormClient({
                   name="slug"
                   render={({ field, fieldState }) => (
                     <Field>
-                      <FieldLabel>Slug</FieldLabel>
-                      <Input {...field} readOnly className="bg-muted" />
-                      <FieldError errors={[fieldState.error]} />
+                      <FormHeading
+                        htmlFor="slug"
+                        label="Slug"
+                        required
+                        validationType={fieldState.error ? "error" : undefined}
+                        errorMessage={fieldState.error?.message}
+                      />
+                      <Input
+                        id="slug"
+                        {...field}
+                        readOnly
+                        className="bg-muted"
+                      />
                     </Field>
                   )}
                 />
@@ -330,9 +409,13 @@ export default function ProductFormClient({
                   name="imageUrl"
                   render={({ field, fieldState }) => (
                     <Field>
-                      <FieldLabel>Image URL</FieldLabel>
-                      <Input {...field} placeholder="https://..." />
-                      <FieldError errors={[fieldState.error]} />
+                      <FormHeading
+                        htmlFor="imageUrl"
+                        label="Image URL"
+                        validationType={fieldState.error ? "error" : undefined}
+                        errorMessage={fieldState.error?.message}
+                      />
+                      <Input id="imageUrl" {...field} placeholder="https://..." />
                     </Field>
                   )}
                 />
@@ -357,7 +440,9 @@ export default function ProductFormClient({
               {/* Right Column: Description & Settings */}
               <FieldGroup>
                 <div className="mb-4 pb-2 border-b">
-                  <h3 className="text-lg font-semibold">Description & Settings</h3>
+                  <h3 className="text-lg font-semibold">
+                    Description & Settings
+                  </h3>
                   <p className="text-sm text-muted-foreground">
                     Product details and configuration options
                   </p>
@@ -368,9 +453,18 @@ export default function ProductFormClient({
                   name="description"
                   render={({ field, fieldState }) => (
                     <Field>
-                      <FieldLabel>Description</FieldLabel>
-                      <Textarea {...field} className="h-32" placeholder="Describe your product..." />
-                      <FieldError errors={[fieldState.error]} />
+                      <FormHeading
+                        htmlFor="description"
+                        label="Description"
+                        validationType={fieldState.error ? "error" : undefined}
+                        errorMessage={fieldState.error?.message}
+                      />
+                      <Textarea
+                        id="description"
+                        {...field}
+                        className="h-32"
+                        placeholder="Describe your product..."
+                      />
                     </Field>
                   )}
                 />
@@ -508,7 +602,9 @@ export default function ProductFormClient({
                       <Field>
                         <FieldLabel>Variety</FieldLabel>
                         <Input {...field} placeholder="e.g., Bourbon, Typica" />
-                        <FieldDescription>Coffee cultivar or variety</FieldDescription>
+                        <FieldDescription>
+                          Coffee cultivar or variety
+                        </FieldDescription>
                         <FieldError errors={[fieldState.error]} />
                       </Field>
                     )}
@@ -552,62 +648,103 @@ export default function ProductFormClient({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Categories */}
               <div className="border p-4 rounded-md">
-                <h3 className="font-medium mb-6">Categories</h3>
+                <FormHeading label="Categories" />
                 <FormField
                   control={form.control}
                   name="categoryIds"
                   render={({ fieldState }) => (
-                    <Field>
-                      {Object.entries(categoriesByLabel).map(
-                        ([label, cats], index) => (
-                          <div key={label}>
-                            {index > 0 && <Separator className="my-6" />}
-                            <h4 className="text-sm font-medium mb-3">
-                              {label}
-                            </h4>
-                            <div className="flex flex-row flex-wrap gap-4">
-                              {cats.map((cat) => (
+                    <Field className="mt-4">
+                      {sortedLabelGroups.map((group, groupIndex) => (
+                        <div key={group.labelName}>
+                          {groupIndex > 0 && <Separator className="my-4" />}
+                          <h4 className="text-sm font-medium mb-3">
+                            {group.labelName}
+                          </h4>
+                          <ul className="flex flex-row flex-wrap gap-4 list-none">
+                            {group.categories.map(({ category: cat }) => (
+                              <li key={cat.id} className="inline-block">
                                 <FormField
-                                  key={cat.id}
                                   control={form.control}
                                   name="categoryIds"
-                                  render={({ field }) => {
-                                    return (
-                                      <Field
-                                        key={cat.id}
-                                        orientation="horizontal"
-                                        className="w-auto"
-                                      >
-                                        <Checkbox
-                                          checked={field.value?.includes(
-                                            cat.id
-                                          )}
-                                          onCheckedChange={(checked) => {
-                                            return checked
-                                              ? field.onChange([
-                                                  ...(field.value || []),
-                                                  cat.id,
-                                                ])
-                                              : field.onChange(
-                                                  (field.value || []).filter(
-                                                    (value) => value !== cat.id
-                                                  )
-                                                );
-                                          }}
-                                        />
-                                        <FieldLabel className="font-normal cursor-pointer">
-                                          {cat.name}
-                                        </FieldLabel>
-                                      </Field>
-                                    );
-                                  }}
+                                  render={({ field }) => (
+                                    <Field
+                                      orientation="horizontal"
+                                      className="w-auto"
+                                    >
+                                      <Checkbox
+                                        checked={field.value?.includes(cat.id)}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([
+                                                ...(field.value || []),
+                                                cat.id,
+                                              ])
+                                            : field.onChange(
+                                                (field.value || []).filter(
+                                                  (value) => value !== cat.id
+                                                )
+                                              );
+                                        }}
+                                      />
+                                      <FieldLabel className="font-normal cursor-pointer">
+                                        {cat.name}
+                                      </FieldLabel>
+                                    </Field>
+                                  )}
                                 />
-                              ))}
-                            </div>
-                          </div>
-                        )
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                      {unlabeledCategories.length > 0 && (
+                        <div>
+                          {sortedLabelGroups.length > 0 && (
+                            <Separator className="my-4" />
+                          )}
+                          <h4 className="text-sm font-medium mb-3">
+                            Unlabeled*
+                          </h4>
+                          <ul className="flex flex-row flex-wrap gap-4 list-none">
+                            {unlabeledCategories.map((cat) => (
+                              <li key={cat.id} className="inline-block">
+                                <FormField
+                                  control={form.control}
+                                  name="categoryIds"
+                                  render={({ field }) => (
+                                    <Field
+                                      orientation="horizontal"
+                                      className="w-auto"
+                                    >
+                                      <Checkbox
+                                        checked={field.value?.includes(cat.id)}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([
+                                                ...(field.value || []),
+                                                cat.id,
+                                              ])
+                                            : field.onChange(
+                                                (field.value || []).filter(
+                                                  (value) => value !== cat.id
+                                                )
+                                              );
+                                        }}
+                                      />
+                                      <FieldLabel className="font-normal cursor-pointer">
+                                        {cat.name}
+                                      </FieldLabel>
+                                    </Field>
+                                  )}
+                                />
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       )}
-                      <FieldError errors={[fieldState.error]} />
+                      {fieldState.error && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />

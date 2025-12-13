@@ -52,12 +52,6 @@ async function main() {
   // --- 1. Create SiteSettings for category labels ---
   console.log("Creating SiteSettings...");
 
-  const _labelRoasts = await prisma.siteSettings.upsert({
-    where: { key: "label_roasts" },
-    update: {},
-    create: { key: "label_roasts", value: "Roasts" },
-  });
-
   const _labelOrigins = await prisma.siteSettings.upsert({
     where: { key: "label_origins" },
     update: {},
@@ -279,12 +273,6 @@ async function main() {
     create: { name: "Collections", order: 0 },
   });
 
-  const labelRoastsNew = await prisma.categoryLabel.upsert({
-    where: { name: "Roasts" },
-    update: { order: 1 },
-    create: { name: "Roasts", order: 1 },
-  });
-
   const labelOriginsNew = await prisma.categoryLabel.upsert({
     where: { name: "Origins" },
     update: { order: 2 },
@@ -411,10 +399,6 @@ async function main() {
   await attach(labelCollectionsNew.id, catBlends.id, 0);
   await attach(labelCollectionsNew.id, catMicroLot.id, 1);
   await attach(labelCollectionsNew.id, catSingleOrigin.id, 2);
-
-  await attach(labelRoastsNew.id, catLight.id, 0);
-  await attach(labelRoastsNew.id, catMedium.id, 1);
-  await attach(labelRoastsNew.id, catDark.id, 2);
 
   await Promise.all(
     Object.values(originCategories).map((cat, idx) =>

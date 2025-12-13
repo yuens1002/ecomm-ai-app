@@ -16,7 +16,6 @@ import {
   ShoppingCart,
   Eye,
   BarChart3,
-  ArrowLeft,
   Loader2,
 } from "lucide-react";
 
