@@ -40,6 +40,43 @@ if (typeof window !== "undefined") {
   Object.defineProperty(window, "sessionStorage", {
     value: sessionStorageMock,
   });
+
+  // Mock matchMedia for embla carousel
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: jest.fn().mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(), // deprecated
+      removeListener: jest.fn(), // deprecated
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
+
+  // Mock IntersectionObserver for embla carousel
+  global.IntersectionObserver = class IntersectionObserver {
+    observe = jest.fn();
+    disconnect = jest.fn();
+    unobserve = jest.fn();
+    takeRecords = jest.fn();
+    root = null;
+    rootMargin = "";
+    thresholds = [];
+
+    constructor() {}
+  } as unknown as typeof IntersectionObserver;
+
+  // Mock ResizeObserver for embla carousel
+  global.ResizeObserver = class ResizeObserver {
+    observe = jest.fn();
+    disconnect = jest.fn();
+    unobserve = jest.fn();
+
+    constructor() {}
+  } as unknown as typeof ResizeObserver;
 }
 
 // Mock fetch for API calls
