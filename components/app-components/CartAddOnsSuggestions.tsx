@@ -59,7 +59,7 @@ export function CartAddOnsSuggestions({
   const cartItems = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
   const [addOns, setAddOns] = useState<AddOnItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [_isLoading, setIsLoading] = useState(false);
 
   // Fetch add-ons when cart items change
   useEffect(() => {

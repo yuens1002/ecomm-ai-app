@@ -4,13 +4,13 @@ import React, { ReactNode, useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { cn } from "@/lib/utils";
+import { CarouselDots } from "./CarouselDots";
 
 interface ScrollCarouselProps {
   children: ReactNode;
   slidesPerView?: number;
   showDots?: boolean;
   gap?: string;
-  padding?: string;
   minWidth?: string;
   noBorder?: boolean;
   autoplay?: boolean;
@@ -22,7 +22,6 @@ export function ScrollCarousel({
   slidesPerView = 1,
   showDots = true,
   gap = "gap-4",
-  padding = "px-4",
   minWidth,
   noBorder = false,
   autoplay = false,
@@ -107,20 +106,13 @@ export function ScrollCarousel({
       </div>
 
       {showDots && childArray.length > 1 && (
-        <div className="flex justify-center gap-2 p-4">
-          {childArray.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => handleDotClick(index)}
-              className={cn(
-                "w-2 h-2 rounded-full transition-all",
-                currentIndex === index
-                  ? "bg-primary w-6"
-                  : "bg-slate-700 hover:bg-slate-900"
-              )}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
+        <div className="flex justify-center p-4">
+          <CarouselDots
+            total={childArray.length}
+            currentIndex={currentIndex}
+            onDotClick={handleDotClick}
+            noBorder={noBorder}
+          />
         </div>
       )}
     </div>

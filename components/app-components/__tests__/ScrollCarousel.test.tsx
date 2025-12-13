@@ -106,17 +106,16 @@ describe("ScrollCarousel", () => {
   });
 
   describe("Props validation", () => {
-    it("accepts custom gap and padding", () => {
+    it("accepts custom gap", () => {
       const { container } = render(
-        <ScrollCarousel slidesPerView={2.5} gap="gap-8" padding="px-8">
+        <ScrollCarousel slidesPerView={2.5} gap="gap-8">
           <div key="1">Slide 1</div>
           <div key="2">Slide 2</div>
         </ScrollCarousel>
       );
 
-      const scrollContainer = container.querySelector(".overflow-x-auto");
+      const scrollContainer = container.querySelector(".flex");
       expect(scrollContainer).toHaveClass("gap-8");
-      expect(scrollContainer).toHaveClass("px-8");
     });
 
     it("accepts custom minWidth", () => {

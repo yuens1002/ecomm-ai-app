@@ -36,7 +36,6 @@ import {
   SheetTitle,
   SheetDescription,
   SheetTrigger,
-  SheetClose,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { CartAddOnsSuggestions } from "./CartAddOnsSuggestions";
