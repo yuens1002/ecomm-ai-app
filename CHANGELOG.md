@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- **Test environment fixes**: Added matchMedia, IntersectionObserver, and ResizeObserver mocks to jest.setup.ts for Embla Carousel compatibility; updated ScrollCarousel tests to match new Embla implementation structure (flex container, no px-4 class); all 10 tests passing.
+- **Test environment fixes**: Added matchMedia, IntersectionObserver, and ResizeObserver mocks to jest.setup.ts for Embla Carousel compatibility; updated ScrollCarousel tests to match new Embla implementation structure (flex container, no px-4 class); suppressed Framer Motion prop warnings in test output; all 10 tests passing.
+- **Add-ons test fixes**: Added missing images and categories arrays to all mock addOnProduct objects in actions tests; updated test expectations to include imageUrl and categorySlug fields returned by getProductAddOns.
 
 ## 0.41.0 - 2025-12-13
 

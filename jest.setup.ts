@@ -81,3 +81,32 @@ if (typeof window !== "undefined") {
 
 // Mock fetch for API calls
 global.fetch = jest.fn();
+
+// Suppress expected error logs and Framer Motion warnings in tests
+const originalError = console.error;
+beforeAll(() => {
+  console.error = jest.fn((...args: unknown[]) => {
+    const message = typeof args[0] === "string" ? args[0] : "";
+
+    // Filter out Framer Motion prop warnings
+    if (message.includes("React does not recognize the")) {
+      return;
+    }
+
+    // Filter out expected error logs from error-handling tests
+    if (
+      message.includes("Error fetching add-ons:") ||
+      message.includes("Error creating add-on:") ||
+      message.includes("Error deleting add-on:") ||
+      message.includes("Failed to fetch add-ons:")
+    ) {
+      return;
+    }
+
+    originalError.call(console, ...args);
+  });
+});
+
+afterAll(() => {
+  console.error = originalError;
+});

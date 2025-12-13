@@ -129,6 +129,8 @@ describe("getProductAddOns", () => {
           slug: "sample-mug",
           type: "MERCHANDISE",
           description: "A nice mug",
+          images: [{ url: "https://example.com/mug.jpg" }],
+          categories: [{ category: { slug: "merchandise" } }],
         },
         addOnVariant: {
           id: "variant-2",
@@ -159,6 +161,8 @@ describe("getProductAddOns", () => {
         slug: "sample-mug",
         type: "MERCHANDISE",
         description: "A nice mug",
+        images: [{ url: "https://example.com/mug.jpg" }],
+        categories: [{ category: { slug: "merchandise" } }],
       },
       variant: {
         id: "variant-2",
@@ -174,6 +178,8 @@ describe("getProductAddOns", () => {
         ],
       },
       discountedPriceInCents: 1200,
+      imageUrl: "https://example.com/mug.jpg",
+      categorySlug: "merchandise",
     });
   });
 
@@ -191,6 +197,8 @@ describe("getProductAddOns", () => {
           slug: "sample-mug",
           type: "MERCHANDISE",
           description: "A nice mug",
+          images: [{ url: "https://example.com/mug.jpg" }],
+          categories: [{ category: { slug: "merchandise" } }],
         },
         addOnVariant: {
           id: "variant-2",
@@ -229,6 +237,8 @@ describe("getProductAddOns", () => {
           slug: "sample-mug",
           type: "MERCHANDISE",
           description: "A nice mug",
+          images: [{ url: "https://example.com/mug.jpg" }],
+          categories: [{ category: { slug: "merchandise" } }],
         },
         addOnVariant: {
           id: "variant-2",
@@ -261,6 +271,8 @@ describe("getProductAddOns", () => {
           slug: "coffee-beans",
           type: "COFFEE",
           description: "Fresh beans",
+          images: [{ url: "https://example.com/coffee.jpg" }],
+          categories: [{ category: { slug: "coffee" } }],
         },
         addOnVariant: {
           id: "variant-2",
@@ -300,6 +312,8 @@ describe("getProductAddOns", () => {
           slug: "mug",
           type: "MERCHANDISE",
           description: "A mug",
+          images: [{ url: "https://example.com/mug.jpg" }],
+          categories: [{ category: { slug: "merchandise" } }],
         },
         addOnVariant: {
           id: "variant-2",
@@ -323,6 +337,8 @@ describe("getProductAddOns", () => {
           slug: "sticker",
           type: "MERCHANDISE",
           description: "A sticker",
+          images: [{ url: "https://example.com/sticker.jpg" }],
+          categories: [{ category: { slug: "merchandise" } }],
         },
         addOnVariant: {
           id: "variant-3",
