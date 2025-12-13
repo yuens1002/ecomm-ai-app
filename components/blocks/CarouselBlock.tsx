@@ -134,9 +134,9 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
   return (
     <ScrollCarousel
       slidesPerView={2.5}
-      minWidth="280px"
-      autoScroll={autoScroll}
-      intervalSeconds={intervalSeconds}
+      autoplay={autoScroll}
+      autoplayDelay={intervalSeconds * 1000}
+      noBorder={true}
     >
       {slides.map(
         (
@@ -149,15 +149,7 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
           },
           index: number
         ) => (
-          <div
-            key={index}
-            className="relative group cursor-pointer"
-            onClick={
-              block.type === "locationCarousel"
-                ? () => handleSlideClick(slide)
-                : undefined
-            }
-          >
+          <div key={index} className="relative group">
             {/* Image */}
             <div className="relative aspect-4/3 rounded-lg overflow-hidden">
               <Image
@@ -165,6 +157,7 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
                 alt={slide.alt || "Carousel image"}
                 fill
                 className="object-cover transition-transform group-hover:scale-105"
+                draggable={false}
               />
 
               {/* Hours & Location Button - Bottom Right */}
@@ -174,7 +167,8 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
                     e.stopPropagation();
                     handleSlideClick(slide);
                   }}
-                  className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-white/90 hover:bg-white text-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-white/90 hover:bg-white text-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm z-10"
                 >
                   Hours & Location
                   <ArrowRight className="w-4 h-4" />

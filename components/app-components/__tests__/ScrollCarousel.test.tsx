@@ -145,7 +145,7 @@ describe("ScrollCarousel", () => {
 
     it("accepts autoScroll and intervalSeconds props", () => {
       render(
-        <ScrollCarousel autoScroll={true} intervalSeconds={5}>
+        <ScrollCarousel autoplay={true} autoplayDelay={5000}>
           <div key="1">Slide 1</div>
           <div key="2">Slide 2</div>
         </ScrollCarousel>

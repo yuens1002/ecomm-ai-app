@@ -26,6 +26,8 @@ export async function GET() {
             "footer_categories_heading",
             "footer_quick_links_heading",
             "product_related_heading",
+            "product_addons_section_title",
+            "cart_addons_section_title",
           ],
         },
       },

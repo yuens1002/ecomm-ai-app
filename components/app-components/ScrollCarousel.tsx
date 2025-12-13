@@ -1,149 +1,126 @@
 "use client";
 
-import React, { useState, useEffect, useRef, ReactNode } from "react";
-import { CarouselDots } from "./CarouselDots";
+import React, { ReactNode, useCallback, useEffect, useState } from "react";
+import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
 import { cn } from "@/lib/utils";
 
 interface ScrollCarouselProps {
   children: ReactNode;
-  /** Number of slides per view (e.g., 1 for full width, 2.5 for multiple slides) */
   slidesPerView?: number;
-  /** Minimum width for each slide */
-  minWidth?: string;
-  /** Gap between slides (e.g., "1rem", "16px") */
-  gap?: string;
-  /** Padding for the container (e.g., "1rem") */
-  padding?: string;
-  /** Show navigation dots */
   showDots?: boolean;
-  /** Auto-scroll enabled */
-  autoScroll?: boolean;
-  /** Auto-scroll interval in seconds */
-  intervalSeconds?: number;
-  /** Remove border/background from dots */
+  gap?: string;
+  padding?: string;
+  minWidth?: string;
   noBorder?: boolean;
+  autoplay?: boolean;
+  autoplayDelay?: number;
 }
 
 export function ScrollCarousel({
   children,
   slidesPerView = 1,
-  minWidth,
+  showDots = true,
   gap = "gap-4",
   padding = "px-4",
-  showDots = true,
-  autoScroll = false,
-  intervalSeconds = 5,
+  minWidth,
   noBorder = false,
+  autoplay = false,
+  autoplayDelay = 4000,
 }: ScrollCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const autoScrollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Convert children to array to handle single child case
-  const childrenArray = Array.isArray(children) ? children : [children];
-  const itemCount = childrenArray.length;
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    {
+      align: "start",
+      containScroll: "trimSnaps",
+      dragFree: false,
+      slidesToScroll: 1,
+    },
+    autoplay
+      ? [Autoplay({ delay: autoplayDelay, stopOnInteraction: true })]
+      : []
+  );
 
-  // Auto-scroll logic
+  // Update current index when carousel scrolls
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setCurrentIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
   useEffect(() => {
-    if (!autoScroll || itemCount <= 1 || isHovered) {
-      return;
-    }
-
-    autoScrollTimerRef.current = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % itemCount);
-    }, intervalSeconds * 1000);
-
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on("select", onSelect);
     return () => {
-      if (autoScrollTimerRef.current) {
-        clearInterval(autoScrollTimerRef.current);
-      }
+      emblaApi.off("select", onSelect);
     };
-  }, [autoScroll, intervalSeconds, itemCount, isHovered]);
+  }, [emblaApi, onSelect]);
 
-  // Scroll to current index when changed (dots clicked or auto-scroll)
-  useEffect(() => {
-    if (scrollContainerRef.current && itemCount > 0) {
-      const container = scrollContainerRef.current;
-      const slideWidth = container.scrollWidth / itemCount;
-      container.scrollTo({
-        left: slideWidth * currentIndex,
-        behavior: "smooth",
-      });
-    }
-  }, [currentIndex, itemCount]);
+  // Dot navigation handler
+  const handleDotClick = useCallback(
+    (index: number) => {
+      if (!emblaApi) return;
+      emblaApi.scrollTo(index);
+    },
+    [emblaApi]
+  );
 
-  // Update currentIndex when user manually scrolls/swipes
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container || itemCount <= 1) return;
+  // Convert children to array for mapping
+  const childArray = React.Children.toArray(children);
 
-    let scrollTimeout: NodeJS.Timeout;
-    const handleScroll = () => {
-      // Debounce to avoid updating during smooth scroll
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        const slideWidth = container.scrollWidth / itemCount;
-        const newIndex = Math.round(container.scrollLeft / slideWidth);
-        setCurrentIndex(newIndex);
-      }, 150);
-    };
-
-    container.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      clearTimeout(scrollTimeout);
-      container.removeEventListener("scroll", handleScroll);
-    };
-  }, [itemCount]);
-
-  if (itemCount === 0) {
-    return null;
-  }
-
-  // Calculate slide width based on slidesPerView
-  const slideStyle = {
-    width:
-      slidesPerView === 1
-        ? "100%"
-        : `calc((100% - ${gap} * ${slidesPerView - 1}) / ${slidesPerView})`,
-    minWidth: minWidth || undefined,
-  };
+  // Calculate consistent slide width
+  const slideWidth = minWidth || `${100 / slidesPerView}%`;
 
   return (
     <div
-      className="relative w-full"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={cn(
+        "w-full",
+        !noBorder && "border border-border rounded-lg overflow-hidden"
+      )}
     >
-      {/* Scroll Container */}
-      <div
-        ref={scrollContainerRef}
-        className={cn(
-          "flex overflow-x-auto snap-x snap-mandatory scrollbar-hide",
-          slidesPerView === 1 ? "gap-0" : gap,
-          slidesPerView === 1 ? "" : padding
-        )}
-        style={{
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
-        }}
-      >
-        {childrenArray.map((child, index) => (
-          <div key={index} className="shrink-0 snap-start" style={slideStyle}>
-            {child}
-          </div>
-        ))}
+      <div className="overflow-hidden touch-none" ref={emblaRef}>
+        <div
+          className={cn("flex", gap)}
+          style={{
+            WebkitUserSelect: "none",
+            MozUserSelect: "none",
+            msUserSelect: "none",
+          }}
+        >
+          {childArray.map((child, index) => (
+            <div
+              key={index}
+              className="shrink-0"
+              style={{
+                flex: `0 0 ${slideWidth}`,
+                minWidth: slideWidth,
+                maxWidth: slideWidth,
+                userSelect: "none",
+                WebkitUserSelect: "none",
+              }}
+            >
+              {child}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Dots Navigation */}
-      {showDots && (
-        <div className="flex justify-center mt-10">
-          <CarouselDots
-            total={itemCount}
-            currentIndex={currentIndex}
-            onDotClick={setCurrentIndex}
-            noBorder={noBorder}
-          />
+      {showDots && childArray.length > 1 && (
+        <div className="flex justify-center gap-2 p-4">
+          {childArray.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => handleDotClick(index)}
+              className={cn(
+                "w-2 h-2 rounded-full transition-all",
+                currentIndex === index
+                  ? "bg-primary w-6"
+                  : "bg-slate-700 hover:bg-slate-900"
+              )}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
         </div>
       )}
     </div>

@@ -74,6 +74,11 @@ interface WeightUnitSettings {
   weightUnit: WeightUnitOption;
 }
 
+interface AddOnsSettings {
+  productAddOnsSectionTitle: string;
+  cartAddOnsSectionTitle: string;
+}
+
 type FieldName =
   | "showHours"
   | "hoursText"
@@ -85,7 +90,9 @@ type FieldName =
   | "storeTagline"
   | "storeDescription"
   | "storeLogoUrl"
-  | "storeFaviconUrl";
+  | "storeFaviconUrl"
+  | "productAddOnsSectionTitle"
+  | "cartAddOnsSectionTitle";
 
 export default function SettingsManagementClient() {
   const { toast } = useToast();
@@ -102,6 +109,8 @@ export default function SettingsManagementClient() {
     storeDescription: false,
     storeLogoUrl: false,
     storeFaviconUrl: false,
+    productAddOnsSectionTitle: false,
+    cartAddOnsSectionTitle: false,
   });
   const [settings, setSettings] = useState<FooterSettings>({
     showHours: true,
@@ -172,6 +181,15 @@ export default function SettingsManagementClient() {
       weightUnit: WeightUnitOption.METRIC,
     });
   const [savingWeightUnit, setSavingWeightUnit] = useState(false);
+  const [addOnsSettings, setAddOnsSettings] = useState<AddOnsSettings>({
+    productAddOnsSectionTitle: "Complete Your Order",
+    cartAddOnsSectionTitle: "You Might Also Like",
+  });
+  const [originalAddOnsSettings, setOriginalAddOnsSettings] =
+    useState<AddOnsSettings>({
+      productAddOnsSectionTitle: "Complete Your Order",
+      cartAddOnsSectionTitle: "You Might Also Like",
+    });
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -182,6 +200,7 @@ export default function SettingsManagementClient() {
         brandingResponse,
         locationTypeResponse,
         weightUnitResponse,
+        addOnsResponse,
       ] = await Promise.all([
         fetch("/api/admin/settings/footer-contact"),
         fetch("/api/admin/settings/email"),
@@ -189,6 +208,7 @@ export default function SettingsManagementClient() {
         fetch("/api/admin/settings/branding"),
         fetch("/api/admin/settings/location-type"),
         fetch("/api/admin/settings/weight-unit"),
+        fetch("/api/admin/settings/add-ons"),
       ]);
 
       if (
@@ -197,7 +217,8 @@ export default function SettingsManagementClient() {
         !newsletterResponse.ok ||
         !brandingResponse.ok ||
         !locationTypeResponse.ok ||
-        !weightUnitResponse.ok
+        !weightUnitResponse.ok ||
+        !addOnsResponse.ok
       ) {
         throw new Error("Failed to fetch settings");
       }
@@ -208,6 +229,7 @@ export default function SettingsManagementClient() {
       const brandingData = await brandingResponse.json();
       const locationTypeData = await locationTypeResponse.json();
       const weightUnitData = await weightUnitResponse.json();
+      const addOnsData = await addOnsResponse.json();
       const safeWeightUnit = isWeightUnitOption(weightUnitData?.weightUnit)
         ? weightUnitData.weightUnit
         : WeightUnitOption.METRIC;
@@ -223,6 +245,8 @@ export default function SettingsManagementClient() {
       setLocationTypeSettings(locationTypeData);
       setOriginalWeightUnitSettings({ weightUnit: safeWeightUnit });
       setWeightUnitSettings({ weightUnit: safeWeightUnit });
+      setAddOnsSettings(addOnsData);
+      setOriginalAddOnsSettings(addOnsData);
     } catch {
       toast({
         title: "Error",
@@ -280,6 +304,24 @@ export default function SettingsManagementClient() {
         });
 
         setOriginalBrandingSettings(brandingSettings);
+      } else if (
+        field === "productAddOnsSectionTitle" ||
+        field === "cartAddOnsSectionTitle"
+      ) {
+        const response = await fetch("/api/admin/settings/add-ons", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(addOnsSettings),
+        });
+
+        if (!response.ok) throw new Error("Failed to save add-ons settings");
+
+        toast({
+          title: "Success",
+          description: "Add-ons settings saved successfully",
+        });
+
+        setOriginalAddOnsSettings(addOnsSettings);
       } else {
         const response = await fetch("/api/admin/settings/footer-contact", {
           method: "PUT",
@@ -348,6 +390,12 @@ export default function SettingsManagementClient() {
       field === "storeFaviconUrl"
     ) {
       return brandingSettings[field] !== originalBrandingSettings[field];
+    }
+    if (
+      field === "productAddOnsSectionTitle" ||
+      field === "cartAddOnsSectionTitle"
+    ) {
+      return addOnsSettings[field] !== originalAddOnsSettings[field];
     }
     return settings[field] !== originalSettings[field];
   };
@@ -1268,6 +1316,126 @@ export default function SettingsManagementClient() {
               )}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Add-Ons Settings */}
+      <Card>
+        <CardHeader className="pb-8">
+          <Field orientation="vertical">
+            <FieldContent>
+              <FieldTitle className="text-base font-semibold">
+                Add-Ons Section Headings
+              </FieldTitle>
+              <FieldDescription>
+                Customize the headings for product add-ons displayed on product
+                pages and in the shopping cart.
+              </FieldDescription>
+            </FieldContent>
+          </Field>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <FieldGroup>
+            <Field>
+              <FormHeading
+                htmlFor="product-addons-title"
+                label="Product Page Add-Ons Title"
+                isDirty={isFieldDirty("productAddOnsSectionTitle")}
+              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="product-addons-title"
+                  type="text"
+                  value={addOnsSettings.productAddOnsSectionTitle}
+                  onChange={(e) =>
+                    setAddOnsSettings({
+                      ...addOnsSettings,
+                      productAddOnsSectionTitle: e.target.value,
+                    })
+                  }
+                  placeholder={originalAddOnsSettings.productAddOnsSectionTitle}
+                  className={
+                    isFieldDirty("productAddOnsSectionTitle")
+                      ? "border-amber-500"
+                      : ""
+                  }
+                />
+                <Button
+                  size="sm"
+                  onClick={() => handleSaveField("productAddOnsSectionTitle")}
+                  disabled={savingFields["productAddOnsSectionTitle"]}
+                  className="shrink-0"
+                >
+                  {savingFields["productAddOnsSectionTitle"] ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="ml-2">Saving</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span className="ml-2">Save</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+              <FieldDescription>
+                Shown on individual product pages to introduce complementary
+                products.
+              </FieldDescription>
+            </Field>
+          </FieldGroup>
+
+          <FieldGroup>
+            <Field>
+              <FormHeading
+                htmlFor="cart-addons-title"
+                label="Shopping Cart Add-Ons Title"
+                isDirty={isFieldDirty("cartAddOnsSectionTitle")}
+              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="cart-addons-title"
+                  type="text"
+                  value={addOnsSettings.cartAddOnsSectionTitle}
+                  onChange={(e) =>
+                    setAddOnsSettings({
+                      ...addOnsSettings,
+                      cartAddOnsSectionTitle: e.target.value,
+                    })
+                  }
+                  placeholder={originalAddOnsSettings.cartAddOnsSectionTitle}
+                  className={
+                    isFieldDirty("cartAddOnsSectionTitle")
+                      ? "border-amber-500"
+                      : ""
+                  }
+                />
+                <Button
+                  size="sm"
+                  onClick={() => handleSaveField("cartAddOnsSectionTitle")}
+                  disabled={savingFields["cartAddOnsSectionTitle"]}
+                  className="shrink-0"
+                >
+                  {savingFields["cartAddOnsSectionTitle"] ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="ml-2">Saving</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span className="ml-2">Save</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+              <FieldDescription>
+                Shown in the shopping cart to suggest additional products before
+                checkout.
+              </FieldDescription>
+            </Field>
+          </FieldGroup>
         </CardContent>
       </Card>
 

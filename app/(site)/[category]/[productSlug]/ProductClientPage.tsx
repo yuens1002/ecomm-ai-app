@@ -212,24 +212,47 @@ export default function ProductClientPage({
 
   // ProductCard now uses cart store directly, no callback needed
 
-  // Handle add-on add to cart
+  // Handle add-on add to cart - adds BOTH the main product AND the add-on
   const handleAddOnToCart = (addOn: AddOnItem) => {
-    const displayImage = "/placeholder-product.png";
+    // First, add the main product
+    addItem({
+      productId: product.id,
+      productName: product.name,
+      productSlug: product.slug,
+      variantId: selectedVariant.id,
+      variantName: selectedVariant.name,
+      categorySlug: category.slug,
+      purchaseOptionId: selectedPurchaseOption.id,
+      purchaseType: selectedPurchaseOption.type as "ONE_TIME" | "SUBSCRIPTION",
+      priceInCents: selectedPurchaseOption.priceInCents,
+      imageUrl: displayImage,
+      quantity: quantity,
+    });
 
+    // Track main product add to cart
+    trackActivity({
+      activityType: "ADD_TO_CART",
+      productId: product.id,
+    });
+
+    // Then, add the add-on
     addItem({
       productId: addOn.product.id,
       productName: addOn.product.name,
       productSlug: addOn.product.slug,
       variantId: addOn.variant.id,
       variantName: addOn.variant.name,
+      categorySlug: addOn.categorySlug || "shop",
       purchaseOptionId: addOn.variant.purchaseOptions[0].id,
       purchaseType: "ONE_TIME",
       priceInCents: addOn.discountedPriceInCents,
-      imageUrl: displayImage,
+      imageUrl:
+        addOn.imageUrl ||
+        "https://placehold.co/300x300/CCCCCC/FFFFFF.png?text=No+Image",
       quantity: 1,
     });
 
-    // Track add to cart activity for add-on
+    // Track add-on add to cart activity
     trackActivity({
       activityType: "ADD_TO_CART",
       productId: addOn.product.id,
@@ -479,7 +502,7 @@ export default function ProductClientPage({
               <Separator className="my-6" />
               <div>
                 <h2 className="text-lg font-bold text-left text-text-base mb-6">
-                  You May Also Like
+                  {settings.productAddOnsSectionTitle}
                 </h2>
 
                 <ScrollCarousel slidesPerView={1} noBorder={true}>
@@ -488,6 +511,7 @@ export default function ProductClientPage({
                       key={`${addOn.product.id}-${addOn.variant.id}`}
                       addOn={addOn}
                       weightUnit="g"
+                      buttonText="Add Bundle"
                       onAddToCart={() => handleAddOnToCart(addOn)}
                     />
                   ))}

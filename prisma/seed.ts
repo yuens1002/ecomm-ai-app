@@ -252,6 +252,24 @@ async function main() {
     },
   });
 
+  await prisma.siteSettings.upsert({
+    where: { key: "product_addons_section_title" },
+    update: {},
+    create: {
+      key: "product_addons_section_title",
+      value: "Complete Your Order",
+    },
+  });
+
+  await prisma.siteSettings.upsert({
+    where: { key: "cart_addons_section_title" },
+    update: {},
+    create: {
+      key: "cart_addons_section_title",
+      value: "You Might Also Like",
+    },
+  });
+
   console.log("✓ SiteSettings created");
 
   // --- 2. Create Category Labels ---

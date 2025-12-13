@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.41.0 - 2025-12-13
+
+- **Embla Carousel integration**: Replaced custom CSS scroll-snap carousel with Embla Carousel library for reliable touch/swipe gestures on mobile and mouse drag on desktop; added autoplay support with configurable delay and stop-on-interaction.
+- **Carousel touch improvements**: Fixed pointer event handling with touch-none class, vendor-prefixed userSelect, draggable={false} on images, and stopPropagation on buttons to enable smooth swipe navigation without interference.
+- **Visual refinements**: Updated carousel dots to use slate-700 background for better visibility, removed container padding to eliminate partial slide views, adjusted slide width calculations for consistent 2.5 slides-per-view layout.
+- **Add-ons settings management**: Added admin UI section for customizing add-on section headings (product page and cart), with dedicated API endpoint, individual save buttons, and dirty state indicators following site settings patterns.
+
 ## 0.40.0 - 2025-12-12
 
 - **Add-ons carousel**: Created reusable ScrollCarousel component with configurable slides-per-view, added carousel to product add-ons section with single slide display, theme-aware dots navigation (noBorder prop), debounced scroll tracking, and full-width slide support.

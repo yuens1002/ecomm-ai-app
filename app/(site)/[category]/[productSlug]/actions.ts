@@ -25,6 +25,8 @@ export interface AddOnItem {
     }>;
   };
   discountedPriceInCents: number;
+  imageUrl?: string;
+  categorySlug?: string;
 }
 
 /**
@@ -54,6 +56,25 @@ export async function getProductAddOns(
             slug: true,
             type: true,
             description: true,
+            images: {
+              select: {
+                url: true,
+              },
+              take: 1,
+            },
+            categories: {
+              where: {
+                isPrimary: true,
+              },
+              include: {
+                category: {
+                  select: {
+                    slug: true,
+                  },
+                },
+              },
+              take: 1,
+            },
           },
         },
         addOnVariant: {
@@ -119,6 +140,10 @@ export async function getProductAddOns(
         },
         discountedPriceInCents:
           addOn.discountedPriceInCents ?? purchaseOption.priceInCents,
+        imageUrl:
+          addOn.addOnProduct.images[0]?.url ||
+          "https://placehold.co/300x300/CCCCCC/FFFFFF.png?text=No+Image",
+        categorySlug: addOn.addOnProduct.categories[0]?.category.slug || "shop",
       };
     });
   } catch (error) {

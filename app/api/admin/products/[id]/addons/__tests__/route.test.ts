@@ -242,6 +242,70 @@ describe("POST /api/admin/products/[id]/addons", () => {
     expect(json.error).toBe("Unauthorized");
   });
 
+  it("returns 400 when addOnProductId is missing", async () => {
+    requireAdminApiMock.mockResolvedValue({ authorized: true });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/admin/products/prod-1/addons",
+      {
+        method: "POST",
+        body: JSON.stringify({}),
+      }
+    );
+
+    const response = await POST(request, {
+      params: Promise.resolve({ id: "prod-1" }),
+    });
+
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.error).toBeDefined();
+    expect(json.error).toMatch(/required|expected string/i);
+  });
+
+  it("returns 400 when addOnProductId is empty string", async () => {
+    requireAdminApiMock.mockResolvedValue({ authorized: true });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/admin/products/prod-1/addons",
+      {
+        method: "POST",
+        body: JSON.stringify({ addOnProductId: "" }),
+      }
+    );
+
+    const response = await POST(request, {
+      params: Promise.resolve({ id: "prod-1" }),
+    });
+
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.error).toContain("required");
+  });
+
+  it("returns 400 when discountedPriceInCents is not a positive integer", async () => {
+    requireAdminApiMock.mockResolvedValue({ authorized: true });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/admin/products/prod-1/addons",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          addOnProductId: "prod-2",
+          discountedPriceInCents: -100,
+        }),
+      }
+    );
+
+    const response = await POST(request, {
+      params: Promise.resolve({ id: "prod-1" }),
+    });
+
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.error).toBeDefined();
+  });
+
   it("returns 404 when primary product not found", async () => {
     requireAdminApiMock.mockResolvedValue({ authorized: true });
     findUniqueMock.mockResolvedValueOnce(null); // primary product not found
