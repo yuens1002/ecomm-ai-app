@@ -33,26 +33,26 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label"; // <-- ADDED THIS IMPORT
 import ProductCard from "@components/app-components/ProductCard"; // Re-use our card
+import { AddOnCard } from "@components/app-components/AddOnCard";
+import { ScrollCarousel } from "@components/app-components/ScrollCarousel";
 import { useCartStore } from "@/lib/store/cart-store";
-import { formatBillingInterval } from "@/lib/utils";
+import { formatBillingInterval, formatPrice } from "@/lib/utils";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
+import { AddOnItem } from "./actions";
 
 // Prop interface for this component
 interface ProductClientPageProps {
   product: NonNullable<FullProductPayload>;
   relatedProducts: RelatedProduct[];
   category: Pick<Category, "name" | "slug">; // We only need name and slug
-}
-
-// Helper to format cents to dollars
-function formatPrice(priceInCents: number) {
-  return (priceInCents / 100).toFixed(2);
+  addOns: AddOnItem[];
 }
 
 export default function ProductClientPage({
   product,
   relatedProducts,
   category,
+  addOns,
 }: ProductClientPageProps) {
   const { settings } = useSiteSettings();
   const addItem = useCartStore((state) => state.addItem);
@@ -211,6 +211,53 @@ export default function ProductClientPage({
   };
 
   // ProductCard now uses cart store directly, no callback needed
+
+  // Handle add-on add to cart - adds BOTH the main product AND the add-on
+  const handleAddOnToCart = (addOn: AddOnItem) => {
+    // First, add the main product
+    addItem({
+      productId: product.id,
+      productName: product.name,
+      productSlug: product.slug,
+      variantId: selectedVariant.id,
+      variantName: selectedVariant.name,
+      categorySlug: category.slug,
+      purchaseOptionId: selectedPurchaseOption.id,
+      purchaseType: selectedPurchaseOption.type as "ONE_TIME" | "SUBSCRIPTION",
+      priceInCents: selectedPurchaseOption.priceInCents,
+      imageUrl: displayImage,
+      quantity: quantity,
+    });
+
+    // Track main product add to cart
+    trackActivity({
+      activityType: "ADD_TO_CART",
+      productId: product.id,
+    });
+
+    // Then, add the add-on
+    addItem({
+      productId: addOn.product.id,
+      productName: addOn.product.name,
+      productSlug: addOn.product.slug,
+      variantId: addOn.variant.id,
+      variantName: addOn.variant.name,
+      categorySlug: addOn.categorySlug || "shop",
+      purchaseOptionId: addOn.variant.purchaseOptions[0].id,
+      purchaseType: "ONE_TIME",
+      priceInCents: addOn.discountedPriceInCents,
+      imageUrl:
+        addOn.imageUrl ||
+        "https://placehold.co/300x300/CCCCCC/FFFFFF.png?text=No+Image",
+      quantity: 1,
+    });
+
+    // Track add-on add to cart activity
+    trackActivity({
+      activityType: "ADD_TO_CART",
+      productId: addOn.product.id,
+    });
+  };
 
   const isCoffee = product.type === ProductType.COFFEE;
 
@@ -448,6 +495,30 @@ export default function ProductClientPage({
           >
             {selectedVariant.stockQuantity > 0 ? "Add to Cart" : "Out of Stock"}
           </Button>
+
+          {/* Add-ons Section */}
+          {addOns.length > 0 && (
+            <>
+              <Separator className="my-6" />
+              <div>
+                <h2 className="text-lg font-bold text-left text-text-base mb-6">
+                  {settings.productAddOnsSectionTitle}
+                </h2>
+
+                <ScrollCarousel slidesPerView={1} noBorder={true}>
+                  {addOns.map((addOn) => (
+                    <AddOnCard
+                      key={`${addOn.product.id}-${addOn.variant.id}`}
+                      addOn={addOn}
+                      weightUnit="g"
+                      buttonText="Add Bundle"
+                      onAddToCart={() => handleAddOnToCart(addOn)}
+                    />
+                  ))}
+                </ScrollCarousel>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

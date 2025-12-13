@@ -2,7 +2,27 @@
 
 ## Unreleased
 
+## 0.41.0 - 2025-12-13
+
+- **Embla Carousel integration**: Replaced custom CSS scroll-snap carousel with Embla Carousel library for reliable touch/swipe gestures on mobile and mouse drag on desktop; added autoplay support with configurable delay and stop-on-interaction; integrated CarouselDots component with Framer Motion animations.
+- **Carousel touch improvements**: Fixed pointer event handling with touch-none class, vendor-prefixed userSelect, draggable={false} on images, and stopPropagation on buttons to enable smooth swipe navigation without interference.
+- **Visual refinements**: Updated carousel to use CarouselDots with smooth animations, removed container padding to eliminate partial slide views, adjusted slide width calculations for consistent 2.5 slides-per-view layout.
+- **Add-ons settings management**: Added admin UI section for customizing add-on section headings (product page and cart), with dedicated API endpoint, individual save buttons, and dirty state indicators following site settings patterns.
 - **Recommendations URL fix**: Fixed product links in RecommendationsSection to use primary category instead of non-existent "recommendations-personalized" or "recommendations-trending" slugs that created invalid /recommendations/* URLs.
+
+## 0.40.0 - 2025-12-12
+
+- **Add-ons carousel**: Created reusable ScrollCarousel component with configurable slides-per-view, added carousel to product add-ons section with single slide display, theme-aware dots navigation (noBorder prop), debounced scroll tracking, and full-width slide support.
+- **Carousel refactor**: Refactored CarouselBlock to use ScrollCarousel internally, eliminating duplicate scroll logic and centralizing carousel behavior in one reusable component.
+- **ScrollCarousel children handling**: Fixed ScrollCarousel to properly handle React children using `Array.isArray()` check instead of requiring array type, enabling single-child usage; fixed gap/padding props to use Tailwind classes as defaults and actually apply custom values.
+- **Test coverage fixes**: Updated actions.test.ts mock data to match new AddOnLink schema (primaryProductId, addOnProduct, addOnVariant fields); fixed WeightUnit enum mock to use IMPERIAL instead of "ounces"; all 150 tests passing.
+
+## 0.39.0 - 2025-12-12
+
+- **Server actions for add-ons**: Migrated product add-ons to server actions with `getProductAddOns()` fetching data server-side for better performance and type safety; both product routes now render add-ons without client-side API calls.
+- **Component co-location**: Moved ProductClientPage from `components/app-components` to route directory following Next.js App Router best practices; added AddOnCard component for displaying add-on products with discount pricing.
+- **Add-ons test coverage**: Created comprehensive test suite for server actions (10 tests covering empty results, filtering, weight conversion, error handling, and ONE_TIME purchase options); all 140 tests passing.
+- **Architecture cleanup**: Removed unused `/api/products/[id]/addons` API route; added formatPrice utility to lib/utils for consistent price formatting across components.
 
 ## 0.38.2 - 2025-12-12
 

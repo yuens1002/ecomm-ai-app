@@ -4,7 +4,8 @@ import {
   getRelatedProducts,
   getAllProductSlugs,
 } from "@/lib/data";
-import ProductClientPage from "@components/app-components/ProductClientPage";
+import ProductClientPage from "../../[category]/[productSlug]/ProductClientPage";
+import { getProductAddOns } from "../../[category]/[productSlug]/actions";
 
 export const revalidate = 3600; // Re-fetch this page in the background, at most once per hour
 
@@ -82,12 +83,16 @@ export default async function ProductPage({
     roastCategory?.slug || "medium-roast" // Fallback if no roast level found
   );
 
+  // Fetch add-ons for this product
+  const addOns = await getProductAddOns(product.id);
+
   return (
     // Pass the fetched data as props to the Client Component
     <ProductClientPage
       product={product}
       relatedProducts={relatedProducts} // Pass the chosen category for the breadcrumb
       category={displayCategory}
+      addOns={addOns}
     />
   );
 }

@@ -2,6 +2,59 @@
 
 ## High Priority
 
+### Reciprocal Add-Ons Feature
+
+**Status**: Backlog  
+**Priority**: Medium  
+**Description**: Add opt-in functionality to automatically create reciprocal add-on relationships when linking products. Currently, if Product A has Product B as an add-on, Product B does not automatically have Product A as an add-on - this must be created manually.
+
+**Use Cases**:
+
+- Brewing equipment pairs (dripper + filters, kettle + thermometer)
+- Coffee + brewing method pairings
+- Accessory bundles (grinder + scale, canister + scoop)
+
+**Proposed Implementations** (choose one or offer all):
+
+1. **Checkbox on Add-On Creation**:
+   - Add "Also add reciprocal link" checkbox to add-on form
+   - Optional separate discount field for reverse relationship
+   - Creates both A→B and B→A links in one action
+
+2. **Bulk Action in Admin**:
+   - Add "Make Selected Reciprocal" action in add-ons management
+   - Applies to existing one-way relationships
+   - Preview affected products before confirming
+
+3. **Product-Level Setting**:
+   - Add "Auto-reciprocal add-ons" toggle to product settings
+   - When enabled, automatically creates reverse link when product is added as add-on
+   - Could be default setting for certain product types (accessories, brewing equipment)
+
+**Considerations**:
+
+- **Asymmetric discounts**: A→B might have different discount than B→A
+- **Business logic**: Some relationships shouldn't be reciprocal (kettle as add-on for dripper makes sense, but not vice versa)
+- **Default behavior**: Keep current one-way system as default to avoid unexpected changes
+- **Duplicate prevention**: Check for existing reciprocal before creating
+
+**Technical Changes**:
+
+- Update POST `/api/admin/products/[id]/addons` endpoint with optional `createReciprocal` flag
+- Add UI checkbox/toggle to ProductAddOnsClient form
+- Consider adding AddOnLink validation to prevent conflicting reciprocal relationships
+- Update tests to cover reciprocal creation scenarios
+
+**Acceptance Criteria**:
+
+- [ ] Shop owners can opt-in to create reciprocal links when adding add-ons
+- [ ] Reciprocal links can have different discounts in each direction
+- [ ] System prevents duplicate reciprocal relationships
+- [ ] Existing one-way relationships remain unchanged
+- [ ] Clear UI indication when a reciprocal relationship exists
+
+---
+
 ### Refactor Client Components to Server Actions Pattern
 
 **Status**: Backlog  

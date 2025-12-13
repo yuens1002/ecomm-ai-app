@@ -36,9 +36,9 @@ import {
   SheetTitle,
   SheetDescription,
   SheetTrigger,
-  SheetClose,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { CartAddOnsSuggestions } from "./CartAddOnsSuggestions";
 
 /**
  * ShoppingCart component - manages cart UI and logic
@@ -318,11 +318,9 @@ export function ShoppingCart() {
               <p className="text-sm text-text-muted mb-6">
                 Add some delicious coffee to get started!
               </p>
-              <SheetClose asChild>
-                <Button asChild>
-                  <Link href="/">Browse Products</Link>
-                </Button>
-              </SheetClose>
+              <Button asChild>
+                <Link href="/">Browse Products</Link>
+              </Button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -424,6 +422,9 @@ export function ShoppingCart() {
               ))}
             </div>
           )}
+
+          {/* Add-ons Suggestions */}
+          {items.length > 0 && <CartAddOnsSuggestions />}
         </div>
 
         {/* Cart Footer */}

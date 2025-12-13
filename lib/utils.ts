@@ -21,3 +21,12 @@ export function formatBillingInterval(
   }
   return `Every ${count} ${normalizedInterval}s`;
 }
+
+/**
+ * Formats price in cents to dollar string
+ * @param priceInCents - Price in cents
+ * @returns Formatted price string like "12.99"
+ */
+export function formatPrice(priceInCents: number): string {
+  return (priceInCents / 100).toFixed(2);
+}

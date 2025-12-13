@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
+import { z } from "zod";
+
+const addOnLinkSchema = z.object({
+  addOnProductId: z.string().min(1, "Add-on product ID is required"),
+  addOnVariantId: z.string().optional().nullable(),
+  discountedPriceInCents: z.number().int().positive().optional().nullable(),
+});
 
 export async function GET(
   request: Request,
@@ -65,7 +72,18 @@ export async function POST(
 
     const { id: primaryProductId } = await params;
     const body = await request.json();
-    const { addOnProductId, addOnVariantId, discountedPriceInCents } = body;
+
+    // Validate request body with Zod
+    const validation = addOnLinkSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+
+    const { addOnProductId, addOnVariantId, discountedPriceInCents } =
+      validation.data;
 
     // Validate the product exists
     const product = await prisma.product.findUnique({

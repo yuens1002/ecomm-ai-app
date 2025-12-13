@@ -17,6 +17,9 @@ export interface SiteSettings {
   footerCategoriesHeading: string;
   footerQuickLinksHeading: string;
   productRelatedHeading: string;
+  // Add-ons Section Titles
+  productAddOnsSectionTitle: string;
+  cartAddOnsSectionTitle: string;
 }
 
 const defaultSettings: SiteSettings = {
@@ -36,6 +39,9 @@ const defaultSettings: SiteSettings = {
   footerCategoriesHeading: "Coffee Selection",
   footerQuickLinksHeading: "Quick Links",
   productRelatedHeading: "You Might Also Like",
+  // Add-ons defaults
+  productAddOnsSectionTitle: "Save on a Bundle",
+  cartAddOnsSectionTitle: "You May Also Like",
 };
 
 // Cache for settings to avoid repeated fetches
@@ -87,6 +93,13 @@ async function fetchSettings(): Promise<SiteSettings> {
           defaultSettings.footerQuickLinksHeading,
         productRelatedHeading:
           data.product_related_heading || defaultSettings.productRelatedHeading,
+        // Add-ons Section Titles
+        productAddOnsSectionTitle:
+          data.product_addons_section_title ||
+          defaultSettings.productAddOnsSectionTitle,
+        cartAddOnsSectionTitle:
+          data.cart_addons_section_title ||
+          defaultSettings.cartAddOnsSectionTitle,
       };
       fetchPromise = null; // Clear promise after successful fetch
       return cachedSettings;
