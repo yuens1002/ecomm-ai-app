@@ -9,9 +9,14 @@ export default async function CategoriesPage() {
   await requireAdmin();
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold tracking-tight mb-6">Product Menu</h1>
+    <>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Product Menu</h1>
+        <p className="text-muted-foreground mt-2">
+          Manage product categories and organization
+        </p>
+      </div>
       <CategoryManagementClient />
-    </div>
+    </>
   );
 }

@@ -34,7 +34,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Save } from "lucide-react";
+import { Save, ArrowLeft } from "lucide-react";
 import ProductVariantsClient from "./ProductVariantsClient";
 import ProductAddOnsClient from "./ProductAddOnsClient";
 import { PRODUCT_TYPES, ROAST_LEVELS } from "@/lib/productEnums";
@@ -52,27 +52,44 @@ interface ProductFormClientProps {
   productType?: ProductType;
 }
 
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  slug: z.string().min(1, "Slug is required"),
-  description: z.string().optional(),
-  imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  isOrganic: z.boolean().default(false),
-  isFeatured: z.boolean().default(false),
-  isDisabled: z.boolean().default(false),
-  categoryIds: z.array(z.string()).default([]),
-  productType: z.enum(PRODUCT_TYPES).default(PRODUCT_TYPES[0]),
-  roastLevel: z.enum(ROAST_LEVELS).default("MEDIUM"),
-  origin: z.string().optional(),
-  variety: z.string().optional(),
-  altitude: z.string().optional(),
-  tastingNotes: z.string().optional(),
-});
+// Base schema with conditional validation based on productType
+const formSchema = z
+  .object({
+    name: z.string().min(1, "Name is required"),
+    slug: z.string().min(1, "Slug is required"),
+    description: z.string().optional(),
+    imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    isOrganic: z.boolean().default(false),
+    isFeatured: z.boolean().default(false),
+    isDisabled: z.boolean().default(false),
+    categoryIds: z.array(z.string()).default([]),
+    productType: z.enum(PRODUCT_TYPES).default(PRODUCT_TYPES[0]),
+    // Coffee-specific fields
+    roastLevel: z.enum(ROAST_LEVELS).default("MEDIUM"),
+    origin: z.string().optional(),
+    variety: z.string().optional(),
+    altitude: z.string().optional(),
+    tastingNotes: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // If product type is COFFEE, require roast level and origin
+      if (data.productType === ProductType.COFFEE) {
+        return !!data.roastLevel && !!data.origin && data.origin.trim() !== "";
+      }
+      return true;
+    },
+    {
+      message: "Roast level and origin are required for coffee products",
+      path: ["roastLevel"],
+    }
+  );
 
 type ProductFormValues = z.infer<typeof formSchema>;
 
 export default function ProductFormClient({
   productId,
+  onClose,
   onSaved,
   productType = ProductType.COFFEE,
 }: ProductFormClientProps) {
@@ -81,7 +98,7 @@ export default function ProductFormClient({
   const [categories, setCategories] = useState<Category[]>([]);
   const [originalName, setOriginalName] = useState<string>("");
 
-  const form = useForm({
+  const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
@@ -92,8 +109,8 @@ export default function ProductFormClient({
       isFeatured: false,
       isDisabled: false,
       categoryIds: [],
-      productType,
-      roastLevel: "MEDIUM",
+      productType: productType as ProductFormValues["productType"],
+      roastLevel: "MEDIUM" as const,
       origin: "",
       variety: "",
       altitude: "",
@@ -250,15 +267,12 @@ export default function ProductFormClient({
   if (loading) return <div>Loading...</div>;
 
   return (
-    <Card className="w-full">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="space-y-1.5">
-          <CardTitle>{productId ? "Edit Product" : "New Product"}</CardTitle>
+          <CardTitle>{productId ? "Edit Product" : "Add a Product"}</CardTitle>
           <CardDescription>
-            {productId ? originalName : "Create a new product"}
-            <div className="text-xs text-muted-foreground">
-              Fill out the details for your product and add variants.
-            </div>
+            {productId ? originalName : "Fill out the details for your product and add variants"}
           </CardDescription>
         </div>
         <Button
@@ -274,15 +288,18 @@ export default function ProductFormClient({
         </Button>
       </CardHeader>
 
-      <CardContent className="pt-3">
+      <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Left Column: Base Info */}
+              {/* Left Column: Basic Information */}
               <FieldGroup>
-                <div className="text-xs font-semibold uppercase text-muted-foreground">
-                  {productType === ProductType.COFFEE ? "Coffee" : "Merch"}{" "}
-                  Product
+                <div className="mb-4 pb-2 border-b">
+                  <h3 className="text-lg font-semibold">Basic Information</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Core product details and identification
+                  </p>
                 </div>
                 <FormField
                   control={form.control}
@@ -337,35 +354,14 @@ export default function ProductFormClient({
                 )}
               </FieldGroup>
 
-              {/* Right Column: Details */}
+              {/* Right Column: Description & Settings */}
               <FieldGroup>
-                {productType === ProductType.COFFEE && (
-                  <FormField
-                    control={form.control}
-                    name="roastLevel"
-                    render={({ field, fieldState }) => (
-                      <Field>
-                        <FieldLabel>Roast Level</FieldLabel>
-                        <Select
-                          value={field.value}
-                          onValueChange={(val) => field.onChange(val)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {ROAST_LEVELS.map((level) => (
-                              <SelectItem key={level} value={level}>
-                                {level.replace("_", " ")}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FieldError errors={[fieldState.error]} />
-                      </Field>
-                    )}
-                  />
-                )}
+                <div className="mb-4 pb-2 border-b">
+                  <h3 className="text-lg font-semibold">Description & Settings</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Product details and configuration options
+                  </p>
+                </div>
 
                 <FormField
                   control={form.control}
@@ -373,13 +369,13 @@ export default function ProductFormClient({
                   render={({ field, fieldState }) => (
                     <Field>
                       <FieldLabel>Description</FieldLabel>
-                      <Textarea {...field} className="h-32" />
+                      <Textarea {...field} className="h-32" placeholder="Describe your product..." />
                       <FieldError errors={[fieldState.error]} />
                     </Field>
                   )}
                 />
 
-                <FieldGroup>
+                <div className="space-y-3">
                   <FormField
                     control={form.control}
                     name="isOrganic"
@@ -393,9 +389,9 @@ export default function ProductFormClient({
                           onCheckedChange={field.onChange}
                         />
                         <FieldContent>
-                          <FieldLabel>Organic</FieldLabel>
+                          <FieldLabel>Organic Certified</FieldLabel>
                           <FieldDescription>
-                            This product is organic certified.
+                            This product is certified organic
                           </FieldDescription>
                         </FieldContent>
                       </Field>
@@ -438,85 +434,124 @@ export default function ProductFormClient({
                         <FieldContent>
                           <FieldLabel>Disabled</FieldLabel>
                           <FieldDescription>
-                            This product is disabled and won&apos;t be visible.
+                            Hide product from storefront
                           </FieldDescription>
                         </FieldContent>
                       </Field>
                     )}
                   />
-                </FieldGroup>
-
-                {productType === ProductType.COFFEE && (
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="origin"
-                      render={({ field, fieldState }) => (
-                        <Field>
-                          <FieldLabel>Origin(s)</FieldLabel>
-                          <Input
-                            {...field}
-                            placeholder="e.g., Colombia, Ethiopia"
-                          />
-                          <FieldDescription>
-                            Comma-separated list used for coffee origin chips.
-                          </FieldDescription>
-                          <FieldError errors={[fieldState.error]} />
-                        </Field>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="variety"
-                      render={({ field, fieldState }) => (
-                        <Field>
-                          <FieldLabel>Variety</FieldLabel>
-                          <Input {...field} placeholder="e.g., Bourbon" />
-                          <FieldError errors={[fieldState.error]} />
-                        </Field>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="altitude"
-                      render={({ field, fieldState }) => (
-                        <Field>
-                          <FieldLabel>Altitude</FieldLabel>
-                          <Input {...field} placeholder="e.g., 1800m" />
-                          <FieldError errors={[fieldState.error]} />
-                        </Field>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="tastingNotes"
-                      render={({ field, fieldState }) => (
-                        <Field>
-                          <FieldLabel>Tasting Notes</FieldLabel>
-                          <Input
-                            {...field}
-                            placeholder="e.g., Chocolate, Caramel"
-                          />
-                          <FieldDescription>
-                            Comma-separated list for notes shown on product
-                            pages.
-                          </FieldDescription>
-                          <FieldError errors={[fieldState.error]} />
-                        </Field>
-                      )}
-                    />
-                  </div>
-                )}
+                </div>
               </FieldGroup>
             </div>
+
+            {/* Coffee-Specific Section */}
+            {productType === ProductType.COFFEE && (
+              <div className="border rounded-lg p-6 bg-muted/30">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    ☕ Coffee Details
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Coffee-specific attributes and characteristics
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="roastLevel"
+                    render={({ field, fieldState }) => (
+                      <Field>
+                        <FieldLabel>Roast Level *</FieldLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={(val) => field.onChange(val)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select roast level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ROAST_LEVELS.map((level) => (
+                              <SelectItem key={level} value={level}>
+                                {level.charAt(0) + level.slice(1).toLowerCase()}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FieldError errors={[fieldState.error]} />
+                      </Field>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="origin"
+                    render={({ field, fieldState }) => (
+                      <Field>
+                        <FieldLabel>Origin(s) *</FieldLabel>
+                        <Input
+                          {...field}
+                          placeholder="e.g., Colombia, Ethiopia"
+                        />
+                        <FieldDescription>
+                          Comma-separated list (e.g., Colombia, Ethiopia)
+                        </FieldDescription>
+                        <FieldError errors={[fieldState.error]} />
+                      </Field>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="variety"
+                    render={({ field, fieldState }) => (
+                      <Field>
+                        <FieldLabel>Variety</FieldLabel>
+                        <Input {...field} placeholder="e.g., Bourbon, Typica" />
+                        <FieldDescription>Coffee cultivar or variety</FieldDescription>
+                        <FieldError errors={[fieldState.error]} />
+                      </Field>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="altitude"
+                    render={({ field, fieldState }) => (
+                      <Field>
+                        <FieldLabel>Altitude</FieldLabel>
+                        <Input {...field} placeholder="e.g., 1800m" />
+                        <FieldDescription>Growing altitude</FieldDescription>
+                        <FieldError errors={[fieldState.error]} />
+                      </Field>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="tastingNotes"
+                    render={({ field, fieldState }) => (
+                      <Field className="md:col-span-2">
+                        <FieldLabel>Tasting Notes</FieldLabel>
+                        <Input
+                          {...field}
+                          placeholder="e.g., Chocolate, Caramel, Citrus"
+                        />
+                        <FieldDescription>
+                          Comma-separated flavor notes displayed on product page
+                        </FieldDescription>
+                        <FieldError errors={[fieldState.error]} />
+                      </Field>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Bottom Section: Categories & Variants */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Categories */}
-              <div className="border p-4 rounded-md h-full">
+              <div className="border p-4 rounded-md">
                 <h3 className="font-medium mb-6">Categories</h3>
                 <FormField
                   control={form.control}
@@ -579,7 +614,7 @@ export default function ProductFormClient({
               </div>
 
               {/* Variants */}
-              <div className="border p-4 rounded-md h-full">
+              <div className="border p-4 rounded-md">
                 {productId ? (
                   <ProductVariantsClient productId={productId} />
                 ) : (

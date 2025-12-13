@@ -113,7 +113,7 @@ export default function ProductManagementClient({
           }}
           className="pl-0 hover:bg-transparent hover:text-primary"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back to products management
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back to catalog
         </Button>
         <ProductFormClient
           productId={selectedProductId}
@@ -133,11 +133,7 @@ export default function ProductManagementClient({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <div className="space-y-1.5">
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </div>
+      <CardHeader className="flex flex-row items-center justify-end">
         <Button
           onClick={() => {
             setSelectedProductId(undefined);

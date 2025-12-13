@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ProductType, RoastLevel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
+import { productCreateSchema } from "@/lib/validations/product";
 
 // GET /api/admin/products - List all products
 export async function GET(request: Request) {
@@ -95,6 +96,22 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+
+    // Validate with Zod
+    const validation = productCreateSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          details: validation.error.issues.map((issue) => ({
+            path: issue.path.join("."),
+            message: issue.message,
+          })),
+        },
+        { status: 400 }
+      );
+    }
+
     const {
       name,
       slug,
@@ -110,45 +127,9 @@ export async function POST(request: Request) {
       variety,
       altitude,
       tastingNotes,
-    } = body;
+    } = validation.data;
 
-    const typeToSave =
-      productType && Object.values(ProductType).includes(productType)
-        ? productType
-        : ProductType.COFFEE;
-    const roastLevelToSave =
-      roastLevel && Object.values(RoastLevel).includes(roastLevel)
-        ? roastLevel
-        : undefined;
-
-    const isCoffee = typeToSave === ProductType.COFFEE;
-    const originList = Array.isArray(origin)
-      ? origin
-      : typeof origin === "string"
-        ? [origin]
-        : [];
-    const tastingNotesList = Array.isArray(tastingNotes)
-      ? tastingNotes
-      : typeof tastingNotes === "string"
-        ? [tastingNotes]
-        : [];
-
-    const shouldValidateCoffee = productType === ProductType.COFFEE;
-
-    if (shouldValidateCoffee) {
-      if (!roastLevelToSave) {
-        return NextResponse.json(
-          { error: "Roast level is required for coffee products" },
-          { status: 400 }
-        );
-      }
-      if (originList.length === 0) {
-        return NextResponse.json(
-          { error: "At least one origin is required for coffee products" },
-          { status: 400 }
-        );
-      }
-    }
+    const isCoffee = productType === ProductType.COFFEE;
 
     // Transaction to create product and categories
     const product = await prisma.$transaction(async (tx) => {
@@ -156,16 +137,16 @@ export async function POST(request: Request) {
         data: {
           name,
           slug,
-          description,
+          description: description || null,
           isOrganic,
           isFeatured,
-          isDisabled: Boolean(isDisabled),
-          type: typeToSave,
-          roastLevel: isCoffee ? (roastLevelToSave ?? RoastLevel.MEDIUM) : null,
-          origin: isCoffee ? originList : [],
+          isDisabled,
+          type: productType,
+          roastLevel: isCoffee ? roastLevel : null,
+          origin: isCoffee ? origin : [],
           variety: isCoffee ? variety || null : null,
           altitude: isCoffee ? altitude || null : null,
-          tastingNotes: isCoffee ? tastingNotesList : [],
+          tastingNotes: isCoffee ? tastingNotes : [],
         },
       });
 

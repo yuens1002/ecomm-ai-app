@@ -123,26 +123,9 @@ export default function AnalyticsView({
   );
 
   return (
-    <div className={embedded ? "space-y-6" : "container mx-auto p-6 space-y-6"}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {!embedded && (
-            <Link href="/admin">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-          )}
-          <div>
-            <h2 className="text-2xl font-bold">Analytics Overview</h2>
-            <p className="text-muted-foreground">
-              User behavior and product performance insights
-            </p>
-          </div>
-        </div>
-
-        {/* Period Selector */}
+    <div className="space-y-6">
+      {/* Period Selector */}
+      <div className="flex items-center justify-end">
         <div className="flex gap-2">
           {[7, 30].map((days) => (
             <Button

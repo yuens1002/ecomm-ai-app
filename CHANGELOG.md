@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Admin product form enhancements**: Improved product creation form with clear separation of coffee-specific fields in dedicated section with border styling; added comprehensive Zod validation to product API endpoints with discriminated unions for COFFEE vs MERCH types; moved `isOrganic` to common fields (available for both types); enhanced field labels and descriptions for better admin UX; added "Back to catalog" navigation button; changed form title from "New Product" to "Add a Product" with simplified subtitle.
+- **Admin layout standardization**: Normalized all admin page headers to consistent structure (text-3xl font-bold, text-muted-foreground mt-2 subtitle, mb-6 spacing); removed container wrappers from all pages to rely on admin layout padding; fixed double scrollbar issue by making admin layout fixed with `fixed inset-0`; updated ProductManagementClient to show headers outside Card component matching other admin pages.
+- **Product validation architecture**: Created `lib/validations/product.ts` with base schema for common fields, coffee-specific fields schema, and separate update schemas using discriminated unions; fixed `.partial()` error by creating separate update schemas for coffee and merch products; all API endpoints now validate with detailed error messages on failure.
 - **Next.js upgrade**: Updated Next.js from 16.0.7 to 16.0.10 (latest stable); updated eslint-config-next to match.
 - **Node.js upgrade**: Updated project requirements to Node.js v22 LTS (current stable); added engines field to package.json enforcing Node >=22.0.0 and npm >=10.0.0; updated documentation in SETUP.md and copilot instructions; updated GitHub Actions workflow to use Node v22.
 - **Test console cleanup**: Suppressed expected console.error logs in add-ons API error-handling tests to reduce test output noise.
