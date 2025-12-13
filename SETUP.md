@@ -19,8 +19,8 @@ Complete setup instructions for running Artisan Roast locally and deploying to p
 
 Before you begin, ensure you have the following installed:
 
-- **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
-- **npm** or **pnpm** (comes with Node.js)
+- **Node.js** (v22 LTS or higher) - [Download](https://nodejs.org/)
+- **npm** (v10 or higher, comes with Node.js)
 - **Git** - [Download](https://git-scm.com/)
 - **Stripe CLI** (for local webhook testing) - [Installation Guide](https://stripe.com/docs/stripe-cli)
 

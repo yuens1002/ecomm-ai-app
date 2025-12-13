@@ -195,6 +195,10 @@ describe("GET /api/admin/products/[id]/addons", () => {
   });
 
   it("handles database errors gracefully", async () => {
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
     requireAdminApiMock.mockResolvedValue({ authorized: true });
     findManyMock.mockRejectedValue(new Error("Database connection failed"));
 
@@ -209,6 +213,8 @@ describe("GET /api/admin/products/[id]/addons", () => {
     expect(response.status).toBe(500);
     const json = await response.json();
     expect(json.error).toBe("Failed to fetch add-ons");
+
+    consoleErrorSpy.mockRestore();
   });
 });
 
@@ -592,6 +598,10 @@ describe("POST /api/admin/products/[id]/addons", () => {
   });
 
   it("handles database errors gracefully", async () => {
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
     requireAdminApiMock.mockResolvedValue({ authorized: true });
     findUniqueMock.mockRejectedValue(new Error("Database connection failed"));
 
@@ -612,5 +622,7 @@ describe("POST /api/admin/products/[id]/addons", () => {
     expect(response.status).toBe(500);
     const json = await response.json();
     expect(json.error).toBe("Failed to create add-on");
+
+    consoleErrorSpy.mockRestore();
   });
 });

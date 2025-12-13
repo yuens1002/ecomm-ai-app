@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Next.js upgrade**: Updated Next.js from 16.0.7 to 16.0.10 (latest stable); updated eslint-config-next to match.
+- **Node.js upgrade**: Updated project requirements to Node.js v22 LTS (current stable); added engines field to package.json enforcing Node >=22.0.0 and npm >=10.0.0; updated documentation in SETUP.md and copilot instructions.
+- **Test console cleanup**: Suppressed expected console.error logs in add-ons API error-handling tests to reduce test output noise.
 - **Test environment fixes**: Added matchMedia, IntersectionObserver, and ResizeObserver mocks to jest.setup.ts for Embla Carousel compatibility; updated ScrollCarousel tests to match new Embla implementation structure (flex container, no px-4 class); suppressed Framer Motion prop warnings in test output; all 10 tests passing.
 - **Add-ons test fixes**: Added missing images and categories arrays to all mock addOnProduct objects in actions tests; updated test expectations to include imageUrl and categorySlug fields returned by getProductAddOns.
 
