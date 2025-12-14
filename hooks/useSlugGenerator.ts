@@ -25,6 +25,7 @@ export function generateSlug(text: string): string {
 type UseSlugGeneratorOptions = {
   sourceField: string;
   targetField: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   form: UseFormReturn<any>;
 };
 

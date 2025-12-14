@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   InputGroup,
@@ -13,20 +12,11 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ProductType, RoastLevel } from "@prisma/client";
 import {
   Field,
   FieldContent,
   FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
@@ -39,15 +29,13 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Upload } from "lucide-react";
+import { Save } from "lucide-react";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { MultiImageUpload } from "@/components/ui/app/MultiImageUpload";
-import { FormCard } from "@/components/ui/app/FormCard";
 import { ProductCoffeeDetailsSection } from "./ProductCoffeeDetailsSection";
 import { ProductCategoriesSection } from "./ProductCategoriesSection";
 import { ProductVariantsSection } from "./ProductVariantsSection";
 import { ProductAddOnsSection } from "./ProductAddOnsSection";
-import { ROAST_LEVELS } from "@/lib/productEnums";
 import { useSlugGenerator } from "@/hooks/useSlugGenerator";
 import { useMultiImageUpload } from "@/hooks/useImageUpload";
 
@@ -140,7 +128,7 @@ export default function ProductFormClient({
       isDisabled: false,
       categoryIds: [],
       productType: productType as ProductFormValues["productType"],
-      roastLevel: undefined as any,
+      roastLevel: undefined as RoastLevel | undefined,
       origin: "",
       variety: "",
       altitude: "",
@@ -168,7 +156,6 @@ export default function ProductFormClient({
     removeImage,
     handleFileSelect,
     uploadAll: uploadAllImages,
-    hasChanges: hasImageChanges,
   } = useMultiImageUpload({
     currentImages: existingImages,
     minImages: 0,
@@ -196,7 +183,7 @@ export default function ProductFormClient({
         const p = data.product;
         setOriginalName(p.name);
         setExistingImages(
-          p.images?.map((img: any) => ({
+          p.images?.map((img: { url: string; altText?: string }) => ({
             url: img.url,
             alt: img.altText || "",
           })) || []
@@ -250,10 +237,7 @@ export default function ProductFormClient({
   const onSubmit = async (data: ProductFormValues) => {
     try {
       // Upload any pending images first
-      let uploadedImages: Array<{ url: string; alt: string }> = [];
-      if (hasImageChanges) {
-        uploadedImages = await uploadAllImages();
-      }
+      const uploadedImages = await uploadAllImages();
 
       const url = productId
         ? `/api/admin/products/${productId}`
@@ -348,7 +332,6 @@ export default function ProductFormClient({
                         required
                         validationType={fieldState.error ? "error" : undefined}
                         errorMessage={fieldState.error?.message}
-                        description="Slug will be auto-generated from the name"
                       />
                       <InputGroup>
                         <InputGroupInput
@@ -367,10 +350,7 @@ export default function ProductFormClient({
                 />
 
                 <div className="space-y-4">
-                  <FormHeading
-                    label="Product Images"
-                    description="Upload up to 5 images. First image will be the primary."
-                  />
+                  <FormHeading label="Product Images" />
                   <MultiImageUpload
                     images={productImages}
                     onImageSelect={handleFileSelect}

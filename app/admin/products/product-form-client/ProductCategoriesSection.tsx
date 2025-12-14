@@ -1,4 +1,4 @@
-import { Control, FieldValues } from "react-hook-form";
+import { Control } from "react-hook-form";
 import { FormField } from "@/components/ui/form";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,7 +18,8 @@ interface Category {
 }
 
 type ProductCategoriesSectionProps = {
-  control: Control<FieldValues>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  control: Control<any>;
   categories: Category[];
 };
 
@@ -126,7 +127,7 @@ export function ProductCategoriesSection({
                                     ])
                                   : field.onChange(
                                       (field.value || []).filter(
-                                        (value) => value !== cat.id
+                                        (value: string) => value !== cat.id
                                       )
                                     );
                               }}
@@ -163,7 +164,7 @@ export function ProductCategoriesSection({
                                     ])
                                   : field.onChange(
                                       (field.value || []).filter(
-                                        (value) => value !== cat.id
+                                        (value: string) => value !== cat.id
                                       )
                                     );
                               }}

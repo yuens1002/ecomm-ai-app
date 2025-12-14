@@ -10,18 +10,16 @@ import { PUT } from "../route";
 
 const requireAdminApiMock = jest.fn();
 const updateProductMock = jest.fn();
-const findImagesMock = jest.fn();
-const updateImageMock = jest.fn();
-const createImageMock = jest.fn();
+const deleteImagesMock = jest.fn();
+const createManyImagesMock = jest.fn();
 const deleteCategoriesMock = jest.fn();
 const createCategoriesMock = jest.fn();
 
 type MockTx = {
   product: { update: typeof updateProductMock };
   productImage: {
-    findMany: typeof findImagesMock;
-    update: typeof updateImageMock;
-    create: typeof createImageMock;
+    deleteMany: typeof deleteImagesMock;
+    createMany: typeof createManyImagesMock;
   };
   categoriesOnProducts: {
     deleteMany: typeof deleteCategoriesMock;
@@ -39,9 +37,8 @@ jest.mock("@/lib/prisma", () => ({
       cb({
         product: { update: updateProductMock },
         productImage: {
-          findMany: findImagesMock,
-          update: updateImageMock,
-          create: createImageMock,
+          deleteMany: deleteImagesMock,
+          createMany: createManyImagesMock,
         },
         categoriesOnProducts: {
           deleteMany: deleteCategoriesMock,
@@ -57,18 +54,13 @@ describe("PUT /api/admin/products/[id]", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     requireAdminApiMock.mockResolvedValue({ authorized: true });
-    findImagesMock.mockResolvedValue([]);
     updateProductMock.mockResolvedValue({ id: "prod_1" });
   });
 
-  it("updates merch and strips coffee fields", async () => {
+  it("updates merch product", async () => {
     const payload = buildProductPayload(ProductType.MERCH, {
-      weight: 500,
-      roastLevel: RoastLevel.DARK,
-      origin: ["Ethiopia"],
-      tastingNotes: ["Citrus"],
-      variety: "Heirloom",
-      altitude: "1900m",
+      name: "Updated Mug",
+      slug: "updated-mug",
     });
 
     const req = new NextRequest("http://localhost/api/admin/products/prod_1", {

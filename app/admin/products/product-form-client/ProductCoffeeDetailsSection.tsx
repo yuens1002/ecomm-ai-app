@@ -1,4 +1,4 @@
-import { Control, FieldValues } from "react-hook-form";
+import { Control } from "react-hook-form";
 import { FormField } from "@/components/ui/form";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,8 @@ import { FormHeading } from "@/components/ui/app/FormHeading";
 import { ROAST_LEVELS } from "@/lib/productEnums";
 
 type ProductCoffeeDetailsSectionProps = {
-  control: Control<FieldValues>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  control: Control<any>;
   show?: boolean;
 };
 
@@ -78,7 +79,6 @@ export function ProductCoffeeDetailsSection({
                 required
                 validationType={fieldState.error ? "error" : undefined}
                 errorMessage={fieldState.error?.message}
-                description="Comma-separated list (e.g., Colombia, Ethiopia)"
               />
               <Input
                 id="origin"
@@ -99,7 +99,6 @@ export function ProductCoffeeDetailsSection({
                 label="Variety"
                 validationType={fieldState.error ? "error" : undefined}
                 errorMessage={fieldState.error?.message}
-                description="Coffee cultivar or variety"
               />
               <Input
                 id="variety"
@@ -120,7 +119,6 @@ export function ProductCoffeeDetailsSection({
                 label="Altitude"
                 validationType={fieldState.error ? "error" : undefined}
                 errorMessage={fieldState.error?.message}
-                description="Growing altitude"
               />
               <Input id="altitude" {...field} placeholder="e.g., 1800m" />
             </Field>
@@ -137,7 +135,6 @@ export function ProductCoffeeDetailsSection({
                 label="Tasting Notes"
                 validationType={fieldState.error ? "error" : undefined}
                 errorMessage={fieldState.error?.message}
-                description="Comma-separated flavor notes displayed on product page"
               />
               <Input
                 id="tastingNotes"
