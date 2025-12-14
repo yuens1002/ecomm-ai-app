@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.43.0 - 2025-12-14
+
 - **Multi-image product uploads**: Created reusable MultiImageUpload component with configurable grid layout (1-6 columns), hover-only controls, filename display with high contrast, and support for multiple aspect ratios; updated ProductFormClient to support up to 5 images with deferred upload pattern; updated API endpoints (POST/PUT) and validation schemas to handle images array; images stored with order, altText, and URL in ProductImage table.
 - **Product form UX improvements**: Combined name and slug fields into inline InputGroup with real-time slug preview; updated Coffee Details section to use FormHeading component for consistent label/error styling; fixed slug generator to properly clear when name field is empty; moved slug watch to component level for proper re-rendering.
 - **Product edit URL persistence**: Refactored ProductManagementClient to use URL parameters instead of component state for view/product selection; enables page refresh without losing context; URLs now follow pattern `/admin/products?view=edit&id=<productId>` for editing and `/admin/products?view=new` for creating.
