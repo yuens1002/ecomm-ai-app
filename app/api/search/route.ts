@@ -52,14 +52,19 @@ export async function GET(request: NextRequest) {
     // Track search activity only if there's a text query
     const session = await auth();
     if (sessionId && query) {
-      await prisma.userActivity.create({
-        data: {
-          sessionId,
-          userId: session?.user?.id || null,
-          activityType: "SEARCH",
-          searchQuery: query.trim(),
-        },
-      });
+      try {
+        await prisma.userActivity.create({
+          data: {
+            sessionId,
+            userId: session?.user?.id || null,
+            activityType: "SEARCH",
+            searchQuery: query.trim(),
+          },
+        });
+      } catch (error) {
+        // Log but don't fail the search if activity tracking fails
+        console.error("Failed to track search activity:", error);
+      }
     }
 
     // Search products
