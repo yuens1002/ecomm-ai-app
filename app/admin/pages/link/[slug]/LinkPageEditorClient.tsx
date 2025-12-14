@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save, Loader2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 import {
   Field,
@@ -92,9 +92,9 @@ export default function LinkPageEditorClient({
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Button asChild variant="ghost" size="icon">
             <Link href="/admin/pages">
@@ -102,11 +102,8 @@ export default function LinkPageEditorClient({
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <ExternalLink className="h-6 w-6" />
-              {page.title}
-            </h1>
-            <p className="text-muted-foreground text-sm">Navigation Link</p>
+            <h1 className="text-3xl font-bold">{page.title}</h1>
+            <p className="text-muted-foreground mt-2">Navigation Link</p>
           </div>
         </div>
         <Button onClick={handleSave} disabled={saving}>
@@ -257,6 +254,6 @@ export default function LinkPageEditorClient({
           </div>
         </FieldSet>
       </div>
-    </div>
+    </>
   );
 }

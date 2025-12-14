@@ -57,7 +57,7 @@ export default async function AdminLayout({
   });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen w-screen overflow-hidden bg-background fixed inset-0">
       {/* Sidebar */}
       <AdminSidebar pages={pages} />
 

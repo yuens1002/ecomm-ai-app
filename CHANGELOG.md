@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## 0.43.0 - 2025-12-14
+
+- **Multi-image product uploads**: Created reusable MultiImageUpload component with configurable grid layout (1-6 columns), hover-only controls, filename display with high contrast, and support for multiple aspect ratios; updated ProductFormClient to support up to 5 images with deferred upload pattern; updated API endpoints (POST/PUT) and validation schemas to handle images array; images stored with order, altText, and URL in ProductImage table.
+- **Product form UX improvements**: Combined name and slug fields into inline InputGroup with real-time slug preview; updated Coffee Details section to use FormHeading component for consistent label/error styling; fixed slug generator to properly clear when name field is empty; moved slug watch to component level for proper re-rendering.
+- **Product edit URL persistence**: Refactored ProductManagementClient to use URL parameters instead of component state for view/product selection; enables page refresh without losing context; URLs now follow pattern `/admin/products?view=edit&id=<productId>` for editing and `/admin/products?view=new` for creating.
+- **Category data integrity enforcement**: Added unique constraint on `Category.name` to prevent duplicate category names; cleaned up 3 existing duplicate category sets (Fruity & Floral, Nutty & Chocolatey, Spicy & Earthy) by merging into canonical categories with most product/label associations; created cleanup script in `dev-tools/cleanup-duplicate-categories.ts` for merging duplicate categories while preserving all product and label links.
+- **Category label cleanup**: Deleted redundant "Roasts" label from database and seed file that was conflicting with "By Roast Level" label causing duplicate categories and empty label groups in admin product form; the two labels had same order value and contained identical Light/Medium/Dark Roast categories leading to deduplication issues.
+- **Admin product form enhancements**: Improved product creation form with clear separation of coffee-specific fields in dedicated section with border styling; added comprehensive Zod validation to product API endpoints with discriminated unions for COFFEE vs MERCH types; moved `isOrganic` to common fields (available for both types); enhanced field labels and descriptions for better admin UX; added "Back to catalog" navigation button; changed form title from "New Product" to "Add a Product" with simplified subtitle.
+- **Admin layout standardization**: Normalized all admin page headers to consistent structure (text-3xl font-bold, text-muted-foreground mt-2 subtitle, mb-6 spacing); removed container wrappers from all pages to rely on admin layout padding; fixed double scrollbar issue by making admin layout fixed with `fixed inset-0`; updated ProductManagementClient to show headers outside Card component matching other admin pages.
+- **Product validation architecture**: Created `lib/validations/product.ts` with base schema for common fields, coffee-specific fields schema, and separate update schemas using discriminated unions; fixed `.partial()` error by creating separate update schemas for coffee and merch products; all API endpoints now validate with detailed error messages on failure.
+
+## 0.42.0 - 2025-12-14
+
 - **Next.js upgrade**: Updated Next.js from 16.0.7 to 16.0.10 (latest stable); updated eslint-config-next to match.
 - **Node.js upgrade**: Updated project requirements to Node.js v22 LTS (current stable); added engines field to package.json enforcing Node >=22.0.0 and npm >=10.0.0; updated documentation in SETUP.md and copilot instructions; updated GitHub Actions workflow to use Node v22.
 - **Test console cleanup**: Suppressed expected console.error logs in add-ons API error-handling tests to reduce test output noise.

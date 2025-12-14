@@ -40,10 +40,10 @@ export default async function AdminPagesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Pages</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mt-2">
             Manage informational pages for your store
           </p>
         </div>

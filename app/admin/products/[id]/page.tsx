@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/admin";
-import ProductFormClient from "../ProductFormClient";
+import ProductFormClient from "../product-form-client/ProductFormClient";
 
 export default async function ProductEditPage({
   params,

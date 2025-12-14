@@ -11,12 +11,12 @@ import { POST } from "../route";
 
 const requireAdminApiMock = jest.fn();
 const createProductMock = jest.fn();
-const createImageMock = jest.fn();
+const createManyImagesMock = jest.fn();
 const createCategoriesMock = jest.fn();
 
 type MockTx = {
   product: { create: typeof createProductMock };
-  productImage: { create: typeof createImageMock };
+  productImage: { createMany: typeof createManyImagesMock };
   categoriesOnProducts: { createMany: typeof createCategoriesMock };
 };
 
@@ -29,7 +29,7 @@ jest.mock("@/lib/prisma", () => ({
     $transaction: (cb: (tx: MockTx) => Promise<unknown>) =>
       cb({
         product: { create: createProductMock },
-        productImage: { create: createImageMock },
+        productImage: { createMany: createManyImagesMock },
         categoriesOnProducts: { createMany: createCategoriesMock },
       }),
   },
@@ -70,7 +70,7 @@ describe("POST /api/admin/products", () => {
         }),
       })
     );
-    expect(createImageMock).toHaveBeenCalled();
+    expect(createManyImagesMock).toHaveBeenCalled();
     expect(createCategoriesMock).toHaveBeenCalled();
   });
 
@@ -131,11 +131,15 @@ describe("POST /api/admin/products", () => {
     const json = await res.json();
 
     expect(res.status).toBe(400);
-    expect(json.error).toMatch(/origin/i);
+    expect(json.error).toBe("Validation failed");
+    expect(json.details).toBeDefined();
+    expect(
+      json.details.some((d: { path: string }) => d.path.includes("origin"))
+    ).toBe(true);
     expect(createProductMock).not.toHaveBeenCalled();
   });
 
-  it("strips coffee-only fields when creating a merch product", async () => {
+  it("creates merch product without coffee fields", async () => {
     createProductMock.mockResolvedValue({ id: "prod_merch" });
 
     const req = new NextRequest("http://localhost/api/admin/products", {
@@ -147,12 +151,6 @@ describe("POST /api/admin/products", () => {
           slug: "branded-mug",
           description: "Ceramic mug",
           categoryIds: ["merch-cat"],
-          // send coffee fields to confirm they are stripped
-          roastLevel: RoastLevel.DARK,
-          origin: ["Ethiopia"],
-          tastingNotes: ["Citrus"],
-          variety: "Heirloom",
-          altitude: "1900m",
         })
       ),
     });

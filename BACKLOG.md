@@ -2,6 +2,47 @@
 
 ## High Priority
 
+### Create AdminPageHeader Component
+
+**Status**: Backlog  
+**Priority**: Low  
+**Description**: Extract the standardized admin page header structure into a reusable component. Currently duplicated across 13+ admin pages with identical structure:
+
+```tsx
+<div className="mb-6">
+  <h1 className="text-3xl font-bold">{title}</h1>
+  <p className="text-muted-foreground mt-2">{description}</p>
+</div>
+```
+
+**Benefits**:
+
+- DRY principle - single source of truth for header styling
+- Easier to maintain consistent spacing/typography
+- Simpler to update all admin pages at once
+
+**Proposed API**:
+
+```tsx
+<AdminPageHeader
+  title="Coffee Products"
+  description="Manage coffee products, variants, and pricing"
+/>
+```
+
+**Pages to Update** (13+):
+
+- Coffee Products, Merch Products, Users, Orders, Categories, Newsletter, Settings, CMS Pages, Social Links, Analytics, Link Page Editor, Admin Dashboard, Overview
+
+**Technical Changes**:
+
+- Create `components/admin/AdminPageHeader.tsx`
+- Export as reusable component
+- Replace all inline headers with component
+- Consider adding optional actions/breadcrumbs prop for future extensions
+
+---
+
 ### Reciprocal Add-Ons Feature
 
 **Status**: Backlog  

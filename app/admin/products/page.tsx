@@ -6,13 +6,14 @@ export default async function ProductManagementPage() {
   await requireAdmin();
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Coffee Products</h1>
-      <ProductManagementClient
-        title="Coffee Products"
-        description="Manage coffee products, variants, and pricing"
-        productType={ProductType.COFFEE}
-      />
-    </div>
+    <>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Coffee Products</h1>
+        <p className="text-muted-foreground mt-2">
+          Manage coffee catalog, variants, and pricing
+        </p>
+      </div>
+      <ProductManagementClient productType={ProductType.COFFEE} />
+    </>
   );
 }

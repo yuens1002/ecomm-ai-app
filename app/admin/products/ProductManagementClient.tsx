@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -10,16 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Plus, Pencil, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import ProductFormClient from "./ProductFormClient";
+import ProductFormClient from "./product-form-client/ProductFormClient";
 import { ProductType } from "@prisma/client";
 
 interface PurchaseOption {
@@ -53,17 +48,22 @@ interface ProductManagementClientProps {
 }
 
 export default function ProductManagementClient({
-  title = "Product Management",
-  description = "Manage products and inventory",
+  title: _title = "Product Management",
+  description: _description = "Manage products and inventory",
   productType = ProductType.COFFEE,
 }: ProductManagementClientProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"list" | "form">("list");
-  const [selectedProductId, setSelectedProductId] = useState<
-    string | undefined
-  >(undefined);
   const { toast } = useToast();
+
+  // Get view and productId from URL params
+  const view =
+    searchParams.get("view") === "edit" || searchParams.get("view") === "new"
+      ? "form"
+      : "list";
+  const selectedProductId = searchParams.get("id") || undefined;
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -108,23 +108,20 @@ export default function ProductManagementClient({
         <Button
           variant="ghost"
           onClick={() => {
-            setView("list");
-            setSelectedProductId(undefined);
+            router.push("/admin/products");
           }}
           className="pl-0 hover:bg-transparent hover:text-primary"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back to products management
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back to catalog
         </Button>
         <ProductFormClient
           productId={selectedProductId}
           productType={productType}
           onClose={() => {
-            setView("list");
-            setSelectedProductId(undefined);
+            router.push("/admin/products");
           }}
           onSaved={(id) => {
-            setSelectedProductId(id);
-            // Stay in form view to allow adding variants
+            router.push(`/admin/products?view=edit&id=${id}`);
           }}
         />
       </div>
@@ -133,15 +130,10 @@ export default function ProductManagementClient({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <div className="space-y-1.5">
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </div>
+      <CardHeader className="flex flex-row items-center justify-end">
         <Button
           onClick={() => {
-            setSelectedProductId(undefined);
-            setView("form");
+            router.push("/admin/products?view=new");
           }}
         >
           <Plus className="mr-2 h-4 w-4" /> Add Product
@@ -223,8 +215,9 @@ export default function ProductManagementClient({
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setSelectedProductId(product.id);
-                        setView("form");
+                        router.push(
+                          `/admin/products?view=edit&id=${product.id}`
+                        );
                       }}
                     >
                       <Pencil className="h-4 w-4" />
