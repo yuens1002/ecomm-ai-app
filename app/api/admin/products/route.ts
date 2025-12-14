@@ -120,7 +120,7 @@ export async function POST(request: Request) {
       isFeatured,
       isDisabled,
       categoryIds,
-      imageUrl,
+      images,
       productType,
       roastLevel,
       origin,
@@ -150,14 +150,14 @@ export async function POST(request: Request) {
         },
       });
 
-      if (imageUrl) {
-        await tx.productImage.create({
-          data: {
+      if (images && images.length > 0) {
+        await tx.productImage.createMany({
+          data: images.map((img, index) => ({
             productId: newProduct.id,
-            url: imageUrl,
-            altText: name,
-            order: 0,
-          },
+            url: img.url,
+            altText: img.alt || name,
+            order: index,
+          })),
         });
       }
 

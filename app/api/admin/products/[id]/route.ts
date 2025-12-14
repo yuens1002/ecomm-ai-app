@@ -104,7 +104,7 @@ export async function PUT(
       isFeatured,
       isDisabled,
       categoryIds,
-      imageUrl,
+      images,
       productType,
       roastLevel,
       origin,
@@ -136,29 +136,22 @@ export async function PUT(
         },
       });
 
-      // 2. Update Image (Simple logic: Update first image or create new one)
-      if (imageUrl) {
-        const existingImages = await tx.productImage.findMany({
+      // 2. Update Images (replace all images if provided)
+      if (images && images.length > 0) {
+        // Delete existing images
+        await tx.productImage.deleteMany({
           where: { productId: id },
-          orderBy: { order: "asc" },
-          take: 1,
         });
 
-        if (existingImages.length > 0) {
-          await tx.productImage.update({
-            where: { id: existingImages[0].id },
-            data: { url: imageUrl, altText: name },
-          });
-        } else {
-          await tx.productImage.create({
-            data: {
-              productId: id,
-              url: imageUrl,
-              altText: name,
-              order: 0,
-            },
-          });
-        }
+        // Create new images
+        await tx.productImage.createMany({
+          data: images.map((img, index) => ({
+            productId: id,
+            url: img.url,
+            altText: img.alt || name,
+            order: index,
+          })),
+        });
       }
 
       // 3. Update categories

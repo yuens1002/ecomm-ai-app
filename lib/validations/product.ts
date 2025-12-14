@@ -10,12 +10,14 @@ const baseProductSchema = z.object({
   name: z.string().min(1, "Name is required"),
   slug: z.string().min(1, "Slug is required"),
   description: z.string().optional().nullable(),
-  imageUrl: z
-    .string()
-    .url("Must be a valid URL")
-    .optional()
-    .or(z.literal(""))
-    .nullable(),
+  images: z
+    .array(
+      z.object({
+        url: z.string().url("Image URL must be valid"),
+        alt: z.string().default(""),
+      })
+    )
+    .optional(),
   isOrganic: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
   isDisabled: z.boolean().default(false),

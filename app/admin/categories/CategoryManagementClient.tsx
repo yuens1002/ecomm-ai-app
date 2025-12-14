@@ -49,6 +49,7 @@ import {
   DynamicIcon,
   COMMON_PAGE_ICONS,
 } from "@/components/app-components/DynamicIcon";
+import { generateSlug } from "@/hooks/useSlugGenerator";
 
 type Category = {
   id: string;
@@ -156,9 +157,7 @@ export default function CategoryManagementClient() {
     setCategoryForm((prev) => ({
       ...prev,
       name,
-      slug: editingCategory
-        ? prev.slug
-        : name.toLowerCase().replace(/\s+/g, "-"),
+      slug: editingCategory ? prev.slug : generateSlug(name),
     }));
   }
 
