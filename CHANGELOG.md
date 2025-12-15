@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- _TBD_
+
+## 0.45.0 - 2025-12-15
+
 - **Option card spacing normalization**: Standardized OptionCardGroup default vertical gap to 2 and reused it across AI Assist so variation pickers match settings pages; per-instance className overrides remain available for custom spacing.
 - **Field description nesting fix**: Wrapped non-text settings descriptions in a local container to avoid nested `<p>` tags and hydration warnings while keeping the shadcn FieldDescription unchanged.
 - **Settings architecture refactor**: Replaced 1600-line monolithic SettingsManagementClient with page-based settings architecture inspired by Next.js; created reusable SettingsField component that handles all boilerplate (fetch, state, save, dirty tracking, toast notifications); settings now organized into 6 dedicated pages (General, Store Front, Location, Commerce, Marketing, Contact) with sidebar navigation and active state highlighting; each field reduced from ~50 lines of repetitive code to ~10 lines of declarative configuration; supports custom input components via render props with automatic isDirty state passing; settings layout uses client component with usePathname for active nav state; eliminates 15+ duplicated state variables and fetch/save handlers.
