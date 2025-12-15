@@ -64,17 +64,13 @@ export function FormInputField({
 }: FormInputFieldProps) {
   const charCountEnabled = showCharCount && typeof maxLength === "number";
 
+  const isAriaDisabled = isSaveDisabled || isSaving;
+
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (
-      e.key === "Enter" &&
-      showSaveButton &&
-      !isSaveDisabled &&
-      !isSaving &&
-      onSave
-    ) {
-      e.preventDefault();
-      onSave();
-    }
+    if (e.key !== "Enter") return;
+    if (!showSaveButton || isAriaDisabled || !onSave) return;
+    e.preventDefault();
+    onSave();
   };
 
   return (
@@ -92,13 +88,16 @@ export function FormInputField({
           )}
           {showSaveButton && (
             <InputGroupButton
-              onClick={() => {
-                if (isSaveDisabled || isSaving) return;
+              onClick={(e) => {
+                if (isAriaDisabled) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  return;
+                }
                 onSave?.();
               }}
-              disabled={isSaveDisabled || isSaving}
-              aria-disabled={isSaveDisabled || isSaving}
-              data-disabled={isSaveDisabled || isSaving ? "true" : undefined}
+              aria-disabled={isAriaDisabled}
+              data-disabled={isAriaDisabled ? "true" : undefined}
               className="ml-auto data-[disabled=true]:opacity-60 data-[disabled=true]:cursor-not-allowed"
               size="sm"
               variant="default"
