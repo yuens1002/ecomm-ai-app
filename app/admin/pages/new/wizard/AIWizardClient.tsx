@@ -24,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -32,6 +31,7 @@ import {
   GenerateAboutResponse,
   WizardAnswers,
 } from "@/lib/api-schemas/generate-about";
+import { OptionCardGroup } from "@/components/admin/OptionCardGroup";
 
 const questions = [
   {
@@ -359,30 +359,20 @@ export default function AIWizardClient({
           )}
 
           {currentQuestion.type === "radio" && currentQuestion.options && (
-            <RadioGroup
+            <OptionCardGroup
               value={answers[currentQuestion.id as keyof WizardAnswers] ?? ""}
               onValueChange={updateAnswer}
-            >
-              {(
+              options={(
                 currentQuestion.options as Array<{
                   value: string;
                   label: string;
                 }>
-              ).map((option) => (
-                <div
-                  key={option.value}
-                  className="flex items-center space-x-3 rounded-lg border border-border p-4 hover:bg-muted/50"
-                >
-                  <RadioGroupItem value={option.value} id={option.value} />
-                  <Label
-                    htmlFor={option.value}
-                    className="flex-1 cursor-pointer text-base"
-                  >
-                    {option.label}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
+              ).map((option) => ({
+                value: option.value,
+                title: option.label,
+              }))}
+              wrapperClassName="w-full max-w-2xl"
+            />
           )}
 
           {currentQuestion.type === "file" && (

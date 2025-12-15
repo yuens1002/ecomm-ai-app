@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SaveButton } from "@/components/admin/SaveButton";
 
 interface EditPageClientProps {
   page: {
@@ -382,10 +383,13 @@ export default function EditPageClient({ page }: EditPageClientProps) {
 
             {/* Actions */}
             <div className="space-y-2">
-              <Button type="submit" className="w-full" disabled={isSaving}>
-                <Save className="mr-2 h-4 w-4" />
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
+              <SaveButton
+                type="submit"
+                className="w-full"
+                isSaving={isSaving}
+                label="Save Changes"
+                savingLabel="Saving..."
+              />
               <Button
                 type="button"
                 variant="outline"

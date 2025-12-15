@@ -220,5 +220,24 @@ export async function seedSettings(prisma: PrismaClient) {
     },
   });
 
+  // Product menu navigation settings
+  await prisma.siteSettings.upsert({
+    where: { key: "product_menu_icon" },
+    update: {},
+    create: {
+      key: "product_menu_icon",
+      value: "ShoppingBag",
+    },
+  });
+
+  await prisma.siteSettings.upsert({
+    where: { key: "product_menu_text" },
+    update: {},
+    create: {
+      key: "product_menu_text",
+      value: "Shop",
+    },
+  });
+
   console.log("  ✅ Site settings created");
 }

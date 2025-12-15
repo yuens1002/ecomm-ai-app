@@ -16,6 +16,13 @@ import {
   ChevronRight,
   ExternalLink,
   ToyBrick,
+  SlidersHorizontal,
+  Store,
+  MapPin,
+  Scale,
+  Megaphone,
+  Share2,
+  Phone,
 } from "lucide-react";
 import { useState } from "react";
 import { PageType } from "@prisma/client";
@@ -187,9 +194,46 @@ const staticNavSections: NavSection[] = [
     title: "Settings",
     items: [
       {
-        title: "Site Settings",
+        title: "General",
         href: "/admin/settings",
-        icon: Settings,
+        icon: SlidersHorizontal,
+        isChild: true,
+      },
+      {
+        title: "Store Front",
+        href: "/admin/settings/storefront",
+        icon: Store,
+        isChild: true,
+      },
+      {
+        title: "Location",
+        href: "/admin/settings/location",
+        icon: MapPin,
+        isChild: true,
+      },
+      {
+        title: "Commerce",
+        href: "/admin/settings/commerce",
+        icon: Scale,
+        isChild: true,
+      },
+      {
+        title: "Marketing",
+        href: "/admin/settings/marketing",
+        icon: Megaphone,
+        isChild: true,
+      },
+      {
+        title: "Social Media",
+        href: "/admin/social-links",
+        icon: Share2,
+        isChild: true,
+      },
+      {
+        title: "Contact",
+        href: "/admin/settings/contact",
+        icon: Phone,
+        isChild: true,
       },
     ],
   },
@@ -251,9 +295,7 @@ export default function AdminSidebar({ pages }: { pages: Page[] }) {
               )}
               <div className="space-y-1">
                 {section.items.map((item) => {
-                  const isActive =
-                    pathname === item.href ||
-                    (item.href !== "/admin" && pathname.startsWith(item.href));
+                  const isActive = pathname === item.href;
                   const Icon = item.icon;
 
                   if (item.isLabel) {
@@ -291,7 +333,7 @@ export default function AdminSidebar({ pages }: { pages: Page[] }) {
                       )}
                       title={collapsed ? item.title : undefined}
                     >
-                      <Icon className="h-5 w-5 shrink-0" />
+                      {Icon && <Icon className="h-5 w-5 shrink-0" />}
                       {!collapsed && (
                         <span className="flex-1">{item.title}</span>
                       )}

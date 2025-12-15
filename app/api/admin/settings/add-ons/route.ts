@@ -1,12 +1,26 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { z } from "zod";
+import { requireAdminApi } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
-  const session = await auth();
+const addOnsSchema = z.object({
+  productAddOnsSectionTitle: z
+    .string()
+    .trim()
+    .min(1, "Product add-ons title is required")
+    .max(120, "Product add-ons title must be 120 characters or fewer"),
+  cartAddOnsSectionTitle: z
+    .string()
+    .trim()
+    .min(1, "Cart add-ons title is required")
+    .max(120, "Cart add-ons title must be 120 characters or fewer"),
+});
 
-  if (!session?.user || !(session.user as { isAdmin?: boolean }).isAdmin) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET() {
+  const authResult = await requireAdminApi();
+
+  if (!authResult.authorized) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
   }
 
   try {
@@ -33,15 +47,24 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const session = await auth();
+  const authResult = await requireAdminApi();
 
-  if (!session?.user || !(session.user as { isAdmin?: boolean }).isAdmin) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!authResult.authorized) {
+    return NextResponse.json({ error: authResult.error }, { status: 401 });
   }
 
   try {
     const body = await request.json();
-    const { productAddOnsSectionTitle, cartAddOnsSectionTitle } = body;
+    const parsed = addOnsSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues.map((issue) => issue.message).join("; ") },
+        { status: 400 }
+      );
+    }
+
+    const { productAddOnsSectionTitle, cartAddOnsSectionTitle } = parsed.data;
 
     await Promise.all([
       prisma.siteSettings.upsert({

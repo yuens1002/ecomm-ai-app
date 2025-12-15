@@ -108,6 +108,8 @@ interface SiteHeaderProps {
   } | null;
   pages: PageLink[];
   banner?: BannerConfig;
+  productMenuIcon?: string;
+  productMenuText?: string;
 }
 
 /**
@@ -120,6 +122,8 @@ export default function SiteHeader({
   user,
   pages,
   banner,
+  productMenuIcon = "ShoppingBag",
+  productMenuText = "Shop",
 }: SiteHeaderProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -194,18 +198,15 @@ export default function SiteHeader({
                 <NavigationMenuItem>
                   <NavigationMenuTrigger className="h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden">
                     <div className="flex flex-col items-center gap-1">
-                      <Image
-                        src="/beans.svg"
-                        alt="Coffee selections"
-                        width={20}
-                        height={20}
-                        className="w-5 h-5 dark:invert"
+                      <DynamicIcon
+                        name={productMenuIcon as IconName}
+                        className="w-5 h-5"
                       />
                       <div className="flex items-center gap-1">
                         {/* Spacer to balance the chevron for centering */}
                         <div className="w-3 h-3" aria-hidden="true" />
                         <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
-                          Coffee
+                          {productMenuText}
                         </span>
                         <ChevronDown
                           className="h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"
@@ -373,12 +374,9 @@ export default function SiteHeader({
                                 className="w-5 h-5"
                               />
                             ) : (
-                              <Image
-                                src="/beans.svg"
-                                alt="Coffee"
-                                width={20}
-                                height={20}
-                                className="w-5 h-5 dark:invert"
+                              <DynamicIcon
+                                name={productMenuIcon as IconName}
+                                className="w-5 h-5"
                               />
                             )}
                             <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">

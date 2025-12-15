@@ -3,31 +3,24 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  ArrowLeft,
-  Save,
-  Sparkles,
-  Check,
-  X,
-  Upload,
-  Pencil,
-} from "lucide-react";
+import { ArrowLeft, Sparkles, Check, X, Upload, Pencil } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Typography } from "@/components/ui/typography";
 import { PullQuote } from "@/components/app-components/PullQuote";
 import { StatCard } from "@/components/app-components/StatCard";
+import { OptionCardGroup } from "@/components/admin/OptionCardGroup";
 import {
   GenerateAboutRequest,
   GeneratedVariation,
   WizardAnswers,
 } from "@/lib/api-schemas/generate-about";
 import { AboutAnswerEditor } from "@/components/app-components/AboutAnswerEditor";
+import { SaveButton } from "@/components/admin/SaveButton";
 
 type UiVariation = {
   style: "story" | "values" | "product";
@@ -412,44 +405,22 @@ export default function SelectVariationClient() {
       {/* Variation Selector */}
       <div className="grid gap-6 lg:grid-cols-3 pb-8 lg:pb-0">
         <div className="space-y-4 lg:col-span-1 order-2 lg:order-1 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-          <RadioGroup
+          <OptionCardGroup
             value={selectedStyle}
             onValueChange={setSelectedStyle}
-            className="align-items-center"
             disabled={isRegenerating}
-          >
-            {variations.map((variation) => (
-              <div
-                key={variation.style}
-                className={`rounded-lg border-2 p-4 transition-colors ${
-                  selectedStyle === variation.style
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50"
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <RadioGroupItem
-                    value={variation.style}
-                    id={variation.style}
-                    className="mt-0.5"
-                  />
-                  <div className="flex-1">
-                    <Label htmlFor={variation.style} className="cursor-pointer">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">{variation.title}</span>
-                        {selectedStyle === variation.style && (
-                          <Check className="h-4 w-4 text-primary" />
-                        )}
-                      </div>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {variation.description}
-                      </p>
-                    </Label>
+            options={variations.map((variation) => ({
+              value: variation.style,
+              title: variation.title,
+              description: variation.description,
+              hint:
+                selectedStyle === variation.style ? (
+                  <div className="flex items-center gap-2 text-xs text-primary font-medium">
+                    <Check className="h-4 w-4" /> Selected
                   </div>
-                </div>
-              </div>
-            ))}
-          </RadioGroup>
+                ) : null,
+            }))}
+          />
 
           {wizardAnswers && (
             <>
@@ -459,15 +430,15 @@ export default function SelectVariationClient() {
                 isRegenerating={isRegenerating}
                 questionLabels={questionMap}
               />
-              <Button
+              <SaveButton
                 onClick={handleSave}
-                disabled={isSaving || isRegenerating}
+                isSaving={isSaving}
+                disabled={isRegenerating}
                 className="w-full mb-4"
                 size="lg"
-              >
-                <Save className="h-4 w-4" />
-                {isSaving ? "Saving..." : "Save as Draft"}
-              </Button>
+                label="Save as Draft"
+                savingLabel="Saving..."
+              />
             </>
           )}
         </div>

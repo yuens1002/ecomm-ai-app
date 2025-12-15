@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Block, BlockType } from "@/lib/blocks/schemas";
-import { cn } from "@/lib/utils";
 import {
   canAddBlock,
   getBlockDisplayName,
@@ -29,36 +28,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Eye,
-  Save,
-  Settings,
-  X,
-  ChevronsUpDown,
-  Check,
-  Sparkles,
-} from "lucide-react";
-import {
-  DynamicIcon,
-  getAvailableIcons,
-  COMMON_PAGE_ICONS,
-} from "@/components/app-components/DynamicIcon";
+import { Eye, Settings, X, Sparkles } from "lucide-react";
+import { IconPicker } from "@/components/app-components/IconPicker";
 import { AiAssistClient } from "@/components/ai-assist/AiAssistClient";
 import { WizardAnswers } from "@/lib/api-schemas/generate-about";
 
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { SaveButton } from "@/components/admin/SaveButton";
 import { useToast } from "@/hooks/use-toast";
 import { addBlock, updateBlock, deleteBlock } from "@/lib/blocks/actions";
 import { PendingBlockDialog } from "@/components/blocks/PendingBlockDialog";
@@ -133,26 +108,7 @@ export function PageEditor({
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
 
   // AI Assist state lives inside AiAssistClient
-  const [iconOpen, setIconOpen] = useState(false);
-  const [iconSearch, setIconSearch] = useState("");
   const { toast } = useToast();
-
-  // Convert PascalCase to readable format (e.g., "CircleQuestionMark" -> "Circle Question Mark")
-  const formatIconName = (name: string) => {
-    return name.replace(/([A-Z])/g, " $1").trim();
-  };
-
-  // Get all available icons and filter based on search
-  const allIcons = useMemo(() => getAvailableIcons(), []);
-  const filteredIcons = useMemo(() => {
-    if (!iconSearch) return COMMON_PAGE_ICONS;
-    const search = iconSearch.toLowerCase();
-    return allIcons.filter(
-      (icon) =>
-        icon.toLowerCase().includes(search) ||
-        formatIconName(icon).toLowerCase().includes(search)
-    );
-  }, [iconSearch, allIcons]);
 
   const layout = PAGE_LAYOUTS[pageType];
 
@@ -629,91 +585,11 @@ export function PageEditor({
                           >
                             Link Icon
                           </Label>
-                          <Popover open={iconOpen} onOpenChange={setIconOpen}>
-                            <PopoverTrigger asChild>
-                              <Button
-                                id="link-icon"
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={iconOpen}
-                                className="justify-between bg-transparent"
-                              >
-                                <div className="flex items-center gap-2 truncate">
-                                  {iconValue ? (
-                                    <>
-                                      <DynamicIcon name={iconValue} size={16} />
-                                      <span className="truncate">
-                                        {formatIconName(iconValue)}
-                                      </span>
-                                    </>
-                                  ) : (
-                                    "Pick an icon or none..."
-                                  )}
-                                </div>
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="p-0">
-                              <Command shouldFilter={false}>
-                                <CommandInput
-                                  placeholder="Search icons..."
-                                  value={iconSearch}
-                                  onValueChange={setIconSearch}
-                                />
-                                <CommandEmpty>No icon found.</CommandEmpty>
-                                <CommandList>
-                                  <CommandGroup>
-                                    <CommandItem
-                                      value="none"
-                                      onSelect={() => {
-                                        setIconValue("");
-                                        setIconSearch("");
-                                        setIconOpen(false);
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          !iconValue
-                                            ? "opacity-100"
-                                            : "opacity-0"
-                                        )}
-                                      />
-                                      None
-                                    </CommandItem>
-                                    {filteredIcons
-                                      .slice(0, 50)
-                                      .map((iconName: string) => (
-                                        <CommandItem
-                                          key={iconName}
-                                          value={iconName}
-                                          onSelect={() => {
-                                            setIconValue(iconName);
-                                            setIconSearch("");
-                                            setIconOpen(false);
-                                          }}
-                                        >
-                                          <Check
-                                            className={cn(
-                                              "mr-2 h-4 w-4",
-                                              iconValue === iconName
-                                                ? "opacity-100"
-                                                : "opacity-0"
-                                            )}
-                                          />
-                                          <DynamicIcon
-                                            name={iconName}
-                                            size={16}
-                                            className="mr-2"
-                                          />
-                                          {formatIconName(iconName)}
-                                        </CommandItem>
-                                      ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
+                          <IconPicker
+                            value={iconValue}
+                            onValueChange={setIconValue}
+                            placeholder="Pick an icon or none..."
+                          />
                         </div>
                       )}
                     </div>
@@ -766,10 +642,12 @@ export function PageEditor({
               </FieldGroup>
 
               <div className="flex justify-end mt-6 ">
-                <Button onClick={handleMetadataSave} disabled={isSaving}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Settings
-                </Button>
+                <SaveButton
+                  onClick={handleMetadataSave}
+                  isSaving={isSaving}
+                  label="Save Settings"
+                  savingLabel="Saving"
+                />
               </div>
             </CardContent>
           </Card>

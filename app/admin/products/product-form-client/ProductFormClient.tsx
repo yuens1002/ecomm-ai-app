@@ -4,13 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from "@/components/ui/input-group";
+} from "@/components/ui/app/InputGroup";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ProductType, RoastLevel } from "@prisma/client";
 import {
@@ -29,7 +28,6 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Save } from "lucide-react";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { MultiImageUpload } from "@/components/ui/app/MultiImageUpload";
 import { ProductCoffeeDetailsSection } from "./ProductCoffeeDetailsSection";
@@ -38,6 +36,7 @@ import { ProductVariantsSection } from "./ProductVariantsSection";
 import { ProductAddOnsSection } from "./ProductAddOnsSection";
 import { useSlugGenerator } from "@/hooks/useSlugGenerator";
 import { useMultiImageUpload } from "@/hooks/useImageUpload";
+import { SaveButton } from "@/components/admin/SaveButton";
 
 interface CategoryLabel {
   id: string;
@@ -302,17 +301,12 @@ export default function ProductFormClient({
               : "Fill out the details for your product and add variants"}
           </CardDescription>
         </div>
-        <Button
+        <SaveButton
           onClick={form.handleSubmit(onSubmit)}
-          disabled={form.formState.isSubmitting}
-        >
-          <Save className="mr-2 h-4 w-4" />
-          {form.formState.isSubmitting
-            ? "Saving..."
-            : productId
-              ? "Save Product"
-              : "Save & Add Variants"}
-        </Button>
+          isSaving={form.formState.isSubmitting}
+          label={productId ? "Save Product" : "Save & Add Variants"}
+          savingLabel="Saving..."
+        />
       </CardHeader>
 
       <CardContent className="pt-6">

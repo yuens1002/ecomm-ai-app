@@ -1,16 +1,15 @@
 "use client";
 
 import OrderManagementClient from "./OrderManagementClient";
+import { PageTitle } from "@/components/admin/PageTitle";
 
 export default function AdminOrdersPage() {
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Order Management</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage and fulfill customer orders
-        </p>
-      </div>
+      <PageTitle
+        title="Order Management"
+        subtitle="Manage and fulfill customer orders"
+      />
       <OrderManagementClient />
     </>
   );

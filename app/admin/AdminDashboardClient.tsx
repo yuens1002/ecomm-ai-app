@@ -19,12 +19,12 @@ import {
   Tags,
   Mail,
 } from "lucide-react";
+import { PageTitle } from "@/components/admin/PageTitle";
 import ProductManagementClient from "./products/ProductManagementClient";
 import CategoryManagementClient from "./categories/CategoryManagementClient";
 import UserManagementClient from "./users/UserManagementClient";
 import OrderManagementClient from "./orders/OrderManagementClient";
 import AnalyticsView from "./analytics/AnalyticsView";
-import SettingsManagementClient from "./settings/SettingsManagementClient";
 import NewsletterManagementClient from "./newsletter/NewsletterManagementClient";
 
 interface UserData {
@@ -58,12 +58,10 @@ export default function AdminDashboardClient({
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Welcome back, {user.name || user.email}
-        </p>
-      </div>
+      <PageTitle
+        title="Admin Dashboard"
+        subtitle={`Welcome back, ${user.name || user.email}`}
+      />
 
       <Tabs
         value={activeTab}
@@ -94,10 +92,6 @@ export default function AdminDashboardClient({
           <TabsTrigger value="newsletter" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             <span className="hidden sm:inline">Newsletter</span>
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Settings</span>
           </TabsTrigger>
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
@@ -221,11 +215,6 @@ export default function AdminDashboardClient({
         {/* Newsletter Tab */}
         <TabsContent value="newsletter">
           <NewsletterManagementClient />
-        </TabsContent>
-
-        {/* Settings Tab */}
-        <TabsContent value="settings">
-          <SettingsManagementClient />
         </TabsContent>
 
         {/* Profile Tab */}

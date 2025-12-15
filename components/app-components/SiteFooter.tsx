@@ -8,6 +8,7 @@ import SocialLinks from "./SocialLinks";
 import FooterCategories from "./FooterCategories";
 import FooterAccountLinks from "./FooterAccountLinks";
 import { getPagesForFooter } from "@/app/actions";
+import { getProductMenuSettings } from "@/lib/product-menu-settings";
 
 /**
  * Get branding settings from database
@@ -193,7 +194,7 @@ async function getSocialLinksSettings() {
   return {
     enabled: map["social_links_enabled"] === "true",
     heading: map["social_links_heading"] || "Stay Connected",
-    description: map["social_links_description"] || "",
+    description: map["social_links_description"] || undefined,
   };
 }
 
@@ -209,6 +210,7 @@ export default async function SiteFooter() {
     newsletterSettings,
     socialLinksSettings,
     footerPages,
+    productMenuSettings,
   ] = await Promise.all([
     getBrandingSettings(),
     getCategoriesForFooter(),
@@ -217,6 +219,7 @@ export default async function SiteFooter() {
     getNewsletterSettings(),
     getSocialLinksSettings(),
     getPagesForFooter(),
+    getProductMenuSettings(),
   ]);
 
   const { grouped: categoryGroups, labelIcons } = categoriesData;
@@ -309,6 +312,8 @@ export default async function SiteFooter() {
             categoryGroups={categoryGroups}
             labelIcons={labelIcons}
             heading={brandingSettings.footerCategoriesHeading}
+            productMenuIcon={productMenuSettings.icon}
+            productMenuText={productMenuSettings.text}
           />
 
           {showThirdColumn && (

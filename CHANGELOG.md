@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Option card spacing normalization**: Standardized OptionCardGroup default vertical gap to 2 and reused it across AI Assist so variation pickers match settings pages; per-instance className overrides remain available for custom spacing.
+- **Field description nesting fix**: Wrapped non-text settings descriptions in a local container to avoid nested `<p>` tags and hydration warnings while keeping the shadcn FieldDescription unchanged.
+- **Settings architecture refactor**: Replaced 1600-line monolithic SettingsManagementClient with page-based settings architecture inspired by Next.js; created reusable SettingsField component that handles all boilerplate (fetch, state, save, dirty tracking, toast notifications); settings now organized into 6 dedicated pages (General, Store Front, Location, Commerce, Marketing, Contact) with sidebar navigation and active state highlighting; each field reduced from ~50 lines of repetitive code to ~10 lines of declarative configuration; supports custom input components via render props with automatic isDirty state passing; settings layout uses client component with usePathname for active nav state; eliminates 15+ duplicated state variables and fetch/save handlers.
+- **Customizable product menu**: Added admin settings UI for configuring product menu icon and text displayed in header and footer navigation; created reusable IconPicker component with search and 50+ icon options; added API endpoint `/api/admin/settings/product-menu` with Zod validation; created `lib/product-menu-settings.ts` helper function; updated SiteHeader and FooterCategories components to dynamically display configured icon and text instead of hardcoded "Coffee Selection"; default values are ShoppingBag icon and "Shop" text.
+- **Build script fix**: Restored `npm run build` to run Prisma migrate + generate before the Next.js build (typo regression caused the command to fail).
+
 ## 0.43.0 - 2025-12-14
 
 - **Multi-image product uploads**: Created reusable MultiImageUpload component with configurable grid layout (1-6 columns), hover-only controls, filename display with high contrast, and support for multiple aspect ratios; updated ProductFormClient to support up to 5 images with deferred upload pattern; updated API endpoints (POST/PUT) and validation schemas to handle images array; images stored with order, altText, and URL in ProductImage table.

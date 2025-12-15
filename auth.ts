@@ -87,5 +87,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
     // Use JWT for credentials, database adapter handles OAuth sessions
     strategy: "jwt",
+    maxAge: 7 * 24 * 60 * 60, // 7 days
   },
+  // Add secret explicitly to ensure consistency across restarts
+  secret: process.env.AUTH_SECRET,
 });

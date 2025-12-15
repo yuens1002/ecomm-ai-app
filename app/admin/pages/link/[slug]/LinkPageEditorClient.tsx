@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import {
   Field,
@@ -16,6 +16,7 @@ import {
   FieldDescription,
 } from "@/components/ui/field";
 import { useToast } from "@/hooks/use-toast";
+import { SaveButton } from "@/components/admin/SaveButton";
 
 interface LinkPageEditorClientProps {
   page: {
@@ -106,14 +107,12 @@ export default function LinkPageEditorClient({
             <p className="text-muted-foreground mt-2">Navigation Link</p>
           </div>
         </div>
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Save className="h-4 w-4 mr-2" />
-          )}
-          Save Changes
-        </Button>
+        <SaveButton
+          onClick={handleSave}
+          isSaving={saving}
+          label="Save Changes"
+          savingLabel="Saving"
+        />
       </div>
 
       {/* Settings Panel */}

@@ -12,6 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { SettingsField } from "@/components/admin/SettingsField";
+import { FormTextArea } from "@/components/ui/app/FormTextArea";
 import {
   Select,
   SelectContent,
@@ -204,167 +206,235 @@ export default function SocialLinksManagement() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Social Media Links</CardTitle>
-            <CardDescription>
-              Manage social media links displayed in the footer
-            </CardDescription>
-          </div>
-          <Button onClick={() => openDialog()}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Link
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {socialLinks.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              No social links yet. Click &quot;Add Link&quot; to get started.
-            </p>
-          ) : (
-            socialLinks.map((link) => {
-              const Icon = getPlatformIcon(link.icon);
-              return (
-                <div
-                  key={link.id}
-                  className="flex items-center gap-4 p-4 border rounded-lg"
-                >
-                  <GripVertical className="w-5 h-5 text-muted-foreground" />
-                  <Icon className="w-5 h-5" />
-                  <div className="flex-1">
-                    <p className="font-medium">{link.platform}</p>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {link.url}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={link.isActive}
-                      onCheckedChange={() => handleToggleActive(link)}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openDialog(link)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(link.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
-            <form onSubmit={handleSubmit}>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingLink ? "Edit" : "Add"} Social Link
-                </DialogTitle>
-                <DialogDescription>
-                  {editingLink
-                    ? "Update the social media link details"
-                    : "Add a new social media link to the footer"}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="platform">Platform</Label>
-                  <Select
-                    value={formData.platform}
-                    onValueChange={(value) => {
-                      setFormData({
-                        ...formData,
-                        platform: value,
-                        icon: value,
-                      });
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select platform" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SOCIAL_PLATFORMS.map((platform) => (
-                        <SelectItem key={platform.value} value={platform.value}>
-                          {platform.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="url">URL</Label>
-                  <Input
-                    id="url"
-                    type="url"
-                    placeholder="https://..."
-                    value={formData.url}
-                    onChange={(e) =>
-                      setFormData({ ...formData, url: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="order">Display Order</Label>
-                  <Input
-                    id="order"
-                    type="number"
-                    value={formData.order}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        order: parseInt(e.target.value),
-                      })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="isActive"
-                    checked={formData.isActive}
-                    onCheckedChange={(checked: boolean) =>
-                      setFormData({ ...formData, isActive: checked })
-                    }
-                  />
-                  <Label htmlFor="isActive">Active</Label>
-                </div>
+    <div className="space-y-6">
+      {/* Section Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Settings</CardTitle>
+          <CardDescription>
+            Toggle socila media section. Customize heading and description
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <SettingsField<boolean>
+            endpoint="/api/admin/settings/social-links-feature"
+            field="enabled"
+            label="Enable Social Links"
+            description="Show or hide social media links section in the footer"
+            autoSave
+            defaultValue={false}
+            input={(value, onChange, _isDirty) => (
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={Boolean(value)}
+                  onCheckedChange={(checked) => onChange(checked)}
+                />
+                <Label className="text-sm text-muted-foreground">
+                  {value ? "Enabled" : "Disabled"}
+                </Label>
               </div>
+            )}
+          />
 
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editingLink ? "Update" : "Create"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </CardContent>
-    </Card>
+          <SettingsField
+            endpoint="/api/admin/settings/social-links-feature"
+            field="heading"
+            label="Heading"
+            description="The heading for your social links section"
+            maxLength={120}
+            defaultValue="Stay Connected"
+          />
+          <SettingsField
+            endpoint="/api/admin/settings/social-links-feature"
+            field="description"
+            label="Description"
+            description="Description text for your social links section"
+            maxLength={280}
+            defaultValue="Follow us on social media for the latest updates and offers."
+            saveButtonInInput
+            input={(value, onChange, isDirty, isSaving, onSave) => (
+              <FormTextArea
+                value={value as string}
+                onChange={(e) => onChange(e.target.value)}
+                rows={2}
+                maxLength={280}
+                currentLength={(value as string)?.length ?? 0}
+                showSaveButton
+                isSaving={isSaving}
+                isSaveDisabled={!isDirty}
+                onSave={onSave}
+              />
+            )}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Social Media Links */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="pb-2">Links</CardTitle>
+              <CardDescription>
+                Manage social media links displayed in the footer
+              </CardDescription>
+            </div>
+            <Button onClick={() => openDialog()}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Link
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {socialLinks.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No social links yet. Click &quot;Add Link&quot; to get started.
+              </p>
+            ) : (
+              socialLinks.map((link) => {
+                const Icon = getPlatformIcon(link.icon);
+                return (
+                  <div
+                    key={link.id}
+                    className="flex items-center gap-4 p-4 border rounded-lg"
+                  >
+                    <GripVertical className="w-5 h-5 text-muted-foreground" />
+                    <Icon className="w-5 h-5" />
+                    <div className="flex-1">
+                      <p className="font-medium">{link.platform}</p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {link.url}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={link.isActive}
+                        onCheckedChange={() => handleToggleActive(link)}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openDialog(link)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(link.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogContent>
+              <form onSubmit={handleSubmit}>
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingLink ? "Edit" : "Add"} Social Link
+                  </DialogTitle>
+                  <DialogDescription>
+                    {editingLink
+                      ? "Update the social media link details"
+                      : "Add a new social media link to the footer"}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="platform">Platform</Label>
+                    <Select
+                      value={formData.platform}
+                      onValueChange={(value) => {
+                        setFormData({
+                          ...formData,
+                          platform: value,
+                          icon: value,
+                        });
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select platform" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SOCIAL_PLATFORMS.map((platform) => (
+                          <SelectItem
+                            key={platform.value}
+                            value={platform.value}
+                          >
+                            {platform.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="url">URL</Label>
+                    <Input
+                      id="url"
+                      type="url"
+                      placeholder="https://..."
+                      value={formData.url}
+                      onChange={(e) =>
+                        setFormData({ ...formData, url: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="order">Display Order</Label>
+                    <Input
+                      id="order"
+                      type="number"
+                      value={formData.order}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          order: parseInt(e.target.value),
+                        })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="isActive"
+                      checked={formData.isActive}
+                      onCheckedChange={(checked: boolean) =>
+                        setFormData({ ...formData, isActive: checked })
+                      }
+                    />
+                    <Label htmlFor="isActive">Active</Label>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    {editingLink ? "Update" : "Create"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
