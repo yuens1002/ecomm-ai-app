@@ -19,15 +19,17 @@ interface FooterCategoriesProps {
 export default function FooterCategories({
   categoryGroups,
   labelIcons,
-  heading: _heading = "Coffee Selection",
+  heading,
   productMenuIcon = "ShoppingBag",
   productMenuText = "Shop",
 }: FooterCategoriesProps) {
+  const title = productMenuText ?? heading ?? "Shop";
+  const icon = productMenuIcon ?? "ShoppingBag";
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold flex items-center gap-2">
-        <DynamicIcon name={productMenuIcon} className="w-5 h-5" />
-        {productMenuText}
+        <DynamicIcon name={icon} className="w-5 h-5" />
+        {title}
       </h3>
 
       {/* Use self-balancing CategoryMenuColumns component */}

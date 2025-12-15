@@ -23,14 +23,14 @@ describe("FooterCategories - Integration Tests", () => {
     it("renders the component with default heading", () => {
       render(<FooterCategories categoryGroups={mockCategoryGroups} />);
 
-      expect(screen.getByText("Coffee Selection")).toBeInTheDocument();
+      expect(screen.getByText("Shop")).toBeInTheDocument();
     });
 
     it("renders with custom heading", () => {
       render(
         <FooterCategories
           categoryGroups={mockCategoryGroups}
-          heading="Our Coffee Collection"
+          productMenuText="Our Coffee Collection"
         />
       );
 
@@ -164,7 +164,7 @@ describe("FooterCategories - Integration Tests", () => {
     it("handles empty categoryGroups", () => {
       render(<FooterCategories categoryGroups={{}} />);
 
-      expect(screen.getByText("Coffee Selection")).toBeInTheDocument();
+      expect(screen.getByText("Shop")).toBeInTheDocument();
     });
 
     it("handles single category group", () => {
@@ -228,7 +228,7 @@ describe("FooterCategories - Integration Tests", () => {
     it("has accessible heading hierarchy", () => {
       render(<FooterCategories categoryGroups={mockCategoryGroups} />);
 
-      const heading = screen.getByRole("heading", { name: "Coffee Selection" });
+      const heading = screen.getByRole("heading", { name: "Shop" });
       expect(heading.tagName).toBe("H3");
     });
 
