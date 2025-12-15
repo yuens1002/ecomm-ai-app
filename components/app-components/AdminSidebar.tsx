@@ -11,7 +11,6 @@ import {
   SquareMenu,
   FileText,
   Mail,
-  Settings,
   BarChart3,
   ChevronRight,
   ExternalLink,
