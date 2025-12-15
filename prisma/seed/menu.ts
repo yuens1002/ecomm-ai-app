@@ -284,8 +284,13 @@ export async function seedMenu(prisma: PrismaClient) {
   for (const cat of CATEGORY_DEFS) {
     const categoryKind = cat.kind ?? CategoryKind.COFFEE;
     const category = await prisma.category.upsert({
-      where: { slug: cat.slug },
-      update: { name: cat.name, order: cat.order, kind: categoryKind },
+      where: { name: cat.name },
+      update: {
+        slug: cat.slug,
+        name: cat.name,
+        order: cat.order,
+        kind: categoryKind,
+      },
       create: {
         name: cat.name,
         slug: cat.slug,

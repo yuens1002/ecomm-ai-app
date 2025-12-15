@@ -87,7 +87,7 @@ Run dev against the same DB (example on port 3001):
 
 ```bash
 export DATABASE_ADAPTER=postgres
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres?schema=public"
 PORT=3001 npm run dev
 ```
 

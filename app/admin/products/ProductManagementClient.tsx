@@ -54,6 +54,8 @@ export default function ProductManagementClient({
 }: ProductManagementClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const basePath =
+    productType === ProductType.MERCH ? "/admin/merch" : "/admin/products";
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -108,7 +110,7 @@ export default function ProductManagementClient({
         <Button
           variant="ghost"
           onClick={() => {
-            router.push("/admin/products");
+            router.push(basePath);
           }}
           className="pl-0 hover:bg-transparent hover:text-primary"
         >
@@ -118,10 +120,10 @@ export default function ProductManagementClient({
           productId={selectedProductId}
           productType={productType}
           onClose={() => {
-            router.push("/admin/products");
+            router.push(basePath);
           }}
           onSaved={(id) => {
-            router.push(`/admin/products?view=edit&id=${id}`);
+            router.push(`${basePath}?view=edit&id=${id}`);
           }}
         />
       </div>
@@ -133,7 +135,7 @@ export default function ProductManagementClient({
       <CardHeader className="flex flex-row items-center justify-end">
         <Button
           onClick={() => {
-            router.push("/admin/products?view=new");
+            router.push(`${basePath}?view=new`);
           }}
         >
           <Plus className="mr-2 h-4 w-4" /> Add Product
@@ -215,9 +217,7 @@ export default function ProductManagementClient({
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        router.push(
-                          `/admin/products?view=edit&id=${product.id}`
-                        );
+                        router.push(`${basePath}?view=edit&id=${product.id}`);
                       }}
                     >
                       <Pencil className="h-4 w-4" />

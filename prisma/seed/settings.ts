@@ -70,6 +70,33 @@ export async function seedSettings(prisma: PrismaClient) {
     },
   });
 
+  await prisma.siteSettings.upsert({
+    where: { key: "social_links_enabled" },
+    update: {},
+    create: {
+      key: "social_links_enabled",
+      value: "true",
+    },
+  });
+
+  await prisma.siteSettings.upsert({
+    where: { key: "social_links_heading" },
+    update: {},
+    create: {
+      key: "social_links_heading",
+      value: "Stay Connected",
+    },
+  });
+
+  await prisma.siteSettings.upsert({
+    where: { key: "social_links_description" },
+    update: {},
+    create: {
+      key: "social_links_description",
+      value: "Follow us on our social media channels to stay updated",
+    },
+  });
+
   // Store branding
   await prisma.siteSettings.upsert({
     where: { key: "store_name" },
@@ -220,6 +247,24 @@ export async function seedSettings(prisma: PrismaClient) {
     },
   });
 
+  await prisma.siteSettings.upsert({
+    where: { key: "product_addons_section_title" },
+    update: {},
+    create: {
+      key: "product_addons_section_title",
+      value: "Save on Bundles",
+    },
+  });
+
+  await prisma.siteSettings.upsert({
+    where: { key: "cart_addons_section_title" },
+    update: {},
+    create: {
+      key: "cart_addons_section_title",
+      value: "You May Also Like",
+    },
+  });
+
   // Product menu navigation settings
   await prisma.siteSettings.upsert({
     where: { key: "product_menu_icon" },
@@ -238,6 +283,45 @@ export async function seedSettings(prisma: PrismaClient) {
       value: "Shop",
     },
   });
+
+  // Social links used in footer/header
+  const socialLinks = [
+    {
+      platform: "github",
+      url: "https://github.com/yuens1002/ecomm-ai-app",
+      icon: "github",
+      order: 0,
+    },
+    {
+      platform: "linkedin",
+      url: "https://www.linkedin.com/in/yuens-me",
+      icon: "linkedin",
+      order: 1,
+    },
+  ];
+
+  for (const link of socialLinks) {
+    await prisma.socialLink.upsert({
+      where: { platform: link.platform },
+      update: {
+        url: link.url,
+        icon: link.icon,
+        order: link.order,
+        isActive: true,
+        useCustomIcon: false,
+        customIconUrl: null,
+      },
+      create: {
+        platform: link.platform,
+        url: link.url,
+        icon: link.icon,
+        order: link.order,
+        isActive: true,
+        useCustomIcon: false,
+        customIconUrl: null,
+      },
+    });
+  }
 
   console.log("  ✅ Site settings created");
 }

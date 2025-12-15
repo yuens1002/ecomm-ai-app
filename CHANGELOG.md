@@ -4,6 +4,12 @@
 
 - _TBD_
 
+## 0.45.2 - 2025-12-15
+
+- **Merch add-product routing**: Admin merch list now routes Add/Edit/Back actions to the merch path instead of the coffee products form, keeping context when adding merch.
+- **Seeds synced to latest backup**: CMS seeds now mirror current content/navigation (About/Café/FAQ metadata, Brewing Guides page, Features/Contact link pages) and site settings seed social links + add-on headings; menu seeding upserts categories by name to respect unique constraint.
+- **Install doc fix**: Corrected local Postgres dev URL example to use the default `postgres` database in the port-3001 snippet.
+
 ## 0.45.1 - 2025-12-15
 
 - **Save button accessibility**: Keep Save buttons focusable/active even when fields are unchanged, only blocking during in-flight saves; clicks with no edits now surface an "Already saved" status in FormHeading for consistent feedback across inputs and textareas.

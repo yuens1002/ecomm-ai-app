@@ -3,20 +3,36 @@ import { PrismaClient } from "@prisma/client";
 export async function seedAboutPage(prisma: PrismaClient) {
   const aboutPage = await prisma.page.upsert({
     where: { slug: "about" },
-    update: {},
+    update: {
+      title: "About",
+      heroImage: "/logo.svg",
+      content:
+        "\n        <h2>Our Story</h2>\n        <p>Welcome to our specialty coffee roastery. This page will be customized with your unique brand story using our AI-powered wizard.</p>\n        \n        <h2>Our Values</h2>\n        <p>Quality, sustainability, and community are at the heart of everything we do.</p>\n        \n        <h2>Visit Us</h2>\n        <p>Stop by our roastery to experience the art of coffee roasting firsthand.</p>\n      ",
+      showInFooter: true,
+      footerOrder: 4,
+      showInHeader: true,
+      headerOrder: 4,
+      metaDescription:
+        "Learn about our specialty coffee roastery, our values, and our commitment to quality.",
+      icon: "Newspaper",
+    },
     create: {
       slug: "about",
-      title: "About Us",
+      title: "About",
       type: "ABOUT",
-      heroImage: null,
-      content: "",
+      heroImage: "/logo.svg",
+      content:
+        "\n        <h2>Our Story</h2>\n        <p>Welcome to our specialty coffee roastery. This page will be customized with your unique brand story using our AI-powered wizard.</p>\n        \n        <h2>Our Values</h2>\n        <p>Quality, sustainability, and community are at the heart of everything we do.</p>\n        \n        <h2>Visit Us</h2>\n        <p>Stop by our roastery to experience the art of coffee roasting firsthand.</p>\n      ",
       metaDescription:
         "Learn about our specialty coffee roastery, our values, and our commitment to quality.",
       showInFooter: true,
-      footerOrder: 1,
+      footerOrder: 4,
+      showInHeader: true,
+      headerOrder: 4,
       isPublished: true,
       publishedAt: new Date(),
       generatedBy: "manual",
+      icon: "Newspaper",
     },
   });
 
@@ -96,24 +112,35 @@ export async function seedCafePage(
   prisma: PrismaClient,
   LOCATION_TYPE: string
 ) {
+  const cafeTitle = LOCATION_TYPE === "SINGLE" ? "Visit Our Café" : "Café";
   const cafePage = await prisma.page.upsert({
     where: { slug: "cafe" },
-    update: {},
+    update: {
+      title: cafeTitle,
+      metaDescription:
+        "Visit our café for freshly roasted specialty coffee. Find our location, hours, and what to expect.",
+      showInFooter: true,
+      footerOrder: 1,
+      showInHeader: true,
+      headerOrder: 1,
+      icon: "Coffee",
+    },
     create: {
       slug: "cafe",
-      title: LOCATION_TYPE === "SINGLE" ? "Visit Our Café" : "Visit Our Cafés",
+      title: cafeTitle,
       type: "CAFE",
       heroImage: null,
       content: "",
       metaDescription:
-        LOCATION_TYPE === "SINGLE"
-          ? "Visit our café for freshly roasted specialty coffee. Find our location, hours, and what to expect."
-          : "Visit our café locations for freshly roasted specialty coffee. Find our locations, hours, and what to expect.",
+        "Visit our café for freshly roasted specialty coffee. Find our location, hours, and what to expect.",
       showInFooter: true,
-      footerOrder: 3,
+      footerOrder: 1,
+      showInHeader: true,
+      headerOrder: 1,
       isPublished: true,
       publishedAt: new Date(),
       generatedBy: "manual",
+      icon: "Coffee",
     },
   });
 
@@ -364,20 +391,31 @@ export async function seedCafePage(
 export async function seedFaqPage(prisma: PrismaClient) {
   const faqPage = await prisma.page.upsert({
     where: { slug: "faq" },
-    update: {},
+    update: {
+      title: "FAQ",
+      content: "[]",
+      metaDescription: "site frequently asked questions",
+      showInFooter: true,
+      footerOrder: 2,
+      showInHeader: true,
+      headerOrder: 2,
+      icon: "BadgeQuestionMark",
+    },
     create: {
       slug: "faq",
-      title: "Frequently Asked Questions",
+      title: "FAQ",
       type: "FAQ",
       heroImage: null,
-      content: "",
-      metaDescription:
-        "Find answers to common questions about our coffee, orders, shipping, returns, and more.",
+      content: "[]",
+      metaDescription: "site frequently asked questions",
       showInFooter: true,
-      footerOrder: 4,
+      footerOrder: 2,
+      showInHeader: true,
+      headerOrder: 2,
       isPublished: true,
       publishedAt: new Date(),
       generatedBy: "manual",
+      icon: "BadgeQuestionMark",
     },
   });
 
@@ -454,6 +492,98 @@ export async function seedCmsPages(prisma: PrismaClient) {
   await seedAboutPage(prisma);
   await seedCafePage(prisma, LOCATION_TYPE);
   await seedFaqPage(prisma);
+
+  // Optional supporting pages and navigation links
+  await prisma.page.upsert({
+    where: { slug: "brewing" },
+    update: {
+      title: "Brewing Guides",
+      content:
+        "\n        <h2>Master the Art of Coffee Brewing</h2>\n        <p>Explore our comprehensive brewing guides to make the perfect cup of coffee at home.</p>\n        <p>Choose your preferred brewing method below to get started.</p>\n      ",
+      metaDescription:
+        "Learn how to brew perfect coffee with our step-by-step guides for various brewing methods.",
+      showInFooter: true,
+      footerOrder: 6,
+      showInHeader: false,
+      headerOrder: null,
+      heroImage: null,
+      icon: null,
+    },
+    create: {
+      slug: "brewing",
+      title: "Brewing Guides",
+      type: "GENERIC",
+      heroImage: null,
+      content:
+        "\n        <h2>Master the Art of Coffee Brewing</h2>\n        <p>Explore our comprehensive brewing guides to make the perfect cup of coffee at home.</p>\n        <p>Choose your preferred brewing method below to get started.</p>\n      ",
+      parentId: null,
+      showInFooter: true,
+      footerOrder: 6,
+      metaDescription:
+        "Learn how to brew perfect coffee with our step-by-step guides for various brewing methods.",
+      isPublished: true,
+      publishedAt: new Date(),
+      generatedBy: "manual",
+      icon: null,
+      showInHeader: false,
+      headerOrder: null,
+    },
+  });
+
+  const linkPages = [
+    {
+      slug: "link-features",
+      title: "Features",
+      url: "/about",
+      icon: "Sparkles",
+      headerOrder: 4,
+      footerOrder: 4,
+    },
+    {
+      slug: "link-contact",
+      title: "Contact",
+      url: "/contact",
+      icon: "Mail",
+      headerOrder: 5,
+      footerOrder: 5,
+    },
+  ];
+
+  for (const link of linkPages) {
+    await prisma.page.upsert({
+      where: { slug: link.slug },
+      update: {
+        title: link.title,
+        url: link.url,
+        type: "LINK",
+        showInHeader: true,
+        headerOrder: link.headerOrder,
+        showInFooter: true,
+        footerOrder: link.footerOrder,
+        icon: link.icon,
+        content: "",
+      },
+      create: {
+        slug: link.slug,
+        title: link.title,
+        type: "LINK",
+        heroImage: null,
+        content: "",
+        parentId: null,
+        showInFooter: true,
+        footerOrder: link.footerOrder,
+        metaDescription: "",
+        isPublished: true,
+        publishedAt: null,
+        generatedBy: null,
+        generatedAt: null,
+        icon: link.icon,
+        headerOrder: link.headerOrder,
+        showInHeader: true,
+        url: link.url,
+      },
+    });
+  }
 
   console.log("  ✅ CMS pages created");
 }
