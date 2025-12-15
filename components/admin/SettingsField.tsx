@@ -110,6 +110,16 @@ export function SettingsField<T = string>({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const lastSavedValueRef = useRef<T>(defaultValue);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const statusTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearStatusMessage = useCallback(() => {
+    if (statusTimerRef.current) {
+      clearTimeout(statusTimerRef.current);
+      statusTimerRef.current = null;
+    }
+    setStatusMessage(null);
+  }, []);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -141,6 +151,14 @@ export function SettingsField<T = string>({
   }, [endpoint, field, transformLoad, toast]);
 
   const handleSave = useCallback(async () => {
+    // If nothing changed, surface a friendly status and skip network
+    if (!isLoading && value === originalValue) {
+      clearStatusMessage();
+      setStatusMessage("Already saved");
+      statusTimerRef.current = setTimeout(clearStatusMessage, 3000);
+      return;
+    }
+
     setIsSaving(true);
     try {
       const body = transformSave
@@ -172,7 +190,25 @@ export function SettingsField<T = string>({
     } finally {
       setIsSaving(false);
     }
-  }, [allSettings, endpoint, field, method, toast, transformSave, value]);
+  }, [
+    allSettings,
+    clearStatusMessage,
+    endpoint,
+    field,
+    isLoading,
+    method,
+    originalValue,
+    toast,
+    transformSave,
+    value,
+  ]);
+
+  // Clear "already saved" notice once user edits
+  useEffect(() => {
+    if (value !== lastSavedValueRef.current) {
+      clearStatusMessage();
+    }
+  }, [clearStatusMessage, value]);
 
   useEffect(() => {
     if (!autoSave) return;
@@ -208,7 +244,13 @@ export function SettingsField<T = string>({
 
   return (
     <Field>
-      <FormHeading htmlFor={`field-${field}`} label={label} isDirty={isDirty} />
+      <FormHeading
+        htmlFor={`field-${field}`}
+        label={label}
+        isDirty={isDirty}
+        statusMessage={statusMessage ?? undefined}
+        statusType="dirty"
+      />
       {input && (saveButtonInInput || autoSave) ? (
         // Custom input that handles its own layout (e.g., FormTextArea with Save button or autoSave selectors)
         input(value, setValue, isDirty, isSaving, handleSave)
@@ -219,7 +261,7 @@ export function SettingsField<T = string>({
           currentLength={currentLength}
           showSaveButton={!autoSave && !saveButtonInInput}
           isSaving={isSaving}
-          isSaveDisabled={!isDirty}
+          isSaveDisabled={isSaving}
           onSave={handleSave}
         >
           {input ? (

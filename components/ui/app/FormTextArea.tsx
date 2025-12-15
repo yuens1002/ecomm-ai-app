@@ -50,11 +50,13 @@ export function FormTextArea({
   currentLength = 0,
   showSaveButton = false,
   isSaving = false,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isSaveDisabled = false,
   onSave,
   ...textareaProps
 }: FormTextAreaProps) {
   const charCountEnabled = showCharCount && typeof maxLength === "number";
+  const isAriaDisabled = isSaving;
 
   return (
     <InputGroup className="md:max-w-[72ch] lg:max-w-[72ch] xl:max-w-[72ch]">
@@ -68,11 +70,16 @@ export function FormTextArea({
           )}
           {showSaveButton && (
             <InputGroupButton
-              onClick={() => {
-                if (isSaveDisabled || isSaving) return;
+              onClick={(e) => {
+                if (isAriaDisabled) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  return;
+                }
                 onSave?.();
               }}
-              disabled={isSaveDisabled || isSaving}
+              aria-disabled={isAriaDisabled}
+              data-disabled={isAriaDisabled ? "true" : undefined}
               className="ml-auto"
               size="sm"
               variant="default"

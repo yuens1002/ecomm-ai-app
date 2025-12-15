@@ -18,6 +18,10 @@ interface FormHeadingProps {
   required?: boolean;
   /** Delay in ms before showing "unsaved changes" indicator (default: 30000ms) */
   dirtyDelay?: number;
+  /** Explicit status message to show immediately (overrides delay/dirty logic) */
+  statusMessage?: string;
+  /** Visual style for statusMessage (defaults to dirty style) */
+  statusType?: ValidationType;
 }
 
 const validationStyles = {
@@ -47,14 +51,19 @@ export function FormHeading({
   errorMessage,
   required = false,
   dirtyDelay = 30000,
+  statusMessage,
+  statusType,
 }: FormHeadingProps) {
   // Delay showing dirty indicator so it only appears if user forgets to save
   const showDirty = useDebouncedDirty(isDirty, dirtyDelay);
 
-  const style = validationStyles[validationType];
-  const message = errorMessage || style.defaultMessage;
-  // Show indicator when: dirty (after delay), required field indicator needed, or has error
+  const indicatorType = statusMessage ? statusType || "dirty" : validationType;
+
+  const style = validationStyles[indicatorType];
+  const message = statusMessage || errorMessage || style.defaultMessage;
+  // Show indicator when: explicit status message provided OR dirty (after delay) OR required indicator OR error
   const showIndicator =
+    !!statusMessage ||
     showDirty ||
     (validationType === "required" && required) ||
     (validationType === "error" && errorMessage);
