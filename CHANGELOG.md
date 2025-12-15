@@ -7,6 +7,7 @@
 ## 0.45.1 - 2025-12-15
 
 - **Save button accessibility**: Keep Save buttons focusable/active even when fields are unchanged, only blocking during in-flight saves; clicks with no edits now surface an "Already saved" status in FormHeading for consistent feedback across inputs and textareas.
+- **Build reliability**: Added direct-build path (`build:direct`/`vercel-build`) that sets `DATABASE_URL=$DIRECT_URL` and `PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT=60000` to avoid Neon pooler advisory-lock timeouts during migrate.
 
 ## 0.45.0 - 2025-12-15
 
