@@ -4,6 +4,10 @@
 
 - _TBD_
 
+## 0.45.1 - 2025-12-15
+
+- **Save button accessibility**: Keep Save buttons focusable/active even when fields are unchanged, only blocking during in-flight saves; clicks with no edits now surface an "Already saved" status in FormHeading for consistent feedback across inputs and textareas.
+
 ## 0.45.0 - 2025-12-15
 
 - **Option card spacing normalization**: Standardized OptionCardGroup default vertical gap to 2 and reused it across AI Assist so variation pickers match settings pages; per-instance className overrides remain available for custom spacing.
