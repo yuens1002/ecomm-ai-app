@@ -13,7 +13,7 @@ import {
   InputGroupButton,
   InputGroupText,
   InputGroupTextarea,
-} from "@/components/ui/input-group";
+} from "@/components/ui/app/InputGroup";
 import {
   Select,
   SelectContent,

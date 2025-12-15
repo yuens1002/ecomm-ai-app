@@ -1,12 +1,11 @@
 "use client";
 import { Loader2 } from "lucide-react";
 import { AboutAnswerEditor } from "@/components/app-components/AboutAnswerEditor";
-import { cn } from "@/lib/utils";
 import {
   GeneratedVariation,
   WizardAnswers,
 } from "@/lib/api-schemas/generate-about";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { OptionCardGroup } from "@/components/admin/OptionCardGroup";
 
 export type AiAssistContentProps = {
   answers: WizardAnswers;
@@ -45,51 +44,28 @@ export function AiAssistContent({
           <h4 className="text-sm font-semibold">Variations</h4>
         </div>
 
-        <div className="space-y-3">
-          <RadioGroup
-            value={selectedStyle}
-            onValueChange={(val) =>
-              onSelectedStyleChange(val as GeneratedVariation["style"])
-            }
-            className="space-y-3"
-            disabled={isRegenerating}
-          >
-            {["story", "values", "product"].map((style) => (
-              <label
-                key={style}
-                className={cn(
-                  "flex gap-3 rounded-lg border p-3 hover:border-primary/50",
-                  selectedStyle === style
-                    ? "border-primary bg-primary/5"
-                    : "border-border"
-                )}
-              >
-                <RadioGroupItem value={style} />
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                      {style}
-                    </span>
-                    <span className="text-sm font-semibold">
-                      {style === "story"
-                        ? "Story-first"
-                        : style === "values"
-                          ? "Values-forward"
-                          : "Product-first"}
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground line-clamp-3">
-                    {style === "story"
-                      ? "Narrative, warm, founder journey focus"
-                      : style === "values"
-                        ? "Principles-led, trustworthy, mission first"
-                        : "Coffee-forward, educational, craft-driven"}
-                  </p>
-                </div>
-              </label>
-            ))}
-          </RadioGroup>
-        </div>
+        <OptionCardGroup
+          value={selectedStyle}
+          onValueChange={(val) =>
+            onSelectedStyleChange(val as GeneratedVariation["style"])
+          }
+          disabled={isRegenerating}
+          options={["story", "values", "product"].map((style) => ({
+            value: style,
+            title:
+              style === "story"
+                ? "Story-first"
+                : style === "values"
+                  ? "Values-forward"
+                  : "Product-first",
+            description:
+              style === "story"
+                ? "Narrative, warm, founder journey focus"
+                : style === "values"
+                  ? "Principles-led, trustworthy, mission first"
+                  : "Coffee-forward, educational, craft-driven",
+          }))}
+        />
       </div>
 
       <div>

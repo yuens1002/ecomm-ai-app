@@ -1,6 +1,7 @@
 import { requireAdmin, getCurrentAdminUserId } from "@/lib/admin";
 import { Metadata } from "next";
 import UserManagementClient from "./UserManagementClient";
+import { PageTitle } from "@/components/admin/PageTitle";
 
 export const metadata: Metadata = {
   title: "User Management - Admin",
@@ -16,12 +17,10 @@ export default async function UserManagementPage() {
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">User Management</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage user accounts and admin privileges
-        </p>
-      </div>
+      <PageTitle
+        title="User Management"
+        subtitle="Manage user accounts and admin privileges"
+      />
 
       <UserManagementClient currentUserId={currentUserId || undefined} />
     </>

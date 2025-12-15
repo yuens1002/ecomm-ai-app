@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import TipTapEditor from "@/components/app-components/TipTapEditor";
 import { useToast } from "@/hooks/use-toast";
+import { SaveButton } from "@/components/admin/SaveButton";
 
 export default function NewPageClient() {
   const router = useRouter();
@@ -249,10 +250,13 @@ export default function NewPageClient() {
 
             {/* Actions */}
             <div className="space-y-2">
-              <Button type="submit" className="w-full" disabled={isSaving}>
-                <Save className="mr-2 h-4 w-4" />
-                {isSaving ? "Creating..." : "Create Page"}
-              </Button>
+              <SaveButton
+                type="submit"
+                className="w-full"
+                isSaving={isSaving}
+                label="Create Page"
+                savingLabel="Creating..."
+              />
               <Button
                 type="button"
                 variant="outline"

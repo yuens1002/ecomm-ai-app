@@ -2,6 +2,7 @@ import { getCategoryLabelsWithCategories } from "@/lib/data";
 import { auth } from "@/auth";
 import SiteHeader from "@components/app-components/SiteHeader";
 import { getPagesForHeader } from "@/app/actions";
+import { getProductMenuSettings } from "@/lib/product-menu-settings";
 
 /**
  * SiteHeaderWrapper is a Server Component responsible for fetching global,
@@ -11,11 +12,14 @@ import { getPagesForHeader } from "@/app/actions";
  */
 export default async function SiteHeaderWrapper() {
   // Fetch all data for the navigation menu in parallel
-  const [labels, session, headerPages] = await Promise.all([
-    getCategoryLabelsWithCategories(),
-    auth(),
-    getPagesForHeader(),
-  ]);
+  const [labels, session, headerPages, productMenuSettings] = await Promise.all(
+    [
+      getCategoryLabelsWithCategories(),
+      auth(),
+      getPagesForHeader(),
+      getProductMenuSettings(),
+    ]
+  );
 
   // Handle case where no categories are found (e.g., first deployment/empty DB)
   if (!labels || labels.length === 0) {
@@ -24,6 +28,8 @@ export default async function SiteHeaderWrapper() {
         categoryGroups={{}}
         user={session?.user || null}
         pages={headerPages}
+        productMenuIcon={productMenuSettings.icon}
+        productMenuText={productMenuSettings.text}
       />
     );
   }
@@ -63,6 +69,8 @@ export default async function SiteHeaderWrapper() {
       labelIcons={labelIcons}
       user={session?.user || null}
       pages={headerPages}
+      productMenuIcon={productMenuSettings.icon}
+      productMenuText={productMenuSettings.text}
     />
   );
 }

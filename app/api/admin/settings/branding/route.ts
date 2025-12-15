@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
+import { z } from "zod";
 
 /**
  * GET /api/admin/settings/branding
@@ -67,13 +68,41 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
+
+    const brandingSchema = z.object({
+      storeName: z
+        .string()
+        .min(1, "Store name is required")
+        .max(60, "Max 60 characters"),
+      storeTagline: z
+        .string()
+        .max(120, "Max 120 characters")
+        .optional()
+        .default(""),
+      storeDescription: z
+        .string()
+        .max(280, "Max 280 characters")
+        .optional()
+        .default(""),
+      storeLogoUrl: z.string().optional().default(""),
+      storeFaviconUrl: z.string().optional().default(""),
+    });
+
+    const parsed = brandingSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Invalid payload" },
+        { status: 400 }
+      );
+    }
+
     const {
       storeName,
       storeTagline,
       storeDescription,
       storeLogoUrl,
       storeFaviconUrl,
-    } = body;
+    } = parsed.data;
 
     // Update each setting
     await Promise.all([

@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
+import { InputGroup, InputGroupAddon } from "@/components/ui/app/InputGroup";
 import { Loader2, FileIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 

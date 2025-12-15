@@ -2,6 +2,345 @@
 
 ## High Priority
 
+### Customizable Product Menu (Coffee Dropdown)
+
+**Status**: Backlog  
+**Priority**: High  
+**Description**: Allow admins to customize the product menu icon and text in header/footer navigation. Currently hardcoded to show coffee beans icon (`/beans.svg`) with "Coffee" text. Should support dynamic configuration for stores that sell multiple product types or want different branding.
+
+**Current Hardcoded Implementation** (SiteHeader.tsx lines 197-211):
+
+```tsx
+<Image
+  src="/beans.svg"
+  alt="Coffee selections"
+  width={20}
+  height={20}
+  className="w-5 h-5 dark:invert"
+/>
+<span className="text-[10px] uppercase tracking-wide font-medium leading-3">
+  Coffee
+</span>
+```
+
+**Proposed Solution**:
+
+Add two new settings to `SiteSettings` table:
+
+- `product_menu_icon` - Lucide icon name (e.g., "Coffee", "ShoppingBag", "Package")
+- `product_menu_text` - Display text (e.g., "Coffee", "Shop", "Products")
+
+**Use Cases**:
+
+- Multi-category stores (coffee + merch + accessories) want "Shop" or "Products"
+- Specialty stores want brand-specific terminology ("Beans", "Roasts", "Blends")
+- International stores want localized text
+- Stores want to match icon to primary product type
+
+**Technical Implementation**:
+
+1. **Schema Changes** (prisma/schema.prisma):
+   - No schema change needed - use existing `SiteSettings` model
+
+2. **Seed Data** (prisma/seed/settings.ts):
+
+   ```ts
+   { key: "product_menu_icon", value: "Coffee" },
+   { key: "product_menu_text", value: "Coffee" },
+   ```
+
+3. **Settings UI** (app/admin/settings/page.tsx):
+   - Add "Product Menu" section after branding settings
+   - Icon picker using same `DynamicIcon` + Lucide pattern as page icons
+   - Text input with max length ~15 characters (fits nav button)
+   - Live preview showing icon + text
+
+4. **Header Wrapper** (components/app-components/SiteHeaderWrapper.tsx):
+
+   ```ts
+   const [labels, session, headerPages, productMenuSettings] =
+     await Promise.all([
+       getCategoryLabelsWithCategories(),
+       auth(),
+       getPagesForHeader(),
+       getProductMenuSettings(), // NEW
+     ]);
+   ```
+
+5. **Header Component** (components/app-components/SiteHeader.tsx):
+   - Add optional `productMenuIcon?: string` and `productMenuText?: string` to props
+   - Replace hardcoded `/beans.svg` with `<DynamicIcon name={productMenuIcon || "Coffee"} />`
+   - Replace hardcoded "Coffee" with `{productMenuText || "Coffee"}`
+   - Fallback to defaults if settings not configured
+
+6. **Mobile Menu** (SiteHeader.tsx ~line 300-350):
+   - Apply same icon/text customization to mobile sheet menu
+
+**Testing Checklist**:
+
+- [ ] Settings save and persist correctly
+- [ ] Icon picker shows all Lucide icons
+- [ ] Text input validates length
+- [ ] Header displays custom icon in desktop nav
+- [ ] Header displays custom text in desktop nav
+- [ ] Mobile menu reflects changes
+- [ ] Defaults work when settings not configured
+- [ ] Dark mode icon rendering works correctly
+- [ ] Icon + text + chevron alignment maintained
+
+**Future Enhancements** (separate PRs):
+
+- Multiple product menus (e.g., "Coffee" + "Merch" separate dropdowns)
+- Per-menu category filtering
+- Custom dropdown width/height settings
+- Localization support for multi-language stores
+
+---
+
+### Unified Product Menu Admin Page
+
+**Status**: Backlog  
+**Priority**: High  
+**Description**: Create a dedicated admin page for building and managing the product catalog menu. Consolidates scattered category management, label configuration, and menu structure into a single, intuitive interface that leverages existing product APIs.
+
+**Current State - Fragmented Management**:
+
+- Category CRUD scattered across multiple locations
+- Category labels managed in `/admin/categories` but UI is basic table
+- No visual representation of how menu will appear to customers
+- Manual category assignment to products (no bulk operations)
+- Menu icon/text settings will live in Settings (temporary)
+- No way to preview menu structure during configuration
+
+**Proposed Solution - Visual Menu Builder** (similar to Pages CMS):
+
+A **block-based, drag-and-drop interface** where admins build the menu structure visually:
+
+**Single Canvas Layout**:
+
+- Top: Menu settings bar (icon, text - inline editable)
+- Center: **Visual menu structure builder** - WYSIWYG representation of the actual menu
+- Right sidebar: Toolbox with draggable components + properties panel
+
+**Building Blocks (Draggable Components)**:
+
+```
+┌─────────────────────────────────────────────┐
+│ 🔧 Menu Settings                            │
+│ [Coffee Icon ▼] [Text: "Coffee"]           │
+├─────────────────────────────────────────────┤
+│                                             │
+│   ┌─ BY ROAST LEVEL ───────────┐ [Drag]   │ ← Label block
+│   │  [Icon] Light Roast    (8) │           │ ← Category block (shows count)
+│   │  [Icon] Medium Roast  (12) │           │
+│   │  [Icon] Dark Roast     (5) │           │
+│   │  + Add Category            │           │
+│   └────────────────────────────┘           │
+│                                             │
+│   ┌─ BY ORIGIN ──────────────┐ [Drag]     │
+│   │  [Icon] Ethiopian     (6) │           │
+│   │  [Icon] Colombian     (4) │           │
+│   │  + Add Category            │           │
+│   └────────────────────────────┘           │
+│                                             │
+│   + Add Label Group                         │
+│                                             │
+└─────────────────────────────────────────────┘
+     Sidebar: [+ Label] [+ Category] [Preview]
+```
+
+**Interaction Patterns** (like Page block editor):
+
+1. **Add Label**:
+   - Click "+ Add Label Group" or drag from sidebar
+   - Inline edit: Click label name to edit in place
+   - Click icon to open icon picker popover
+   - Drag handle to reorder labels
+
+2. **Add Category**:
+   - Click "+ Add Category" within label
+   - Or drag "Category" component from sidebar
+   - Opens dialog: Name, slug, icon, assign products
+   - Category appears in structure immediately
+
+3. **Reorder** (like Notion/block editors):
+   - Drag handles (⋮⋮) on labels and categories
+   - Drag category between labels (visual drop zones)
+   - Drag labels up/down to reorder
+   - Live feedback with drop indicators
+
+4. **Edit in Place**:
+   - Click label/category name: Inline text edit
+   - Click icon: Popover icon picker
+   - Click product count: Opens product assignment dialog
+   - Hover shows quick actions (edit, delete, duplicate)
+
+5. **Product Assignment**:
+   - Click category → opens dialog
+   - Search/filter products (similar to add-ons UI)
+   - Bulk select with checkboxes
+   - Set primary category toggle
+   - Shows current assignments with remove option
+
+6. **Menu Preview**:
+   - Toggle button in top-right
+   - Side-by-side view or overlay
+   - Shows exactly how menu renders in header
+   - Desktop + mobile preview tabs
+
+**No Separate Panels** - Everything is contextual:
+
+- Click element → Properties appear in right sidebar
+- Dialog for complex operations (product assignment)
+- Inline editing for simple changes (names, icons)
+- Drag-drop for structure changes
+
+**Technical Implementation**:
+
+**1. Route Structure**:
+
+```
+/admin/product-menu                    # Main menu builder
+/admin/product-menu/labels/[id]        # Edit label (optional, can be inline)
+/admin/product-menu/categories/[id]    # Edit category details
+```
+
+**2. API Endpoints to Leverage** (mostly already exist):
+
+```typescript
+// Category Labels
+GET    /api/admin/category-labels           # List all labels
+POST   /api/admin/category-labels           # Create label
+PATCH  /api/admin/category-labels/[id]      # Update label (name, icon, order)
+DELETE /api/admin/category-labels/[id]      # Delete label
+PATCH  /api/admin/category-labels/reorder   # Bulk reorder
+
+// Categories
+GET    /api/admin/categories                # List all categories
+POST   /api/admin/categories                # Create category
+PATCH  /api/admin/categories/[id]           # Update category
+DELETE /api/admin/categories/[id]           # Archive category
+PATCH  /api/admin/categories/reorder        # Reorder within label
+
+// Products (existing)
+GET    /api/admin/products                  # List for assignment
+PATCH  /api/admin/products/[id]/categories  # Bulk update category links
+
+// New: Product Menu Settings
+GET    /api/admin/product-menu/settings     # Menu icon, text, config
+PATCH  /api/admin/product-menu/settings     # Update menu settings
+```
+
+**3. Component Structure** (block-based architecture):
+
+```tsx
+app/admin/product-menu/
+├── page.tsx                           # Server component (fetch data)
+└── ProductMenuBuilder.tsx             # Main canvas + drag-drop context
+
+components/product-menu-builder/
+├── MenuCanvas.tsx                     # Main visual builder area
+├── MenuSettingsBar.tsx                # Top bar: icon + text inline edit
+├── LabelBlock.tsx                     # Draggable label group component
+│   ├── LabelHeader.tsx                # Name, icon, drag handle, actions
+│   └── CategoryList.tsx               # Categories within label
+├── CategoryBlock.tsx                  # Draggable category item
+│   ├── CategoryItem.tsx               # Icon, name, count, actions
+│   └── CategoryDropZone.tsx           # Visual drop indicator
+├── ComponentToolbox.tsx               # Right sidebar: drag sources
+├── PropertiesPanel.tsx                # Context-sensitive properties
+├── ProductAssignmentDialog.tsx       # Bulk product assignment
+└── MenuPreviewPanel.tsx               # Toggle preview (desktop/mobile)
+
+lib/menu-builder/
+├── useDragDrop.ts                     # @dnd-kit logic for labels/categories
+├── useMenuState.ts                    # Optimistic state management
+└── menuBuilderActions.ts              # Server actions for CRUD ops
+```
+
+**4. Key Features**:
+
+- **Drag-and-drop**: `@dnd-kit/core` for reordering labels and categories
+- **Bulk operations**: Multi-select products for category assignment
+- **Search/filter**: Quick find products by name, type, status
+- **Optimistic UI**: Instant feedback on reorder/assignment
+- **Validation**: Prevent orphaned categories, ensure at least one primary category
+- **Undo support**: Keep operation history for easy rollback
+
+**5. Migration from Existing Pages**:
+
+- `/admin/categories` page remains for simple category list view (legacy)
+- Add prominent "Product Menu Builder" link in categories page
+- Eventually deprecate old categories page in favor of unified builder
+
+**Use Cases**:
+
+- **Initial setup**: Shop owner builds entire menu structure from scratch
+- **Seasonal updates**: Quickly reorder categories for holiday promotions
+- **New product launch**: Create category, assign products, set menu position
+- **Menu optimization**: Preview and adjust layout based on customer behavior
+- **Bulk category changes**: Reassign multiple products at once
+
+**Testing Checklist**:
+
+- [ ] Label CRUD operations work correctly
+- [ ] Drag-and-drop persists order to database
+- [ ] Category reordering within/between labels works
+- [ ] Product assignment updates category relationships
+- [ ] Primary category enforcement works
+- [ ] Live preview accurately reflects menu structure
+- [ ] Mobile preview shows correct layout
+- [ ] Bulk product operations handle errors gracefully
+- [ ] Menu settings (icon/text) integrate correctly
+- [ ] Page loads fast even with 50+ products
+
+**Future Enhancements** (separate PRs):
+
+- Visual category thumbnail upload
+- Category templates (common menu structures)
+- A/B testing different menu layouts
+- Analytics integration (track which categories get clicked)
+- Import/export menu structure as JSON
+- Multi-menu support (different menus for different product types)
+
+**Dependencies**:
+
+- Existing product, category, and label APIs
+- `@dnd-kit` package (already in project)
+- Menu icon/text settings (from current ticket)
+
+**Success Metrics**:
+
+- Time to build menu from scratch < 10 minutes
+- Reduce category management support tickets by 75%
+- Admin satisfaction score > 8/10
+- Zero orphaned categories after using builder
+
+---
+
+### Fix Analytics Page Product Links
+
+**Status**: Backlog  
+**Priority**: Medium  
+**Description**: Analytics page "Trending Products" links are hardcoded to assume all products are coffee with roast-level URLs. They should use the product's primary category slug instead.
+
+**Current Issue**:
+
+- Roastery Script Tee (merch) incorrectly links to: `/medium-roast/roastery-script-tee`
+- Should link to: `/merch/roastery-script-tee` (using primary category slug)
+
+**Correct URL Pattern**: `/{primary-category-slug}/{product-slug}`
+
+**Technical Changes**:
+
+- Update trending products query to include primary category
+- Build URL using: `/${product.primaryCategory.slug}/${product.slug}`
+- Consider extracting product URL builder utility function for reuse across the app
+
+**Also Fix**: Link hover state is not readable - update to use default shadcn link styles for better contrast.
+
+---
+
 ### Create AdminPageHeader Component
 
 **Status**: Backlog  
