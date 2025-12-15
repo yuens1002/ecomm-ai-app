@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma migrate deploy && prisma generate && next build",
-    "vercel-build": "DATABASE_URL=$DIRECT_URL prisma migrate deploy && prisma generate && next build",
+    "build:direct": "PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT=60000 DATABASE_URL=$DIRECT_URL prisma migrate deploy && prisma generate && next build",
+    "vercel-build": "PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT=60000 DATABASE_URL=$DIRECT_URL prisma migrate deploy && prisma generate && next build",
     "postinstall": "prisma generate",
     "prepare": "husky",
     "start": "next start",
