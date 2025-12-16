@@ -151,6 +151,7 @@ export async function GET(request: Request) {
       isPersonalized: true,
       source: "behavioral",
       userPreferences: {
+        preferredRoastLevel: userContext.purchaseHistory.preferredRoastLevel,
         topTastingNotes: userContext.purchaseHistory.topTastingNotes.slice(
           0,
           3

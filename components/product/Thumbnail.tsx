@@ -27,7 +27,7 @@ export function Thumbnail({
         src={src}
         alt={alt}
         fill
-        className="object-cover object-top-left transition-transform duration-200 ease-in group-hover:scale-115"
+        className="object-cover transition-transform duration-200 ease-in group-hover:scale-115"
         sizes="64px"
       />
     </Button>

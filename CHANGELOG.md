@@ -4,6 +4,13 @@
 
 - _TBD_
 
+## 0.46.1 - 2025-12-16
+
+- **Homepage layout improvements**: Added gap-4 to small batch collection grid for proper spacing between product cards; removed sparkle/trending icon wrapper to eliminate indentation on recommendations section header.
+- **Recommendations API fix**: Added preferredRoastLevel field to userPreferences in personalized recommendations response; frontend now correctly displays "Based on your love for [roast] roasts" message when user has purchase history.
+- **Image positioning fix**: Corrected invalid `object-top-left` Tailwind class to `object-cover` in ImageCarousel and Thumbnail components for proper centered image display.
+- **Layout consistency**: Updated section padding across ChatBarista, FeaturedProducts, and RecommendationsSection to use consistent max-width wrappers for proper full-width backgrounds.
+
 ## 0.46.0 - 2025-12-16
 
 - **Product image gallery refactor**: Switched to Next.js `Image` with a new reusable `Thumbnail` component. Single thumbnail set with responsive positioning (sm: dots only; md–lg: thumbnails below; xl+: thumbnails upper-left). Removed Fade to allow smooth scroll animation; fixed overflow and scrollbar issues.

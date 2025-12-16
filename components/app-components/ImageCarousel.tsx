@@ -119,7 +119,7 @@ export function ImageCarousel({
                     src={img.url}
                     alt={img.alt || defaultAlt}
                     fill
-                    className="object-cover object-top-left"
+                    className="object-cover"
                     sizes="(max-width: 768px) 90vw, 45vw"
                     priority={idx === 0}
                   />

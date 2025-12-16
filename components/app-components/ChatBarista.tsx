@@ -833,44 +833,46 @@ export default function ChatBarista({
           />
         </div>
 
-        <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground drop-shadow-sm">
-              {userName ? (
-                `Welcome back, ${userName}! 👋`
-              ) : (
-                <>
-                  Your perfect ☕ awaits
-                  <span className="inline-block animate-dots">.</span>
-                  <span
-                    className="inline-block animate-dots"
-                    style={{ animationDelay: "0.2s" }}
-                  >
-                    .
-                  </span>
-                  <span
-                    className="inline-block animate-dots"
-                    style={{ animationDelay: "0.4s" }}
-                  >
-                    .
-                  </span>
-                </>
-              )}
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground drop-shadow-sm">
-              {userName
-                ? "Chat with your personal coffee barista. Get recommendations, reorder favorites, or discover something new."
-                : "Chat with our AI barista to find your perfect roast. Get personalized recommendations based on your taste preferences."}
-            </p>
-            <div className="flex justify-center">
-              <Button
-                size="lg"
-                className="gap-2 text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-shadow"
-                onClick={handleStartConversation}
-              >
-                <MessageCircle className="w-5 h-5" />
-                Chat Now
-              </Button>
+        <div className="py-16 md:py-24 relative z-10">
+          <div className="mx-auto max-w-screen-2xl px-4 md:px-8">
+            <div className="max-w-3xl mx-auto text-center space-y-6">
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground drop-shadow-sm">
+                {userName ? (
+                  `Welcome back, ${userName}! 👋`
+                ) : (
+                  <>
+                    Your perfect ☕ awaits
+                    <span className="inline-block animate-dots">.</span>
+                    <span
+                      className="inline-block animate-dots"
+                      style={{ animationDelay: "0.2s" }}
+                    >
+                      .
+                    </span>
+                    <span
+                      className="inline-block animate-dots"
+                      style={{ animationDelay: "0.4s" }}
+                    >
+                      .
+                    </span>
+                  </>
+                )}
+              </h1>
+              <p className="text-lg md:text-xl text-muted-foreground drop-shadow-sm">
+                {userName
+                  ? "Chat with your personal coffee barista. Get recommendations, reorder favorites, or discover something new."
+                  : "Chat with our AI barista to find your perfect roast. Get personalized recommendations based on your taste preferences."}
+              </p>
+              <div className="flex justify-center">
+                <Button
+                  size="lg"
+                  className="gap-2 text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-shadow"
+                  onClick={handleStartConversation}
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  Chat Now
+                </Button>
+              </div>
             </div>
           </div>
         </div>

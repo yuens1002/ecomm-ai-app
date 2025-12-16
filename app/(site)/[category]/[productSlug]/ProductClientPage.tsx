@@ -44,9 +44,7 @@ const brewMethodsByRoast: Record<RoastLevel, string[]> = {
   DARK: ["Espresso", "French press", "Moka"],
 };
 
-const getOneTimeOption = (
-  variant: ProductVariant
-): PurchaseOption | null =>
+const getOneTimeOption = (variant: ProductVariant): PurchaseOption | null =>
   variant.purchaseOptions.find((p) => p.type === "ONE_TIME") ?? null;
 
 const getSubscriptionOptions = (variant: ProductVariant): PurchaseOption[] =>
@@ -130,9 +128,8 @@ export default function ProductClientPage({
     product.id
   );
   const [selectedVariant, setSelectedVariant] = useState(initialVariant);
-  const [selectedPurchaseOption, setSelectedPurchaseOption] = useState<
-    PurchaseOption | null
-  >(initialPurchaseOption);
+  const [selectedPurchaseOption, setSelectedPurchaseOption] =
+    useState<PurchaseOption | null>(initialPurchaseOption);
   const [quantity, setQuantity] = useState(1);
   const [selectedSubscriptionOptionId, setSelectedSubscriptionOptionId] =
     useState<string | null>(
@@ -164,7 +161,7 @@ export default function ProductClientPage({
         setSelectedSubscriptionOptionId(subscriptionOpts[0].id);
       }
     }
-  }, [selectedVariant]);
+  }, [selectedVariant, selectedPurchaseOption]);
 
   const hasSubscriptionInCart = cartItems.some(
     (item) =>
@@ -306,8 +303,11 @@ export default function ProductClientPage({
   const subscriptionOptions = getSubscriptionOptions(selectedVariant);
   const subscriptionDisplayOption = getSubscriptionDisplayOption(
     selectedVariant,
-    selectedSubscriptionOptionId || selectedPurchaseOption?.id
+    selectedPurchaseOption?.type === "SUBSCRIPTION"
+      ? selectedPurchaseOption.id
+      : selectedSubscriptionOptionId
   );
+
   const subscriptionDiscountMessage = subscriptionDisplayOption
     ? getDiscountMessage(selectedVariant, subscriptionDisplayOption)
     : null;

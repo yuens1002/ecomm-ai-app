@@ -90,7 +90,7 @@ export default function RecommendationsSection() {
   if (isLoading) {
     return (
       <section className="bg-secondary py-12">
-        <div className="container mx-auto px-4 md:px-8">
+        <div className="mx-auto max-w-screen-2xl px-4 md:px-8">
           <div className="flex items-center gap-2 mb-6">
             <div className="h-6 w-6 rounded-full bg-muted animate-pulse" />
             <div className="h-8 w-64 bg-muted animate-pulse rounded" />
@@ -117,14 +117,14 @@ export default function RecommendationsSection() {
 
   return (
     <section className="bg-secondary py-12">
-      <div className="container mx-auto px-4 md:px-8">
+      <div className="mx-auto max-w-screen-2xl px-4 md:px-8">
         {/* Section Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             {isPersonalized ? (
-              <Sparkles className="h-6 w-6 text-accent" />
+              <Sparkles className="h-6 w-6" />
             ) : (
-              <TrendingUp className="h-6 w-6 text-accent" />
+              <TrendingUp className="h-6 w-6" />
             )}
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-text-base">
@@ -135,12 +135,12 @@ export default function RecommendationsSection() {
               {isPersonalized && userPreferences && (
                 <p className="text-sm text-muted-foreground mt-1">
                   Based on your love for{" "}
-                  {userPreferences.preferredRoastLevel?.toLowerCase()} roasts
+                  {userPreferences.preferredRoastLevel?.toLowerCase() +
+                    " roasts with"}
                   {userPreferences.topTastingNotes &&
                     userPreferences.topTastingNotes.length > 0 && (
                       <>
                         {" "}
-                        with{" "}
                         {userPreferences.topTastingNotes
                           .slice(0, 2)
                           .join(" and ")}{" "}
@@ -159,7 +159,7 @@ export default function RecommendationsSection() {
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {products.map((product, index) => (
             <ProductCard
               key={product.id}
