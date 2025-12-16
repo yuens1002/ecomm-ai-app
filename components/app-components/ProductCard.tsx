@@ -25,6 +25,7 @@ export default function ProductCard({
   disableCardEffects = false,
   categorySlug,
   priority = false,
+  cardPaddingClass,
 }: Omit<ProductCardProps, "onAddToCart"> & {
   categorySlug?: string;
   priority?: boolean;
@@ -71,12 +72,13 @@ export default function ProductCard({
     >
       <Card
         className={clsx(
-          "w-full overflow-hidden rounded-none bg-card-bg flex flex-col justify-between p-4 border-0 shadow-none gap-0",
+          "w-full overflow-hidden rounded-none bg-card-bg flex flex-col justify-between border-0 shadow-none gap-0",
+          cardPaddingClass ? cardPaddingClass : "p-0",
           !disableCardEffects && "cursor-pointer"
         )}
       >
         {/* 1. Image container. The parent <Card> clips its top corners. */}
-        <CardHeader className="relative w-full aspect-square rounded-t-lg p-0 overflow-hidden max-h-[200px]">
+        <CardHeader className="relative w-full aspect-square rounded-t-lg p-0 overflow-hidden">
           <Image
             src={displayImage}
             alt={altText}

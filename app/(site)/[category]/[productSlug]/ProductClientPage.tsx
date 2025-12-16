@@ -1,20 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ProductType } from "@prisma/client";
-import { FullProductPayload, RelatedProduct, Category } from "@/lib/types";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Coffee, Flame, Leaf } from "lucide-react";
+import { ProductType, RoastLevel } from "@prisma/client";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Product,
+  ProductVariant,
+  PurchaseOption,
+  RelatedProduct,
+  Category,
+} from "@/lib/types";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -23,30 +20,95 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 import { Separator } from "@/components/ui/separator";
-import { Label } from "@/components/ui/label"; // <-- ADDED THIS IMPORT
-import ProductCard from "@components/app-components/ProductCard"; // Re-use our card
+import ProductCard from "@components/app-components/ProductCard";
 import { AddOnCard } from "@components/app-components/AddOnCard";
 import { ScrollCarousel } from "@components/app-components/ScrollCarousel";
-import { useCartStore } from "@/lib/store/cart-store";
-import { formatBillingInterval, formatPrice } from "@/lib/utils";
+import { ImageCarousel } from "@components/app-components/ImageCarousel";
+import { useCartStore, type CartItem } from "@/lib/store/cart-store";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
 import { AddOnItem } from "./actions";
+import { Badge } from "@/components/ui/badge";
+import { ProductSelectionsSection } from "@/components/product/ProductSelectionsSection";
 
-// Prop interface for this component
 interface ProductClientPageProps {
-  product: NonNullable<FullProductPayload>;
+  product: Product;
   relatedProducts: RelatedProduct[];
-  category: Pick<Category, "name" | "slug">; // We only need name and slug
+  category: Pick<Category, "name" | "slug">;
   addOns: AddOnItem[];
 }
+
+const brewMethodsByRoast: Record<RoastLevel, string[]> = {
+  LIGHT: ["Pour-over (V60/Chemex)", "Aeropress", "Filter"],
+  MEDIUM: ["Drip", "Chemex", "Aeropress"],
+  DARK: ["Espresso", "French press", "Moka"],
+};
+
+const getOneTimeOption = (variant: ProductVariant): PurchaseOption | null =>
+  variant.purchaseOptions.find((p) => p.type === "ONE_TIME") ?? null;
+
+const getSubscriptionOptions = (variant: ProductVariant): PurchaseOption[] =>
+  variant.purchaseOptions.filter((p) => p.type === "SUBSCRIPTION");
+
+const getSubscriptionDisplayOption = (
+  variant: ProductVariant,
+  selectedId?: string | null
+): PurchaseOption | null => {
+  const options = getSubscriptionOptions(variant);
+  if (!options.length) return null;
+  if (selectedId) {
+    const matched = options.find((option) => option.id === selectedId);
+    if (matched) return matched;
+  }
+  return options[0];
+};
+
+const getPreferredPurchaseOption = (
+  variant: ProductVariant,
+  cartItems: CartItem[],
+  productId: string
+): PurchaseOption | null => {
+  if (!variant.purchaseOptions.length) return null;
+
+  const hasSubscriptionInCart = cartItems.some(
+    (item) =>
+      item.productId === productId &&
+      item.variantId === variant.id &&
+      item.purchaseType === "SUBSCRIPTION"
+  );
+
+  const oneTimeOption = getOneTimeOption(variant);
+  const subscriptionOptions = getSubscriptionOptions(variant);
+
+  // If there's a subscription in cart and a one-time option exists, prefer one-time
+  if (hasSubscriptionInCart && oneTimeOption) return oneTimeOption;
+
+  // If there's no one-time option and subscriptions exist, default to first subscription
+  if (!oneTimeOption && subscriptionOptions.length > 0)
+    return subscriptionOptions[0];
+
+  // Otherwise prefer one-time or fallback to first option
+  return oneTimeOption ?? variant.purchaseOptions[0];
+};
+
+const getDiscountMessage = (
+  variant: ProductVariant,
+  subscriptionOption: PurchaseOption
+): string | null => {
+  if (subscriptionOption.type !== "SUBSCRIPTION") return null;
+  const oneTimeOption = getOneTimeOption(variant);
+  if (!oneTimeOption) return null;
+
+  const savings = oneTimeOption.priceInCents - subscriptionOption.priceInCents;
+  if (savings <= 0) return null;
+
+  const discountPercent = Math.round(
+    (savings / oneTimeOption.priceInCents) * 100
+  );
+  if (discountPercent <= 0) return null;
+
+  return `Save ${discountPercent}% with subscription`;
+};
 
 export default function ProductClientPage({
   product,
@@ -59,18 +121,23 @@ export default function ProductClientPage({
   const cartItems = useCartStore((state) => state.items);
   const { trackActivity } = useActivityTracking();
 
-  // --- State Management ---
-  // Find the first variant and purchase option to set as default
-  const [selectedVariant, setSelectedVariant] = useState(product.variants[0]);
-  const [selectedPurchaseOption, setSelectedPurchaseOption] = useState(
-    selectedVariant.purchaseOptions[0]
+  const initialVariant = product.variants[0];
+  const initialPurchaseOption = getPreferredPurchaseOption(
+    initialVariant,
+    cartItems,
+    product.id
   );
-  const quantity = 1;
-  // Track which subscription cadence is selected (purchaseOptionId)
+  const [selectedVariant, setSelectedVariant] = useState(initialVariant);
+  const [selectedPurchaseOption, setSelectedPurchaseOption] =
+    useState<PurchaseOption | null>(initialPurchaseOption);
+  const [quantity, setQuantity] = useState(1);
   const [selectedSubscriptionOptionId, setSelectedSubscriptionOptionId] =
-    useState<string | null>(null);
+    useState<string | null>(
+      initialPurchaseOption?.type === "SUBSCRIPTION"
+        ? initialPurchaseOption.id
+        : null
+    );
 
-  // Track product view on mount
   useEffect(() => {
     trackActivity({
       activityType: "PRODUCT_VIEW",
@@ -78,7 +145,24 @@ export default function ProductClientPage({
     });
   }, [product.id, trackActivity]);
 
-  // Check if selected variant already has a subscription in cart
+  // Auto-select subscription when it's the only option
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+  useEffect(() => {
+    const oneTimeOpt = getOneTimeOption(selectedVariant);
+    const subscriptionOpts = getSubscriptionOptions(selectedVariant);
+
+    // If no one-time option and subscriptions exist, ensure subscription is selected
+    if (!oneTimeOpt && subscriptionOpts.length > 0) {
+      if (
+        !selectedPurchaseOption ||
+        selectedPurchaseOption.type !== "SUBSCRIPTION"
+      ) {
+        setSelectedPurchaseOption(subscriptionOpts[0]);
+        setSelectedSubscriptionOptionId(subscriptionOpts[0].id);
+      }
+    }
+  }, [selectedVariant, selectedPurchaseOption]);
+
   const hasSubscriptionInCart = cartItems.some(
     (item) =>
       item.productId === product.id &&
@@ -86,90 +170,64 @@ export default function ProductClientPage({
       item.purchaseType === "SUBSCRIPTION"
   );
 
-  // --- Derived State ---
-  // Calculate the price to display based on state
   const displayImage =
     product.images[0]?.url ||
     "https://placehold.co/600x400/CCCCCC/FFFFFF.png?text=Image+Not+Found";
   const altText =
     product.images[0]?.altText || `A bag of ${product.name} coffee`;
+  const galleryImages =
+    product.images.length > 0
+      ? product.images.map((img) => ({ url: img.url, alt: img.altText }))
+      : [{ url: displayImage, alt: altText }];
+  const showThumbs = galleryImages.length > 1;
 
-  // Calculate discount percentage for subscription
-  const oneTimePrice = selectedVariant.purchaseOptions.find(
-    (o) => o.type === "ONE_TIME"
-  )?.priceInCents;
-
-  const getDiscountMessage = (subscriptionPrice: number) => {
-    if (!oneTimePrice || subscriptionPrice >= oneTimePrice) return null;
-    const discount = Math.round((1 - subscriptionPrice / oneTimePrice) * 100);
-    return `Save ${discount}%`;
-  };
-
-  // --- Event Handlers ---
   const handleVariantChange = (variantId: string) => {
     const newVariant = product.variants.find((v) => v.id === variantId)!;
     setSelectedVariant(newVariant);
 
-    // Check if new variant has subscription in cart
-    const newVariantHasSubscription = cartItems.some(
-      (item) =>
-        item.productId === product.id &&
-        item.variantId === newVariant.id &&
-        item.purchaseType === "SUBSCRIPTION"
+    const preferredOption = getPreferredPurchaseOption(
+      newVariant,
+      cartItems,
+      product.id
     );
 
-    // If subscription exists, default to one-time purchase
-    if (newVariantHasSubscription) {
-      const oneTimeOption = newVariant.purchaseOptions.find(
-        (p) => p.type === "ONE_TIME"
-      );
-      if (oneTimeOption) {
-        setSelectedPurchaseOption(oneTimeOption);
-      } else {
-        setSelectedPurchaseOption(newVariant.purchaseOptions[0]);
-      }
-    } else {
-      // Default to the first purchase option of the new variant
-      setSelectedPurchaseOption(newVariant.purchaseOptions[0]);
-    }
-    setSelectedSubscriptionOptionId(null);
+    setSelectedPurchaseOption(preferredOption);
+    setSelectedSubscriptionOptionId(
+      preferredOption?.type === "SUBSCRIPTION" ? preferredOption.id : null
+    );
   };
 
   const handlePurchaseTypeChange = (value: string) => {
+    if (!selectedVariant.purchaseOptions.length) return;
+
     if (value === "SUBSCRIPTION") {
-      // Don't allow switching to subscription if already in cart
-      if (hasSubscriptionInCart) {
-        return;
-      }
-      // User selected subscription group - pick first subscription option as default
-      const subscriptionOptions = selectedVariant.purchaseOptions.filter(
-        (p) => p.type === "SUBSCRIPTION"
-      );
+      if (hasSubscriptionInCart) return;
+      const subscriptionOptions = getSubscriptionOptions(selectedVariant);
       if (subscriptionOptions.length > 0) {
         setSelectedPurchaseOption(subscriptionOptions[0]);
         setSelectedSubscriptionOptionId(subscriptionOptions[0].id);
       }
-    } else {
-      // User selected one-time
-      const oneTimeOption = selectedVariant.purchaseOptions.find(
-        (p) => p.type === "ONE_TIME"
-      );
-      if (oneTimeOption) {
-        setSelectedPurchaseOption(oneTimeOption);
-        setSelectedSubscriptionOptionId(null);
-      }
+      return;
+    }
+
+    const oneTimeOption = getOneTimeOption(selectedVariant);
+    if (oneTimeOption) {
+      setSelectedPurchaseOption(oneTimeOption);
+      setSelectedSubscriptionOptionId(null);
     }
   };
 
   const handleSubscriptionCadenceChange = (optionId: string) => {
     const option = selectedVariant.purchaseOptions.find(
       (p) => p.id === optionId
-    )!;
+    );
+    if (!option) return;
     setSelectedPurchaseOption(option);
     setSelectedSubscriptionOptionId(optionId);
   };
 
   const handleAddToCart = () => {
+    if (!selectedPurchaseOption) return;
     const isAddingSubscription = selectedPurchaseOption.type === "SUBSCRIPTION";
 
     addItem({
@@ -183,19 +241,14 @@ export default function ProductClientPage({
       purchaseType: selectedPurchaseOption.type,
       priceInCents: selectedPurchaseOption.priceInCents,
       imageUrl: displayImage,
-      quantity: quantity,
+      quantity,
       billingInterval: selectedPurchaseOption.billingInterval || undefined,
       billingIntervalCount:
         selectedPurchaseOption.billingIntervalCount || undefined,
     });
 
-    // Track add to cart activity
-    trackActivity({
-      activityType: "ADD_TO_CART",
-      productId: product.id,
-    });
+    trackActivity({ activityType: "ADD_TO_CART", productId: product.id });
 
-    // If a subscription was added, switch to one-time purchase option
     if (isAddingSubscription) {
       const oneTimeOption = selectedVariant.purchaseOptions.find(
         (p) => p.type === "ONE_TIME"
@@ -205,16 +258,10 @@ export default function ProductClientPage({
         setSelectedSubscriptionOptionId(null);
       }
     }
-
-    // Optional: Show feedback or reset quantity
-    // For now, keep quantity at 1 after adding
   };
 
-  // ProductCard now uses cart store directly, no callback needed
-
-  // Handle add-on add to cart - adds BOTH the main product AND the add-on
   const handleAddOnToCart = (addOn: AddOnItem) => {
-    // First, add the main product
+    if (!selectedPurchaseOption) return;
     addItem({
       productId: product.id,
       productName: product.name,
@@ -226,16 +273,11 @@ export default function ProductClientPage({
       purchaseType: selectedPurchaseOption.type as "ONE_TIME" | "SUBSCRIPTION",
       priceInCents: selectedPurchaseOption.priceInCents,
       imageUrl: displayImage,
-      quantity: quantity,
+      quantity,
     });
 
-    // Track main product add to cart
-    trackActivity({
-      activityType: "ADD_TO_CART",
-      productId: product.id,
-    });
+    trackActivity({ activityType: "ADD_TO_CART", productId: product.id });
 
-    // Then, add the add-on
     addItem({
       productId: addOn.product.id,
       productName: addOn.product.name,
@@ -252,19 +294,48 @@ export default function ProductClientPage({
       quantity: 1,
     });
 
-    // Track add-on add to cart activity
-    trackActivity({
-      activityType: "ADD_TO_CART",
-      productId: addOn.product.id,
-    });
+    trackActivity({ activityType: "ADD_TO_CART", productId: addOn.product.id });
   };
 
   const isCoffee = product.type === ProductType.COFFEE;
 
+  const oneTimeOption = getOneTimeOption(selectedVariant);
+  const subscriptionOptions = getSubscriptionOptions(selectedVariant);
+  const subscriptionDisplayOption = getSubscriptionDisplayOption(
+    selectedVariant,
+    selectedPurchaseOption?.type === "SUBSCRIPTION"
+      ? selectedPurchaseOption.id
+      : selectedSubscriptionOptionId
+  );
+
+  const subscriptionDiscountMessage = subscriptionDisplayOption
+    ? getDiscountMessage(selectedVariant, subscriptionDisplayOption)
+    : null;
+
+  // Responsive slides per view for related products carousel
+  const [relatedSlidesPerView, setRelatedSlidesPerView] = useState(1);
+  useEffect(() => {
+    const calcSlides = () => {
+      const w = window.innerWidth;
+      // xs/s: 1, md: 2.5, lg: 3, xl+: 4
+      if (w >= 1280) {
+        setRelatedSlidesPerView(4);
+      } else if (w >= 1024) {
+        setRelatedSlidesPerView(3);
+      } else if (w >= 768) {
+        setRelatedSlidesPerView(2.5);
+      } else {
+        setRelatedSlidesPerView(1.5);
+      }
+    };
+    calcSlides();
+    window.addEventListener("resize", calcSlides);
+    return () => window.removeEventListener("resize", calcSlides);
+  }, []);
+
   return (
-    <div className="container mx-auto px-4 md:px-8 py-8">
-      {/* 1. Breadcrumb (Home > Category > Product) */}
-      <Breadcrumb className="mb-6">
+    <div className="w-full px-4 md:px-8 py-8">
+      <Breadcrumb className="mb-4 md:mb-5">
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
@@ -272,231 +343,99 @@ export default function ProductClientPage({
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
-
-          {/* Category link: Uses the category slug and name */}
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
               <Link href={`/${category.slug}`}>{category.name}</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
-
-          {/* Current Page: Product Name */}
           <BreadcrumbItem>
             <BreadcrumbPage>{product.name}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
-      {/* 2. Main Product Section (Grid) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
-        {/* --- LEFT COLUMN: Image --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 lg:gap-8">
         <div className="w-full">
-          <div className="relative w-full overflow-hidden rounded-lg h-0 pb-[100%]">
-            <Image
-              src={displayImage}
-              alt={altText}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 90vw, 45vw"
-              loading="eager"
-            />
-          </div>
-          {/* In a real app, a thumbnail gallery would go here */}
+          <ImageCarousel
+            images={galleryImages}
+            aspectRatio="square"
+            showThumbnails={showThumbs}
+            showDots={true}
+          />
         </div>
 
-        {/* --- RIGHT COLUMN: Product Info & Options --- */}
         <div className="w-full flex flex-col space-y-6">
           <h1 className="text-4xl font-bold text-text-base">{product.name}</h1>
 
           {isCoffee && (
             <div className="flex flex-col space-y-1">
-              {product.origin.length > 0 && (
-                <span className="text-lg text-text-base font-semibold">
-                  {product.origin.join(", ")}
-                </span>
-              )}
               {product.tastingNotes.length > 0 && (
                 <span className="text-lg text-text-muted italic">
                   {product.tastingNotes.join(", ")}
                 </span>
               )}
-            </div>
-          )}
 
-          <p className="text-text-base leading-relaxed">
-            {product.description}
-          </p>
-          {product.isOrganic && (
-            <span className="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-              Organic
-            </span>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-text-base">
+                {product.roastLevel && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Flame className="h-4 w-4 text-amber-600" />
+                    <span className="font-semibold capitalize">
+                      {product.roastLevel.toLowerCase()}
+                    </span>
+                  </Badge>
+                )}
+                {product.variety && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Leaf className="h-4 w-4 text-emerald-600" />
+                    <span>{product.variety}</span>
+                  </Badge>
+                )}
+                {product.roastLevel && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Coffee className="h-4 w-4 text-brown-600" />
+                    <span className="whitespace-nowrap">Best for:</span>
+                    <span className="font-medium">
+                      {brewMethodsByRoast[product.roastLevel]?.join(", ")}
+                    </span>
+                  </Badge>
+                )}
+              </div>
+            </div>
           )}
 
           <Separator />
 
-          {/* Variant Selection (Size) */}
-          <div>
-            <Label className="text-base font-semibold text-text-base mb-3 block">
-              Size
-            </Label>
-            <RadioGroup
-              value={selectedVariant.id}
-              onValueChange={handleVariantChange}
-              className="flex gap-4"
-            >
-              {product.variants.map((variant) => (
-                <div key={variant.id}>
-                  <RadioGroupItem
-                    value={variant.id}
-                    id={variant.id}
-                    className="sr-only"
-                  />
-                  <Label
-                    htmlFor={variant.id}
-                    className={`flex items-center justify-center rounded-md border-2 p-3 text-sm font-medium
-                      cursor-pointer transition-colors
-                      ${
-                        selectedVariant.id === variant.id
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-transparent border-border hover:bg-accent"
-                      }`}
-                  >
-                    {variant.name}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
+          <ProductSelectionsSection
+            product={product}
+            selectedVariant={selectedVariant}
+            selectedPurchaseOption={selectedPurchaseOption}
+            selectedSubscriptionOptionId={selectedSubscriptionOptionId}
+            quantity={quantity}
+            hasSubscriptionInCart={hasSubscriptionInCart}
+            oneTimeOption={oneTimeOption}
+            subscriptionOptions={subscriptionOptions}
+            subscriptionDisplayOption={subscriptionDisplayOption}
+            subscriptionDiscountMessage={subscriptionDiscountMessage}
+            onVariantChange={handleVariantChange}
+            onPurchaseTypeChange={handlePurchaseTypeChange}
+            onSubscriptionCadenceChange={handleSubscriptionCadenceChange}
+            onQuantityChange={setQuantity}
+            onAddToCart={handleAddToCart}
+            spacing="3"
+          />
 
-          {/* Purchase Type Selection (One-time vs. Sub) */}
-          <div>
-            <Label className="text-base font-semibold text-text-base mb-3 block">
-              Purchase Option
-            </Label>
-            <RadioGroup
-              value={selectedPurchaseOption.type}
-              onValueChange={handlePurchaseTypeChange}
-              className="space-y-3"
-            >
-              {/* One-Time Purchase Option */}
-              {selectedVariant.purchaseOptions.some(
-                (o) => o.type === "ONE_TIME"
-              ) && (
-                <Label
-                  htmlFor="one-time"
-                  className={`flex items-center rounded-lg border-2 p-4 cursor-pointer transition-colors
-                    ${
-                      selectedPurchaseOption.type === "ONE_TIME"
-                        ? "bg-accent border-primary"
-                        : "border-border hover:bg-accent"
-                    }`}
-                >
-                  <RadioGroupItem value="ONE_TIME" id="one-time" />
-                  <div className="ml-4 flex flex-col">
-                    <span className="font-semibold text-text-base">
-                      One-Time Purchase
-                    </span>
-                  </div>
-                  <span className="ml-auto font-bold text-text-base text-lg">
-                    $
-                    {formatPrice(
-                      selectedVariant.purchaseOptions.find(
-                        (o) => o.type === "ONE_TIME"
-                      )?.priceInCents || 0
-                    )}
-                  </span>
-                </Label>
-              )}
-
-              {/* Subscription Option Group - Hide if already in cart */}
-              {selectedVariant.purchaseOptions.some(
-                (o) => o.type === "SUBSCRIPTION"
-              ) &&
-                !hasSubscriptionInCart && (
-                  <Label
-                    htmlFor="subscription"
-                    className={`flex items-center rounded-lg border-2 p-4 cursor-pointer transition-colors
-                    ${
-                      selectedPurchaseOption.type === "SUBSCRIPTION"
-                        ? "bg-accent border-primary"
-                        : "border-border hover:bg-accent"
-                    }`}
-                  >
-                    <RadioGroupItem value="SUBSCRIPTION" id="subscription" />
-                    <div className="ml-4 flex flex-col">
-                      <span className="font-semibold text-text-base">
-                        Subscribe & Save
-                      </span>
-                      {getDiscountMessage(
-                        selectedPurchaseOption.priceInCents
-                      ) && (
-                        <span className="text-sm text-text-muted">
-                          {getDiscountMessage(
-                            selectedPurchaseOption.priceInCents
-                          )}
-                        </span>
-                      )}
-                    </div>
-                    <span className="ml-auto font-bold text-text-base text-lg">
-                      ${formatPrice(selectedPurchaseOption.priceInCents)}
-                    </span>
-                  </Label>
-                )}
-            </RadioGroup>
-          </div>
-
-          {/* Delivery Schedule Dropdown (dynamically generated from available subscription options) */}
-          {selectedPurchaseOption.type === "SUBSCRIPTION" &&
-            !hasSubscriptionInCart && (
-              <div>
-                <Label className="text-base font-semibold text-text-base mb-3 block">
-                  Delivery Schedule
-                </Label>
-                <Select
-                  value={
-                    selectedSubscriptionOptionId || selectedPurchaseOption.id
-                  }
-                  onValueChange={handleSubscriptionCadenceChange}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Choose delivery schedule" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {selectedVariant.purchaseOptions
-                      .filter((o) => o.type === "SUBSCRIPTION")
-                      .map((option) => {
-                        const interval =
-                          option.billingInterval?.toLowerCase() || "week";
-                        const count = option.billingIntervalCount || 1;
-                        const label = formatBillingInterval(interval, count);
-                        const capitalizedLabel =
-                          label.charAt(0).toUpperCase() + label.slice(1);
-
-                        return (
-                          <SelectItem key={option.id} value={option.id}>
-                            {capitalizedLabel} - $
-                            {formatPrice(option.priceInCents)}
-                          </SelectItem>
-                        );
-                      })}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="space-y-2">
+            <p className="text-text-base leading-relaxed">
+              {product.description}
+            </p>
+            {product.isOrganic && (
+              <span className="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                Organic
+              </span>
             )}
+          </div>
 
-          {/* Add to Cart Button */}
-          <Button
-            size="lg"
-            className="w-full text-lg py-6"
-            onClick={handleAddToCart}
-            // Simple check for stock
-            disabled={selectedVariant.stockQuantity <= 0}
-          >
-            {selectedVariant.stockQuantity > 0 ? "Add to Cart" : "Out of Stock"}
-          </Button>
-
-          {/* Add-ons Section */}
           {addOns.length > 0 && (
             <>
               <Separator className="my-6" />
@@ -505,7 +444,7 @@ export default function ProductClientPage({
                   {settings.productAddOnsSectionTitle}
                 </h2>
 
-                <ScrollCarousel slidesPerView={1} noBorder={true}>
+                <ScrollCarousel slidesPerView={1} noBorder>
                   {addOns.map((addOn) => (
                     <AddOnCard
                       key={`${addOn.product.id}-${addOn.variant.id}`}
@@ -522,38 +461,22 @@ export default function ProductClientPage({
         </div>
       </div>
 
-      {/* 3. Related Products Section */}
       <div className="my-16">
         <Separator className="my-12" />
         <h2 className="text-3xl font-bold text-center text-text-base mb-12">
           {settings.productRelatedHeading}
         </h2>
-        <Carousel
-          opts={{
-            align: "start",
-            loop: true,
-          }}
-          className="w-full"
+        <ScrollCarousel
+          slidesPerView={relatedSlidesPerView}
+          gap="gap-8"
+          noBorder
         >
-          <CarouselContent>
-            {relatedProducts.map((relatedProduct) => (
-              <CarouselItem
-                key={relatedProduct.id}
-                className="md:basis-1/2 lg:basis-1/small"
-              >
-                <div className="p-1">
-                  {/* We re-use our existing ProductCard component! */}
-                  <ProductCard
-                    product={relatedProduct} // Cast as 'any' to satisfy prop type, since we're passing a partial product
-                    disableCardEffects={true}
-                  />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
-        </Carousel>
+          {relatedProducts.map((relatedProduct) => (
+            <div key={relatedProduct.id}>
+              <ProductCard product={relatedProduct} disableCardEffects />
+            </div>
+          ))}
+        </ScrollCarousel>
       </div>
     </div>
   );

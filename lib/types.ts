@@ -33,6 +33,21 @@ export type FullProductPayload = Prisma.PromiseReturnType<
 >;
 
 /**
+ * Helper type to extract the non-null Product type from FullProductPayload.
+ */
+export type Product = NonNullable<FullProductPayload>;
+
+/**
+ * Helper type to extract a Variant from the Product.
+ */
+export type ProductVariant = Product["variants"][number];
+
+/**
+ * Helper type to extract a PurchaseOption from a Variant.
+ */
+export type PurchaseOption = ProductVariant["purchaseOptions"][number];
+
+/**
  * The data payload for *one* product in the "Related Products" carousel.
  * We use [number] to get the type of a single item from the array.
  */
@@ -121,6 +136,7 @@ export interface ProductCardProps {
   product: FeaturedProduct | CategoryProduct | RelatedProduct;
   showPurchaseOptions?: boolean;
   disableCardEffects?: boolean;
+  cardPaddingClass?: string; // allows overriding default padding (e.g., p-2 for tight carousels)
 }
 
 /**

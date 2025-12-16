@@ -233,7 +233,7 @@ export default async function SiteFooter() {
 
   return (
     <footer className="bg-secondary text-secondary-foreground border-t">
-      <div className="container mx-auto px-4 md:px-8 pt-12 pb-6">
+      <div className="mx-auto max-w-screen-2xl px-4 md:px-8 pt-12 pb-6">
         {/* Logo and Branding */}
         <div className="mb-8">
           <Link
@@ -398,7 +398,7 @@ export default async function SiteFooter() {
 
       {/* Copyright - Full Width Separator */}
       <div className="border-t border-border/30 bg-white/90 dark:bg-slate-950/90">
-        <div className="container mx-auto px-4 md:px-8 py-4 text-center">
+        <div className="mx-auto max-w-screen-2xl px-4 md:px-8 py-4 text-center">
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} {brandingSettings.storeName}. All
             rights reserved.

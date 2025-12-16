@@ -13,7 +13,14 @@ const baseProductSchema = z.object({
   images: z
     .array(
       z.object({
-        url: z.string().url("Image URL must be valid"),
+        url: z
+          .string()
+          .url("Image URL must be valid")
+          .or(
+            z
+              .string()
+              .regex(/^\//, "Image URL must be valid")
+          ),
         alt: z.string().default(""),
       })
     )

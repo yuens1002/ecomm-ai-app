@@ -245,9 +245,11 @@ export default function ProductFormClient({
       const method = productId ? "PUT" : "POST";
 
       const isCoffee = data.productType === ProductType.COFFEE;
+      const cleanImages = uploadedImages.filter((img) => img.url);
+
       const payload = {
         ...data,
-        images: uploadedImages.length > 0 ? uploadedImages : undefined,
+        images: cleanImages.length > 0 ? cleanImages : undefined,
         origin: isCoffee ? toList(data.origin) : [],
         tastingNotes: isCoffee ? toList(data.tastingNotes) : [],
         variety: isCoffee ? data.variety : "",
@@ -262,7 +264,27 @@ export default function ProductFormClient({
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error("Failed to save product");
+      if (!response.ok) {
+        let message = "Failed to save product";
+        try {
+          const err = await response.json();
+          if (err?.error) message = err.error;
+          if (err?.details) {
+            const detailMsg = Array.isArray(err.details)
+              ? err.details
+                  .map(
+                    (d: { path: string; message: string }) =>
+                      `${d.path}: ${d.message}`
+                  )
+                  .join("; ")
+              : String(err.details);
+            message = `${message} – ${detailMsg}`;
+          }
+        } catch {
+          /* ignore */
+        }
+        throw new Error(message);
+      }
 
       const responseData = await response.json();
 
