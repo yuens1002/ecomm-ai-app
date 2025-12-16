@@ -2,6 +2,7 @@
 
 import React, { ReactNode, useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
+import WheelGesturesPlugin from "embla-carousel-wheel-gestures";
 import Autoplay from "embla-carousel-autoplay";
 import { cn } from "@/lib/utils";
 import { CarouselDots } from "./CarouselDots";
@@ -15,6 +16,7 @@ interface ScrollCarouselProps {
   noBorder?: boolean;
   autoplay?: boolean;
   autoplayDelay?: number;
+  wheelGestures?: boolean;
 }
 
 export function ScrollCarousel({
@@ -26,6 +28,7 @@ export function ScrollCarousel({
   noBorder = false,
   autoplay = false,
   autoplayDelay = 4000,
+  wheelGestures = true,
 }: ScrollCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -36,9 +39,12 @@ export function ScrollCarousel({
       dragFree: false,
       slidesToScroll: 1,
     },
-    autoplay
-      ? [Autoplay({ delay: autoplayDelay, stopOnInteraction: true })]
-      : []
+    [
+      ...(autoplay
+        ? [Autoplay({ delay: autoplayDelay, stopOnInteraction: true })]
+        : []),
+      ...(wheelGestures ? [WheelGesturesPlugin({ forceWheelAxis: "x" })] : []),
+    ]
   );
 
   // Update current index when carousel scrolls

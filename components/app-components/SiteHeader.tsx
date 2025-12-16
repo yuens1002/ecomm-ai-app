@@ -160,7 +160,7 @@ export default function SiteHeader({
           link={banner.link}
         />
       )}
-      <div className="container mx-auto px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12">
+      <div className="mx-auto max-w-screen-2xl px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12">
         {/* Logo/Title */}
         <Link href="/" className="flex items-center gap-2 text-primary">
           {/* Mobile View: Stacked */}

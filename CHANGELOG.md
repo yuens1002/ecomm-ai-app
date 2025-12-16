@@ -4,6 +4,14 @@
 
 - _TBD_
 
+## 0.46.0 - 2025-12-16
+
+- **Product image gallery refactor**: Switched to Next.js `Image` with a new reusable `Thumbnail` component. Single thumbnail set with responsive positioning (sm: dots only; md–lg: thumbnails below; xl+: thumbnails upper-left). Removed Fade to allow smooth scroll animation; fixed overflow and scrollbar issues.
+- **Related products carousel**: Replaced shadcn slider with `ScrollCarousel`, implemented responsive slides per view (xs:1, md:2.5, lg:3, xl+:4), reduced gaps, and ensured card images render 1:1 without extra per-card padding by default.
+- **Site-wide layout normalization**: Standardized header, content, and footer to a `max-w-screen-2xl` wrapper. Removed page-level container constraints and set `(site)` layout wrapper padding to `px-0` for consistent width across pages.
+- **Product selection UI**: Created reusable `ProductSelectionsSection`, `ProductPurchaseTypeSelector`, and `ProductDeliverySchedule` components to handle coffee product metadata, purchase type (one-time vs subscription), and delivery cadence selection. Configured flexible spacing via optional `spacing` prop.
+- **Bugs fixed**: Restored dots on small screens, corrected `CarouselDots` props/visibility, eliminated horizontal scrollbar caused by arrows, and addressed parsing error in `ImageCarousel` after refactor.
+
 ## 0.45.2 - 2025-12-15
 
 - **Merch add-product routing**: Admin merch list now routes Add/Edit/Back actions to the merch path instead of the coffee products form, keeping context when adding merch.

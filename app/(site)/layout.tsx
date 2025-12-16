@@ -22,7 +22,11 @@ export default function SiteLayout({
         <SiteHeaderWrapper />
 
         {/* Page content */}
-        <main className="flex-1 w-full">{children}</main>
+        <main className="flex-1 w-full">
+          <div className="mx-auto max-w-screen-2xl px-0 md:px-0">
+            {children}
+          </div>
+        </main>
 
         {/* Site footer */}
         <SiteFooter />
