@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { PageContainer } from "@/components/app-components/PageContainer";
 
 interface OrderDetailClientProps {
   order: OrderWithItems;
@@ -69,7 +70,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
   const shipping = order.totalInCents - subtotal;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
+    <PageContainer>
       {/* Header with back button */}
       <div className="mb-6">
         <Button variant="ghost" asChild className="mb-4">
@@ -314,6 +315,6 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
           </Card>
         )}
       </div>
-    </div>
+    </PageContainer>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Coffee, Flame, Leaf } from "lucide-react";
-import { ProductType, RoastLevel } from "@prisma/client";
+import { ProductType, RoastLevel, PurchaseType } from "@prisma/client";
 import {
   Product,
   ProductVariant,
@@ -25,6 +25,7 @@ import ProductCard from "@components/app-components/ProductCard";
 import { AddOnCard } from "@components/app-components/AddOnCard";
 import { ScrollCarousel } from "@components/app-components/ScrollCarousel";
 import { ImageCarousel } from "@components/app-components/ImageCarousel";
+import PageContainer from "@components/app-components/PageContainer";
 import { useCartStore, type CartItem } from "@/lib/store/cart-store";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
 import { AddOnItem } from "./actions";
@@ -270,7 +271,7 @@ export default function ProductClientPage({
       variantName: selectedVariant.name,
       categorySlug: category.slug,
       purchaseOptionId: selectedPurchaseOption.id,
-      purchaseType: selectedPurchaseOption.type as "ONE_TIME" | "SUBSCRIPTION",
+      purchaseType: selectedPurchaseOption.type as PurchaseType,
       priceInCents: selectedPurchaseOption.priceInCents,
       imageUrl: displayImage,
       quantity,
@@ -334,7 +335,7 @@ export default function ProductClientPage({
   }, []);
 
   return (
-    <div className="w-full px-4 md:px-8 py-8">
+    <PageContainer>
       <Breadcrumb className="mb-4 md:mb-5">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -478,6 +479,6 @@ export default function ProductClientPage({
           ))}
         </ScrollCarousel>
       </div>
-    </div>
+    </PageContainer>
   );
 }

@@ -10,6 +10,7 @@ import ConnectedAccountsTab from "./tabs/ConnectedAccountsTab";
 import AddressesTab from "./tabs/AddressesTab";
 import SubscriptionsTab from "./tabs/SubscriptionsTab";
 import DangerZoneTab from "./tabs/DangerZoneTab";
+import { PageContainer } from "@/components/app-components/PageContainer";
 
 interface Address {
   id: string;
@@ -78,7 +79,7 @@ export default function AccountPageClient({ user }: AccountPageClientProps) {
   const [userData, setUserData] = useState(user);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
+    <PageContainer>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-text-base mb-2">
           Account Settings
@@ -123,9 +124,9 @@ export default function AccountPageClient({ user }: AccountPageClientProps) {
         </TabsList>
 
         <TabsContent value="profile">
-          <ProfileTab 
-            user={userData} 
-            onUpdate={(user) => setUserData({ ...userData, ...user })} 
+          <ProfileTab
+            user={userData}
+            onUpdate={(user) => setUserData({ ...userData, ...user })}
           />
         </TabsContent>
 
@@ -155,6 +156,6 @@ export default function AccountPageClient({ user }: AccountPageClientProps) {
           <DangerZoneTab userId={userData.id} userEmail={userData.email} />
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   );
 }

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageContainer } from "@/components/app-components/PageContainer";
 
 export default function CheckoutCancelPage() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function CheckoutCancelPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-16">
+    <PageContainer className="py-16">
       <div className="max-w-2xl mx-auto text-center">
         <XCircle className="w-20 h-20 text-orange-500 mx-auto mb-6" />
         <h1 className="text-4xl font-bold text-text-base mb-4">
@@ -53,6 +54,6 @@ export default function CheckoutCancelPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </PageContainer>
   );
 }

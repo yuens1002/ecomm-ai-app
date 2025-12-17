@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/store/cart-store";
+import { PageContainer } from "@/components/app-components/PageContainer";
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
@@ -28,15 +29,15 @@ function CheckoutSuccessContent() {
 
   if (verifying) {
     return (
-      <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[60vh]">
+      <PageContainer className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="w-16 h-16 text-primary animate-spin mb-4" />
         <p className="text-lg text-text-muted">Verifying your order...</p>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-16">
+    <PageContainer className="py-16">
       <div className="max-w-2xl mx-auto text-center">
         <CheckCircle className="w-20 h-20 text-green-600 mx-auto mb-6" />
         <h1 className="text-4xl font-bold text-text-base mb-4">
@@ -72,7 +73,7 @@ function CheckoutSuccessContent() {
           </Link>
         </p>
       </div>
-    </div>
+    </PageContainer>
   );
 }
 
@@ -80,10 +81,10 @@ export default function CheckoutSuccessPage() {
   return (
     <Suspense
       fallback={
-        <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[60vh]">
+        <PageContainer className="py-16 flex flex-col items-center justify-center min-h-[60vh]">
           <Loader2 className="w-16 h-16 text-primary animate-spin mb-4" />
           <p className="text-lg text-text-muted">Loading...</p>
-        </div>
+        </PageContainer>
       }
     >
       <CheckoutSuccessContent />

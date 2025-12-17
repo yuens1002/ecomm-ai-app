@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { PageContainer } from "@/components/app-components/PageContainer";
 
 interface OrdersPageClientProps {
   statusFilter?: string;
@@ -144,7 +145,7 @@ export default function OrdersPageClient({
   });
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <PageContainer>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-text-base mb-2">
           Order History
@@ -337,6 +338,6 @@ export default function OrdersPageClient({
           </CardContent>
         </Card>
       )}
-    </div>
+    </PageContainer>
   );
 }

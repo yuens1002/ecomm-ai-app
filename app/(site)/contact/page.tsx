@@ -6,10 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormField,
-} from "@/components/ui/form";
+import { Form, FormField } from "@/components/ui/form";
 import {
   Field,
   FieldLabel,
@@ -27,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { PageContainer } from "@/components/app-components/PageContainer";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -94,11 +92,13 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 md:py-20 max-w-2xl">
+    <PageContainer className="max-w-screen-sm">
       <div className="space-y-6 text-center mb-10">
         <h1 className="text-4xl font-bold tracking-tight">Get in Touch</h1>
         <p className="text-lg text-muted-foreground">
-          I&apos;m Sunny Yuen. I built this open-source e-commerce demo to showcase modern AI integration. I am available for full-stack projects.
+          I&apos;m Sunny Yuen. I built this open-source e-commerce demo to
+          showcase modern AI integration. I am available for full-stack
+          projects.
         </p>
         <p className="text-muted-foreground">
           Whether you have an idea for a new app, need help with an existing
@@ -194,6 +194,6 @@ export default function ContactPage() {
           </form>
         </Form>
       </div>
-    </div>
+    </PageContainer>
   );
 }

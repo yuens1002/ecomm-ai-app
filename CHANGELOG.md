@@ -4,6 +4,15 @@
 
 - _TBD_
 
+## 0.46.3 - 2025-12-17
+
+- **PageContainer standardization**: Applied PageContainer component across all client pages (OrdersPageClient, AccountPageClient, OrderDetailClient, contact, checkout success/cancel) replacing manual container divs for consistent layout patterns.
+
+## 0.46.2 - 2025-12-16
+
+- **PageContainer component**: Created reusable page wrapper component with standardized `mx-auto max-w-screen-2xl px-4 sm:px-8 py-8` layout; supports custom pageWidth prop (default, "full", or custom string) and className override for flexible spacing control.
+- **Site-wide container standardization**: Applied PageContainer across all client pages in (site) directory: OrdersPageClient, AccountPageClient, OrderDetailClient, contact page, checkout success/cancel pages; replaced manual container divs with consistent wrapper component for maintainable layout patterns.
+
 ## 0.46.1 - 2025-12-16
 
 - **Homepage layout improvements**: Added gap-4 to small batch collection grid for proper spacing between product cards; removed sparkle/trending icon wrapper to eliminate indentation on recommendations section header.

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import SearchResults from "./SearchResults";
 import Link from "next/link";
+import PageContainer from "@/components/app-components/PageContainer";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { getSiteMetadata } from "@/lib/site-metadata";
@@ -15,7 +16,7 @@ export async function generateMetadata() {
 
 export default function SearchPage() {
   return (
-    <div className="container mx-auto px-4 py-8">
+    <PageContainer>
       <div className="mb-6">
         <Link href="/">
           <Button variant="ghost" size="sm" className="mb-4">
@@ -29,7 +30,7 @@ export default function SearchPage() {
       <Suspense fallback={<SearchLoadingSkeleton />}>
         <SearchResults />
       </Suspense>
-    </div>
+    </PageContainer>
   );
 }
 
