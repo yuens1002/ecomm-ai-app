@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Development tooling scripts
     "dev-tools/**",
+    // Test coverage reports
+    "coverage/**",
     // AI wizard features (not currently in use - will revisit later)
     "app/admin/pages/new/wizard/**",
     "app/admin/pages/edit/[id]/**",
