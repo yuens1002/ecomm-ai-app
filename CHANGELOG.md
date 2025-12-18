@@ -7,6 +7,7 @@
 - **Email delivery**: Branded PasswordResetEmail template via Resend with store name and support email
 - **Comprehensive tests**: 24 passing unit tests for password validation (9 tests) and reset service (10 tests) with mocked dependencies
 - **Auth consolidation**: Merged auth actions, updated admin sign-in redirect, added reusable SignIn/LoginForm components with email retention on errors
+- **Auth concerns**: Separate site user and admin sign in pages
 
 ## 0.46.3 - 2025-12-17
 
