@@ -231,12 +231,12 @@ describe("Password Reset Service", () => {
       const expectedMaxTime = afterTime + RESET_EXPIRY_MINUTES * 60 * 1000;
 
       expect(capturedCreateData).toBeDefined();
-      expect((capturedCreateData!.expiresAt as Date).getTime()).toBeGreaterThanOrEqual(
-        expectedMinTime
-      );
-      expect((capturedCreateData!.expiresAt as Date).getTime()).toBeLessThanOrEqual(
-        expectedMaxTime
-      );
+      expect(
+        (capturedCreateData!.expiresAt as Date).getTime()
+      ).toBeGreaterThanOrEqual(expectedMinTime);
+      expect(
+        (capturedCreateData!.expiresAt as Date).getTime()
+      ).toBeLessThanOrEqual(expectedMaxTime);
     });
   });
 
