@@ -126,21 +126,22 @@ model SiteSettings {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  name          String?
-  email         String?        @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  isAdmin       Boolean        @default(false)
-  accounts      Account[]
-  addresses     Address[]
-  orders        Order[]
-  sessions      Session[]
-  subscriptions Subscription[]
-  activities    UserActivity[]
+  id                  String               @id @default(cuid())
+  name                String?
+  email               String?              @unique
+  emailVerified       DateTime?
+  image               String?
+  passwordHash        String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  isAdmin             Boolean              @default(false)
+  accounts            Account[]
+  addresses           Address[]
+  orders              Order[]
+  sessions            Session[]
+  subscriptions       Subscription[]
+  activities          UserActivity[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Account {
@@ -175,6 +176,20 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Address {

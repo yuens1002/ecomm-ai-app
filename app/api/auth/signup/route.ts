@@ -1,33 +1,32 @@
 import { NextResponse } from "next/server";
+import { z, ZodIssue } from "zod";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { hashPassword, isStrongPassword } from "@/lib/password";
+
+const signupSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(1, "Password is required"),
+  name: z.string().optional(),
+});
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, name } = body;
+    const parsed = signupSchema.safeParse(body);
 
-    // Validation
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password are required" },
-        { status: 400 }
-      );
+    if (!parsed.success) {
+      const errors = parsed.error.issues
+        .map((e: ZodIssue) => `${e.path.join(".")}: ${e.message}`)
+        .join("; ");
+      return NextResponse.json({ error: errors }, { status: 400 });
     }
 
-    // Check if email is valid format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
+    const { email, password, name } = parsed.data;
 
-    // Check password strength (min 8 characters)
-    if (password.length < 8) {
+    // Check password strength
+    if (!isStrongPassword(password)) {
       return NextResponse.json(
-        { error: "Password must be at least 8 characters" },
+        { error: "Password must meet complexity requirements" },
         { status: 400 }
       );
     }
@@ -44,8 +43,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Hash password (10 salt rounds = good balance of security and speed)
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password
+    const hashedPassword = await hashPassword(password);
 
     // Create user in database
     const user = await prisma.user.create({

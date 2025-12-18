@@ -1,25 +1,10 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import AboutEditorClient from "./AboutEditorClient";
 import { getPageBlocks } from "@/lib/blocks/actions";
 import { prisma } from "@/lib/prisma";
 import { WizardAnswers } from "@/lib/api-schemas/generate-about";
 
 export default async function AboutEditorPage() {
-  const session = await auth();
-
-  if (!session?.user?.email) {
-    redirect("/admin/signin");
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { isAdmin: true },
-  });
-
-  if (!user?.isAdmin) {
-    redirect("/unauthorized");
-  }
+  // Auth and admin checks are enforced by the parent admin layout
 
   // Find or create the About page
   let aboutPage = await prisma.page.findUnique({
