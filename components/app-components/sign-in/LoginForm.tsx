@@ -19,7 +19,12 @@ interface LoginFormProps {
   signInAction: (
     prevState: unknown,
     formData: FormData
-  ) => Promise<{ message: string; email?: string }>;
+  ) => Promise<{
+    message?: string;
+    emailError?: string;
+    passwordError?: string;
+    email?: string;
+  }>;
 }
 
 export function LoginForm({ signInAction }: LoginFormProps) {
@@ -33,8 +38,8 @@ export function LoginForm({ signInAction }: LoginFormProps) {
           <FormHeading
             htmlFor="email"
             label="Email"
-            errorMessage={state?.message}
-            validationType={state?.message ? "error" : undefined}
+            errorMessage={state?.emailError}
+            validationType={state?.emailError ? "error" : undefined}
           />
           <Input
             id="email"
@@ -51,8 +56,10 @@ export function LoginForm({ signInAction }: LoginFormProps) {
           <FormHeading
             htmlFor="password"
             label="Password"
-            errorMessage={state?.message}
-            validationType={state?.message ? "error" : undefined}
+            errorMessage={state?.passwordError || state?.message}
+            validationType={
+              state?.passwordError || state?.message ? "error" : undefined
+            }
             action={
               <Button
                 variant="link"

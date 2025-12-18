@@ -27,17 +27,28 @@ const resetPasswordSchema = z.object({
 export async function signInAdmin(
   prevState: unknown,
   formData: FormData
-): Promise<{ message: string; email?: string }> {
+): Promise<{
+  message?: string;
+  emailError?: string;
+  passwordError?: string;
+  email?: string;
+}> {
   const email = formData.get("email");
   const password = formData.get("password");
 
   try {
     const validated = credentialsSchema.safeParse({ email, password });
     if (!validated.success) {
+      const errors: { emailError?: string; passwordError?: string } = {};
+      validated.error.issues.forEach((e: ZodIssue) => {
+        if (e.path[0] === "email") {
+          errors.emailError = e.message;
+        } else if (e.path[0] === "password") {
+          errors.passwordError = e.message;
+        }
+      });
       return {
-        message: validated.error.issues
-          .map((e: ZodIssue) => e.message)
-          .join("; "),
+        ...errors,
         email: String(email || ""),
       };
     }
@@ -69,17 +80,28 @@ export async function signInAdmin(
 export async function signInPublic(
   prevState: unknown,
   formData: FormData
-): Promise<{ message: string; email?: string }> {
+): Promise<{
+  message?: string;
+  emailError?: string;
+  passwordError?: string;
+  email?: string;
+}> {
   const email = formData.get("email");
   const password = formData.get("password");
 
   try {
     const validated = credentialsSchema.safeParse({ email, password });
     if (!validated.success) {
+      const errors: { emailError?: string; passwordError?: string } = {};
+      validated.error.issues.forEach((e: ZodIssue) => {
+        if (e.path[0] === "email") {
+          errors.emailError = e.message;
+        } else if (e.path[0] === "password") {
+          errors.passwordError = e.message;
+        }
+      });
       return {
-        message: validated.error.issues
-          .map((e: ZodIssue) => e.message)
-          .join("; "),
+        ...errors,
         email: String(email || ""),
       };
     }
