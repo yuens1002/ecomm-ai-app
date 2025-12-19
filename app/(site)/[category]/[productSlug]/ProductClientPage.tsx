@@ -147,7 +147,6 @@ export default function ProductClientPage({
   }, [product.id, trackActivity]);
 
   // Auto-select subscription when it's the only option
-  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
   useEffect(() => {
     const oneTimeOpt = getOneTimeOption(selectedVariant);
     const subscriptionOpts = getSubscriptionOptions(selectedVariant);
@@ -158,7 +157,9 @@ export default function ProductClientPage({
         !selectedPurchaseOption ||
         selectedPurchaseOption.type !== "SUBSCRIPTION"
       ) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedPurchaseOption(subscriptionOpts[0]);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedSubscriptionOptionId(subscriptionOpts[0].id);
       }
     }

@@ -232,6 +232,10 @@ describe("Category label routes", () => {
         name: "Collections",
         icon: null,
         order: 0,
+        isVisible: true,
+        showInHeaderMenu: true,
+        showInMobileMenu: true,
+        showInFooterMenu: true,
         categories: [
           {
             order: 0,
@@ -252,6 +256,10 @@ describe("Category label routes", () => {
     expect(res.status).toBe(200);
     expect(json.labels[0]).toMatchObject({
       name: "Collections",
+      isVisible: true,
+      showInHeaderMenu: true,
+      showInMobileMenu: true,
+      showInFooterMenu: true,
       categories: [{ name: "Blends" }],
     });
   });

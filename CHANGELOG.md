@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.50.0 - 2025-12-19
+
+- **Product menu visibility + ordering**: Added per-surface visibility flags (header/mobile/footer) and global visibility for labels and categories; introduced product ordering within categories via `CategoriesOnProducts.order` and created `ProductMenuDraft` model for staged menu edits.
+- **API payloads**: Category labels GET now returns visibility/per-surface flags; products GET now returns `thumbnailUrl` (first image) and `categoriesDetailed` with category order for builder UIs.
+- **Migration scope**: Applied migration locally only (Docker Postgres); Neon untouched pending release.
+- **Tests**: Updated admin category-label and products route tests for new payload fields; targeted suites passing (18 tests across 2 suites).
+
 ## 0.49.0 - 2025-12-19
 
 - **Signup page refactor**: Updated public signup to use the shared `SignIn` shell and `FormHeading` + `Field` + `FieldGroup` pattern for consistent spacing, labels, and error handling.

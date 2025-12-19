@@ -49,6 +49,10 @@ export async function GET(request: Request) {
             category: true,
           },
         },
+        images: {
+          select: { url: true, order: true },
+          orderBy: { order: "asc" },
+        },
       },
       orderBy: { name: "asc" },
     });
@@ -68,12 +72,18 @@ export async function GET(request: Request) {
         isDisabled: p.isDisabled,
         stock: totalStock,
         price: basePrice,
+        thumbnailUrl: p.images[0]?.url || null,
         variants: p.variants.map((v) => ({
           name: v.name,
           stock: v.stockQuantity,
           options: v.purchaseOptions,
         })),
         categories: p.categories.map((c) => c.category.name).join(", "),
+        categoriesDetailed: p.categories.map((c) => ({
+          id: c.category.id,
+          name: c.category.name,
+          order: c.order,
+        })),
       };
     });
 

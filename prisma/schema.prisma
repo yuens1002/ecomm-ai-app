@@ -39,10 +39,12 @@ model CategoriesOnProducts {
   productId  String
   categoryId String
   isPrimary  Boolean  @default(false)
+  order      Int      @default(0)
   category   Category @relation(fields: [categoryId], references: [id])
   product    Product  @relation(fields: [productId], references: [id])
 
   @@id([productId, categoryId])
+  @@index([categoryId, order])
 }
 
 model Category {
@@ -53,6 +55,10 @@ model Category {
   isUsingDefaultLabel Boolean                 @default(true)
   order               Int                     @default(0)
   showPurchaseOptions Boolean                 @default(true)
+  isVisible           Boolean                 @default(true)
+  showInHeaderMenu    Boolean                 @default(true)
+  showInMobileMenu    Boolean                 @default(true)
+  showInFooterMenu    Boolean                 @default(true)
   products            CategoriesOnProducts[]
   labels              CategoryLabelCategory[]
 }
@@ -64,6 +70,10 @@ model CategoryLabel {
   order      Int                     @default(0)
   createdAt  DateTime                @default(now())
   updatedAt  DateTime                @updatedAt
+  isVisible  Boolean                 @default(true)
+  showInHeaderMenu Boolean           @default(true)
+  showInMobileMenu Boolean           @default(true)
+  showInFooterMenu Boolean           @default(true)
   categories CategoryLabelCategory[]
 }
 
@@ -77,6 +87,28 @@ model CategoryLabelCategory {
   @@id([labelId, categoryId])
   @@index([categoryId])
   @@index([labelId, order])
+}
+
+model ProductMenuDraft {
+  id        String                  @id @default(cuid())
+  userId    String?
+  status    ProductMenuDraftStatus  @default(ACTIVE)
+  payload   Json
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+  expiresAt DateTime?
+
+  user      User?                   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+enum ProductMenuDraftStatus {
+  ACTIVE
+  COMMITTED
+  DISCARDED
 }
 
 model ProductImage {
@@ -142,6 +174,7 @@ model User {
   subscriptions       Subscription[]
   activities          UserActivity[]
   passwordResetTokens PasswordResetToken[]
+  drafts              ProductMenuDraft[]
 }
 
 model Account {

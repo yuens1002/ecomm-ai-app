@@ -52,6 +52,10 @@ export async function GET() {
       name: label.name,
       icon: label.icon,
       order: label.order,
+      isVisible: label.isVisible,
+      showInHeaderMenu: label.showInHeaderMenu,
+      showInMobileMenu: label.showInMobileMenu,
+      showInFooterMenu: label.showInFooterMenu,
       categories: label.categories.map((entry) => ({
         id: entry.category.id,
         name: entry.category.name,
