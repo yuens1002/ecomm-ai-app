@@ -8,6 +8,8 @@ import {
   resetPasswordWithToken,
 } from "@/lib/password-reset";
 import { isStrongPassword } from "@/lib/password";
+import { prisma } from "@/lib/prisma";
+import { hashPassword } from "@/lib/password";
 
 // Validation schemas
 const credentialsSchema = z.object({
@@ -233,4 +235,108 @@ export async function resetPasswordWithTokenAction(
       error: "Unable to reset password",
     };
   }
+}
+
+// Signup schema with confirm
+const signupSchema = z
+  .object({
+    name: z.string().optional(),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(1, "Password is required"),
+    confirmPassword: z.string().min(1, "Confirm password is required"),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "password should match",
+  });
+
+export async function signUpPublic(
+  _prevState: unknown,
+  formData: FormData
+): Promise<{
+  message?: string;
+  name?: string;
+  email?: string;
+  emailError?: string;
+  passwordError?: string;
+  confirmPasswordError?: string;
+}> {
+  const name = (formData.get("name") as string | null) ?? "";
+  const email = (formData.get("email") as string | null) ?? "";
+  const password = (formData.get("password") as string | null) ?? "";
+  const confirmPassword =
+    (formData.get("confirmPassword") as string | null) ?? "";
+
+  const validated = signupSchema.safeParse({
+    name: name || undefined,
+    email,
+    password,
+    confirmPassword,
+  });
+
+  if (!validated.success) {
+    const errors: {
+      emailError?: string;
+      passwordError?: string;
+      confirmPasswordError?: string;
+    } = {};
+    validated.error.issues.forEach((e: ZodIssue) => {
+      if (e.path[0] === "email") errors.emailError = e.message;
+      if (e.path[0] === "password") errors.passwordError = e.message;
+      if (e.path[0] === "confirmPassword")
+        errors.confirmPasswordError = e.message;
+    });
+    return {
+      ...errors,
+      name: String(name || ""),
+      email: String(email || ""),
+    };
+  }
+
+  if (!isStrongPassword(validated.data.password)) {
+    return {
+      passwordError: "Password does not meet requirements",
+      name: String(name || ""),
+      email: String(email || ""),
+    };
+  }
+
+  // Ensure unique email
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    return {
+      emailError: "Email already registered",
+      name: String(name || ""),
+      email: String(email || ""),
+    };
+  }
+
+  const passwordHash = await hashPassword(validated.data.password);
+  await prisma.user.create({
+    data: {
+      email: validated.data.email,
+      name: validated.data.name || null,
+      passwordHash,
+    },
+  });
+
+  try {
+    await signIn("credentials", {
+      email: validated.data.email,
+      password: validated.data.password,
+      redirectTo: "/account",
+    });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return {
+        message:
+          "Account created but sign-in failed. Please try signing in manually.",
+        name: String(name || ""),
+        email: String(email || ""),
+      };
+    }
+    throw error;
+  }
+
+  return { message: "Something went wrong" };
 }

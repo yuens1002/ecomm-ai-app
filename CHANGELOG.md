@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.49.0 - 2025-12-19
+
+- **Signup page refactor**: Updated public signup to use the shared `SignIn` shell and `FormHeading` + `Field` + `FieldGroup` pattern for consistent spacing, labels, and error handling.
+- **Password validation**: Integrated reusable `PasswordFields` with real-time strength checks (8+ chars, uppercase/lowercase/number/special, no spaces) and blur-based match validation.
+- **Server action**: Added `signUpPublic` server action with Zod validation, strong password enforcement, unique email guard, user creation, and automatic sign-in redirect to `"/account"`.
+- **Unit tests**: Added signup API route tests covering invalid email, weak password, duplicate email, and success; all tests pass (now 215 total).
+- **Type safety**: Ensured Zod-based runtime validation and removed use of `any` in tests.
+
 ## 0.47.0 - 2025-12-18
 
 - **Password reset backend**: Complete forgot-password/reset-password flow with secure SHA-256 token hashing, 30-minute expiry, and consumption tracking
