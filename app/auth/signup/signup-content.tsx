@@ -1,0 +1,116 @@
+"use client";
+
+import { useActionState, useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import { FormHeading } from "@/components/ui/app/FormHeading";
+import { Field, FieldGroup } from "@/components/ui/field";
+import { PasswordFields } from "@/components/app-components/auth/PasswordFields";
+import { signUpPublic } from "@/actions/auth";
+
+type State = {
+  message?: string;
+  name?: string;
+  email?: string;
+  emailError?: string;
+  passwordError?: string;
+  confirmPasswordError?: string;
+};
+
+export function SignupContent() {
+  const [state, action, isPending] = useActionState<State, FormData>(
+    signUpPublic,
+    {}
+  );
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordsValid, setPasswordsValid] = useState(false);
+
+  return (
+    <form action={action}>
+      <FieldGroup>
+        <Field>
+          <FormHeading htmlFor="name" label="Name" />
+          <Input
+            id="name"
+            name="name"
+            type="text"
+            placeholder="John Doe"
+            disabled={isPending}
+            defaultValue={state?.name || ""}
+          />
+        </Field>
+
+        <Field>
+          <FormHeading
+            htmlFor="email"
+            label="Email"
+            required
+            errorMessage={state?.emailError}
+            validationType={state?.emailError ? "error" : undefined}
+          />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="your@email.com"
+            required
+            disabled={isPending}
+            defaultValue={state?.email || ""}
+          />
+        </Field>
+
+        <PasswordFields
+          password={password}
+          confirmPassword={confirmPassword}
+          onPasswordChange={setPassword}
+          onConfirmPasswordChange={setConfirmPassword}
+          disabled={isPending}
+          passwordError={state?.passwordError}
+          confirmPasswordError={state?.confirmPasswordError}
+          passwordLabel="Password"
+          confirmLabel="Confirm Password"
+          passwordPlaceholder="Minimum 8 characters"
+          confirmPlaceholder="Re-enter your password"
+          onValidationChange={setPasswordsValid}
+        />
+
+        {state?.message && (
+          <Field>
+            <FormHeading
+              label=""
+              errorMessage={state.message}
+              validationType="error"
+            />
+          </Field>
+        )}
+
+        <Field className="mt-2">
+          <Button
+            type={isPending || !passwordsValid ? "button" : "submit"}
+            className="w-full"
+            aria-disabled={isPending || !passwordsValid}
+            data-disabled={isPending || !passwordsValid}
+          >
+            {isPending ? (
+              <>
+                <Spinner /> Creating account...
+              </>
+            ) : (
+              "Create Account"
+            )}
+          </Button>
+        </Field>
+
+        <div className="mt-2 text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link href="/auth/signin" className="text-primary hover:underline">
+            Sign in
+          </Link>
+        </div>
+      </FieldGroup>
+    </form>
+  );
+}
