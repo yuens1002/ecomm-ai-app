@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { Shield } from "lucide-react";
-import { SignIn } from "@/components/app-components/sign-in/SignIn";
-import { LoginForm } from "@/components/app-components/sign-in/LoginForm";
+import { SignIn } from "@/components/app-components/auth/SignIn";
+import { LoginForm } from "@/components/app-components/auth/LoginForm";
 import { signInAdmin } from "@/actions/auth";
 import { getSiteMetadata } from "@/lib/site-metadata";
 import Link from "next/link";
@@ -33,7 +33,7 @@ export default async function AdminSignInPage() {
           href="/"
           className="text-sm text-muted-foreground hover:text-primary transition-colors"
         >
-          ← Back to Store
+          &larr; Back to Store
         </Link>
       </div>
     </SignIn>

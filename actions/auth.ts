@@ -19,10 +19,16 @@ const forgotPasswordSchema = z.object({
   email: z.string().email("Invalid password"),
 });
 
-const resetPasswordSchema = z.object({
-  token: z.string().min(10, "Invalid token"),
-  password: z.string().min(1, "Password is required"),
-});
+const resetPasswordSchema = z
+  .object({
+    token: z.string().min(10, "Invalid token"),
+    password: z.string().min(1, "Password is required"),
+    confirmPassword: z.string().min(1, "Confirm password is required"),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "password should match",
+  });
 
 export async function signInAdmin(
   prevState: unknown,
@@ -164,18 +170,35 @@ export async function requestPasswordResetAction(
 export async function resetPasswordWithTokenAction(
   prevState: unknown,
   formData: FormData
-): Promise<{ ok?: boolean; error?: string; message?: string }> {
+): Promise<{
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  errors?: { password?: string; confirmPassword?: string };
+}> {
   try {
     const token = (formData.get("token") as string | null)?.trim() ?? "";
     const password = (formData.get("password") as string | null) ?? "";
+    const confirmPassword =
+      (formData.get("confirmPassword") as string | null) ?? "";
 
-    const validated = resetPasswordSchema.safeParse({ token, password });
+    const validated = resetPasswordSchema.safeParse({
+      token,
+      password,
+      confirmPassword,
+    });
     if (!validated.success) {
+      const errors: { password?: string; confirmPassword?: string } = {};
+      validated.error.issues.forEach((e: ZodIssue) => {
+        if (e.path[0] === "password") errors.password = e.message;
+        if (e.path[0] === "confirmPassword") errors.confirmPassword = e.message;
+      });
       return {
         ok: false,
         error: validated.error.issues
           .map((e: ZodIssue) => e.message)
           .join("; "),
+        errors,
       };
     }
 
@@ -183,6 +206,7 @@ export async function resetPasswordWithTokenAction(
       return {
         ok: false,
         error: "Password does not meet requirements",
+        errors: { password: "Password does not meet requirements" },
       };
     }
 

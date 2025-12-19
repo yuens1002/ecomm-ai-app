@@ -36,7 +36,7 @@ export async function requestPasswordReset(email: string) {
     },
   });
 
-  const resetUrl = `${APP_URL}/auth/reset-password?token=${token}`;
+  const resetUrl = `${APP_URL}/api/auth/password-reset-callback?token=${token}`;
 
   const [fromEmailSetting, storeNameSetting, supportEmailSetting] =
     await Promise.all([

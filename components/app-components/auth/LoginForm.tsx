@@ -67,7 +67,9 @@ export function LoginForm({ signInAction }: LoginFormProps) {
                 asChild
                 disabled={isPending}
               >
-                <Link href="/forgot-password">Forgot your password?</Link>
+                <Link href="/auth/forgot-password?returnTo=/auth/signin">
+                  Forgot your password?
+                </Link>
               </Button>
             }
           />

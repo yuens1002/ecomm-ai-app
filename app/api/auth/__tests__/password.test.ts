@@ -43,6 +43,12 @@ describe("Password Validation & Hashing", () => {
       expect(isStrongPassword("PlainPass999")).toBe(false);
     });
 
+    it("should reject passwords containing spaces", () => {
+      expect(isStrongPassword("Pass word1!")).toBe(false);
+      expect(isStrongPassword(" Leading@123")).toBe(false);
+      expect(isStrongPassword("Trailing@123 ")).toBe(false);
+    });
+
     it("should reject empty or null strings", () => {
       expect(isStrongPassword("")).toBe(false);
       // Note: null and undefined will throw in the actual implementation

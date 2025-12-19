@@ -6,6 +6,7 @@ export function isStrongPassword(password: string): boolean {
     /[a-z]/.test(password),
     /[0-9]/.test(password),
     /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
+    !/\s/.test(password),
     password.length >= 8,
   ];
   return rules.every(Boolean);

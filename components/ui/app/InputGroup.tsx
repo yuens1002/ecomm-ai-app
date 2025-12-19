@@ -130,6 +130,9 @@ function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
 
 function InputGroupInput({
   className,
+  // Drop void element props
+  children: _children,
+  dangerouslySetInnerHTML: _dangerouslySetInnerHTML,
   ...props
 }: React.ComponentProps<"input">) {
   return (
