@@ -1,8 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.47.0 - 2025-12-18
 
-- _TBD_
+- **Password reset backend**: Complete forgot-password/reset-password flow with secure SHA-256 token hashing, 30-minute expiry, and consumption tracking
+- **Strong password validation**: 8+ characters with uppercase, lowercase, number, and special character requirements (no spaces allowed)
+- **Email delivery**: Branded PasswordResetEmail template via Resend with store name and support email
+- **Comprehensive tests**: 24 passing unit tests for password validation (9 tests) and reset service (10 tests) with mocked dependencies
+- **Auth consolidation**: Merged auth actions, updated admin sign-in redirect, added reusable SignIn/LoginForm components with email retention on errors
+- **Auth concerns**: Separate site user and admin sign in pages
+- **Password reset UX enhancements**: Reusable PasswordFields component with real-time strength indicators, green checkmarks on requirements met, two-field entry with blur-based matching validation, text inputs for visibility, non-interactive status icons via InputGroupAddon
+- **Forgot-password flow**: Icon-based success/error messages (green checkmark or red triangle), no auto-redirect to let users choose next action
+- **Accessibility improvements**: Submit buttons stay focusable with aria-disabled pattern, required field asterisks auto-applied via FormHeading
+- **Auth directory restructure**: Renamed sign-in to auth for shared authentication components, store branding (logo, name) displayed on all auth pages
 
 ## 0.46.3 - 2025-12-17
 

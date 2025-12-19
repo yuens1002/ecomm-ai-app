@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import LinkPageEditorClient from "./LinkPageEditorClient";
 
@@ -8,20 +7,7 @@ export default async function LinkPageEditor({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const session = await auth();
-
-  if (!session?.user?.email) {
-    redirect("/admin/signin");
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { isAdmin: true },
-  });
-
-  if (!user?.isAdmin) {
-    redirect("/unauthorized");
-  }
+  // Auth and admin checks are enforced by the parent admin layout
 
   const { slug } = await params;
 

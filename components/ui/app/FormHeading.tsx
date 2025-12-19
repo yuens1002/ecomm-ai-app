@@ -22,6 +22,8 @@ interface FormHeadingProps {
   statusMessage?: string;
   /** Visual style for statusMessage (defaults to dirty style) */
   statusType?: ValidationType;
+  /** Optional action link/element to display inline at the end (e.g., "Forgot password?") */
+  action?: React.ReactNode;
 }
 
 const validationStyles = {
@@ -53,6 +55,7 @@ export function FormHeading({
   dirtyDelay = 30000,
   statusMessage,
   statusType,
+  action,
 }: FormHeadingProps) {
   // Delay showing dirty indicator so it only appears if user forgets to save
   const showDirty = useDebouncedDirty(isDirty, dirtyDelay);
@@ -77,22 +80,25 @@ export function FormHeading({
   );
 
   return (
-    <div className="flex items-center justify-start min-h-5 gap-2">
-      {htmlFor ? (
-        <FieldLabel htmlFor={htmlFor}>{LabelContent}</FieldLabel>
-      ) : (
-        <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-          {LabelContent}
-        </span>
-      )}
-      {showIndicator && (
-        <FieldError className={style.className}>
-          <div
-            className={`w-2 h-2 rounded-full ${style.dotColor} animate-pulse`}
-          />
-          {message}
-        </FieldError>
-      )}
+    <div className="flex items-center justify-start gap-2">
+      <div className="flex items-center gap-2">
+        {htmlFor ? (
+          <FieldLabel htmlFor={htmlFor}>{LabelContent}</FieldLabel>
+        ) : (
+          <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            {LabelContent}
+          </span>
+        )}
+        {showIndicator && (
+          <FieldError className={style.className}>
+            <div
+              className={`w-2 h-2 rounded-full ${style.dotColor} animate-pulse`}
+            />
+            {message}
+          </FieldError>
+        )}
+      </div>
+      {action && <div className="ml-auto">{action}</div>}
     </div>
   );
 }

@@ -1,24 +1,9 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import FaqEditorClient from "./FaqEditorClient";
 import { getPageBlocks } from "@/lib/blocks/actions";
 
 export default async function FaqEditorPage() {
-  const session = await auth();
-
-  if (!session?.user?.email) {
-    redirect("/admin/signin");
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { isAdmin: true },
-  });
-
-  if (!user?.isAdmin) {
-    redirect("/unauthorized");
-  }
+  // Auth and admin checks are enforced by the parent admin layout
 
   // Find or create the FAQ page
   let faqPage = await prisma.page.findUnique({

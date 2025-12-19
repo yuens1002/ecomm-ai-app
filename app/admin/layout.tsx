@@ -22,7 +22,7 @@ export default async function AdminLayout({
   const session = await auth();
 
   if (!session?.user?.email) {
-    redirect("/auth/signin?callbackUrl=/admin");
+    redirect("/auth/admin-signin");
   }
 
   const user = await prisma.user.findUnique({
