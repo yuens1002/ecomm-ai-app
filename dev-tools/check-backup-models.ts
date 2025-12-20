@@ -32,6 +32,7 @@ const backupTables = [
   "block",
   "aiTokenUsage",
   "userActivity",
+  "productMenuDraft",
 ];
 
 function toClientName(modelName: string) {
