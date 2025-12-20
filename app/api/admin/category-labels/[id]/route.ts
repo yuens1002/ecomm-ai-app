@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
+import { updateCategoryLabelSchema } from "@/lib/schemas/category";
 
 export async function PUT(
   req: Request,
@@ -14,7 +15,24 @@ export async function PUT(
 
     const { id } = await params;
     const body = await req.json();
-    const { name, icon }: { name?: string; icon?: string | null } = body;
+    const validation = updateCategoryLabelSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: validation.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const {
+      name,
+      icon,
+      isVisible,
+      autoOrder,
+      showInHeaderMenu,
+      showInMobileMenu,
+      showInFooterMenu,
+    } = validation.data;
 
     if (name && !name.trim()) {
       return NextResponse.json(
@@ -40,6 +58,11 @@ export async function PUT(
       data: {
         ...(name ? { name: name.trim() } : {}),
         icon: icon === undefined ? undefined : icon || null,
+        ...(isVisible !== undefined ? { isVisible } : {}),
+        ...(autoOrder !== undefined ? { autoOrder } : {}),
+        ...(showInHeaderMenu !== undefined ? { showInHeaderMenu } : {}),
+        ...(showInMobileMenu !== undefined ? { showInMobileMenu } : {}),
+        ...(showInFooterMenu !== undefined ? { showInFooterMenu } : {}),
       },
     });
 

@@ -7,12 +7,13 @@ import {
   buildProductPayload,
   coffeeRequiredFields,
 } from "../test-utils/productTestUtils";
-import { POST } from "../route";
+import { GET, POST } from "../route";
 
 const requireAdminApiMock = jest.fn();
 const createProductMock = jest.fn();
 const createManyImagesMock = jest.fn();
 const createCategoriesMock = jest.fn();
+const findManyProductsMock = jest.fn();
 
 type MockTx = {
   product: { create: typeof createProductMock };
@@ -26,6 +27,9 @@ jest.mock("@/lib/admin", () => ({
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
+    product: {
+      findMany: () => findManyProductsMock(),
+    },
     $transaction: (cb: (tx: MockTx) => Promise<unknown>) =>
       cb({
         product: { create: createProductMock },
@@ -34,6 +38,61 @@ jest.mock("@/lib/prisma", () => ({
       }),
   },
 }));
+
+describe("GET /api/admin/products", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    requireAdminApiMock.mockResolvedValue({ authorized: true });
+  });
+
+  it("returns products with thumbnailUrl and categoriesDetailed", async () => {
+    findManyProductsMock.mockResolvedValue([
+      {
+        id: "prod_1",
+        name: "Test Coffee",
+        slug: "test-coffee",
+        type: ProductType.COFFEE,
+        isDisabled: false,
+        variants: [
+          {
+            name: "12oz",
+            stockQuantity: 10,
+            purchaseOptions: [
+              {
+                type: "ONE_TIME",
+                priceInCents: 1500,
+                billingInterval: null,
+                billingIntervalCount: null,
+              },
+            ],
+          },
+        ],
+        categories: [
+          {
+            order: 0,
+            category: { id: "cat_1", name: "Blends" },
+          },
+        ],
+        images: [{ url: "https://example.com/image.jpg", order: 0 }],
+      },
+    ]);
+
+    const req = new NextRequest("http://localhost/api/admin/products", {
+      method: "GET",
+    });
+
+    const res = await GET(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.products[0]).toMatchObject({
+      id: "prod_1",
+      name: "Test Coffee",
+      thumbnailUrl: "https://example.com/image.jpg",
+      categoriesDetailed: [{ id: "cat_1", name: "Blends", order: 0 }],
+    });
+  });
+});
 
 describe("POST /api/admin/products", () => {
   beforeEach(() => {

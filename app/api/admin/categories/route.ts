@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
+import { createCategorySchema } from "@/lib/schemas/category";
 
 // GET /api/admin/categories - List all categories and labels
 export async function GET() {
@@ -59,15 +60,16 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const {
-      name,
-      slug,
-      labelIds = [] as string[],
-    } = body as {
-      name?: string;
-      slug?: string;
-      labelIds?: string[];
-    };
+    const validation = createCategorySchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: validation.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { name, slug, labelIds = [] } = validation.data;
 
     if (!name || !slug) {
       return NextResponse.json(

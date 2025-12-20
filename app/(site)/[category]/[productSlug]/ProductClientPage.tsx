@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import Link from "next/link";
 import { Coffee, Flame, Leaf } from "lucide-react";
 import { ProductType, RoastLevel, PurchaseType } from "@prisma/client";
@@ -147,7 +147,6 @@ export default function ProductClientPage({
   }, [product.id, trackActivity]);
 
   // Auto-select subscription when it's the only option
-  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
   useEffect(() => {
     const oneTimeOpt = getOneTimeOption(selectedVariant);
     const subscriptionOpts = getSubscriptionOptions(selectedVariant);
@@ -158,8 +157,10 @@ export default function ProductClientPage({
         !selectedPurchaseOption ||
         selectedPurchaseOption.type !== "SUBSCRIPTION"
       ) {
-        setSelectedPurchaseOption(subscriptionOpts[0]);
-        setSelectedSubscriptionOptionId(subscriptionOpts[0].id);
+        startTransition(() => {
+          setSelectedPurchaseOption(subscriptionOpts[0]);
+          setSelectedSubscriptionOptionId(subscriptionOpts[0].id);
+        });
       }
     }
   }, [selectedVariant, selectedPurchaseOption]);

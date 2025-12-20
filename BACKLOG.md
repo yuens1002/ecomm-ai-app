@@ -548,16 +548,16 @@ function ProductAddOnsClient({ addOns, products }) {
 
 ### Admin-Specific Sign-In Page
 
-**Status**: Backlog  
+**Status**: Done (shipped in 0.49.0)  
 **Priority**: High  
 **Description**: Provide a dedicated admin sign-in flow that always returns admins to `/admin` instead of the public homepage. Avoids confusion when public users sign in and land on the main site instead of the admin dashboard.
 
 **Tasks**:
 
-- [ ] Create an admin-only sign-in page/route with its own UI copy.
-- [ ] Ensure successful auth redirects to `/admin` (respecting callback if provided, defaulting to admin dashboard).
-- [ ] Update auth middleware/config so admin routes send unauthenticated users to the admin sign-in (not the public sign-in).
-- [ ] Keep public sign-in behavior unchanged for storefront users.
+- [x] Create an admin-only sign-in page/route with its own UI copy.
+- [x] Ensure successful auth redirects to `/admin` (respecting callback if provided, defaulting to admin dashboard).
+- [x] Update auth middleware/config so admin routes send unauthenticated users to the admin sign-in (not the public sign-in).
+- [x] Keep public sign-in behavior unchanged for storefront users.
 
 **Acceptance Criteria**:
 
