@@ -28,6 +28,8 @@ interface IconPickerProps {
   onValueChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  onOpenChange?: (open: boolean) => void;
+  defaultOpen?: boolean;
 }
 
 /**
@@ -51,8 +53,10 @@ export function IconPicker({
   onValueChange,
   placeholder = "Pick an icon or none...",
   className,
+  onOpenChange,
+  defaultOpen = false,
 }: IconPickerProps) {
-  const [iconOpen, setIconOpen] = useState(false);
+  const [iconOpen, setIconOpen] = useState(defaultOpen);
   const [iconSearch, setIconSearch] = useState("");
 
   // Convert PascalCase to readable format (e.g., "CircleQuestionMark" -> "Circle Question Mark")
@@ -73,7 +77,13 @@ export function IconPicker({
   }, [iconSearch, allIcons]);
 
   return (
-    <Popover open={iconOpen} onOpenChange={setIconOpen}>
+    <Popover
+      open={iconOpen}
+      onOpenChange={(open) => {
+        setIconOpen(open);
+        onOpenChange?.(open);
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="outline"

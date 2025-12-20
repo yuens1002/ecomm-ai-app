@@ -233,6 +233,7 @@ describe("Category label routes", () => {
         icon: null,
         order: 0,
         isVisible: true,
+        autoOrder: false,
         showInHeaderMenu: true,
         showInMobileMenu: true,
         showInFooterMenu: true,

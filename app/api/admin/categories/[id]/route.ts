@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
+import { updateCategorySchema } from "@/lib/schemas/category";
 
 // PUT /api/admin/categories/[id] - Update a category
 export async function PUT(
@@ -15,15 +16,35 @@ export async function PUT(
 
     const { id } = await params;
     const body = await req.json();
-    const { name, slug, labelIds } = body as {
-      name?: string;
-      slug?: string;
-      labelIds?: string[] | undefined;
-    };
+    const validation = updateCategorySchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: validation.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const {
+      name,
+      slug,
+      labelIds,
+      isVisible,
+      showInHeaderMenu,
+      showInMobileMenu,
+      showInFooterMenu,
+    } = validation.data;
 
     const updates: Record<string, unknown> = {};
     if (name) updates.name = name;
     if (slug) updates.slug = slug;
+    if (isVisible !== undefined) updates.isVisible = isVisible;
+    if (showInHeaderMenu !== undefined)
+      updates.showInHeaderMenu = showInHeaderMenu;
+    if (showInMobileMenu !== undefined)
+      updates.showInMobileMenu = showInMobileMenu;
+    if (showInFooterMenu !== undefined)
+      updates.showInFooterMenu = showInFooterMenu;
 
     // Update category core fields first
     await prisma.category.update({

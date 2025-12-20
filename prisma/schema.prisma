@@ -71,6 +71,7 @@ model CategoryLabel {
   createdAt  DateTime                @default(now())
   updatedAt  DateTime                @updatedAt
   isVisible  Boolean                 @default(true)
+  autoOrder  Boolean                 @default(false)
   showInHeaderMenu Boolean           @default(true)
   showInMobileMenu Boolean           @default(true)
   showInFooterMenu Boolean           @default(true)

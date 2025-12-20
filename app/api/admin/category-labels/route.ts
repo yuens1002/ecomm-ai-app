@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
+import { createCategoryLabelSchema } from "@/lib/schemas/category";
 
 async function insertOrder(afterLabelId?: string | null) {
   if (!afterLabelId) {
@@ -53,6 +54,7 @@ export async function GET() {
       icon: label.icon,
       order: label.order,
       isVisible: label.isVisible,
+      autoOrder: label.autoOrder,
       showInHeaderMenu: label.showInHeaderMenu,
       showInMobileMenu: label.showInMobileMenu,
       showInFooterMenu: label.showInFooterMenu,
@@ -82,12 +84,16 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const {
-      name,
-      icon,
-      afterLabelId,
-    }: { name?: string; icon?: string | null; afterLabelId?: string | null } =
-      body;
+    const validation = createCategoryLabelSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: validation.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { name, icon, afterLabelId } = validation.data;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });

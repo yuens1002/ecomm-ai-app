@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.51.0 - 2025-12-20
+
+- **Category management UI refinements**: Dramatically improved admin category/label management experience with modern UX patterns
+  - **Auto-order feature**: Added persistent auto-order toggle for labels with database storage (`CategoryLabel.autoOrder` field); when enabled, categories are automatically sorted alphabetically and manual drag-drop is disabled
+  - **Visual indicators**: Category chips show grip icon only when drag-drop enabled (auto-order off); added `cursor-grab` and `cursor-grabbing` states for better drag feedback on both label rows and category chips
+  - **Icon editing improvements**: IconPicker auto-opens on click and closes on blur/selection; added separate edit states for label name vs icon with independent save functions to prevent validation conflicts
+  - **Dropdown menu enhancements**: 3-dot menu with visibility toggles (Header/Mobile/Footer), auto-order switch, rename/delete actions, and scrollable category group submenu; menu stays open during multi-select operations
+  - **Delete confirmation**: AlertDialog with dynamic label name display warns about category detachment before deletion
+  - **Layout polish**: Removed unnecessary borders from category table, moved icon column before label column, made label name fully clickable for edit mode
+- **Database migration**: Added `autoOrder` boolean field to CategoryLabel model (defaults to false)
+- **API updates**: Extended category-labels endpoints to persist/retrieve autoOrder state; updated validation schemas and type definitions
+- **Test coverage**: All existing tests passing (11 tests in category-labels suite)
+
 ## 0.50.0 - 2025-12-19
 
 - **Product menu visibility + ordering**: Added per-surface visibility flags (header/mobile/footer) and global visibility for labels and categories; introduced product ordering within categories via `CategoriesOnProducts.order` and created `ProductMenuDraft` model for staged menu edits.
