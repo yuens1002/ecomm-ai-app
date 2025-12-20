@@ -62,7 +62,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Combobox } from "@/components/ui/combobox";
 import { IconPicker } from "@/components/app-components/IconPicker";
 import {
   DynamicIcon,
@@ -310,7 +309,7 @@ export default function CategoryManagementClient() {
     setInsertingAfterId(null);
   }
 
-  function startInsertAfter(labelId: string) {
+  function _startInsertAfter(labelId: string) {
     setInsertingAfterId(labelId);
     setEditingLabelId(null);
     setLabelDraft({
