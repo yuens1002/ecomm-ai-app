@@ -86,6 +86,7 @@ async function backupDatabase() {
       "block",
       "aiTokenUsage",
       "userActivity",
+      "productMenuDraft",
     ];
 
     // Validate models exist on the Prisma client before fetching
