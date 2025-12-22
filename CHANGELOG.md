@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.52.0 - 2025-12-21
+
+- **Product Menu Builder scaffold**: Split builder into context-driven client components (SettingsBar, Canvas, SidebarActions, PreviewPanel) for clear separation of concerns and reusable state via MenuProvider.
+- **Shared server actions with Zod validation**: Added menu actions wrapping existing category/label endpoints (create/update/delete/reorder, attach/detach categories) using runtime validation only, enabling reuse across Product Menu Builder and Category Management.
+- **Preview and settings UX**: Desktop/mobile preview toggles, header-style preview, and inline menu text/icon controls wired through context without duplicating state.
+- **Tech debt reduction**: Removed monolithic builder state, avoided duplicate fetch logic, and kept implementation aligned with existing category/label management flows; no database migrations.
+
 ## 0.51.0 - 2025-12-20
 
 - **Category management UI refinements**: Dramatically improved admin category/label management experience with modern UX patterns
