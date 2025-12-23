@@ -23,12 +23,7 @@ export async function PUT(
       );
     }
 
-    const {
-      name,
-      icon,
-      isVisible,
-      autoOrder,
-    } = validation.data;
+    const { name, icon, isVisible, autoOrder } = validation.data;
 
     if (name && !name.trim()) {
       return NextResponse.json(

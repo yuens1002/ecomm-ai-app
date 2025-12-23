@@ -12,13 +12,9 @@ import { getProductMenuSettings } from "@/lib/product-menu-settings";
  */
 export default async function SiteHeaderWrapper() {
   // Fetch all data for the navigation menu in parallel
-  const [labels, session, headerPages, productMenuSettings] =
-    await Promise.all([
-      getCategoryLabels(),
-      auth(),
-      getPagesForHeader(),
-      getProductMenuSettings(),
-    ]);
+  const [labels, session, headerPages, productMenuSettings] = await Promise.all(
+    [getCategoryLabels(), auth(), getPagesForHeader(), getProductMenuSettings()]
+  );
 
   // Handle case where no categories are found (e.g., first deployment/empty DB)
   if (!labels || labels.length === 0) {

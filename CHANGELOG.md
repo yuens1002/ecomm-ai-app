@@ -1,11 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- **Resilient build system**: Implemented cross-instance build script with automatic retries, exponential backoff, and advisory lock timeout increased to 3 minutes
+- **Direct URL for builds**: Builds now use `DIRECT_URL` instead of pooler connection to avoid the 10-connection limit during CI/CD
+- **Build troubleshooting guide**: Added comprehensive documentation with environment setup, CI/CD examples, and solutions for common build issues
+- **Vercel optimization**: Created optimized Vercel configuration with 3-minute build timeout and proper environment variable handling
+- **Graceful migration handling**: Build script supports `--no-migrate` flag for skipping migrations when needed, enabling faster iteration during development
+- **Better error messaging**: Added actionable error messages with suggested next steps for advisory lock timeouts and connection failures
+
 ## 0.53.1 - 2025-12-23
 
 - **Shared NameSlugField component**: Created reusable form component with inline slug preview for consistent name/slug handling across product, category, and page editors
 - **Slug generation centralization**: Consolidated slug logic in `useSlugGenerator` utility with enhanced unicode normalization and diacritic removal; retired hook pattern in favor of direct function import
-- **Placement-aware category queries**: Implemented dedicated data functions (`getCategoryLabelsForHeader`, `getCategoryLabelsForMobile`, `getCategoryLabelsForFooter`) that respect `isVisible` and placement-specific visibility flags
-- **Mobile menu filtering**: Mobile navigation now uses `getCategoryLabelsForMobile` for proper category filtering based on `showInMobileMenu` flag
+- **Simplified visibility model**: Refactored category and label visibility from placement-specific flags (showInHeaderMenu, showInMobileMenu, showInFooterMenu) to single `isVisible` boolean; consolidated getCategoryLabelsFor\* functions into unified `getCategoryLabels()`
+- **Admin UI simplification**: Reduced visual complexity in CategoriesTable and LabelsTable by replacing multi-option visibility UI with single toggle
 - **Admin page titles**: Added consistent PageTitle components to categories and labels admin pages with descriptive subtitles
 
 ## 0.53.0 - 2025-12-23

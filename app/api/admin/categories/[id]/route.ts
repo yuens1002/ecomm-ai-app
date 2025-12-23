@@ -25,12 +25,7 @@ export async function PUT(
       );
     }
 
-    const {
-      name,
-      slug,
-      labelIds,
-      isVisible,
-    } = validation.data;
+    const { name, slug, labelIds, isVisible } = validation.data;
 
     const updates: Record<string, unknown> = {};
     if (name) updates.name = name;

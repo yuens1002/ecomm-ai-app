@@ -85,15 +85,15 @@ model CategoryLabelCategory {
 }
 
 model ProductMenuDraft {
-  id        String                  @id @default(cuid())
+  id        String                 @id @default(cuid())
   userId    String?
-  status    ProductMenuDraftStatus  @default(ACTIVE)
+  status    ProductMenuDraftStatus @default(ACTIVE)
   payload   Json
-  createdAt DateTime                @default(now())
-  updatedAt DateTime                @updatedAt
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
   expiresAt DateTime?
 
-  user      User?                   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([status])
@@ -207,12 +207,12 @@ model VerificationToken {
 }
 
 model PasswordResetToken {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   userId     String
-  tokenHash  String   @unique
+  tokenHash  String    @unique
   expiresAt  DateTime
   consumedAt DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

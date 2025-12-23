@@ -61,14 +61,12 @@ async function getBrandingSettings() {
  * Get all categories grouped by their label for footer navigation
  */
 async function getCategoriesForFooter() {
-  const data = await import("@/lib/data").then((m) =>
-    m.getCategoryLabels()
-  );
-  
+  const data = await import("@/lib/data").then((m) => m.getCategoryLabels());
+
   // Transform the data into grouped categories by label
   const grouped: Record<string, NavCategory[]> = {};
   const labelIcons: Record<string, string> = {};
-  
+
   for (const label of data) {
     grouped[label.name] = label.categories.map((cat) => ({
       id: cat.id,
@@ -80,7 +78,7 @@ async function getCategoriesForFooter() {
       labelIcons[label.name] = label.icon;
     }
   }
-  
+
   return { grouped, labelIcons };
 }
 

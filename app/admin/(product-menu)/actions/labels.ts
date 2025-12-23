@@ -87,12 +87,7 @@ export async function updateLabel(id: unknown, input: unknown) {
     };
 
   try {
-    const {
-      name,
-      icon,
-      isVisible,
-      autoOrder,
-    } = bodyParsed.data;
+    const { name, icon, isVisible, autoOrder } = bodyParsed.data;
 
     if (name) {
       const dup = await prisma.categoryLabel.findFirst({
