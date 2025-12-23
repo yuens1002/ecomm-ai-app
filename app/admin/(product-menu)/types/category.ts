@@ -12,16 +12,13 @@ export const createCategoryLabelSchema = z.object({
 export type CreateCategoryLabel = z.infer<typeof createCategoryLabelSchema>;
 
 /**
- * Schema for updating a category label with visibility fields
+ * Schema for updating a category label with visibility field
  */
 export const updateCategoryLabelSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
   icon: z.string().nullable().optional(),
   isVisible: z.boolean().optional(),
   autoOrder: z.boolean().optional(),
-  showInHeaderMenu: z.boolean().optional(),
-  showInMobileMenu: z.boolean().optional(),
-  showInFooterMenu: z.boolean().optional(),
 });
 
 export type UpdateCategoryLabel = z.infer<typeof updateCategoryLabelSchema>;
@@ -38,16 +35,13 @@ export const createCategorySchema = z.object({
 export type CreateCategory = z.infer<typeof createCategorySchema>;
 
 /**
- * Schema for updating a category with visibility fields
+ * Schema for updating a category with visibility field
  */
 export const updateCategorySchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
   slug: z.string().min(1, "Slug is required").optional(),
   labelIds: z.array(z.string()).optional(),
   isVisible: z.boolean().optional(),
-  showInHeaderMenu: z.boolean().optional(),
-  showInMobileMenu: z.boolean().optional(),
-  showInFooterMenu: z.boolean().optional(),
 });
 
 export type UpdateCategory = z.infer<typeof updateCategorySchema>;

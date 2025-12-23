@@ -258,9 +258,6 @@ describe("Category label routes", () => {
     expect(json.labels[0]).toMatchObject({
       name: "Collections",
       isVisible: true,
-      showInHeaderMenu: true,
-      showInMobileMenu: true,
-      showInFooterMenu: true,
       categories: [{ name: "Blends" }],
     });
   });

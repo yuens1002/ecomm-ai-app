@@ -79,9 +79,6 @@ export function LabelsTable({ labels, categories }: LabelsTableProps) {
     name: "",
     icon: "",
     isVisible: true,
-    showInHeaderMenu: true,
-    showInMobileMenu: true,
-    showInFooterMenu: true,
   });
   const [insertingAfterId, setInsertingAfterId] = useState<string | null>(null);
   const [isAddLabelDialogOpen, setIsAddLabelDialogOpen] = useState(false);
@@ -115,9 +112,6 @@ export function LabelsTable({ labels, categories }: LabelsTableProps) {
       name: label.name,
       icon: label.icon || "",
       isVisible: label.isVisible,
-      showInHeaderMenu: label.showInHeaderMenu,
-      showInMobileMenu: label.showInMobileMenu,
-      showInFooterMenu: label.showInFooterMenu,
     });
     setInsertingAfterId(null);
   }
@@ -129,9 +123,6 @@ export function LabelsTable({ labels, categories }: LabelsTableProps) {
       name: "",
       icon: "",
       isVisible: true,
-      showInHeaderMenu: true,
-      showInMobileMenu: true,
-      showInFooterMenu: true,
     });
   }
 
@@ -167,9 +158,6 @@ export function LabelsTable({ labels, categories }: LabelsTableProps) {
         name: labelDraft.name.trim(),
         icon: labelDraft.icon || null,
         isVisible: labelDraft.isVisible,
-        showInHeaderMenu: labelDraft.showInHeaderMenu,
-        showInMobileMenu: labelDraft.showInMobileMenu,
-        showInFooterMenu: labelDraft.showInFooterMenu,
       });
       if (!res.ok) {
         toast({
@@ -218,10 +206,7 @@ export function LabelsTable({ labels, categories }: LabelsTableProps) {
 
   async function toggleLabelVisibility(
     labelId: string,
-    field: keyof Pick<
-      MenuLabel,
-      "isVisible" | "showInHeaderMenu" | "showInMobileMenu" | "showInFooterMenu"
-    >,
+    field: "isVisible",
     extra?: Record<string, boolean>
   ) {
     const label = labels.find((l) => l.id === labelId);
@@ -588,57 +573,17 @@ export function LabelsTable({ labels, categories }: LabelsTableProps) {
                           <Eye className="h-4 w-4" />
                           Visibility
                         </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent className="w-48">
+                        <DropdownMenuSubContent>
                           <DropdownMenuCheckboxItem
                             onSelect={(event) => event.preventDefault()}
                             checked={label.isVisible}
                             onCheckedChange={() =>
                               toggleLabelVisibility(label.id, "isVisible", {
                                 isVisible: !label.isVisible,
-                                showInHeaderMenu: !label.isVisible,
-                                showInMobileMenu: !label.isVisible,
-                                showInFooterMenu: !label.isVisible,
                               })
                             }
                           >
-                            Show all
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuCheckboxItem
-                            onSelect={(event) => event.preventDefault()}
-                            checked={label.showInHeaderMenu}
-                            onCheckedChange={() =>
-                              toggleLabelVisibility(
-                                label.id,
-                                "showInHeaderMenu"
-                              )
-                            }
-                          >
-                            Header
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuCheckboxItem
-                            onSelect={(event) => event.preventDefault()}
-                            checked={label.showInMobileMenu}
-                            onCheckedChange={() =>
-                              toggleLabelVisibility(
-                                label.id,
-                                "showInMobileMenu"
-                              )
-                            }
-                          >
-                            Mobile
-                          </DropdownMenuCheckboxItem>
-                          <DropdownMenuCheckboxItem
-                            onSelect={(event) => event.preventDefault()}
-                            checked={label.showInFooterMenu}
-                            onCheckedChange={() =>
-                              toggleLabelVisibility(
-                                label.id,
-                                "showInFooterMenu"
-                              )
-                            }
-                          >
-                            Footer
+                            Visible
                           </DropdownMenuCheckboxItem>
                         </DropdownMenuSubContent>
                       </DropdownMenuSub>

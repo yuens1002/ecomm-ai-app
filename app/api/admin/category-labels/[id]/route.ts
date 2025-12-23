@@ -28,9 +28,6 @@ export async function PUT(
       icon,
       isVisible,
       autoOrder,
-      showInHeaderMenu,
-      showInMobileMenu,
-      showInFooterMenu,
     } = validation.data;
 
     if (name && !name.trim()) {
@@ -59,9 +56,6 @@ export async function PUT(
         icon: icon === undefined ? undefined : icon || null,
         ...(isVisible !== undefined ? { isVisible } : {}),
         ...(autoOrder !== undefined ? { autoOrder } : {}),
-        ...(showInHeaderMenu !== undefined ? { showInHeaderMenu } : {}),
-        ...(showInMobileMenu !== undefined ? { showInMobileMenu } : {}),
-        ...(showInFooterMenu !== undefined ? { showInFooterMenu } : {}),
       },
     });
 

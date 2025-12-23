@@ -10,6 +10,13 @@ import FooterAccountLinks from "./FooterAccountLinks";
 import { getPagesForFooter } from "@/app/actions";
 import { getProductMenuSettings } from "@/lib/product-menu-settings";
 
+interface NavCategory {
+  id: string;
+  name: string;
+  slug: string;
+  order: number;
+}
+
 /**
  * Get branding settings from database
  */
@@ -54,9 +61,26 @@ async function getBrandingSettings() {
  * Get all categories grouped by their label for footer navigation
  */
 async function getCategoriesForFooter() {
-  const { grouped, labelIcons } = await import("@/lib/data").then((m) =>
-    m.getCategoryLabelsForFooter()
+  const data = await import("@/lib/data").then((m) =>
+    m.getCategoryLabels()
   );
+  
+  // Transform the data into grouped categories by label
+  const grouped: Record<string, NavCategory[]> = {};
+  const labelIcons: Record<string, string> = {};
+  
+  for (const label of data) {
+    grouped[label.name] = label.categories.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      order: cat.order,
+    }));
+    if (label.icon) {
+      labelIcons[label.name] = label.icon;
+    }
+  }
+  
   return { grouped, labelIcons };
 }
 

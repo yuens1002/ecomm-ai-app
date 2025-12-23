@@ -92,9 +92,6 @@ export async function updateLabel(id: unknown, input: unknown) {
       icon,
       isVisible,
       autoOrder,
-      showInHeaderMenu,
-      showInMobileMenu,
-      showInFooterMenu,
     } = bodyParsed.data;
 
     if (name) {
@@ -111,9 +108,6 @@ export async function updateLabel(id: unknown, input: unknown) {
         icon: icon === undefined ? undefined : icon || null,
         ...(isVisible !== undefined ? { isVisible } : {}),
         ...(autoOrder !== undefined ? { autoOrder } : {}),
-        ...(showInHeaderMenu !== undefined ? { showInHeaderMenu } : {}),
-        ...(showInMobileMenu !== undefined ? { showInMobileMenu } : {}),
-        ...(showInFooterMenu !== undefined ? { showInFooterMenu } : {}),
       },
     });
     return { ok: true, data: label };

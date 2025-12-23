@@ -100,7 +100,6 @@ interface NavCategory {
 
 interface SiteHeaderProps {
   categoryGroups: Record<string, NavCategory[]>;
-  mobileCategoryGroups?: Record<string, NavCategory[]>;
   labelIcons?: Record<string, string>;
   user: {
     name?: string | null;
@@ -119,7 +118,6 @@ interface SiteHeaderProps {
  */
 export default function SiteHeader({
   categoryGroups,
-  mobileCategoryGroups,
   labelIcons,
   user,
   pages,
@@ -366,7 +364,7 @@ export default function SiteHeader({
                     aria-label="Mobile"
                     className="flex-1 overflow-y-auto px-6 py-4 border-t border-border"
                   >
-                    {Object.entries(mobileCategoryGroups ?? categoryGroups).map(
+                    {Object.entries(categoryGroups).map(
                       ([label, categories]) => (
                         <div key={label} className="mb-6">
                           <div className="flex items-center gap-2 mb-2 px-4">
