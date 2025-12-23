@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
-import { updateCategorySchema } from "@/lib/schemas/category";
+import { updateCategorySchema } from "@/app/admin/(product-menu)/types/category";
 
 // PUT /api/admin/categories/[id] - Update a category
 export async function PUT(

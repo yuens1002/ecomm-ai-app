@@ -87,8 +87,8 @@ Run dev against the same DB (example on port 3001):
 
 ```bash
 export DATABASE_ADAPTER=postgres
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres?schema=public"
-PORT=3001 npm run dev
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
+PORT=3000 npm run dev
 ```
 
 Switch back to Neon (uses `.env.local`):

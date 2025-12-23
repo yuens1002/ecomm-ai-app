@@ -5,11 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/app/InputGroup";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ProductType, RoastLevel } from "@prisma/client";
 import {
@@ -34,7 +29,7 @@ import { ProductCoffeeDetailsSection } from "./ProductCoffeeDetailsSection";
 import { ProductCategoriesSection } from "./ProductCategoriesSection";
 import { ProductVariantsSection } from "./ProductVariantsSection";
 import { ProductAddOnsSection } from "./ProductAddOnsSection";
-import { useSlugGenerator } from "@/hooks/useSlugGenerator";
+import { NameSlugField } from "@/components/app-components/NameSlugField";
 import { useMultiImageUpload } from "@/hooks/useImageUpload";
 import { SaveButton } from "@/components/admin/SaveButton";
 
@@ -135,15 +130,7 @@ export default function ProductFormClient({
     },
   });
 
-  // Auto-generate slug from name
-  useSlugGenerator({
-    sourceField: "name",
-    targetField: "slug",
-    form,
-  });
-
-  // Watch slug value for display
-  const slugValue = form.watch("slug");
+  // Name/Slug handled via NameSlugField; keep form values in sync
 
   // Image upload handler
   const [existingImages, setExistingImages] = useState<
@@ -337,32 +324,21 @@ export default function ProductFormClient({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Left Column: Basic Information */}
               <FieldGroup>
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field, fieldState }) => (
-                    <Field>
-                      <FormHeading
-                        htmlFor="name"
-                        label="Product Name"
-                        required
-                        validationType={fieldState.error ? "error" : undefined}
-                        errorMessage={fieldState.error?.message}
-                      />
-                      <InputGroup>
-                        <InputGroupInput
-                          id="name"
-                          {...field}
-                          placeholder="Name of the coffee"
-                        />
-                        <InputGroupAddon align="inline-end">
-                          <div className="text-xs italic font-mono text-muted-foreground">
-                            {slugValue || "slug-preview"}
-                          </div>
-                        </InputGroupAddon>
-                      </InputGroup>
-                    </Field>
-                  )}
+                <NameSlugField
+                  label="Product Name"
+                  name={form.watch("name")}
+                  slug={form.watch("slug")}
+                  errorMessage={form.formState.errors.name?.message}
+                  onChange={({ name, slug }) => {
+                    form.setValue("name", name, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                    form.setValue("slug", slug, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
                 />
 
                 <div className="space-y-4">

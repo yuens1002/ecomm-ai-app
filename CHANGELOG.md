@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.53.1 - 2025-12-23
+
+- **Shared NameSlugField component**: Created reusable form component with inline slug preview for consistent name/slug handling across product, category, and page editors
+- **Slug generation centralization**: Consolidated slug logic in `useSlugGenerator` utility with enhanced unicode normalization and diacritic removal; retired hook pattern in favor of direct function import
+- **Placement-aware category queries**: Implemented dedicated data functions (`getCategoryLabelsForHeader`, `getCategoryLabelsForMobile`, `getCategoryLabelsForFooter`) that respect `isVisible` and placement-specific visibility flags
+- **Mobile menu filtering**: Mobile navigation now uses `getCategoryLabelsForMobile` for proper category filtering based on `showInMobileMenu` flag
+- **Admin page titles**: Added consistent PageTitle components to categories and labels admin pages with descriptive subtitles
+
+## 0.53.0 - 2025-12-23
+
+- **Admin product menu feature refactor**: Consolidated categories/labels/menu-builder under a hidden route group and cleaned up legacy shims.
+- **Single data/mutation model**: Standardized reads via SWR + Zod DTO parsing and mutations via server actions with shared invalidation.
+- **Client cleanup**: Removed client-side REST fetch logic from table components; UI now delegates all data work to shared hooks/actions.
+- **Dev/build stability**: Marked Prisma packages as server externals to avoid SSR bundling issues with Turbopack.
+
+## 0.52.0 - 2025-12-21
+
+- **Product Menu Builder scaffold**: Split builder into context-driven client components (SettingsBar, Canvas, SidebarActions, PreviewPanel) for clear separation of concerns and reusable state via MenuProvider.
+- **Shared server actions with Zod validation**: Added menu actions wrapping existing category/label endpoints (create/update/delete/reorder, attach/detach categories) using runtime validation only, enabling reuse across Product Menu Builder and Category Management.
+- **Preview and settings UX**: Desktop/mobile preview toggles, header-style preview, and inline menu text/icon controls wired through context without duplicating state.
+- **Tech debt reduction**: Removed monolithic builder state, avoided duplicate fetch logic, and kept implementation aligned with existing category/label management flows; no database migrations.
+
 ## 0.51.0 - 2025-12-20
 
 - **Category management UI refinements**: Dramatically improved admin category/label management experience with modern UX patterns

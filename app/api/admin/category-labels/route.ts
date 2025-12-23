@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { createCategoryLabelSchema } from "@/lib/schemas/category";
+import { createCategoryLabelSchema } from "@/app/admin/(product-menu)/types/category";
 
 async function insertOrder(afterLabelId?: string | null) {
   if (!afterLabelId) {

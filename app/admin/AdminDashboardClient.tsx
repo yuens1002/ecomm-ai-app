@@ -16,12 +16,10 @@ import {
   Shield,
   User,
   Settings,
-  Tags,
   Mail,
 } from "lucide-react";
 import { PageTitle } from "@/components/admin/PageTitle";
 import ProductManagementClient from "./products/ProductManagementClient";
-import CategoryManagementClient from "./categories/CategoryManagementClient";
 import UserManagementClient from "./users/UserManagementClient";
 import OrderManagementClient from "./orders/OrderManagementClient";
 import AnalyticsView from "./analytics/AnalyticsView";
@@ -84,10 +82,6 @@ export default function AdminDashboardClient({
           <TabsTrigger value="products" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             <span className="hidden sm:inline">Products</span>
-          </TabsTrigger>
-          <TabsTrigger value="categories" className="flex items-center gap-2">
-            <Tags className="h-4 w-4" />
-            <span className="hidden sm:inline">Categories</span>
           </TabsTrigger>
           <TabsTrigger value="newsletter" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
@@ -195,21 +189,6 @@ export default function AdminDashboardClient({
         {/* Products Tab */}
         <TabsContent value="products">
           <ProductManagementClient />
-        </TabsContent>
-
-        {/* Categories Tab */}
-        <TabsContent value="categories">
-          <Card>
-            <CardHeader>
-              <CardTitle>Category Management</CardTitle>
-              <CardDescription>
-                Manage product categories, origins, and collections
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CategoryManagementClient />
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* Newsletter Tab */}

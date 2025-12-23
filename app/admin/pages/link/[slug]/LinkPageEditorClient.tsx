@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/field";
 import { useToast } from "@/hooks/use-toast";
 import { SaveButton } from "@/components/admin/SaveButton";
+import { NameSlugField } from "@/components/app-components/NameSlugField";
 
 interface LinkPageEditorClientProps {
   page: {
@@ -125,12 +126,12 @@ export default function LinkPageEditorClient({
 
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="title">Title</FieldLabel>
-              <Input
+              <NameSlugField
                 id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Link title"
+                label="Title"
+                name={title}
+                editableSlug={false}
+                onChange={({ name }) => setTitle(name)}
               />
             </Field>
 

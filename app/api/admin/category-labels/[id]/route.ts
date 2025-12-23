@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
+import { updateCategoryLabelSchema } from "@/app/admin/(product-menu)/types/category";
 import { prisma } from "@/lib/prisma";
-import { updateCategoryLabelSchema } from "@/lib/schemas/category";
 
 export async function PUT(
   req: Request,
@@ -16,7 +16,6 @@ export async function PUT(
     const { id } = await params;
     const body = await req.json();
     const validation = updateCategoryLabelSchema.safeParse(body);
-
     if (!validation.success) {
       return NextResponse.json(
         { error: "Validation failed", details: validation.error.issues },
@@ -87,7 +86,6 @@ export async function DELETE(
     }
 
     const { id } = await params;
-
     await prisma.$transaction(async (tx) => {
       // remove target label assignments (categories simply become unassigned)
       await tx.categoryLabelCategory.deleteMany({ where: { labelId: id } });

@@ -1,5 +1,6 @@
-import { useEffect } from "react";
-import { UseFormReturn } from "react-hook-form";
+// Deprecated: useSlugGenerator has been retired.
+// Use the reusable app component `NameSlugField` instead,
+// or call `generateSlug()` directly where needed.
 
 /**
  * Generates a URL-safe slug from a string by:
@@ -21,43 +22,6 @@ export function generateSlug(text: string): string {
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
-
-type UseSlugGeneratorOptions = {
-  sourceField: string;
-  targetField: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  form: UseFormReturn<any>;
-};
-
-/**
- * Hook that automatically generates a slug from a source field
- * and updates the target field when the source changes.
- *
- * Only generates slug when the source field is dirty (user has modified it).
- */
-export function useSlugGenerator({
-  sourceField,
-  targetField,
-  form,
-}: UseSlugGeneratorOptions) {
-  const sourceValue = form.watch(sourceField);
-
-  useEffect(() => {
-    // Generate slug from source value
-    const slug =
-      sourceValue &&
-      typeof sourceValue === "string" &&
-      sourceValue.trim() !== ""
-        ? generateSlug(sourceValue)
-        : "";
-
-    // Always update the slug field to keep it in sync
-    const currentSlug = form.getValues(targetField);
-    if (currentSlug !== slug) {
-      form.setValue(targetField, slug, {
-        shouldValidate: true,
-        shouldDirty: false,
-      });
-    }
-  }, [sourceValue, form, sourceField, targetField]);
-}
+// The hook has been removed to encourage a single source of truth
+// (the NameSlugField component) and simpler form logic.
+// If you need slug generation, import and use generateSlug directly.
