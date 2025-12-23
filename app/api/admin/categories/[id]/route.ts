@@ -30,21 +30,12 @@ export async function PUT(
       slug,
       labelIds,
       isVisible,
-      showInHeaderMenu,
-      showInMobileMenu,
-      showInFooterMenu,
     } = validation.data;
 
     const updates: Record<string, unknown> = {};
     if (name) updates.name = name;
     if (slug) updates.slug = slug;
     if (isVisible !== undefined) updates.isVisible = isVisible;
-    if (showInHeaderMenu !== undefined)
-      updates.showInHeaderMenu = showInHeaderMenu;
-    if (showInMobileMenu !== undefined)
-      updates.showInMobileMenu = showInMobileMenu;
-    if (showInFooterMenu !== undefined)
-      updates.showInFooterMenu = showInFooterMenu;
 
     // Update category core fields first
     await prisma.category.update({

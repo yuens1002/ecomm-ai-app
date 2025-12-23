@@ -120,21 +120,12 @@ export async function updateCategory(id: unknown, input: unknown) {
       slug,
       labelIds,
       isVisible,
-      showInHeaderMenu,
-      showInMobileMenu,
-      showInFooterMenu,
     } = bodyParsed.data;
 
     const updates: Record<string, unknown> = {};
     if (name) updates.name = name;
     if (slug) updates.slug = slug;
     if (isVisible !== undefined) updates.isVisible = isVisible;
-    if (showInHeaderMenu !== undefined)
-      updates.showInHeaderMenu = showInHeaderMenu;
-    if (showInMobileMenu !== undefined)
-      updates.showInMobileMenu = showInMobileMenu;
-    if (showInFooterMenu !== undefined)
-      updates.showInFooterMenu = showInFooterMenu;
 
     await prisma.category.update({
       where: { id: idParsed.data },

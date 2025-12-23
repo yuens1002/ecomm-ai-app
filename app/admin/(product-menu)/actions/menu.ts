@@ -33,9 +33,6 @@ export async function listMenuData() {
       order: label.order,
       isVisible: label.isVisible,
       autoOrder: label.autoOrder,
-      showInHeaderMenu: label.showInHeaderMenu,
-      showInMobileMenu: label.showInMobileMenu,
-      showInFooterMenu: label.showInFooterMenu,
       categories: label.categories.map((entry) => ({
         id: entry.category.id,
         name: entry.category.name,
@@ -50,9 +47,6 @@ export async function listMenuData() {
       slug: category.slug,
       order: category.order,
       isVisible: category.isVisible,
-      showInHeaderMenu: category.showInHeaderMenu,
-      showInMobileMenu: category.showInMobileMenu,
-      showInFooterMenu: category.showInFooterMenu,
       productCount: category._count.products,
       labels: category.labels.map((entry) => ({
         id: entry.label.id,

@@ -1,7 +1,7 @@
 "use client";
 
 import type { MenuCategory, MenuLabel } from "../types/menu";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -58,30 +58,7 @@ export function CategoriesTable({ categories, labels }: CategoriesTableProps) {
     slug: "",
     labelIds: [] as string[],
     isVisible: true,
-    showInHeaderMenu: true,
-    showInMobileMenu: true,
-    showInFooterMenu: true,
   });
-
-  // Determine parent checkbox state: true (all checked), false (all unchecked), "indeterminate" (mixed)
-  const placementCheckboxState = useMemo(() => {
-    const all =
-      categoryForm.showInHeaderMenu &&
-      categoryForm.showInMobileMenu &&
-      categoryForm.showInFooterMenu;
-    const none =
-      !categoryForm.showInHeaderMenu &&
-      !categoryForm.showInMobileMenu &&
-      !categoryForm.showInFooterMenu;
-
-    if (all) return true;
-    if (none) return false;
-    return "indeterminate";
-  }, [
-    categoryForm.showInHeaderMenu,
-    categoryForm.showInMobileMenu,
-    categoryForm.showInFooterMenu,
-  ]);
 
   function openCategoryDialog(category?: MenuCategory) {
     if (category) {
@@ -91,9 +68,6 @@ export function CategoriesTable({ categories, labels }: CategoriesTableProps) {
         slug: category.slug,
         labelIds: category.labels.map((l) => l.id),
         isVisible: category.isVisible,
-        showInHeaderMenu: category.showInHeaderMenu,
-        showInMobileMenu: category.showInMobileMenu,
-        showInFooterMenu: category.showInFooterMenu,
       });
     } else {
       setEditingCategory(null);
@@ -102,9 +76,6 @@ export function CategoriesTable({ categories, labels }: CategoriesTableProps) {
         slug: "",
         labelIds: [],
         isVisible: true,
-        showInHeaderMenu: true,
-        showInMobileMenu: true,
-        showInFooterMenu: true,
       });
     }
     setIsDialogOpen(true);
@@ -149,20 +120,9 @@ export function CategoriesTable({ categories, labels }: CategoriesTableProps) {
 
   async function toggleCategoryVisibility(
     categoryId: string,
-    field: keyof Pick<
-      MenuCategory,
-      "isVisible" | "showInHeaderMenu" | "showInMobileMenu" | "showInFooterMenu"
-    >,
-    extra?: Record<string, boolean>
+    checked: boolean
   ) {
-    const category = categories.find((c) => c.id === categoryId);
-    if (!category) return;
-
-    const currentValue = category[field] === true ? true : false;
-    const body: Record<string, unknown> = {
-      [field]: extra?.[field] ?? !currentValue,
-      ...extra,
-    };
+    const body = { isVisible: checked };
 
     // Validate with schema
     const validation = updateCategorySchema.safeParse(body);
@@ -239,24 +199,11 @@ export function CategoriesTable({ categories, labels }: CategoriesTableProps) {
                         aria-label="Toggle category visibility"
                         checked={category.isVisible}
                         onCheckedChange={(checked) =>
-                          toggleCategoryVisibility(category.id, "isVisible", {
-                            isVisible: checked === true,
-                            showInHeaderMenu: checked === true,
-                            showInMobileMenu: checked === true,
-                            showInFooterMenu: checked === true,
-                          })
+                          toggleCategoryVisibility(category.id, checked)
                         }
                       />
                       <span className="text-xs text-muted-foreground">
-                        {category.showInHeaderMenu &&
-                        category.showInMobileMenu &&
-                        category.showInFooterMenu
-                          ? "Visible"
-                          : !category.showInHeaderMenu &&
-                              !category.showInMobileMenu &&
-                              !category.showInFooterMenu
-                            ? "Hidden"
-                            : "Mixed"}
+                        {category.isVisible ? "Visible" : "Hidden"}
                       </span>
                     </div>
                   </TableCell>
@@ -378,34 +325,15 @@ export function CategoriesTable({ categories, labels }: CategoriesTableProps) {
 
               <Field>
                 <FormHeading label="Visibility" />
-                <p className="text-xs text-muted-foreground">
-                  All menus is a master switch; individual toggles control
-                  Header, Mobile, and Footer menus.
-                </p>
-                <FieldContent className="space-y-3">
+                <FieldContent>
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id="cat-visible"
-                      checked={placementCheckboxState === true}
-                      aria-checked={
-                        placementCheckboxState === "indeterminate"
-                          ? "mixed"
-                          : placementCheckboxState === true
-                            ? "true"
-                            : "false"
-                      }
+                      checked={categoryForm.isVisible}
                       onCheckedChange={(checked) => {
-                        // If currently indeterminate, toggle to fully checked
-                        const shouldCheck =
-                          placementCheckboxState === "indeterminate"
-                            ? true
-                            : checked === true;
                         setCategoryForm((prev) => ({
                           ...prev,
-                          isVisible: shouldCheck,
-                          showInHeaderMenu: shouldCheck,
-                          showInMobileMenu: shouldCheck,
-                          showInFooterMenu: shouldCheck,
+                          isVisible: checked === true,
                         }));
                       }}
                     />
@@ -413,97 +341,8 @@ export function CategoriesTable({ categories, labels }: CategoriesTableProps) {
                       htmlFor="cat-visible"
                       className="text-sm cursor-pointer"
                     >
-                      All menus
+                      Visible in navigation
                     </label>
-                  </div>
-                  <div className="ml-6 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="cat-header"
-                        checked={categoryForm.showInHeaderMenu}
-                        onCheckedChange={(checked) => {
-                          setCategoryForm((prev) => {
-                            const next = checked === true;
-                            const updated = {
-                              ...prev,
-                              showInHeaderMenu: next,
-                            };
-                            const any =
-                              next ||
-                              updated.showInMobileMenu ||
-                              updated.showInFooterMenu;
-                            return {
-                              ...updated,
-                              isVisible: any,
-                            };
-                          });
-                        }}
-                      />
-                      <label
-                        htmlFor="cat-header"
-                        className="text-sm cursor-pointer"
-                      >
-                        Header menu
-                      </label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="cat-mobile"
-                        checked={categoryForm.showInMobileMenu}
-                        onCheckedChange={(checked) => {
-                          setCategoryForm((prev) => {
-                            const next = checked === true;
-                            const updated = {
-                              ...prev,
-                              showInMobileMenu: next,
-                            };
-                            const any =
-                              updated.showInHeaderMenu ||
-                              next ||
-                              updated.showInFooterMenu;
-                            return {
-                              ...updated,
-                              isVisible: any,
-                            };
-                          });
-                        }}
-                      />
-                      <label
-                        htmlFor="cat-mobile"
-                        className="text-sm cursor-pointer"
-                      >
-                        Mobile menu
-                      </label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="cat-footer"
-                        checked={categoryForm.showInFooterMenu}
-                        onCheckedChange={(checked) => {
-                          setCategoryForm((prev) => {
-                            const next = checked === true;
-                            const updated = {
-                              ...prev,
-                              showInFooterMenu: next,
-                            };
-                            const any =
-                              updated.showInHeaderMenu ||
-                              updated.showInMobileMenu ||
-                              next;
-                            return {
-                              ...updated,
-                              isVisible: any,
-                            };
-                          });
-                        }}
-                      />
-                      <label
-                        htmlFor="cat-footer"
-                        className="text-sm cursor-pointer"
-                      >
-                        Footer menu
-                      </label>
-                    </div>
                   </div>
                 </FieldContent>
               </Field>

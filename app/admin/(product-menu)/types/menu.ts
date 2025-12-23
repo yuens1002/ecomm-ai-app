@@ -20,9 +20,6 @@ export const menuLabelSchema = z.object({
   order: z.number(),
   isVisible: z.boolean(),
   autoOrder: z.boolean(),
-  showInHeaderMenu: z.boolean(),
-  showInMobileMenu: z.boolean(),
-  showInFooterMenu: z.boolean(),
   categories: z.array(menuCategoryInLabelSchema),
 });
 export type MenuLabel = z.infer<typeof menuLabelSchema>;
@@ -63,9 +60,6 @@ export const menuCategorySchema = z.object({
   slug: z.string(),
   order: z.number(),
   isVisible: z.boolean(),
-  showInHeaderMenu: z.boolean(),
-  showInMobileMenu: z.boolean(),
-  showInFooterMenu: z.boolean(),
   productCount: z.number(),
   labels: z.array(menuCategoryLabelItemSchema),
 });

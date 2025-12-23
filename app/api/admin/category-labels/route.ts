@@ -55,9 +55,6 @@ export async function GET() {
       order: label.order,
       isVisible: label.isVisible,
       autoOrder: label.autoOrder,
-      showInHeaderMenu: label.showInHeaderMenu,
-      showInMobileMenu: label.showInMobileMenu,
-      showInFooterMenu: label.showInFooterMenu,
       categories: label.categories.map((entry) => ({
         id: entry.category.id,
         name: entry.category.name,
