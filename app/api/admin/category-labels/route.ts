@@ -66,7 +66,7 @@ export async function GET() {
       })),
     }));
 
-    return NextResponse.json(payload);
+    return NextResponse.json({ labels: payload });
   } catch (error) {
     console.error("Error fetching category labels:", error);
     return NextResponse.json(
