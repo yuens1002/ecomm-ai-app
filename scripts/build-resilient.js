@@ -55,15 +55,19 @@ function executeWithRetry(command, description, maxAttempts = 3) {
       log.info(`${description} (attempt ${attempt}/${maxAttempts})`);
       log.debug(`Command: ${command}`);
 
+      // Determine effective DB URL and mask it for logs
+      const effectiveDbUrl =
+        config.directUrl || process.env.DIRECT_URL || process.env.DATABASE_URL || "";
+      const maskedUrl = effectiveDbUrl.replace(/:\/\/([^:@]+):([^@]+)@/, "://$1:***@");
+      log.info(`Using DB url: ${maskedUrl ? "[configured]" : "[missing]"}`);
+      log.info(`Advisory lock timeout: ${config.lockTimeout}ms`);
+
       execSync(command, {
         stdio: "inherit",
         env: {
           ...process.env,
           // Use direct URL if provided or available in environment
-          DATABASE_URL:
-            config.directUrl ||
-            process.env.DIRECT_URL ||
-            process.env.DATABASE_URL,
+          DATABASE_URL: effectiveDbUrl,
           PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT: config.lockTimeout.toString(),
         },
       });
