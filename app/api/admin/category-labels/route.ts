@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { createCategoryLabelSchema } from "@/lib/schemas/category";
+import { createCategoryLabelSchema } from "@/app/admin/(product-menu)/types/category";
 
 async function insertOrder(afterLabelId?: string | null) {
   if (!afterLabelId) {
@@ -66,7 +66,7 @@ export async function GET() {
       })),
     }));
 
-    return NextResponse.json({ labels: payload });
+    return NextResponse.json(payload);
   } catch (error) {
     console.error("Error fetching category labels:", error);
     return NextResponse.json(

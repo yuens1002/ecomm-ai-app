@@ -4,16 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
-import { useMenuContext } from "../MenuContext";
+import { useProductMenu } from "../ProductMenuProvider";
+import { useMenuBuilder } from "./MenuBuilderContext";
 
 export default function PreviewPanel() {
-  const ctx = useMenuContext();
-  const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">(
-    "desktop"
-  );
+  const menu = useProductMenu();
+  const builder = useMenuBuilder();
 
-  const labels = Array.isArray(ctx.labels) ? ctx.labels : [];
+  const labels = Array.isArray(menu.labels) ? menu.labels : [];
 
   return (
     <Card>
@@ -22,9 +20,9 @@ export default function PreviewPanel() {
       </CardHeader>
       <CardContent>
         <Tabs
-          value={previewMode}
+          value={builder.previewMode}
           onValueChange={(v) =>
-            setPreviewMode((v as "desktop" | "mobile") || "desktop")
+            builder.setPreviewMode((v as "desktop" | "mobile") || "desktop")
           }
         >
           <TabsList>
@@ -34,8 +32,10 @@ export default function PreviewPanel() {
           <TabsContent value="desktop" className="pt-4">
             <div className="flex items-center gap-3 p-3 border rounded-md">
               <span className="inline-flex items-center gap-2 text-sm">
-                {ctx.menuIcon ? <span className="inline-block" /> : null}
-                {ctx.menuTitle || "Menu"}
+                {builder.menuIconDraft ? (
+                  <span className="inline-block" />
+                ) : null}
+                {builder.menuTitleDraft || "Menu"}
               </span>
               <Separator orientation="vertical" />
               <div className="flex flex-wrap gap-2">
@@ -53,7 +53,7 @@ export default function PreviewPanel() {
           <TabsContent value="mobile" className="pt-4">
             <div className="space-y-2 p-3 border rounded-md">
               <Button variant="outline" size="sm" className="w-full">
-                {ctx.menuTitle || "Menu"}
+                {builder.menuTitleDraft || "Menu"}
               </Button>
               <div className="grid grid-cols-2 gap-2">
                 {labels

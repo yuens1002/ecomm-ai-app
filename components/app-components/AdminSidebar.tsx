@@ -22,6 +22,7 @@ import {
   Megaphone,
   Share2,
   Phone,
+  Tag,
 } from "lucide-react";
 import { useState } from "react";
 import { PageType } from "@prisma/client";
@@ -65,6 +66,7 @@ interface NavItem {
   order?: number;
   isLabel?: boolean;
   isChild?: boolean;
+  hidden?: boolean;
 }
 
 interface NavSection {
@@ -167,10 +169,26 @@ const staticNavSections: NavSection[] = [
         icon: ToyBrick,
         isChild: true,
       },
+    ],
+  },
+  {
+    title: "Product Menu",
+    items: [
       {
-        title: "Product Menu",
-        href: "/admin/categories",
+        title: "Menu Builder",
+        href: "/admin/menu-builder",
         icon: SquareMenu,
+        hidden: true, // TODO: reveal on feature launch
+      },
+      {
+        title: "Product Categories",
+        href: "/admin/categories",
+        icon: Package,
+      },
+      {
+        title: "Category Labels",
+        href: "/admin/labels",
+        icon: Tag,
       },
     ],
   },
@@ -293,52 +311,54 @@ export default function AdminSidebar({ pages }: { pages: Page[] }) {
                 </h3>
               )}
               <div className="space-y-1">
-                {section.items.map((item) => {
-                  const isActive = pathname === item.href;
-                  const Icon = item.icon;
+                {section.items
+                  .filter((item) => !item.hidden)
+                  .map((item) => {
+                    const isActive = pathname === item.href;
+                    const Icon = item.icon;
 
-                  if (item.isLabel) {
+                    if (item.isLabel) {
+                      return (
+                        <div
+                          key={item.title}
+                          className={cn(
+                            "flex items-center gap-3 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+                            collapsed && "justify-center"
+                          )}
+                          title={collapsed ? item.title : undefined}
+                        >
+                          <Icon className="h-4 w-4 shrink-0" />
+                          {!collapsed && (
+                            <span className="flex-1">{item.title}</span>
+                          )}
+                        </div>
+                      );
+                    }
+
                     return (
-                      <div
-                        key={item.title}
+                      <Link
+                        key={item.href}
+                        href={item.href}
                         className={cn(
-                          "flex items-center gap-3 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
-                          collapsed && "justify-center"
+                          "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                          collapsed
+                            ? "justify-center"
+                            : item.isChild
+                              ? "pl-6"
+                              : ""
                         )}
                         title={collapsed ? item.title : undefined}
                       >
-                        <Icon className="h-4 w-4 shrink-0" />
+                        {Icon && <Icon className="h-5 w-5 shrink-0" />}
                         {!collapsed && (
                           <span className="flex-1">{item.title}</span>
                         )}
-                      </div>
+                      </Link>
                     );
-                  }
-
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                        collapsed
-                          ? "justify-center"
-                          : item.isChild
-                            ? "pl-6"
-                            : ""
-                      )}
-                      title={collapsed ? item.title : undefined}
-                    >
-                      {Icon && <Icon className="h-5 w-5 shrink-0" />}
-                      {!collapsed && (
-                        <span className="flex-1">{item.title}</span>
-                      )}
-                    </Link>
-                  );
-                })}
+                  })}
               </div>
             </div>
           ))}

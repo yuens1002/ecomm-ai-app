@@ -1,12 +1,12 @@
 "use client";
 
-import { useMenuContext } from "../MenuContext";
+import { useMenuBuilder } from "./MenuBuilderContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IconPicker } from "@/components/app-components/IconPicker";
 
 export default function SettingsBar() {
-  const ctx = useMenuContext();
+  const ctx = useMenuBuilder();
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -14,8 +14,8 @@ export default function SettingsBar() {
         <Input
           id="menu-title"
           placeholder="e.g. Shop"
-          value={ctx.menuTitle}
-          onChange={(e) => ctx.setMenuTitle(e.target.value)}
+          value={ctx.menuTitleDraft}
+          onChange={(e) => ctx.setMenuTitleDraft(e.target.value)}
           aria-describedby="menu-title-help"
         />
       </div>
@@ -24,7 +24,11 @@ export default function SettingsBar() {
       </p>
       <div className="flex items-center justify-between">
         <Label>Menu Icon</Label>
-        <IconPicker value={ctx.menuIcon} onValueChange={ctx.setMenuIcon} placeholder="Pick an icon or none..." />
+        <IconPicker
+          value={ctx.menuIconDraft}
+          onValueChange={ctx.setMenuIconDraft}
+          placeholder="Pick an icon or none..."
+        />
       </div>
     </div>
   );

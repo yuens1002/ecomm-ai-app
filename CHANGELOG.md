@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.53.0 - 2025-12-23
+
+- **Admin product menu feature refactor**: Consolidated categories/labels/menu-builder under a hidden route group and cleaned up legacy shims.
+- **Single data/mutation model**: Standardized reads via SWR + Zod DTO parsing and mutations via server actions with shared invalidation.
+- **Client cleanup**: Removed client-side REST fetch logic from table components; UI now delegates all data work to shared hooks/actions.
+- **Dev/build stability**: Marked Prisma packages as server externals to avoid SSR bundling issues with Turbopack.
+
 ## 0.52.0 - 2025-12-21
 
 - **Product Menu Builder scaffold**: Split builder into context-driven client components (SettingsBar, Canvas, SidebarActions, PreviewPanel) for clear separation of concerns and reusable state via MenuProvider.

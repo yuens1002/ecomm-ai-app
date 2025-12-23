@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["@prisma/client", "prisma"],
   images: {
     // We must whitelist the domains we'll be using for our product images.
     // This is a security feature of Next.js Image Optimization.

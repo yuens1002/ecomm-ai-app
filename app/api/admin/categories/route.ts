@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
-import { createCategorySchema } from "@/lib/schemas/category";
+import { createCategorySchema } from "@/app/admin/(product-menu)/types/category";
 
 // GET /api/admin/categories - List all categories and labels
 export async function GET() {

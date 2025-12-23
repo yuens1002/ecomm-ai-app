@@ -4,10 +4,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sparkles } from "lucide-react";
-import { useMenuContext } from "../MenuContext";
+import { useProductMenu } from "../ProductMenuProvider";
 
 export default function SidebarActions() {
-  const ctx = useMenuContext();
+  const ctx = useProductMenu();
   const [isSaving, setIsSaving] = useState(false);
 
   return (

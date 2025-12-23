@@ -200,9 +200,9 @@ A **block-based, drag-and-drop interface** where admins build the menu structure
 **1. Route Structure**:
 
 ```
-/admin/product-menu                    # Main menu builder
-/admin/product-menu/labels/[id]        # Edit label (optional, can be inline)
-/admin/product-menu/categories/[id]    # Edit category details
+/admin/menu-builder                    # Main menu builder (feature-gated)
+/admin/labels/[id]                     # Edit label (optional, can be inline)
+/admin/categories/[id]                 # Edit category details
 ```
 
 **2. API Endpoints to Leverage** (mostly already exist):
@@ -234,9 +234,11 @@ PATCH  /api/admin/product-menu/settings     # Update menu settings
 **3. Component Structure** (block-based architecture):
 
 ```tsx
-app/admin/product-menu/
-├── page.tsx                           # Server component (fetch data)
-└── ProductMenuBuilder.tsx             # Main canvas + drag-drop context
+app/admin/(product-menu)/
+├── menu-builder/page.tsx              # Route group; URL stays /admin/menu-builder
+├── labels/page.tsx                    # Labels list/editor at /admin/labels
+├── categories/page.tsx                # Categories list/editor at /admin/categories
+└── MenuContext.tsx                    # Shared SWR context
 
 components/product-menu-builder/
 ├── MenuCanvas.tsx                     # Main visual builder area
