@@ -57,8 +57,14 @@ function executeWithRetry(command, description, maxAttempts = 3) {
 
       // Determine effective DB URL and mask it for logs
       const effectiveDbUrl =
-        config.directUrl || process.env.DIRECT_URL || process.env.DATABASE_URL || "";
-      const maskedUrl = effectiveDbUrl.replace(/:\/\/([^:@]+):([^@]+)@/, "://$1:***@");
+        config.directUrl ||
+        process.env.DIRECT_URL ||
+        process.env.DATABASE_URL ||
+        "";
+      const maskedUrl = effectiveDbUrl.replace(
+        /:\/\/([^:@]+):([^@]+)@/,
+        "://$1:***@"
+      );
       log.info(`Using DB url: ${maskedUrl ? "[configured]" : "[missing]"}`);
       log.info(`Advisory lock timeout: ${config.lockTimeout}ms`);
 
