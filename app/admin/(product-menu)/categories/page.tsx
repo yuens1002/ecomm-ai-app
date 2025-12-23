@@ -2,6 +2,7 @@
 
 import { useProductMenuData } from "../hooks/useProductMenuData";
 import { CategoriesTable } from "./CategoriesTable";
+import { PageTitle } from "@/components/admin/PageTitle";
 
 export default function Page() {
   const { categories, labels, isLoading } = useProductMenuData();
@@ -16,5 +17,13 @@ export default function Page() {
     );
   }
 
-  return <CategoriesTable categories={categories} labels={labels} />;
+  return (
+    <>
+      <PageTitle
+        title="Categories"
+        subtitle="Manage product categories and organize your catalog"
+      />
+      <CategoriesTable categories={categories} labels={labels} />
+    </>
+  );
 }

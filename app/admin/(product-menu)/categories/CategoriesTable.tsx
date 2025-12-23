@@ -1,7 +1,7 @@
 "use client";
 
 import type { MenuCategory, MenuLabel } from "../types/menu";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -32,13 +31,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pencil, Trash2, Plus, TriangleAlert, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Field, FieldContent, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
-import { generateSlug } from "@/hooks/useSlugGenerator";
+import { NameSlugField } from "@/components/app-components/NameSlugField";
 import { updateCategorySchema } from "@/app/admin/(product-menu)/types/category";
 import { useProductMenuMutations } from "../hooks/useProductMenuMutations";
 
@@ -47,15 +45,10 @@ interface CategoriesTableProps {
   labels: MenuLabel[];
 }
 
-export function CategoriesTable({
-  categories: initialCategories,
-  labels,
-}: CategoriesTableProps) {
+export function CategoriesTable({ categories, labels }: CategoriesTableProps) {
   const { toast } = useToast();
   const mutations = useProductMenuMutations();
 
-  const [categories, setCategories] =
-    useState<MenuCategory[]>(initialCategories);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<MenuCategory | null>(
     null
@@ -70,16 +63,20 @@ export function CategoriesTable({
     showInFooterMenu: true,
   });
 
-  useEffect(() => {
-    setCategories(initialCategories);
-  }, [initialCategories]);
-
-  const placementParentState = useMemo(() => {
-    return (
+  // Determine parent checkbox state: true (all checked), false (all unchecked), "indeterminate" (mixed)
+  const placementCheckboxState = useMemo(() => {
+    const all =
       categoryForm.showInHeaderMenu &&
       categoryForm.showInMobileMenu &&
-      categoryForm.showInFooterMenu
-    );
+      categoryForm.showInFooterMenu;
+    const none =
+      !categoryForm.showInHeaderMenu &&
+      !categoryForm.showInMobileMenu &&
+      !categoryForm.showInFooterMenu;
+
+    if (all) return true;
+    if (none) return false;
+    return "indeterminate";
   }, [
     categoryForm.showInHeaderMenu,
     categoryForm.showInMobileMenu,
@@ -113,14 +110,7 @@ export function CategoriesTable({
     setIsDialogOpen(true);
   }
 
-  function onCategoryNameChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const name = e.target.value;
-    setCategoryForm((prev) => ({
-      ...prev,
-      name,
-      slug: editingCategory ? prev.slug : generateSlug(name),
-    }));
-  }
+  // Name/Slug handled by NameSlugField component
 
   async function saveCategory(e: React.FormEvent) {
     e.preventDefault();
@@ -193,21 +183,7 @@ export function CategoriesTable({
         description: res.error || "Failed to update visibility",
         variant: "destructive",
       });
-      return;
     }
-
-    // Optimistic update
-    setCategories((prev) =>
-      prev.map((c) =>
-        c.id === categoryId
-          ? {
-              ...c,
-              [field]: extra?.[field] ?? !currentValue,
-              ...extra,
-            }
-          : c
-      )
-    );
   }
 
   return (
@@ -265,11 +241,22 @@ export function CategoriesTable({
                         onCheckedChange={(checked) =>
                           toggleCategoryVisibility(category.id, "isVisible", {
                             isVisible: checked === true,
+                            showInHeaderMenu: checked === true,
+                            showInMobileMenu: checked === true,
+                            showInFooterMenu: checked === true,
                           })
                         }
                       />
                       <span className="text-xs text-muted-foreground">
-                        {category.isVisible ? "Visible" : "Hidden"}
+                        {category.showInHeaderMenu &&
+                        category.showInMobileMenu &&
+                        category.showInFooterMenu
+                          ? "Visible"
+                          : !category.showInHeaderMenu &&
+                              !category.showInMobileMenu &&
+                              !category.showInFooterMenu
+                            ? "Hidden"
+                            : "Mixed"}
                       </span>
                     </div>
                   </TableCell>
@@ -340,44 +327,29 @@ export function CategoriesTable({
           </DialogHeader>
           <form onSubmit={saveCategory} className="space-y-6">
             <FieldGroup>
-              <Field>
-                <FormHeading htmlFor="name" label="Name" required />
-                <FieldContent>
-                  <Input
-                    id="name"
-                    value={categoryForm.name}
-                    onChange={onCategoryNameChange}
-                    required
-                  />
-                </FieldContent>
-              </Field>
+              <NameSlugField
+                name={categoryForm.name}
+                slug={categoryForm.slug}
+                onChange={({ name, slug }) =>
+                  setCategoryForm((prev) => ({ ...prev, name, slug }))
+                }
+              />
+
+              {/* Slug display moved into NameSlugField */}
 
               <Field>
-                <FormHeading htmlFor="slug" label="Slug" required />
-                <FieldContent>
-                  <Input
-                    id="slug"
-                    value={categoryForm.slug}
-                    onChange={(e) =>
-                      setCategoryForm({ ...categoryForm, slug: e.target.value })
-                    }
-                    required
-                  />
-                </FieldContent>
-              </Field>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Category labels</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
+                <FormHeading label="Category labels" />
+                <p className="text-xs text-muted-foreground">
+                  Choose labels to group this category in the product menu.
+                </p>
+                <FieldContent className="space-y-3">
                   {labels.length === 0 ? (
-                    <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                    <div className="rounded-md p-4 text-sm text-muted-foreground">
                       No labels yet. Add labels in the Labels tab.
                     </div>
                   ) : (
                     <div
-                      className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-md"
+                      className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2"
                       aria-label="Existing labels"
                     >
                       {labels.map((label) => (
@@ -401,132 +373,140 @@ export function CategoriesTable({
                       ))}
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </FieldContent>
+              </Field>
 
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Visibility</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Field orientation="vertical">
-                    <FormHeading label="Placements" />
-                    <FieldContent className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="cat-visible"
-                          checked={placementParentState}
-                          onCheckedChange={(checked) => {
+              <Field>
+                <FormHeading label="Visibility" />
+                <p className="text-xs text-muted-foreground">
+                  All menus is a master switch; individual toggles control
+                  Header, Mobile, and Footer menus.
+                </p>
+                <FieldContent className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="cat-visible"
+                      checked={placementCheckboxState === true}
+                      aria-checked={
+                        placementCheckboxState === "indeterminate"
+                          ? "mixed"
+                          : placementCheckboxState === true
+                            ? "true"
+                            : "false"
+                      }
+                      onCheckedChange={(checked) => {
+                        // If currently indeterminate, toggle to fully checked
+                        const shouldCheck =
+                          placementCheckboxState === "indeterminate"
+                            ? true
+                            : checked === true;
+                        setCategoryForm((prev) => ({
+                          ...prev,
+                          isVisible: shouldCheck,
+                          showInHeaderMenu: shouldCheck,
+                          showInMobileMenu: shouldCheck,
+                          showInFooterMenu: shouldCheck,
+                        }));
+                      }}
+                    />
+                    <label
+                      htmlFor="cat-visible"
+                      className="text-sm cursor-pointer"
+                    >
+                      All menus
+                    </label>
+                  </div>
+                  <div className="ml-6 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="cat-header"
+                        checked={categoryForm.showInHeaderMenu}
+                        onCheckedChange={(checked) => {
+                          setCategoryForm((prev) => {
                             const next = checked === true;
-                            setCategoryForm((prev) => ({
+                            const updated = {
                               ...prev,
-                              isVisible: next,
                               showInHeaderMenu: next,
+                            };
+                            const any =
+                              next ||
+                              updated.showInMobileMenu ||
+                              updated.showInFooterMenu;
+                            return {
+                              ...updated,
+                              isVisible: any,
+                            };
+                          });
+                        }}
+                      />
+                      <label
+                        htmlFor="cat-header"
+                        className="text-sm cursor-pointer"
+                      >
+                        Header menu
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="cat-mobile"
+                        checked={categoryForm.showInMobileMenu}
+                        onCheckedChange={(checked) => {
+                          setCategoryForm((prev) => {
+                            const next = checked === true;
+                            const updated = {
+                              ...prev,
                               showInMobileMenu: next,
+                            };
+                            const any =
+                              updated.showInHeaderMenu ||
+                              next ||
+                              updated.showInFooterMenu;
+                            return {
+                              ...updated,
+                              isVisible: any,
+                            };
+                          });
+                        }}
+                      />
+                      <label
+                        htmlFor="cat-mobile"
+                        className="text-sm cursor-pointer"
+                      >
+                        Mobile menu
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="cat-footer"
+                        checked={categoryForm.showInFooterMenu}
+                        onCheckedChange={(checked) => {
+                          setCategoryForm((prev) => {
+                            const next = checked === true;
+                            const updated = {
+                              ...prev,
                               showInFooterMenu: next,
-                            }));
-                          }}
-                        />
-                        <label
-                          htmlFor="cat-visible"
-                          className="text-sm cursor-pointer"
-                        >
-                          All placements
-                        </label>
-                      </div>
-                      <div className="ml-6 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="cat-header"
-                            checked={categoryForm.showInHeaderMenu}
-                            onCheckedChange={(checked) => {
-                              setCategoryForm((prev) => {
-                                const next = checked === true;
-                                const updated = {
-                                  ...prev,
-                                  showInHeaderMenu: next,
-                                };
-                                const any =
-                                  next ||
-                                  updated.showInMobileMenu ||
-                                  updated.showInFooterMenu;
-                                return {
-                                  ...updated,
-                                  isVisible: any,
-                                };
-                              });
-                            }}
-                          />
-                          <label
-                            htmlFor="cat-header"
-                            className="text-sm cursor-pointer"
-                          >
-                            Header menu
-                          </label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="cat-mobile"
-                            checked={categoryForm.showInMobileMenu}
-                            onCheckedChange={(checked) => {
-                              setCategoryForm((prev) => {
-                                const next = checked === true;
-                                const updated = {
-                                  ...prev,
-                                  showInMobileMenu: next,
-                                };
-                                const any =
-                                  updated.showInHeaderMenu ||
-                                  next ||
-                                  updated.showInFooterMenu;
-                                return {
-                                  ...updated,
-                                  isVisible: any,
-                                };
-                              });
-                            }}
-                          />
-                          <label
-                            htmlFor="cat-mobile"
-                            className="text-sm cursor-pointer"
-                          >
-                            Mobile menu
-                          </label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="cat-footer"
-                            checked={categoryForm.showInFooterMenu}
-                            onCheckedChange={(checked) => {
-                              setCategoryForm((prev) => {
-                                const next = checked === true;
-                                const updated = {
-                                  ...prev,
-                                  showInFooterMenu: next,
-                                };
-                                const any =
-                                  updated.showInHeaderMenu ||
-                                  updated.showInMobileMenu ||
-                                  next;
-                                return {
-                                  ...updated,
-                                  isVisible: any,
-                                };
-                              });
-                            }}
-                          />
-                          <label
-                            htmlFor="cat-footer"
-                            className="text-sm cursor-pointer"
-                          >
-                            Footer menu
-                          </label>
-                        </div>
-                      </div>
-                    </FieldContent>
-                  </Field>
-                </CardContent>
-              </Card>
+                            };
+                            const any =
+                              updated.showInHeaderMenu ||
+                              updated.showInMobileMenu ||
+                              next;
+                            return {
+                              ...updated,
+                              isVisible: any,
+                            };
+                          });
+                        }}
+                      />
+                      <label
+                        htmlFor="cat-footer"
+                        className="text-sm cursor-pointer"
+                      >
+                        Footer menu
+                      </label>
+                    </div>
+                  </div>
+                </FieldContent>
+              </Field>
             </FieldGroup>
 
             <DialogFooter>

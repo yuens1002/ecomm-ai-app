@@ -267,11 +267,167 @@ export async function getProductsByCategorySlug(categorySlug: string) {
 }
 
 /**
- * Fetches all categories for the main navigation.
+ * Fetches categories for header navigation (showInHeaderMenu = true, isVisible = true)
+ */
+export async function getCategoryLabelsForHeader() {
+  try {
+    const labels = await prisma.categoryLabel.findMany({
+      where: {
+        showInHeaderMenu: true,
+      },
+      orderBy: { order: "asc" },
+      include: {
+        categories: {
+          where: {
+            category: {
+              isVisible: true,
+              showInHeaderMenu: true,
+            },
+          },
+          orderBy: { order: "asc" },
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                order: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return labels.map((label) => ({
+      id: label.id,
+      name: label.name,
+      icon: label.icon,
+      order: label.order,
+      categories: label.categories.map((entry) => ({
+        id: entry.category.id,
+        name: entry.category.name,
+        slug: entry.category.slug,
+        order: entry.order,
+      })),
+    }));
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch header categories.");
+  }
+}
+
+/**
+ * Fetches categories for mobile navigation (showInMobileMenu = true, isVisible = true)
+ */
+export async function getCategoryLabelsForMobile() {
+  try {
+    const labels = await prisma.categoryLabel.findMany({
+      where: {
+        showInMobileMenu: true,
+      },
+      orderBy: { order: "asc" },
+      include: {
+        categories: {
+          where: {
+            category: {
+              isVisible: true,
+              showInMobileMenu: true,
+            },
+          },
+          orderBy: { order: "asc" },
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                order: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return labels.map((label) => ({
+      id: label.id,
+      name: label.name,
+      icon: label.icon,
+      order: label.order,
+      categories: label.categories.map((entry) => ({
+        id: entry.category.id,
+        name: entry.category.name,
+        slug: entry.category.slug,
+        order: entry.order,
+      })),
+    }));
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch mobile categories.");
+  }
+}
+
+/**
+ * Fetches categories for footer navigation (showInFooterMenu = true, isVisible = true)
+ */
+export async function getCategoryLabelsForFooter() {
+  try {
+    const labels = await prisma.categoryLabel.findMany({
+      where: {
+        showInFooterMenu: true,
+      },
+      orderBy: { order: "asc" },
+      include: {
+        categories: {
+          where: {
+            category: {
+              isVisible: true,
+              showInFooterMenu: true,
+            },
+          },
+          orderBy: { order: "asc" },
+          include: {
+            category: {
+              select: {
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const grouped: Record<string, { name: string; slug: string }[]> = {};
+    const labelIcons: Record<string, string> = {};
+
+    labels.forEach((label) => {
+      grouped[label.name] = label.categories.map((entry) => ({
+        name: entry.category.name,
+        slug: entry.category.slug,
+      }));
+      if (label.icon) {
+        labelIcons[label.name] = label.icon;
+      }
+    });
+
+    return { grouped, labelIcons };
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch footer categories.");
+  }
+}
+
+/**
+ * Deprecated: Use getCategoryLabelsForHeader, getCategoryLabelsForMobile, or getCategoryLabelsForFooter instead
  */
 export async function getAllCategories() {
   try {
     const categories = await prisma.category.findMany({
+      where: {
+        isVisible: true,
+      },
       select: {
         id: true,
         name: true,
@@ -295,12 +451,20 @@ export async function getAllCategories() {
   }
 }
 
+/**
+ * Deprecated: Use getCategoryLabelsForHeader instead
+ */
 export async function getCategoryLabelsWithCategories() {
   try {
     const labels = await prisma.categoryLabel.findMany({
       orderBy: { order: "asc" },
       include: {
         categories: {
+          where: {
+            category: {
+              isVisible: true,
+            },
+          },
           orderBy: { order: "asc" },
           include: {
             category: {

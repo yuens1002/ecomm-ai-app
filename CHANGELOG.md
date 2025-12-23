@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.53.1 - 2025-12-23
+
+- **Shared NameSlugField component**: Created reusable form component with inline slug preview for consistent name/slug handling across product, category, and page editors
+- **Slug generation centralization**: Consolidated slug logic in `useSlugGenerator` utility with enhanced unicode normalization and diacritic removal; retired hook pattern in favor of direct function import
+- **Placement-aware category queries**: Implemented dedicated data functions (`getCategoryLabelsForHeader`, `getCategoryLabelsForMobile`, `getCategoryLabelsForFooter`) that respect `isVisible` and placement-specific visibility flags
+- **Mobile menu filtering**: Mobile navigation now uses `getCategoryLabelsForMobile` for proper category filtering based on `showInMobileMenu` flag
+- **Admin page titles**: Added consistent PageTitle components to categories and labels admin pages with descriptive subtitles
+
 ## 0.53.0 - 2025-12-23
 
 - **Admin product menu feature refactor**: Consolidated categories/labels/menu-builder under a hidden route group and cleaned up legacy shims.
