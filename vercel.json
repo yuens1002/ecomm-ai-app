@@ -14,17 +14,17 @@
       ]
     }
   ],
-  "env": [
-    "DATABASE_URL",
-    "DIRECT_URL",
-    "NEXTAUTH_SECRET",
-    "NEXTAUTH_URL",
-    "GEMINI_API_KEY",
-    "GROK_API_KEY",
-    "OPENAI_API_KEY",
-    "RESEND_API_KEY",
-    "STRIPE_SECRET_KEY"
-  ],
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "DIRECT_URL": "@direct_url",
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "NEXTAUTH_URL": "@nextauth_url",
+    "GEMINI_API_KEY": "@gemini_api_key",
+    "GROK_API_KEY": "@grok_api_key",
+    "OPENAI_API_KEY": "@openai_api_key",
+    "RESEND_API_KEY": "@resend_api_key",
+    "STRIPE_SECRET_KEY": "@stripe_secret_key"
+  },
   "git": {
     "deploymentEnabled": {
       "main": true
