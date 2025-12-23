@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import TipTapEditor from "@/components/app-components/TipTapEditor";
+import { NameSlugField } from "@/components/app-components/NameSlugField";
 import { useToast } from "@/hooks/use-toast";
 import { SaveButton } from "@/components/admin/SaveButton";
 
@@ -64,19 +65,7 @@ export default function NewPageClient() {
     }
   };
 
-  // Auto-generate slug from title
-  const handleTitleChange = (title: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      title,
-      slug:
-        prev.slug ||
-        title
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, ""),
-    }));
-  };
+  // Slug is derived via NameSlugField; no separate handler needed.
 
   return (
     <div className="space-y-6">
@@ -108,34 +97,17 @@ export default function NewPageClient() {
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Content */}
           <div className="space-y-6 lg:col-span-2">
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => handleTitleChange(e.target.value)}
-                placeholder="About Us"
-                required
-              />
-            </div>
-
-            {/* Slug */}
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
-              <Input
-                id="slug"
-                value={formData.slug}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, slug: e.target.value }))
-                }
-                placeholder="about"
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                URL: /pages/{formData.slug || "slug"}
-              </p>
-            </div>
+            {/* Title + Slug */}
+            <NameSlugField
+              id="title"
+              label="Title"
+              name={formData.title}
+              slug={formData.slug}
+              editableSlug={false}
+              onChange={({ name, slug }) =>
+                setFormData((prev) => ({ ...prev, title: name, slug }))
+              }
+            />
 
             {/* Hero Image */}
             <div className="space-y-2">

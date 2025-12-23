@@ -1,4 +1,7 @@
-import { getCategoryLabelsWithCategories } from "@/lib/data";
+import {
+  getCategoryLabelsForHeader,
+  getCategoryLabelsForMobile,
+} from "@/lib/data";
 import { auth } from "@/auth";
 import SiteHeader from "@components/app-components/SiteHeader";
 import { getPagesForHeader } from "@/app/actions";
@@ -12,20 +15,21 @@ import { getProductMenuSettings } from "@/lib/product-menu-settings";
  */
 export default async function SiteHeaderWrapper() {
   // Fetch all data for the navigation menu in parallel
-  const [labels, session, headerPages, productMenuSettings] = await Promise.all(
-    [
-      getCategoryLabelsWithCategories(),
+  const [labels, mobileLabels, session, headerPages, productMenuSettings] =
+    await Promise.all([
+      getCategoryLabelsForHeader(),
+      getCategoryLabelsForMobile(),
       auth(),
       getPagesForHeader(),
       getProductMenuSettings(),
-    ]
-  );
+    ]);
 
   // Handle case where no categories are found (e.g., first deployment/empty DB)
   if (!labels || labels.length === 0) {
     return (
       <SiteHeader
         categoryGroups={{}}
+        mobileCategoryGroups={{}}
         user={session?.user || null}
         pages={headerPages}
         productMenuIcon={productMenuSettings.icon}
@@ -36,6 +40,22 @@ export default async function SiteHeaderWrapper() {
 
   // Build groups from labels -> categories (already ordered)
   const categoryGroups = labels.reduce(
+    (acc, label) => {
+      acc[label.name] = label.categories.map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        order: cat.order,
+      }));
+      return acc;
+    },
+    {} as Record<
+      string,
+      { id: string; name: string; slug: string; order: number }[]
+    >
+  );
+
+  const mobileCategoryGroups = mobileLabels.reduce(
     (acc, label) => {
       acc[label.name] = label.categories.map((cat) => ({
         id: cat.id,
@@ -66,6 +86,7 @@ export default async function SiteHeaderWrapper() {
   return (
     <SiteHeader
       categoryGroups={categoryGroups}
+      mobileCategoryGroups={mobileCategoryGroups}
       labelIcons={labelIcons}
       user={session?.user || null}
       pages={headerPages}
