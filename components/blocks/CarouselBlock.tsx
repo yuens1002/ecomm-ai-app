@@ -486,7 +486,6 @@ function EditCarouselDialog({
           ? "Location carousel - add slides and configure settings"
           : "Image carousel - add slides and configure settings"
       }
-      size="xl"
       footer={
         <>
           <Button variant="outline" onClick={handleCancel} disabled={isSaving}>

@@ -2,12 +2,12 @@
 
 ## Unreleased
 
-- **Resilient build system**: Implemented cross-instance build script with automatic retries, exponential backoff, and advisory lock timeout increased to 3 minutes
-- **Direct URL for builds**: Builds now use `DIRECT_URL` instead of pooler connection to avoid the 10-connection limit during CI/CD
-- **Build troubleshooting guide**: Added comprehensive documentation with environment setup, CI/CD examples, and solutions for common build issues
-- **Vercel optimization**: Created optimized Vercel configuration with 3-minute build timeout and proper environment variable handling
-- **Graceful migration handling**: Build script supports `--no-migrate` flag for skipping migrations when needed, enabling faster iteration during development
-- **Better error messaging**: Added actionable error messages with suggested next steps for advisory lock timeouts and connection failures
+- **Menu Settings feature**: Complete implementation of validated menu settings dialog with icon picker and character-limited text input
+  - **MenuSettingsDialog component**: Modal dialog with Zod validation, FormInputField with 12-char counter, optional IconPicker, proper error handling, and save/cancel flow
+  - **Backend integration**: Integrated with existing ProductMenuProvider (SWR) and MenuBuilderContext for draft state management; uses `updateSettings` mutation for persistence
+  - **Enhanced PageTitle component**: Added optional `action` prop to PageTitle for consistent header layout with action buttons across admin pages
+  - **Incremental replacement**: Retired old SettingsBar and 3-column MenuBuilder layout; new implementation uses ProductMenuProvider + MenuBuilderContext (no useEffect, no props drilling)
+  - **Pattern compliance**: Follows established patterns with FormHeading, FormInputField, InputGroupInput, FieldDescription under fields, and zod validation schema
 
 ## 0.53.1 - 2025-12-23
 

@@ -3,6 +3,31 @@
 import { prisma } from "@/lib/prisma";
 import { productMenuSettingsSchema } from "../types/menu";
 
+export async function getProductMenuSettings() {
+  try {
+    const [iconSetting, textSetting] = await Promise.all([
+      prisma.siteSettings.findUnique({
+        where: { key: "product_menu_icon" },
+      }),
+      prisma.siteSettings.findUnique({
+        where: { key: "product_menu_text" },
+      }),
+    ]);
+
+    return {
+      ok: true as const,
+      data: {
+        icon: iconSetting?.value ?? "ShoppingBag",
+        text: textSetting?.value ?? "Shop",
+      },
+    };
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Failed to fetch menu settings";
+    return { ok: false as const, error: message };
+  }
+}
+
 export async function updateProductMenuSettings(input: unknown) {
   const parsed = productMenuSettingsSchema.safeParse(input);
   if (!parsed.success) {
@@ -19,8 +44,8 @@ export async function updateProductMenuSettings(input: unknown) {
     await Promise.all([
       prisma.siteSettings.upsert({
         where: { key: "product_menu_icon" },
-        update: { value: icon },
-        create: { key: "product_menu_icon", value: icon },
+        update: { value: icon || "" },
+        create: { key: "product_menu_icon", value: icon || "" },
       }),
       prisma.siteSettings.upsert({
         where: { key: "product_menu_text" },

@@ -341,7 +341,7 @@ export function CategoriesTable({ categories, labels }: CategoriesTableProps) {
                       htmlFor="cat-visible"
                       className="text-sm cursor-pointer"
                     >
-                      Visible in navigation
+                      product menu and footer
                     </label>
                   </div>
                 </FieldContent>

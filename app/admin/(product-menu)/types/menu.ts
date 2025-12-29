@@ -33,8 +33,11 @@ export const menuLabelForCategorySchema = z.object({
 export type MenuLabelForCategory = z.infer<typeof menuLabelForCategorySchema>;
 
 export const productMenuSettingsSchema = z.object({
-  icon: z.string().min(1),
-  text: z.string().min(1).max(20),
+  icon: z.string().optional(),
+  text: z
+    .string()
+    .min(1, "Menu text is required")
+    .max(12, "Menu text must be 12 characters or less"),
 });
 export type ProductMenuSettings = z.infer<typeof productMenuSettingsSchema>;
 
