@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Settings } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
   FieldGroup,
@@ -21,12 +22,12 @@ import { useProductMenu } from "../../ProductMenuProvider";
 export function MenuSettingsDialog() {
   const { menuIconDraft, setMenuIconDraft, menuTitleDraft, setMenuTitleDraft } =
     useMenuBuilder();
-  const { updateSettings } = useProductMenu();
+  const { updateSettings, isSaving, isLoading } = useProductMenu();
+  const { toast } = useToast();
 
   const [open, setOpen] = useState(false);
   const [icon, setIcon] = useState("");
   const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
   const [textError, setTextError] = useState<string>();
 
   // Initialize from context when dialog opens
@@ -57,8 +58,6 @@ export function MenuSettingsDialog() {
 
   const handleSave = async () => {
     if (!validate()) return;
-
-    setLoading(true);
     try {
       const result = await updateSettings({
         icon: icon || undefined,
@@ -69,15 +68,26 @@ export function MenuSettingsDialog() {
         // Update context draft state
         setMenuIconDraft(icon || "");
         setMenuTitleDraft(text.trim());
+        toast({
+          title: "Menu settings saved",
+          description: "Your menu configuration has been updated.",
+        });
         setOpen(false);
       } else {
         setTextError(result.error || "Failed to save settings");
+        toast({
+          title: "Failed to save menu settings",
+          description: result.error || "Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Failed to save menu settings:", error);
-      setTextError("Failed to save settings. Please try again.");
-    } finally {
-      setLoading(false);
+      toast({
+        title: "Failed to save menu settings",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -103,11 +113,11 @@ export function MenuSettingsDialog() {
         open={open}
         onOpenChange={handleOpen}
         title="Menu Settings"
-        description="Configure the menu icon and text shown in the navigation."
+        description="Configure the menu icon and name for the product menu"
         size="sm"
         onSave={handleSave}
         onCancel={handleCancel}
-        isSaving={loading}
+        isSaving={isSaving}
       >
         <FieldGroup>
           <FieldSet>
@@ -121,14 +131,14 @@ export function MenuSettingsDialog() {
                   className="w-full"
                 />
                 <FieldDescription>
-                  Optional icon shown next to the menu text
+                  Optional icon shown next to the menu name
                 </FieldDescription>
               </Field>
 
               <Field data-invalid={!!textError}>
                 <FormHeading
                   htmlFor="menu-text"
-                  label="Menu Text"
+                  label="Menu Name"
                   required
                   validationType={textError ? "error" : undefined}
                   errorMessage={textError}
@@ -141,14 +151,15 @@ export function MenuSettingsDialog() {
                       setText(e.target.value);
                       if (textError) setTextError(undefined);
                     }}
-                    placeholder="Shop"
-                    disabled={loading}
+                    placeholder="ie, Shop, Coffee, etc"
+                    disabled={isSaving || isLoading}
                     maxLength={12}
                     aria-invalid={!!textError}
                   />
                 </FormInputField>
                 <FieldDescription>
-                  Text shown next to the icon in the navigation menu
+                  Text shown as a link on the site header and footer above the
+                  menu
                 </FieldDescription>
               </Field>
             </FieldGroup>

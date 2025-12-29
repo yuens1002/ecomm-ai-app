@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSWRConfig } from "swr";
 import { PRODUCT_MENU_DATA_KEY } from "./useProductMenuData";
 import * as labelActions from "../actions/labels";
@@ -8,6 +9,7 @@ import { updateProductMenuSettings } from "../actions/productMenuSettings";
 
 export function useProductMenuMutations() {
   const { mutate } = useSWRConfig();
+  const [isSaving, setIsSaving] = useState(false);
 
   async function refresh() {
     await mutate(PRODUCT_MENU_DATA_KEY);
@@ -15,6 +17,7 @@ export function useProductMenuMutations() {
 
   return {
     refresh,
+    isSaving,
 
     // Labels
     createLabel: async (payload: unknown) => {
@@ -84,8 +87,10 @@ export function useProductMenuMutations() {
 
     // Settings (server-backed)
     updateSettings: async (payload: unknown) => {
+      setIsSaving(true);
       const res = await updateProductMenuSettings(payload);
       if (res.ok) await refresh();
+      setIsSaving(false);
       return res;
     },
   };

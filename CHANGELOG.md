@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.54.1 - 2025-12-29
+
+- **Menu Settings feature completion**: Finalized Menu Settings dialog with comprehensive testing, error handling, and UX refinements
+  - **Provider-level loading states**: Exposed `isSaving` in useProductMenuMutations for clean mutation tracking; integrated hook `isLoading`/`isValidating` for data fetch and revalidation gating
+  - **Toast notifications**: Added success toast on save ("Menu settings saved") and destructive toasts for server errors and validation failures; replaced console logging with user-facing feedback
+  - **UX optimizations**: Relaxed disable logic to prevent input lockup during post-save revalidation; inputs/buttons disabled only during active save or initial load
+  - **Comprehensive test suite**: 17 passing tests covering getProductMenuSettings and updateProductMenuSettings with zod schema-derived test data; validates boundary conditions, error handling, and type safety
+  - **Backend validation**: All tests confirm proper Prisma upsert behavior, optional icon handling (undefined → empty string), text trimming, and database error resilience
+  - **Type safety**: All test data generated via productMenuSettingsSchema.parse() to ensure tests stay synchronized with schema rules
+
 ## Unreleased
 
 - **Menu Settings feature**: Complete implementation of validated menu settings dialog with icon picker and character-limited text input

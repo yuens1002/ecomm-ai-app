@@ -13,7 +13,7 @@ async function fetchProductMenuData(): Promise<ProductMenuData> {
 }
 
 export function useProductMenuData() {
-  const { data, error, isLoading, mutate } = useSWR(
+  const { data, error, isLoading, isValidating, mutate } = useSWR(
     PRODUCT_MENU_DATA_KEY,
     fetchProductMenuData,
     { revalidateOnFocus: false, shouldRetryOnError: false }
@@ -23,8 +23,9 @@ export function useProductMenuData() {
     data,
     labels: data?.labels ?? [],
     categories: data?.categories ?? [],
-    settings: data?.settings ?? { icon: "ShoppingBag", text: "Shop" },
+    settings: data?.settings,
     isLoading,
+    isValidating,
     error: error as Error | undefined,
     mutate,
   };

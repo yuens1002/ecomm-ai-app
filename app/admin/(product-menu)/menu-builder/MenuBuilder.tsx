@@ -11,8 +11,8 @@ export default function MenuBuilder() {
       <MenuBuilderProvider>
         <>
           <PageTitle
-            title="Menu Settings"
-            subtitle="Configure the menu icon and text shown in navigation"
+            title="Product Menu Builder"
+            subtitle="Group categories under labels and arrange the links to your category pages"
             action={<MenuSettingsDialog />}
           />
 
