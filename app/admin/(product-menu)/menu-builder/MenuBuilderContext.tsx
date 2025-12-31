@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState } from "react";
-import { useProductMenu } from "../ProductMenuProvider";
 
 type PreviewMode = "desktop" | "mobile";
 
@@ -30,15 +29,11 @@ export function MenuBuilderProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const menu = useProductMenu();
   const [previewMode, setPreviewMode] = useState<PreviewMode>("desktop");
 
-  const [menuTitleDraft, setMenuTitleDraft] = useState(
-    menu.settings?.text || "Shop"
-  );
-  const [menuIconDraft, setMenuIconDraft] = useState(
-    menu.settings?.icon || "ShoppingBag"
-  );
+  // Draft states start as empty strings (not initialized from DB)
+  const [menuTitleDraft, setMenuTitleDraft] = useState("");
+  const [menuIconDraft, setMenuIconDraft] = useState("");
 
   return (
     <MenuBuilderContext.Provider

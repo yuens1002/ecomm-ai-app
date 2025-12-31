@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.55.0 - 2025-12-30
+
+- **Menu Builder navigation and architecture refactor**: Complete overhaul of Menu Builder with URL-based navigation, simplified data flow, and centralized error handling
+  - **MenuNavBar component**: 3-segment navigation bar (Menu | Labels | Categories) with URL param routing (`?view=menu|label|category`), dropdown menus for label/category selection, and skeleton loading states to prevent UI jumps
+  - **NavItem component**: Generic Button-based navigation segment with conditional icon rendering, selected state styling, optional dropdowns with scrolling (max-h-[200px]), and responsive design (icon-only on mobile)
+  - **Architecture simplification**: Removed MenuBuilderContext and moved draft state to local dialog state; deleted legacy builder components (Canvas, PreviewPanel, SidebarActions, useMenuData); reduced complexity by ~300 lines
+  - **Provider normalization layer**: Enhanced useProductMenuData to map DB schema fields (`settings.text`) to UI terminology (`settings.title`) and apply defaults (icon: "", title: "Menu") in a single location; components now trust provider values without duplicate checks
+  - **Centralized error handling**: Moved error detection and toast notifications from individual components to MenuBuilder page level; single useEffect watches provider error state
+  - **Fixed schema field mismatch**: Corrected MenuSettingsDialog to use schema field `text` (not `title`) for validation and save operations; fixed DynamicIcon fallback by conditionally rendering only when icon string is truthy
+  - **Improved loading UX**: Added Skeleton component to MenuNavBar while data is loading; removed layout shift issues during initial render
+
 ## 0.54.1 - 2025-12-29
 
 - **Menu Settings feature completion**: Finalized Menu Settings dialog with comprehensive testing, error handling, and UX refinements

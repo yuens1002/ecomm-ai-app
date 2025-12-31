@@ -19,11 +19,19 @@ export function useProductMenuData() {
     { revalidateOnFocus: false, shouldRetryOnError: false }
   );
 
+  // Apply defaults: empty string for icon if none, "Menu" for text if none
+  const settings = data?.settings
+    ? {
+        icon: data.settings.icon || "",
+        title: data.settings.text || "Menu",
+      }
+    : undefined;
+
   return {
     data,
     labels: data?.labels ?? [],
     categories: data?.categories ?? [],
-    settings: data?.settings,
+    settings,
     isLoading,
     isValidating,
     error: error as Error | undefined,

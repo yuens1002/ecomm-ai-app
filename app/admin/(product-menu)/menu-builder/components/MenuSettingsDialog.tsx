@@ -16,34 +16,34 @@ import { InputGroupInput } from "@/components/ui/app/InputGroup";
 import { DialogShell } from "@/components/app-components/DialogShell";
 import { IconPicker } from "@/components/app-components/IconPicker";
 import { productMenuSettingsSchema } from "../../types/menu";
-import { useMenuBuilder } from "../MenuBuilderContext";
 import { useProductMenu } from "../../ProductMenuProvider";
 
 export function MenuSettingsDialog() {
-  const { menuIconDraft, setMenuIconDraft, menuTitleDraft, setMenuTitleDraft } =
-    useMenuBuilder();
-  const { updateSettings, isSaving, isLoading } = useProductMenu();
+  const { settings, updateSettings, isSaving, isLoading } = useProductMenu();
   const { toast } = useToast();
 
   const [open, setOpen] = useState(false);
-  const [icon, setIcon] = useState("");
-  const [text, setText] = useState("");
   const [textError, setTextError] = useState<string>();
 
-  // Initialize from context when dialog opens
+  // Local draft state for the dialog
+  const [menuIconDraft, setMenuIconDraft] = useState("");
+  const [menuTitleDraft, setMenuTitleDraft] = useState("");
+
+  // Initialize drafts from DB when dialog opens
   const handleOpen = (isOpen: boolean) => {
     if (isOpen) {
-      setIcon(menuIconDraft || "");
-      setText(menuTitleDraft || "");
+      setMenuIconDraft(settings?.icon || "");
+      setMenuTitleDraft(settings?.title || "");
       setTextError(undefined);
     }
     setOpen(isOpen);
   };
 
   const validate = () => {
+    const trimmedText = menuTitleDraft.trim();
     const result = productMenuSettingsSchema.safeParse({
-      icon: icon || undefined,
-      text: text.trim(),
+      icon: menuIconDraft || undefined,
+      text: trimmedText,
     });
 
     if (!result.success) {
@@ -58,16 +58,17 @@ export function MenuSettingsDialog() {
 
   const handleSave = async () => {
     if (!validate()) return;
+
     try {
       const result = await updateSettings({
-        icon: icon || undefined,
-        text: text.trim(),
+        icon: menuIconDraft || undefined,
+        text: menuTitleDraft.trim(),
       });
 
       if (result.ok) {
-        // Update context draft state
-        setMenuIconDraft(icon || "");
-        setMenuTitleDraft(text.trim());
+        // Clear drafts after successful save (DB is now source of truth)
+        setMenuIconDraft("");
+        setMenuTitleDraft("");
         toast({
           title: "Menu settings saved",
           description: "Your menu configuration has been updated.",
@@ -92,8 +93,9 @@ export function MenuSettingsDialog() {
   };
 
   const handleCancel = () => {
-    setIcon(menuIconDraft || "");
-    setText(menuTitleDraft || "");
+    // Reset drafts to what navbar shows (with fallbacks)
+    setMenuIconDraft("");
+    setMenuTitleDraft("");
     setTextError(undefined);
     setOpen(false);
   };
@@ -103,7 +105,7 @@ export function MenuSettingsDialog() {
       <Button
         variant="ghost"
         size="icon"
-        onClick={() => setOpen(true)}
+        onClick={() => handleOpen(true)}
         title="Menu settings"
       >
         <Settings className="h-4 w-4" />
@@ -125,8 +127,8 @@ export function MenuSettingsDialog() {
               <Field>
                 <FormHeading htmlFor="menu-icon" label="Menu Icon" />
                 <IconPicker
-                  value={icon}
-                  onValueChange={setIcon}
+                  value={menuIconDraft}
+                  onValueChange={setMenuIconDraft}
                   placeholder="Pick an icon or none..."
                   className="w-full"
                 />
@@ -143,12 +145,15 @@ export function MenuSettingsDialog() {
                   validationType={textError ? "error" : undefined}
                   errorMessage={textError}
                 />
-                <FormInputField maxLength={12} currentLength={text.length}>
+                <FormInputField
+                  maxLength={12}
+                  currentLength={menuTitleDraft.length}
+                >
                   <InputGroupInput
                     id="menu-text"
-                    value={text}
+                    value={menuTitleDraft}
                     onChange={(e) => {
-                      setText(e.target.value);
+                      setMenuTitleDraft(e.target.value);
                       if (textError) setTextError(undefined);
                     }}
                     placeholder="ie, Shop, Coffee, etc"
