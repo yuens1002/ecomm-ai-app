@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.55.1 - 2026-01-01
+
+- **Menu Builder hook test coverage**: Comprehensive unit tests for useProductMenuData hook with Zod schema validation
+  - **Settings normalization tests** (3 tests): Verify text→title mapping, icon default fallback to empty string, undefined settings handling
+  - **Labels and categories tests** (5 tests): Validate label/category ID preservation through hook pipeline, nested structure integrity, cross-reference associations between categories and their labels
+  - **Edge case coverage**: Empty arrays, error state handling, full integration scenario with both labels and categories populated
+  - **Zod schema validation**: All test data generated via productMenuDataSchema.parse() ensuring tests match production data flow
+  - **Test suite**: 8 passing tests (13→21 total in menu settings workflow)
+
 ## 0.55.0 - 2025-12-30
 
 - **Menu Builder navigation and architecture refactor**: Complete overhaul of Menu Builder with URL-based navigation, simplified data flow, and centralized error handling
