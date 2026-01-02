@@ -79,7 +79,6 @@ export async function listMenuData() {
     }));
 
     const dto = { labels, categories, products, settings };
-    console.log("[listMenuData] Returning products count:", products.length);
     const parsed = productMenuDataSchema.safeParse(dto);
     if (!parsed.success) {
       console.error("Invalid ProductMenuData DTO:", parsed.error);

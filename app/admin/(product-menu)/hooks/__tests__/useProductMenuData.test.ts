@@ -28,6 +28,7 @@ describe("useProductMenuData", () => {
     const mockData = productMenuDataSchema.parse({
       labels: [],
       categories: [],
+      products: [],
       settings: { icon: "Coffee", text: "Shop" },
     });
 
@@ -59,6 +60,7 @@ describe("useProductMenuData", () => {
     const mockData = productMenuDataSchema.parse({
       labels: [],
       categories: [],
+      products: [],
       settings: { icon: undefined, text: "Menu" },
     });
 
@@ -120,6 +122,7 @@ describe("useProductMenuData", () => {
         },
       ],
       categories: [],
+      products: [],
       settings: { icon: "Coffee", text: "Shop" },
     });
 
@@ -173,6 +176,7 @@ describe("useProductMenuData", () => {
           ],
         },
       ],
+      products: [],
       settings: { icon: "Mug", text: "Menu" },
     });
 
@@ -203,6 +207,7 @@ describe("useProductMenuData", () => {
     const mockData = productMenuDataSchema.parse({
       labels: [],
       categories: [],
+      products: [],
       settings: { icon: "Bag", text: "Shop" },
     });
 
@@ -265,6 +270,7 @@ describe("useProductMenuData", () => {
           ],
         },
       ],
+      products: [],
       settings: { icon: "Coffee", text: "Shop" },
     });
 

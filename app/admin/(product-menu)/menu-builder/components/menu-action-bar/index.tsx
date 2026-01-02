@@ -17,6 +17,44 @@ import { ActionComboButton } from "./ActionComboButton";
 import { ActionDropdownButton } from "./ActionDropdownButton";
 import { useProductMenuMutations } from "../../../hooks/useProductMenuMutations";
 
+/**
+ * Filter products by search term (case-insensitive)
+ */
+export function filterProductsBySearch(
+  products: MenuProduct[],
+  search: string
+): MenuProduct[] {
+  return products.filter((product) =>
+    product.name.toLowerCase().includes(search.toLowerCase())
+  );
+}
+
+/**
+ * Section products into Added, Unassigned, and Available groups
+ * Each section is sorted alphabetically
+ */
+export function sectionProducts(
+  products: MenuProduct[],
+  currentCategoryId: string
+) {
+  const addedProducts = products
+    .filter((p) => p.categoryIds.includes(currentCategoryId))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const unassignedProducts = products
+    .filter((p) => p.categoryIds.length === 0)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const availableProducts = products
+    .filter(
+      (p) =>
+        !p.categoryIds.includes(currentCategoryId) && p.categoryIds.length > 0
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return { addedProducts, unassignedProducts, availableProducts };
+}
+
 type MenuActionBarProps = {
   view: ViewType;
   state: BuilderState;
@@ -138,26 +176,12 @@ export function MenuActionBar({
         if (!state.currentCategoryId) return null;
         if (!products || products.length === 0) return null;
 
-        const filteredProducts = products.filter((product) =>
-          product.name.toLowerCase().includes(productSearch.toLowerCase())
+        const filteredProducts = filterProductsBySearch(
+          products,
+          productSearch
         );
-
-        // Group products into sections
-        const addedProducts = filteredProducts
-          .filter((p) => p.categoryIds.includes(state.currentCategoryId!))
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        const unassignedProducts = filteredProducts
-          .filter((p) => p.categoryIds.length === 0)
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        const availableProducts = filteredProducts
-          .filter(
-            (p) =>
-              !p.categoryIds.includes(state.currentCategoryId!) &&
-              p.categoryIds.length > 0
-          )
-          .sort((a, b) => a.name.localeCompare(b.name));
+        const { addedProducts, unassignedProducts, availableProducts } =
+          sectionProducts(filteredProducts, state.currentCategoryId);
 
         const renderProductItem = (product: MenuProduct) => {
           const isAttached = product.categoryIds.includes(

@@ -10,7 +10,7 @@
   - **UX refinements**: Fixed checkbox interaction by removing conflicting onSelect handlers, implemented multi-select with dropdown persistence, 300px max width with text truncation and ellipsis, overflow-x-hidden to prevent horizontal scrollbar
   - **Data flow**: Extended menu actions query to include products with categoryIds, created MenuProduct type with Zod schema, integrated into useProductMenuData hook and BuilderState for disabled logic
   - **Conditional rendering**: Dropdowns disabled when DB count is 0 (totalLabels/totalCategories/totalProducts), tooltips always visible when enabled
-  - **Console debugging**: Added comprehensive logging for mutation tracking during development
+  - **Comprehensive unit tests** (29 tests): Complete test coverage for action bar dropdown logic including disabled states validation, product filtering (case-insensitive, partial matching), 3-section separation (Added/Unassigned/Available), alphabetical sorting within sections, checkbox checked states, combined search and sectioning, and button type rendering logic (combo vs standalone); exported filterProductsBySearch and sectionProducts functions for proper testability; fixed useProductMenuData tests to include products array in mock data
 
 ## 0.55.1 - 2026-01-01
 
