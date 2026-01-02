@@ -68,9 +68,18 @@ export const menuCategorySchema = z.object({
 });
 export type MenuCategory = z.infer<typeof menuCategorySchema>;
 
+export const menuProductSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  categoryIds: z.array(z.string()),
+});
+export type MenuProduct = z.infer<typeof menuProductSchema>;
+
 export const productMenuDataSchema = z.object({
   labels: z.array(menuLabelSchema),
   categories: z.array(menuCategorySchema),
+  products: z.array(menuProductSchema),
   settings: productMenuSettingsSchema,
 });
 export type ProductMenuData = z.infer<typeof productMenuDataSchema>;

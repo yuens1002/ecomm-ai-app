@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.55.2 - 2026-01-02
+
+- **Menu Builder action bar dropdowns**: Implemented interactive "Add existing" dropdowns with multi-select functionality for managing label, category, and product assignments
+  - **Add Labels dropdown**: Toggle label visibility in menu with immediate updates and SWR cache refresh
+  - **Add Categories dropdown**: Attach/detach categories to/from labels with proper relationship management through CategoryLabelCategory junction table
+  - **Add Products dropdown**: Enhanced with search bar, 3 dynamic sections (Added/Unassigned/Available), alphabetical sorting within sections, and category assignment through CategoriesOnProducts junction table
+  - **Product actions**: Created attachProductToCategory and detachProductFromCategory mutations with automatic primary category assignment, order management, and primary reassignment on detach
+  - **UX refinements**: Fixed checkbox interaction by removing conflicting onSelect handlers, implemented multi-select with dropdown persistence, 300px max width with text truncation and ellipsis, overflow-x-hidden to prevent horizontal scrollbar
+  - **Data flow**: Extended menu actions query to include products with categoryIds, created MenuProduct type with Zod schema, integrated into useProductMenuData hook and BuilderState for disabled logic
+  - **Conditional rendering**: Dropdowns disabled when DB count is 0 (totalLabels/totalCategories/totalProducts), tooltips always visible when enabled
+  - **Console debugging**: Added comprehensive logging for mutation tracking during development
+
 ## 0.55.1 - 2026-01-01
 
 - **Menu Builder hook test coverage**: Comprehensive unit tests for useProductMenuData hook with Zod schema validation

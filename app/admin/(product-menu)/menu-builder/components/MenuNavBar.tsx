@@ -8,11 +8,10 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-
-type View = "menu" | "label" | "category" | "all-labels" | "all-categories";
+import type { ViewType } from "../../types/builder-state";
 
 interface MenuNavBarProps {
-  currentView: View;
+  currentView: ViewType;
   currentLabelId?: string;
   currentCategoryId?: string;
 }
@@ -42,7 +41,7 @@ export function MenuNavBar({
   const currentCategory = categories.find((c) => c.id === currentCategoryId);
 
   // Navigation helpers
-  const navigate = (view: View, labelId?: string, categoryId?: string) => {
+  const navigate = (view: ViewType, labelId?: string, categoryId?: string) => {
     const params = new URLSearchParams();
     params.set("view", view);
     if (labelId) params.set("labelId", labelId);

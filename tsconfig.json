@@ -36,6 +36,8 @@
     "prisma/seed-full-original.ts",
     "app/admin/pages/edit",
     "app/admin/pages/new/wizard",
-    "app/api/admin/pages/generate-about"
+    "app/api/admin/pages/generate-about",
+    "app/admin/menu-builder-mock",
+    "app/admin/menu-builder-mock2"
   ]
 }

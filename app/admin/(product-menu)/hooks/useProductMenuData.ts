@@ -31,6 +31,7 @@ export function useProductMenuData() {
     data,
     labels: data?.labels ?? [],
     categories: data?.categories ?? [],
+    products: data?.products ?? [],
     settings,
     isLoading,
     isValidating,

@@ -140,82 +140,106 @@ CategoryLabel (Label)
 
 - **Button Group**: New/Add combined with dropdown (shadcn button-group)
   - `[Sparkles] New Label` - Create new label in DB
-  - `[Plus] Add Label` - Link existing label (dropdown menu to select)
-- `[Copy] Clone` - Duplicate selected items (with children)
-- `[CornerUpLeft] Remove` - Hide selected from menu
+  - `[Plus] Add Label(s) 🔽` - Link existing labels (dropdown menu to select one or more)
+- `[Copy] Clone` - Duplicates the entire verticals (label, categories, and products) of selected items
+- `[CornerUpLeft] Remove` - Removes selected from menu (detaches, doesn't delete from DB)
 
 **Right:**
 
-- `[ChevronsUpDown] Expand All`
-- `[ChevronDown] Collapse All`
-- `[Undo/Redo] Re/Undo` - Bidirectional undo (10 ops)
+- `[Eye] Visibility` - Toggle visibility of selected items
+- `[ListChevronsDownUp] Expand All` - Expands all label sections
+- `[ListChevronsUpDown] Collapse All` - Collapses all label sections
+- `[Undo] Undo` / `[Redo] Redo` - Bidirectional undo/redo last operation
 
-### Label View (drilling into specific label)
+### Label View (specific label)
 
 **Left:**
 
-- `[Sparkles] New Category` - Create new category in DB
-- `[Plus] Add Product` - Link product to category
-- `[Copy] Clone` - Duplicate selected
-- `[CornerUpLeft] Remove` - Detach from label
+- `[Plus] Categories 🔽` - Link existing categories to this label via dropdown
+- `[ArrowUpDown] Sort Mode 🔽` - Category ordering mode: Auto (A-Z) or Manual (affects product menu display - order of category links under label)
+- `[CornerUpLeft] Remove` - Remove selected categories from label (detaches junction)
 
 **Right:**
 
-- `[ChevronsUpDown] Expand All`
-- `[ChevronDown] Collapse All`
-- `[Undo/Redo] Re/Undo`
+- `[Undo] Undo` / `[Redo] Redo` - Bidirectional undo/redo
 
-### Category View (drilling into specific category)
+### Category View (specific category)
 
 **Left:**
 
-- `[Plus] Add Product` - Link products via checkbox selection
-- `[Copy] Clone` - Duplicate selected products
-- `[CornerUpLeft] Remove` - Unlink products from category
+- `[Plus] Products 🔽` - Link existing products to this category via dropdown
+- `[ArrowUpDown] Sort Order 🔽` - Product ordering: Manual (inherit), Alpha (A-Z, Z-A), Added (First, Last) - affects category page display (not shown on product menu)
+- `[CornerUpLeft] Remove` - Remove selected products from category (detaches junction)
 
 **Right:**
 
-- `[ArrowUpDown] Sort ▼` - Sort products in this category
-- `[Undo/Redo] Re/Undo`
+- `[ListChevronsDownUp] Expand All` - Expands all product rows
+- `[ListChevronsUpDown] Collapse All` - Collapses all product rows
+- `[Undo] Undo` / `[Redo] Redo` - Bidirectional undo/redo
 
 ### All-Labels View
 
 **Left:**
 
-- `[Sparkles] New Label`
-- `[Copy] Clone`
-- `[CornerUpLeft] Remove` - Hide from menu
+- `[Sparkles] New Label` - Create new label in DB
+- `[Copy] Clone` - Duplicates selected labels with all categories
+- `[CornerUpLeft] Remove` - Hide selected from menu (detaches)
 
 **Right:**
 
-- `[Undo/Redo] Undo`
+- `[Eye] Visibility` - Toggle visibility of selected items
+- `[Undo] Undo` / `[Redo] Redo` - Bidirectional undo/redo
 
 ### All-Categories View
 
 **Left:**
 
-- `[Sparkles] New Category`
-- `[Copy] Clone`
-- `[CornerUpLeft] Remove` - Hide from menu
+- `[Sparkles] New Category` - Create new category in DB
+- `[Copy] Clone` - Duplicates selected categories with all products
+- `[CornerUpLeft] Remove` - Hide selected from menu (detaches)
 
 **Right:**
 
-- `[Undo/Redo] Undo`
+- `[Eye] Visibility` - Toggle visibility of selected items
+- `[Undo] Undo` / `[Redo] Redo` - Bidirectional undo/redo
 
 ### Button State Logic
 
 - **Show disabled**: Action is possible in this view but not available now
   - Example: Clone disabled when nothing selected
   - Example: Remove disabled when nothing selected
+  - **Remains tabbable**: Disabled buttons stay in keyboard tab order
+  - **Accessibility**: Uses aria-disabled and aria-label explaining why action is unavailable
+  - **Variant**: Use `ghost` variant for disabled state
 - **Hide completely**: Action doesn't apply to this view
   - Example: "New Product" never shown (products not created here)
   - Example: Expand/Collapse hidden in flat all-views
 
-### Tooltips
+### Tooltips (https://ui.shadcn.com/docs/components/kbd)
 
-- **Desktop**: Show on hover with keyboard shortcut (use shadcn `Kbd` component)
+- **Desktop enabled buttons**: Show on hover with keyboard shortcut (use shadcn `Kbd` component)
   - Example: "Clone" with `<Kbd>Ctrl</Kbd>+<Kbd>D</Kbd>`
-- **Mobile**: Show on long-press (no keyboard shortcuts shown)
+- **Desktop disabled buttons**: No tooltip - use aria-label only to explain why disabled
+- **Mobile**: Show tooltips on long-press (no keyboard shortcuts shown)
+
+---
+
+### Keyboard Shortcuts Map
+
+| Action                | Shortcut               | Applies To                                  |
+| --------------------- | ---------------------- | ------------------------------------------- |
+| **Add New**           | `Ctrl/Cmd + N`         | Menu, All-labels, All-categories            |
+| **Select All**        | `Ctrl/Cmd + A`         | All views - selects all visible rows        |
+| **Clone**             | `Ctrl/Cmd + D`         | All views - duplicates selected items       |
+| **Remove**            | `Ctrl/Cmd + Backspace` | All views - removes/detaches selected items |
+| **Sort Mode/Order**   | `Ctrl/Cmd + R`         | Label view (mode), Category view (order)    |
+| **Undo**              | `Ctrl/Cmd + Z`         | All views - undo last operation             |
+| **Redo**              | `Ctrl/Cmd + Shift + Z` | All views - redo last undone operation      |
+| **Expand All**        | `Ctrl/Cmd + ↓`         | Menu, Label, Category views                 |
+| **Collapse All**      | `Ctrl/Cmd + ↑`         | Menu, Label, Category views                 |
+| **Toggle Visibility** | `Space`                | When items selected - toggles visibility    |
+
+**Note**: "Add" actions (New Label, Add Categories, Add Products) do not have keyboard shortcuts as they require multi-step selection via dropdowns.
 
 ---
 
@@ -631,14 +655,16 @@ const modKey = isMac ? "Cmd" : "Ctrl";
 
 ### Operations
 
-| Shortcut                | Action                         | Platform |
-| ----------------------- | ------------------------------ | -------- |
-| `Ctrl/Cmd + D`          | Clone selected                 | Both     |
-| `Ctrl/Cmd + V`          | Clone selected (same as Cmd+D) | Both     |
-| `Delete` or `Backspace` | Remove selected from menu      | Both     |
-| `Ctrl/Cmd + Z`          | Undo                           | Both     |
-| `Ctrl/Cmd + Shift + Z`  | Redo                           | Both     |
-| `Space`                 | Toggle visibility of selected  | Both     |
+| Shortcut               | Action                        | Platform |
+| ---------------------- | ----------------------------- | -------- |
+| `Ctrl/Cmd + D`         | Clone selected                | Both     |
+| `Ctrl/Cmd + Backspace` | Remove selected from menu     | Both     |
+| `Ctrl/Cmd + R`         | Sort Mode/Order toggle        | Both     |
+| `Ctrl/Cmd + Z`         | Undo                          | Both     |
+| `Ctrl/Cmd + Shift + Z` | Redo                          | Both     |
+| `Ctrl/Cmd + ↓`         | Expand All                    | Both     |
+| `Ctrl/Cmd + ↑`         | Collapse All                  | Both     |
+| `Space`                | Toggle visibility of selected | Both     |
 
 ### Implementation Pattern
 

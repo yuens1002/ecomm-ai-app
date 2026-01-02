@@ -90,13 +90,13 @@ export function TreeRow({
 
             {icon ? (
               <DynamicIcon
-                name={icon as any}
+                name={icon as string}
                 size={16}
                 className="mr-2 text-muted-foreground shrink-0"
               />
             ) : level === 3 ? (
               <DynamicIcon
-                name={"Package" as any}
+                name={"Package" as string}
                 size={16}
                 className="mr-2 text-muted-foreground shrink-0"
               />

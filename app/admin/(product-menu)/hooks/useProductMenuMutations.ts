@@ -5,6 +5,7 @@ import { useSWRConfig } from "swr";
 import { PRODUCT_MENU_DATA_KEY } from "./useProductMenuData";
 import * as labelActions from "../actions/labels";
 import * as categoryActions from "../actions/categories";
+import * as productActions from "../actions/products";
 import { updateProductMenuSettings } from "../actions/productMenuSettings";
 
 export function useProductMenuMutations() {
@@ -81,6 +82,30 @@ export function useProductMenuMutations() {
     },
     deleteCategory: async (id: unknown) => {
       const res = await categoryActions.deleteCategory(id);
+      if (res.ok) await refresh();
+      return res;
+    },
+
+    // Products
+    attachProductToCategory: async (
+      productId: unknown,
+      categoryId: unknown
+    ) => {
+      const res = await productActions.attachProductToCategory(
+        productId,
+        categoryId
+      );
+      if (res.ok) await refresh();
+      return res;
+    },
+    detachProductFromCategory: async (
+      productId: unknown,
+      categoryId: unknown
+    ) => {
+      const res = await productActions.detachProductFromCategory(
+        productId,
+        categoryId
+      );
       if (res.ok) await refresh();
       return res;
     },

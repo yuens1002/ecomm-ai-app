@@ -20,6 +20,9 @@ const eslintConfig = defineConfig([
     "app/admin/pages/new/wizard/**",
     "app/admin/pages/edit/[id]/**",
     "app/api/admin/pages/generate-about/**",
+    // Menu builder mock/prototype directories
+    "app/admin/menu-builder-mock/**",
+    "app/admin/menu-builder-mock2/**",
   ]),
   {
     rules: {
