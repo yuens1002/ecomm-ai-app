@@ -130,28 +130,28 @@ describe("MenuActionBar Dropdown Logic", () => {
       ],
     };
 
-    const mockCategories: MenuCategory[] = [
-      {
-        id: "category-1",
-        name: "Single Origin",
-        slug: "single-origin",
-        order: 0,
-        isVisible: true,
-        productCount: 5,
-        labels: [],
-      },
-      {
-        id: "category-2",
-        name: "Blends",
-        slug: "blends",
-        order: 1,
-        isVisible: true,
-        productCount: 3,
-        labels: [],
-      },
-    ];
-
     it("should identify attached categories", () => {
+      const mockCategories: MenuCategory[] = [
+        {
+          id: "category-1",
+          name: "Single Origin",
+          slug: "single-origin",
+          order: 0,
+          isVisible: true,
+          productCount: 5,
+          labels: [],
+        },
+        {
+          id: "category-2",
+          name: "Blends",
+          slug: "blends",
+          order: 1,
+          isVisible: true,
+          productCount: 3,
+          labels: [],
+        },
+      ];
+
       const isCategory1Attached = mockLabel.categories.some(
         (c) => c.id === "category-1"
       );
@@ -161,6 +161,7 @@ describe("MenuActionBar Dropdown Logic", () => {
 
       expect(isCategory1Attached).toBe(true);
       expect(isCategory2Attached).toBe(false);
+      expect(mockCategories).toHaveLength(2);
     });
   });
 
