@@ -6,7 +6,7 @@ import { PRODUCT_MENU_DATA_KEY } from "./useProductMenuData";
 import * as labelActions from "../actions/labels";
 import * as categoryActions from "../actions/categories";
 import * as productActions from "../actions/products";
-import { updateProductMenuSettings } from "../actions/productMenuSettings";
+import { updateProductMenuSettings } from "../actions/settings";
 
 export function useProductMenuMutations() {
   const { mutate } = useSWRConfig();

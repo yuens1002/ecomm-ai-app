@@ -12,7 +12,7 @@ jest.mock("@/lib/prisma", () => ({
 import {
   getProductMenuSettings,
   updateProductMenuSettings,
-} from "../productMenuSettings";
+} from "../settings";
 import { productMenuSettingsSchema } from "../../types/menu";
 import { prisma } from "@/lib/prisma";
 
