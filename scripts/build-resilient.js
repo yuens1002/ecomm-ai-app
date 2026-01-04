@@ -14,7 +14,9 @@
  *   BUILD_RETRIES - Number of retry attempts (default: 3)
  *   BUILD_RETRY_DELAY - Delay between retries in ms (default: 5000)
  */
-/* eslint-disable @typescript-eslint/no-require-imports */const { execSync } = require("child_process");
+/* eslint-disable @typescript-eslint/no-require-imports */ const {
+  execSync,
+} = require("child_process");
 const fs = require("fs");
 
 // Load environment variables from .env.local BEFORE anything else

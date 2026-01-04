@@ -19,7 +19,9 @@ describe("Action Strategies", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       detachCategory: (jest.fn() as any).mockResolvedValue({ ok: true }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      detachProductFromCategory: (jest.fn() as any).mockResolvedValue({ ok: true }),
+      detachProductFromCategory: (jest.fn() as any).mockResolvedValue({
+        ok: true,
+      }),
     },
     labels: [
       { id: "id1", name: "Label 1", isVisible: true },
@@ -202,7 +204,9 @@ describe("Action Strategies", () => {
       const context = createMockContext();
       // Make mutation fail
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      context.mutations.updateLabel = (jest.fn() as any).mockRejectedValue(new Error("Network error"));
+      context.mutations.updateLabel = (jest.fn() as any).mockRejectedValue(
+        new Error("Network error")
+      );
 
       const result = await executeAction("remove", "menu", context, mockMutate);
 
