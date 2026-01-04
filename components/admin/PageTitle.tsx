@@ -11,7 +11,7 @@ export function PageTitle({ title, subtitle, action }: PageTitleProps) {
         <h1 className="text-2xl font-bold">{title}</h1>
         {subtitle && <p className="text-muted-foreground mt-2">{subtitle}</p>}
       </div>
-      {action && <div className="flex-shrink-0">{action}</div>}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }

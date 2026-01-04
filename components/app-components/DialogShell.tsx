@@ -113,7 +113,7 @@ export function DialogShell({
   // Determine which footer to render
   const showBuiltInButtons = onSave && onCancel && !footer;
   const showCustomFooter = footer && !onSave && !onCancel;
-  const showNoFooter = !footer && !onSave && !onCancel;
+  const _showNoFooter = !footer && !onSave && !onCancel;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

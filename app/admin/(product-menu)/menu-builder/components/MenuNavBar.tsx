@@ -1,53 +1,51 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { NavItem } from "./NavItem";
-import { useProductMenu } from "../../ProductMenuProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import type { ViewType } from "../../types/builder-state";
-
-interface MenuNavBarProps {
-  currentView: ViewType;
-  currentLabelId?: string;
-  currentCategoryId?: string;
-}
+import { useProductMenu } from "../../ProductMenuProvider";
 
 /**
  * MenuNavBar - Navigation breadcrumb with 3 segments (Menu | Labels | Categories)
  *
- * Uses URL params for state persistence:
- * - /admin/menu-builder?view=menu
- * - /admin/menu-builder?view=label&labelId=123
- * - /admin/menu-builder?view=category&categoryId=456
+ * Gets all data from ProductMenuProvider - no props needed.
+ * State is persisted in URL params via builder.currentView, etc.
  */
-export function MenuNavBar({
-  currentView,
-  currentLabelId,
-  currentCategoryId,
-}: MenuNavBarProps) {
-  const router = useRouter();
-  const { labels, categories, settings, isLoading } = useProductMenu();
+export function MenuNavBar() {
+  const {
+    builder: {
+      currentView,
+      currentLabelId,
+      currentCategoryId,
+      navigateToView,
+      navigateToLabel,
+      navigateToCategory,
+    },
+    labels,
+    categories,
+    settings,
+    isLoading,
+  } = useProductMenu();
 
-  // Menu segment: use settings from provider (which already has defaults applied)
-  const menuIcon = settings?.icon || "";
-  const menuText = settings?.title || "";
+  if (isLoading) {
+    return (
+      <div className="flex gap-2 mb-6">
+        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-10 w-32" />
+      </div>
+    );
+  }
 
   // Find current label/category for display
   const currentLabel = labels.find((l) => l.id === currentLabelId);
   const currentCategory = categories.find((c) => c.id === currentCategoryId);
 
-  // Navigation helpers
-  const navigate = (view: ViewType, labelId?: string, categoryId?: string) => {
-    const params = new URLSearchParams();
-    params.set("view", view);
-    if (labelId) params.set("labelId", labelId);
-    if (categoryId) params.set("categoryId", categoryId);
-    router.push(`/admin/menu-builder?${params}`);
-  };
+  const menuIcon = settings?.icon || "ShoppingBag";
+  const menuText = settings?.title || "Menu";
 
   // Labels segment text
   const labelsText =
@@ -65,17 +63,6 @@ export function MenuNavBar({
         ? currentCategory.name
         : "Categories";
 
-  // Show skeleton while loading
-  if (isLoading) {
-    return (
-      <div className="flex items-center gap-4 mb-4 pb-3 border-b">
-        <Skeleton className="h-9 w-24" />
-        <Skeleton className="h-9 w-24" />
-        <Skeleton className="h-9 w-32" />
-      </div>
-    );
-  }
-
   return (
     <div className="flex items-center gap-4 mb-4 pb-3 border-b">
       {/* Menu segment */}
@@ -84,7 +71,7 @@ export function MenuNavBar({
         text={menuText}
         isSelected={currentView === "menu"}
         hasDropdown={false}
-        onClick={() => navigate("menu")}
+        onClick={() => navigateToView("menu")}
       />
 
       {/* Labels segment */}
@@ -94,14 +81,14 @@ export function MenuNavBar({
         isSelected={currentView === "label" || currentView === "all-labels"}
         hasDropdown
       >
-        <DropdownMenuItem onClick={() => navigate("all-labels")}>
+        <DropdownMenuItem onClick={() => navigateToView("all-labels")}>
           All labels
         </DropdownMenuItem>
         {labels.length > 0 && <DropdownMenuSeparator />}
         {labels.map((label) => (
           <DropdownMenuItem
             key={label.id}
-            onClick={() => navigate("label", label.id)}
+            onClick={() => navigateToLabel(label.id)}
           >
             {label.name}
           </DropdownMenuItem>
@@ -117,14 +104,20 @@ export function MenuNavBar({
         }
         hasDropdown
       >
-        <DropdownMenuItem onClick={() => navigate("all-categories")}>
+        <DropdownMenuItem onClick={() => navigateToView("all-categories")}>
           All categories
         </DropdownMenuItem>
         {categories.length > 0 && <DropdownMenuSeparator />}
         {categories.map((category) => (
           <DropdownMenuItem
             key={category.id}
-            onClick={() => navigate("category", undefined, category.id)}
+            onClick={() => {
+              // Need labelId to navigate to category
+              // Use current label or first label that has this category
+              if (currentLabelId) {
+                navigateToCategory(currentLabelId, category.id);
+              }
+            }}
           >
             {category.name}
           </DropdownMenuItem>

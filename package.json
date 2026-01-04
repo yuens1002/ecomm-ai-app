@@ -1,6 +1,6 @@
 {
   "name": "artisan-roast",
-  "version": "0.54.1",
+  "version": "0.57.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

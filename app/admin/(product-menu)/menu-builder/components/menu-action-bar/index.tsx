@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   DropdownMenuCheckboxItem,
@@ -10,12 +10,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { ACTION_BAR_CONFIG } from "../../../constants/action-bar-config";
-import type { BuilderState, ViewType } from "../../../types/builder-state";
-import type { MenuLabel, MenuCategory, MenuProduct } from "../../../types/menu";
+import { useProductMenu } from "../../../ProductMenuProvider";
+import {
+  executeAction,
+  type ActionContext,
+} from "../../../constants/action-strategies";
+import type { MenuProduct } from "../../../types/menu";
 import { ActionButton } from "./ActionButton";
 import { ActionComboButton } from "./ActionComboButton";
 import { ActionDropdownButton } from "./ActionDropdownButton";
-import { useProductMenuMutations } from "../../../hooks/useProductMenuMutations";
 
 /**
  * Filter products by search term (case-insensitive)
@@ -55,28 +58,156 @@ export function sectionProducts(
   return { addedProducts, unassignedProducts, availableProducts };
 }
 
-type MenuActionBarProps = {
-  view: ViewType;
-  state: BuilderState;
-  labels: MenuLabel[];
-  categories: MenuCategory[];
-  products?: MenuProduct[];
-};
+/**
+ * MenuActionBar - Action buttons for current view
+ *
+ * Gets all data from ProductMenuProvider - no props needed.
+ */
+export function MenuActionBar() {
+  const {
+    builder,
+    labels,
+    categories,
+    products,
+    mutate,
+    // All mutations
+    updateLabel,
+    updateCategory,
+    attachCategory,
+    detachCategory,
+    detachProductFromCategory,
+    attachProductToCategory,
+  } = useProductMenu();
 
-export function MenuActionBar({
-  view,
-  state,
-  labels,
-  categories,
-  products = [],
-}: MenuActionBarProps) {
-  const actions = ACTION_BAR_CONFIG[view];
+  const actions = ACTION_BAR_CONFIG[builder.currentView];
   const leftActions = actions.filter((a) => a.position === "left");
   const rightActions = actions.filter((a) => a.position === "right");
-  const mutations = useProductMenuMutations();
 
   // Search state for products dropdown
   const [productSearch, setProductSearch] = useState("");
+
+  // Build state object for action bar config (with data counts)
+  const state = useMemo(
+    () => ({
+      ...builder,
+      totalLabels: labels.length,
+      totalCategories: categories.length,
+      totalProducts: products.length,
+    }),
+    [builder, labels.length, categories.length, products.length]
+  );
+
+  // Build actions object for action bar config
+  const builderActions = useMemo(
+    () => ({
+      // Selection
+      toggleSelection: builder.toggleSelection,
+      selectAll: builder.selectAll,
+      clearSelection: builder.clearSelection,
+
+      // Expand/collapse
+      toggleExpand: builder.toggleExpand,
+      expandAll: builder.expandAll,
+      collapseAll: builder.collapseAll,
+
+      // Navigation
+      navigateToView: builder.navigateToView,
+      navigateToLabel: builder.navigateToLabel,
+      navigateToCategory: builder.navigateToCategory,
+      navigateBack: builder.navigateBack,
+
+      // Undo/redo (stubs for now)
+      undo: () => console.log("[MenuActionBar] Undo not yet implemented"),
+      redo: () => console.log("[MenuActionBar] Redo not yet implemented"),
+
+      // CRUD operations
+      removeSelected: async () => {
+        if (builder.selectedIds.length === 0) return;
+
+        const context: ActionContext = {
+          selectedIds: builder.selectedIds,
+          currentLabelId: builder.currentLabelId,
+          currentCategoryId: builder.currentCategoryId,
+          mutations: {
+            updateLabel,
+            updateCategory,
+            detachCategory,
+            detachProductFromCategory,
+          },
+          labels,
+          categories,
+          products,
+        };
+
+        const result = await executeAction(
+          "remove",
+          builder.currentView,
+          context,
+          {
+            labels: mutate,
+            categories: mutate,
+          }
+        );
+
+        if (!result.ok) {
+          console.error("[MenuActionBar] Remove failed:", result.error);
+        }
+
+        builder.clearSelection();
+      },
+      cloneSelected: async () => {
+        console.log("[MenuActionBar] Clone not yet implemented");
+      },
+      toggleVisibility: async () => {
+        if (builder.selectedIds.length === 0) return;
+
+        const context: ActionContext = {
+          selectedIds: builder.selectedIds,
+          currentLabelId: builder.currentLabelId,
+          currentCategoryId: builder.currentCategoryId,
+          mutations: {
+            updateLabel,
+            updateCategory,
+            detachCategory,
+            detachProductFromCategory,
+          },
+          labels,
+          categories,
+          products,
+        };
+
+        const result = await executeAction(
+          "toggleVisibility",
+          builder.currentView,
+          context,
+          {
+            labels: mutate,
+            categories: mutate,
+          }
+        );
+
+        if (!result.ok) {
+          console.error(
+            "[MenuActionBar] Toggle visibility failed:",
+            result.error
+          );
+        }
+
+        builder.clearSelection();
+      },
+    }),
+    [
+      builder,
+      labels,
+      categories,
+      products,
+      mutate,
+      updateLabel,
+      updateCategory,
+      detachCategory,
+      detachProductFromCategory,
+    ]
+  );
 
   // Helper to get dropdown content for "Add existing" actions
   const getAddExistingDropdownContent = (actionId: string) => {
@@ -100,7 +231,7 @@ export function MenuActionBar({
                     checked
                   );
                   try {
-                    const result = await mutations.updateLabel(label.id, {
+                    const result = await updateLabel(label.id, {
                       isVisible: checked,
                     });
                     console.log(
@@ -146,13 +277,13 @@ export function MenuActionBar({
                     );
                     try {
                       if (checked) {
-                        const result = await mutations.attachCategory(
+                        const result = await attachCategory(
                           state.currentLabelId!,
                           category.id
                         );
                         console.log("[Add Categories] Attach result:", result);
                       } else {
-                        const result = await mutations.detachCategory(
+                        const result = await detachCategory(
                           state.currentLabelId!,
                           category.id
                         );
@@ -202,13 +333,13 @@ export function MenuActionBar({
                 );
                 try {
                   if (checked) {
-                    const result = await mutations.attachProductToCategory(
+                    const result = await attachProductToCategory(
                       product.id,
                       state.currentCategoryId!
                     );
                     console.log("[Add Products] Attach result:", result);
                   } else {
-                    const result = await mutations.detachProductFromCategory(
+                    const result = await detachProductFromCategory(
                       product.id,
                       state.currentCategoryId!
                     );
@@ -314,7 +445,7 @@ export function MenuActionBar({
               kbd: action.kbd,
               disabled: isDisabled,
               ariaLabel: action.ariaLabel?.(state),
-              onClick: () => action.onClick(state),
+              onClick: () => action.onClick(state, builderActions),
             }}
             addButton={{
               label: addAction.label,
@@ -364,7 +495,7 @@ export function MenuActionBar({
               kbd={action.kbd}
               disabled={isDisabled}
               ariaLabel={action.ariaLabel?.(state)}
-              onClick={() => action.onClick(state)}
+              onClick={() => action.onClick(state, builderActions)}
             />
           </div>
         );

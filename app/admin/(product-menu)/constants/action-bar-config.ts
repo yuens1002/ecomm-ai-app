@@ -17,7 +17,11 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { BuilderState, ViewType } from "../types/builder-state";
+import type {
+  BuilderState,
+  ViewType,
+  MenuBuilderActions,
+} from "../types/builder-state";
 
 export type ActionPosition = "left" | "right";
 
@@ -33,7 +37,10 @@ export type ActionDefinition = {
   position: ActionPosition;
   disabled: (state: BuilderState) => boolean;
   ariaLabel?: (state: BuilderState) => string; // For disabled state explanation
-  onClick: (state: BuilderState) => void | Promise<void>;
+  onClick: (
+    state: BuilderState,
+    actions: MenuBuilderActions
+  ) => void | Promise<void>;
   // For combo buttons
   comboWith?: string; // ID of the paired action
   // For dropdown buttons
@@ -107,9 +114,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasSelection(state)
           ? "Clone selected items"
           : "Clone disabled - no items selected",
-      onClick: async (state) => {
-        // TODO: Clone selected labels with all categories/products
-        console.log("Clone clicked", state.selectedIds);
+      onClick: async (state, actions) => {
+        await actions.cloneSelected();
       },
     },
     {
@@ -125,9 +131,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasSelection(state)
           ? "Remove selected items from menu"
           : "Remove disabled - no items selected",
-      onClick: async (state) => {
-        // TODO: Detach selected labels from menu
-        console.log("Remove clicked", state.selectedIds);
+      onClick: async (state, actions) => {
+        await actions.removeSelected();
       },
     },
     // RIGHT SIDE
@@ -144,9 +149,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasSelection(state)
           ? "Toggle visibility of selected items"
           : "Visibility disabled - no items selected",
-      onClick: async (state) => {
-        // TODO: Toggle visibility of selected labels
-        console.log("Visibility clicked", state.selectedIds);
+      onClick: async (state, actions) => {
+        await actions.toggleVisibility();
       },
     },
     {
@@ -158,9 +162,10 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
       kbd: [modKey, "↓"],
       position: "right",
       disabled: () => false, // Always enabled
-      onClick: (state) => {
-        // TODO: Expand all label sections
-        console.log("Expand All clicked", state);
+      onClick: (state, actions) => {
+        // Get all expandable IDs from labels
+        // TODO: This will be improved when we have the actual table data
+        actions.expandAll([]);
       },
     },
     {
@@ -172,9 +177,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
       kbd: [modKey, "↑"],
       position: "right",
       disabled: () => false, // Always enabled
-      onClick: (state) => {
-        // TODO: Collapse all label sections
-        console.log("Collapse All clicked", state);
+      onClick: (state, actions) => {
+        actions.collapseAll();
       },
     },
     {
@@ -190,9 +194,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasUndoHistory(state)
           ? "Undo last operation"
           : "Undo disabled - no changes to undo",
-      onClick: (state) => {
-        // TODO: Undo last operation
-        console.log("Undo clicked", state.undoStack);
+      onClick: (state, actions) => {
+        actions.undo();
       },
     },
     {
@@ -208,9 +211,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasRedoHistory(state)
           ? "Redo last undone operation"
           : "Redo disabled - no changes to redo",
-      onClick: (state) => {
-        // TODO: Redo last operation
-        console.log("Redo clicked", state.redoStack);
+      onClick: (state, actions) => {
+        actions.redo();
       },
     },
   ],
@@ -259,9 +261,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasSelection(state)
           ? "Remove selected categories from label"
           : "Remove disabled - no categories selected",
-      onClick: async (state) => {
-        // TODO: Detach selected categories from label
-        console.log("Remove clicked", state.selectedIds);
+      onClick: async (state, actions) => {
+        await actions.removeSelected();
       },
     },
     // RIGHT SIDE
@@ -278,8 +279,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasUndoHistory(state)
           ? "Undo last operation"
           : "Undo disabled - no changes to undo",
-      onClick: (state) => {
-        console.log("Undo clicked", state.undoStack);
+      onClick: (state, actions) => {
+        actions.undo();
       },
     },
     {
@@ -295,8 +296,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasRedoHistory(state)
           ? "Redo last undone operation"
           : "Redo disabled - no changes to redo",
-      onClick: (state) => {
-        console.log("Redo clicked", state.redoStack);
+      onClick: (state, actions) => {
+        actions.redo();
       },
     },
   ],
@@ -345,9 +346,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasSelection(state)
           ? "Remove selected products from category"
           : "Remove disabled - no products selected",
-      onClick: async (state) => {
-        // TODO: Detach selected products from category
-        console.log("Remove clicked", state.selectedIds);
+      onClick: async (state, actions) => {
+        await actions.removeSelected();
       },
     },
     // RIGHT SIDE
@@ -360,9 +360,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
       kbd: [modKey, "↓"],
       position: "right",
       disabled: () => false, // Always enabled
-      onClick: (state) => {
-        // TODO: Expand all product rows
-        console.log("Expand All clicked", state);
+      onClick: (state, actions) => {
+        actions.expandAll([]);
       },
     },
     {
@@ -374,9 +373,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
       kbd: [modKey, "↑"],
       position: "right",
       disabled: () => false, // Always enabled
-      onClick: (state) => {
-        // TODO: Collapse all product rows
-        console.log("Collapse All clicked", state);
+      onClick: (state, actions) => {
+        actions.collapseAll();
       },
     },
     {
@@ -392,8 +390,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasUndoHistory(state)
           ? "Undo last operation"
           : "Undo disabled - no changes to undo",
-      onClick: (state) => {
-        console.log("Undo clicked", state.undoStack);
+      onClick: (state, actions) => {
+        actions.undo();
       },
     },
     {
@@ -409,8 +407,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasRedoHistory(state)
           ? "Redo last undone operation"
           : "Redo disabled - no changes to redo",
-      onClick: (state) => {
-        console.log("Redo clicked", state.redoStack);
+      onClick: (state, actions) => {
+        actions.redo();
       },
     },
   ],
@@ -427,7 +425,7 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
       kbd: [modKey, "N"],
       position: "left",
       disabled: () => false, // Always enabled
-      onClick: async (state) => {
+      onClick: async (state, _actions) => {
         // TODO: Open new label modal
         console.log("New Label clicked", state);
       },
@@ -445,9 +443,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasSelection(state)
           ? "Clone selected labels with categories"
           : "Clone disabled - no labels selected",
-      onClick: async (state) => {
-        // TODO: Clone selected labels with all categories
-        console.log("Clone clicked", state.selectedIds);
+      onClick: async (state, actions) => {
+        await actions.cloneSelected();
       },
     },
     {
@@ -463,9 +460,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasSelection(state)
           ? "Hide selected labels from menu"
           : "Remove disabled - no labels selected",
-      onClick: async (state) => {
-        // TODO: Detach selected labels from menu
-        console.log("Remove clicked", state.selectedIds);
+      onClick: async (state, actions) => {
+        await actions.removeSelected();
       },
     },
     // RIGHT SIDE
@@ -482,9 +478,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasSelection(state)
           ? "Toggle visibility of selected labels"
           : "Visibility disabled - no labels selected",
-      onClick: async (state) => {
-        // TODO: Toggle visibility of selected labels
-        console.log("Visibility clicked", state.selectedIds);
+      onClick: async (state, actions) => {
+        await actions.toggleVisibility();
       },
     },
     {
@@ -500,8 +495,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasUndoHistory(state)
           ? "Undo last operation"
           : "Undo disabled - no changes to undo",
-      onClick: (state) => {
-        console.log("Undo clicked", state.undoStack);
+      onClick: (state, actions) => {
+        actions.undo();
       },
     },
     {
@@ -517,8 +512,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasRedoHistory(state)
           ? "Redo last undone operation"
           : "Redo disabled - no changes to redo",
-      onClick: (state) => {
-        console.log("Redo clicked", state.redoStack);
+      onClick: (state, actions) => {
+        actions.redo();
       },
     },
   ],
@@ -535,7 +530,7 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
       kbd: [modKey, "N"],
       position: "left",
       disabled: () => false, // Always enabled
-      onClick: async (state) => {
+      onClick: async (state, _actions) => {
         // TODO: Open new category modal
         console.log("New Category clicked", state);
       },
@@ -553,9 +548,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasSelection(state)
           ? "Clone selected categories with products"
           : "Clone disabled - no categories selected",
-      onClick: async (state) => {
-        // TODO: Clone selected categories with all products
-        console.log("Clone clicked", state.selectedIds);
+      onClick: async (state, actions) => {
+        await actions.cloneSelected();
       },
     },
     {
@@ -571,9 +565,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasSelection(state)
           ? "Hide selected categories from menu"
           : "Remove disabled - no categories selected",
-      onClick: async (state) => {
-        // TODO: Detach selected categories from menu
-        console.log("Remove clicked", state.selectedIds);
+      onClick: async (state, actions) => {
+        await actions.removeSelected();
       },
     },
     // RIGHT SIDE
@@ -590,9 +583,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasSelection(state)
           ? "Toggle visibility of selected categories"
           : "Visibility disabled - no categories selected",
-      onClick: async (state) => {
-        // TODO: Toggle visibility of selected categories
-        console.log("Visibility clicked", state.selectedIds);
+      onClick: async (state, actions) => {
+        await actions.toggleVisibility();
       },
     },
     {
@@ -608,8 +600,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasUndoHistory(state)
           ? "Undo last operation"
           : "Undo disabled - no changes to undo",
-      onClick: (state) => {
-        console.log("Undo clicked", state.undoStack);
+      onClick: (state, actions) => {
+        actions.undo();
       },
     },
     {
@@ -625,8 +617,8 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         hasRedoHistory(state)
           ? "Redo last undone operation"
           : "Redo disabled - no changes to redo",
-      onClick: (state) => {
-        console.log("Redo clicked", state.redoStack);
+      onClick: (state, actions) => {
+        actions.redo();
       },
     },
   ],

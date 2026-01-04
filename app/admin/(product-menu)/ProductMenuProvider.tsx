@@ -3,9 +3,12 @@
 import { createContext, useContext } from "react";
 import { useProductMenuData } from "./hooks/useProductMenuData";
 import { useProductMenuMutations } from "./hooks/useProductMenuMutations";
+import { useMenuBuilderState } from "./hooks/useMenuBuilderState";
 
 type ProductMenuContextValue = ReturnType<typeof useProductMenuData> &
-  ReturnType<typeof useProductMenuMutations>;
+  ReturnType<typeof useProductMenuMutations> & {
+    builder: ReturnType<typeof useMenuBuilderState>;
+  };
 
 const ProductMenuContext = createContext<ProductMenuContextValue | undefined>(
   undefined
@@ -24,10 +27,12 @@ export function ProductMenuProvider({
 }) {
   const data = useProductMenuData();
   const mutations = useProductMenuMutations();
+  const builderState = useMenuBuilderState();
 
   const value: ProductMenuContextValue = {
     ...data,
     ...mutations,
+    builder: builderState,
   };
 
   return (

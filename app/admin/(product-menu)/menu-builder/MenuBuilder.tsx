@@ -1,61 +1,44 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
 import { MenuSettingsDialog } from "./components/MenuSettingsDialog";
 import { MenuNavBar } from "./components/MenuNavBar";
 import { MenuActionBar } from "./components/menu-action-bar";
 import { PageTitle } from "@/components/admin/PageTitle";
 import { ProductMenuProvider, useProductMenu } from "../ProductMenuProvider";
-import type { BuilderState, ViewType } from "../types/builder-state";
 
+/**
+ * Menu Builder Content - Main Component
+ *
+ * Pure compositional component - just renders sub-components.
+ * All state and data comes from ProductMenuProvider.
+ * Sub-components use useProductMenu() to get what they need.
+ */
 function MenuBuilderContent() {
-  const searchParams = useSearchParams();
-  const { labels, categories, products, error } = useProductMenu();
-  const { toast } = useToast();
+  const { isLoading, error, builder } = useProductMenu();
 
-  const currentView = (searchParams.get("view") as ViewType) || "menu";
-  const currentLabelId = searchParams.get("labelId") || undefined;
-  const currentCategoryId = searchParams.get("categoryId") || undefined;
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">Loading menu data...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Debug log
-  console.log("[MenuBuilder] Products count:", products.length);
-
-  // Builder state derived directly from URL params
-  const builderState = useMemo<BuilderState>(
-    () => ({
-      selectedIds: [], // TODO: Will be managed through state later
-      undoStack: [],
-      redoStack: [],
-      currentView,
-      currentLabelId,
-      currentCategoryId,
-      totalLabels: labels.length,
-      totalCategories: categories.length,
-      totalProducts: products.length,
-    }),
-    [
-      currentView,
-      currentLabelId,
-      currentCategoryId,
-      labels.length,
-      categories.length,
-      products.length,
-    ]
-  );
-
-  // Centralized error handling
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: "Failed to load menu data",
-        description:
-          error.message || "Unable to load the menu builder. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }, [error, toast]);
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center text-destructive">
+          <p className="font-semibold">Failed to load menu data</p>
+          <p className="text-sm mt-2">{error.message || "Please try again"}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -65,40 +48,47 @@ function MenuBuilderContent() {
         action={<MenuSettingsDialog />}
       />
 
-      <MenuNavBar
-        currentView={currentView}
-        currentLabelId={currentLabelId}
-        currentCategoryId={currentCategoryId}
-      />
-
-      <MenuActionBar
-        view={currentView}
-        state={builderState}
-        labels={labels}
-        categories={categories}
-        products={products}
-      />
+      <MenuNavBar />
+      <MenuActionBar />
 
       {/* Placeholder for future table views */}
       <div className="mt-8 p-8 border-2 border-dashed rounded-lg text-center text-muted-foreground">
-        <p>Current view: {currentView}</p>
-        {currentLabelId && (
-          <p className="text-xs">Label ID: {currentLabelId}</p>
-        )}
-        {currentCategoryId && (
-          <p className="text-xs">Category ID: {currentCategoryId}</p>
-        )}
-        <p className="text-xs mt-2">
-          Navigation bar is functional - use dropdowns to switch views
+        <p className="font-semibold mb-2">
+          Current view: {builder.currentView}
         </p>
-        <p className="text-xs mt-2">
-          Action bar shows different buttons based on current view
-        </p>
+        {builder.currentLabelId && (
+          <p className="text-xs">Label ID: {builder.currentLabelId}</p>
+        )}
+        {builder.currentCategoryId && (
+          <p className="text-xs">Category ID: {builder.currentCategoryId}</p>
+        )}
+        <div className="mt-4 space-y-1">
+          <p className="text-xs">
+            Selected: {builder.selectedIds.length} items
+          </p>
+          <p className="text-xs">
+            Expanded: {builder.expandedIds.size} sections
+          </p>
+        </div>
+        <div className="mt-4 pt-4 border-t border-dashed">
+          <p className="text-xs font-medium mb-2">
+            ✅ Simplified Architecture:
+          </p>
+          <ul className="text-xs space-y-1">
+            <li>✓ State in ProductMenuProvider</li>
+            <li>✓ Components get their own data</li>
+            <li>✓ No prop drilling</li>
+            <li>✓ Ready for table views</li>
+          </ul>
+        </div>
       </div>
     </>
   );
 }
 
+/**
+ * Menu Builder - Wrapped with Provider
+ */
 export default function MenuBuilder() {
   return (
     <ProductMenuProvider>
