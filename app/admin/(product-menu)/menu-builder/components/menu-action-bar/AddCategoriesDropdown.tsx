@@ -5,8 +5,14 @@ type AddCategoriesDropdownProps = {
   currentLabelId: string;
   labels: MenuLabel[];
   categories: MenuCategory[];
-  attachCategory: (labelId: string, categoryId: string) => Promise<any>;
-  detachCategory: (labelId: string, categoryId: string) => Promise<any>;
+  attachCategory: (
+    labelId: string,
+    categoryId: string
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  detachCategory: (
+    labelId: string,
+    categoryId: string
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
 };
 
 /**

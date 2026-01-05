@@ -1,14 +1,13 @@
 import { describe, it, expect, jest } from "@jest/globals";
-import {
-  DROPDOWN_REGISTRY,
-  type DropdownContext,
-} from "../dropdown-registry";
+import { DROPDOWN_REGISTRY, type DropdownContext } from "../dropdown-registry";
 import type { BuilderState } from "../../types/builder-state";
 import type { MenuLabel, MenuCategory, MenuProduct } from "../../types/menu";
 
 describe("Dropdown Registry", () => {
   // Mock context factory
-  const createMockContext = (overrides?: Partial<DropdownContext>): DropdownContext => ({
+  const createMockContext = (
+    overrides?: Partial<DropdownContext>
+  ): DropdownContext => ({
     state: {
       selectedIds: [],
       undoStack: [],
@@ -32,11 +31,21 @@ describe("Dropdown Registry", () => {
       { id: "prod-1", name: "Product 1" } as MenuProduct,
       { id: "prod-2", name: "Product 2" } as MenuProduct,
     ],
-    updateLabel: jest.fn().mockResolvedValue({ ok: true }),
-    attachCategory: jest.fn().mockResolvedValue({ ok: true }),
-    detachCategory: jest.fn().mockResolvedValue({ ok: true }),
-    attachProductToCategory: jest.fn().mockResolvedValue({ ok: true }),
-    detachProductFromCategory: jest.fn().mockResolvedValue({ ok: true }),
+    updateLabel: jest
+      .fn<DropdownContext["updateLabel"]>()
+      .mockResolvedValue({ ok: true }),
+    attachCategory: jest
+      .fn<DropdownContext["attachCategory"]>()
+      .mockResolvedValue({ ok: true }),
+    detachCategory: jest
+      .fn<DropdownContext["detachCategory"]>()
+      .mockResolvedValue({ ok: true }),
+    attachProductToCategory: jest
+      .fn<DropdownContext["attachProductToCategory"]>()
+      .mockResolvedValue({ ok: true }),
+    detachProductFromCategory: jest
+      .fn<DropdownContext["detachProductFromCategory"]>()
+      .mockResolvedValue({ ok: true }),
     ...overrides,
   });
 
@@ -48,7 +57,7 @@ describe("Dropdown Registry", () => {
     });
 
     it("should have Component and buildProps for each entry", () => {
-      Object.entries(DROPDOWN_REGISTRY).forEach(([key, value]) => {
+      Object.entries(DROPDOWN_REGISTRY).forEach(([_key, value]) => {
         expect(value).toHaveProperty("Component");
         expect(value).toHaveProperty("buildProps");
         expect(typeof value.buildProps).toBe("function");
@@ -140,15 +149,19 @@ describe("Dropdown Registry", () => {
       const config = DROPDOWN_REGISTRY["add-products"];
       const props = config.buildProps(context);
 
-      expect(props.attachProductToCategory).toBe(context.attachProductToCategory);
-      expect(props.detachProductFromCategory).toBe(context.detachProductFromCategory);
+      expect(props.attachProductToCategory).toBe(
+        context.attachProductToCategory
+      );
+      expect(props.detachProductFromCategory).toBe(
+        context.detachProductFromCategory
+      );
     });
   });
 
   describe("Type Safety", () => {
     it("should have properly typed mutation functions", () => {
       const context = createMockContext();
-      
+
       // These should all be callable with correct signatures
       expect(typeof context.updateLabel).toBe("function");
       expect(typeof context.attachCategory).toBe("function");
@@ -159,7 +172,7 @@ describe("Dropdown Registry", () => {
 
     it("should return proper result shape from mutations", async () => {
       const context = createMockContext();
-      
+
       const result = await context.updateLabel("label-1", { isVisible: true });
       expect(result).toHaveProperty("ok");
       expect(result.ok).toBe(true);

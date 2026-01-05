@@ -5,7 +5,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { ReactNode } from "react";
 
 type DropdownSection = {
   label?: string;
@@ -85,7 +84,9 @@ export function DropdownContent({
                     key={item.id}
                     checked={item.checked}
                     onSelect={(e) => e.preventDefault()}
-                    onCheckedChange={(checked) => onItemToggle(item.id, checked)}
+                    onCheckedChange={(checked) =>
+                      onItemToggle(item.id, checked)
+                    }
                   >
                     <span className="truncate">{item.name}</span>
                   </DropdownMenuCheckboxItem>

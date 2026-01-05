@@ -8,11 +8,11 @@ type AddProductsDropdownProps = {
   attachProductToCategory: (
     productId: string,
     categoryId: string
-  ) => Promise<any>;
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
   detachProductFromCategory: (
     productId: string,
     categoryId: string
-  ) => Promise<any>;
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
 };
 
 /**

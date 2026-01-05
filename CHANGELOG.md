@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.58.1 - 2026-01-05
+
+- **Code Quality & Type Safety Improvements**: Removed obsolete files and fixed all TypeScript/lint errors
+  - **Deleted obsolete files**: action-builders.ts (unused after refactoring), index.test.tsx (tested removed functions)
+  - **Fixed Jest mock types**: Using `jest.fn<T>()` pattern for proper type inference in test mocks
+  - **Removed unused code**: Unused imports and prefixed unused params with underscore per ESLint rules
+  - **React Compiler optimization**: Removed manual useMemo wrapper (React Compiler handles memoization automatically)
+  - **Type safety**: Replaced `Promise<any>` with proper `Promise<{ ok: boolean; error?: string; data?: unknown }>` return types in dropdown components
+  - **Net impact**: Cleaner codebase; zero TypeScript errors; zero lint warnings; proper type safety throughout
+
 ## 0.58.0 - 2026-01-05
 
 - **Menu Builder Architecture Consolidation**: Unified action configuration with single source of truth, eliminating duplication and improving maintainability

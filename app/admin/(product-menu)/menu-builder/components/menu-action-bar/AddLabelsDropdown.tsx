@@ -3,7 +3,10 @@ import type { MenuLabel } from "../../../types/menu";
 
 type AddLabelsDropdownProps = {
   labels: MenuLabel[];
-  updateLabel: (id: string, data: { isVisible: boolean }) => Promise<any>;
+  updateLabel: (
+    id: string,
+    data: { isVisible: boolean }
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
 };
 
 /**

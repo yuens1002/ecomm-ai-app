@@ -52,41 +52,38 @@ export function MenuActionBar() {
   );
 
   // Build actions object for action bar config
-  const builderActions = useMemo(
-    () => ({
-      // Selection
-      toggleSelection: builder.toggleSelection,
-      selectAll: builder.selectAll,
-      clearSelection: builder.clearSelection,
+  const builderActions = {
+    // Selection
+    toggleSelection: builder.toggleSelection,
+    selectAll: builder.selectAll,
+    clearSelection: builder.clearSelection,
 
-      // Expand/collapse
-      toggleExpand: builder.toggleExpand,
-      expandAll: builder.expandAll,
-      collapseAll: builder.collapseAll,
+    // Expand/collapse
+    toggleExpand: builder.toggleExpand,
+    expandAll: builder.expandAll,
+    collapseAll: builder.collapseAll,
 
-      // Navigation
-      navigateToView: builder.navigateToView,
-      navigateToLabel: builder.navigateToLabel,
-      navigateToCategory: builder.navigateToCategory,
-      navigateBack: builder.navigateBack,
+    // Navigation
+    navigateToView: builder.navigateToView,
+    navigateToLabel: builder.navigateToLabel,
+    navigateToCategory: builder.navigateToCategory,
+    navigateBack: builder.navigateBack,
 
-      // Undo/redo (stubs for now)
-      undo: () => console.log("[MenuActionBar] Undo not yet implemented"),
-      redo: () => console.log("[MenuActionBar] Redo not yet implemented"),
+    // Undo/redo (stubs for now)
+    undo: () => console.log("[MenuActionBar] Undo not yet implemented"),
+    redo: () => console.log("[MenuActionBar] Redo not yet implemented"),
 
-      // CRUD operations - now handled by action.execute
-      removeSelected: async () => {
-        await executeActionFromConfig("remove");
-      },
-      cloneSelected: async () => {
-        await executeActionFromConfig("clone");
-      },
-      toggleVisibility: async () => {
-        await executeActionFromConfig("visibility");
-      },
-    }),
-    [builder]
-  );
+    // CRUD operations - now handled by action.execute
+    removeSelected: async () => {
+      await executeActionFromConfig("remove");
+    },
+    cloneSelected: async () => {
+      await executeActionFromConfig("clone");
+    },
+    toggleVisibility: async () => {
+      await executeActionFromConfig("visibility");
+    },
+  };
 
   // Helper to execute actions using action.execute from config
   const executeActionFromConfig = async (actionId: string) => {
@@ -128,13 +125,19 @@ export function MenuActionBar() {
       const refreshForView = action.refresh?.[builder.currentView];
       if (refreshForView) {
         refreshForView.forEach((resource) => {
-          if (resource === "labels" || resource === "categories" || resource === "products") {
+          if (
+            resource === "labels" ||
+            resource === "categories" ||
+            resource === "products"
+          ) {
             mutate();
           }
         });
       }
     } catch (error) {
-      const errorMsg = action.errorMessage?.[builder.currentView] || `Failed to execute ${actionId}`;
+      const errorMsg =
+        action.errorMessage?.[builder.currentView] ||
+        `Failed to execute ${actionId}`;
       console.error(`[MenuActionBar] ${errorMsg}:`, error);
     }
 
@@ -169,10 +172,13 @@ export function MenuActionBar() {
 
   // Helper to build dropdown content from registry
   const buildDropdownContent = (actionId: string): React.ReactNode => {
-    const config = DROPDOWN_REGISTRY[actionId as keyof typeof DROPDOWN_REGISTRY];
-    
+    const config =
+      DROPDOWN_REGISTRY[actionId as keyof typeof DROPDOWN_REGISTRY];
+
     if (!config) {
-      return <div className="p-4 text-sm text-muted-foreground">Coming soon</div>;
+      return (
+        <div className="p-4 text-sm text-muted-foreground">Coming soon</div>
+      );
     }
 
     const Component = config.Component;
@@ -250,7 +256,7 @@ export function MenuActionBar() {
     combo: renderCombo,
   };
 
-  const renderAction = (action: (typeof actions)[0], index: number) => {
+  const renderAction = (action: (typeof actions)[0], _index: number) => {
     const isDisabled = action.disabled(state);
     const renderer = RENDERERS[action.type];
     return renderer(action, isDisabled);
