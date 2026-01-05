@@ -4,17 +4,17 @@ import { MenuSettingsDialog } from "./components/MenuSettingsDialog";
 import { MenuNavBar } from "./components/MenuNavBar";
 import { MenuActionBar } from "./components/menu-action-bar";
 import { PageTitle } from "@/components/admin/PageTitle";
-import { ProductMenuProvider, useProductMenu } from "../ProductMenuProvider";
+import { MenuBuilderProvider, useMenuBuilder } from "./MenuBuilderProvider";
 
 /**
  * Menu Builder Content - Main Component
  *
  * Pure compositional component - just renders sub-components.
- * All state and data comes from ProductMenuProvider.
- * Sub-components use useProductMenu() to get what they need.
+ * All state and data comes from MenuBuilderProvider.
+ * Sub-components use useMenuBuilder() to get what they need.
  */
 function MenuBuilderContent() {
-  const { isLoading, error, builder } = useProductMenu();
+  const { isLoading, error, builder } = useMenuBuilder();
 
   // Show loading state
   if (isLoading) {
@@ -91,8 +91,8 @@ function MenuBuilderContent() {
  */
 export default function MenuBuilder() {
   return (
-    <ProductMenuProvider>
+    <MenuBuilderProvider>
       <MenuBuilderContent />
-    </ProductMenuProvider>
+    </MenuBuilderProvider>
   );
 }

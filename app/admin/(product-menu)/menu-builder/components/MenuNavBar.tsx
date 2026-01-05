@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { useProductMenu } from "../../ProductMenuProvider";
+import { useMenuBuilder } from "../MenuBuilderProvider";
 
 /**
  * MenuNavBar - Navigation breadcrumb with 3 segments (Menu | Labels | Categories)
@@ -28,7 +28,7 @@ export function MenuNavBar() {
     categories,
     settings,
     isLoading,
-  } = useProductMenu();
+  } = useMenuBuilder();
 
   if (isLoading) {
     return (
@@ -44,8 +44,8 @@ export function MenuNavBar() {
   const currentLabel = labels.find((l) => l.id === currentLabelId);
   const currentCategory = categories.find((c) => c.id === currentCategoryId);
 
-  const menuIcon = settings?.icon || "ShoppingBag";
-  const menuText = settings?.title || "Menu";
+  const menuIcon = settings?.icon; // Only show if admin has set one
+  const menuText = settings?.title;
 
   // Labels segment text
   const labelsText =
@@ -111,13 +111,7 @@ export function MenuNavBar() {
         {categories.map((category) => (
           <DropdownMenuItem
             key={category.id}
-            onClick={() => {
-              // Need labelId to navigate to category
-              // Use current label or first label that has this category
-              if (currentLabelId) {
-                navigateToCategory(currentLabelId, category.id);
-              }
-            }}
+            onClick={() => navigateToCategory(category.id)}
           >
             {category.name}
           </DropdownMenuItem>

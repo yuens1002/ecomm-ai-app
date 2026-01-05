@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface NavItemProps {
-  icon: string; // DynamicIcon name (e.g., "Home", "Tags")
-  text: string; // Display text
+  icon?: string; // DynamicIcon name (e.g., "Home", "Tags")
+  text?: string; // Display text
   isSelected: boolean; // Highlights segment (primary background)
   hasDropdown: boolean; // Shows chevron and enables dropdown
   onClick?: () => void; // Click handler for non-dropdown items

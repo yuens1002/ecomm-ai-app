@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.58.0 - 2026-01-05
+
+- **Menu Builder Architecture Consolidation**: Unified action configuration with single source of truth, eliminating duplication and improving maintainability
+  - **Consolidated action-bar-config.ts** (355→496 lines): All button configs + view-specific execute logic in one place; eliminated action-strategies.ts (269 lines deleted)
+  - **Added ActionContext & ProductMenuMutations types**: Proper TypeScript types for execution context (no `any` types); validated with unit tests
+  - **View-specific execute logic**: Each shared action (remove, clone, visibility) has execute/refresh/errorMessage per view (menu, label, category, all-labels, all-categories)
+  - **Removed duplication**: Deleted action-strategies.ts; logic now in action definitions; 3-layer indirection reduced to 1 (config → execute directly)
+  - **Created dropdown components**: AddLabelsDropdown, AddCategoriesDropdown, AddProductsDropdown using base DropdownContent component (consistent UI/search/sections)
+  - **DROPDOWN_REGISTRY pattern**: Declarative mapping of action IDs to components with typed props builders; no switch statements
+  - **Renamed & relocated provider**: ProductMenuProvider → MenuBuilderProvider (moved to menu-builder/); properly scoped to menu-builder feature only
+  - **Simplified index.tsx** (294→271 lines): Extracted buildDropdownContent() helper; eliminated duplicate dropdown rendering; single `as any` with explanation
+  - **Unit tests**: 72 tests passing (56 action-bar-config, 16 dropdown-registry); validates types, execute logic, disabled states, props building
+  - **Net impact**: -152 lines total; better organization (all action logic co-located); clearer intent (config contains behavior); easier to extend (add view → add execute)
+  - **Type safety**: All mutations properly typed; no `any` in config or context (only 1 justified `as any` in component spread)
+
 ## 0.57.0 - 2026-01-04
 
 - **Menu Builder Architecture Simplification**: Refactored state management to use existing ProductMenuProvider pattern, eliminating duplicate data fetching and reducing cognitive load

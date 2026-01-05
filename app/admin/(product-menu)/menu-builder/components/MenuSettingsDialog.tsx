@@ -16,10 +16,10 @@ import { InputGroupInput } from "@/components/ui/app/InputGroup";
 import { DialogShell } from "@/components/app-components/DialogShell";
 import { IconPicker } from "@/components/app-components/IconPicker";
 import { productMenuSettingsSchema } from "../../types/menu";
-import { useProductMenu } from "../../ProductMenuProvider";
+import { useMenuBuilder } from "../MenuBuilderProvider";
 
 export function MenuSettingsDialog() {
-  const { settings, updateSettings, isSaving, isLoading } = useProductMenu();
+  const { settings, updateSettings, isSaving, isLoading } = useMenuBuilder();
   const { toast } = useToast();
 
   const [open, setOpen] = useState(false);

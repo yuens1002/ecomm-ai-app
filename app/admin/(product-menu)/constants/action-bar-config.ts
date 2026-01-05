@@ -22,10 +22,30 @@ import type {
   ViewType,
   MenuBuilderActions,
 } from "../types/builder-state";
+import type { MenuLabel, MenuCategory, MenuProduct } from "../types/menu";
 
 export type ActionPosition = "left" | "right";
 
 export type ActionType = "button" | "combo" | "dropdown";
+
+// Subset of mutations from useProductMenuMutations used in actions
+export type ProductMenuMutations = {
+  updateLabel: (id: string, payload: { isVisible?: boolean }) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  updateCategory: (id: string, payload: { isVisible?: boolean }) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  detachCategory: (labelId: string, categoryId: string) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  detachProductFromCategory: (productId: string, categoryId: string) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+};
+
+// Context passed to execute functions
+export type ActionContext = {
+  selectedIds: string[];
+  currentLabelId?: string;
+  currentCategoryId?: string;
+  mutations: ProductMenuMutations;
+  labels: MenuLabel[];
+  categories: MenuCategory[];
+  products: MenuProduct[];
+};
 
 export type ActionDefinition = {
   id: string;
@@ -45,6 +65,10 @@ export type ActionDefinition = {
   comboWith?: string; // ID of the paired action
   // For dropdown buttons
   hasDropdown?: boolean;
+  // View-specific execution logic (alternative to onClick for shared actions)
+  execute?: Partial<Record<ViewType, (context: ActionContext) => Promise<void>>>;
+  refresh?: Partial<Record<ViewType, ("labels" | "categories" | "products")[]>>;
+  errorMessage?: Partial<Record<ViewType, string>>;
 };
 
 // Platform detection for keyboard shortcuts
@@ -65,6 +89,241 @@ const hasUndoHistory = (state: BuilderState): boolean => {
 const hasRedoHistory = (state: BuilderState): boolean => {
   return state.redoStack.length > 0;
 };
+
+// ==================== SHARED ACTIONS ====================
+// Define common actions once, reuse across all views
+const SHARED_ACTIONS = {
+  clone: {
+    id: "clone",
+    type: "button" as ActionType,
+    icon: Copy,
+    label: "Clone",
+    tooltip: "Duplicate selected items",
+    kbd: [modKey, "D"],
+    position: "left" as ActionPosition,
+    disabled: (state: BuilderState) => !hasSelection(state),
+    ariaLabel: (state: BuilderState) =>
+      hasSelection(state)
+        ? "Clone selected items"
+        : "Clone disabled - no items selected",
+    onClick: async (state: BuilderState, actions: MenuBuilderActions) => {
+      await actions.cloneSelected();
+    },
+    execute: {
+      menu: async ({ selectedIds }: ActionContext) => {
+        // TODO: Implement label cloning with categories
+        console.log("[Clone] Menu Labels:", selectedIds);
+      },
+      "all-labels": async ({ selectedIds }: ActionContext) => {
+        // TODO: Implement label cloning
+        console.log("[Clone] All Labels:", selectedIds);
+      },
+      "all-categories": async ({ selectedIds }: ActionContext) => {
+        // TODO: Implement category cloning
+        console.log("[Clone] All Categories:", selectedIds);
+      },
+    },
+    refresh: {
+      menu: ["labels" as const],
+      "all-labels": ["labels" as const],
+      "all-categories": ["categories" as const],
+    },
+    errorMessage: {
+      menu: "Failed to clone labels",
+      "all-labels": "Failed to clone labels",
+      "all-categories": "Failed to clone categories",
+    },
+  },
+  remove: {
+    id: "remove",
+    type: "button" as ActionType,
+    icon: CornerUpLeft,
+    label: "Remove",
+    tooltip: "Remove from menu",
+    kbd: [modKey, "⌫"],
+    position: "left" as ActionPosition,
+    disabled: (state: BuilderState) => !hasSelection(state),
+    ariaLabel: (state: BuilderState) =>
+      hasSelection(state)
+        ? "Remove selected items"
+        : "Remove disabled - no items selected",
+    onClick: async (state: BuilderState, actions: MenuBuilderActions) => {
+      await actions.removeSelected();
+    },
+    execute: {
+      menu: async ({ selectedIds, mutations }: ActionContext) => {
+        await Promise.all(
+          selectedIds.map((id) =>
+            mutations.updateLabel(id, { isVisible: false })
+          )
+        );
+      },
+      label: async ({ selectedIds, currentLabelId, mutations }: ActionContext) => {
+        if (!currentLabelId) return;
+        await Promise.all(
+          selectedIds.map((id) => mutations.detachCategory(currentLabelId, id))
+        );
+      },
+      category: async ({ selectedIds, currentCategoryId, mutations }: ActionContext) => {
+        if (!currentCategoryId) return;
+        await Promise.all(
+          selectedIds.map((id) =>
+            mutations.detachProductFromCategory(id, currentCategoryId)
+          )
+        );
+      },
+      "all-labels": async ({ selectedIds, mutations }: ActionContext) => {
+        await Promise.all(
+          selectedIds.map((id) =>
+            mutations.updateLabel(id, { isVisible: false })
+          )
+        );
+      },
+      "all-categories": async ({ selectedIds, mutations }: ActionContext) => {
+        await Promise.all(
+          selectedIds.map((id) =>
+            mutations.updateCategory(id, { isVisible: false })
+          )
+        );
+      },
+    },
+    refresh: {
+      menu: ["labels" as const],
+      label: ["labels" as const],
+      category: ["products" as const],
+      "all-labels": ["labels" as const],
+      "all-categories": ["categories" as const],
+    },
+    errorMessage: {
+      menu: "Failed to hide labels from menu",
+      label: "Failed to detach categories from label",
+      category: "Failed to detach products from category",
+      "all-labels": "Failed to hide labels",
+      "all-categories": "Failed to hide categories",
+    },
+  },
+  visibility: {
+    id: "visibility",
+    type: "button" as ActionType,
+    icon: Eye,
+    label: "Visibility",
+    tooltip: "Toggle visibility",
+    kbd: ["Space"],
+    position: "right" as ActionPosition,
+    disabled: (state: BuilderState) => !hasSelection(state),
+    ariaLabel: (state: BuilderState) =>
+      hasSelection(state)
+        ? "Toggle visibility of selected items"
+        : "Visibility disabled - no items selected",
+    onClick: async (state: BuilderState, actions: MenuBuilderActions) => {
+      await actions.toggleVisibility();
+    },
+    execute: {
+      menu: async ({ selectedIds, mutations, labels }: ActionContext) => {
+        await Promise.all(
+          selectedIds.map(async (id) => {
+            const label = labels.find((l) => l.id === id);
+            if (label) {
+              await mutations.updateLabel(id, { isVisible: !label.isVisible });
+            }
+          })
+        );
+      },
+      "all-labels": async ({ selectedIds, mutations, labels }: ActionContext) => {
+        await Promise.all(
+          selectedIds.map(async (id) => {
+            const label = labels.find((l) => l.id === id);
+            if (label) {
+              await mutations.updateLabel(id, { isVisible: !label.isVisible });
+            }
+          })
+        );
+      },
+      "all-categories": async ({ selectedIds, mutations, categories }: ActionContext) => {
+        await Promise.all(
+          selectedIds.map(async (id) => {
+            const category = categories.find((c) => c.id === id);
+            if (category) {
+              await mutations.updateCategory(id, {
+                isVisible: !category.isVisible,
+              });
+            }
+          })
+        );
+      },
+    },
+    refresh: {
+      menu: ["labels" as const],
+      "all-labels": ["labels" as const],
+      "all-categories": ["categories" as const],
+    },
+    errorMessage: {
+      menu: "Failed to toggle label visibility",
+      "all-labels": "Failed to toggle label visibility",
+      "all-categories": "Failed to toggle category visibility",
+    },
+  },
+  expandAll: {
+    id: "expand-all",
+    type: "button" as ActionType,
+    icon: ListChevronsDownUp,
+    label: "Expand All",
+    tooltip: "Expand all sections",
+    kbd: [modKey, "↓"],
+    position: "right" as ActionPosition,
+    disabled: () => false,
+    onClick: (state: BuilderState, actions: MenuBuilderActions) => {
+      actions.expandAll([]);
+    },
+  },
+  collapseAll: {
+    id: "collapse-all",
+    type: "button" as ActionType,
+    icon: ListChevronsUpDown,
+    label: "Collapse All",
+    tooltip: "Collapse all sections",
+    kbd: [modKey, "↑"],
+    position: "right" as ActionPosition,
+    disabled: () => false,
+    onClick: (state: BuilderState, actions: MenuBuilderActions) => {
+      actions.collapseAll();
+    },
+  },
+  undo: {
+    id: "undo",
+    type: "button" as ActionType,
+    icon: Undo,
+    label: "Undo",
+    tooltip: "Undo last change",
+    kbd: [modKey, "Z"],
+    position: "right" as ActionPosition,
+    disabled: (state: BuilderState) => !hasUndoHistory(state),
+    ariaLabel: (state: BuilderState) =>
+      hasUndoHistory(state)
+        ? "Undo last operation"
+        : "Undo disabled - no changes to undo",
+    onClick: (state: BuilderState, actions: MenuBuilderActions) => {
+      actions.undo();
+    },
+  },
+  redo: {
+    id: "redo",
+    type: "button" as ActionType,
+    icon: Redo,
+    label: "Redo",
+    tooltip: "Redo last change",
+    kbd: [modKey, "Shift", "Z"],
+    position: "right" as ActionPosition,
+    disabled: (state: BuilderState) => !hasRedoHistory(state),
+    ariaLabel: (state: BuilderState) =>
+      hasRedoHistory(state)
+        ? "Redo last undone operation"
+        : "Redo disabled - no changes to redo",
+    onClick: (state: BuilderState, actions: MenuBuilderActions) => {
+      actions.redo();
+    },
+  },
+} satisfies Record<string, ActionDefinition>;
 
 // Action definitions by view
 export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
@@ -96,125 +355,16 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
       position: "left",
       disabled: (state) => state.totalLabels === 0, // Disabled when no labels in DB
       comboWith: "new-label",
-      onClick: async (state) => {
-        // TODO: Open label picker dropdown
-        console.log("Add Labels clicked", state);
-      },
+      onClick: () => {}, // Dropdown handled by DROPDOWN_REGISTRY
     },
-    {
-      id: "clone",
-      type: "button",
-      icon: Copy,
-      label: "Clone",
-      tooltip: "Duplicate selected items",
-      kbd: [modKey, "D"],
-      position: "left",
-      disabled: (state) => !hasSelection(state),
-      ariaLabel: (state) =>
-        hasSelection(state)
-          ? "Clone selected items"
-          : "Clone disabled - no items selected",
-      onClick: async (state, actions) => {
-        await actions.cloneSelected();
-      },
-    },
-    {
-      id: "remove",
-      type: "button",
-      icon: CornerUpLeft,
-      label: "Remove",
-      tooltip: "Remove from menu",
-      kbd: [modKey, "⌫"],
-      position: "left",
-      disabled: (state) => !hasSelection(state),
-      ariaLabel: (state) =>
-        hasSelection(state)
-          ? "Remove selected items from menu"
-          : "Remove disabled - no items selected",
-      onClick: async (state, actions) => {
-        await actions.removeSelected();
-      },
-    },
+    SHARED_ACTIONS.clone,
+    SHARED_ACTIONS.remove,
     // RIGHT SIDE
-    {
-      id: "visibility",
-      type: "button",
-      icon: Eye,
-      label: "Visibility",
-      tooltip: "Toggle visibility",
-      kbd: ["Space"],
-      position: "right",
-      disabled: (state) => !hasSelection(state),
-      ariaLabel: (state) =>
-        hasSelection(state)
-          ? "Toggle visibility of selected items"
-          : "Visibility disabled - no items selected",
-      onClick: async (state, actions) => {
-        await actions.toggleVisibility();
-      },
-    },
-    {
-      id: "expand-all",
-      type: "button",
-      icon: ListChevronsDownUp,
-      label: "Expand All",
-      tooltip: "Expand all sections",
-      kbd: [modKey, "↓"],
-      position: "right",
-      disabled: () => false, // Always enabled
-      onClick: (state, actions) => {
-        // Get all expandable IDs from labels
-        // TODO: This will be improved when we have the actual table data
-        actions.expandAll([]);
-      },
-    },
-    {
-      id: "collapse-all",
-      type: "button",
-      icon: ListChevronsUpDown,
-      label: "Collapse All",
-      tooltip: "Collapse all sections",
-      kbd: [modKey, "↑"],
-      position: "right",
-      disabled: () => false, // Always enabled
-      onClick: (state, actions) => {
-        actions.collapseAll();
-      },
-    },
-    {
-      id: "undo",
-      type: "button",
-      icon: Undo,
-      label: "Undo",
-      tooltip: "Undo last change",
-      kbd: [modKey, "Z"],
-      position: "right",
-      disabled: (state) => !hasUndoHistory(state),
-      ariaLabel: (state) =>
-        hasUndoHistory(state)
-          ? "Undo last operation"
-          : "Undo disabled - no changes to undo",
-      onClick: (state, actions) => {
-        actions.undo();
-      },
-    },
-    {
-      id: "redo",
-      type: "button",
-      icon: Redo,
-      label: "Redo",
-      tooltip: "Redo last change",
-      kbd: [modKey, "Shift", "Z"],
-      position: "right",
-      disabled: (state) => !hasRedoHistory(state),
-      ariaLabel: (state) =>
-        hasRedoHistory(state)
-          ? "Redo last undone operation"
-          : "Redo disabled - no changes to redo",
-      onClick: (state, actions) => {
-        actions.redo();
-      },
-    },
+    SHARED_ACTIONS.visibility,
+    SHARED_ACTIONS.expandAll,
+    SHARED_ACTIONS.collapseAll,
+    SHARED_ACTIONS.undo,
+    SHARED_ACTIONS.redo,
   ],
 
   // ==================== LABEL VIEW ====================
@@ -229,10 +379,7 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
       kbd: [],
       position: "left",
       disabled: (state) => state.totalCategories === 0, // Disabled when no categories in DB
-      onClick: async (state) => {
-        // TODO: Open category picker dropdown
-        console.log("Add Categories clicked", state);
-      },
+      onClick: () => {}, // Dropdown handled by DROPDOWN_REGISTRY
     },
     {
       id: "sort-mode",
@@ -248,58 +395,10 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         console.log("Sort Mode clicked", state);
       },
     },
-    {
-      id: "remove",
-      type: "button",
-      icon: CornerUpLeft,
-      label: "Remove",
-      tooltip: "Remove from label",
-      kbd: [modKey, "⌫"],
-      position: "left",
-      disabled: (state) => !hasSelection(state),
-      ariaLabel: (state) =>
-        hasSelection(state)
-          ? "Remove selected categories from label"
-          : "Remove disabled - no categories selected",
-      onClick: async (state, actions) => {
-        await actions.removeSelected();
-      },
-    },
+    SHARED_ACTIONS.remove,
     // RIGHT SIDE
-    {
-      id: "undo",
-      type: "button",
-      icon: Undo,
-      label: "Undo",
-      tooltip: "Undo last change",
-      kbd: [modKey, "Z"],
-      position: "right",
-      disabled: (state) => !hasUndoHistory(state),
-      ariaLabel: (state) =>
-        hasUndoHistory(state)
-          ? "Undo last operation"
-          : "Undo disabled - no changes to undo",
-      onClick: (state, actions) => {
-        actions.undo();
-      },
-    },
-    {
-      id: "redo",
-      type: "button",
-      icon: Redo,
-      label: "Redo",
-      tooltip: "Redo last change",
-      kbd: [modKey, "Shift", "Z"],
-      position: "right",
-      disabled: (state) => !hasRedoHistory(state),
-      ariaLabel: (state) =>
-        hasRedoHistory(state)
-          ? "Redo last undone operation"
-          : "Redo disabled - no changes to redo",
-      onClick: (state, actions) => {
-        actions.redo();
-      },
-    },
+    SHARED_ACTIONS.undo,
+    SHARED_ACTIONS.redo,
   ],
 
   // ==================== CATEGORY VIEW ====================
@@ -314,10 +413,7 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
       kbd: [],
       position: "left",
       disabled: (state) => state.totalProducts === 0, // Disabled when no products in DB
-      onClick: async (state) => {
-        // TODO: Open product picker dropdown
-        console.log("Add Products clicked", state);
-      },
+      onClick: () => {}, // Dropdown handled by DROPDOWN_REGISTRY
     },
     {
       id: "sort-order",
@@ -333,84 +429,12 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         console.log("Sort Order clicked", state);
       },
     },
-    {
-      id: "remove",
-      type: "button",
-      icon: CornerUpLeft,
-      label: "Remove",
-      tooltip: "Remove from category",
-      kbd: [modKey, "⌫"],
-      position: "left",
-      disabled: (state) => !hasSelection(state),
-      ariaLabel: (state) =>
-        hasSelection(state)
-          ? "Remove selected products from category"
-          : "Remove disabled - no products selected",
-      onClick: async (state, actions) => {
-        await actions.removeSelected();
-      },
-    },
+    SHARED_ACTIONS.remove,
     // RIGHT SIDE
-    {
-      id: "expand-all",
-      type: "button",
-      icon: ListChevronsDownUp,
-      label: "Expand All",
-      tooltip: "Expand all rows",
-      kbd: [modKey, "↓"],
-      position: "right",
-      disabled: () => false, // Always enabled
-      onClick: (state, actions) => {
-        actions.expandAll([]);
-      },
-    },
-    {
-      id: "collapse-all",
-      type: "button",
-      icon: ListChevronsUpDown,
-      label: "Collapse All",
-      tooltip: "Collapse all rows",
-      kbd: [modKey, "↑"],
-      position: "right",
-      disabled: () => false, // Always enabled
-      onClick: (state, actions) => {
-        actions.collapseAll();
-      },
-    },
-    {
-      id: "undo",
-      type: "button",
-      icon: Undo,
-      label: "Undo",
-      tooltip: "Undo last change",
-      kbd: [modKey, "Z"],
-      position: "right",
-      disabled: (state) => !hasUndoHistory(state),
-      ariaLabel: (state) =>
-        hasUndoHistory(state)
-          ? "Undo last operation"
-          : "Undo disabled - no changes to undo",
-      onClick: (state, actions) => {
-        actions.undo();
-      },
-    },
-    {
-      id: "redo",
-      type: "button",
-      icon: Redo,
-      label: "Redo",
-      tooltip: "Redo last change",
-      kbd: [modKey, "Shift", "Z"],
-      position: "right",
-      disabled: (state) => !hasRedoHistory(state),
-      ariaLabel: (state) =>
-        hasRedoHistory(state)
-          ? "Redo last undone operation"
-          : "Redo disabled - no changes to redo",
-      onClick: (state, actions) => {
-        actions.redo();
-      },
-    },
+    SHARED_ACTIONS.expandAll,
+    SHARED_ACTIONS.collapseAll,
+    SHARED_ACTIONS.undo,
+    SHARED_ACTIONS.redo,
   ],
 
   // ==================== ALL-LABELS VIEW ====================
@@ -430,92 +454,12 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         console.log("New Label clicked", state);
       },
     },
-    {
-      id: "clone",
-      type: "button",
-      icon: Copy,
-      label: "Clone",
-      tooltip: "Duplicate selected items",
-      kbd: [modKey, "D"],
-      position: "left",
-      disabled: (state) => !hasSelection(state),
-      ariaLabel: (state) =>
-        hasSelection(state)
-          ? "Clone selected labels with categories"
-          : "Clone disabled - no labels selected",
-      onClick: async (state, actions) => {
-        await actions.cloneSelected();
-      },
-    },
-    {
-      id: "remove",
-      type: "button",
-      icon: CornerUpLeft,
-      label: "Remove",
-      tooltip: "Hide from menu",
-      kbd: [modKey, "⌫"],
-      position: "left",
-      disabled: (state) => !hasSelection(state),
-      ariaLabel: (state) =>
-        hasSelection(state)
-          ? "Hide selected labels from menu"
-          : "Remove disabled - no labels selected",
-      onClick: async (state, actions) => {
-        await actions.removeSelected();
-      },
-    },
+    SHARED_ACTIONS.clone,
+    SHARED_ACTIONS.remove,
     // RIGHT SIDE
-    {
-      id: "visibility",
-      type: "button",
-      icon: Eye,
-      label: "Visibility",
-      tooltip: "Toggle visibility",
-      kbd: ["Space"],
-      position: "right",
-      disabled: (state) => !hasSelection(state),
-      ariaLabel: (state) =>
-        hasSelection(state)
-          ? "Toggle visibility of selected labels"
-          : "Visibility disabled - no labels selected",
-      onClick: async (state, actions) => {
-        await actions.toggleVisibility();
-      },
-    },
-    {
-      id: "undo",
-      type: "button",
-      icon: Undo,
-      label: "Undo",
-      tooltip: "Undo last change",
-      kbd: [modKey, "Z"],
-      position: "right",
-      disabled: (state) => !hasUndoHistory(state),
-      ariaLabel: (state) =>
-        hasUndoHistory(state)
-          ? "Undo last operation"
-          : "Undo disabled - no changes to undo",
-      onClick: (state, actions) => {
-        actions.undo();
-      },
-    },
-    {
-      id: "redo",
-      type: "button",
-      icon: Redo,
-      label: "Redo",
-      tooltip: "Redo last change",
-      kbd: [modKey, "Shift", "Z"],
-      position: "right",
-      disabled: (state) => !hasRedoHistory(state),
-      ariaLabel: (state) =>
-        hasRedoHistory(state)
-          ? "Redo last undone operation"
-          : "Redo disabled - no changes to redo",
-      onClick: (state, actions) => {
-        actions.redo();
-      },
-    },
+    SHARED_ACTIONS.visibility,
+    SHARED_ACTIONS.undo,
+    SHARED_ACTIONS.redo,
   ],
 
   // ==================== ALL-CATEGORIES VIEW ====================
@@ -535,91 +479,11 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
         console.log("New Category clicked", state);
       },
     },
-    {
-      id: "clone",
-      type: "button",
-      icon: Copy,
-      label: "Clone",
-      tooltip: "Duplicate selected items",
-      kbd: [modKey, "D"],
-      position: "left",
-      disabled: (state) => !hasSelection(state),
-      ariaLabel: (state) =>
-        hasSelection(state)
-          ? "Clone selected categories with products"
-          : "Clone disabled - no categories selected",
-      onClick: async (state, actions) => {
-        await actions.cloneSelected();
-      },
-    },
-    {
-      id: "remove",
-      type: "button",
-      icon: CornerUpLeft,
-      label: "Remove",
-      tooltip: "Hide from menu",
-      kbd: [modKey, "⌫"],
-      position: "left",
-      disabled: (state) => !hasSelection(state),
-      ariaLabel: (state) =>
-        hasSelection(state)
-          ? "Hide selected categories from menu"
-          : "Remove disabled - no categories selected",
-      onClick: async (state, actions) => {
-        await actions.removeSelected();
-      },
-    },
+    SHARED_ACTIONS.clone,
+    SHARED_ACTIONS.remove,
     // RIGHT SIDE
-    {
-      id: "visibility",
-      type: "button",
-      icon: Eye,
-      label: "Visibility",
-      tooltip: "Toggle visibility",
-      kbd: ["Space"],
-      position: "right",
-      disabled: (state) => !hasSelection(state),
-      ariaLabel: (state) =>
-        hasSelection(state)
-          ? "Toggle visibility of selected categories"
-          : "Visibility disabled - no categories selected",
-      onClick: async (state, actions) => {
-        await actions.toggleVisibility();
-      },
-    },
-    {
-      id: "undo",
-      type: "button",
-      icon: Undo,
-      label: "Undo",
-      tooltip: "Undo last change",
-      kbd: [modKey, "Z"],
-      position: "right",
-      disabled: (state) => !hasUndoHistory(state),
-      ariaLabel: (state) =>
-        hasUndoHistory(state)
-          ? "Undo last operation"
-          : "Undo disabled - no changes to undo",
-      onClick: (state, actions) => {
-        actions.undo();
-      },
-    },
-    {
-      id: "redo",
-      type: "button",
-      icon: Redo,
-      label: "Redo",
-      tooltip: "Redo last change",
-      kbd: [modKey, "Shift", "Z"],
-      position: "right",
-      disabled: (state) => !hasRedoHistory(state),
-      ariaLabel: (state) =>
-        hasRedoHistory(state)
-          ? "Redo last undone operation"
-          : "Redo disabled - no changes to redo",
-      onClick: (state, actions) => {
-        actions.redo();
-      },
-    },
+    SHARED_ACTIONS.visibility,
+    SHARED_ACTIONS.undo,
+    SHARED_ACTIONS.redo,
   ],
 };

@@ -59,10 +59,9 @@ export function useMenuBuilderState() {
   );
 
   const navigateToCategory = useCallback(
-    (labelId: string, categoryId: string) => {
+    (categoryId: string) => {
       const params = new URLSearchParams();
       params.set("view", "category");
-      params.set("labelId", labelId);
       params.set("categoryId", categoryId);
       router.push(`/admin/menu-builder?${params}`);
       setSelectedIds([]);

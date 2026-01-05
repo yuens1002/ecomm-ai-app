@@ -91,6 +91,10 @@ export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast
 PORT=3000 npm run dev
 ```
 
+```pwsh
+$env:DATABASE_ADAPTER = "postgres"; $env:DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"; $env:PORT = "3000"; npm run dev
+```
+
 Switch back to Neon (uses `.env.local`):
 
 ```bash
