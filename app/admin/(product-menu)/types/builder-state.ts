@@ -4,12 +4,7 @@
  * Central state management types for Menu Builder.
  */
 
-export type ViewType =
-  | "menu"
-  | "label"
-  | "category"
-  | "all-labels"
-  | "all-categories";
+export type ViewType = "menu" | "label" | "category" | "all-labels" | "all-categories";
 
 export type BuilderState = {
   // Selection state
@@ -34,6 +29,20 @@ export type HistoryEntry = {
   action: string;
   timestamp: Date;
   data: unknown; // Serializable state snapshot
+};
+
+/**
+ * Undoable Action
+ *
+ * Represents a reversible operation with undo/redo logic.
+ */
+export type UndoableAction = {
+  type: "create" | "update" | "delete" | "detach" | "bulk";
+  view: ViewType;
+  description: string;
+  timestamp: number;
+  undo: () => Promise<void>;
+  redo: () => Promise<void>;
 };
 
 /**

@@ -9,13 +9,12 @@ import type { MenuLabel, MenuCategory, MenuProduct } from "../../types/menu";
 
 describe("Action Bar Configuration", () => {
   // Mock context factory
-  const createMockContext = (
-    overrides?: Partial<ActionContext>
-  ): ActionContext => {
+  const createMockContext = (overrides?: Partial<ActionContext>): ActionContext => {
     const mockMutations: ProductMenuMutations = {
-      updateLabel: jest
-        .fn<ProductMenuMutations["updateLabel"]>()
-        .mockResolvedValue({ ok: true }),
+      createCategory: jest
+        .fn<ProductMenuMutations["createCategory"]>()
+        .mockResolvedValue({ ok: true, data: { id: "new-category-id" } }),
+      updateLabel: jest.fn<ProductMenuMutations["updateLabel"]>().mockResolvedValue({ ok: true }),
       updateCategory: jest
         .fn<ProductMenuMutations["updateCategory"]>()
         .mockResolvedValue({ ok: true }),
@@ -45,9 +44,7 @@ describe("Action Bar Configuration", () => {
     };
   };
 
-  const createMockState = (
-    overrides?: Partial<BuilderState>
-  ): BuilderState => ({
+  const createMockState = (overrides?: Partial<BuilderState>): BuilderState => ({
     selectedIds: [],
     undoStack: [],
     redoStack: [],
@@ -96,25 +93,19 @@ describe("Action Bar Configuration", () => {
 
   describe("Shared Actions - Remove", () => {
     it("should have execute logic for all relevant views", () => {
-      const removeAction = ACTION_BAR_CONFIG.menu.find(
-        (a) => a.id === "remove"
-      );
+      const removeAction = ACTION_BAR_CONFIG.menu.find((a) => a.id === "remove");
 
       expect(removeAction?.execute).toBeDefined();
       expect(removeAction?.execute?.menu).toBeInstanceOf(Function);
       expect(removeAction?.execute?.label).toBeInstanceOf(Function);
       expect(removeAction?.execute?.category).toBeInstanceOf(Function);
       expect(removeAction?.execute?.["all-labels"]).toBeInstanceOf(Function);
-      expect(removeAction?.execute?.["all-categories"]).toBeInstanceOf(
-        Function
-      );
+      expect(removeAction?.execute?.["all-categories"]).toBeInstanceOf(Function);
     });
 
     it("should hide labels in menu view", async () => {
       const context = createMockContext();
-      const removeAction = ACTION_BAR_CONFIG.menu.find(
-        (a) => a.id === "remove"
-      );
+      const removeAction = ACTION_BAR_CONFIG.menu.find((a) => a.id === "remove");
 
       await removeAction?.execute?.menu?.(context);
 
@@ -128,44 +119,26 @@ describe("Action Bar Configuration", () => {
 
     it("should detach categories in label view", async () => {
       const context = createMockContext();
-      const removeAction = ACTION_BAR_CONFIG.label.find(
-        (a) => a.id === "remove"
-      );
+      const removeAction = ACTION_BAR_CONFIG.label.find((a) => a.id === "remove");
 
       await removeAction?.execute?.label?.(context);
 
-      expect(context.mutations.detachCategory).toHaveBeenCalledWith(
-        "label-1",
-        "id1"
-      );
-      expect(context.mutations.detachCategory).toHaveBeenCalledWith(
-        "label-1",
-        "id2"
-      );
+      expect(context.mutations.detachCategory).toHaveBeenCalledWith("label-1", "id1");
+      expect(context.mutations.detachCategory).toHaveBeenCalledWith("label-1", "id2");
     });
 
     it("should detach products in category view", async () => {
       const context = createMockContext();
-      const removeAction = ACTION_BAR_CONFIG.category.find(
-        (a) => a.id === "remove"
-      );
+      const removeAction = ACTION_BAR_CONFIG.category.find((a) => a.id === "remove");
 
       await removeAction?.execute?.category?.(context);
 
-      expect(context.mutations.detachProductFromCategory).toHaveBeenCalledWith(
-        "id1",
-        "category-1"
-      );
-      expect(context.mutations.detachProductFromCategory).toHaveBeenCalledWith(
-        "id2",
-        "category-1"
-      );
+      expect(context.mutations.detachProductFromCategory).toHaveBeenCalledWith("id1", "category-1");
+      expect(context.mutations.detachProductFromCategory).toHaveBeenCalledWith("id2", "category-1");
     });
 
     it("should have proper refresh config", () => {
-      const removeAction = ACTION_BAR_CONFIG.menu.find(
-        (a) => a.id === "remove"
-      );
+      const removeAction = ACTION_BAR_CONFIG.menu.find((a) => a.id === "remove");
 
       expect(removeAction?.refresh?.menu).toEqual(["labels"]);
       expect(removeAction?.refresh?.label).toEqual(["labels"]);
@@ -173,9 +146,7 @@ describe("Action Bar Configuration", () => {
     });
 
     it("should have error messages for all views", () => {
-      const removeAction = ACTION_BAR_CONFIG.menu.find(
-        (a) => a.id === "remove"
-      );
+      const removeAction = ACTION_BAR_CONFIG.menu.find((a) => a.id === "remove");
 
       expect(removeAction?.errorMessage?.menu).toBeTruthy();
       expect(removeAction?.errorMessage?.label).toBeTruthy();
@@ -203,24 +174,16 @@ describe("Action Bar Configuration", () => {
 
   describe("Shared Actions - Visibility", () => {
     it("should have execute logic for menu and all-* views", () => {
-      const visibilityAction = ACTION_BAR_CONFIG.menu.find(
-        (a) => a.id === "visibility"
-      );
+      const visibilityAction = ACTION_BAR_CONFIG.menu.find((a) => a.id === "visibility");
 
       expect(visibilityAction?.execute?.menu).toBeInstanceOf(Function);
-      expect(visibilityAction?.execute?.["all-labels"]).toBeInstanceOf(
-        Function
-      );
-      expect(visibilityAction?.execute?.["all-categories"]).toBeInstanceOf(
-        Function
-      );
+      expect(visibilityAction?.execute?.["all-labels"]).toBeInstanceOf(Function);
+      expect(visibilityAction?.execute?.["all-categories"]).toBeInstanceOf(Function);
     });
 
     it("should toggle label visibility in menu view", async () => {
       const context = createMockContext();
-      const visibilityAction = ACTION_BAR_CONFIG.menu.find(
-        (a) => a.id === "visibility"
-      );
+      const visibilityAction = ACTION_BAR_CONFIG.menu.find((a) => a.id === "visibility");
 
       await visibilityAction?.execute?.menu?.(context);
 
@@ -254,45 +217,35 @@ describe("Action Bar Configuration", () => {
   describe("Disabled State Logic", () => {
     it("should disable actions when no items selected", () => {
       const state = createMockState({ selectedIds: [] });
-      const removeAction = ACTION_BAR_CONFIG.menu.find(
-        (a) => a.id === "remove"
-      );
+      const removeAction = ACTION_BAR_CONFIG.menu.find((a) => a.id === "remove");
 
       expect(removeAction?.disabled(state)).toBe(true);
     });
 
     it("should enable actions when items selected", () => {
       const state = createMockState({ selectedIds: ["id1"] });
-      const removeAction = ACTION_BAR_CONFIG.menu.find(
-        (a) => a.id === "remove"
-      );
+      const removeAction = ACTION_BAR_CONFIG.menu.find((a) => a.id === "remove");
 
       expect(removeAction?.disabled(state)).toBe(false);
     });
 
     it("should disable add-labels when totalLabels is 0", () => {
       const state = createMockState({ totalLabels: 0 });
-      const addLabelsAction = ACTION_BAR_CONFIG.menu.find(
-        (a) => a.id === "add-labels"
-      );
+      const addLabelsAction = ACTION_BAR_CONFIG.menu.find((a) => a.id === "add-labels");
 
       expect(addLabelsAction?.disabled(state)).toBe(true);
     });
 
     it("should disable add-categories when totalCategories is 0", () => {
       const state = createMockState({ totalCategories: 0 });
-      const addCategoriesAction = ACTION_BAR_CONFIG.label.find(
-        (a) => a.id === "add-categories"
-      );
+      const addCategoriesAction = ACTION_BAR_CONFIG.label.find((a) => a.id === "add-categories");
 
       expect(addCategoriesAction?.disabled(state)).toBe(true);
     });
 
     it("should disable add-products when totalProducts is 0", () => {
       const state = createMockState({ totalProducts: 0 });
-      const addProductsAction = ACTION_BAR_CONFIG.category.find(
-        (a) => a.id === "add-products"
-      );
+      const addProductsAction = ACTION_BAR_CONFIG.category.find((a) => a.id === "add-products");
 
       expect(addProductsAction?.disabled(state)).toBe(true);
     });
@@ -325,9 +278,7 @@ describe("Action Bar Configuration", () => {
 
     it("should have dropdown type for add-categories", () => {
       const labelActions = ACTION_BAR_CONFIG.label;
-      const addCategoriesAction = labelActions.find(
-        (a) => a.id === "add-categories"
-      );
+      const addCategoriesAction = labelActions.find((a) => a.id === "add-categories");
 
       expect(addCategoriesAction?.type).toBe("dropdown");
     });
@@ -356,9 +307,7 @@ describe("Action Bar Configuration", () => {
       const categoryActions = ACTION_BAR_CONFIG.category;
 
       expect(menuActions.find((a) => a.id === "expand-all")).toBeDefined();
-      expect(
-        categoryActions.find((a) => a.id === "collapse-all")
-      ).toBeDefined();
+      expect(categoryActions.find((a) => a.id === "collapse-all")).toBeDefined();
     });
 
     it("should not have expand/collapse in label view", () => {

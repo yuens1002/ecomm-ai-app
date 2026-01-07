@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import {
   createCategorySchema,
   updateCategorySchema,
@@ -10,14 +11,17 @@ import { prisma } from "@/lib/prisma";
 // List categories with labels
 export async function listCategories() {
   try {
+    const categoryQueryArgs = {
+      // Category model has no createdAt; use id desc as a practical newest-first ordering.
+      orderBy: { id: "desc" },
+      include: {
+        _count: { select: { products: true } },
+        labels: { orderBy: { order: "asc" }, include: { label: true } },
+      },
+    } satisfies Prisma.CategoryFindManyArgs;
+
     const [categories, labels] = await Promise.all([
-      prisma.category.findMany({
-        orderBy: { name: "asc" },
-        include: {
-          _count: { select: { products: true } },
-          labels: { orderBy: { order: "asc" }, include: { label: true } },
-        },
-      }),
+      prisma.category.findMany(categoryQueryArgs),
       prisma.categoryLabel.findMany({ orderBy: { order: "asc" } }),
     ]);
 
@@ -33,8 +37,7 @@ export async function listCategories() {
 
     return { ok: true, data: { categories: payload, labels } };
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Failed to list categories";
+    const message = err instanceof Error ? err.message : "Failed to list categories";
     return { ok: false, error: message };
   }
 }
@@ -96,8 +99,7 @@ export async function createCategory(input: unknown) {
       },
     };
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Failed to create category";
+    const message = err instanceof Error ? err.message : "Failed to create category";
     return { ok: false, error: message };
   }
 }
@@ -115,12 +117,7 @@ export async function updateCategory(id: unknown, input: unknown) {
     };
 
   try {
-    const {
-      name,
-      slug,
-      labelIds,
-      isVisible,
-    } = bodyParsed.data;
+    const { name, slug, labelIds, isVisible } = bodyParsed.data;
 
     const updates: Record<string, unknown> = {};
     if (name) updates.name = name;
@@ -169,8 +166,7 @@ export async function updateCategory(id: unknown, input: unknown) {
       },
     };
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Failed to update category";
+    const message = err instanceof Error ? err.message : "Failed to update category";
     return { ok: false, error: message };
   }
 }
@@ -192,8 +188,7 @@ export async function deleteCategory(id: unknown) {
     ]);
     return { ok: true, data: { id: idParsed.data } };
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Failed to delete category";
+    const message = err instanceof Error ? err.message : "Failed to delete category";
     return { ok: false, error: message };
   }
 }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.59.0 - 2026-01-07
+
+- **All Categories table view**: Added stable “All Categories” table with consistent sorting and inline editing UX
+  - Implemented selection, inline rename, visibility toggle, sortable headers, and auto-edit on newly created categories
+  - Fixed category creation to generate slugs and default ordering to newest-first (`createdAt desc`)
+  - Centralized shared table primitives (width presets, sortable header cell, checkbox/visibility/name editor cells) to stabilize alignment and hover/focus behavior
+  - Refined default-name styling so only system-generated names (e.g. “New category”, “copy”) render muted/italic + ellipsis
+  - Metrics: Jest `npm run test:ci` (29 suites, 281 tests passing)
+
 ## 0.58.1 - 2026-01-05
 
 - **Code Quality & Type Safety Improvements**: Removed obsolete files and fixed all TypeScript/lint errors

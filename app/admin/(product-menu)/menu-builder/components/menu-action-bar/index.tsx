@@ -2,14 +2,8 @@
 
 import { useMemo } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import {
-  ACTION_BAR_CONFIG,
-  type ActionContext,
-} from "../../../constants/action-bar-config";
-import {
-  DROPDOWN_REGISTRY,
-  type DropdownContext,
-} from "../../../constants/dropdown-registry";
+import { ACTION_BAR_CONFIG, type ActionContext } from "../../../constants/action-bar-config";
+import { DROPDOWN_REGISTRY, type DropdownContext } from "../../../constants/dropdown-registry";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { ActionButton } from "./ActionButton";
 import { ActionComboButton } from "./ActionComboButton";
@@ -28,6 +22,7 @@ export function MenuActionBar() {
     products,
     mutate,
     // All mutations
+    createCategory,
     updateLabel,
     updateCategory,
     attachCategory,
@@ -108,10 +103,12 @@ export function MenuActionBar() {
       currentLabelId: builder.currentLabelId,
       currentCategoryId: builder.currentCategoryId,
       mutations: {
+        createCategory,
         updateLabel,
         updateCategory,
         detachCategory,
         detachProductFromCategory,
+        attachCategory,
       },
       labels,
       categories,
@@ -125,19 +122,14 @@ export function MenuActionBar() {
       const refreshForView = action.refresh?.[builder.currentView];
       if (refreshForView) {
         refreshForView.forEach((resource) => {
-          if (
-            resource === "labels" ||
-            resource === "categories" ||
-            resource === "products"
-          ) {
+          if (resource === "labels" || resource === "categories" || resource === "products") {
             mutate();
           }
         });
       }
     } catch (error) {
       const errorMsg =
-        action.errorMessage?.[builder.currentView] ||
-        `Failed to execute ${actionId}`;
+        action.errorMessage?.[builder.currentView] || `Failed to execute ${actionId}`;
       console.error(`[MenuActionBar] ${errorMsg}:`, error);
     }
 
@@ -172,13 +164,10 @@ export function MenuActionBar() {
 
   // Helper to build dropdown content from registry
   const buildDropdownContent = (actionId: string): React.ReactNode => {
-    const config =
-      DROPDOWN_REGISTRY[actionId as keyof typeof DROPDOWN_REGISTRY];
+    const config = DROPDOWN_REGISTRY[actionId as keyof typeof DROPDOWN_REGISTRY];
 
     if (!config) {
-      return (
-        <div className="p-4 text-sm text-muted-foreground">Coming soon</div>
-      );
+      return <div className="p-4 text-sm text-muted-foreground">Coming soon</div>;
     }
 
     const Component = config.Component;
@@ -271,9 +260,7 @@ export function MenuActionBar() {
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="flex items-center gap-2">
-          {rightActions.map(renderAction)}
-        </div>
+        <div className="flex items-center gap-2">{rightActions.map(renderAction)}</div>
       </div>
     </TooltipProvider>
   );

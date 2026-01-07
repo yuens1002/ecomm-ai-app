@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ViewType, HistoryEntry } from "../types/builder-state";
 
@@ -33,10 +33,25 @@ export function useMenuBuilderState() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   // ==================== UNDO/REDO STATE (LOCAL) ====================
-  // TODO: Implement undo/redo functionality
-  // For now, just maintain empty arrays to satisfy BuilderState interface
-  const [undoStack, _setUndoStack] = useState<HistoryEntry[]>([]);
-  const [redoStack, _setRedoStack] = useState<HistoryEntry[]>([]);
+  // View-specific stacks (max 10 operations per view)
+  const [undoStacks, setUndoStacks] = useState<Record<ViewType, HistoryEntry[]>>({
+    menu: [],
+    label: [],
+    category: [],
+    "all-labels": [],
+    "all-categories": [],
+  });
+  const [redoStacks, setRedoStacks] = useState<Record<ViewType, HistoryEntry[]>>({
+    menu: [],
+    label: [],
+    category: [],
+    "all-labels": [],
+    "all-categories": [],
+  });
+
+  // Get current view's stacks
+  const undoStack = useMemo(() => undoStacks[currentView] || [], [undoStacks, currentView]);
+  const redoStack = useMemo(() => redoStacks[currentView] || [], [redoStacks, currentView]);
 
   // ==================== NAVIGATION ACTIONS ====================
   const navigateToView = useCallback(
@@ -79,9 +94,7 @@ export function useMenuBuilderState() {
 
   // ==================== SELECTION ACTIONS ====================
   const toggleSelection = useCallback((id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   }, []);
 
   const selectAll = useCallback((ids: string[]) => {
@@ -113,6 +126,60 @@ export function useMenuBuilderState() {
     setExpandedIds(new Set());
   }, []);
 
+  // ==================== UNDO/REDO ACTIONS ====================
+  const pushUndoAction = useCallback(
+    (action: HistoryEntry) => {
+      setUndoStacks((prev) => {
+        const viewStack = prev[currentView] || [];
+        const newStack = [...viewStack, action].slice(-10); // Keep last 10
+        return { ...prev, [currentView]: newStack };
+      });
+      // Clear redo stack when new action is pushed
+      setRedoStacks((prev) => ({ ...prev, [currentView]: [] }));
+    },
+    [currentView]
+  );
+
+  const undo = useCallback(async () => {
+    const action = undoStack[undoStack.length - 1];
+    if (!action || typeof action.data !== "object" || !action.data) return;
+
+    const undoable = action.data as { undo?: () => Promise<void> };
+    if (undoable.undo) {
+      await undoable.undo();
+
+      // Move action from undo to redo stack
+      setUndoStacks((prev) => {
+        const viewStack = prev[currentView] || [];
+        return { ...prev, [currentView]: viewStack.slice(0, -1) };
+      });
+      setRedoStacks((prev) => {
+        const viewStack = prev[currentView] || [];
+        return { ...prev, [currentView]: [...viewStack, action] };
+      });
+    }
+  }, [undoStack, currentView]);
+
+  const redo = useCallback(async () => {
+    const action = redoStack[redoStack.length - 1];
+    if (!action || typeof action.data !== "object" || !action.data) return;
+
+    const redoable = action.data as { redo?: () => Promise<void> };
+    if (redoable.redo) {
+      await redoable.redo();
+
+      // Move action from redo to undo stack
+      setRedoStacks((prev) => {
+        const viewStack = prev[currentView] || [];
+        return { ...prev, [currentView]: viewStack.slice(0, -1) };
+      });
+      setUndoStacks((prev) => {
+        const viewStack = prev[currentView] || [];
+        return { ...prev, [currentView]: [...viewStack, action] };
+      });
+    }
+  }, [redoStack, currentView]);
+
   return {
     // Navigation state
     currentView,
@@ -140,5 +207,10 @@ export function useMenuBuilderState() {
     toggleExpand,
     expandAll,
     collapseAll,
+
+    // Undo/redo actions
+    pushUndoAction,
+    undo,
+    redo,
   };
 }

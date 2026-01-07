@@ -17,12 +17,9 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type {
-  BuilderState,
-  ViewType,
-  MenuBuilderActions,
-} from "../types/builder-state";
+import type { BuilderState, ViewType, MenuBuilderActions } from "../types/builder-state";
 import type { MenuLabel, MenuCategory, MenuProduct } from "../types/menu";
+import { generateSlug } from "@/hooks/useSlugGenerator";
 
 export type ActionPosition = "left" | "right";
 
@@ -30,10 +27,31 @@ export type ActionType = "button" | "combo" | "dropdown";
 
 // Subset of mutations from useProductMenuMutations used in actions
 export type ProductMenuMutations = {
-  updateLabel: (id: string, payload: { isVisible?: boolean }) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
-  updateCategory: (id: string, payload: { isVisible?: boolean }) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
-  detachCategory: (labelId: string, categoryId: string) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
-  detachProductFromCategory: (productId: string, categoryId: string) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  updateLabel: (
+    id: string,
+    payload: { isVisible?: boolean }
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  updateCategory: (
+    id: string,
+    payload: { isVisible?: boolean }
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  createCategory: (payload: {
+    name: string;
+    slug: string;
+    isVisible?: boolean;
+  }) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  detachCategory: (
+    labelId: string,
+    categoryId: string
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  detachProductFromCategory: (
+    productId: string,
+    categoryId: string
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  attachCategory?: (
+    labelId: string,
+    categoryId: string
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
 };
 
 // Context passed to execute functions
@@ -57,10 +75,7 @@ export type ActionDefinition = {
   position: ActionPosition;
   disabled: (state: BuilderState) => boolean;
   ariaLabel?: (state: BuilderState) => string; // For disabled state explanation
-  onClick: (
-    state: BuilderState,
-    actions: MenuBuilderActions
-  ) => void | Promise<void>;
+  onClick: (state: BuilderState, actions: MenuBuilderActions) => void | Promise<void>;
   // For combo buttons
   comboWith?: string; // ID of the paired action
   // For dropdown buttons
@@ -72,9 +87,7 @@ export type ActionDefinition = {
 };
 
 // Platform detection for keyboard shortcuts
-const isMac =
-  typeof window !== "undefined" &&
-  navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+const isMac = typeof window !== "undefined" && navigator.platform.toUpperCase().indexOf("MAC") >= 0;
 const modKey = isMac ? "⌘" : "Ctrl";
 
 // Helper functions for disabled state
@@ -103,9 +116,7 @@ const SHARED_ACTIONS = {
     position: "left" as ActionPosition,
     disabled: (state: BuilderState) => !hasSelection(state),
     ariaLabel: (state: BuilderState) =>
-      hasSelection(state)
-        ? "Clone selected items"
-        : "Clone disabled - no items selected",
+      hasSelection(state) ? "Clone selected items" : "Clone disabled - no items selected",
     onClick: async (state: BuilderState, actions: MenuBuilderActions) => {
       await actions.cloneSelected();
     },
@@ -118,9 +129,42 @@ const SHARED_ACTIONS = {
         // TODO: Implement label cloning
         console.log("[Clone] All Labels:", selectedIds);
       },
-      "all-categories": async ({ selectedIds }: ActionContext) => {
-        // TODO: Implement category cloning
-        console.log("[Clone] All Categories:", selectedIds);
+      "all-categories": async ({ selectedIds, categories, labels, mutations }: ActionContext) => {
+        // Clone each selected category with products and isVisible state
+        for (const categoryId of selectedIds) {
+          const originalCategory = categories.find((c) => c.id === categoryId);
+          if (!originalCategory) continue;
+
+          // Generate unique clone name
+          const existingNames = categories.map((c) => c.name);
+          let counter = 1;
+          let cloneName = `${originalCategory.name} copy`;
+          while (existingNames.includes(cloneName)) {
+            cloneName = `${originalCategory.name} copy ${counter}`;
+            counter++;
+          }
+
+          // Create the clone
+          const result = await mutations.createCategory({
+            name: cloneName,
+            slug: generateSlug(cloneName),
+            isVisible: originalCategory.isVisible,
+          });
+
+          if (result.ok && result.data) {
+            const newCategoryId = (result.data as { id: string }).id;
+
+            // Attach to same labels as original
+            const attachedLabels = labels.filter((label) =>
+              label.categories?.some((cat) => cat.id === categoryId)
+            );
+            for (const label of attachedLabels) {
+              await mutations.attachCategory?.(label.id, newCategoryId);
+            }
+
+            // TODO: Clone products when product attachment API is available
+          }
+        }
       },
     },
     refresh: {
@@ -139,50 +183,39 @@ const SHARED_ACTIONS = {
     type: "button" as ActionType,
     icon: CornerUpLeft,
     label: "Remove",
-    tooltip: "Remove from menu",
+    tooltip: "Remove from added labels",
     kbd: [modKey, "⌫"],
     position: "left" as ActionPosition,
     disabled: (state: BuilderState) => !hasSelection(state),
     ariaLabel: (state: BuilderState) =>
-      hasSelection(state)
-        ? "Remove selected items"
-        : "Remove disabled - no items selected",
+      hasSelection(state) ? "Remove selected items" : "Remove disabled - no items selected",
     onClick: async (state: BuilderState, actions: MenuBuilderActions) => {
       await actions.removeSelected();
     },
     execute: {
       menu: async ({ selectedIds, mutations }: ActionContext) => {
-        await Promise.all(
-          selectedIds.map((id) =>
-            mutations.updateLabel(id, { isVisible: false })
-          )
-        );
+        await Promise.all(selectedIds.map((id) => mutations.updateLabel(id, { isVisible: false })));
       },
       label: async ({ selectedIds, currentLabelId, mutations }: ActionContext) => {
         if (!currentLabelId) return;
-        await Promise.all(
-          selectedIds.map((id) => mutations.detachCategory(currentLabelId, id))
-        );
+        await Promise.all(selectedIds.map((id) => mutations.detachCategory(currentLabelId, id)));
       },
       category: async ({ selectedIds, currentCategoryId, mutations }: ActionContext) => {
         if (!currentCategoryId) return;
         await Promise.all(
-          selectedIds.map((id) =>
-            mutations.detachProductFromCategory(id, currentCategoryId)
-          )
+          selectedIds.map((id) => mutations.detachProductFromCategory(id, currentCategoryId))
         );
       },
       "all-labels": async ({ selectedIds, mutations }: ActionContext) => {
-        await Promise.all(
-          selectedIds.map((id) =>
-            mutations.updateLabel(id, { isVisible: false })
-          )
-        );
+        await Promise.all(selectedIds.map((id) => mutations.updateLabel(id, { isVisible: false })));
       },
-      "all-categories": async ({ selectedIds, mutations }: ActionContext) => {
+      "all-categories": async ({ selectedIds, mutations, labels }: ActionContext) => {
+        // Detach categories from ALL labels (does NOT set isVisible: false)
         await Promise.all(
-          selectedIds.map((id) =>
-            mutations.updateCategory(id, { isVisible: false })
+          selectedIds.flatMap((categoryId) =>
+            labels
+              .filter((label) => label.categories?.some((cat) => cat.id === categoryId))
+              .map((label) => mutations.detachCategory(label.id, categoryId))
           )
         );
       },
@@ -199,7 +232,7 @@ const SHARED_ACTIONS = {
       label: "Failed to detach categories from label",
       category: "Failed to detach products from category",
       "all-labels": "Failed to hide labels",
-      "all-categories": "Failed to hide categories",
+      "all-categories": "Failed to detach categories from labels",
     },
   },
   visibility: {
@@ -299,9 +332,7 @@ const SHARED_ACTIONS = {
     position: "right" as ActionPosition,
     disabled: (state: BuilderState) => !hasUndoHistory(state),
     ariaLabel: (state: BuilderState) =>
-      hasUndoHistory(state)
-        ? "Undo last operation"
-        : "Undo disabled - no changes to undo",
+      hasUndoHistory(state) ? "Undo last operation" : "Undo disabled - no changes to undo",
     onClick: (state: BuilderState, actions: MenuBuilderActions) => {
       actions.undo();
     },
@@ -316,9 +347,7 @@ const SHARED_ACTIONS = {
     position: "right" as ActionPosition,
     disabled: (state: BuilderState) => !hasRedoHistory(state),
     ariaLabel: (state: BuilderState) =>
-      hasRedoHistory(state)
-        ? "Redo last undone operation"
-        : "Redo disabled - no changes to redo",
+      hasRedoHistory(state) ? "Redo last undone operation" : "Redo disabled - no changes to redo",
     onClick: (state: BuilderState, actions: MenuBuilderActions) => {
       actions.redo();
     },
@@ -473,10 +502,13 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
       tooltip: "Add new category",
       kbd: [modKey, "N"],
       position: "left",
-      disabled: () => false, // Always enabled
-      onClick: async (state, _actions) => {
-        // TODO: Open new category modal
-        console.log("New Category clicked", state);
+      disabled: (state: BuilderState) => hasSelection(state), // Disabled when rows selected
+      ariaLabel: (state: BuilderState) =>
+        hasSelection(state) ? "New category disabled - clear selection first" : "Add new category",
+      onClick: async () => {
+        // Trigger handled by AllCategoriesTableView component
+        // This will be implemented via custom event or context
+        window.dispatchEvent(new CustomEvent("menu-builder:new-category"));
       },
     },
     SHARED_ACTIONS.clone,

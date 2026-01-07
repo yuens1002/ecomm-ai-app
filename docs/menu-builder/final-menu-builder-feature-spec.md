@@ -35,7 +35,7 @@ The Menu Builder is a single-page admin interface for organizing the product cat
 
 ### Three-Level Hierarchy
 
-```
+```text
 CategoryLabel (Label)
   ├─ id, name, icon, order, isVisible, autoOrder
   └─ CategoryLabelCategory[] (junction)
@@ -556,9 +556,7 @@ Ethiopian Copy 2 → Ethiopian Copy 3
   </DropdownMenuTrigger>
   <DropdownMenuContent>
     {sortOptions.map((opt) => (
-      <DropdownMenuItem onClick={() => handleSort(opt.value)}>
-        {opt.label}
-      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => handleSort(opt.value)}>{opt.label}</DropdownMenuItem>
     ))}
   </DropdownMenuContent>
 </DropdownMenu>
@@ -968,27 +966,12 @@ export async function updateCategory(id: string, data: UpdateCategoryInput) {}
 export async function deleteCategory(id: string) {}
 export async function reorderCategories(labelId: string, ids: string[]) {}
 
-export async function assignProductToCategory(
-  productId: string,
-  categoryId: string
-) {}
-export async function removeProductFromCategory(
-  productId: string,
-  categoryId: string
-) {}
-export async function reorderProductsInCategory(
-  categoryId: string,
-  ids: string[]
-) {}
+export async function assignProductToCategory(productId: string, categoryId: string) {}
+export async function removeProductFromCategory(productId: string, categoryId: string) {}
+export async function reorderProductsInCategory(categoryId: string, ids: string[]) {}
 
-export async function attachCategoryToLabel(
-  categoryId: string,
-  labelId: string
-) {}
-export async function detachCategoryFromLabel(
-  categoryId: string,
-  labelId: string
-) {}
+export async function attachCategoryToLabel(categoryId: string, labelId: string) {}
+export async function detachCategoryFromLabel(categoryId: string, labelId: string) {}
 ```
 
 ---

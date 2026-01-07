@@ -1,29 +1,33 @@
-import { defineConfig, globalIgnores } from "eslint/config";
+import { defineConfig } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
 const eslintConfig = defineConfig([
+  // Global ignores must be in a separate config object with ONLY ignores property
+  {
+    ignores: [
+      // Default ignores of eslint-config-next:
+      ".next/**",
+      "out/**",
+      "build/**",
+      "next-env.d.ts",
+      // Development tooling scripts
+      "dev-tools/**",
+      // Test coverage reports
+      "coverage/**",
+      // Documentation
+      "docs/**",
+      // AI wizard features (not currently in use - will revisit later)
+      "app/admin/pages/new/wizard/**",
+      "app/admin/pages/edit/[id]/**",
+      "app/api/admin/pages/generate-about/**",
+      // Menu builder mock/prototype directories
+      "app/admin/menu-builder-mock/**",
+      "app/admin/menu-builder-mock2/**",
+    ],
+  },
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-    // Development tooling scripts
-    "dev-tools/**",
-    // Test coverage reports
-    "coverage/**",
-    // AI wizard features (not currently in use - will revisit later)
-    "app/admin/pages/new/wizard/**",
-    "app/admin/pages/edit/[id]/**",
-    "app/api/admin/pages/generate-about/**",
-    // Menu builder mock/prototype directories
-    "app/admin/menu-builder-mock/**",
-    "app/admin/menu-builder-mock2/**",
-  ]),
   {
     rules: {
       // STRICT: Prevent 'any' type - force proper typing
