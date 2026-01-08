@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
-import { prisma } from "@/lib/prisma";
+import { detachCategoryFromLabel } from "@/app/admin/(product-menu)/data/labels";
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await requireAdminApi();
     if (!auth.authorized) {
@@ -17,27 +14,13 @@ export async function POST(
     const { categoryId } = body as { categoryId?: string };
 
     if (!categoryId) {
-      return NextResponse.json(
-        { error: "categoryId is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "categoryId is required" }, { status: 400 });
     }
 
-    await prisma.categoryLabelCategory.delete({
-      where: {
-        labelId_categoryId: {
-          labelId,
-          categoryId,
-        },
-      },
-    });
-
+    await detachCategoryFromLabel({ labelId, categoryId });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error detaching category from label:", error);
-    return NextResponse.json(
-      { error: "Failed to detach category" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to detach category" }, { status: 500 });
   }
 }

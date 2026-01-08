@@ -7,6 +7,7 @@ import * as labelActions from "../actions/labels";
 import * as categoryActions from "../actions/categories";
 import * as productActions from "../actions/products";
 import { updateProductMenuSettings } from "../actions/settings";
+import type { CloneCategory } from "../types/category";
 
 export function useProductMenuMutations() {
   const { mutate } = useSWRConfig();
@@ -51,14 +52,8 @@ export function useProductMenuMutations() {
       if (res.ok) await refresh();
       return res;
     },
-    reorderCategoriesInLabel: async (
-      labelId: unknown,
-      categoryIds: unknown
-    ) => {
-      const res = await labelActions.reorderCategoriesInLabel(
-        labelId,
-        categoryIds
-      );
+    reorderCategoriesInLabel: async (labelId: unknown, categoryIds: unknown) => {
+      const res = await labelActions.reorderCategoriesInLabel(labelId, categoryIds);
       if (res.ok) await refresh();
       return res;
     },
@@ -75,6 +70,11 @@ export function useProductMenuMutations() {
       if (res.ok) await refresh();
       return res;
     },
+    cloneCategory: async (payload: CloneCategory) => {
+      const res = await categoryActions.cloneCategory(payload);
+      if (res.ok) await refresh();
+      return res;
+    },
     updateCategory: async (id: unknown, payload: unknown) => {
       const res = await categoryActions.updateCategory(id, payload);
       if (res.ok) await refresh();
@@ -87,25 +87,13 @@ export function useProductMenuMutations() {
     },
 
     // Products
-    attachProductToCategory: async (
-      productId: unknown,
-      categoryId: unknown
-    ) => {
-      const res = await productActions.attachProductToCategory(
-        productId,
-        categoryId
-      );
+    attachProductToCategory: async (productId: unknown, categoryId: unknown) => {
+      const res = await productActions.attachProductToCategory(productId, categoryId);
       if (res.ok) await refresh();
       return res;
     },
-    detachProductFromCategory: async (
-      productId: unknown,
-      categoryId: unknown
-    ) => {
-      const res = await productActions.detachProductFromCategory(
-        productId,
-        categoryId
-      );
+    detachProductFromCategory: async (productId: unknown, categoryId: unknown) => {
+      const res = await productActions.detachProductFromCategory(productId, categoryId);
       if (res.ok) await refresh();
       return res;
     },

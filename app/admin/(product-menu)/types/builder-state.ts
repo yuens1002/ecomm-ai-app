@@ -4,7 +4,17 @@
  * Central state management types for Menu Builder.
  */
 
-export type ViewType = "menu" | "label" | "category" | "all-labels" | "all-categories";
+/**
+ * Single source of truth for available views.
+ *
+ * These are UI views (not pages) and are intentionally treated as peer states
+ * rather than a strict hierarchy.
+ */
+export const ALL_VIEWS = ["menu", "label", "category", "all-labels", "all-categories"] as const;
+
+export type ViewType = (typeof ALL_VIEWS)[number];
+
+export type NavigableEntityView = Extract<ViewType, "menu" | "label" | "category">;
 
 export type BuilderState = {
   // Selection state
@@ -71,7 +81,7 @@ export interface MenuBuilderActions {
   redo: () => void;
 
   // Navigation
-  navigateToView: (view: "menu" | "label" | "category") => void;
+  navigateToView: (view: NavigableEntityView) => void;
   navigateToLabel: (labelId: string) => void;
   navigateToCategory: (labelId: string, categoryId: string) => void;
   navigateBack: () => void;

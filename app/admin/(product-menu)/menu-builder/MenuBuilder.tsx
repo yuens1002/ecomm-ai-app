@@ -5,7 +5,7 @@ import { MenuNavBar } from "./components/MenuNavBar";
 import { MenuActionBar } from "./components/menu-action-bar";
 import { PageTitle } from "@/components/admin/PageTitle";
 import { MenuBuilderProvider, useMenuBuilder } from "./MenuBuilderProvider";
-import { AllCategoriesTableView } from "./components/table-views/AllCategoriesTableView";
+import { TableViewRenderer } from "./components/table-views/TableViewRenderer";
 
 /**
  * Menu Builder Content - Main Component
@@ -15,7 +15,7 @@ import { AllCategoriesTableView } from "./components/table-views/AllCategoriesTa
  * Sub-components use useMenuBuilder() to get what they need.
  */
 function MenuBuilderContent() {
-  const { isLoading, error, builder } = useMenuBuilder();
+  const { isLoading, error } = useMenuBuilder();
 
   // Show loading state
   if (isLoading) {
@@ -52,32 +52,7 @@ function MenuBuilderContent() {
       <MenuNavBar />
       <MenuActionBar />
 
-      {/* Render appropriate table view based on current view */}
-      {builder.currentView === "all-categories" && <AllCategoriesTableView />}
-
-      {/* Placeholder for other views */}
-      {builder.currentView !== "all-categories" && (
-        <div className="mt-8 p-8 border-2 border-dashed rounded-lg text-center text-muted-foreground">
-          <p className="font-semibold mb-2">Current view: {builder.currentView}</p>
-          {builder.currentLabelId && <p className="text-xs">Label ID: {builder.currentLabelId}</p>}
-          {builder.currentCategoryId && (
-            <p className="text-xs">Category ID: {builder.currentCategoryId}</p>
-          )}
-          <div className="mt-4 space-y-1">
-            <p className="text-xs">Selected: {builder.selectedIds.length} items</p>
-            <p className="text-xs">Expanded: {builder.expandedIds.size} sections</p>
-          </div>
-          <div className="mt-4 pt-4 border-t border-dashed">
-            <p className="text-xs font-medium mb-2">✅ Simplified Architecture:</p>
-            <ul className="text-xs space-y-1">
-              <li>✓ State in ProductMenuProvider</li>
-              <li>✓ Components get their own data</li>
-              <li>✓ No prop drilling</li>
-              <li>✓ Ready for table views</li>
-            </ul>
-          </div>
-        </div>
-      )}
+      <TableViewRenderer />
     </>
   );
 }

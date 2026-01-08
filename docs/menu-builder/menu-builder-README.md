@@ -1,222 +1,114 @@
 # Menu Builder - Documentation Hub
 
-**Status:** Phase 1 Complete ✅  
-**Last Updated:** January 3, 2026
+**Status:** Foundation + first table view shipped ✅  
+**Last Updated:** January 8, 2026
 
 ---
 
 ## 📚 All Menu Builder Documentation
 
-### **Main Documents** (in `/docs`)
+### **Main Documents**
 
 1. **[menu-builder-implementation.md](./menu-builder-implementation.md)** ⭐ **START HERE**
-   - Complete Phase 1 implementation guide
-   - Architecture overview
+   - Current architecture overview (provider composition)
    - URL state persistence
-   - Action strategy pattern
-   - Testing guide
-   - File structure
-   - Next steps
+   - Action bar (`ACTION_BAR_CONFIG`) execution model
+   - View config layer (`VIEW_CONFIGS`) and table rendering
+   - How to add new views/actions
 
 2. **[final-menu-builder-feature-spec.md](./final-menu-builder-feature-spec.md)**
-   - Complete feature specification
-   - UI/UX design
-   - Data model
-   - All 5 table views
-   - Action bar specifications
-   - Navigation system
+   - Target UX + final table views
+   - Hierarchy: Labels → Categories → Products
 
-3. **[product-menu-builder-breakout.md](./product-menu-builder-breakout.md)**
-   - Original planning document
-   - Feature breakdown
-   - Technical decisions
-
-4. **[menu-builder-filesystem-ui.md](./menu-builder-filesystem-ui.md)**
-   - UI concept documentation
-   - File explorer metaphor
-   - User experience design
+3. **[menu-builder-filesystem-ui.md](./menu-builder-filesystem-ui.md)**
+   - UI metaphor and navigation concept
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Quick Start
 
-### **New to Menu Builder?**
+### **Where to look in code**
 
-1. **Understand the Feature:**
-   - Read [final-menu-builder-feature-spec.md](./final-menu-builder-feature-spec.md) (overview)
-   - Understand the 3-level hierarchy: Labels → Categories → Products
-
-2. **Learn the Implementation:**
-   - Read [menu-builder-implementation.md](./menu-builder-implementation.md) (complete guide)
-   - Understand the architecture and state management
-
-3. **Start Developing:**
-   - Check existing code in `app/admin/(product-menu)/menu-builder/`
-   - Review `hooks/useMenuBuilder.ts` - the main state hook
-   - Review `hooks/actionStrategies.ts` - action configuration
-
-### **Adding Features?**
-
-**To add a new view:**
-
-1. Add view type to `types/builder-state.ts`
-2. Add strategy config to `hooks/actionStrategies.ts`
-3. Add action bar config to `constants/action-bar-config.ts`
-4. Create table component in `menu-builder/components/table-views/`
-5. Add to MenuBuilder.tsx render switch
-
-**To add a new action:**
-
-1. Add action type to `hooks/actionStrategies.ts`
-2. Add strategy for each view that supports it
-3. Add button config to `constants/action-bar-config.ts`
-4. Add handler to `hooks/useMenuBuilder.ts`
-5. Write tests in `hooks/__tests__/`
+- Provider + composition: `app/admin/(product-menu)/menu-builder/MenuBuilderProvider.tsx`
+- UI state (URL + selection): `app/admin/(product-menu)/hooks/useMenuBuilderState.ts`
+- Data fetch (SWR): `app/admin/(product-menu)/hooks/useProductMenuData.ts`
+- Mutations (refresh on success): `app/admin/(product-menu)/hooks/useProductMenuMutations.ts`
+- Action bar config (IDs + execute logic): `app/admin/(product-menu)/constants/action-bar-config.ts`
+- View surface config (table/context-menu metadata): `app/admin/(product-menu)/constants/view-configs.ts`
+- Table switcher (reads `VIEW_CONFIGS`): `app/admin/(product-menu)/menu-builder/components/table-views/TableViewRenderer.tsx`
 
 ---
 
-## 📊 Project Status
+## 🧩 Adding Features
 
-### ✅ **Phase 1 Complete** (January 3, 2026)
+### **Add a new table view**
 
-**What's Built:**
+1. Add a new `ViewType` (if needed) in `app/admin/(product-menu)/types/builder-state.ts`.
+2. Add/adjust view entry in `app/admin/(product-menu)/constants/view-configs.ts`.
+3. Implement your table in `app/admin/(product-menu)/menu-builder/components/table-views/`.
+4. Add a new `tableViewId` and map it to your component in `TableViewRenderer.tsx`.
 
-- ✅ Central state management hook (`useMenuBuilder`)
-- ✅ URL state persistence (navigation survives refresh)
-- ✅ Action strategy pattern (no if/else chains)
-- ✅ Action bar integration (buttons → strategies)
-- ✅ Navigation system (breadcrumb with dropdowns)
-- ✅ Comprehensive tests (hooks + strategies)
+### **Add a new action**
 
-**Key Features:**
-
-- Single source of truth for all state
-- Declarative action configuration
-- Type-safe throughout
-- Fully tested
-- Production-ready foundation
-
-### 🔜 **Phase 2 Next** (Table Views)
-
-**To Build:**
-
-- [ ] Shared table components (CheckboxCell, ExpandToggle, etc.)
-- [ ] AllLabelsTableView (flat list)
-- [ ] AllCategoriesTableView (flat list)
-- [ ] LabelTableView (2-level hierarchy)
-- [ ] CategoryTableView (product linking)
-- [ ] MenuTableView (3-level hierarchy)
-- [ ] Drag & drop support
-- [ ] Inline editing
-- [ ] Integration tests
+1. Add an action definition to `app/admin/(product-menu)/constants/action-bar-config.ts` (ID, label, shortcuts, disabled logic).
+2. Implement behavior in `action.execute[view]` using mutations from `useProductMenuMutations`.
+3. If needed, add Zod schemas/types in `app/admin/(product-menu)/types/*` and use them in server actions + mutations.
 
 ---
 
-## 📂 Repository Structure
+## 📊 Current Status
+
+### ✅ Implemented
+
+- Provider-based architecture via `MenuBuilderProvider` + `useMenuBuilder()` context
+- URL-backed navigation (`view`, `labelId`, `categoryId`) via `useMenuBuilderState`
+- Action bar driven by `ACTION_BAR_CONFIG` (no view-specific switch statements)
+- View surface config layer via `VIEW_CONFIGS` + `TableViewRenderer`
+- `AllCategoriesTableView` wired under the `all-categories` view
+
+### 🔜 Next
+
+- Implement remaining view tables (`menu`, `label`, `category`, `all-labels`)
+- Add row/bulk context menus using `VIEW_CONFIGS[view].actionIds` (planned surface)
+
+---
+
+## 📂 Key Paths
 
 ```
-docs/
-├── menu-builder-README.md ← You are here
-├── menu-builder-implementation.md ← Complete guide
-├── final-menu-builder-feature-spec.md ← Feature spec
-├── product-menu-builder-breakout.md ← Planning
-└── menu-builder-filesystem-ui.md ← UI concepts
+docs/menu-builder/
+  menu-builder-README.md
+  menu-builder-implementation.md
 
 app/admin/(product-menu)/
-├── menu-builder/
-│   ├── MenuBuilder.tsx ← Main container
-│   ├── page.tsx
-│   └── components/
-│       ├── MenuNavBar.tsx
-│       └── menu-action-bar/
-│
-├── hooks/
-│   ├── useMenuBuilder.ts ← 📍 Main state hook
-│   ├── actionStrategies.ts ← 📍 Action config
-│   ├── useProductMenuMutations.ts
-│   └── __tests__/
-│
-├── actions/ ← Backend API
-│   ├── labels.ts
-│   ├── categories.ts
-│   └── products.ts
-│
-├── types/
-│   ├── builder-state.ts
-│   └── menu.ts
-│
-└── constants/
-    └── action-bar-config.ts
+  menu-builder/
+    MenuBuilder.tsx
+    MenuBuilderProvider.tsx
+    components/
+      menu-action-bar/
+      table-views/
+  hooks/
+    useMenuBuilderState.ts
+    useProductMenuData.ts
+    useProductMenuMutations.ts
+  constants/
+    action-bar-config.ts
+    view-configs.ts
 ```
 
 ---
 
-## 🔗 Key Code Files
-
-### **State Management:**
-
-- `hooks/useMenuBuilder.ts` - Central state hook (373 lines)
-- `constants/action-strategies.ts` - Action configuration (249 lines)
-- `types/builder-state.ts` - Type definitions
-
-### **Components:**
-
-- `menu-builder/MenuBuilder.tsx` - Main container
-- `menu-builder/components/MenuNavBar.tsx` - Navigation
-- `menu-builder/components/menu-action-bar/index.tsx` - Action buttons
-
-### **Backend:**
-
-- `actions/labels.ts` - Label CRUD operations
-- `actions/categories.ts` - Category CRUD operations
-- `actions/products.ts` - Product operations (TODO)
-
-### **Tests:**
-
-- `hooks/__tests__/useMenuBuilder.test.ts` - Hook tests (285 lines)
-- `hooks/__tests__/actionStrategies.test.ts` - Strategy tests (242 lines)
-
----
-
-## 🧪 Testing
-
-### **Run Tests:**
+## 🧪 Checks
 
 ```bash
-# All menu builder tests
-npm test -- menu-builder
+npm run precheck
 
-# Specific test files
-npm test -- useMenuBuilder
-npm test -- actionStrategies
+# Jest (CI mode)
+npm run test:ci
 
-# Watch mode
-npm test -- --watch
+# Or run the action bar config test only
+npx jest --ci app/admin/(product-menu)/constants/__tests__/action-bar-config.test.ts
 ```
-
-### **Test Coverage:**
-
-- ✅ State management (selection, navigation, expand/collapse)
-- ✅ Action strategies (all view/action combinations)
-- ✅ Strategy executor (executeAction function)
-- ✅ Error handling
-
----
-
-## 📖 Related Documentation
-
-### **Within This Repo:**
-
-- [Code Quality Standards](./CODE_QUALITY_STANDARDS.md) - Coding standards
-- [Testing Guide](./testing-recurring-orders.md) - General testing patterns
-- [Git Workflow](./git-workflow.md) - Git practices
-
-### **External Resources:**
-
-- [Next.js App Router](https://nextjs.org/docs/app) - Framework docs
-- [SWR](https://swr.vercel.app/) - Data fetching
-- [Prisma](https://www.prisma.io/docs) - Database ORM
-- [shadcn/ui](https://ui.shadcn.com/) - UI components
 
 ---
 
@@ -242,25 +134,25 @@ npm test -- --watch
 
 ## 💡 Key Concepts
 
-### **1. Single Source of Truth**
+### **1. Provider Composition**
 
-All state managed by `useMenuBuilder()` hook. No duplicate state.
+`MenuBuilderProvider` composes data, mutations, and UI state into a single context.
 
-### **2. URL State Persistence**
+### **2. URL-backed Navigation**
 
-Navigation state (view, labelId, categoryId) persists in URL for bookmarking and refresh.
+`useMenuBuilderState` persists `view`/IDs in the URL; selection/expand stay local.
 
-### **3. Strategy Pattern**
+### **3. Config-driven Actions**
 
-Actions configured declaratively in `ACTION_STRATEGIES` object. No if/else chains.
+`ACTION_BAR_CONFIG` is the source of truth for action bar buttons and per-view execution.
 
-### **4. Composition over Monolith**
+### **4. Config-driven Surfaces**
 
-Components receive state and actions as props. Small, focused, reusable.
+`VIEW_CONFIGS` declares which surfaces are present per view; `TableViewRenderer` selects the table component.
 
 ### **5. Type Safety**
 
-TypeScript throughout. No `any` types. Zod for runtime validation.
+Types live in `app/admin/(product-menu)/types/*` and Zod schemas validate server action payloads.
 
 ---
 
@@ -271,8 +163,8 @@ TypeScript throughout. No `any` types. Zod for runtime validation.
 - ✅ Clean, maintainable architecture
 - ✅ Single source of truth
 - ✅ URL state persistence
-- ✅ Strategy pattern for actions
-- ✅ Comprehensive tests
+- ✅ Config-driven action bar
+- ✅ Precheck + Jest test coverage
 - ✅ Full documentation
 
 ### **Upcoming (Phase 2):**
@@ -293,9 +185,9 @@ TypeScript throughout. No `any` types. Zod for runtime validation.
    - [Feature spec](./final-menu-builder-feature-spec.md)
 
 2. **Review existing code:**
-   - `hooks/useMenuBuilder.ts` - State management
-   - `hooks/actionStrategies.ts` - Action patterns
-   - Tests for examples
+   - `app/admin/(product-menu)/menu-builder/MenuBuilderProvider.tsx`
+   - `app/admin/(product-menu)/constants/action-bar-config.ts`
+   - `app/admin/(product-menu)/constants/view-configs.ts`
 
 3. **Ask the team!**
 
@@ -306,11 +198,6 @@ TypeScript throughout. No `any` types. Zod for runtime validation.
 | Date       | Version | Changes                                     |
 | ---------- | ------- | ------------------------------------------- |
 | 2026-01-03 | 1.0.0   | Phase 1 complete - Foundation & integration |
-| -          | -       | Created comprehensive documentation         |
-| -          | -       | Consolidated all docs to `/docs`            |
+| 2026-01-08 | 1.1.0   | Updated docs to match current architecture  |
 
 ---
-
-**Status:** ✅ Phase 1 Complete - Ready for Phase 2  
-**Last Updated:** January 3, 2026  
-**Maintained By:** Development Team

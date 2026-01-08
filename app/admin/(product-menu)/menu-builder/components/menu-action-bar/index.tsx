@@ -23,6 +23,7 @@ export function MenuActionBar() {
     mutate,
     // All mutations
     createCategory,
+    cloneCategory,
     updateLabel,
     updateCategory,
     attachCategory,
@@ -104,6 +105,7 @@ export function MenuActionBar() {
       currentCategoryId: builder.currentCategoryId,
       mutations: {
         createCategory,
+        cloneCategory,
         updateLabel,
         updateCategory,
         detachCategory,

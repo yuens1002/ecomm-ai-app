@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
 import { updateCategoryLabelSchema } from "@/app/admin/(product-menu)/types/category";
-import { prisma } from "@/lib/prisma";
+import { deleteCategoryLabel, updateCategoryLabel } from "@/app/admin/(product-menu)/data/labels";
 
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await requireAdminApi();
     if (!auth.authorized) {
@@ -26,48 +23,36 @@ export async function PUT(
     const { name, icon, isVisible, autoOrder } = validation.data;
 
     if (name && !name.trim()) {
-      return NextResponse.json(
-        { error: "Name cannot be empty" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Name cannot be empty" }, { status: 400 });
     }
 
-    if (name) {
-      const dup = await prisma.categoryLabel.findFirst({
-        where: { name: name.trim(), id: { not: id } },
-      });
-      if (dup) {
-        return NextResponse.json(
-          { error: "Label name must be unique" },
-          { status: 400 }
-        );
-      }
-    }
-
-    const updated = await prisma.categoryLabel.update({
-      where: { id },
-      data: {
-        ...(name ? { name: name.trim() } : {}),
+    try {
+      const updated = await updateCategoryLabel({
+        id,
+        ...(name !== undefined ? { name } : {}),
         icon: icon === undefined ? undefined : icon || null,
         ...(isVisible !== undefined ? { isVisible } : {}),
         ...(autoOrder !== undefined ? { autoOrder } : {}),
-      },
-    });
+      });
 
-    return NextResponse.json({ label: updated });
+      return NextResponse.json({ label: updated });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed";
+      if (message === "Label name must be unique") {
+        return NextResponse.json({ error: "Label name must be unique" }, { status: 400 });
+      }
+      if (message === "Name cannot be empty") {
+        return NextResponse.json({ error: "Name cannot be empty" }, { status: 400 });
+      }
+      throw e;
+    }
   } catch (error) {
     console.error("Error updating category label:", error);
-    return NextResponse.json(
-      { error: "Failed to update category label" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update category label" }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await requireAdminApi();
     if (!auth.authorized) {
@@ -75,18 +60,11 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    await prisma.$transaction(async (tx) => {
-      // remove target label assignments (categories simply become unassigned)
-      await tx.categoryLabelCategory.deleteMany({ where: { labelId: id } });
-      await tx.categoryLabel.delete({ where: { id } });
-    });
+    await deleteCategoryLabel(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting category label:", error);
-    return NextResponse.json(
-      { error: "Failed to delete category label" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to delete category label" }, { status: 500 });
   }
 }

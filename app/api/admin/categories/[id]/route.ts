@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
 import { updateCategorySchema } from "@/app/admin/(product-menu)/types/category";
+import {
+  updateCategoryWithLabels,
+  deleteCategoryWithRelations,
+} from "@/app/admin/(product-menu)/data/categories";
 
 // PUT /api/admin/categories/[id] - Update a category
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await requireAdminApi();
     if (!auth.authorized) {
@@ -27,67 +27,23 @@ export async function PUT(
 
     const { name, slug, labelIds, isVisible } = validation.data;
 
-    const updates: Record<string, unknown> = {};
-    if (name) updates.name = name;
-    if (slug) updates.slug = slug;
-    if (isVisible !== undefined) updates.isVisible = isVisible;
-
-    // Update category core fields first
-    await prisma.category.update({
-      where: { id },
-      data: updates,
+    const category = await updateCategoryWithLabels({
+      id,
+      name,
+      slug,
+      labelIds,
+      isVisible,
     });
 
-    // Replace label assignments if provided
-    if (Array.isArray(labelIds)) {
-      await prisma.categoryLabelCategory.deleteMany({
-        where: { categoryId: id },
-      });
-
-      if (labelIds.length > 0) {
-        await prisma.categoryLabelCategory.createMany({
-          data: labelIds.map((labelId, idx) => ({
-            labelId,
-            categoryId: id,
-            order: idx,
-          })),
-        });
-      }
-    }
-
-    const fresh = await prisma.category.findUnique({
-      where: { id },
-      include: {
-        _count: { select: { products: true } },
-        labels: { include: { label: true }, orderBy: { order: "asc" } },
-      },
-    });
-
-    return NextResponse.json({
-      category: {
-        ...fresh,
-        labels: fresh?.labels.map((entry) => ({
-          id: entry.label.id,
-          name: entry.label.name,
-          icon: entry.label.icon,
-          order: entry.order,
-        })),
-      },
-    });
+    return NextResponse.json({ category });
   } catch (error) {
     console.error("Error updating category:", error);
-    return NextResponse.json(
-      { error: "Failed to update category" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update category" }, { status: 500 });
   }
 }
 
 // DELETE /api/admin/categories/[id] - Delete a category
-export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await requireAdminApi();
     if (!auth.authorized) {
@@ -96,19 +52,11 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Transaction: remove joins, remove product links, delete category
-    await prisma.$transaction([
-      prisma.categoryLabelCategory.deleteMany({ where: { categoryId: id } }),
-      prisma.categoriesOnProducts.deleteMany({ where: { categoryId: id } }),
-      prisma.category.delete({ where: { id } }),
-    ]);
+    await deleteCategoryWithRelations(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting category:", error);
-    return NextResponse.json(
-      { error: "Failed to delete category" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to delete category" }, { status: 500 });
   }
 }

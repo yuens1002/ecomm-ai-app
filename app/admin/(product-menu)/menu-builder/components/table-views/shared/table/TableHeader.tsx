@@ -1,9 +1,9 @@
 import * as React from "react";
 import { TableHead, TableHeader as ShadcnTableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Table } from "@tanstack/react-table";
+import { SortableHeaderCell } from "./SortableHeaderCell";
 
 export type TableHeaderColumn = {
   id: string;
@@ -15,9 +15,9 @@ export type TableHeaderColumn = {
   stickyLeft?: string;
 };
 
-type TableHeaderProps = {
+type TableHeaderProps<TData> = {
   columns: TableHeaderColumn[];
-  table?: Table<unknown>;
+  table?: Table<TData>;
   hasSelectAll?: boolean;
   allSelected?: boolean;
   someSelected?: boolean;
@@ -25,7 +25,7 @@ type TableHeaderProps = {
   className?: string;
 };
 
-export function TableHeader({
+export function TableHeader<TData = unknown>({
   columns,
   table,
   hasSelectAll = false,
@@ -33,10 +33,10 @@ export function TableHeader({
   someSelected = false,
   onSelectAll,
   className,
-}: TableHeaderProps) {
+}: TableHeaderProps<TData>) {
   return (
-    <ShadcnTableHeader className={className}>
-      <TableRow className="group/header">
+    <ShadcnTableHeader className={cn("h-10 bg-muted/40 border-b", className)}>
+      <TableRow className="group/header hover:bg-transparent">
         {columns.map((column) => {
           if (column.isCheckbox && hasSelectAll) {
             return (
@@ -84,38 +84,21 @@ export function TableHeader({
           // Get sorting info from table if available
           const tableColumn = table?.getColumn(column.id);
           const canSort = tableColumn?.getCanSort();
-          const sortDirection = tableColumn?.getIsSorted();
 
           if (table && tableColumn && canSort) {
             return (
-              <TableHead
+              <SortableHeaderCell
                 key={column.id}
-                className={cn(
+                table={table}
+                columnId={column.id}
+                label={column.label}
+                align={column.align}
+                headClassName={cn(
                   column.width,
-                  alignClass,
-                  "truncate max-w-xs",
-                  column.isSticky && "sticky z-10 bg-muted",
+                  column.isSticky && "sticky z-10 bg-muted/40",
                   column.stickyLeft
                 )}
-              >
-                <button
-                  className={cn(
-                    "relative inline-block text-foreground hover:opacity-70 transition-opacity font-medium"
-                  )}
-                  onClick={() => tableColumn.toggleSorting()}
-                >
-                  {column.label}
-                  <span className="absolute left-[calc(100%+0.25rem)] top-1/2 -translate-y-1/2 inline-flex">
-                    {sortDirection === "asc" ? (
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    ) : sortDirection === "desc" ? (
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    ) : (
-                      <ArrowUpDown className="h-3.5 w-3.5 opacity-0 group-hover/header:opacity-100 transition-opacity" />
-                    )}
-                  </span>
-                </button>
-              </TableHead>
+              />
             );
           }
 
@@ -125,7 +108,7 @@ export function TableHeader({
               className={cn(
                 column.width,
                 alignClass,
-                "font-medium text-foreground truncate max-w-xs",
+                "font-medium text-foreground",
                 column.isSticky && "sticky z-10 bg-muted/40",
                 column.stickyLeft
               )}

@@ -35,6 +35,15 @@ export const createCategorySchema = z.object({
 export type CreateCategory = z.infer<typeof createCategorySchema>;
 
 /**
+ * Schema for cloning a category
+ */
+export const cloneCategorySchema = z.object({
+  id: z.string().min(1, "Category id is required"),
+});
+
+export type CloneCategory = z.infer<typeof cloneCategorySchema>;
+
+/**
  * Schema for updating a category with visibility field
  */
 export const updateCategorySchema = z.object({

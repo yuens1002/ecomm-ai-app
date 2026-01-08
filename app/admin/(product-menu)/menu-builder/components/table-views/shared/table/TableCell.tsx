@@ -15,13 +15,7 @@ export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
     return (
       <ShadcnTableCell
         ref={ref}
-        className={cn(
-          "truncate max-w-xs",
-          alignClass,
-          isSticky && "sticky z-10",
-          stickyLeft,
-          className
-        )}
+        className={cn("truncate", alignClass, isSticky && "sticky z-10", stickyLeft, className)}
         {...props}
       />
     );

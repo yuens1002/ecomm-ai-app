@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
-import { prisma } from "@/lib/prisma";
+import {
+  autoSortCategoriesInLabel,
+  updateCategoryLabel,
+} from "@/app/admin/(product-menu)/data/labels";
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await requireAdminApi();
     if (!auth.authorized) {
@@ -14,35 +14,12 @@ export async function POST(
 
     const { id: labelId } = await params;
 
-    const entries = await prisma.categoryLabelCategory.findMany({
-      where: { labelId },
-      include: { category: true },
-    });
-
-    const sorted = entries
-      .sort((a, b) => a.category.name.localeCompare(b.category.name))
-      .map((entry, idx) => ({ id: entry.categoryId, order: idx }));
-
-    await prisma.$transaction(
-      sorted.map((item) =>
-        prisma.categoryLabelCategory.update({
-          where: {
-            labelId_categoryId: {
-              labelId,
-              categoryId: item.id,
-            },
-          },
-          data: { order: item.order },
-        })
-      )
-    );
+    await autoSortCategoriesInLabel(labelId);
+    await updateCategoryLabel({ id: labelId, autoOrder: true });
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error auto-sorting categories:", error);
-    return NextResponse.json(
-      { error: "Failed to auto-sort categories" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to auto-sort categories" }, { status: 500 });
   }
 }

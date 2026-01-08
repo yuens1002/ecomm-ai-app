@@ -144,6 +144,44 @@ Add two new settings to `SiteSettings` table:
 - [ ] Drag & drop support for reordering
 - [ ] Integration tests
 
+**Follow-up (Jan 8, 2026): Pathway to a data-config-driven Menu Builder**
+
+The goal is to make the Menu Builder predictable and shippable by driving UI behavior from a small, typed configuration layer, without attempting a “single mega config file” all at once.
+
+**What’s already true today (foundation we can trust):**
+
+- Action bar behavior is driven by `ACTION_BAR_CONFIG`.
+- View surfaces are declared by `VIEW_CONFIGS` (e.g. `tableViewId`, feature flags, future context-menu action IDs).
+- Table rendering is routed through `TableViewRenderer`.
+- Admin/server actions share a product-menu data layer for labels/categories to reduce drift.
+
+**Proposed pathway (incremental, not a rewrite):**
+
+1. **Define the smallest “data config” we need**
+  - Decide what is config vs code. Keep config to stable declarations only (IDs, capabilities, tableViewId).
+  - Keep business logic in server actions/data layer; config references capabilities, it doesn’t re-implement them.
+
+2. **Make view rendering 100% config-driven**
+  - Replace remaining view-based conditionals with a `tableViewId → component` registry in `TableViewRenderer`.
+  - Acceptance: adding a new table view requires only registering the component + setting `VIEW_CONFIGS[view].tableViewId`.
+
+3. **Align table “surfaces” behind shared primitives**
+  - Continue building shared table cells (selection, visibility, inline name editor) so each new table is mostly data + columns.
+  - Acceptance: second table view ships with minimal duplicated cell logic.
+
+4. **Drive secondary surfaces (context menus) from action IDs**
+  - Context menus should reference action IDs already defined in `ACTION_BAR_CONFIG` (avoid duplicate action definitions).
+  - Acceptance: a context-menu item triggers the same execute logic as the action bar.
+
+5. **Lock the pathway with a small set of invariants tests**
+  - DTO invariants are already covered (join-table ordering).
+  - Add config invariant tests as needed (e.g. each view has a valid `tableViewId`, referenced action IDs exist).
+
+**Non-goals (to avoid a repeat of the last attempt):**
+
+- Don’t unify all configs into one giant object until boundaries prove stable.
+- Don’t push business logic into config; keep it in server actions + data layer.
+
 **Current State - Phase 1 Foundation Ready**:
 
 - Category CRUD scattered across multiple locations

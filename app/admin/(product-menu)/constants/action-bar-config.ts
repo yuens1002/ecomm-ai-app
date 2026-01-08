@@ -19,7 +19,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type { BuilderState, ViewType, MenuBuilderActions } from "../types/builder-state";
 import type { MenuLabel, MenuCategory, MenuProduct } from "../types/menu";
-import { generateSlug } from "@/hooks/useSlugGenerator";
+import type { CloneCategory } from "../types/category";
 
 export type ActionPosition = "left" | "right";
 
@@ -40,6 +40,9 @@ export type ProductMenuMutations = {
     slug: string;
     isVisible?: boolean;
   }) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  cloneCategory: (
+    payload: CloneCategory
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
   detachCategory: (
     labelId: string,
     categoryId: string
@@ -129,41 +132,13 @@ const SHARED_ACTIONS = {
         // TODO: Implement label cloning
         console.log("[Clone] All Labels:", selectedIds);
       },
-      "all-categories": async ({ selectedIds, categories, labels, mutations }: ActionContext) => {
-        // Clone each selected category with products and isVisible state
+      "all-categories": async ({ selectedIds, categories, mutations }: ActionContext) => {
+        // Clone each selected category with products + label attachments (server-side)
         for (const categoryId of selectedIds) {
           const originalCategory = categories.find((c) => c.id === categoryId);
           if (!originalCategory) continue;
 
-          // Generate unique clone name
-          const existingNames = categories.map((c) => c.name);
-          let counter = 1;
-          let cloneName = `${originalCategory.name} copy`;
-          while (existingNames.includes(cloneName)) {
-            cloneName = `${originalCategory.name} copy ${counter}`;
-            counter++;
-          }
-
-          // Create the clone
-          const result = await mutations.createCategory({
-            name: cloneName,
-            slug: generateSlug(cloneName),
-            isVisible: originalCategory.isVisible,
-          });
-
-          if (result.ok && result.data) {
-            const newCategoryId = (result.data as { id: string }).id;
-
-            // Attach to same labels as original
-            const attachedLabels = labels.filter((label) =>
-              label.categories?.some((cat) => cat.id === categoryId)
-            );
-            for (const label of attachedLabels) {
-              await mutations.attachCategory?.(label.id, newCategoryId);
-            }
-
-            // TODO: Clone products when product attachment API is available
-          }
+          await mutations.cloneCategory({ id: categoryId });
         }
       },
     },

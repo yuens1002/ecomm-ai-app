@@ -14,6 +14,9 @@ describe("Action Bar Configuration", () => {
       createCategory: jest
         .fn<ProductMenuMutations["createCategory"]>()
         .mockResolvedValue({ ok: true, data: { id: "new-category-id" } }),
+      cloneCategory: jest
+        .fn<ProductMenuMutations["cloneCategory"]>()
+        .mockResolvedValue({ ok: true, data: { id: "cloned-category-id" } }),
       updateLabel: jest.fn<ProductMenuMutations["updateLabel"]>().mockResolvedValue({ ok: true }),
       updateCategory: jest
         .fn<ProductMenuMutations["updateCategory"]>()

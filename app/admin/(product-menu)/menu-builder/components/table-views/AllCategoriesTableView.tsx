@@ -10,7 +10,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { TableBody, TableHeader, TableRow, TableCell, TableHead } from "@/components/ui/table";
+import { TableBody } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FileSpreadsheet } from "lucide-react";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
@@ -19,7 +19,9 @@ import { VisibilityCell } from "./shared/cells/VisibilityCell";
 import { EmptyState } from "../shared/EmptyState";
 import { MenuBuilderTable } from "./shared/table/MenuBuilderTable";
 import { allCategoriesWidthPreset } from "./shared/table/columnWidthPresets";
-import { SortableHeaderCell } from "./shared/table/SortableHeaderCell";
+import { TableHeader } from "./shared/table/TableHeader";
+import { TableRow } from "./shared/table/TableRow";
+import { TableCell } from "./shared/table/TableCell";
 import { generateSlug } from "@/hooks/useSlugGenerator";
 import type { MenuCategory } from "../../../types/menu";
 
@@ -27,8 +29,27 @@ export function AllCategoriesTableView() {
   const { builder, categories, labels, products, updateCategory, createCategory } =
     useMenuBuilder();
   const [editingCategoryId, setEditingCategoryId] = React.useState<string | null>(null);
+  const [pinnedCategoryId, setPinnedCategoryId] = React.useState<string | null>(null);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const previousCategoriesRef = React.useRef<MenuCategory[]>([]);
+
+  const pinnedCategory = useMemo(() => {
+    if (!pinnedCategoryId) return undefined;
+    return categories.find((c) => c.id === pinnedCategoryId);
+  }, [categories, pinnedCategoryId]);
+
+  const categoriesForTable = useMemo(() => {
+    const rest = pinnedCategoryId
+      ? categories.filter((c) => c.id !== pinnedCategoryId)
+      : categories;
+
+    if (sorting.length > 0) return rest;
+
+    return [...rest].sort((a, b) => {
+      if (b.order !== a.order) return b.order - a.order;
+      return b.id.localeCompare(a.id);
+    });
+  }, [categories, pinnedCategoryId, sorting]);
 
   // Auto-detect new categories by diffing with previous list
   React.useEffect(() => {
@@ -40,8 +61,14 @@ export function AllCategoriesTableView() {
       previousCategoriesRef.current.length > 0 &&
       !editingCategoryId
     ) {
-      setSorting([]);
-      setEditingCategoryId(newCategories[0].id);
+      const newestNew = [...newCategories].sort((a, b) => {
+        if (b.order !== a.order) return b.order - a.order;
+        return b.id.localeCompare(a.id);
+      })[0];
+
+      const nextId = newestNew?.id ?? newCategories[0].id;
+      setPinnedCategoryId(nextId);
+      setEditingCategoryId(nextId);
     }
 
     previousCategoriesRef.current = categories;
@@ -210,13 +237,15 @@ export function AllCategoriesTableView() {
   );
 
   // Initialize table
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: categories,
+    data: categoriesForTable,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getRowId: (row) => row.id,
     enableSortingRemoval: true,
   });
 
@@ -239,129 +268,190 @@ export function AllCategoriesTableView() {
   }
 
   return (
-    <div className="w-full pt-4">
-      <MenuBuilderTable minWidthClassName="min-w-[660px]">
-        <TableHeader className="h-10 bg-muted/40 border-b">
-          <TableRow className="group/header hover:bg-transparent">
-            <TableHead className={allCategoriesWidthPreset.select.head}>
-              <div className="flex items-center">
-                <Checkbox
-                  checked={allSelected || (someSelected && "indeterminate")}
-                  onCheckedChange={() => {
-                    if (allSelected) {
-                      builder.clearSelection();
-                    } else {
-                      builder.selectAll(categories.map((c) => c.id));
-                    }
-                  }}
-                  aria-label="Select all"
-                />
-              </div>
-            </TableHead>
-            <SortableHeaderCell
-              table={table}
-              columnId="name"
-              label="Category"
-              align="left"
-              headClassName={allCategoriesWidthPreset.name.head}
-            />
-            <SortableHeaderCell
-              table={table}
-              columnId="labels"
-              label="Added to labels"
-              align="left"
-              headClassName={allCategoriesWidthPreset.labels.head}
-            />
-            <SortableHeaderCell
-              table={table}
-              columnId="products"
-              label="Products"
-              align="right"
-              headClassName={allCategoriesWidthPreset.products.head}
-            />
-            <SortableHeaderCell
-              table={table}
-              columnId="visibility"
-              label="Visibility"
-              align="center"
-              headClassName={allCategoriesWidthPreset.visibility.head}
-            />
-          </TableRow>
-        </TableHeader>
+    <MenuBuilderTable className="w-full pt-4" minWidthClassName="min-w-[660px]">
+      <TableHeader
+        table={table}
+        hasSelectAll
+        allSelected={allSelected}
+        someSelected={someSelected}
+        onSelectAll={() => {
+          if (allSelected) {
+            builder.clearSelection();
+          } else {
+            builder.selectAll(categories.map((c) => c.id));
+          }
+        }}
+        columns={[
+          {
+            id: "select",
+            label: "",
+            isCheckbox: true,
+            width: allCategoriesWidthPreset.select.head,
+          },
+          {
+            id: "name",
+            label: "Category",
+            align: "left",
+            width: allCategoriesWidthPreset.name.head,
+          },
+          {
+            id: "labels",
+            label: "Added to labels",
+            align: "left",
+            width: allCategoriesWidthPreset.labels.head,
+          },
+          {
+            id: "products",
+            label: "Products",
+            align: "right",
+            width: allCategoriesWidthPreset.products.head,
+          },
+          {
+            id: "visibility",
+            label: "Visibility",
+            align: "center",
+            width: allCategoriesWidthPreset.visibility.head,
+          },
+        ]}
+      />
 
-        <TableBody>
-          {table.getRowModel().rows.map((row) => {
-            const isSelected = builder.selectedIds.includes(row.original.id);
-            return (
-              <TableRow
-                key={row.id}
-                data-state={isSelected ? "selected" : undefined}
-                className="group cursor-pointer h-10 hover:bg-muted/40 border-b-0"
-                onClick={(e) => handleRowClick(row.original.id, e)}
-              >
-                <TableCell className={allCategoriesWidthPreset.select.cell}>
-                  <div
-                    className={
-                      "flex h-10 items-center opacity-100 transition-opacity " +
-                      (isSelected
-                        ? "md:opacity-100"
-                        : "md:opacity-0 md:group-hover:opacity-100 md:has-[:focus-visible]:opacity-100")
-                    }
-                  >
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => builder.toggleSelection(row.original.id)}
-                      aria-label={`Select ${row.original.name}`}
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className={"truncate " + (allCategoriesWidthPreset.name.cell ?? "")}>
-                  <InlineNameEditor
-                    id={row.original.id}
-                    initialValue={row.original.name}
-                    isEditing={editingCategoryId === row.original.id}
-                    onStartEdit={() => setEditingCategoryId(row.original.id)}
-                    onCancelEdit={() => setEditingCategoryId(null)}
-                    onSave={async (id, name) => {
-                      await updateCategory(id, { name });
-                      setEditingCategoryId(null);
-                    }}
-                  />
-                </TableCell>
-                <TableCell
-                  className={
-                    "text-sm truncate max-w-xs " + (allCategoriesWidthPreset.labels.cell ?? "")
-                  }
+      <TableBody>
+        {pinnedCategory
+          ? (() => {
+              const isSelected = builder.selectedIds.includes(pinnedCategory.id);
+              return (
+                <TableRow
+                  key={pinnedCategory.id}
+                  data-state={isSelected ? "selected" : undefined}
+                  className="cursor-pointer h-10 hover:bg-muted/40 border-b-0"
+                  onClick={(e) => handleRowClick(pinnedCategory.id, e)}
                 >
-                  {getCategoryLabels(row.original.id)}
-                </TableCell>
-                <TableCell
-                  className={
-                    "text-sm text-right truncate max-w-xs " +
-                    (allCategoriesWidthPreset.products.cell ?? "")
-                  }
-                >
-                  {getCategoryProductCount(row.original.id)}
-                </TableCell>
-                <TableCell
-                  className={"text-center " + (allCategoriesWidthPreset.visibility.cell ?? "")}
-                >
-                  <div className="flex justify-center">
-                    <VisibilityCell
-                      id={row.original.id}
-                      isVisible={row.original.isVisible}
-                      variant="switch"
-                      onToggle={async (id, visible) => {
-                        await updateCategory(id, { isVisible: visible });
+                  <TableCell className={allCategoriesWidthPreset.select.cell}>
+                    <div
+                      className={
+                        "flex h-10 items-center opacity-100 transition-opacity " +
+                        (isSelected
+                          ? "md:opacity-100"
+                          : "md:opacity-0 md:group-hover:opacity-100 md:has-[:focus-visible]:opacity-100")
+                      }
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => builder.toggleSelection(pinnedCategory.id)}
+                        aria-label={`Select ${pinnedCategory.name}`}
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell className={allCategoriesWidthPreset.name.cell}>
+                    <InlineNameEditor
+                      id={pinnedCategory.id}
+                      initialValue={pinnedCategory.name}
+                      isEditing={editingCategoryId === pinnedCategory.id}
+                      onStartEdit={() => setEditingCategoryId(pinnedCategory.id)}
+                      onCancelEdit={() => {
+                        setEditingCategoryId(null);
+                        setPinnedCategoryId(null);
+                      }}
+                      onSave={async (id, name) => {
+                        await updateCategory(id, { name });
+                        setEditingCategoryId(null);
+                        setPinnedCategoryId(null);
                       }}
                     />
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </MenuBuilderTable>
-    </div>
+                  </TableCell>
+                  <TableCell className={"text-sm " + (allCategoriesWidthPreset.labels.cell ?? "")}>
+                    {getCategoryLabels(pinnedCategory.id)}
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    className={"text-sm " + (allCategoriesWidthPreset.products.cell ?? "")}
+                  >
+                    {getCategoryProductCount(pinnedCategory.id)}
+                  </TableCell>
+                  <TableCell align="center" className={allCategoriesWidthPreset.visibility.cell}>
+                    <div className="flex justify-center">
+                      <VisibilityCell
+                        id={pinnedCategory.id}
+                        isVisible={pinnedCategory.isVisible}
+                        variant="switch"
+                        onToggle={async (id, visible) => {
+                          await updateCategory(id, { isVisible: visible });
+                        }}
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })()
+          : null}
+
+        {table.getRowModel().rows.map((row) => {
+          const isSelected = builder.selectedIds.includes(row.original.id);
+          return (
+            <TableRow
+              key={row.original.id}
+              data-state={isSelected ? "selected" : undefined}
+              className="cursor-pointer h-10 hover:bg-muted/40 border-b-0"
+              onClick={(e) => handleRowClick(row.original.id, e)}
+            >
+              <TableCell className={allCategoriesWidthPreset.select.cell}>
+                <div
+                  className={
+                    "flex h-10 items-center opacity-100 transition-opacity " +
+                    (isSelected
+                      ? "md:opacity-100"
+                      : "md:opacity-0 md:group-hover:opacity-100 md:has-[:focus-visible]:opacity-100")
+                  }
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => builder.toggleSelection(row.original.id)}
+                    aria-label={`Select ${row.original.name}`}
+                  />
+                </div>
+              </TableCell>
+              <TableCell className={allCategoriesWidthPreset.name.cell}>
+                <InlineNameEditor
+                  id={row.original.id}
+                  initialValue={row.original.name}
+                  isEditing={editingCategoryId === row.original.id}
+                  onStartEdit={() => setEditingCategoryId(row.original.id)}
+                  onCancelEdit={() => {
+                    setEditingCategoryId(null);
+                    if (pinnedCategoryId === row.original.id) setPinnedCategoryId(null);
+                  }}
+                  onSave={async (id, name) => {
+                    await updateCategory(id, { name });
+                    setEditingCategoryId(null);
+                    if (pinnedCategoryId === row.original.id) setPinnedCategoryId(null);
+                  }}
+                />
+              </TableCell>
+              <TableCell className={"text-sm " + (allCategoriesWidthPreset.labels.cell ?? "")}>
+                {getCategoryLabels(row.original.id)}
+              </TableCell>
+              <TableCell
+                align="right"
+                className={"text-sm " + (allCategoriesWidthPreset.products.cell ?? "")}
+              >
+                {getCategoryProductCount(row.original.id)}
+              </TableCell>
+              <TableCell align="center" className={allCategoriesWidthPreset.visibility.cell}>
+                <div className="flex justify-center">
+                  <VisibilityCell
+                    id={row.original.id}
+                    isVisible={row.original.isVisible}
+                    variant="switch"
+                    onToggle={async (id, visible) => {
+                      await updateCategory(id, { isVisible: visible });
+                    }}
+                  />
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </MenuBuilderTable>
   );
 }
