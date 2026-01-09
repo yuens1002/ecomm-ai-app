@@ -23,6 +23,10 @@
 3. **[menu-builder-filesystem-ui.md](./menu-builder-filesystem-ui.md)**
    - UI metaphor and navigation concept
 
+4. **[menu-builder-architecture-map.md](./menu-builder-architecture-map.md)**
+   - “Forest view” diagrams (composition + configs + data layer)
+   - View matrix + milestone checklist
+
 ---
 
 ## 🚀 Quick Start
