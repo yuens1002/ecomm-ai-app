@@ -58,13 +58,12 @@ Add two new settings to `SiteSettings` table:
 4. **Header Wrapper** (components/app-components/SiteHeaderWrapper.tsx):
 
    ```ts
-   const [labels, session, headerPages, productMenuSettings] =
-     await Promise.all([
-       getCategoryLabelsWithCategories(),
-       auth(),
-       getPagesForHeader(),
-       getProductMenuSettings(), // NEW
-     ]);
+   const [labels, session, headerPages, productMenuSettings] = await Promise.all([
+     getCategoryLabelsWithCategories(),
+     auth(),
+     getPagesForHeader(),
+     getProductMenuSettings(), // NEW
+   ]);
    ```
 
 5. **Header Component** (components/app-components/SiteHeader.tsx):
@@ -158,24 +157,29 @@ The goal is to make the Menu Builder predictable and shippable by driving UI beh
 **Proposed pathway (incremental, not a rewrite):**
 
 1. **Define the smallest “data config” we need**
-  - Decide what is config vs code. Keep config to stable declarations only (IDs, capabilities, tableViewId).
-  - Keep business logic in server actions/data layer; config references capabilities, it doesn’t re-implement them.
+
+- Decide what is config vs code. Keep config to stable declarations only (IDs, capabilities, tableViewId).
+- Keep business logic in server actions/data layer; config references capabilities, it doesn’t re-implement them.
 
 2. **Make view rendering 100% config-driven**
-  - Replace remaining view-based conditionals with a `tableViewId → component` registry in `TableViewRenderer`.
-  - Acceptance: adding a new table view requires only registering the component + setting `VIEW_CONFIGS[view].tableViewId`.
+
+- Replace remaining view-based conditionals with a `tableViewId → component` registry in `TableViewRenderer`.
+- Acceptance: adding a new table view requires only registering the component + setting `VIEW_CONFIGS[view].tableViewId`.
 
 3. **Align table “surfaces” behind shared primitives**
-  - Continue building shared table cells (selection, visibility, inline name editor) so each new table is mostly data + columns.
-  - Acceptance: second table view ships with minimal duplicated cell logic.
+
+- Continue building shared table cells (selection, visibility, inline name editor) so each new table is mostly data + columns.
+- Acceptance: second table view ships with minimal duplicated cell logic.
 
 4. **Drive secondary surfaces (context menus) from action IDs**
-  - Context menus should reference action IDs already defined in `ACTION_BAR_CONFIG` (avoid duplicate action definitions).
-  - Acceptance: a context-menu item triggers the same execute logic as the action bar.
+
+- Context menus should reference action IDs already defined in `ACTION_BAR_CONFIG` (avoid duplicate action definitions).
+- Acceptance: a context-menu item triggers the same execute logic as the action bar.
 
 5. **Lock the pathway with a small set of invariants tests**
-  - DTO invariants are already covered (join-table ordering).
-  - Add config invariant tests as needed (e.g. each view has a valid `tableViewId`, referenced action IDs exist).
+
+- DTO invariants are already covered (join-table ordering).
+- Add config invariant tests as needed (e.g. each view has a valid `tableViewId`, referenced action IDs exist).
 
 **Non-goals (to avoid a repeat of the last attempt):**
 
