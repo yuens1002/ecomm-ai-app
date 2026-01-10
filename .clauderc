@@ -1,0 +1,193 @@
+# Claude Code Advanced Configuration
+# This file configures agent behavior, hooks, and automation
+
+# Project Context
+project_context: "./claude.md"
+
+# Multi-Agent Settings
+agents:
+  exploration:
+    thoroughness: "medium"  # Options: quick, medium, very thorough
+    auto_enable: true       # Automatically use for codebase questions
+
+  planning:
+    auto_enable: true       # Use for multi-step features
+    require_approval: true  # Always ask before implementing
+
+  review:
+    auto_enable: true       # Auto-review before commits
+    checklist_mode: "strict" # Options: relaxed, standard, strict
+
+  testing:
+    auto_run: true          # Run tests after code changes
+    coverage_threshold: 80  # Minimum coverage percentage
+
+# Workflow Automation
+workflows:
+  pre_commit:
+    - check_types: "npm run typecheck"
+    - check_lint: "npm run lint"
+    - run_tests: "npm run test:ci"
+
+  pre_pr:
+    - full_check: "npm run precheck"
+    - build_check: "npm run build:no-migrate"
+    - test_suite: "npm run test:ci"
+
+  post_merge:
+    - cleanup: "git branch --merged | grep -v main | xargs git branch -d"
+
+# Code Quality Rules
+quality:
+  enforce_types: true
+  no_any_types: true
+  require_tests_for:
+    - "server actions"
+    - "business logic"
+    - "API routes"
+  max_file_length: 500
+  max_function_length: 50
+  prefer_functional_components: true
+
+# Auto-Review Configuration
+auto_review:
+  enabled: true
+  triggers:
+    - "before_commit"
+    - "before_pr"
+    - "on_request"
+
+  checks:
+    type_safety:
+      enabled: true
+      severity: "error"
+      rules:
+        - no_any_types
+        - no_implicit_any
+        - strict_null_checks
+
+    security:
+      enabled: true
+      severity: "error"
+      rules:
+        - validate_all_inputs
+        - check_auth_middleware
+        - no_secrets_in_code
+
+    performance:
+      enabled: true
+      severity: "warning"
+      rules:
+        - optimize_queries
+        - check_n_plus_one
+        - avoid_unnecessary_renders
+
+    accessibility:
+      enabled: true
+      severity: "warning"
+      rules:
+        - semantic_html
+        - aria_labels
+        - keyboard_navigation
+
+    patterns:
+      enabled: true
+      severity: "warning"
+      rules:
+        - follow_project_structure
+        - consistent_naming
+        - proper_imports
+
+# File Watching
+watch:
+  patterns:
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "prisma/schema.prisma"
+
+  actions:
+    schema_change:
+      pattern: "prisma/schema.prisma"
+      action: "warn_migration_needed"
+
+    action_change:
+      pattern: "**/actions/**/*.ts"
+      action: "suggest_test_update"
+
+# Integration Settings
+integrations:
+  git:
+    auto_commit_format: true
+    conventional_commits: true
+    co_author: "Claude Sonnet 4.5 <noreply@anthropic.com>"
+
+  github:
+    auto_pr_template: true
+    require_checks: true
+    auto_request_review: false
+
+  stripe:
+    use_test_mode: true
+    webhook_local: "stripe listen --forward-to localhost:3000/api/webhooks/stripe"
+
+# Context Optimization
+context:
+  max_file_size: 10000  # lines
+  auto_summarize: true
+  include_patterns:
+    - "src/**/*"
+    - "app/**/*"
+    - "prisma/**/*"
+    - "components/**/*"
+    - "lib/**/*"
+
+  exclude_patterns:
+    - "node_modules/**/*"
+    - ".next/**/*"
+    - "dist/**/*"
+    - "build/**/*"
+    - "coverage/**/*"
+
+# Agent Communication Preferences
+communication:
+  style: "concise"  # Options: verbose, concise, minimal
+  include_reasoning: true
+  show_alternatives: true
+  ask_before_major_changes: true
+  provide_file_references: true
+  use_markdown_links: true
+
+# Custom Commands
+commands:
+  safe_deploy:
+    description: "Safe deployment workflow"
+    steps:
+      - "npm run db:backup"
+      - "npm run precheck"
+      - "npm run build:safe"
+      - "git push"
+
+  quick_fix:
+    description: "Quick fix workflow"
+    steps:
+      - "npm run precheck"
+      - "npm run test:ci"
+      - "git add ."
+      - "git commit"
+
+  full_reset:
+    description: "Full database reset and reseed"
+    steps:
+      - "npm run db:backup"
+      - "npx prisma migrate reset --force"
+      - "npm run seed"
+
+# Experimental Features
+experimental:
+  auto_refactor_suggestions: true
+  performance_monitoring: true
+  dependency_updates: false
+  ai_code_reviews: true
+
+---
+# Last Updated: 2026-01-10

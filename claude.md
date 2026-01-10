@@ -1,0 +1,501 @@
+# Claude Code Configuration - Artisan Roast (ecomm-ai-app)
+
+> **Purpose:** This file provides context to Claude Code AI agents for optimal multi-agent workflows, auto-review, and development assistance on the Artisan Roast e-commerce platform.
+
+---
+
+## Project Overview
+
+**Name:** Artisan Roast
+**Type:** Full-stack E-commerce Coffee Store with AI Integration
+**Version:** 0.59.0
+**Live Demo:** https://ecomm-ai-app.vercel.app/
+
+### Tech Stack
+- **Framework:** Next.js 16 (App Router, React 19)
+- **Language:** TypeScript (strict mode, end-to-end type safety)
+- **Database:** PostgreSQL (Neon) with Prisma ORM
+- **Styling:** Tailwind CSS 4 + shadcn/ui components
+- **State:** React Hooks + Zustand (cart)
+- **Auth:** NextAuth.js v5 (OAuth: GitHub/Google)
+- **Payments:** Stripe (Checkout + Billing Portal)
+- **AI:** Google Gemini API (recommendations, chat, voice assistant)
+- **Testing:** Jest + Testing Library
+- **CI/CD:** GitHub Actions + Vercel
+
+---
+
+## Current Development Context
+
+### Active Branch
+**Branch:** `unify-menu-builder`
+**Base:** `main`
+
+### Recent Work
+- Menu Builder architecture refactoring
+- Action bar configuration system
+- Table view renderer implementation
+- All Categories table view (v0.59.0)
+
+### Key Documentation
+- [Menu Builder Implementation](docs/menu-builder/menu-builder-implementation.md)
+- [Architecture Map](docs/menu-builder/menu-builder-architecture-map.md)
+- [Code Quality Standards](docs/CODE_QUALITY_STANDARDS.md)
+- [Build/Deployment Guide](docs/BUILD_DEPLOYMENT_GUIDE.md)
+
+---
+
+## Multi-Agent Workflow Configuration
+
+### 1. Code Exploration Agent
+**When to use:** Understanding codebase structure, finding files, analyzing architecture
+
+**Context to provide:**
+- App structure: Next.js App Router in `app/` directory
+- Key directories:
+  - `app/admin/(product-menu)/` - Menu Builder feature
+  - `app/api/` - API routes
+  - `prisma/` - Database schema and migrations
+  - `components/` - Shared UI components
+  - `lib/` - Utilities and helpers
+
+**Search patterns:**
+- Server Actions: `app/**/actions/*.ts`
+- React Hooks: `app/**/hooks/*.ts`
+- Types: `app/**/types/*.ts`, `types/*.ts`
+- Components: `app/**/components/**/*.tsx`, `components/**/*.tsx`
+
+### 2. Implementation Planning Agent
+**When to use:** Designing new features, refactoring, architectural decisions
+
+**Critical considerations:**
+- **Type Safety:** All code must maintain end-to-end TypeScript safety
+- **Prisma Schema:** Check schema before DB changes
+- **Server Actions:** Follow Next.js 14+ server action patterns
+- **Testing:** Add tests for business logic and critical paths
+- **Migration Safety:** Use safe migration scripts in `dev-tools/`
+
+**Planning checklist:**
+1. Review existing patterns in similar features
+2. Check if Prisma schema changes needed
+3. Identify required server actions
+4. Plan component structure (server vs client)
+5. Determine state management approach
+6. Plan testing strategy
+7. Consider migration/deployment impact
+
+### 3. Code Review Agent
+**When to use:** Before commits, PR creation, quality checks
+
+**Auto-Review Checklist:**
+
+#### Type Safety
+- [ ] No `any` types (use `unknown` + guards instead)
+- [ ] All server actions have Zod validation
+- [ ] Prisma types used correctly (no manual type definitions)
+- [ ] Form schemas use Zod with proper types
+
+#### Next.js Best Practices
+- [ ] Server Components by default (`"use client"` only when needed)
+- [ ] Server Actions in separate files under `actions/`
+- [ ] API routes use proper error handling
+- [ ] No client-side data fetching (use Server Components or SWR)
+
+#### Code Quality
+- [ ] No unused imports or variables
+- [ ] Proper error boundaries for client components
+- [ ] Accessibility: semantic HTML, ARIA labels
+- [ ] Loading states for async operations
+- [ ] Consistent file naming (kebab-case for files, PascalCase for components)
+
+#### Database & Prisma
+- [ ] No direct SQL queries (use Prisma)
+- [ ] Transactions for multi-step operations
+- [ ] Proper error handling for database operations
+- [ ] Migration files generated for schema changes
+
+#### Security
+- [ ] Authentication checks in server actions
+- [ ] Input validation with Zod
+- [ ] No sensitive data in client components
+- [ ] CSRF protection via server actions
+
+#### Performance
+- [ ] Images use Next.js Image component
+- [ ] Proper loading states to prevent layout shift
+- [ ] Database queries optimized (include relations, select specific fields)
+- [ ] React.memo only when proven necessary (avoid premature optimization)
+
+### 4. Testing Agent
+**When to use:** Running tests, fixing failures, adding test coverage
+
+**Test commands:**
+```bash
+npm run test        # Watch mode
+npm run test:ci     # CI mode (single run)
+npm run precheck    # TypeScript + ESLint
+```
+
+**Testing patterns:**
+- Unit tests: `*.test.ts` or `*.test.tsx`
+- Test location: `__tests__/` folder or co-located with source
+- Mock Prisma: Use `jest.mock('@prisma/client')`
+- Mock Next.js: Use `jest.mock('next/navigation')`
+
+### 5. Git/Commit Agent
+**When to use:** Creating commits, PRs, managing git workflow
+
+**Commit conventions:**
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+**Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+
+**Pre-commit checks:**
+- Husky runs automatically
+- Must pass: TypeScript compilation, ESLint
+
+**PR process:**
+1. Create feature branch from `main`
+2. Make changes + tests
+3. Run `npm run precheck` locally
+4. Commit with conventional format
+5. Push and create PR
+6. Wait for CI checks (GitHub Actions)
+
+---
+
+## Common Development Patterns
+
+### Server Actions Pattern
+```typescript
+// app/admin/(product-menu)/actions/example-action.ts
+'use server'
+
+import { z } from 'zod'
+import { prisma } from '@/lib/prisma'
+import { revalidatePath } from 'next/cache'
+
+const schema = z.object({
+  id: z.string(),
+  name: z.string().min(1)
+})
+
+export async function exampleAction(data: z.infer<typeof schema>) {
+  const validated = schema.parse(data)
+
+  const result = await prisma.example.update({
+    where: { id: validated.id },
+    data: { name: validated.name }
+  })
+
+  revalidatePath('/admin/example')
+  return { success: true, data: result }
+}
+```
+
+### SWR Data Fetching Pattern
+```typescript
+// app/admin/(product-menu)/hooks/useExampleData.ts
+import useSWR from 'swr'
+
+export function useExampleData() {
+  return useSWR('/api/example', fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false
+  })
+}
+```
+
+### Provider Composition Pattern
+```typescript
+// app/admin/(product-menu)/ExampleProvider.tsx
+const ExampleContext = createContext<ExampleContextValue | null>(null)
+
+export function ExampleProvider({ children }: { children: ReactNode }) {
+  const data = useExampleData()
+  const mutations = useExampleMutations()
+  const state = useExampleState()
+
+  return (
+    <ExampleContext.Provider value={{ data, mutations, state }}>
+      {children}
+    </ExampleContext.Provider>
+  )
+}
+
+export function useExample() {
+  const context = useContext(ExampleContext)
+  if (!context) throw new Error('useExample must be used within ExampleProvider')
+  return context
+}
+```
+
+---
+
+## Database Safety Protocols
+
+### Before Schema Changes
+1. **Backup:** `npm run db:backup`
+2. **Review:** Check `prisma/schema.prisma` for conflicts
+3. **Migrate:** `npm run db:safe-migrate` (runs checks first)
+4. **Verify:** `npm run db:smoke` (smoke test CRUD)
+
+### Migration Process
+```bash
+# 1. Make schema changes in prisma/schema.prisma
+# 2. Create migration
+npx prisma migrate dev --name descriptive-name
+
+# 3. For production
+npx prisma migrate deploy
+```
+
+### Rollback Process
+```bash
+npm run db:restore
+```
+
+---
+
+## Critical Files & Directories
+
+### Must-Read Before Changes
+- `prisma/schema.prisma` - Database schema (check before any DB work)
+- `app/admin/(product-menu)/constants/action-bar-config.ts` - Menu Builder actions
+- `app/admin/(product-menu)/constants/view-configs.ts` - Menu Builder views
+- `lib/auth.ts` - Authentication configuration
+- `middleware.ts` - Route protection
+
+### Never Modify Directly
+- `node_modules/` - Dependencies
+- `.next/` - Build output
+- `prisma/migrations/` - Generated migrations (create new instead)
+
+### Configuration Files
+- `.env.local` - Local environment variables (not in repo)
+- `.env.example` - Template for required env vars
+- `next.config.js` - Next.js configuration
+- `tailwind.config.ts` - Tailwind configuration
+- `tsconfig.json` - TypeScript configuration
+
+---
+
+## Build & Deployment
+
+### Local Development
+```bash
+npm run dev                                                    # Start dev server
+stripe listen --forward-to localhost:3000/api/webhooks/stripe # Stripe webhooks (Terminal 2)
+```
+
+### Build Process
+```bash
+npm run build              # Standard build
+npm run build:safe         # Safe build (backup + checks)
+npm run build:no-migrate   # Build without migrations
+```
+
+### Deployment (Vercel)
+- **Trigger:** Push to `main` branch
+- **Env Vars:** Set in Vercel dashboard
+- **Build Command:** `npm run vercel-build`
+- **Webhooks:** Configure Stripe production webhooks
+
+---
+
+## Auto-Review Triggers
+
+### Pre-Commit Review
+Run automatic review before every commit:
+1. Type safety check
+2. ESLint validation
+3. Test execution
+4. Import organization
+
+### Pre-PR Review
+Before creating pull request:
+1. All tests passing
+2. No TypeScript errors
+3. No ESLint errors
+4. Build succeeds locally
+5. Database migrations tested
+6. Documentation updated if needed
+
+### Code Quality Gates
+**Block merge if:**
+- CI checks failing
+- TypeScript errors present
+- ESLint errors present
+- Tests failing
+- Build failing
+
+---
+
+## AI Assistant Context
+
+### When I Ask You To...
+
+**"Add a new feature"**
+1. Use Planning Agent to design approach
+2. Review similar existing features
+3. Check if schema changes needed
+4. Plan component structure
+5. Implement with tests
+6. Run auto-review
+7. Create commit
+
+**"Fix a bug"**
+1. Reproduce the issue
+2. Identify root cause
+3. Write failing test
+4. Implement fix
+5. Verify test passes
+6. Run auto-review
+7. Create commit
+
+**"Refactor code"**
+1. Use Exploration Agent to understand current implementation
+2. Plan refactoring strategy
+3. Ensure tests exist for current behavior
+4. Refactor incrementally
+5. Verify tests still pass
+6. Run auto-review
+7. Create commit
+
+**"Review my code"**
+1. Use Review Agent with full checklist
+2. Check type safety
+3. Verify patterns match project conventions
+4. Test coverage
+5. Performance considerations
+6. Security review
+7. Provide specific, actionable feedback
+
+**"Create a PR"**
+1. Verify all commits follow convention
+2. Run full test suite
+3. Generate PR description with:
+   - Summary of changes
+   - Testing performed
+   - Migration notes (if applicable)
+4. Create PR with `gh pr create`
+
+---
+
+## Workflow Preferences
+
+### Code Style
+- **Imports:** Group by external → internal → relative
+- **Components:** Functional components with TypeScript
+- **Async:** Use async/await (no raw promises)
+- **Error Handling:** Try/catch with specific error types
+- **Comments:** Only for "why" not "what" (code should be self-documenting)
+
+### Communication Style
+- Be concise but thorough
+- Explain reasoning for architectural decisions
+- Suggest alternatives when relevant
+- Ask clarifying questions before major changes
+- Provide file paths with line numbers for references
+
+### Multi-Agent Coordination
+- **Sequential tasks:** Plan → Implement → Test → Review → Commit
+- **Parallel tasks:** Multiple file reads, independent feature analysis
+- **Context handoff:** Share relevant findings between agents
+- **Iteration:** Review findings before proceeding to implementation
+
+---
+
+## Reference Commands Quick Guide
+
+```bash
+# Development
+npm run dev                    # Start dev server
+npm run build                  # Build for production
+npm run start                  # Start production server
+
+# Code Quality
+npm run precheck              # TypeScript + ESLint
+npm run typecheck             # TypeScript only
+npm run lint                  # ESLint only
+
+# Testing
+npm run test                  # Jest watch mode
+npm run test:ci               # Jest CI mode
+
+# Database
+npm run db:backup             # Backup database
+npm run db:restore            # Restore from backup
+npm run db:safe-migrate       # Safe migration with checks
+npm run db:smoke              # Smoke test CRUD operations
+npm run seed                  # Seed database
+
+# Utilities
+npm run create-admin          # Create admin user
+npm run setup                 # Initial setup
+npm run dedupe:subs           # Deduplicate subscriptions
+```
+
+---
+
+## Environment Variables Required
+
+See `.env.example` for full list. Critical ones:
+
+```env
+# Database
+DATABASE_URL=               # Neon PostgreSQL connection string
+DIRECT_URL=                # Direct connection (non-pooled)
+
+# Auth
+AUTH_SECRET=               # NextAuth secret
+GITHUB_CLIENT_ID=          # GitHub OAuth
+GITHUB_CLIENT_SECRET=      # GitHub OAuth
+GOOGLE_CLIENT_ID=          # Google OAuth
+GOOGLE_CLIENT_SECRET=      # Google OAuth
+
+# Stripe
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+# AI
+GEMINI_API_KEY=           # Google Gemini API
+```
+
+---
+
+## Success Metrics
+
+When evaluating implementations:
+- **Type Safety:** 100% (no `any`, all validated)
+- **Test Coverage:** Critical paths covered
+- **Build Success:** No errors or warnings
+- **Performance:** No unnecessary re-renders
+- **Accessibility:** WCAG AA compliant
+- **Security:** All inputs validated, auth enforced
+
+---
+
+## Notes for Claude Code Agents
+
+1. **Always read before editing:** Never propose changes to files you haven't read
+2. **Follow patterns:** Match existing code style and architecture
+3. **Type safety first:** Maintain end-to-end TypeScript safety
+4. **Test critical paths:** Business logic must have tests
+5. **Document decisions:** Update docs when making architectural changes
+6. **Ask when unclear:** Better to clarify than assume
+7. **Commit conventions:** Follow conventional commits format
+8. **Safety first:** Use backup/restore scripts for database work
+
+---
+
+**Last Updated:** 2026-01-10
+**Maintained By:** yuens1002
+**Claude Code Version:** 2.1.4
