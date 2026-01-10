@@ -4,8 +4,8 @@
 
 ### Customizable Product Menu (Coffee Dropdown)
 
-**Status**: Backlog  
-**Priority**: High  
+**Status**: Backlog
+**Priority**: High
 **Description**: Allow admins to customize the product menu icon and text in header/footer navigation. Currently hardcoded to show coffee beans icon (`/beans.svg`) with "Coffee" text. Should support dynamic configuration for stores that sell multiple product types or want different branding.
 
 **Current Hardcoded Implementation** (SiteHeader.tsx lines 197-211):
@@ -98,9 +98,9 @@ Add two new settings to `SiteSettings` table:
 
 ### Unified Product Menu Admin Page
 
-**Status**: Phase 1 Complete ✅ (Phase 2 In Progress)  
-**Priority**: High  
-**Completed**: January 3, 2026  
+**Status**: Phase 1 Complete ✅ (Phase 2 In Progress)
+**Priority**: High
+**Completed**: January 3, 2026
 **Description**: Create a dedicated admin page for building and managing the product catalog menu. Phase 1 (foundation & integration) complete with centralized state management, URL persistence, and strategy pattern. Phase 2 (table views) in progress.
 
 **Phase 1 Complete ✅** (January 3, 2026):
@@ -414,8 +414,8 @@ lib/menu-builder/
 
 ### Fix Analytics Page Product Links
 
-**Status**: Backlog  
-**Priority**: Medium  
+**Status**: Backlog
+**Priority**: Medium
 **Description**: Analytics page "Trending Products" links are hardcoded to assume all products are coffee with roast-level URLs. They should use the product's primary category slug instead.
 
 **Current Issue**:
@@ -437,8 +437,8 @@ lib/menu-builder/
 
 ### Create AdminPageHeader Component
 
-**Status**: Backlog  
-**Priority**: Low  
+**Status**: Backlog
+**Priority**: Low
 **Description**: Extract the standardized admin page header structure into a reusable component. Currently duplicated across 13+ admin pages with identical structure:
 
 ```tsx
@@ -478,8 +478,8 @@ lib/menu-builder/
 
 ### Reciprocal Add-Ons Feature
 
-**Status**: Backlog  
-**Priority**: Medium  
+**Status**: Backlog
+**Priority**: Medium
 **Description**: Add opt-in functionality to automatically create reciprocal add-on relationships when linking products. Currently, if Product A has Product B as an add-on, Product B does not automatically have Product A as an add-on - this must be created manually.
 
 **Use Cases**:
@@ -531,8 +531,8 @@ lib/menu-builder/
 
 ### Refactor Client Components to Server Actions Pattern
 
-**Status**: Backlog  
-**Priority**: High  
+**Status**: Backlog
+**Priority**: High
 **Description**: Modernize client components that use `useEffect` for data fetching to follow Next.js App Router best practices with Server Components and Server Actions. This improves performance (SSR), reduces client-side JavaScript, eliminates useEffect exhaustive-deps warnings, and follows current React/Next.js patterns.
 
 **Current State**:
@@ -642,8 +642,8 @@ function ProductAddOnsClient({ addOns, products }) {
 
 ### Admin-Specific Sign-In Page
 
-**Status**: Done (shipped in 0.49.0)  
-**Priority**: High  
+**Status**: Done (shipped in 0.49.0)
+**Priority**: High
 **Description**: Provide a dedicated admin sign-in flow that always returns admins to `/admin` instead of the public homepage. Avoids confusion when public users sign in and land on the main site instead of the admin dashboard.
 
 **Tasks**:
@@ -661,8 +661,8 @@ function ProductAddOnsClient({ addOns, products }) {
 
 ### Admin Dashboard Reorganization
 
-**Status**: Backlog  
-**Priority**: High  
+**Status**: Backlog
+**Priority**: High
 **Description**: The admin dashboard has too many tabs (8+) making navigation cluttered. Need to reorganize into a proper navigation structure with dedicated routes for major features.
 
 **Current State**:
@@ -701,8 +701,8 @@ function ProductAddOnsClient({ addOns, products }) {
 
 ### Advanced Discount & Promotion Controls
 
-**Status**: Backlog  
-**Priority**: High  
+**Status**: Backlog
+**Priority**: High
 **Description**: Build a flexible discount system so marketing can run site-wide promotions, SKU-specific sales, and subscriber incentives without code changes.
 
 **Current State**:
@@ -738,7 +738,7 @@ function ProductAddOnsClient({ addOns, products }) {
 
 ### Failed Order Handling System
 
-**Status**: Planned  
+**Status**: Planned
 **Description**: Implement comprehensive failed order handling to notify customers and track fulfillment issues.
 
 **Tasks**:
@@ -774,8 +774,8 @@ function ProductAddOnsClient({ addOns, products }) {
 
 ### Persist AI Wizard Answers
 
-**Status**: Backlog  
-**Priority**: Medium  
+**Status**: Backlog
+**Priority**: Medium
 **Description**: Save AI About wizard answers to the database so merchants can resume, reuse cached generations, and audit what was sent to the model.
 
 **Tasks**:
@@ -794,8 +794,8 @@ function ProductAddOnsClient({ addOns, products }) {
 
 ### Legacy Content Block for Static Demo Pages
 
-**Status**: Backlog  
-**Priority**: Medium  
+**Status**: Backlog
+**Priority**: Medium
 **Description**: Create a virtual "legacy content" block type that automatically wraps static HTML content from the `Page.content` field, making it visible and editable in the PageEditor alongside real blocks.
 
 **Context**:
@@ -1002,8 +1002,8 @@ When user clicks "Migrate to Blocks":
 
 ### Carousel Infinite Scroll with Manual Dot Controls
 
-**Status**: Backlog  
-**Priority**: Medium  
+**Status**: Backlog
+**Priority**: Medium
 **Description**: Fix the location carousel infinite scroll to work seamlessly with manual dot navigation controls without visible jumping or stopping at edges.
 
 **Current State**:
@@ -1076,8 +1076,8 @@ When user clicks "Migrate to Blocks":
 
 ### AI Image Generation for About Page Wizard
 
-**Status**: Backlog  
-**Priority**: Medium  
+**Status**: Backlog
+**Priority**: Medium
 **Description**: Integrate AI image generation into the About Page wizard to automatically create hero images based on the user's story and brand personality.
 
 **Current State**:
@@ -1164,8 +1164,8 @@ When user clicks "Migrate to Blocks":
 
 ### Lifecycle Marketing Automation
 
-**Status**: Backlog  
-**Priority**: Medium  
+**Status**: Backlog
+**Priority**: Medium
 **Description**: Introduce automated marketing campaigns (welcome, abandoned cart, win-back) powered by in-app triggers and our existing email infrastructure.
 
 **Current State**:
@@ -1200,8 +1200,8 @@ When user clicks "Migrate to Blocks":
 
 ### Admin UI for Category Purchase Options Toggle
 
-**Status**: Backlog  
-**Priority**: Medium  
+**Status**: Backlog
+**Priority**: Medium
 **Description**: Add admin UI to control per-category `showPurchaseOptions` setting, allowing merchants to show/hide prices and purchase buttons on category pages.
 
 **Current State**:
@@ -1265,8 +1265,8 @@ When user clicks "Migrate to Blocks":
 
 ### Consolidate Admin Pages into Dashboard Tabs
 
-**Status**: Backlog  
-**Priority**: Medium  
+**Status**: Backlog
+**Priority**: Medium
 **Description**: Move existing admin management pages into the tabbed admin dashboard for better navigation and consistency.
 
 **Current State**:
@@ -1312,8 +1312,8 @@ When user clicks "Migrate to Blocks":
 
 ### Admin Profile Management
 
-**Status**: Backlog  
-**Priority**: Medium  
+**Status**: Backlog
+**Priority**: Medium
 **Description**: Allow admins to update their own profile information (name, email) from the admin dashboard.
 
 **Current State**:
@@ -1382,8 +1382,8 @@ When user clicks "Migrate to Blocks":
 
 ### Replace Hardcoded Frontend Values with Admin Settings
 
-**Status**: Backlog  
-**Priority**: Medium  
+**Status**: Backlog
+**Priority**: Medium
 **Description**: Centralize all customer-facing copy (store name, taglines, contact info, footer CTAs) into the Site Settings model so non-technical staff can update branding without deployments.
 
 **Current State**:
@@ -1418,7 +1418,7 @@ When user clicks "Migrate to Blocks":
 
 ### Subscription Cancellation Feedback Tracking
 
-**Status**: Backlog  
+**Status**: Backlog
 **Description**: Capture and analyze subscription cancellation feedback from Stripe Customer Portal.
 
 **Tasks**:
@@ -1454,8 +1454,8 @@ When user clicks "Migrate to Blocks":
 
 ### Evaluate FileUpload Component Usage & Deprecation
 
-**Status**: Backlog  
-**Priority**: Low  
+**Status**: Backlog
+**Priority**: Low
 **Description**: The `FileUpload` component (`components/app-components/FileUpload.tsx`) was created for icon uploads in admin settings. With the new standardized `ImageField` component for block dialogs, evaluate whether FileUpload should be deprecated or kept for icon-specific use cases.
 
 **Current Usage**:
@@ -1496,8 +1496,8 @@ When user clicks "Migrate to Blocks":
 
 ### About Page Not Restored After Seed
 
-**Status**: To Fix  
-**Priority**: Low  
+**Status**: To Fix
+**Priority**: Low
 **Description**: The About page is not properly restored after running the database seed command, requiring investigation before merging CMS features into main.
 
 **Current Behavior**:
@@ -1537,8 +1537,8 @@ When user clicks "Migrate to Blocks":
 
 ### Add Store Name to Settings Model
 
-**Status**: Backlog  
-**Priority**: Low  
+**Status**: Backlog
+**Priority**: Low
 **Description**: Add a configurable store name field to the Settings model to allow branding customization throughout the application.
 
 **Current State**:
@@ -1576,8 +1576,8 @@ When user clicks "Migrate to Blocks":
 
 ### Recurring Orders Should Not Show Cancel Button
 
-**Status**: Known Bug  
-**Priority**: Low  
+**Status**: Known Bug
+**Priority**: Low
 **Description**: Recurring orders (created at subscription renewal) currently show cancel buttons in order history. Customers should manage subscriptions at the subscription level, not cancel individual recurring deliveries.
 
 **Current Behavior**:
@@ -1598,17 +1598,17 @@ When user clicks "Migrate to Blocks":
 2. Create recurring orders with different status (e.g., "PROCESSING" instead of "PENDING")
 3. Check if order has a prior order with same `stripeSubscriptionId` (if yes, it's recurring)
 
-**Impact**:  
+**Impact**:
 Customers can currently cancel individual recurring orders, which may create confusion about subscription management vs order cancellation.
 
-**Next Steps**:  
+**Next Steps**:
 Requires separate feature branch for proper design, implementation, and testing.
 
 ---
 
 ### Merchant Order Notification Enhancements
 
-**Status**: Backlog  
+**Status**: Backlog
 **Description**: Improve merchant notifications with actionable insights.
 
 **Tasks**:
@@ -1622,7 +1622,7 @@ Requires separate feature branch for proper design, implementation, and testing.
 
 ### Customer Order Tracking
 
-**Status**: Backlog  
+**Status**: Backlog
 **Description**: Provide real-time order tracking for customers.
 
 **Tasks**:
@@ -1638,7 +1638,7 @@ Requires separate feature branch for proper design, implementation, and testing.
 
 ### ✅ Split Orders for Mixed Carts (v0.11.7)
 
-**Completed**: November 18, 2025  
+**Completed**: November 18, 2025
 **Description**: Implemented order splitting for mixed carts with architectural pivot based on Stripe's subscription model.
 
 **Key Implementation:**
@@ -1681,7 +1681,7 @@ Requires separate feature branch for proper design, implementation, and testing.
 
 ### ✅ Recurring Order Creation (v0.11.6)
 
-**Completed**: November 17, 2025  
+**Completed**: November 17, 2025
 **Description**: Automatically create Order records for each subscription billing cycle to enable fulfillment tracking.
 
 **Implementation:**

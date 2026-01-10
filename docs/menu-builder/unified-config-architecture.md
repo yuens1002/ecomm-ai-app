@@ -1,13 +1,14 @@
 # Unified Config Architecture
 
-**Status:** Planning (Pre-Implementation)  
+**Status:** Planning (Pre-Implementation)
 **Goal:** Single source of truth where ALL features for a view live together
 
-> Note (Jan 2026): This document describes a *future* “mega-config” idea.
+> Note (Jan 2026): This document describes a _future_ “mega-config” idea.
 > The current implementation intentionally uses a smaller split-config approach:
+>
 > - `ACTION_BAR_CONFIG` for action bar behavior
 > - `VIEW_CONFIGS` for view surface metadata (tableViewId/features/actionIds)
-> This reduces risk and keeps the pathway incremental.
+>   This reduces risk and keeps the pathway incremental.
 
 ---
 

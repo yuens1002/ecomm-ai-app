@@ -1,6 +1,6 @@
 # Menu Builder - Documentation Hub
 
-**Status:** Foundation + first table view shipped ✅  
+**Status:** Foundation + first table view shipped ✅
 **Last Updated:** January 8, 2026
 
 ---
