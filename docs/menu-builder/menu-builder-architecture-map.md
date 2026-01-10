@@ -73,7 +73,84 @@ This is the anti-pipe-dream checklist: each step should be small enough to ship 
 
 ---
 
-## 5) Quick sanity questions (when reviewing a change)
+## 5) Action Bar Roadmap: “mixed config” → data-driven model
+
+Today `ACTION_BAR_CONFIG` is *mostly* declarative, but it also contains:
+
+- execution logic (`execute[view](context)`)
+- refresh/invalidation targets (`refresh[view]`)
+- error message selection (`errorMessage[view]`)
+- disabled/aria logic (`disabled(state)`, `ariaLabel(state)`)
+
+That’s fine for early speed, but it’s the exact place where complexity quietly accumulates.
+
+### 5.1 Current vs Target (Concept Diagram)
+
+```mermaid
+flowchart LR
+  subgraph Current[Current]
+   ABC[ACTION_BAR_CONFIG]
+   ABC --> UI[UI metadata]
+   ABC --> AVAIL[Per-view availability]
+   ABC --> DISABLED[disabled/aria logic]
+   ABC --> EXEC[execute logic]
+   ABC --> EFFECTS[refresh + errors]
+  end
+
+  subgraph Target[Target (incremental split)]
+   DEF[ACTION_DEFINITIONS\n(UI only)]
+   AV[ACTION_AVAILABILITY\n(view → actionIds)]
+   BEH[ACTION_BEHAVIORS\n(actionId → disabled/aria + handler)]
+   EF[ACTION_EFFECTS\n(actionId+view → refresh + error)]
+   HYDRATE[getActionsForView(view)\n(hydrates UI + behavior)]
+
+   AV --> HYDRATE
+   DEF --> HYDRATE
+   BEH --> HYDRATE
+   EF --> HYDRATE
+  end
+```
+
+### 5.2 What becomes “data” vs “code”
+
+| Piece | Should be mostly data? | Why |
+|---|---:|---|
+| UI metadata (label/icon/kbd/position/type) | Yes | Stable; shouldn’t change per view very often |
+| Per-view availability (which actions appear) | Yes | It’s an authoring decision; keeps UI consistent |
+| Disabled/aria logic | Mostly code | Needs real state; best centralized per actionId |
+| Execute logic | Code | It’s behavior (mutations + business rules), not “config” |
+| Refresh targets + error messages | Data-ish | Often a small mapping; can live next to behavior but not inline per-view arrays |
+
+### 5.3 Migration steps (roadmap)
+
+1. **Extract `ACTION_DEFINITIONS` (UI-only)**
+  - Goal: the UI shape is declared once per actionId.
+  - Acceptance: changing an icon/label doesn’t touch any execute logic.
+
+2. **Change `ACTION_BAR_CONFIG` to reference action IDs, not full objects**
+  - e.g. `ACTION_BAR_CONFIG[view] = ["new-label", "add-labels", "clone", ...]`
+  - Acceptance: per-view arrays become small and readable.
+
+3. **Move execute logic into `ACTION_BEHAVIORS` keyed by `actionId`**
+  - One place to define behavior; views opt in via availability.
+  - Acceptance: no inline `execute` functions inside per-view arrays.
+
+4. **Move refresh/error mapping into `ACTION_EFFECTS`**
+  - Centralize refresh keys and per-view error messages.
+  - Acceptance: action execution flow reads effects from a mapping (no ad hoc refresh logic).
+
+5. **Hydrate at the boundary**
+  - Implement a single `getActionsForView(view)` that composes: definitions + availability + behaviors + effects.
+  - Acceptance: `MenuActionBar` consumes the hydrated model and stays dumb.
+
+6. **Lock with invariants tests**
+  - Every `actionId` referenced by availability must exist in definitions.
+  - Every `actionId` that claims to be executable must have a behavior.
+  - Optional: effects coverage for actions that mutate.
+
+---
+
+## 6) Quick sanity questions (when reviewing a change)
 
 - If a PR adds a new “view feature”, which source-of-truth should it live in: `ACTION_BAR_CONFIG`, `VIEW_CONFIGS`, or a table component?
 - Does a UI behavior change require touching both menu-builder and admin API? If yes, should it be moved into the `data/*` layer?

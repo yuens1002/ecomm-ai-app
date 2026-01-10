@@ -7,6 +7,7 @@
 - Table view components are chosen by `TableViewRenderer` via `tableViewId`.
 
 If you need the “forest view” (diagrams + view matrix), start with:
+
 - `docs/menu-builder/menu-builder-architecture-map.md`
 
 ---

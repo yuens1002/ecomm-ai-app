@@ -181,6 +181,15 @@ The goal is to make the Menu Builder predictable and shippable by driving UI beh
 - DTO invariants are already covered (join-table ordering).
 - Add config invariant tests as needed (e.g. each view has a valid `tableViewId`, referenced action IDs exist).
 
+6. **Decompose `ACTION_BAR_CONFIG` (reduce mixed config+logic)**
+
+- Target split:
+  - `ACTION_DEFINITIONS` (UI-only metadata)
+  - per-view action availability (IDs only)
+  - action behaviors (disabled/aria + execute logic keyed by actionId)
+  - action effects (refresh targets + error messages)
+- Acceptance: per-view arrays become readable lists of IDs; execute logic is centralized and testable.
+
 **Non-goals (to avoid a repeat of the last attempt):**
 
 - Don’t unify all configs into one giant object until boundaries prove stable.
