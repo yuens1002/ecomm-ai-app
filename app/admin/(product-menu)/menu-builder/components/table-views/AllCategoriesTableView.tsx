@@ -1,32 +1,31 @@
 "use client";
 "use no memo";
 
-import * as React from "react";
-import { useMemo, useCallback } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { TableBody } from "@/components/ui/table";
 import {
-  useReactTable,
   getCoreRowModel,
   getSortedRowModel,
+  useReactTable,
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { TableBody } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
 import { FileSpreadsheet } from "lucide-react";
+import * as React from "react";
+import { useCallback, useMemo } from "react";
+import type { MenuCategory } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
+import { EmptyState } from "../shared/EmptyState";
 import { InlineNameEditor } from "./shared/cells/InlineNameEditor";
 import { VisibilityCell } from "./shared/cells/VisibilityCell";
-import { EmptyState } from "../shared/EmptyState";
-import { MenuBuilderTable } from "./shared/table/MenuBuilderTable";
 import { allCategoriesWidthPreset } from "./shared/table/columnWidthPresets";
+import { MenuBuilderTable } from "./shared/table/MenuBuilderTable";
+import { TableCell } from "./shared/table/TableCell";
 import { TableHeader } from "./shared/table/TableHeader";
 import { TableRow } from "./shared/table/TableRow";
-import { TableCell } from "./shared/table/TableCell";
-import { generateSlug } from "@/hooks/useSlugGenerator";
-import type { MenuCategory } from "../../../types/menu";
 
 export function AllCategoriesTableView() {
-  const { builder, categories, labels, products, updateCategory, createCategory } =
+  const { builder, categories, labels, products, updateCategory, createNewCategory } =
     useMenuBuilder();
   const [editingCategoryId, setEditingCategoryId] = React.useState<string | null>(null);
   const [pinnedCategoryId, setPinnedCategoryId] = React.useState<string | null>(null);
@@ -116,26 +115,6 @@ export function AllCategoriesTableView() {
     },
     [builder]
   );
-
-  // Handle new category creation
-  const handleNewCategory = useCallback(async () => {
-    const existingNames = categories.map((c) => c.name);
-    let counter = 1;
-    let newName = "New Category";
-    while (existingNames.includes(newName)) {
-      newName = `New Category ${counter}`;
-      counter++;
-    }
-    const slug = generateSlug(newName);
-    await createCategory({ name: newName, slug });
-  }, [categories, createCategory]);
-
-  // Listen for action bar new-category event
-  React.useEffect(() => {
-    const handler = () => handleNewCategory();
-    window.addEventListener("menu-builder:new-category", handler);
-    return () => window.removeEventListener("menu-builder:new-category", handler);
-  }, [handleNewCategory]);
 
   // Column definitions
   const columns = useMemo<ColumnDef<MenuCategory>[]>(
@@ -262,7 +241,7 @@ export function AllCategoriesTableView() {
         title="No Categories Yet"
         description="Get started by creating your first category"
         actionLabel="New Category"
-        onAction={handleNewCategory}
+        onAction={createNewCategory}
       />
     );
   }

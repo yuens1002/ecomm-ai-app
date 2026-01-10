@@ -3,6 +3,25 @@ import type { BuilderState, MenuBuilderActions, ViewType } from "../../types/bui
 import type { CloneCategory } from "../../types/category";
 import type { MenuCategory, MenuLabel, MenuProduct } from "../../types/menu";
 
+export const ALL_ACTION_IDS = [
+  "clone",
+  "remove",
+  "visibility",
+  "expand-all",
+  "collapse-all",
+  "undo",
+  "redo",
+  "new-label",
+  "add-labels",
+  "add-categories",
+  "sort-mode",
+  "add-products",
+  "sort-order",
+  "new-category",
+] as const;
+
+export type ActionId = (typeof ALL_ACTION_IDS)[number];
+
 export type ActionPosition = "left" | "right";
 
 export type ActionType = "button" | "combo" | "dropdown";
@@ -53,7 +72,7 @@ export type ActionContext = {
 };
 
 export type ActionDefinition = {
-  id: string;
+  id: ActionId;
   type: ActionType;
   icon: LucideIcon;
   label: string;
@@ -63,7 +82,7 @@ export type ActionDefinition = {
   disabled: (state: BuilderState) => boolean;
   ariaLabel?: (state: BuilderState) => string;
   onClick: (state: BuilderState, actions: MenuBuilderActions) => void | Promise<void>;
-  comboWith?: string;
+  comboWith?: ActionId;
   hasDropdown?: boolean;
   execute?: Partial<Record<ViewType, (context: ActionContext) => Promise<void>>>;
   refresh?: Partial<Record<ViewType, RefreshKey[]>>;
@@ -72,7 +91,7 @@ export type ActionDefinition = {
 
 // Split model primitives (used for incremental refactor)
 export type ActionUiDefinition = {
-  id: string;
+  id: ActionId;
   icon: LucideIcon;
   label: string;
   tooltip: string;
@@ -82,7 +101,7 @@ export type ActionUiDefinition = {
 export type ActionPresentation = {
   type: ActionType;
   position: ActionPosition;
-  comboWith?: string;
+  comboWith?: ActionId;
   hasDropdown?: boolean;
 };
 

@@ -1,8 +1,8 @@
 import type { ViewType } from "../../types/builder-state";
-import type { ActionUiDefinition } from "./model";
+import type { ActionId, ActionUiDefinition } from "./model";
 
 export const ACTION_UI_OVERRIDES: Partial<
-  Record<ViewType, Partial<Record<string, Partial<ActionUiDefinition>>>>
+  Record<ViewType, Partial<Record<ActionId, Partial<ActionUiDefinition>>>>
 > = {
   label: {
     remove: {

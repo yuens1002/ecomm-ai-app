@@ -1,12 +1,12 @@
 import type { BuilderState, MenuBuilderActions, ViewType } from "../../types/builder-state";
 import { modKey } from "./keys";
-import type { ActionBehavior, ActionContext } from "./model";
+import type { ActionBehavior, ActionContext, ActionId } from "./model";
 
 const hasSelection = (state: BuilderState): boolean => state.selectedIds.length > 0;
 const hasUndoHistory = (state: BuilderState): boolean => state.undoStack.length > 0;
 const hasRedoHistory = (state: BuilderState): boolean => state.redoStack.length > 0;
 
-export const ACTION_BEHAVIORS: Record<string, ActionBehavior> = {
+export const ACTION_BEHAVIORS: Record<ActionId, ActionBehavior> = {
   clone: {
     disabled: (state) => !hasSelection(state),
     ariaLabel: (state) =>
@@ -181,8 +181,8 @@ export const ACTION_BEHAVIORS: Record<string, ActionBehavior> = {
     disabled: (state) => hasSelection(state),
     ariaLabel: (state) =>
       hasSelection(state) ? "New category disabled - clear selection first" : "Add new category",
-    onClick: () => {
-      window.dispatchEvent(new CustomEvent("menu-builder:new-category"));
+    onClick: async (_state, actions: MenuBuilderActions) => {
+      await actions.createNewCategory();
     },
   },
 };

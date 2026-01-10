@@ -1,6 +1,6 @@
-import type { ActionEffects } from "./model";
+import type { ActionEffects, ActionId } from "./model";
 
-export const ACTION_EFFECTS: Record<string, ActionEffects> = {
+export const ACTION_EFFECTS: Partial<Record<ActionId, ActionEffects>> = {
   clone: {
     refresh: {
       menu: ["labels"],

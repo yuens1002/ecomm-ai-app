@@ -1,8 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ACTION_BAR_CONFIG, type ActionContext } from "../../../constants/action-bar-config";
+import { useMemo } from "react";
+import {
+  ACTION_BAR_CONFIG,
+  type ActionContext,
+  type ActionId,
+} from "../../../constants/action-bar-config";
 import { DROPDOWN_REGISTRY, type DropdownContext } from "../../../constants/dropdown-registry";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { ActionButton } from "./ActionButton";
@@ -21,6 +25,7 @@ export function MenuActionBar() {
     categories,
     products,
     mutate,
+    createNewCategory,
     // All mutations
     createCategory,
     cloneCategory,
@@ -79,10 +84,14 @@ export function MenuActionBar() {
     toggleVisibility: async () => {
       await executeActionFromConfig("visibility");
     },
+
+    createNewCategory: async () => {
+      await createNewCategory();
+    },
   };
 
   // Helper to execute actions using action.execute from config
-  const executeActionFromConfig = async (actionId: string) => {
+  const executeActionFromConfig = async (actionId: ActionId) => {
     if (builder.selectedIds.length === 0) return;
 
     const action = actions.find((a) => a.id === actionId);
@@ -165,7 +174,7 @@ export function MenuActionBar() {
   );
 
   // Helper to build dropdown content from registry
-  const buildDropdownContent = (actionId: string): React.ReactNode => {
+  const buildDropdownContent = (actionId: ActionId): React.ReactNode => {
     const config = DROPDOWN_REGISTRY[actionId as keyof typeof DROPDOWN_REGISTRY];
 
     if (!config) {

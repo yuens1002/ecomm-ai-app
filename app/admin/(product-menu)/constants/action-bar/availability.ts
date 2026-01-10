@@ -1,8 +1,9 @@
 import type { ViewType } from "../../types/builder-state";
+import type { ActionId } from "./model";
 
 // Per-view availability: keep these lists small/readable.
 // (IDs must be present in definitions/presentation/behavior.)
-export const ACTION_AVAILABILITY: Record<ViewType, string[]> = {
+export const ACTION_AVAILABILITY: Record<ViewType, ActionId[]> = {
   menu: [
     "new-label",
     "add-labels",

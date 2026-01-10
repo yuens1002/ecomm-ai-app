@@ -10,9 +10,9 @@ import {
   Undo,
 } from "lucide-react";
 import { modKey } from "./keys";
-import type { ActionUiDefinition } from "./model";
+import type { ActionId, ActionUiDefinition } from "./model";
 
-export const ACTION_DEFINITIONS: Record<string, ActionUiDefinition> = {
+export const ACTION_DEFINITIONS: Record<ActionId, ActionUiDefinition> = {
   // Shared actions
   clone: {
     id: "clone",
