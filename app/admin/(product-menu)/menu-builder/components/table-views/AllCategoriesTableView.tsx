@@ -305,7 +305,10 @@ export function AllCategoriesTableView() {
                   className="cursor-pointer h-10 hover:bg-muted/40 border-b-0"
                   onClick={(e) => handleRowClick(pinnedCategory.id, e)}
                 >
-                  <TableCell className={allCategoriesWidthPreset.select.cell}>
+                  <TableCell
+                    className={allCategoriesWidthPreset.select.cell}
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <div
                       className={
                         "flex h-10 items-center opacity-100 transition-opacity " +
@@ -373,7 +376,10 @@ export function AllCategoriesTableView() {
               className="cursor-pointer h-10 hover:bg-muted/40 border-b-0"
               onClick={(e) => handleRowClick(row.original.id, e)}
             >
-              <TableCell className={allCategoriesWidthPreset.select.cell}>
+              <TableCell
+                className={allCategoriesWidthPreset.select.cell}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div
                   className={
                     "flex h-10 items-center opacity-100 transition-opacity " +

@@ -1,7 +1,7 @@
-import * as React from "react";
-import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, X, Pencil } from "lucide-react";
+import { Check, Pencil, X } from "lucide-react";
+import * as React from "react";
+import { useEffect, useRef, useState } from "react";
 
 type InlineNameEditorProps = {
   id: string;
@@ -26,10 +26,9 @@ export function InlineNameEditor({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const trimmedValue = value.trim();
-  const isDefaultNewName = /^new (category|label)(?: \d+)?$/i.test(trimmedValue);
-  const isCloneCopyName = /\bcopy(?: \d+)?$/i.test(trimmedValue);
+  const isDefaultNewName = /^new (category|label)(?:\s*\(\d+\)|\s+\d+)?$/i.test(trimmedValue);
+  const isCloneCopyName = /\bcopy(?:\s*\(\d+\)|\s+\d+)?$/i.test(trimmedValue);
   const isGenericName = isDefaultNewName || isCloneCopyName;
-  const displayValue = isGenericName && !trimmedValue.endsWith("...") ? `${value}...` : value;
 
   // Focus and select text when entering edit mode
   useEffect(() => {
@@ -108,7 +107,7 @@ export function InlineNameEditor({
               : "min-w-0 truncate text-foreground"
           }
         >
-          {displayValue}
+          {value}
         </span>
         <Pencil className="w-3 h-3 shrink-0 text-muted-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-visible:opacity-100 transition-opacity" />
       </button>

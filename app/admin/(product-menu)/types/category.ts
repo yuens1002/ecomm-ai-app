@@ -35,6 +35,17 @@ export const createCategorySchema = z.object({
 export type CreateCategory = z.infer<typeof createCategorySchema>;
 
 /**
+ * Schema for creating a new default category (server-owned workflow)
+ */
+export const createNewCategorySchema = z
+  .object({
+    labelIds: z.array(z.string()).optional(),
+  })
+  .optional();
+
+export type CreateNewCategory = z.infer<typeof createNewCategorySchema>;
+
+/**
  * Schema for cloning a category
  */
 export const cloneCategorySchema = z.object({

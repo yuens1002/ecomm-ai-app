@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useSWRConfig } from "swr";
-import { PRODUCT_MENU_DATA_KEY } from "./useProductMenuData";
-import * as labelActions from "../actions/labels";
 import * as categoryActions from "../actions/categories";
+import * as labelActions from "../actions/labels";
 import * as productActions from "../actions/products";
 import { updateProductMenuSettings } from "../actions/settings";
 import type { CloneCategory } from "../types/category";
+import { PRODUCT_MENU_DATA_KEY } from "./useProductMenuData";
 
 export function useProductMenuMutations() {
   const { mutate } = useSWRConfig();
@@ -69,6 +69,16 @@ export function useProductMenuMutations() {
       const res = await categoryActions.createCategory(payload);
       if (res.ok) await refresh();
       return res;
+    },
+
+    createNewCategory: async () => {
+      const res = await categoryActions.createNewCategory(undefined);
+      if (!res.ok) {
+        console.error("[useProductMenuMutations] Failed to create new category:", res.error);
+        return;
+      }
+
+      await refresh();
     },
     cloneCategory: async (payload: CloneCategory) => {
       const res = await categoryActions.cloneCategory(payload);
