@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.60.3 - 2026-01-12
+
+- **All Categories table stability**: Fixed checkbox/row interaction freezes and improved selection UX
+  - Single click selects; double click navigates; guarded interactive targets to prevent accidental navigation
+  - Performance: memoized derived maps and stabilized sorting to avoid re-sorting on selection updates
+  - UI polish: removed selection layout shift; fixed checkbox focus/visibility edge case
+- **Action Bar feedback**: Added success toasts per action and a generic destructive failure toast; disabled “Remove” when there’s nothing to detach
+  - Metrics: Jest `npm run test:ci` (36 suites, 299 tests passing); lint + typecheck clean
+
 ## 0.60.2 - 2026-01-12
 
 - **Menu Builder consistency**: Captured post-commit “Accept All” edits as a follow-up patch

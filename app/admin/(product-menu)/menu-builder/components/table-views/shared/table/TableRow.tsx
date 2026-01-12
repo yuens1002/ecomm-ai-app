@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import * as React from "react";
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
+  if (!(target instanceof Element)) return false;
 
   return Boolean(
     target.closest(
@@ -15,6 +15,7 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
         "textarea",
         "select",
         "[role=button]",
+        "[role=checkbox]",
         "[contenteditable]",
         "[data-row-click-ignore]",
       ].join(",")
@@ -43,8 +44,8 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       <ShadcnTableRow
         ref={ref}
         className={cn(
-          "group cursor-pointer h-10 hover:bg-muted/40 border-b-0",
-          isSelected && "bg-accent/50 border-l-2 border-l-primary",
+          "group cursor-pointer h-10 hover:bg-muted/40 border-b-0 border-l-2 border-l-transparent",
+          isSelected && "bg-accent/50 border-l-primary",
           isDragging && "opacity-50",
           className
         )}

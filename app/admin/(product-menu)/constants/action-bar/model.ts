@@ -28,6 +28,13 @@ export type ActionType = "button" | "combo" | "dropdown";
 
 export type RefreshKey = "labels" | "categories" | "products";
 
+export type ToastSpec = {
+  title: string;
+  description?: string;
+};
+
+export type SuccessToastConfig = Partial<Record<ViewType, ToastSpec>>;
+
 // Subset of mutations from useProductMenuMutations used in actions
 export type ProductMenuMutations = {
   updateLabel: (
@@ -91,6 +98,8 @@ export type ActionDefinition = {
   execute?: Partial<Record<ViewType, (context: ActionContext) => Promise<ActionExecuteResult>>>;
   refresh?: Partial<Record<ViewType, RefreshKey[]>>;
   errorMessage?: Partial<Record<ViewType, string>>;
+  successToast?: SuccessToastConfig;
+  failureToast?: ToastSpec;
 };
 
 // Split model primitives (used for incremental refactor)
@@ -119,4 +128,6 @@ export type ActionBehavior = {
 export type ActionEffects = {
   refresh?: Partial<Record<ViewType, RefreshKey[]>>;
   errorMessage?: Partial<Record<ViewType, string>>;
+  successToast?: SuccessToastConfig;
+  failureToast?: ToastSpec;
 };

@@ -25,7 +25,7 @@ export const ACTION_DEFINITIONS: Record<ActionId, ActionUiDefinition> = {
     id: "remove",
     icon: CornerUpLeft,
     label: "Remove",
-    tooltip: "Remove from added labels",
+    tooltip: "Remove from labels",
     kbd: [modKey, "⌫"],
   },
   visibility: {

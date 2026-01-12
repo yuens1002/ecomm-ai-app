@@ -1,4 +1,5 @@
 import { Checkbox } from "@/components/ui/checkbox";
+import * as React from "react";
 
 type CheckboxCellProps = {
   id: string;
@@ -19,12 +20,18 @@ export function CheckboxCell({
   ariaLabel,
   isSelectable = true,
 }: CheckboxCellProps) {
+  const pointerToggleRef = React.useRef(false);
+
   if (!isSelectable) {
     return <div className="h-4 w-4" aria-hidden="true" />;
   }
 
   return (
     <div
+      data-row-click-ignore
+      onPointerDown={() => {
+        pointerToggleRef.current = true;
+      }}
       className={
         "flex items-center opacity-100 transition-opacity " +
         (alwaysVisible
@@ -34,7 +41,20 @@ export function CheckboxCell({
     >
       <Checkbox
         checked={checked}
-        onCheckedChange={() => onToggle(id)}
+        onCheckedChange={() => {
+          onToggle(id);
+
+          // If this was a pointer interaction, drop focus so the checkbox can
+          // return to its "hidden unless hovered" state when unchecked.
+          if (pointerToggleRef.current) {
+            pointerToggleRef.current = false;
+            queueMicrotask(() => {
+              if (document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+              }
+            });
+          }
+        }}
         disabled={disabled}
         aria-label={ariaLabel ?? `Select ${id}`}
         className="data-[state=checked]:bg-accent-foreground"

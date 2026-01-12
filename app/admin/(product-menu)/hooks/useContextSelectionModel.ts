@@ -28,23 +28,23 @@ export function useContextSelectionModel(
 
   const isSelectionActive = builder.selectedKind === null || builder.selectedKind === kind;
 
+  const selectedIdSet = useMemo(() => new Set(builder.selectedIds), [builder.selectedIds]);
+
   const selectionState: BulkSelectionState = useMemo(() => {
     if (selectableIds.length === 0 || builder.selectedIds.length === 0) {
       return { allSelected: false, someSelected: false, selectedCount: 0 };
     }
-
-    const selected = new Set(builder.selectedIds);
     let selectedCount = 0;
 
     for (const id of selectableIds) {
-      if (selected.has(id)) selectedCount += 1;
+      if (selectedIdSet.has(id)) selectedCount += 1;
     }
 
     const allSelected = selectedCount === selectableIds.length;
     const someSelected = selectedCount > 0 && !allSelected;
 
     return { allSelected, someSelected, selectedCount };
-  }, [selectableIds, builder.selectedIds]);
+  }, [selectableIds, builder.selectedIds.length, selectedIdSet]);
 
   const onSelectAll = useCallback(() => {
     if (!isSelectionActive) return;
@@ -64,10 +64,7 @@ export function useContextSelectionModel(
     [builder, isSelectionActive, kind]
   );
 
-  const isSelected = useCallback(
-    (id: string) => builder.selectedIds.includes(id),
-    [builder.selectedIds]
-  );
+  const isSelected = useCallback((id: string) => selectedIdSet.has(id), [selectedIdSet]);
 
   return {
     kind,

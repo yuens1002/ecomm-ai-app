@@ -63,12 +63,28 @@ export function AllCategoriesTableView() {
   const { builder, categories, labels, products, updateCategory, createNewCategory } =
     useMenuBuilder();
 
+  const rowClickTimeoutRef = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (rowClickTimeoutRef.current !== null) {
+        window.clearTimeout(rowClickTimeoutRef.current);
+        rowClickTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   const {
     editingId: editingCategoryId,
     pinnedId: pinnedCategoryId,
     clearEditing,
     clearPinnedIfMatches,
   } = useContextRowUiState(builder, "category");
+
+  const defaultCategorySort = useCallback((a: MenuCategory, b: MenuCategory) => {
+    if (b.order !== a.order) return b.order - a.order;
+    return b.id.localeCompare(a.id);
+  }, []);
 
   const selectableCategoryIds = useMemo(() => categories.map((c) => c.id), [categories]);
   const {
@@ -84,10 +100,7 @@ export function AllCategoriesTableView() {
     rows: categories,
     pinnedId: pinnedCategoryId,
     isSortingActive: sorting.length > 0,
-    defaultSort: (a, b) => {
-      if (b.order !== a.order) return b.order - a.order;
-      return b.id.localeCompare(a.id);
-    },
+    defaultSort: defaultCategorySort,
   });
 
   React.useEffect(() => {
@@ -97,21 +110,46 @@ export function AllCategoriesTableView() {
   }, [pinnedCategoryId, editingCategoryId, clearPinnedIfMatches]);
 
   // Helper: Get label names for a category
+  const categoryLabelsById = useMemo(() => {
+    const map = new Map<string, string[]>();
+
+    for (const label of labels) {
+      for (const category of label.categories ?? []) {
+        const existing = map.get(category.id);
+        if (existing) {
+          existing.push(label.name);
+        } else {
+          map.set(category.id, [label.name]);
+        }
+      }
+    }
+
+    return map;
+  }, [labels]);
+
+  const categoryProductCountById = useMemo(() => {
+    const map = new Map<string, number>();
+
+    for (const product of products) {
+      for (const categoryId of product.categoryIds ?? []) {
+        map.set(categoryId, (map.get(categoryId) ?? 0) + 1);
+      }
+    }
+
+    return map;
+  }, [products]);
+
   const getCategoryLabels = useCallback(
     (categoryId: string) => {
-      const assignedLabels = labels
-        .filter((label) => label.categories?.some((cat) => cat.id === categoryId))
-        .map((label) => label.name);
-      return assignedLabels.length > 0 ? assignedLabels.join(", ") : "—";
+      const names = categoryLabelsById.get(categoryId);
+      return names && names.length > 0 ? names.join(", ") : "—";
     },
-    [labels]
+    [categoryLabelsById]
   );
 
   const getCategoryProductCountNumber = useCallback(
-    (categoryId: string) => {
-      return products.filter((product) => product.categoryIds?.includes(categoryId)).length;
-    },
-    [products]
+    (categoryId: string) => categoryProductCountById.get(categoryId) ?? 0,
+    [categoryProductCountById]
   );
 
   // Column definitions
@@ -199,12 +237,26 @@ export function AllCategoriesTableView() {
                 key={category.id}
                 data-state={isSelected ? "selected" : undefined}
                 isSelected={isSelected}
-                onClick={() => builder.navigateToCategory(category.id)}
+                onClick={() => {
+                  // Delay single-click selection so a double-click can cancel it.
+                  if (rowClickTimeoutRef.current !== null) {
+                    window.clearTimeout(rowClickTimeoutRef.current);
+                  }
+
+                  rowClickTimeoutRef.current = window.setTimeout(() => {
+                    onToggleCategoryId(category.id);
+                    rowClickTimeoutRef.current = null;
+                  }, 200);
+                }}
+                onDoubleClick={() => {
+                  if (rowClickTimeoutRef.current !== null) {
+                    window.clearTimeout(rowClickTimeoutRef.current);
+                    rowClickTimeoutRef.current = null;
+                  }
+                  builder.navigateToCategory(category.id);
+                }}
               >
-                <TableCell
-                  className={allCategoriesWidthPreset.select.cell}
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <TableCell className={allCategoriesWidthPreset.select.cell} data-row-click-ignore>
                   <CheckboxCell
                     id={category.id}
                     checked={isSelected}
@@ -229,7 +281,24 @@ export function AllCategoriesTableView() {
                       }
                     }}
                     onSave={async (id, name) => {
-                      await updateCategory(id, { name });
+                      const previousName = category.name;
+                      const nextName = name;
+
+                      const res = await updateCategory(id, { name: nextName });
+                      if (res.ok && previousName !== nextName) {
+                        builder.pushUndoAction({
+                          action: "rename-category",
+                          timestamp: new Date(),
+                          data: {
+                            undo: async () => {
+                              await updateCategory(id, { name: previousName });
+                            },
+                            redo: async () => {
+                              await updateCategory(id, { name: nextName });
+                            },
+                          },
+                        });
+                      }
                       clearEditing();
                       if (isPinned || pinnedCategoryId === category.id) {
                         clearPinnedIfMatches(category.id);
@@ -259,7 +328,23 @@ export function AllCategoriesTableView() {
                       isVisible={category.isVisible}
                       variant="switch"
                       onToggle={async (id, visible) => {
-                        await updateCategory(id, { isVisible: visible });
+                        const previousIsVisible = category.isVisible;
+                        const nextIsVisible = visible;
+                        const res = await updateCategory(id, { isVisible: nextIsVisible });
+                        if (res.ok && previousIsVisible !== nextIsVisible) {
+                          builder.pushUndoAction({
+                            action: "toggle-visibility:category",
+                            timestamp: new Date(),
+                            data: {
+                              undo: async () => {
+                                await updateCategory(id, { isVisible: previousIsVisible });
+                              },
+                              redo: async () => {
+                                await updateCategory(id, { isVisible: nextIsVisible });
+                              },
+                            },
+                          });
+                        }
                       }}
                     />
                   </div>

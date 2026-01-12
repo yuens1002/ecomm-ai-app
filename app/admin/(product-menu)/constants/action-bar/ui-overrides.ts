@@ -6,22 +6,22 @@ export const ACTION_UI_OVERRIDES: Partial<
 > = {
   label: {
     remove: {
-      tooltip: "Remove selected categories from label",
+      tooltip: "Remove from label",
     },
   },
   category: {
     remove: {
-      tooltip: "Remove selected products from category",
+      tooltip: "Remove from category",
     },
   },
   "all-labels": {
     remove: {
-      tooltip: "Remove selected labels",
+      tooltip: "Remove from menu",
     },
   },
   "all-categories": {
     remove: {
-      tooltip: "Remove selected categories",
+      tooltip: "Remove from labels",
     },
   },
 };

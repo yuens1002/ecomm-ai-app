@@ -1,6 +1,7 @@
 "use client";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
 import { useMemo } from "react";
 import {
   ACTION_BAR_CONFIG,
@@ -19,6 +20,8 @@ import { ActionDropdownButton } from "./ActionDropdownButton";
  * Gets all data from MenuBuilderProvider - no props needed.
  */
 export function MenuActionBar() {
+  const { toast } = useToast();
+
   const {
     builder,
     labels,
@@ -29,6 +32,7 @@ export function MenuActionBar() {
     // All mutations
     createCategory,
     cloneCategory,
+    deleteCategory,
     updateLabel,
     updateCategory,
     attachCategory,
@@ -40,6 +44,18 @@ export function MenuActionBar() {
   const actions = ACTION_BAR_CONFIG[builder.currentView];
   const leftActions = actions.filter((a) => a.position === "left");
   const rightActions = actions.filter((a) => a.position === "right");
+
+  const disableRemoveInAllCategories = useMemo(() => {
+    if (builder.currentView !== "all-categories") return false;
+    if (builder.selectedIds.length === 0) return false;
+
+    // In all-categories, "Remove" detaches selected categories from labels.
+    // If none of the selected categories are attached to any label, disable the action.
+    return !builder.selectedIds.some((id) => {
+      const category = categories.find((c) => c.id === id);
+      return (category?.labels?.length ?? 0) > 0;
+    });
+  }, [builder.currentView, builder.selectedIds, categories]);
 
   // Build state object for action bar config (with data counts)
   const state = useMemo(
@@ -70,9 +86,13 @@ export function MenuActionBar() {
     navigateToCategory: builder.navigateToCategory,
     navigateBack: builder.navigateBack,
 
-    // Undo/redo (stubs for now)
-    undo: () => console.log("[MenuActionBar] Undo not yet implemented"),
-    redo: () => console.log("[MenuActionBar] Redo not yet implemented"),
+    // Undo/redo
+    undo: () => {
+      void builder.undo();
+    },
+    redo: () => {
+      void builder.redo();
+    },
 
     // CRUD operations - now handled by action.execute
     removeSelected: async () => {
@@ -90,6 +110,23 @@ export function MenuActionBar() {
       if (createdId) {
         builder.setPinnedNew({ kind: "category", id: createdId });
         builder.setEditing({ kind: "category", id: createdId });
+
+        if (builder.currentView === "all-categories") {
+          let activeId = createdId;
+          builder.pushUndoAction({
+            action: "new-category",
+            timestamp: new Date(),
+            data: {
+              undo: async () => {
+                await deleteCategory(activeId);
+              },
+              redo: async () => {
+                const nextId = await createNewCategory();
+                if (nextId) activeId = nextId;
+              },
+            },
+          });
+        }
       }
     },
   };
@@ -97,6 +134,8 @@ export function MenuActionBar() {
   // Helper to execute actions using action.execute from config
   const executeActionFromConfig = async (actionId: ActionId) => {
     if (builder.selectedIds.length === 0) return;
+
+    const selectedIdsSnapshot = [...builder.selectedIds];
 
     const action = actions.find((a) => a.id === actionId);
     if (!action?.execute) {
@@ -131,7 +170,106 @@ export function MenuActionBar() {
     };
 
     try {
+      const viewSnapshot = builder.currentView;
+
+      // Capture "before" state for undo/redo.
+      const beforeAllCategoriesVisibility =
+        viewSnapshot === "all-categories" && actionId === "visibility"
+          ? selectedIdsSnapshot
+              .map((id) => {
+                const category = categories.find((c) => c.id === id);
+                if (!category) return null;
+                return { id, isVisible: category.isVisible };
+              })
+              .filter((x): x is { id: string; isVisible: boolean } => x !== null)
+          : null;
+
+      const beforeAllCategoriesRemovePairs =
+        viewSnapshot === "all-categories" && actionId === "remove"
+          ? selectedIdsSnapshot.flatMap((categoryId) =>
+              labels
+                .filter((label) => label.categories?.some((cat) => cat.id === categoryId))
+                .map((label) => ({ labelId: label.id, categoryId }))
+            )
+          : null;
+
       const result = await executeForView(context);
+
+      if (viewSnapshot === "all-categories") {
+        if (actionId === "visibility" && beforeAllCategoriesVisibility?.length) {
+          const after = beforeAllCategoriesVisibility.map(({ id, isVisible }) => ({
+            id,
+            isVisible: !isVisible,
+          }));
+
+          builder.pushUndoAction({
+            action: "toggle-visibility:categories",
+            timestamp: new Date(),
+            data: {
+              undo: async () => {
+                await Promise.all(
+                  beforeAllCategoriesVisibility.map(({ id, isVisible }) =>
+                    updateCategory(id, { isVisible })
+                  )
+                );
+              },
+              redo: async () => {
+                await Promise.all(
+                  after.map(({ id, isVisible }) => updateCategory(id, { isVisible }))
+                );
+              },
+            },
+          });
+        }
+
+        if (actionId === "remove" && beforeAllCategoriesRemovePairs?.length) {
+          const pairs = beforeAllCategoriesRemovePairs;
+          builder.pushUndoAction({
+            action: "remove:detach-categories-from-labels",
+            timestamp: new Date(),
+            data: {
+              undo: async () => {
+                await Promise.all(
+                  pairs.map(({ labelId, categoryId }) => attachCategory(labelId, categoryId))
+                );
+              },
+              redo: async () => {
+                await Promise.all(
+                  pairs.map(({ labelId, categoryId }) => detachCategory(labelId, categoryId))
+                );
+              },
+            },
+          });
+        }
+
+        if (actionId === "clone") {
+          const originalIds = [...selectedIdsSnapshot];
+          let createdIds = (result as { createdIds?: string[] } | void)?.createdIds ?? [];
+
+          if (createdIds.length > 0) {
+            builder.pushUndoAction({
+              action: "clone:categories",
+              timestamp: new Date(),
+              data: {
+                undo: async () => {
+                  await Promise.all(createdIds.map((id) => deleteCategory(id)));
+                },
+                redo: async () => {
+                  const nextCreated: string[] = [];
+                  for (const categoryId of originalIds) {
+                    const res = await cloneCategory({ id: categoryId });
+                    const createdId = res.ok
+                      ? ((res.data as { id?: string } | undefined)?.id ?? undefined)
+                      : undefined;
+                    if (createdId) nextCreated.push(createdId);
+                  }
+                  createdIds = nextCreated;
+                },
+              },
+            });
+          }
+        }
+      }
 
       if (
         actionId === "clone" &&
@@ -153,10 +291,24 @@ export function MenuActionBar() {
           }
         });
       }
+
+      const successToast = action.successToast?.[viewSnapshot];
+      if (successToast) {
+        toast({
+          title: successToast.title,
+          description: successToast.description,
+        });
+      }
     } catch (error) {
       const errorMsg =
         action.errorMessage?.[builder.currentView] || `Failed to execute ${actionId}`;
       console.error(`[MenuActionBar] ${errorMsg}:`, error);
+
+      toast({
+        title: action.failureToast?.title ?? `${action.label} failed`,
+        description: action.failureToast?.description ?? "Please try again.",
+        variant: "destructive",
+      });
     }
 
     builder.clearSelection();
@@ -272,7 +424,11 @@ export function MenuActionBar() {
   };
 
   const renderAction = (action: (typeof actions)[0], _index: number) => {
-    const isDisabled = action.disabled(state);
+    const isDisabled =
+      action.disabled(state) ||
+      (action.id === "remove" &&
+        builder.currentView === "all-categories" &&
+        disableRemoveInAllCategories);
     const renderer = RENDERERS[action.type];
     return renderer(action, isDisabled);
   };
