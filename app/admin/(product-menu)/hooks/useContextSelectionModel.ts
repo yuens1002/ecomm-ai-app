@@ -64,7 +64,10 @@ export function useContextSelectionModel(
     [builder, isSelectionActive, kind]
   );
 
-  const isSelected = useCallback((id: string) => builder.selectedIds.includes(id), [builder.selectedIds]);
+  const isSelected = useCallback(
+    (id: string) => builder.selectedIds.includes(id),
+    [builder.selectedIds]
+  );
 
   return {
     kind,

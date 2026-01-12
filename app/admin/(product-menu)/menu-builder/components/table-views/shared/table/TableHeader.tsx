@@ -1,6 +1,5 @@
-import * as React from "react";
-import { TableHead, TableHeader as ShadcnTableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { TableHeader as ShadcnTableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { Table } from "@tanstack/react-table";
 import { SortableHeaderCell } from "./SortableHeaderCell";
@@ -40,10 +39,7 @@ export function TableHeader<TData = unknown>({
         {columns.map((column) => {
           if (column.isCheckbox && hasSelectAll) {
             return (
-              <TableHead
-                key={column.id}
-                className={cn("pl-2.5", column.width)}
-              >
+              <TableHead key={column.id} className={cn("pl-2.5", column.width)}>
                 <div className="flex items-center">
                   <Checkbox
                     checked={
@@ -59,12 +55,7 @@ export function TableHeader<TData = unknown>({
           }
 
           if (column.isCheckbox) {
-            return (
-              <TableHead
-                key={column.id}
-                className={cn("pl-2.5", column.width)}
-              />
-            );
+            return <TableHead key={column.id} className={cn("pl-2.5", column.width)} />;
           }
 
           const alignClass =
@@ -94,11 +85,7 @@ export function TableHeader<TData = unknown>({
           return (
             <TableHead
               key={column.id}
-              className={cn(
-                column.width,
-                alignClass,
-                "font-medium text-foreground"
-              )}
+              className={cn(column.width, alignClass, "font-medium text-foreground")}
             >
               {column.label}
             </TableHead>

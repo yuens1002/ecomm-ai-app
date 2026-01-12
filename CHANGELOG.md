@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.60.2 - 2026-01-12
+
+- **Menu Builder consistency**: Captured post-commit “Accept All” edits as a follow-up patch
+  - Formatting/import-order cleanup across menu builder state, table primitives, and docs
+  - Metrics: Jest `npm run test:ci` (35 suites, 298 tests passing); lint + typecheck clean
+
 ## 0.60.1 - 2026-01-12
 
 - **Menu Builder hook coverage**: Standardized All Categories selection to use view hooks only and added unit tests for new table-view hooks

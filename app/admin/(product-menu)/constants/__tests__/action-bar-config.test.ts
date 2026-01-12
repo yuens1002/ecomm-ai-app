@@ -1,11 +1,11 @@
-import { describe, it, expect, jest } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
+import type { BuilderState } from "../../types/builder-state";
+import type { MenuCategory, MenuLabel, MenuProduct } from "../../types/menu";
 import {
   ACTION_BAR_CONFIG,
   type ActionContext,
   type ProductMenuMutations,
 } from "../action-bar-config";
-import type { BuilderState } from "../../types/builder-state";
-import type { MenuLabel, MenuCategory, MenuProduct } from "../../types/menu";
 
 describe("Action Bar Configuration", () => {
   // Mock context factory

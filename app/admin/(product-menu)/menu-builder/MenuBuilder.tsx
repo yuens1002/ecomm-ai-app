@@ -1,10 +1,10 @@
 "use client";
 
-import { MenuSettingsDialog } from "./components/MenuSettingsDialog";
-import { MenuNavBar } from "./components/MenuNavBar";
-import { MenuActionBar } from "./components/menu-action-bar";
 import { PageTitle } from "@/components/admin/PageTitle";
 import { MenuBuilderProvider, useMenuBuilder } from "./MenuBuilderProvider";
+import { MenuNavBar } from "./components/MenuNavBar";
+import { MenuSettingsDialog } from "./components/MenuSettingsDialog";
+import { MenuActionBar } from "./components/menu-action-bar";
 import { MenuBuilderTable } from "./components/table-views/shared/table/MenuBuilderTable";
 
 /**

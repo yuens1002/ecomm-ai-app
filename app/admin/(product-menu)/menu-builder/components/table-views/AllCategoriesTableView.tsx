@@ -12,15 +12,15 @@ import {
 import { FileSpreadsheet } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo } from "react";
+import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
+import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
+import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuCategory } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { EmptyState } from "../shared/EmptyState";
 import { CheckboxCell } from "./shared/cells/CheckboxCell";
 import { InlineNameEditor } from "./shared/cells/InlineNameEditor";
 import { VisibilityCell } from "./shared/cells/VisibilityCell";
-import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
-import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
-import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import { allCategoriesWidthPreset } from "./shared/table/columnWidthPresets";
 import { TableCell } from "./shared/table/TableCell";
 import { TableHeader, type TableHeaderColumn } from "./shared/table/TableHeader";
@@ -59,13 +59,16 @@ const ALL_CATEGORIES_HEADER_COLUMNS: TableHeaderColumn[] = [
   },
 ];
 
-
 export function AllCategoriesTableView() {
   const { builder, categories, labels, products, updateCategory, createNewCategory } =
     useMenuBuilder();
 
-  const { editingId: editingCategoryId, pinnedId: pinnedCategoryId, clearEditing, clearPinnedIfMatches } =
-    useContextRowUiState(builder, "category");
+  const {
+    editingId: editingCategoryId,
+    pinnedId: pinnedCategoryId,
+    clearEditing,
+    clearPinnedIfMatches,
+  } = useContextRowUiState(builder, "category");
 
   const selectableCategoryIds = useMemo(() => categories.map((c) => c.id), [categories]);
   const {

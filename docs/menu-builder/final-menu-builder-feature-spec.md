@@ -1,6 +1,6 @@
 # Menu Builder - Final Feature Specification
 
-**Last Updated**: December 28, 2025  
+**Last Updated**: December 28, 2025
 **Status**: Ready for Implementation
 
 ## Executive Summary
@@ -740,8 +740,8 @@ const handleTouchEnd = () => {
 
 ### Decision
 
-✅ Long-press for context menu (native)  
-✅ Always show checkboxes on mobile (no double-tap needed)  
+✅ Long-press for context menu (native)
+✅ Always show checkboxes on mobile (no double-tap needed)
 ❌ Skip swipe gestures for MVP
 
 ---
@@ -1064,17 +1064,17 @@ export async function detachCategoryFromLabel(categoryId: string, labelId: strin
 
 ### Schema Questions (Answered)
 
-✅ Products can have different order per category - YES (`CategoriesOnProducts.order`)  
-✅ Categories can have different order per label - YES (`CategoryLabelCategory.order`)  
-✅ Products can belong to multiple categories - YES (many-to-many)  
+✅ Products can have different order per category - YES (`CategoriesOnProducts.order`)
+✅ Categories can have different order per label - YES (`CategoryLabelCategory.order`)
+✅ Products can belong to multiple categories - YES (many-to-many)
 ✅ Auto-order for labels - YES (`CategoryLabel.autoOrder`)
 
 ### UX Questions (Decided)
 
-✅ Delete behavior - NO deletion in builder, go to Labels/Categories pages  
-✅ Copy vs Clone - CLONE only (one operation, not two)  
-✅ Mobile checkboxes - Always visible (not double-tap)  
-✅ DnD library - Native HTML5 for MVP  
+✅ Delete behavior - NO deletion in builder, go to Labels/Categories pages
+✅ Copy vs Clone - CLONE only (one operation, not two)
+✅ Mobile checkboxes - Always visible (not double-tap)
+✅ DnD library - Native HTML5 for MVP
 ✅ Sort scope - Context-sensitive (selected items only)
 
 ---

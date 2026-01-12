@@ -71,11 +71,9 @@ export type ActionContext = {
   products: MenuProduct[];
 };
 
-export type ActionExecuteResult =
-  | void
-  | {
-      createdIds?: string[];
-    };
+export type ActionExecuteResult = void | {
+  createdIds?: string[];
+};
 
 export type ActionDefinition = {
   id: ActionId;

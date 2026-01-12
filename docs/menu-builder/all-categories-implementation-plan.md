@@ -1,8 +1,8 @@
 # All-Categories Table View - Implementation Plan
 
-**Status:** Ready for Confirmation  
-**Approach:** Option 1 (Recommended) - Extend current structure  
-**Tech Stack:** TanStack React Table + shadcn Data Table  
+**Status:** Ready for Confirmation
+**Approach:** Option 1 (Recommended) - Extend current structure
+**Tech Stack:** TanStack React Table + shadcn Data Table
 **Reference:** mock2 styles
 
 ---

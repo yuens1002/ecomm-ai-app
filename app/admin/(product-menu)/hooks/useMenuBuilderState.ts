@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { SelectedEntityKind, ViewType, HistoryEntry } from "../types/builder-state";
+import { useCallback, useMemo, useState } from "react";
+import type { HistoryEntry, SelectedEntityKind, ViewType } from "../types/builder-state";
 
 type ActiveRow = {
   kind: SelectedEntityKind;
@@ -112,24 +112,21 @@ export function useMenuBuilderState() {
   }, [currentView, currentLabelId, navigateToLabel, navigateToView]);
 
   // ==================== SELECTION ACTIONS ====================
-  const toggleSelection = useCallback(
-    (id: string, options?: { kind?: SelectedEntityKind }) => {
-      setSelection((prev) => {
-        const kind = options?.kind;
-        const isRemoving = prev.ids.includes(id);
+  const toggleSelection = useCallback((id: string, options?: { kind?: SelectedEntityKind }) => {
+    setSelection((prev) => {
+      const kind = options?.kind;
+      const isRemoving = prev.ids.includes(id);
 
-        if (!isRemoving && kind && prev.kind && prev.kind !== kind && prev.ids.length > 0) {
-          // Selection is "same-entity only" once started.
-          return prev;
-        }
+      if (!isRemoving && kind && prev.kind && prev.kind !== kind && prev.ids.length > 0) {
+        // Selection is "same-entity only" once started.
+        return prev;
+      }
 
-        const nextIds = isRemoving ? prev.ids.filter((i) => i !== id) : [...prev.ids, id];
-        const nextKind = nextIds.length === 0 ? null : kind ?? prev.kind;
-        return { ids: nextIds, kind: nextKind };
-      });
-    },
-    []
-  );
+      const nextIds = isRemoving ? prev.ids.filter((i) => i !== id) : [...prev.ids, id];
+      const nextKind = nextIds.length === 0 ? null : (kind ?? prev.kind);
+      return { ids: nextIds, kind: nextKind };
+    });
+  }, []);
 
   const selectAll = useCallback((ids: string[], options?: { kind?: SelectedEntityKind }) => {
     setSelection((prev) => {

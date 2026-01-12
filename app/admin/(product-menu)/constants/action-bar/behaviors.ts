@@ -29,9 +29,7 @@ export const ACTION_BEHAVIORS: Record<ActionId, ActionBehavior> = {
           const originalCategory = categories.find((c) => c.id === categoryId);
           if (!originalCategory) continue;
           const res = await mutations.cloneCategory({ id: categoryId });
-          const createdId = res.ok
-            ? (res.data as { id?: string } | undefined)?.id
-            : undefined;
+          const createdId = res.ok ? (res.data as { id?: string } | undefined)?.id : undefined;
           if (createdId) createdIds.push(createdId);
         }
 

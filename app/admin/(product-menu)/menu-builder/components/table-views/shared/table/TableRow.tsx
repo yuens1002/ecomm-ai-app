@@ -1,6 +1,6 @@
-import * as React from "react";
 import { TableRow as ShadcnTableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import * as React from "react";
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -28,14 +28,7 @@ type TableRowProps = React.ComponentPropsWithoutRef<typeof ShadcnTableRow> & {
 };
 
 export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
-  ({
-    isSelected,
-    isDragging,
-    className,
-    onClick,
-    onDoubleClick,
-    ...props
-  }, ref) => {
+  ({ isSelected, isDragging, className, onClick, onDoubleClick, ...props }, ref) => {
     const handleClick: React.MouseEventHandler<HTMLTableRowElement> = (event) => {
       if (isInteractiveTarget(event.target)) return;
       onClick?.(event);

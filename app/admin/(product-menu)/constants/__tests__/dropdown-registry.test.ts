@@ -1,13 +1,11 @@
-import { describe, it, expect, jest } from "@jest/globals";
-import { DROPDOWN_REGISTRY, type DropdownContext } from "../dropdown-registry";
+import { describe, expect, it, jest } from "@jest/globals";
 import type { BuilderState } from "../../types/builder-state";
-import type { MenuLabel, MenuCategory, MenuProduct } from "../../types/menu";
+import type { MenuCategory, MenuLabel, MenuProduct } from "../../types/menu";
+import { DROPDOWN_REGISTRY, type DropdownContext } from "../dropdown-registry";
 
 describe("Dropdown Registry", () => {
   // Mock context factory
-  const createMockContext = (
-    overrides?: Partial<DropdownContext>
-  ): DropdownContext => ({
+  const createMockContext = (overrides?: Partial<DropdownContext>): DropdownContext => ({
     state: {
       selectedIds: [],
       selectedKind: null,
@@ -32,15 +30,9 @@ describe("Dropdown Registry", () => {
       { id: "prod-1", name: "Product 1" } as MenuProduct,
       { id: "prod-2", name: "Product 2" } as MenuProduct,
     ],
-    updateLabel: jest
-      .fn<DropdownContext["updateLabel"]>()
-      .mockResolvedValue({ ok: true }),
-    attachCategory: jest
-      .fn<DropdownContext["attachCategory"]>()
-      .mockResolvedValue({ ok: true }),
-    detachCategory: jest
-      .fn<DropdownContext["detachCategory"]>()
-      .mockResolvedValue({ ok: true }),
+    updateLabel: jest.fn<DropdownContext["updateLabel"]>().mockResolvedValue({ ok: true }),
+    attachCategory: jest.fn<DropdownContext["attachCategory"]>().mockResolvedValue({ ok: true }),
+    detachCategory: jest.fn<DropdownContext["detachCategory"]>().mockResolvedValue({ ok: true }),
     attachProductToCategory: jest
       .fn<DropdownContext["attachProductToCategory"]>()
       .mockResolvedValue({ ok: true }),
@@ -150,12 +142,8 @@ describe("Dropdown Registry", () => {
       const config = DROPDOWN_REGISTRY["add-products"];
       const props = config.buildProps(context);
 
-      expect(props.attachProductToCategory).toBe(
-        context.attachProductToCategory
-      );
-      expect(props.detachProductFromCategory).toBe(
-        context.detachProductFromCategory
-      );
+      expect(props.attachProductToCategory).toBe(context.attachProductToCategory);
+      expect(props.detachProductFromCategory).toBe(context.detachProductFromCategory);
     });
   });
 
