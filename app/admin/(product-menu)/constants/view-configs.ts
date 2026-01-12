@@ -1,6 +1,6 @@
 import { ALL_VIEWS, type ViewType } from "../types/builder-state";
 
-export type TableViewId = "placeholder" | "all-categories";
+export type TableViewId = ViewType;
 
 export type ViewConfig = {
   /**
@@ -14,7 +14,7 @@ export type ViewConfig = {
 
   /**
    * Declarative identifier for the table surface in this view.
-   * TableViewRenderer maps this to an actual component.
+   * MenuBuilderTable maps this to an actual component.
    */
   tableViewId: TableViewId;
 
@@ -39,7 +39,7 @@ export type ViewConfig = {
 
 const DEFAULT_VIEW_CONFIG: ViewConfig = {
   features: { table: true, contextMenu: false },
-  tableViewId: "placeholder",
+  tableViewId: "menu",
   actionIds: {},
 };
 
@@ -55,6 +55,7 @@ function defineViewConfigs(overrides: Partial<Record<ViewType, Partial<ViewConfi
         ...DEFAULT_VIEW_CONFIG.features,
         ...(override?.features ?? {}),
       },
+      tableViewId: override?.tableViewId ?? view,
       actionIds: {
         ...DEFAULT_VIEW_CONFIG.actionIds,
         ...(override?.actionIds ?? {}),
@@ -73,9 +74,10 @@ export const VIEW_CONFIGS: Record<ViewType, ViewConfig> = defineViewConfigs({
     },
   },
   "all-categories": {
+    // future intentions
     features: { contextMenu: true },
-    tableViewId: "all-categories",
     actionIds: {
+      // future intentions
       rowContextMenu: ["clone"],
       bulkContextMenu: ["clone", "visibility"],
     },

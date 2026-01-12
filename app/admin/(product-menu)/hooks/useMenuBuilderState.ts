@@ -2,7 +2,12 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { ViewType, HistoryEntry } from "../types/builder-state";
+import type { SelectedEntityKind, ViewType, HistoryEntry } from "../types/builder-state";
+
+type ActiveRow = {
+  kind: SelectedEntityKind;
+  id: string;
+};
 
 /**
  * Menu Builder UI State Hook
@@ -26,11 +31,19 @@ export function useMenuBuilderState() {
 
   // ==================== SELECTION STATE (LOCAL) ====================
   // Intentionally cleared on refresh
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selection, setSelection] = useState<{
+    ids: string[];
+    kind: SelectedEntityKind | null;
+  }>({ ids: [], kind: null });
 
   // ==================== EXPAND/COLLAPSE STATE (LOCAL) ====================
   // Intentionally cleared on refresh
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  // ==================== ROW UI STATE (LOCAL) ====================
+  // Intentionally cleared on refresh
+  const [editingRow, setEditingRow] = useState<ActiveRow | null>(null);
+  const [pinnedNewRow, setPinnedNewRow] = useState<ActiveRow | null>(null);
 
   // ==================== UNDO/REDO STATE (LOCAL) ====================
   // View-specific stacks (max 10 operations per view)
@@ -57,7 +70,9 @@ export function useMenuBuilderState() {
   const navigateToView = useCallback(
     (view: ViewType) => {
       router.push(`/admin/menu-builder?view=${view}`);
-      setSelectedIds([]); // Clear selections on navigation
+      setSelection({ ids: [], kind: null }); // Clear selections on navigation
+      setEditingRow(null);
+      setPinnedNewRow(null);
     },
     [router]
   );
@@ -68,7 +83,9 @@ export function useMenuBuilderState() {
       params.set("view", "label");
       params.set("labelId", labelId);
       router.push(`/admin/menu-builder?${params}`);
-      setSelectedIds([]);
+      setSelection({ ids: [], kind: null });
+      setEditingRow(null);
+      setPinnedNewRow(null);
     },
     [router]
   );
@@ -79,7 +96,9 @@ export function useMenuBuilderState() {
       params.set("view", "category");
       params.set("categoryId", categoryId);
       router.push(`/admin/menu-builder?${params}`);
-      setSelectedIds([]);
+      setSelection({ ids: [], kind: null });
+      setEditingRow(null);
+      setPinnedNewRow(null);
     },
     [router]
   );
@@ -93,16 +112,50 @@ export function useMenuBuilderState() {
   }, [currentView, currentLabelId, navigateToLabel, navigateToView]);
 
   // ==================== SELECTION ACTIONS ====================
-  const toggleSelection = useCallback((id: string) => {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
-  }, []);
+  const toggleSelection = useCallback(
+    (id: string, options?: { kind?: SelectedEntityKind }) => {
+      setSelection((prev) => {
+        const kind = options?.kind;
+        const isRemoving = prev.ids.includes(id);
 
-  const selectAll = useCallback((ids: string[]) => {
-    setSelectedIds(ids);
+        if (!isRemoving && kind && prev.kind && prev.kind !== kind && prev.ids.length > 0) {
+          // Selection is "same-entity only" once started.
+          return prev;
+        }
+
+        const nextIds = isRemoving ? prev.ids.filter((i) => i !== id) : [...prev.ids, id];
+        const nextKind = nextIds.length === 0 ? null : kind ?? prev.kind;
+        return { ids: nextIds, kind: nextKind };
+      });
+    },
+    []
+  );
+
+  const selectAll = useCallback((ids: string[], options?: { kind?: SelectedEntityKind }) => {
+    setSelection((prev) => {
+      const kind = options?.kind;
+      if (kind && prev.kind && prev.kind !== kind && prev.ids.length > 0) {
+        // Avoid switching entity kind when the user already has a selection.
+        return prev;
+      }
+
+      return {
+        ids,
+        kind: ids.length === 0 ? null : (kind ?? prev.kind),
+      };
+    });
   }, []);
 
   const clearSelection = useCallback(() => {
-    setSelectedIds([]);
+    setSelection({ ids: [], kind: null });
+  }, []);
+
+  const setEditing = useCallback((next: ActiveRow | null) => {
+    setEditingRow(next);
+  }, []);
+
+  const setPinnedNew = useCallback((next: ActiveRow | null) => {
+    setPinnedNewRow(next);
   }, []);
 
   // ==================== EXPAND/COLLAPSE ACTIONS ====================
@@ -187,8 +240,11 @@ export function useMenuBuilderState() {
     currentCategoryId,
 
     // UI state
-    selectedIds,
+    selectedIds: selection.ids,
+    selectedKind: selection.kind,
     expandedIds,
+    editingRow,
+    pinnedNewRow,
     undoStack,
     redoStack,
 
@@ -202,6 +258,10 @@ export function useMenuBuilderState() {
     toggleSelection,
     selectAll,
     clearSelection,
+
+    // Row UI actions
+    setEditing,
+    setPinnedNew,
 
     // Expand/collapse actions
     toggleExpand,

@@ -11,8 +11,6 @@ export type TableHeaderColumn = {
   width?: string;
   align?: "left" | "center" | "right";
   isCheckbox?: boolean;
-  isSticky?: boolean;
-  stickyLeft?: string;
 };
 
 type TableHeaderProps<TData> = {
@@ -22,6 +20,7 @@ type TableHeaderProps<TData> = {
   allSelected?: boolean;
   someSelected?: boolean;
   onSelectAll?: () => void;
+  selectAllDisabled?: boolean;
   className?: string;
 };
 
@@ -32,6 +31,7 @@ export function TableHeader<TData = unknown>({
   allSelected = false,
   someSelected = false,
   onSelectAll,
+  selectAllDisabled = false,
   className,
 }: TableHeaderProps<TData>) {
   return (
@@ -42,17 +42,15 @@ export function TableHeader<TData = unknown>({
             return (
               <TableHead
                 key={column.id}
-                className={cn(
-                  "pl-2.5",
-                  column.width,
-                  column.isSticky && "sticky z-10 bg-muted",
-                  column.stickyLeft
-                )}
+                className={cn("pl-2.5", column.width)}
               >
                 <div className="flex items-center">
                   <Checkbox
-                    checked={allSelected || (someSelected && "indeterminate")}
-                    onCheckedChange={onSelectAll}
+                    checked={
+                      selectAllDisabled ? false : allSelected || (someSelected && "indeterminate")
+                    }
+                    onCheckedChange={selectAllDisabled ? undefined : onSelectAll}
+                    disabled={selectAllDisabled}
                     aria-label="Select all"
                   />
                 </div>
@@ -64,12 +62,7 @@ export function TableHeader<TData = unknown>({
             return (
               <TableHead
                 key={column.id}
-                className={cn(
-                  "pl-2.5",
-                  column.width,
-                  column.isSticky && "sticky z-10 bg-muted",
-                  column.stickyLeft
-                )}
+                className={cn("pl-2.5", column.width)}
               />
             );
           }
@@ -93,11 +86,7 @@ export function TableHeader<TData = unknown>({
                 columnId={column.id}
                 label={column.label}
                 align={column.align}
-                headClassName={cn(
-                  column.width,
-                  column.isSticky && "sticky z-10 bg-muted/40",
-                  column.stickyLeft
-                )}
+                headClassName={cn(column.width)}
               />
             );
           }
@@ -108,9 +97,7 @@ export function TableHeader<TData = unknown>({
               className={cn(
                 column.width,
                 alignClass,
-                "font-medium text-foreground",
-                column.isSticky && "sticky z-10 bg-muted/40",
-                column.stickyLeft
+                "font-medium text-foreground"
               )}
             >
               {column.label}

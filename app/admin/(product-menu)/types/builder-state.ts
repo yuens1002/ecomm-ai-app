@@ -16,9 +16,12 @@ export type ViewType = (typeof ALL_VIEWS)[number];
 
 export type NavigableEntityView = Extract<ViewType, "menu" | "label" | "category">;
 
+export type SelectedEntityKind = "label" | "category" | "product";
+
 export type BuilderState = {
   // Selection state
   selectedIds: string[];
+  selectedKind: SelectedEntityKind | null;
 
   // Undo/Redo history
   undoStack: HistoryEntry[];
@@ -62,8 +65,8 @@ export type UndoableAction = {
  */
 export interface MenuBuilderActions {
   // Selection
-  toggleSelection: (id: string) => void;
-  selectAll: (ids: string[]) => void;
+  toggleSelection: (id: string, options?: { kind?: SelectedEntityKind }) => void;
+  selectAll: (ids: string[], options?: { kind?: SelectedEntityKind }) => void;
   clearSelection: () => void;
 
   // Expand/collapse

@@ -10,6 +10,7 @@ describe("Dropdown Registry", () => {
   ): DropdownContext => ({
     state: {
       selectedIds: [],
+      selectedKind: null,
       undoStack: [],
       redoStack: [],
       currentView: "menu",

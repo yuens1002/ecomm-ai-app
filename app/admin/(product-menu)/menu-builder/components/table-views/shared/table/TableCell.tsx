@@ -4,18 +4,16 @@ import { cn } from "@/lib/utils";
 
 type TableCellProps = React.ComponentPropsWithoutRef<typeof ShadcnTableCell> & {
   align?: "left" | "center" | "right";
-  isSticky?: boolean;
-  stickyLeft?: string;
 };
 
 export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
-  ({ align = "left", isSticky, stickyLeft, className, ...props }, ref) => {
+  ({ align = "left", className, ...props }, ref) => {
     const alignClass = align === "center" ? "text-center" : align === "right" ? "text-right" : "";
 
     return (
       <ShadcnTableCell
         ref={ref}
-        className={cn("truncate", alignClass, isSticky && "sticky z-10", stickyLeft, className)}
+        className={cn("truncate", alignClass, className)}
         {...props}
       />
     );

@@ -146,12 +146,8 @@ export async function cloneCategory(input: unknown) {
     const copySuffixPattern = /(.*)\s+Copy\s*\(\d+\)\s*$/;
     const baseName = original.name.replace(copySuffixPattern, "$1").trim();
 
-    // Heuristic: keep newest-first ordering by bumping the order field.
-    const maxOrder = await prisma.category.findFirst({
-      orderBy: { order: "desc" },
-      select: { order: true },
-    });
-    const nextOrder = (maxOrder?.order ?? -1) + 1;
+    // Keep natural sort order by mirroring original order.
+    const nextOrder = original.order;
 
     const created = await createWithUniqueNameAndSlug({
       makeName: (attempt) => `${baseName} Copy (${attempt + 1})`,

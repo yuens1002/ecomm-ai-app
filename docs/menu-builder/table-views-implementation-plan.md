@@ -999,7 +999,8 @@ Each view has a specific set of columns optimized for its purpose. All views sta
 | ---------- | ------ | --------- | ------------------------------------------------------- |
 | Checkbox   | `w-6`  | Selection | Bulk select categories                                  |
 | Name       | Flex   | Editable  | Category name with inline editor                        |
-| Labels     | Center | List      | Comma-separated list of labels this category belongs to |
+| Labels     | Auto   | List      | Comma-separated list of labels this category belongs to |
+| Products   | Auto   | Count     | Number of products assigned to category                 |
 | Visibility | Center | Switch    | Toggle category visibility                              |
 
 **Row Types:**
@@ -1745,10 +1746,13 @@ const handleDrop = async (targetId: string) => {
 
 ### **Always-Visible Checkboxes**
 
-No double-tap needed - checkboxes always visible on all screen sizes.
+Checkbox visibility is responsive:
+
+- **Mobile/sm**: checkboxes are always visible.
+- **md+**: checkboxes are shown on row hover/focus, and always visible when selected.
 
 ```tsx
-// No responsive hiding
+// Responsive: always visible on mobile; hover-reveal on md+
 <TableCell className="w-12">
   <CheckboxCell
     id={item.id}

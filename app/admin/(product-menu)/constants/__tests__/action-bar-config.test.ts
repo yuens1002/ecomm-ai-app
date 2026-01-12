@@ -49,6 +49,7 @@ describe("Action Bar Configuration", () => {
 
   const createMockState = (overrides?: Partial<BuilderState>): BuilderState => ({
     selectedIds: [],
+    selectedKind: null,
     undoStack: [],
     redoStack: [],
     currentView: "menu",

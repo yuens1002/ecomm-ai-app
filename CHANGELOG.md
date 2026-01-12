@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.60.1 - 2026-01-12
+
+- **Menu Builder hook coverage**: Standardized All Categories selection to use view hooks only and added unit tests for new table-view hooks
+  - Refactored All Categories rows/checkboxes to use `useContextSelectionModel` outputs (no direct builder selection reads)
+  - Added Jest tests for `useContextSelectionModel` and `useContextRowUiState`
+  - Removed unused legacy `TableViewRenderer` component
+  - Metrics: Jest `npm run test:ci` (35 suites, 298 tests passing); lint + typecheck clean
+
 ## 0.59.0 - 2026-01-07
 
 - **All Categories table view**: Added stable “All Categories” table with consistent sorting and inline editing UX

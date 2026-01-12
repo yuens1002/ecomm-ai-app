@@ -71,14 +71,19 @@ export function useProductMenuMutations() {
       return res;
     },
 
-    createNewCategory: async () => {
+    createNewCategory: async (): Promise<string | undefined> => {
       const res = await categoryActions.createNewCategory(undefined);
       if (!res.ok) {
         console.error("[useProductMenuMutations] Failed to create new category:", res.error);
-        return;
+        return undefined;
       }
 
       await refresh();
+      if ("data" in res) {
+        return (res.data as { id?: string } | undefined)?.id;
+      }
+
+      return undefined;
     },
     cloneCategory: async (payload: CloneCategory) => {
       const res = await categoryActions.cloneCategory(payload);

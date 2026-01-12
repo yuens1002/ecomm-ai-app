@@ -86,7 +86,11 @@ export function MenuActionBar() {
     },
 
     createNewCategory: async () => {
-      await createNewCategory();
+      const createdId = await createNewCategory();
+      if (createdId) {
+        builder.setPinnedNew({ kind: "category", id: createdId });
+        builder.setEditing({ kind: "category", id: createdId });
+      }
     },
   };
 
@@ -127,7 +131,18 @@ export function MenuActionBar() {
     };
 
     try {
-      await executeForView(context);
+      const result = await executeForView(context);
+
+      if (
+        actionId === "clone" &&
+        builder.currentView === "all-categories" &&
+        builder.selectedIds.length === 1
+      ) {
+        const createdIds = (result as { createdIds?: string[] } | void)?.createdIds ?? [];
+        if (createdIds.length === 1) {
+          builder.setEditing({ kind: "category", id: createdIds[0] });
+        }
+      }
 
       // Refresh data as specified
       const refreshForView = action.refresh?.[builder.currentView];

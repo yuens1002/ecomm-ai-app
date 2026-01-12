@@ -1,6 +1,6 @@
 import type { BuilderState, MenuBuilderActions, ViewType } from "../../types/builder-state";
 import { modKey } from "./keys";
-import type { ActionBehavior, ActionContext, ActionId } from "./model";
+import type { ActionBehavior, ActionContext, ActionExecuteResult, ActionId } from "./model";
 
 const hasSelection = (state: BuilderState): boolean => state.selectedIds.length > 0;
 const hasUndoHistory = (state: BuilderState): boolean => state.undoStack.length > 0;
@@ -24,13 +24,20 @@ export const ACTION_BEHAVIORS: Record<ActionId, ActionBehavior> = {
         console.log("[Clone] All Labels:", selectedIds);
       },
       "all-categories": async ({ selectedIds, categories, mutations }: ActionContext) => {
+        const createdIds: string[] = [];
         for (const categoryId of selectedIds) {
           const originalCategory = categories.find((c) => c.id === categoryId);
           if (!originalCategory) continue;
-          await mutations.cloneCategory({ id: categoryId });
+          const res = await mutations.cloneCategory({ id: categoryId });
+          const createdId = res.ok
+            ? (res.data as { id?: string } | undefined)?.id
+            : undefined;
+          if (createdId) createdIds.push(createdId);
         }
+
+        return { createdIds };
       },
-    } satisfies Partial<Record<ViewType, (context: ActionContext) => Promise<void>>>,
+    } satisfies Partial<Record<ViewType, (context: ActionContext) => Promise<ActionExecuteResult>>>,
   },
 
   remove: {

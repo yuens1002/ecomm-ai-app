@@ -17,13 +17,14 @@ action-bar-config.ts (UNCHANGED)
   ├─ ACTION_BAR_CONFIG["all-categories"] = [actions array]
   └─ Already has button icons, labels, positions, onClick handlers
 
-view-configs.ts (NEW)
+view-configs.ts
   └─ VIEW_CONFIGS["all-categories"] = {
-       tableComponent: AllCategoriesTableView,
-       supportsNesting: false,
-       supportsDragDrop: false,
-       actionIds: ["new-category", "clone", "remove", "visibility", "undo", "redo"],
-       contextMenuActions: [...],
+       features: { table: true, contextMenu: true },
+       tableViewId: "all-categories",
+       actionIds: {
+         rowContextMenu: ["clone"],
+         bulkContextMenu: ["clone", "visibility"],
+       },
      }
 ```
 
@@ -35,12 +36,13 @@ view-configs.ts (NEW)
 
 ### **Columns**
 
-| Column     | Width | Content                                            | Alignment |
-| ---------- | ----- | -------------------------------------------------- | --------- |
-| Checkbox   | `w-6` | Selection checkbox                                 | Center    |
-| Name       | Flex  | FileSpreadsheet icon + name + Pencil icon          | Left      |
-| Labels     | Auto  | Comma-separated list of labels category belongs to | Center    |
-| Visibility | Auto  | Switch component                                   | Center    |
+| Column     | Width | Content                                             | Alignment |
+| ---------- | ----- | --------------------------------------------------- | --------- |
+| Checkbox   | `w-6` | Selection checkbox                                  | Left      |
+| Name       | Flex  | Category name (inline editable) + Pencil affordance | Left      |
+| Labels     | Auto  | Comma-separated list of labels category belongs to  | Left      |
+| Products   | Auto  | Number of products assigned to category             | Right     |
+| Visibility | Auto  | Switch component                                    | Center    |
 
 ### **Styles (from mock2)**
 
@@ -78,6 +80,16 @@ view-configs.ts (NEW)
 1. **Checkbox** - Integrates with `builder.selectedIds` + `builder.toggleSelection()`
 2. **Name cell** - Click pencil or name to enter inline edit mode
 3. **Visibility switch** - Calls `mutations.updateCategory(id, { isVisible: !isVisible })`
+
+### **Selection Rules**
+
+- Selection is constrained to a single entity kind across the builder (`selectedKind`).
+- In All-Categories, checkboxes/select-all are disabled if another kind is selected elsewhere.
+
+### **Row Navigation**
+
+- Row click navigates to the category view.
+- Interactive descendants (checkbox, buttons, inputs) do not trigger row navigation.
 
 ---
 

@@ -71,6 +71,12 @@ export type ActionContext = {
   products: MenuProduct[];
 };
 
+export type ActionExecuteResult =
+  | void
+  | {
+      createdIds?: string[];
+    };
+
 export type ActionDefinition = {
   id: ActionId;
   type: ActionType;
@@ -84,7 +90,7 @@ export type ActionDefinition = {
   onClick: (state: BuilderState, actions: MenuBuilderActions) => void | Promise<void>;
   comboWith?: ActionId;
   hasDropdown?: boolean;
-  execute?: Partial<Record<ViewType, (context: ActionContext) => Promise<void>>>;
+  execute?: Partial<Record<ViewType, (context: ActionContext) => Promise<ActionExecuteResult>>>;
   refresh?: Partial<Record<ViewType, RefreshKey[]>>;
   errorMessage?: Partial<Record<ViewType, string>>;
 };
@@ -109,7 +115,7 @@ export type ActionBehavior = {
   disabled: (state: BuilderState) => boolean;
   ariaLabel?: (state: BuilderState) => string;
   onClick: (state: BuilderState, actions: MenuBuilderActions) => void | Promise<void>;
-  execute?: Partial<Record<ViewType, (context: ActionContext) => Promise<void>>>;
+  execute?: Partial<Record<ViewType, (context: ActionContext) => Promise<ActionExecuteResult>>>;
 };
 
 export type ActionEffects = {

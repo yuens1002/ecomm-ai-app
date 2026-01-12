@@ -5,7 +5,7 @@ import { MenuNavBar } from "./components/MenuNavBar";
 import { MenuActionBar } from "./components/menu-action-bar";
 import { PageTitle } from "@/components/admin/PageTitle";
 import { MenuBuilderProvider, useMenuBuilder } from "./MenuBuilderProvider";
-import { TableViewRenderer } from "./components/table-views/TableViewRenderer";
+import { MenuBuilderTable } from "./components/table-views/shared/table/MenuBuilderTable";
 
 /**
  * Menu Builder Content - Main Component
@@ -52,7 +52,7 @@ function MenuBuilderContent() {
       <MenuNavBar />
       <MenuActionBar />
 
-      <TableViewRenderer />
+      <MenuBuilderTable />
     </>
   );
 }

@@ -203,6 +203,8 @@ CategoryLabel (Label)
 - `[Eye] Visibility` - Toggle visibility of selected items
 - `[Undo] Undo` / `[Redo] Redo` - Bidirectional undo/redo
 
+**Table Columns:** `checkbox | name | labels | products | visibility`
+
 ### Button State Logic
 
 - **Show disabled**: Action is possible in this view but not available now
