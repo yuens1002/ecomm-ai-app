@@ -8,6 +8,11 @@
   - Removed unused legacy `TableViewRenderer` component
   - Metrics: Jest `npm run test:ci` (35 suites, 298 tests passing); lint + typecheck clean
 
+## 0.60.0 - 2026-01-10
+
+- **Release**: Version bump release commit
+  - Updated `package.json` version to `0.60.0`
+
 ## 0.59.0 - 2026-01-07
 
 - **All Categories table view**: Added stable “All Categories” table with consistent sorting and inline editing UX
