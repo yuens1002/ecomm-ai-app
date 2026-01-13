@@ -67,3 +67,4 @@ next-env.d.ts
 # Uploaded images (keep folder structure, ignore contents)
 /public/images/*
 !/public/images/.gitkeep
+.claude/
