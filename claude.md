@@ -147,12 +147,10 @@ npm run precheck    # TypeScript + ESLint
 
 **Commit conventions:**
 ```
-<type>(<scope>): <description>
-
-[optional body]
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+<type>(<scope>): <brief description>
 ```
+
+Single-line commit messages only. No multi-line bodies or co-authoring mentions.
 
 **Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
 

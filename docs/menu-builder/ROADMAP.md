@@ -1,66 +1,70 @@
 # Menu Builder - Development Roadmap
 
-**Last Updated:** 2026-01-10
-**Current Branch:** `unify-menu-builder`
+**Last Updated:** 2026-01-13
+**Current Branch:** `main` (merged from `unify-menu-builder`)
 **Status:** Phase 1 Complete ✅ | Phase 2 In Progress 🚧
 
 ---
 
-## 🎯 Project Vision
+## Project Vision
 
 Build a sophisticated admin interface for managing a 3-level product catalog hierarchy (Labels → Categories → Products) with a config-driven, zero-conditional architecture.
 
 ---
 
-## 📊 Overall Progress
+## Overall Progress
 
 ```
-Foundation ████████████████████████ 100% ✅
-Table Views ████░░░░░░░░░░░░░░░░░░  20% 🚧
-Advanced   ░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️
+Foundation  ████████████████████████ 100% ✅
+Table Views ████░░░░░░░░░░░░░░░░░░░  20% 🚧
+Advanced    ░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️
 ─────────────────────────────────────────
-Total      ████████░░░░░░░░░░░░░░  40%
+Total       ████████░░░░░░░░░░░░░░░  40%
 ```
-
-**Estimated Completion:** 6-10 weeks from now (mid-March 2026)
 
 ---
 
-## Phase 1: Foundation ✅ COMPLETE
+## Completed Work
 
-**Completed:** Jan 3-8, 2026
-**Key Commits:**
-- `0b2cc70` - Unified product-menu data access
-- `83e3ef6` - Shipped All Categories table view (v0.59.0)
-- `bcb0219` - Architecture documentation with diagrams
+### Phase 1: Foundation ✅ (Jan 3-13, 2026)
 
-### Achievements
-
-#### Architecture
+#### 1.1 Architecture (Jan 3-8)
 - [x] Provider composition pattern (MenuBuilderProvider)
 - [x] URL-backed navigation (useMenuBuilderState)
-- [x] Config-driven action bar (ACTION_BAR_CONFIG)
+- [x] Config-driven action bar
 - [x] Table view routing system (VIEW_CONFIGS + TableViewRenderer)
 - [x] 67% reduction in action handler complexity
 
-#### Data Layer
+**Key Commits:**
+- `0b2cc70` - Unified product-menu data access
+- `83e3ef6` - Shipped All Categories table view (v0.59.0)
+
+#### 1.2 Data Layer (Jan 8)
 - [x] Centralized Prisma repositories (`data/categories.ts`, `data/labels.ts`)
 - [x] DTO mapping with tests (ordering invariants guaranteed)
 - [x] Shared helpers for admin API routes
 - [x] 100% type safety (zero `any` types)
 
-#### First Table View
-- [x] AllCategoriesTableView (457 lines, fully functional)
+#### 1.3 First Table View (Jan 7-10)
+- [x] AllCategoriesTableView (fully functional)
 - [x] Shared table primitives (CheckboxCell, InlineNameEditor, VisibilityCell)
 - [x] Inline editing with validation
 - [x] Bulk selection and actions
 
-#### Testing & Documentation
-- [x] 527 lines of tests (hooks, strategies, DTOs, config)
-- [x] 100% test coverage on core logic
-- [x] Architecture maps with diagrams
+#### 1.4 Action Bar Refactor (Jan 13)
+- [x] Colocated action definitions (10 files → 5 files)
+- [x] Explicit left/right layout in views.ts
+- [x] Structural snapshot tests for regression detection
+- [x] Inline overrides visible where used
+
+**Key Commit:**
+- `2a4745c` - Colocate action-bar config with explicit view layout (v0.61.0)
+
+#### 1.5 Testing & Documentation
+- [x] Jest tests (29 passing) for hooks, config, DTOs
+- [x] Structural snapshot for action bar layout
+- [x] Architecture documentation consolidated
 - [x] Implementation guides
-- [x] Session summaries
 
 ---
 
@@ -77,6 +81,7 @@ Total      ████████░░░░░░░░░░░░░░  4
 **Dependencies:** None
 
 **Tasks:**
+
 - [ ] Create `AllLabelsTableView.tsx` component
 - [ ] Columns: Checkbox, Icon, Name, Categories (count), Visibility
 - [ ] Inline icon editing (IconPicker dialog)
@@ -86,12 +91,15 @@ Total      ████████░░░░░░░░░░░░░░  4
 - [ ] Register in TableViewRenderer
 
 **Files to Create:**
+
 - `app/admin/(product-menu)/menu-builder/components/table-views/AllLabelsTableView.tsx`
 
 **Files to Modify:**
+
 - `app/admin/(product-menu)/menu-builder/components/table-views/TableViewRenderer.tsx`
 
 **Acceptance Criteria:**
+
 - Matches AllCategories functionality
 - Inline editing works
 - Bulk selection and actions work
@@ -106,6 +114,7 @@ Total      ████████░░░░░░░░░░░░░░  4
 **Dependencies:** None (can be done in parallel with 2.1)
 
 **Tasks:**
+
 - [ ] Create `ContextMenuCell.tsx` component
 - [ ] Wire VIEW_CONFIGS action IDs to ACTION_BAR_CONFIG
 - [ ] Add to AllCategoriesTableView
@@ -114,13 +123,16 @@ Total      ████████░░░░░░░░░░░░░░  4
 - [ ] Keyboard shortcut hints in menu items
 
 **Files to Create:**
+
 - `app/admin/(product-menu)/menu-builder/components/table-views/shared/ContextMenuCell.tsx`
 
 **Files to Modify:**
+
 - `app/admin/(product-menu)/menu-builder/components/table-views/AllCategoriesTableView.tsx`
 - `app/admin/(product-menu)/menu-builder/components/table-views/AllLabelsTableView.tsx`
 
 **Acceptance Criteria:**
+
 - Context menus show correct actions per view
 - Actions execute using existing ACTION_BAR_CONFIG logic
 - Keyboard shortcuts shown in menu
@@ -135,6 +147,7 @@ Total      ████████░░░░░░░░░░░░░░  4
 **Dependencies:** 2.1 (All Labels view should exist first)
 
 **Tasks:**
+
 - [ ] Create `LabelTableView.tsx` component
 - [ ] Show categories within selected label
 - [ ] Expandable/collapsible category rows
@@ -145,14 +158,17 @@ Total      ████████░░░░░░░░░░░░░░  4
 - [ ] Handle `autoOrder` mode (disable DnD when true)
 
 **Files to Create:**
+
 - `app/admin/(product-menu)/menu-builder/components/table-views/LabelTableView.tsx`
 - `app/admin/(product-menu)/menu-builder/components/table-views/shared/DraggableRow.tsx`
 
 **Files to Modify:**
+
 - `app/admin/(product-menu)/menu-builder/components/table-views/TableViewRenderer.tsx`
 - `app/admin/(product-menu)/constants/action-bar-config.ts` (add "Add Categories" logic)
 
 **Acceptance Criteria:**
+
 - Shows categories in correct order (respects junction table)
 - Drag-and-drop updates order in database
 - Auto-order mode disables manual reordering
@@ -168,6 +184,7 @@ Total      ████████░░░░░░░░░░░░░░  4
 **Dependencies:** 2.3 (Label view pattern established)
 
 **Tasks:**
+
 - [ ] Create `CategoryTableView.tsx` component
 - [ ] Show ALL products (not just assigned)
 - [ ] Checkbox column for bulk selection
@@ -179,15 +196,18 @@ Total      ████████░░░░░░░░░░░░░░  4
 - [ ] Search/filter products
 
 **Files to Create:**
+
 - `app/admin/(product-menu)/menu-builder/components/table-views/CategoryTableView.tsx`
 - `app/admin/(product-menu)/menu-builder/components/table-views/shared/ProductCheckboxCell.tsx`
 
 **Files to Modify:**
+
 - `app/admin/(product-menu)/menu-builder/components/table-views/TableViewRenderer.tsx`
 - `app/admin/(product-menu)/actions/product-menu-actions.ts` (add product assignment actions)
 - `app/admin/(product-menu)/data/categories.ts` (add product assignment helpers)
 
 **Acceptance Criteria:**
+
 - Shows all products with assignment status
 - Can add/remove products in bulk
 - Can set primary product
@@ -203,6 +223,7 @@ Total      ████████░░░░░░░░░░░░░░  4
 **Dependencies:** 2.3, 2.4 (all patterns established)
 
 **Tasks:**
+
 - [ ] Create `MenuTableView.tsx` component
 - [ ] 3-level expand/collapse (Labels → Categories → Products)
 - [ ] Drag-and-drop across all levels
@@ -214,15 +235,18 @@ Total      ████████░░░░░░░░░░░░░░  4
 - [ ] Keyboard navigation (arrow keys expand/collapse)
 
 **Files to Create:**
+
 - `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableView.tsx`
 - `app/admin/(product-menu)/menu-builder/components/table-views/shared/HierarchyRow.tsx`
 - `app/admin/(product-menu)/menu-builder/components/table-views/shared/DropZone.tsx`
 
 **Files to Modify:**
+
 - `app/admin/(product-menu)/menu-builder/components/table-views/TableViewRenderer.tsx`
 - `app/admin/(product-menu)/hooks/useMenuBuilderState.ts` (add expand/collapse state)
 
 **Acceptance Criteria:**
+
 - All 3 levels show correctly with proper indentation
 - Expand/collapse works smoothly
 - Drag-and-drop updates order in correct junction table
@@ -241,6 +265,7 @@ Total      ████████░░░░░░░░░░░░░░  4
 ### 3.1 Drag-and-Drop System ⏸️
 
 **Tasks:**
+
 - [ ] Native HTML5 DnD implementation
 - [ ] Visual feedback (ghost preview, drop zones)
 - [ ] Constraint validation (prevent invalid drops)
@@ -249,6 +274,7 @@ Total      ████████░░░░░░░░░░░░░░  4
 - [ ] Touch device support
 
 **Files to Create:**
+
 - `app/admin/(product-menu)/menu-builder/hooks/useDragAndDrop.ts`
 
 ---
@@ -256,6 +282,7 @@ Total      ████████░░░░░░░░░░░░░░  4
 ### 3.2 Keyboard Shortcuts ⏸️
 
 **Tasks:**
+
 - [ ] Key handler in MenuBuilder root
 - [ ] Platform detection (Mac Cmd vs Win Ctrl)
 - [ ] Shortcut map (from spec):
@@ -271,6 +298,7 @@ Total      ████████░░░░░░░░░░░░░░  4
 - [ ] Disable when input focused
 
 **Files to Create:**
+
 - `app/admin/(product-menu)/menu-builder/hooks/useKeyboardShortcuts.ts`
 - `app/admin/(product-menu)/constants/keyboard-shortcuts.ts`
 
@@ -279,6 +307,7 @@ Total      ████████░░░░░░░░░░░░░░  4
 ### 3.3 Undo/Redo System ⏸️
 
 **Tasks:**
+
 - [ ] 10-operation stack per view (session storage)
 - [ ] Serializable state snapshots
 - [ ] Toast notifications on undo/redo
@@ -287,9 +316,11 @@ Total      ████████░░░░░░░░░░░░░░  4
 - [ ] Clear stack on view change
 
 **Files to Create:**
+
 - `app/admin/(product-menu)/menu-builder/hooks/useUndoRedo.ts`
 
 **Files to Modify:**
+
 - `app/admin/(product-menu)/hooks/useMenuBuilderState.ts` (wire undo/redo)
 
 ---
@@ -297,6 +328,7 @@ Total      ████████░░░░░░░░░░░░░░  4
 ### 3.4 Clone Operations ⏸️
 
 **Tasks:**
+
 - [ ] Clone label with categories (deep clone)
 - [ ] Clone category with products (references only)
 - [ ] Name collision detection (auto-suffix with " (copy)")
@@ -304,6 +336,7 @@ Total      ████████░░░░░░░░░░░░░░  4
 - [ ] Toast notifications on success
 
 **Files to Modify:**
+
 - `app/admin/(product-menu)/constants/action-bar-config.ts` (complete TODOs)
 - `app/admin/(product-menu)/actions/product-menu-actions.ts` (add clone logic)
 
@@ -312,6 +345,7 @@ Total      ████████░░░░░░░░░░░░░░  4
 ### 3.5 Search & Filter ⏸️
 
 **Tasks:**
+
 - [ ] Global search input in MenuActionBar
 - [ ] Filter by name, slug, visibility
 - [ ] Highlight matching text
@@ -320,52 +354,56 @@ Total      ████████░░░░░░░░░░░░░░  4
 
 ---
 
-## 📁 File Structure Reference
+## File Structure
 
 ```
 app/admin/(product-menu)/
 ├─ menu-builder/
-│  ├─ MenuBuilderProvider.tsx       ✅ Complete
-│  ├─ MenuBuilder.tsx               ✅ Complete
+│  ├─ MenuBuilderProvider.tsx       ✅
+│  ├─ MenuBuilder.tsx               ✅
 │  └─ components/
-│     ├─ menu-action-bar/           ✅ Complete
+│     ├─ menu-action-bar/           ✅
 │     └─ table-views/
-│        ├─ TableViewRenderer.tsx   ✅ Complete
-│        ├─ PlaceholderTableView.tsx ✅ Complete
-│        ├─ AllCategoriesTableView.tsx ✅ Complete
-│        ├─ AllLabelsTableView.tsx  ⏸️ TODO (2.1)
-│        ├─ LabelTableView.tsx      ⏸️ TODO (2.3)
-│        ├─ CategoryTableView.tsx   ⏸️ TODO (2.4)
-│        ├─ MenuTableView.tsx       ⏸️ TODO (2.5)
+│        ├─ TableViewRenderer.tsx   ✅
+│        ├─ PlaceholderTableView.tsx ✅
+│        ├─ AllCategoriesTableView.tsx ✅
+│        ├─ AllLabelsTableView.tsx  ⏸️ (2.1)
+│        ├─ LabelTableView.tsx      ⏸️ (2.3)
+│        ├─ CategoryTableView.tsx   ⏸️ (2.4)
+│        ├─ MenuTableView.tsx       ⏸️ (2.5)
 │        └─ shared/
-│           ├─ TableHeader.tsx      ✅ Complete
-│           ├─ TableRow.tsx         ✅ Complete
-│           ├─ CheckboxCell.tsx     ✅ Complete
-│           ├─ InlineNameEditor.tsx ✅ Complete
-│           ├─ VisibilityCell.tsx   ✅ Complete
-│           ├─ ContextMenuCell.tsx  ⏸️ TODO (2.2)
-│           ├─ DraggableRow.tsx     ⏸️ TODO (2.3)
-│           └─ ProductCheckboxCell.tsx ⏸️ TODO (2.4)
+│           ├─ table/               ✅
+│           ├─ cells/               ✅
+│           ├─ ContextMenuCell.tsx  ⏸️ (2.2)
+│           └─ DraggableRow.tsx     ⏸️ (2.3)
 │
 ├─ hooks/
-│  ├─ useMenuBuilderState.ts        ✅ Complete
-│  ├─ useProductMenuData.ts         ✅ Complete
-│  ├─ useProductMenuMutations.ts    ✅ Complete
-│  ├─ useDragAndDrop.ts             ⏸️ TODO (3.1)
-│  ├─ useKeyboardShortcuts.ts       ⏸️ TODO (3.2)
-│  └─ useUndoRedo.ts                ⏸️ TODO (3.3)
+│  ├─ useMenuBuilderState.ts        ✅
+│  ├─ useProductMenuData.ts         ✅
+│  ├─ useProductMenuMutations.ts    ✅
+│  ├─ useContextSelectionModel.ts   ✅
+│  ├─ useContextRowUiState.ts       ✅
+│  ├─ usePinnedRow.ts               ✅
+│  ├─ useDragAndDrop.ts             ⏸️ (3.1)
+│  ├─ useKeyboardShortcuts.ts       ⏸️ (3.2)
+│  └─ useUndoRedo.ts                ⏸️ (3.3)
 │
 ├─ constants/
-│  ├─ action-bar-config.ts          ✅ Complete (TODOs for clone logic)
-│  ├─ view-configs.ts               ✅ Complete
-│  └─ keyboard-shortcuts.ts         ⏸️ TODO (3.2)
+│  ├─ action-bar/                   ✅ (colocated config)
+│  │  ├─ model.ts
+│  │  ├─ shared.ts
+│  │  ├─ actions.ts
+│  │  ├─ views.ts
+│  │  └─ index.ts
+│  ├─ view-configs.ts               ✅
+│  └─ dropdown-registry.ts          ✅
 │
-├─ data/                            ✅ Complete
+├─ data/                            ✅
 │  ├─ categories.ts
 │  ├─ labels.ts
 │  └─ __tests__/
 │
-└─ types/                           ✅ Complete
+└─ types/                           ✅
    ├─ builder-state.ts
    ├─ menu.ts
    └─ category.ts
@@ -373,9 +411,10 @@ app/admin/(product-menu)/
 
 ---
 
-## 🎯 Success Metrics
+## Success Metrics
 
 ### Code Quality
+
 - [x] 100% TypeScript type safety (no `any`)
 - [x] 100% test coverage on core logic
 - [x] Zero conditionals in UI (config-driven)
@@ -383,6 +422,7 @@ app/admin/(product-menu)/
 - [ ] E2E tests for critical user flows
 
 ### Performance
+
 - [x] 67% reduction in cyclomatic complexity
 - [x] 61% reduction in state management code
 - [ ] Menu view handles 100+ items smoothly (<100ms render)
@@ -390,6 +430,7 @@ app/admin/(product-menu)/
 - [ ] Search results return in <50ms
 
 ### User Experience
+
 - [x] Inline editing works without page reload
 - [ ] All 5 views functional
 - [ ] Context menus on right-click
@@ -399,34 +440,39 @@ app/admin/(product-menu)/
 
 ---
 
-## 📋 Decision Log
+## Decision Log
 
 ### Jan 3, 2026: Config-Driven Architecture
+
 **Decision:** Use split-config (ACTION_BAR_CONFIG + VIEW_CONFIGS) instead of unified mega-config
 **Rationale:** Lower risk, incremental pathway, easier to reason about
 **Impact:** 67% complexity reduction, easier testing
 
 ### Jan 8, 2026: Data Layer Unification
+
 **Decision:** Centralize Prisma access in `data/` folder with DTO tests
 **Rationale:** Prevent data access fragmentation, lock in ordering invariants
 **Impact:** Single source of truth, easier debugging, guaranteed consistency
 
 ### Jan 10, 2026: Table View Priority
+
 **Decision:** Ship views in order: AllLabels → Label → Category → Menu
 **Rationale:** Builds complexity incrementally, reuses patterns, validates early
 **Impact:** Faster time to first additional view, lower risk
 
 ---
 
-## 🚀 Next Action
+## Next Action
 
 **Immediate Next Step:** Implement All Labels Table View (2.1)
+
 - Lowest complexity
 - Reuses AllCategories pattern
 - Deliverable in 1-2 days
 - Validates table view primitives work for labels too
 
 **Command to Start:**
+
 ```bash
 # Ensure clean state
 git status
@@ -439,34 +485,33 @@ npm run dev
 ```
 
 **Files to Read First:**
+
 - `app/admin/(product-menu)/menu-builder/components/table-views/AllCategoriesTableView.tsx`
 - `app/admin/(product-menu)/data/labels.ts`
-- `docs/menu-builder/final-menu-builder-feature-spec.md` (All Labels section)
+- `docs/menu-builder/FEATURE-SPEC.md` (All Labels section)
 
 ---
 
-## 📚 Documentation
+## Documentation
 
-- [Architecture Map](menu-builder-architecture-map.md) - Diagrams and view matrix
-- [Implementation Guide](menu-builder-implementation.md) - How to add views/actions
-- [Feature Spec](final-menu-builder-feature-spec.md) - Complete target vision (1,186 lines)
-- [Session Summary](menu-builder-session-summary-2026-01-03.md) - Jan 3 work log
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - System diagrams, source of truth table, config patterns
+- [IMPLEMENTATION-GUIDE.md](./IMPLEMENTATION-GUIDE.md) - How to add views/actions
+- [FEATURE-SPEC.md](./FEATURE-SPEC.md) - Complete target vision (1,186 lines)
+- [archive/](./archive/) - Historical planning docs
 
 ---
 
-## 🤝 Getting Help
+## Getting Help
+
+**Reference Implementation:**
+- `AllCategoriesTableView.tsx` is the **golden example** - copy its patterns for new table views
 
 **Ask Claude Code:**
 - "Show me the AllCategories implementation"
-- "Explain how ACTION_BAR_CONFIG works"
+- "Explain how the action-bar config works"
 - "Help me implement the All Labels view"
-- "Review my Label view implementation"
-
-**Reference Implementation:**
-- AllCategoriesTableView is the **golden example** - copy its patterns
 
 ---
 
-**Roadmap maintained by:** Claude Code (last updated: 2026-01-10)
+**Last Updated:** 2026-01-13
 **Project Owner:** yuens1002
-**Status:** Phase 1 Complete ✅ | Building Phase 2 🚧
