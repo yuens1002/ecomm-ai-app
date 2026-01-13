@@ -31,7 +31,8 @@ jobs:
           cache: npm
 
       - name: Restore Next.js cache
-        uses: actions/cache@v4
+        id: next-cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             .next/cache
@@ -56,3 +57,12 @@ jobs:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
           BUILD_VERBOSE: "true"
         run: npm run build:no-migrate
+
+      - name: Save Next.js cache
+        if: steps.next-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .next/cache
+            .turbo
+          key: ${{ runner.os }}-next-cache-${{ hashFiles('package-lock.json', 'next.config.ts', 'next.config.js', 'tsconfig.json') }}
