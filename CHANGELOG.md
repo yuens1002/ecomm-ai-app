@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.61.0 - 2026-01-13
+
+- **Action Bar config refactor**: Colocated split config files into focused structure with explicit view layout
+  - Consolidated 10 files into 5: `model.ts` (types), `shared.ts` (helpers), `actions.ts` (colocated definitions), `views.ts` (left/right layout), `index.ts` (hydration)
+  - View layout now explicit with `left`/`right` arrays - no position scattered across files
+  - Inline overrides visible in `views.ts` - no mental computation of override layers
+  - Added structural snapshot test to catch regressions in action ordering/positioning/types
+  - Metrics: Jest (29 tests passing); TypeScript + ESLint clean
+
 ## 0.60.3 - 2026-01-12
 
 - **All Categories table stability**: Fixed checkbox/row interaction freezes and improved selection UX

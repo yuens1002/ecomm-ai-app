@@ -3,6 +3,10 @@ import type { BuilderState, MenuBuilderActions, ViewType } from "../../types/bui
 import type { CloneCategory } from "../../types/category";
 import type { MenuCategory, MenuLabel, MenuProduct } from "../../types/menu";
 
+// ─────────────────────────────────────────────────────────────
+// ACTION IDS
+// ─────────────────────────────────────────────────────────────
+
 export const ALL_ACTION_IDS = [
   "clone",
   "remove",
@@ -22,10 +26,12 @@ export const ALL_ACTION_IDS = [
 
 export type ActionId = (typeof ALL_ACTION_IDS)[number];
 
-export type ActionPosition = "left" | "right";
+// ─────────────────────────────────────────────────────────────
+// PRIMITIVES
+// ─────────────────────────────────────────────────────────────
 
 export type ActionType = "button" | "combo" | "dropdown";
-
+export type ActionPosition = "left" | "right";
 export type RefreshKey = "labels" | "categories" | "products";
 
 export type ToastSpec = {
@@ -33,9 +39,10 @@ export type ToastSpec = {
   description?: string;
 };
 
-export type SuccessToastConfig = Partial<Record<ViewType, ToastSpec>>;
+// ─────────────────────────────────────────────────────────────
+// MUTATIONS & CONTEXT
+// ─────────────────────────────────────────────────────────────
 
-// Subset of mutations from useProductMenuMutations used in actions
 export type ProductMenuMutations = {
   updateLabel: (
     id: string,
@@ -67,7 +74,6 @@ export type ProductMenuMutations = {
   ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
 };
 
-// Context passed to execute functions
 export type ActionContext = {
   selectedIds: string[];
   currentLabelId?: string;
@@ -81,6 +87,54 @@ export type ActionContext = {
 export type ActionExecuteResult = void | {
   createdIds?: string[];
 };
+
+// ─────────────────────────────────────────────────────────────
+// ACTION BASE (colocated in actions.ts)
+// ─────────────────────────────────────────────────────────────
+
+export type ActionEffects = {
+  refresh?: Partial<Record<ViewType, RefreshKey[]>>;
+  errorMessage?: Partial<Record<ViewType, string>>;
+  successToast?: Partial<Record<ViewType, ToastSpec>>;
+  failureToast?: ToastSpec;
+};
+
+export type ActionBase = {
+  id: ActionId;
+  icon: LucideIcon;
+  label: string;
+  tooltip: string;
+  kbd: string[];
+  disabled: (state: BuilderState) => boolean;
+  ariaLabel?: (state: BuilderState) => string;
+  onClick: (state: BuilderState, actions: MenuBuilderActions) => void | Promise<void>;
+  execute?: Partial<Record<ViewType, (context: ActionContext) => Promise<ActionExecuteResult>>>;
+  effects?: ActionEffects;
+};
+
+// ─────────────────────────────────────────────────────────────
+// VIEW CONFIG (defined in views.ts)
+// ─────────────────────────────────────────────────────────────
+
+export type ActionSlot = {
+  id: ActionId;
+  type?: ActionType;
+  comboWith?: ActionId;
+  hasDropdown?: boolean;
+  tooltip?: string;
+  label?: string;
+};
+
+export type ViewActionBar = {
+  left: ActionSlot[];
+  right: ActionSlot[];
+};
+
+export type ViewConfig = Record<ViewType, ViewActionBar>;
+
+// ─────────────────────────────────────────────────────────────
+// HYDRATED ACTION (output of getActionsForView)
+// ─────────────────────────────────────────────────────────────
 
 export type ActionDefinition = {
   id: ActionId;
@@ -98,36 +152,6 @@ export type ActionDefinition = {
   execute?: Partial<Record<ViewType, (context: ActionContext) => Promise<ActionExecuteResult>>>;
   refresh?: Partial<Record<ViewType, RefreshKey[]>>;
   errorMessage?: Partial<Record<ViewType, string>>;
-  successToast?: SuccessToastConfig;
-  failureToast?: ToastSpec;
-};
-
-// Split model primitives (used for incremental refactor)
-export type ActionUiDefinition = {
-  id: ActionId;
-  icon: LucideIcon;
-  label: string;
-  tooltip: string;
-  kbd: string[];
-};
-
-export type ActionPresentation = {
-  type: ActionType;
-  position: ActionPosition;
-  comboWith?: ActionId;
-  hasDropdown?: boolean;
-};
-
-export type ActionBehavior = {
-  disabled: (state: BuilderState) => boolean;
-  ariaLabel?: (state: BuilderState) => string;
-  onClick: (state: BuilderState, actions: MenuBuilderActions) => void | Promise<void>;
-  execute?: Partial<Record<ViewType, (context: ActionContext) => Promise<ActionExecuteResult>>>;
-};
-
-export type ActionEffects = {
-  refresh?: Partial<Record<ViewType, RefreshKey[]>>;
-  errorMessage?: Partial<Record<ViewType, string>>;
-  successToast?: SuccessToastConfig;
+  successToast?: Partial<Record<ViewType, ToastSpec>>;
   failureToast?: ToastSpec;
 };

@@ -321,4 +321,189 @@ describe("Action Bar Configuration", () => {
       expect(labelActions.find((a) => a.id === "collapse-all")).toBeUndefined();
     });
   });
+
+  describe("Structural Snapshot", () => {
+    it("should match expected action bar structure", () => {
+      const structure = Object.fromEntries(
+        Object.entries(ACTION_BAR_CONFIG).map(([view, actions]) => [
+          view,
+          {
+            left: actions
+              .filter((a) => a.position === "left")
+              .map((a) => ({ id: a.id, type: a.type })),
+            right: actions
+              .filter((a) => a.position === "right")
+              .map((a) => ({ id: a.id, type: a.type })),
+          },
+        ])
+      );
+
+      expect(structure).toMatchInlineSnapshot(`
+        {
+          "all-categories": {
+            "left": [
+              {
+                "id": "new-category",
+                "type": "button",
+              },
+              {
+                "id": "clone",
+                "type": "button",
+              },
+              {
+                "id": "remove",
+                "type": "button",
+              },
+            ],
+            "right": [
+              {
+                "id": "visibility",
+                "type": "button",
+              },
+              {
+                "id": "undo",
+                "type": "button",
+              },
+              {
+                "id": "redo",
+                "type": "button",
+              },
+            ],
+          },
+          "all-labels": {
+            "left": [
+              {
+                "id": "new-label",
+                "type": "button",
+              },
+              {
+                "id": "clone",
+                "type": "button",
+              },
+              {
+                "id": "remove",
+                "type": "button",
+              },
+            ],
+            "right": [
+              {
+                "id": "visibility",
+                "type": "button",
+              },
+              {
+                "id": "undo",
+                "type": "button",
+              },
+              {
+                "id": "redo",
+                "type": "button",
+              },
+            ],
+          },
+          "category": {
+            "left": [
+              {
+                "id": "add-products",
+                "type": "dropdown",
+              },
+              {
+                "id": "sort-order",
+                "type": "dropdown",
+              },
+              {
+                "id": "remove",
+                "type": "button",
+              },
+            ],
+            "right": [
+              {
+                "id": "expand-all",
+                "type": "button",
+              },
+              {
+                "id": "collapse-all",
+                "type": "button",
+              },
+              {
+                "id": "undo",
+                "type": "button",
+              },
+              {
+                "id": "redo",
+                "type": "button",
+              },
+            ],
+          },
+          "label": {
+            "left": [
+              {
+                "id": "add-categories",
+                "type": "dropdown",
+              },
+              {
+                "id": "sort-mode",
+                "type": "dropdown",
+              },
+              {
+                "id": "remove",
+                "type": "button",
+              },
+            ],
+            "right": [
+              {
+                "id": "undo",
+                "type": "button",
+              },
+              {
+                "id": "redo",
+                "type": "button",
+              },
+            ],
+          },
+          "menu": {
+            "left": [
+              {
+                "id": "new-label",
+                "type": "combo",
+              },
+              {
+                "id": "add-labels",
+                "type": "combo",
+              },
+              {
+                "id": "clone",
+                "type": "button",
+              },
+              {
+                "id": "remove",
+                "type": "button",
+              },
+            ],
+            "right": [
+              {
+                "id": "visibility",
+                "type": "button",
+              },
+              {
+                "id": "expand-all",
+                "type": "button",
+              },
+              {
+                "id": "collapse-all",
+                "type": "button",
+              },
+              {
+                "id": "undo",
+                "type": "button",
+              },
+              {
+                "id": "redo",
+                "type": "button",
+              },
+            ],
+          },
+        }
+      `);
+    });
+  });
 });
