@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.61.1 - 2026-01-13
+
+- **Prisma 7 compatibility fix**: Removed deprecated `url` from datasource block in schema.prisma
+  - Prisma 7+ requires connection URLs to be in `prisma.config.ts` (already configured) rather than schema file
+  - Client uses adapter pattern via `lib/prisma.ts` (Neon or pg adapter based on environment)
+  - Fixes Vercel build error: "The datasource property `url` is no longer supported in schema files"
+
 ## 0.61.0 - 2026-01-13
 
 - **Action Bar config refactor**: Colocated split config files into focused structure with explicit view layout
