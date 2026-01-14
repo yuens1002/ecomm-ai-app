@@ -160,7 +160,11 @@ npm run precheck    # TypeScript + ESLint
 
 **Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`
 
-**Commit procedure:**
+**Trigger phrases:**
+- `"commit - minor bump"` - For new features (0.x.0)
+- `"commit - patch bump"` - For fixes/small changes (0.0.x)
+
+**Commit procedure (auto-executed on trigger):**
 1. Stage changes: `git add -A`
 2. Update CHANGELOG.md with version, date, and changes
 3. Update package.json version to match
