@@ -380,10 +380,6 @@ describe("Action Bar Configuration", () => {
                 "id": "clone",
                 "type": "button",
               },
-              {
-                "id": "remove",
-                "type": "button",
-              },
             ],
             "right": [
               {

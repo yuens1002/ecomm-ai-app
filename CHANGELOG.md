@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.62.0 - 2026-01-14
+
+- **All Labels table view**: Implemented AllLabelsTableView with drag-drop reordering and inline editing
+  - Columns: Checkbox, Icon (center 48px), Label Name, Categories, Visibility, Drag Handle
+  - No column sorting - row order dictates DB label order via drag-drop
+  - Single-click selects (200ms delay), double-click navigates to label detail
+  - Drag handle always visible on mobile, hover-only on desktop
+- **Reusable table view hooks**: Extracted common patterns to reduce boilerplate (~80 lines per view)
+  - `useDragReorder`: Row drag-and-drop with `getDragHandlers()` and `getDragClasses()`
+  - `useInlineEditHandlers`: Name/icon/visibility handlers with automatic undo/redo
+  - `usePinnedRow` enhanced: Built-in default sort by order field (descending)
+  - `useContextRowUiState` enhanced: `autoClearPinned` option for automatic cleanup
+  - `TableRow` enhanced: Built-in click/double-click handling via `onRowClick`/`onRowDoubleClick`
+- **New components**: `InlineIconCell` for inline icon editing with IconPicker dialog
+- **Refactored AllCategoriesTableView**: Updated to use new hooks for consistency
+- **Documentation updates**: Updated ROADMAP, ARCHITECTURE, IMPLEMENTATION-GUIDE with new hooks and patterns
+- **CLAUDE.md updates**: Added instructions for refactor opportunities and docs sync; referenced COMMIT_PROCEDURE.md
+- Metrics: Jest `npm run test:ci` (36 suites, 300 tests passing); lint + typecheck clean
+
 ## 0.61.1 - 2026-01-13
 
 - **Prisma 7 compatibility fix**: Removed deprecated `url` from datasource block in schema.prisma

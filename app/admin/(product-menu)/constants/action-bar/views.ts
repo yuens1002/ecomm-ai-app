@@ -48,7 +48,7 @@ export const VIEW_CONFIG: ViewConfig = {
   // ALL LABELS VIEW
   // ─────────────────────────────────────────────────────────────
   "all-labels": {
-    left: [{ id: "new-label" }, { id: "clone" }, { id: "remove", tooltip: "Remove from menu" }],
+    left: [{ id: "new-label" }, { id: "clone" }],
     right: [{ id: "visibility" }, { id: "undo" }, { id: "redo" }],
   },
 

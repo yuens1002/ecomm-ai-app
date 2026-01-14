@@ -1,7 +1,7 @@
 # Menu Builder - Development Roadmap
 
-**Last Updated:** 2026-01-13
-**Current Branch:** `main` (merged from `unify-menu-builder`)
+**Last Updated:** 2026-01-14
+**Current Branch:** `unify-menu-builder`
 **Status:** Phase 1 Complete ✅ | Phase 2 In Progress 🚧
 
 ---
@@ -16,10 +16,10 @@ Build a sophisticated admin interface for managing a 3-level product catalog hie
 
 ```
 Foundation  ████████████████████████ 100% ✅
-Table Views ████░░░░░░░░░░░░░░░░░░░  20% 🚧
+Table Views ████████░░░░░░░░░░░░░░░  40% 🚧
 Advanced    ░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️
 ─────────────────────────────────────────
-Total       ████████░░░░░░░░░░░░░░░  40%
+Total       ██████████░░░░░░░░░░░░░  47%
 ```
 
 ---
@@ -29,6 +29,7 @@ Total       ████████░░░░░░░░░░░░░░�
 ### Phase 1: Foundation ✅ (Jan 3-13, 2026)
 
 #### 1.1 Architecture (Jan 3-8)
+
 - [x] Provider composition pattern (MenuBuilderProvider)
 - [x] URL-backed navigation (useMenuBuilderState)
 - [x] Config-driven action bar
@@ -36,31 +37,37 @@ Total       ████████░░░░░░░░░░░░░░�
 - [x] 67% reduction in action handler complexity
 
 **Key Commits:**
+
 - `0b2cc70` - Unified product-menu data access
 - `83e3ef6` - Shipped All Categories table view (v0.59.0)
 
 #### 1.2 Data Layer (Jan 8)
+
 - [x] Centralized Prisma repositories (`data/categories.ts`, `data/labels.ts`)
 - [x] DTO mapping with tests (ordering invariants guaranteed)
 - [x] Shared helpers for admin API routes
 - [x] 100% type safety (zero `any` types)
 
 #### 1.3 First Table View (Jan 7-10)
+
 - [x] AllCategoriesTableView (fully functional)
 - [x] Shared table primitives (CheckboxCell, InlineNameEditor, VisibilityCell)
 - [x] Inline editing with validation
 - [x] Bulk selection and actions
 
 #### 1.4 Action Bar Refactor (Jan 13)
+
 - [x] Colocated action definitions (10 files → 5 files)
 - [x] Explicit left/right layout in views.ts
 - [x] Structural snapshot tests for regression detection
 - [x] Inline overrides visible where used
 
 **Key Commit:**
+
 - `2a4745c` - Colocate action-bar config with explicit view layout (v0.61.0)
 
 #### 1.5 Testing & Documentation
+
 - [x] Jest tests (29 passing) for hooks, config, DTOs
 - [x] Structural snapshot for action bar layout
 - [x] Architecture documentation consolidated
@@ -72,38 +79,66 @@ Total       ████████░░░░░░░░░░░░░░�
 
 **Target:** Complete all 5 table views
 **Timeline:** 4-6 weeks
-**Current:** 1/5 views shipped (20%)
+**Current:** 2/5 views shipped (40%)
 
-### 2.1 All Labels Table View ⏸️ NOT STARTED
+### 2.1 All Labels Table View ✅ COMPLETE (Jan 14, 2026)
 
-**Complexity:** Low (reuse AllCategories pattern)
+**Complexity:** Low (reused AllCategories pattern)
 **Effort:** 1-2 days
 **Dependencies:** None
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] Create `AllLabelsTableView.tsx` component
-- [ ] Columns: Checkbox, Icon, Name, Categories (count), Visibility
-- [ ] Inline icon editing (IconPicker dialog)
-- [ ] Inline name editing (InlineNameEditor)
-- [ ] Bulk actions (delete, toggle visibility)
-- [ ] Selection state management
-- [ ] Register in TableViewRenderer
+- [x] Created `AllLabelsTableView.tsx` component
+- [x] Columns: Checkbox, Icon (center 48px), Label Name, Categories, Visibility, Drag Handle
+- [x] Inline icon editing via `InlineIconCell` (IconPicker dialog)
+- [x] Inline name editing via `InlineNameEditor`
+- [x] Visibility toggle via `VisibilityCell` (switch variant)
+- [x] Drag-and-drop row reordering (persists to DB)
+- [x] Selection state management
+- [x] Registered in TableViewRenderer
 
-**Files to Create:**
+**Table Behavior:**
+
+- **No column sorting** - Row order dictates DB label order via drag-drop
+- **Single-click** - Toggles row selection (200ms delay to distinguish from double-click)
+- **Double-click** - Navigates to label detail view
+- **Drag handle** - Always visible on mobile, hover-only on desktop
+
+**New Reusable Hooks Created:**
+
+| Hook | Purpose |
+|------|---------|
+| `useDragReorder` | Drag-and-drop row reordering with `getDragHandlers()` and `getDragClasses()` |
+| `useInlineEditHandlers` | Name/icon/visibility save handlers with undo/redo |
+
+**Enhanced Existing Hooks:**
+
+| Hook | Enhancement |
+|------|-------------|
+| `usePinnedRow` | Built-in default sort by `order` field (descending) |
+| `useContextRowUiState` | `autoClearPinned` option for automatic cleanup |
+
+**Enhanced Components:**
+
+| Component | Enhancement |
+|-----------|-------------|
+| `TableRow` | Built-in click/double-click handling via `onRowClick`/`onRowDoubleClick` props |
+
+**Files Created:**
 
 - `app/admin/(product-menu)/menu-builder/components/table-views/AllLabelsTableView.tsx`
+- `app/admin/(product-menu)/hooks/useDragReorder.ts`
+- `app/admin/(product-menu)/hooks/useInlineEditHandlers.ts`
 
-**Files to Modify:**
+**Files Modified:**
 
 - `app/admin/(product-menu)/menu-builder/components/table-views/TableViewRenderer.tsx`
-
-**Acceptance Criteria:**
-
-- Matches AllCategories functionality
-- Inline editing works
-- Bulk selection and actions work
-- Tests added for new components
+- `app/admin/(product-menu)/menu-builder/components/table-views/AllCategoriesTableView.tsx` (refactored to use new hooks)
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/TableRow.tsx`
+- `app/admin/(product-menu)/hooks/usePinnedRow.ts`
+- `app/admin/(product-menu)/hooks/useContextRowUiState.ts`
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/columnWidthPresets.ts`
 
 ---
 
@@ -356,7 +391,7 @@ Total       ████████░░░░░░░░░░░░░░�
 
 ## File Structure
 
-```
+```text
 app/admin/(product-menu)/
 ├─ menu-builder/
 │  ├─ MenuBuilderProvider.tsx       ✅
@@ -367,13 +402,13 @@ app/admin/(product-menu)/
 │        ├─ TableViewRenderer.tsx   ✅
 │        ├─ PlaceholderTableView.tsx ✅
 │        ├─ AllCategoriesTableView.tsx ✅
-│        ├─ AllLabelsTableView.tsx  ⏸️ (2.1)
+│        ├─ AllLabelsTableView.tsx  ✅ (2.1)
 │        ├─ LabelTableView.tsx      ⏸️ (2.3)
 │        ├─ CategoryTableView.tsx   ⏸️ (2.4)
 │        ├─ MenuTableView.tsx       ⏸️ (2.5)
 │        └─ shared/
-│           ├─ table/               ✅
-│           ├─ cells/               ✅
+│           ├─ table/               ✅ (TableRow, TableCell, TableHeader, columnWidthPresets)
+│           ├─ cells/               ✅ (CheckboxCell, InlineNameEditor, InlineIconCell, VisibilityCell)
 │           ├─ ContextMenuCell.tsx  ⏸️ (2.2)
 │           └─ DraggableRow.tsx     ⏸️ (2.3)
 │
@@ -382,9 +417,10 @@ app/admin/(product-menu)/
 │  ├─ useProductMenuData.ts         ✅
 │  ├─ useProductMenuMutations.ts    ✅
 │  ├─ useContextSelectionModel.ts   ✅
-│  ├─ useContextRowUiState.ts       ✅
-│  ├─ usePinnedRow.ts               ✅
-│  ├─ useDragAndDrop.ts             ⏸️ (3.1)
+│  ├─ useContextRowUiState.ts       ✅ (enhanced: autoClearPinned option)
+│  ├─ usePinnedRow.ts               ✅ (enhanced: built-in default sort)
+│  ├─ useDragReorder.ts             ✅ (NEW: row drag-and-drop)
+│  ├─ useInlineEditHandlers.ts      ✅ (NEW: name/icon/visibility with undo)
 │  ├─ useKeyboardShortcuts.ts       ⏸️ (3.2)
 │  └─ useUndoRedo.ts                ⏸️ (3.3)
 │
@@ -460,16 +496,37 @@ app/admin/(product-menu)/
 **Rationale:** Builds complexity incrementally, reuses patterns, validates early
 **Impact:** Faster time to first additional view, lower risk
 
+### Jan 14, 2026: Reusable Table View Hooks
+
+**Decision:** Extract common table view patterns into reusable hooks
+**Rationale:** AllLabels and AllCategories shared significant boilerplate (click handling, drag-drop, inline edits with undo)
+**Impact:**
+- `useDragReorder` - Centralized drag-and-drop row reordering
+- `useInlineEditHandlers` - Name/icon/visibility handlers with automatic undo/redo
+- `usePinnedRow` enhanced with built-in default order sort
+- `useContextRowUiState` enhanced with `autoClearPinned` option
+- `TableRow` component now handles click/double-click timeout internally
+- ~80 lines of boilerplate removed from each table view
+
 ---
 
 ## Next Action
 
-**Immediate Next Step:** Implement All Labels Table View (2.1)
+**Immediate Next Step:** Context Menu Infrastructure (2.2) or Label View (2.3)
 
-- Lowest complexity
-- Reuses AllCategories pattern
-- Deliverable in 1-2 days
-- Validates table view primitives work for labels too
+Both can be done in parallel:
+
+### Option A: Context Menu Infrastructure (2.2)
+- Medium complexity
+- New pattern (right-click + three-dot menu)
+- Reuses ACTION_BAR_CONFIG for action definitions
+- Enables row-level actions without selection
+
+### Option B: Label View (2.3)
+- Medium complexity
+- Shows categories within selected label
+- Requires drag-and-drop for category reordering
+- Can reuse `useDragReorder` hook from 2.1
 
 **Command to Start:**
 
@@ -477,18 +534,15 @@ app/admin/(product-menu)/
 # Ensure clean state
 git status
 
-# Create new branch (optional)
-git checkout -b feature/all-labels-table-view
-
-# Start development
+# Continue on current branch or create new
 npm run dev
 ```
 
 **Files to Read First:**
 
-- `app/admin/(product-menu)/menu-builder/components/table-views/AllCategoriesTableView.tsx`
-- `app/admin/(product-menu)/data/labels.ts`
-- `docs/menu-builder/FEATURE-SPEC.md` (All Labels section)
+- `app/admin/(product-menu)/menu-builder/components/table-views/AllLabelsTableView.tsx` (reference for new hooks)
+- `app/admin/(product-menu)/hooks/useDragReorder.ts` (for Label view drag-drop)
+- `docs/menu-builder/FEATURE-SPEC.md` (Label view section)
 
 ---
 
@@ -503,15 +557,25 @@ npm run dev
 
 ## Getting Help
 
-**Reference Implementation:**
-- `AllCategoriesTableView.tsx` is the **golden example** - copy its patterns for new table views
+**Reference Implementations:**
+
+- `AllLabelsTableView.tsx` is the **golden example** for table views with drag-and-drop
+- `AllCategoriesTableView.tsx` is the **golden example** for table views with column sorting
+
+**Reusable Hooks:**
+
+- `useDragReorder` - For any table view needing row reordering
+- `useInlineEditHandlers` - For any table view with name/icon/visibility editing
+- `usePinnedRow` - For any table view with pinned newly-created rows
+- `useContextRowUiState` - For any table view with editing state
 
 **Ask Claude Code:**
-- "Show me the AllCategories implementation"
-- "Explain how the action-bar config works"
-- "Help me implement the All Labels view"
+
+- "Show me the AllLabels implementation"
+- "Explain how useDragReorder works"
+- "Help me implement the Label view"
 
 ---
 
-**Last Updated:** 2026-01-13
+**Last Updated:** 2026-01-14
 **Project Owner:** yuens1002

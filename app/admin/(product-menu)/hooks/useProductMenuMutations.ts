@@ -42,6 +42,20 @@ export function useProductMenuMutations() {
       if (res.ok) await refresh();
       return res;
     },
+    createNewLabel: async (): Promise<string | undefined> => {
+      const res = await labelActions.createNewLabel();
+      if (!res.ok) {
+        console.error("[useProductMenuMutations] Failed to create new label:", res.error);
+        return undefined;
+      }
+
+      await refresh();
+      if ("data" in res) {
+        return (res.data as { id?: string } | undefined)?.id;
+      }
+
+      return undefined;
+    },
     attachCategory: async (labelId: unknown, categoryId: unknown) => {
       const res = await labelActions.attachCategory(labelId, categoryId);
       if (res.ok) await refresh();

@@ -55,7 +55,7 @@ npm run dev
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
 
-Visit http://localhost:3000 and sign in with the admin you created.
+Visit ```http://localhost:3000``` and sign in with the admin you created.
 
 ## 5) Production notes
 

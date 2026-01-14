@@ -4,6 +4,18 @@ import { cn } from "@/lib/utils";
 import type { Table } from "@tanstack/react-table";
 import { SortableHeaderCell } from "./SortableHeaderCell";
 
+/**
+ * Column definition for TableHeader.
+ *
+ * IMPORTANT: When adding a new column to a table view:
+ * 1. Add entry to the header columns array (e.g., ALL_LABELS_HEADER_COLUMNS)
+ * 2. Add matching entry to TanStack table `columns` array with same `id`
+ * 3. Add width preset in columnWidthPresets.ts
+ * 4. Add the TableCell in the row render function
+ *
+ * The `id` must match between header columns and TanStack columns to avoid
+ * "[Table] Column with id 'xxx' does not exist" errors.
+ */
 export type TableHeaderColumn = {
   id: string;
   label: string;

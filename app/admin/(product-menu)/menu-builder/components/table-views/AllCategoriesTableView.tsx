@@ -14,6 +14,7 @@ import * as React from "react";
 import { useCallback, useMemo } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
+import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuCategory } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
@@ -63,28 +64,12 @@ export function AllCategoriesTableView() {
   const { builder, categories, labels, products, updateCategory, createNewCategory } =
     useMenuBuilder();
 
-  const rowClickTimeoutRef = React.useRef<number | null>(null);
-
-  React.useEffect(() => {
-    return () => {
-      if (rowClickTimeoutRef.current !== null) {
-        window.clearTimeout(rowClickTimeoutRef.current);
-        rowClickTimeoutRef.current = null;
-      }
-    };
-  }, []);
-
   const {
     editingId: editingCategoryId,
     pinnedId: pinnedCategoryId,
     clearEditing,
     clearPinnedIfMatches,
-  } = useContextRowUiState(builder, "category");
-
-  const defaultCategorySort = useCallback((a: MenuCategory, b: MenuCategory) => {
-    if (b.order !== a.order) return b.order - a.order;
-    return b.id.localeCompare(a.id);
-  }, []);
+  } = useContextRowUiState(builder, "category", { autoClearPinned: true });
 
   const selectableCategoryIds = useMemo(() => categories.map((c) => c.id), [categories]);
   const {
@@ -100,14 +85,17 @@ export function AllCategoriesTableView() {
     rows: categories,
     pinnedId: pinnedCategoryId,
     isSortingActive: sorting.length > 0,
-    defaultSort: defaultCategorySort,
+    // Uses built-in default sort by order field
   });
 
-  React.useEffect(() => {
-    if (!pinnedCategoryId) return;
-    if (editingCategoryId && editingCategoryId === pinnedCategoryId) return;
-    clearPinnedIfMatches(pinnedCategoryId);
-  }, [pinnedCategoryId, editingCategoryId, clearPinnedIfMatches]);
+  // Inline edit handlers with undo/redo
+  const { handleNameSave, handleVisibilitySave } = useInlineEditHandlers({
+    builder,
+    entityKind: "category",
+    getItem: (id) => categories.find((c) => c.id === id),
+    updateItem: updateCategory,
+    onSaveComplete: clearEditing,
+  });
 
   // Helper: Get label names for a category
   const categoryLabelsById = useMemo(() => {
@@ -214,6 +202,79 @@ export function AllCategoriesTableView() {
     );
   }
 
+  const renderCategoryRow = (category: MenuCategory, options?: { isPinned?: boolean }) => {
+    const isPinned = options?.isPinned === true;
+    const isSelected = isCategorySelected(category.id);
+
+    return (
+      <TableRow
+        key={category.id}
+        data-state={isSelected ? "selected" : undefined}
+        isSelected={isSelected}
+        onRowClick={() => onToggleCategoryId(category.id)}
+        onRowDoubleClick={() => builder.navigateToCategory(category.id)}
+      >
+        <TableCell className={allCategoriesWidthPreset.select.cell} data-row-click-ignore>
+          <CheckboxCell
+            id={category.id}
+            checked={isSelected}
+            onToggle={onToggleCategoryId}
+            isSelectable={isCategorySelectionActive}
+            disabled={!isCategorySelectionActive}
+            alwaysVisible={isSelected}
+            ariaLabel={`Select ${category.name}`}
+          />
+        </TableCell>
+
+        <TableCell className={allCategoriesWidthPreset.name.cell}>
+          <InlineNameEditor
+            id={category.id}
+            initialValue={category.name}
+            isEditing={editingCategoryId === category.id}
+            onStartEdit={() => builder.setEditing({ kind: "category", id: category.id })}
+            onCancelEdit={() => {
+              clearEditing();
+              if (isPinned || pinnedCategoryId === category.id) {
+                clearPinnedIfMatches(category.id);
+              }
+            }}
+            onSave={async (id, name) => {
+              await handleNameSave(id, name);
+              if (isPinned || pinnedCategoryId === category.id) {
+                clearPinnedIfMatches(category.id);
+              }
+            }}
+          />
+        </TableCell>
+
+        <TableCell className={"text-sm " + (allCategoriesWidthPreset.labels.cell ?? "")}>
+          {getCategoryLabels(category.id)}
+        </TableCell>
+
+        <TableCell
+          align="right"
+          className={"text-sm " + (allCategoriesWidthPreset.products.cell ?? "")}
+        >
+          {(() => {
+            const count = getCategoryProductCountNumber(category.id);
+            return count > 0 ? count.toString() : "—";
+          })()}
+        </TableCell>
+
+        <TableCell align="center" className={allCategoriesWidthPreset.visibility.cell}>
+          <div className="flex justify-center">
+            <VisibilityCell
+              id={category.id}
+              isVisible={category.isVisible}
+              variant="switch"
+              onToggle={handleVisibilitySave}
+            />
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   return (
     <>
       <TableHeader
@@ -227,139 +288,8 @@ export function AllCategoriesTableView() {
       />
 
       <TableBody>
-        {(() => {
-          const renderCategoryRow = (category: MenuCategory, options?: { isPinned?: boolean }) => {
-            const isPinned = options?.isPinned === true;
-            const isSelected = isCategorySelected(category.id);
-
-            return (
-              <TableRow
-                key={category.id}
-                data-state={isSelected ? "selected" : undefined}
-                isSelected={isSelected}
-                onClick={() => {
-                  // Delay single-click selection so a double-click can cancel it.
-                  if (rowClickTimeoutRef.current !== null) {
-                    window.clearTimeout(rowClickTimeoutRef.current);
-                  }
-
-                  rowClickTimeoutRef.current = window.setTimeout(() => {
-                    onToggleCategoryId(category.id);
-                    rowClickTimeoutRef.current = null;
-                  }, 200);
-                }}
-                onDoubleClick={() => {
-                  if (rowClickTimeoutRef.current !== null) {
-                    window.clearTimeout(rowClickTimeoutRef.current);
-                    rowClickTimeoutRef.current = null;
-                  }
-                  builder.navigateToCategory(category.id);
-                }}
-              >
-                <TableCell className={allCategoriesWidthPreset.select.cell} data-row-click-ignore>
-                  <CheckboxCell
-                    id={category.id}
-                    checked={isSelected}
-                    onToggle={onToggleCategoryId}
-                    isSelectable={isCategorySelectionActive}
-                    disabled={!isCategorySelectionActive}
-                    alwaysVisible={isSelected}
-                    ariaLabel={`Select ${category.name}`}
-                  />
-                </TableCell>
-
-                <TableCell className={allCategoriesWidthPreset.name.cell}>
-                  <InlineNameEditor
-                    id={category.id}
-                    initialValue={category.name}
-                    isEditing={editingCategoryId === category.id}
-                    onStartEdit={() => builder.setEditing({ kind: "category", id: category.id })}
-                    onCancelEdit={() => {
-                      clearEditing();
-                      if (isPinned || pinnedCategoryId === category.id) {
-                        clearPinnedIfMatches(category.id);
-                      }
-                    }}
-                    onSave={async (id, name) => {
-                      const previousName = category.name;
-                      const nextName = name;
-
-                      const res = await updateCategory(id, { name: nextName });
-                      if (res.ok && previousName !== nextName) {
-                        builder.pushUndoAction({
-                          action: "rename-category",
-                          timestamp: new Date(),
-                          data: {
-                            undo: async () => {
-                              await updateCategory(id, { name: previousName });
-                            },
-                            redo: async () => {
-                              await updateCategory(id, { name: nextName });
-                            },
-                          },
-                        });
-                      }
-                      clearEditing();
-                      if (isPinned || pinnedCategoryId === category.id) {
-                        clearPinnedIfMatches(category.id);
-                      }
-                    }}
-                  />
-                </TableCell>
-
-                <TableCell className={"text-sm " + (allCategoriesWidthPreset.labels.cell ?? "")}>
-                  {getCategoryLabels(category.id)}
-                </TableCell>
-
-                <TableCell
-                  align="right"
-                  className={"text-sm " + (allCategoriesWidthPreset.products.cell ?? "")}
-                >
-                  {(() => {
-                    const count = getCategoryProductCountNumber(category.id);
-                    return count > 0 ? count.toString() : "—";
-                  })()}
-                </TableCell>
-
-                <TableCell align="center" className={allCategoriesWidthPreset.visibility.cell}>
-                  <div className="flex justify-center">
-                    <VisibilityCell
-                      id={category.id}
-                      isVisible={category.isVisible}
-                      variant="switch"
-                      onToggle={async (id, visible) => {
-                        const previousIsVisible = category.isVisible;
-                        const nextIsVisible = visible;
-                        const res = await updateCategory(id, { isVisible: nextIsVisible });
-                        if (res.ok && previousIsVisible !== nextIsVisible) {
-                          builder.pushUndoAction({
-                            action: "toggle-visibility:category",
-                            timestamp: new Date(),
-                            data: {
-                              undo: async () => {
-                                await updateCategory(id, { isVisible: previousIsVisible });
-                              },
-                              redo: async () => {
-                                await updateCategory(id, { isVisible: nextIsVisible });
-                              },
-                            },
-                          });
-                        }
-                      }}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          };
-
-          return (
-            <>
-              {pinnedCategory ? renderCategoryRow(pinnedCategory, { isPinned: true }) : null}
-              {table.getRowModel().rows.map((row) => renderCategoryRow(row.original))}
-            </>
-          );
-        })()}
+        {pinnedCategory ? renderCategoryRow(pinnedCategory, { isPinned: true }) : null}
+        {table.getRowModel().rows.map((row) => renderCategoryRow(row.original))}
       </TableBody>
     </>
   );

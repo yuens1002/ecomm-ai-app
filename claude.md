@@ -145,14 +145,28 @@ npm run precheck    # TypeScript + ESLint
 ### 5. Git/Commit Agent
 **When to use:** Creating commits, PRs, managing git workflow
 
-**Commit conventions:**
+**Full procedure:** See [.github/COMMIT_PROCEDURE.md](.github/COMMIT_PROCEDURE.md)
+
+**Commit format:**
 ```
-<type>(<scope>): <brief description>
+<type>: <brief description> (v0.x.y)
 ```
 
-Single-line commit messages only. No multi-line bodies or co-authoring mentions.
+**Rules:**
+- Single-line commit messages only (under 72 characters)
+- **No multi-line bodies or co-authoring mentions**
+- Use imperative mood ("add feature" not "added feature")
+- Include version number in parentheses
 
-**Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+**Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`
+
+**Commit procedure:**
+1. Stage changes: `git add -A`
+2. Update CHANGELOG.md with version, date, and changes
+3. Update package.json version to match
+4. Commit with format above
+5. Create annotated tag: `git tag -a v0.x.y -m "<summary>"`
+6. Push commit and tag: `git push && git push origin v0.x.y`
 
 **Pre-commit checks:**
 - Husky runs automatically
@@ -491,9 +505,11 @@ When evaluating implementations:
 6. **Ask when unclear:** Better to clarify than assume
 7. **Commit conventions:** Follow conventional commits format
 8. **Safety first:** Use backup/restore scripts for database work
+9. **Identify refactor opportunities:** When implementing features, check for patterns that can be reused or deduplicated across the codebase; inform and suggest consolidation when applicable
+10. **Keep docs in sync:** Update documentation (especially `docs/menu-builder/`) to match architecture and actual implementation when changes are made
 
 ---
 
-**Last Updated:** 2026-01-10
+**Last Updated:** 2026-01-14
 **Maintained By:** yuens1002
 **Claude Code Version:** 2.1.4

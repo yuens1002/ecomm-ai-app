@@ -52,6 +52,41 @@ export async function createLabel(input: unknown) {
   }
 }
 
+/**
+ * Create a new label with a default name (server-owned workflow).
+ * Handles name collision by appending (2), (3), etc.
+ */
+export async function createNewLabel() {
+  const baseName = "New Label";
+  const maxAttempts = 50;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const name = attempt === 0 ? baseName : `${baseName} (${attempt + 1})`;
+
+    try {
+      const label = await createCategoryLabel({
+        name,
+        icon: null,
+        afterLabelId: null,
+      });
+      return { ok: true as const, data: label };
+    } catch (err) {
+      // If unique constraint error, try next name
+      if (
+        err instanceof Error &&
+        err.message.includes("Unique constraint")
+      ) {
+        continue;
+      }
+      // Re-throw other errors
+      const message = err instanceof Error ? err.message : "Failed to create label";
+      return { ok: false as const, error: message };
+    }
+  }
+
+  return { ok: false as const, error: "Could not generate unique label name" };
+}
+
 export async function updateLabel(id: unknown, input: unknown) {
   const idParsed = z.string().min(1).safeParse(id);
   const bodyParsed = updateCategoryLabelSchema.safeParse(input);

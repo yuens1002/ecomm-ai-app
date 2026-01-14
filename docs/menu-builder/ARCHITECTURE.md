@@ -1,7 +1,7 @@
 # Menu Builder Architecture
 
-**Last Updated:** 2026-01-13
-**Status:** Phase 1 Complete, Phase 2 In Progress
+**Last Updated:** 2026-01-14
+**Status:** Phase 1 Complete, Phase 2 In Progress (40%)
 
 ---
 
@@ -73,7 +73,7 @@ flowchart TD
 | `menu` | PlaceholderTableView | Labels (3-level hierarchy) | Planned |
 | `label` | PlaceholderTableView | Categories in label | Planned |
 | `category` | PlaceholderTableView | Products in category | Planned |
-| `all-labels` | PlaceholderTableView | Flat list of labels | Planned |
+| `all-labels` | AllLabelsTableView | Flat list of labels | **Shipped** |
 | `all-categories` | AllCategoriesTableView | Flat list of categories | **Shipped** |
 
 ---
@@ -218,14 +218,20 @@ app/admin/(product-menu)/
 │       └── table-views/
 │           ├── TableViewRenderer.tsx
 │           ├── PlaceholderTableView.tsx
-│           ├── AllCategoriesTableView.tsx  # First shipped view
+│           ├── AllCategoriesTableView.tsx  # Column sorting example
+│           ├── AllLabelsTableView.tsx      # Drag-and-drop example
 │           └── shared/
-│               ├── cells/           # Reusable cell components
-│               └── table/           # Table primitives
+│               ├── cells/           # CheckboxCell, InlineNameEditor, InlineIconCell, VisibilityCell
+│               └── table/           # TableRow, TableCell, TableHeader, columnWidthPresets
 ├── hooks/
 │   ├── useMenuBuilderState.ts       # URL + selection state
 │   ├── useProductMenuData.ts        # SWR data fetching
-│   └── useProductMenuMutations.ts   # CRUD wrappers
+│   ├── useProductMenuMutations.ts   # CRUD wrappers
+│   ├── useContextSelectionModel.ts  # Multi-select state
+│   ├── useContextRowUiState.ts      # Editing/pinned row state (autoClearPinned option)
+│   ├── usePinnedRow.ts              # Pinned row + default sorting
+│   ├── useDragReorder.ts            # Row drag-and-drop reordering
+│   └── useInlineEditHandlers.ts     # Name/icon/visibility handlers with undo
 ├── constants/
 │   ├── action-bar/                  # Colocated action config
 │   │   ├── model.ts
@@ -291,6 +297,7 @@ See [IMPLEMENTATION-GUIDE.md](./IMPLEMENTATION-GUIDE.md) for details.
 | Jan 8, 2026 | Centralized data layer | Single source of truth, guaranteed ordering |
 | Jan 10, 2026 | Ship views incrementally | Lower risk, validates patterns early |
 | Jan 13, 2026 | Colocated action-bar config | Better DX, explicit layout, fewer files to touch |
+| Jan 14, 2026 | Reusable table view hooks | Extract common patterns (drag, inline edit, click handling) to reduce boilerplate |
 
 ---
 

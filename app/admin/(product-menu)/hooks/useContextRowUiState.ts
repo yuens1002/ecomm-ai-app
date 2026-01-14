@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import type { SelectedEntityKind } from "../types/builder-state";
 
 type ActiveRow = {
@@ -15,7 +15,22 @@ type BuilderRowUiApi = {
   setPinnedNew: (next: ActiveRow | null) => void;
 };
 
-export function useContextRowUiState(builder: BuilderRowUiApi, kind: SelectedEntityKind) {
+type UseContextRowUiStateOptions = {
+  /**
+   * When true, automatically clears pinned state when the pinned item
+   * is no longer being edited. This is the typical behavior for table views.
+   * @default false
+   */
+  autoClearPinned?: boolean;
+};
+
+export function useContextRowUiState(
+  builder: BuilderRowUiApi,
+  kind: SelectedEntityKind,
+  options: UseContextRowUiStateOptions = {}
+) {
+  const { autoClearPinned = false } = options;
+
   const editingId = builder.editingRow?.kind === kind ? builder.editingRow.id : null;
   const pinnedId = builder.pinnedNewRow?.kind === kind ? builder.pinnedNewRow.id : null;
 
@@ -31,6 +46,14 @@ export function useContextRowUiState(builder: BuilderRowUiApi, kind: SelectedEnt
     },
     [builder, kind]
   );
+
+  // Auto-clear pinned when item is no longer being edited
+  useEffect(() => {
+    if (!autoClearPinned) return;
+    if (!pinnedId) return;
+    if (editingId && editingId === pinnedId) return;
+    clearPinnedIfMatches(pinnedId);
+  }, [autoClearPinned, pinnedId, editingId, clearPinnedIfMatches]);
 
   return { editingId, pinnedId, clearEditing, clearPinnedIfMatches };
 }

@@ -1,6 +1,7 @@
 import { TableRow as ShadcnTableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import * as React from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
@@ -23,22 +24,74 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
   );
 }
 
-type TableRowProps = React.ComponentPropsWithoutRef<typeof ShadcnTableRow> & {
+/** Delay in ms before single-click fires (allows double-click to cancel) */
+const CLICK_DELAY_MS = 200;
+
+type TableRowProps = Omit<
+  React.ComponentPropsWithoutRef<typeof ShadcnTableRow>,
+  "onClick" | "onDoubleClick"
+> & {
   isSelected?: boolean;
   isDragging?: boolean;
+  /**
+   * Called on single-click (delayed to distinguish from double-click).
+   * Ignored if click target is an interactive element.
+   */
+  onRowClick?: () => void;
+  /**
+   * Called on double-click (cancels pending single-click).
+   * Ignored if click target is an interactive element.
+   */
+  onRowDoubleClick?: () => void;
 };
 
 export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
-  ({ isSelected, isDragging, className, onClick, onDoubleClick, ...props }, ref) => {
-    const handleClick: React.MouseEventHandler<HTMLTableRowElement> = (event) => {
-      if (isInteractiveTarget(event.target)) return;
-      onClick?.(event);
-    };
+  ({ isSelected, isDragging, className, onRowClick, onRowDoubleClick, ...props }, ref) => {
+    const clickTimeoutRef = useRef<number | null>(null);
 
-    const handleDoubleClick: React.MouseEventHandler<HTMLTableRowElement> = (event) => {
-      if (isInteractiveTarget(event.target)) return;
-      onDoubleClick?.(event);
-    };
+    // Cleanup timeout on unmount
+    useEffect(() => {
+      return () => {
+        if (clickTimeoutRef.current !== null) {
+          window.clearTimeout(clickTimeoutRef.current);
+        }
+      };
+    }, []);
+
+    const handleClick = useCallback(
+      (event: React.MouseEvent<HTMLTableRowElement>) => {
+        if (isInteractiveTarget(event.target)) return;
+        if (!onRowClick) return;
+
+        // Clear any pending click
+        if (clickTimeoutRef.current !== null) {
+          window.clearTimeout(clickTimeoutRef.current);
+        }
+
+        // Delay single-click to allow double-click to cancel
+        clickTimeoutRef.current = window.setTimeout(() => {
+          onRowClick();
+          clickTimeoutRef.current = null;
+        }, CLICK_DELAY_MS);
+      },
+      [onRowClick]
+    );
+
+    const handleDoubleClick = useCallback(
+      (event: React.MouseEvent<HTMLTableRowElement>) => {
+        if (isInteractiveTarget(event.target)) return;
+        if (!onRowDoubleClick) return;
+
+        // Cancel pending single-click
+        if (clickTimeoutRef.current !== null) {
+          window.clearTimeout(clickTimeoutRef.current);
+          clickTimeoutRef.current = null;
+        }
+
+        onRowDoubleClick();
+      },
+      [onRowDoubleClick]
+    );
 
     return (
       <ShadcnTableRow
@@ -49,8 +102,8 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
           isDragging && "opacity-50",
           className
         )}
-        onClick={onClick ? handleClick : undefined}
-        onDoubleClick={onDoubleClick ? handleDoubleClick : undefined}
+        onClick={onRowClick ? handleClick : undefined}
+        onDoubleClick={onRowDoubleClick ? handleDoubleClick : undefined}
         {...props}
       />
     );
