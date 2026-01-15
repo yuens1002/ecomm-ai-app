@@ -14,35 +14,33 @@ import {
 } from "@/app/admin/(product-menu)/types/category";
 import { generateSlug } from "@/hooks/useSlugGenerator";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { z } from "zod";
+import {
+  makeCloneName,
+  makeNewItemName,
+  retryWithUniqueConstraint,
+  stripCopySuffix,
+} from "./utils";
 
-function isUniqueConstraintError(err: unknown) {
-  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
-}
-
+/**
+ * Category-specific retry wrapper that generates both name and slug
+ * Wraps retryWithUniqueConstraint to handle slug generation
+ */
 async function createWithUniqueNameAndSlug<T>(opts: {
   makeName: (attempt: number) => string;
   create: (args: { name: string; slug: string }) => Promise<T>;
   maxAttempts?: number;
   errorMessage?: string;
 }): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
-  const maxAttempts = opts.maxAttempts ?? 50;
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const name = opts.makeName(attempt);
-    const slug = generateSlug(name);
-
-    try {
-      const data = await opts.create({ name, slug });
-      return { ok: true, data };
-    } catch (err) {
-      if (isUniqueConstraintError(err)) continue;
-      throw err;
-    }
-  }
-
-  return { ok: false, error: opts.errorMessage ?? "Failed to generate a unique category name" };
+  return await retryWithUniqueConstraint({
+    makeName: opts.makeName,
+    create: async (name) => {
+      const slug = generateSlug(name);
+      return await opts.create({ name, slug });
+    },
+    maxAttempts: opts.maxAttempts,
+    errorMessage: opts.errorMessage ?? "Failed to generate a unique category name",
+  });
 }
 
 // List categories with labels
@@ -104,11 +102,8 @@ export async function createNewCategory(input?: unknown) {
   try {
     const labelIds = parsed.data?.labelIds ?? [];
 
-    // Base defaults
-    const baseName = "New Category";
-
     return await createWithUniqueNameAndSlug({
-      makeName: (attempt) => (attempt === 0 ? baseName : `${baseName} (${attempt + 1})`),
+      makeName: (attempt) => makeNewItemName("Category", attempt),
       create: async ({ name, slug }) => {
         return await createCategoryWithLabels({ name, slug, labelIds });
       },
@@ -143,14 +138,13 @@ export async function cloneCategory(input: unknown) {
       return { ok: false, error: "Category not found" };
     }
 
-    const copySuffixPattern = /(.*)\s+Copy\s*\(\d+\)\s*$/;
-    const baseName = original.name.replace(copySuffixPattern, "$1").trim();
+    const baseName = stripCopySuffix(original.name);
 
     // Keep natural sort order by mirroring original order.
     const nextOrder = original.order;
 
     const created = await createWithUniqueNameAndSlug({
-      makeName: (attempt) => `${baseName} Copy (${attempt + 1})`,
+      makeName: (attempt) => makeCloneName(baseName, attempt),
       create: async ({ name, slug }) => {
         return await prisma.$transaction(async (tx) => {
           const created = await tx.category.create({

@@ -54,6 +54,7 @@ export function useDragReorder<TItem extends { id: string }>({
 }: UseDragReorderOptions<TItem>) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [dropPosition, setDropPosition] = useState<"before" | "after">("before");
 
   const handleDragStart = useCallback((itemId: string) => {
     setDragId(itemId);
@@ -61,7 +62,14 @@ export function useDragReorder<TItem extends { id: string }>({
 
   const handleDragOver = useCallback((e: React.DragEvent, targetId: string) => {
     e.preventDefault();
+
+    // Calculate if drop should be before or after target based on mouse position
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const midPoint = rect.top + rect.height / 2;
+    const position = e.clientY < midPoint ? "before" : "after";
+
     setDragOverId(targetId);
+    setDropPosition(position);
   }, []);
 
   const handleDragLeave = useCallback(() => {
@@ -76,13 +84,29 @@ export function useDragReorder<TItem extends { id: string }>({
         return;
       }
 
+      // If dropping after, insert after the target instead of before
       const reordered = reorderList(items, dragId, targetId);
+
+      // If position is "after", move one position further
+      if (dropPosition === "after") {
+        const dragIndex = reordered.findIndex((item) => item.id === dragId);
+        const targetIndex = reordered.findIndex((item) => item.id === targetId);
+
+        if (dragIndex !== -1 && targetIndex !== -1 && dragIndex < targetIndex) {
+          // Already in correct position due to reorderList logic
+        } else if (dragIndex !== -1 && targetIndex !== -1) {
+          // Need to move one position further
+          const [item] = reordered.splice(dragIndex, 1);
+          reordered.splice(targetIndex + 1, 0, item);
+        }
+      }
+
       await onReorder(reordered.map((item) => item.id));
 
       setDragId(null);
       setDragOverId(null);
     },
-    [dragId, items, onReorder]
+    [dragId, items, onReorder, dropPosition]
   );
 
   const handleDragEnd = useCallback(() => {
@@ -111,20 +135,24 @@ export function useDragReorder<TItem extends { id: string }>({
     (itemId: string) => {
       const isDragging = dragId === itemId;
       const isDragOver = dragOverId === itemId && dragId !== itemId;
+      const borderClass =
+        isDragOver && dropPosition === "after"
+          ? "border-b-2 border-b-primary"
+          : "border-t-2 border-t-primary";
+
       return {
         isDragging,
         isDragOver,
-        className: [isDragging && "opacity-50", isDragOver && "border-t-2 border-t-primary"]
-          .filter(Boolean)
-          .join(" "),
+        dropPosition: isDragOver ? dropPosition : null,
+        className: [isDragging && "opacity-50", isDragOver && borderClass].filter(Boolean).join(" "),
       };
     },
-    [dragId, dragOverId]
+    [dragId, dragOverId, dropPosition]
   );
 
   return {
     /** Current drag state */
-    dragState: { dragId, dragOverId },
+    dragState: { dragId, dragOverId, dropPosition },
     /** Get drag handlers for a specific item id */
     getDragHandlers,
     /** Get drag-related CSS classes for a specific item id */

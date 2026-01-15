@@ -77,6 +77,11 @@ export function useProductMenuMutations() {
       if (res.ok) await refresh();
       return res;
     },
+    cloneLabel: async (payload: unknown) => {
+      const res = await labelActions.cloneLabel(payload);
+      if (res.ok) await refresh();
+      return res;
+    },
 
     // Categories
     createCategory: async (payload: unknown) => {

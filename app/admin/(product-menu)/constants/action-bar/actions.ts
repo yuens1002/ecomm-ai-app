@@ -9,7 +9,7 @@ import {
   Redo,
   Undo,
 } from "lucide-react";
-import type { ActionBase, ActionContext, ActionId } from "./model";
+import type { ActionBase, ActionContext, ActionExecuteResult, ActionId } from "./model";
 import { hasRedoHistory, hasSelection, hasUndoHistory, modKey } from "./shared";
 
 // ─────────────────────────────────────────────────────────────
@@ -38,6 +38,78 @@ const hideLabels = async ({ selectedIds, mutations }: ActionContext) => {
   await Promise.all(selectedIds.map((id) => mutations.updateLabel(id, { isVisible: false })));
 };
 
+/**
+ * Generic clone helper - executes clone mutation for each selected ID
+ * @param selectedIds - Array of IDs to clone
+ * @param items - Array of items to validate against
+ * @param cloneFn - Clone mutation function
+ * @returns Object with array of created IDs
+ */
+const cloneItems = async <T extends { id: string }>(
+  selectedIds: string[],
+  items: T[],
+  cloneFn?: (payload: { id: string }) => Promise<{ ok: boolean; data?: unknown }>
+): Promise<{ createdIds: string[] }> => {
+  if (!cloneFn) return { createdIds: [] };
+
+  const createdIds: string[] = [];
+  for (const id of selectedIds) {
+    const original = items.find((item) => item.id === id);
+    if (!original) continue;
+
+    const res = await cloneFn({ id });
+    const createdId = res.ok ? (res.data as { id?: string } | undefined)?.id : undefined;
+    if (createdId) createdIds.push(createdId);
+  }
+
+  return { createdIds };
+};
+
+/**
+ * Generic clone undo capture helper
+ * @param actionName - Action name for undo history (e.g., "clone:labels")
+ * @param selectedIds - Original IDs that were cloned
+ * @param result - Result from clone execution containing createdIds
+ * @param deleteFn - Delete mutation function for undo
+ * @param cloneFn - Clone mutation function for redo
+ * @returns UndoAction or null if no items were created
+ */
+const captureCloneUndo = (
+  actionName: string,
+  selectedIds: string[],
+  result: ActionExecuteResult,
+  deleteFn?: (id: string) => Promise<{ ok: boolean; data?: unknown }>,
+  cloneFn?: (payload: { id: string }) => Promise<{ ok: boolean; data?: unknown }>
+) => {
+  const originalIds = [...selectedIds];
+  let createdIds = (result as { createdIds?: string[] } | void)?.createdIds ?? [];
+
+  if (createdIds.length === 0) return null;
+
+  return {
+    action: actionName,
+    timestamp: new Date(),
+    data: {
+      undo: async () => {
+        if (!deleteFn) return;
+        await Promise.all(createdIds.map((id) => deleteFn(id)));
+      },
+      redo: async () => {
+        if (!cloneFn) return;
+        const nextCreated: string[] = [];
+        for (const id of originalIds) {
+          const res = await cloneFn({ id });
+          const createdId = res.ok
+            ? ((res.data as { id?: string } | undefined)?.id ?? undefined)
+            : undefined;
+          if (createdId) nextCreated.push(createdId);
+        }
+        createdIds = nextCreated;
+      },
+    },
+  };
+};
+
 // ─────────────────────────────────────────────────────────────
 // ACTIONS
 // ─────────────────────────────────────────────────────────────
@@ -60,25 +132,21 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     },
 
     execute: {
-      menu: async ({ selectedIds }) => {
-        // TODO: Implement label cloning with categories
-        console.log("[Clone] Menu Labels:", selectedIds);
-      },
-      "all-labels": async ({ selectedIds }) => {
-        // TODO: Implement label cloning
-        console.log("[Clone] All Labels:", selectedIds);
-      },
-      "all-categories": async ({ selectedIds, categories, mutations }) => {
-        const createdIds: string[] = [];
-        for (const categoryId of selectedIds) {
-          const original = categories.find((c) => c.id === categoryId);
-          if (!original) continue;
-          const res = await mutations.cloneCategory({ id: categoryId });
-          const createdId = res.ok ? (res.data as { id?: string } | undefined)?.id : undefined;
-          if (createdId) createdIds.push(createdId);
-        }
-        return { createdIds };
-      },
+      menu: async ({ selectedIds, labels, mutations }) =>
+        cloneItems(selectedIds, labels, mutations.cloneLabel),
+      "all-labels": async ({ selectedIds, labels, mutations }) =>
+        cloneItems(selectedIds, labels, mutations.cloneLabel),
+      "all-categories": async ({ selectedIds, categories, mutations }) =>
+        cloneItems(selectedIds, categories, mutations.cloneCategory),
+    },
+
+    captureUndo: {
+      menu: ({ selectedIds, mutations }, result) =>
+        captureCloneUndo("clone:labels", selectedIds, result, mutations.deleteLabel, mutations.cloneLabel),
+      "all-labels": ({ selectedIds, mutations }, result) =>
+        captureCloneUndo("clone:labels", selectedIds, result, mutations.deleteLabel, mutations.cloneLabel),
+      "all-categories": ({ selectedIds, mutations }, result) =>
+        captureCloneUndo("clone:categories", selectedIds, result, mutations.deleteCategory, mutations.cloneCategory),
     },
 
     effects: {
@@ -93,6 +161,8 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
         "all-categories": "Failed to clone categories",
       },
       successToast: {
+        menu: { title: "Cloned labels" },
+        "all-labels": { title: "Cloned labels" },
         "all-categories": { title: "Cloned categories" },
       },
       failureToast: { title: "Clone failed", description: "Please try again." },
@@ -136,6 +206,38 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
               .map((label) => mutations.detachCategory(label.id, categoryId))
           )
         );
+      },
+    },
+
+    captureUndo: {
+      "all-categories": ({ selectedIds, labels, mutations }) => {
+        const pairs = selectedIds.flatMap((categoryId) =>
+          labels
+            .filter((label) => label.categories?.some((cat) => cat.id === categoryId))
+            .map((label) => ({ labelId: label.id, categoryId }))
+        );
+
+        if (pairs.length === 0) return null;
+
+        return {
+          action: "remove:detach-categories-from-labels",
+          timestamp: new Date(),
+          data: {
+            undo: async () => {
+              if (!mutations.attachCategory) return;
+              await Promise.all(
+                pairs.map(({ labelId, categoryId }) =>
+                  mutations.attachCategory!(labelId, categoryId)
+                )
+              );
+            },
+            redo: async () => {
+              await Promise.all(
+                pairs.map(({ labelId, categoryId }) => mutations.detachCategory(labelId, categoryId))
+              );
+            },
+          },
+        };
       },
     },
 
@@ -187,6 +289,93 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
       menu: toggleLabelVisibility,
       "all-labels": toggleLabelVisibility,
       "all-categories": toggleCategoryVisibility,
+    },
+
+    captureUndo: {
+      menu: ({ selectedIds, labels, mutations }) => {
+        const before = selectedIds
+          .map((id) => {
+            const label = labels.find((l) => l.id === id);
+            if (!label) return null;
+            return { id, isVisible: label.isVisible };
+          })
+          .filter((x): x is { id: string; isVisible: boolean } => x !== null);
+
+        if (before.length === 0) return null;
+
+        return {
+          action: "toggle-visibility:labels",
+          timestamp: new Date(),
+          data: {
+            undo: async () => {
+              await Promise.all(
+                before.map(({ id, isVisible }) => mutations.updateLabel(id, { isVisible }))
+              );
+            },
+            redo: async () => {
+              await Promise.all(
+                before.map(({ id, isVisible }) => mutations.updateLabel(id, { isVisible: !isVisible }))
+              );
+            },
+          },
+        };
+      },
+      "all-labels": ({ selectedIds, labels, mutations }) => {
+        const before = selectedIds
+          .map((id) => {
+            const label = labels.find((l) => l.id === id);
+            if (!label) return null;
+            return { id, isVisible: label.isVisible };
+          })
+          .filter((x): x is { id: string; isVisible: boolean } => x !== null);
+
+        if (before.length === 0) return null;
+
+        return {
+          action: "toggle-visibility:labels",
+          timestamp: new Date(),
+          data: {
+            undo: async () => {
+              await Promise.all(
+                before.map(({ id, isVisible }) => mutations.updateLabel(id, { isVisible }))
+              );
+            },
+            redo: async () => {
+              await Promise.all(
+                before.map(({ id, isVisible }) => mutations.updateLabel(id, { isVisible: !isVisible }))
+              );
+            },
+          },
+        };
+      },
+      "all-categories": ({ selectedIds, categories, mutations }) => {
+        const before = selectedIds
+          .map((id) => {
+            const category = categories.find((c) => c.id === id);
+            if (!category) return null;
+            return { id, isVisible: category.isVisible };
+          })
+          .filter((x): x is { id: string; isVisible: boolean } => x !== null);
+
+        if (before.length === 0) return null;
+
+        return {
+          action: "toggle-visibility:categories",
+          timestamp: new Date(),
+          data: {
+            undo: async () => {
+              await Promise.all(
+                before.map(({ id, isVisible }) => mutations.updateCategory(id, { isVisible }))
+              );
+            },
+            redo: async () => {
+              await Promise.all(
+                before.map(({ id, isVisible }) => mutations.updateCategory(id, { isVisible: !isVisible }))
+              );
+            },
+          },
+        };
+      },
     },
 
     effects: {
@@ -282,9 +471,11 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     label: "New Label",
     tooltip: "Add new label",
     kbd: [modKey, "N"],
-    disabled: () => false,
-    onClick: async (state) => {
-      console.log("New Label clicked", state);
+    disabled: (state) => hasSelection(state),
+    ariaLabel: (state) =>
+      hasSelection(state) ? "New label disabled - clear selection first" : "Add new label",
+    onClick: async (_state, actions) => {
+      await actions.createNewLabel?.();
     },
   },
 

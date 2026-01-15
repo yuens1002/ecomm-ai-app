@@ -48,6 +48,8 @@ export type ProductMenuMutations = {
     id: string,
     payload: { isVisible?: boolean }
   ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  cloneLabel?: (payload: { id: string }) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  deleteLabel?: (id: string) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
   updateCategory: (
     id: string,
     payload: { isVisible?: boolean }
@@ -60,6 +62,7 @@ export type ProductMenuMutations = {
   cloneCategory: (
     payload: CloneCategory
   ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  deleteCategory?: (id: string) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
   detachCategory: (
     labelId: string,
     categoryId: string
@@ -89,6 +92,24 @@ export type ActionExecuteResult = void | {
 };
 
 // ─────────────────────────────────────────────────────────────
+// UNDO/REDO SYSTEM
+// ─────────────────────────────────────────────────────────────
+
+export type UndoAction = {
+  action: string;
+  timestamp: Date;
+  data: {
+    undo: () => Promise<void>;
+    redo: () => Promise<void>;
+  };
+};
+
+export type CaptureUndoFn = (
+  context: ActionContext,
+  result: ActionExecuteResult
+) => UndoAction | null;
+
+// ─────────────────────────────────────────────────────────────
 // ACTION BASE (colocated in actions.ts)
 // ─────────────────────────────────────────────────────────────
 
@@ -109,6 +130,7 @@ export type ActionBase = {
   ariaLabel?: (state: BuilderState) => string;
   onClick: (state: BuilderState, actions: MenuBuilderActions) => void | Promise<void>;
   execute?: Partial<Record<ViewType, (context: ActionContext) => Promise<ActionExecuteResult>>>;
+  captureUndo?: Partial<Record<ViewType, CaptureUndoFn>>;
   effects?: ActionEffects;
 };
 
@@ -150,6 +172,7 @@ export type ActionDefinition = {
   comboWith?: ActionId;
   hasDropdown?: boolean;
   execute?: Partial<Record<ViewType, (context: ActionContext) => Promise<ActionExecuteResult>>>;
+  captureUndo?: Partial<Record<ViewType, CaptureUndoFn>>;
   refresh?: Partial<Record<ViewType, RefreshKey[]>>;
   errorMessage?: Partial<Record<ViewType, string>>;
   successToast?: Partial<Record<ViewType, ToastSpec>>;

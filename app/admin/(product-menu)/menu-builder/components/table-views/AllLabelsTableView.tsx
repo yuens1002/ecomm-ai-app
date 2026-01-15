@@ -165,7 +165,7 @@ export function AllLabelsTableView() {
     const isPinned = options?.isPinned === true;
     const isSelected = isLabelSelected(label.id);
     const isRowHovered = hoveredRowId === label.id;
-    const { isDragging, isDragOver } = getDragClasses(label.id);
+    const dragClasses = getDragClasses(label.id);
     const dragHandlers = getDragHandlers(label.id);
 
     return (
@@ -173,7 +173,7 @@ export function AllLabelsTableView() {
         key={label.id}
         data-state={isSelected ? "selected" : undefined}
         isSelected={isSelected}
-        isDragging={isDragging}
+        isDragging={dragClasses.isDragging}
         draggable
         onDragStart={dragHandlers.onDragStart}
         onDragOver={dragHandlers.onDragOver}
@@ -182,7 +182,12 @@ export function AllLabelsTableView() {
         onDragEnd={dragHandlers.onDragEnd}
         onMouseEnter={() => setHoveredRowId(label.id)}
         onMouseLeave={() => setHoveredRowId(null)}
-        className={cn(isDragOver && "border-t-2 border-t-primary")}
+        className={cn(
+          dragClasses.isDragOver &&
+            (dragClasses.dropPosition === "after"
+              ? "border-b-2 border-b-primary"
+              : "border-t-2 border-t-primary")
+        )}
         onRowClick={() => onToggleLabelId(label.id)}
         onRowDoubleClick={() => builder.navigateToLabel(label.id)}
       >

@@ -28,10 +28,13 @@ export function MenuActionBar() {
     categories,
     products,
     mutate,
+    createNewLabel,
     createNewCategory,
     // All mutations
     createCategory,
+    cloneLabel,
     cloneCategory,
+    deleteLabel,
     deleteCategory,
     updateLabel,
     updateCategory,
@@ -105,6 +108,31 @@ export function MenuActionBar() {
       await executeActionFromConfig("visibility");
     },
 
+    createNewLabel: async () => {
+      const createdId = await createNewLabel();
+      if (createdId) {
+        builder.setPinnedNew({ kind: "label", id: createdId });
+        builder.setEditing({ kind: "label", id: createdId });
+
+        if (builder.currentView === "menu" || builder.currentView === "all-labels") {
+          let activeId = createdId;
+          builder.pushUndoAction({
+            action: "new-label",
+            timestamp: new Date(),
+            data: {
+              undo: async () => {
+                await updateLabel(activeId, { isVisible: false });
+              },
+              redo: async () => {
+                const nextId = await createNewLabel();
+                if (nextId) activeId = nextId;
+              },
+            },
+          });
+        }
+      }
+    },
+
     createNewCategory: async () => {
       const createdId = await createNewCategory();
       if (createdId) {
@@ -135,8 +163,6 @@ export function MenuActionBar() {
   const executeActionFromConfig = async (actionId: ActionId) => {
     if (builder.selectedIds.length === 0) return;
 
-    const selectedIdsSnapshot = [...builder.selectedIds];
-
     const action = actions.find((a) => a.id === actionId);
     if (!action?.execute) {
       console.error(`[MenuActionBar] Action ${actionId} has no execute logic`);
@@ -156,9 +182,12 @@ export function MenuActionBar() {
       currentLabelId: builder.currentLabelId,
       currentCategoryId: builder.currentCategoryId,
       mutations: {
+        updateLabel,
+        cloneLabel,
+        deleteLabel,
         createCategory,
         cloneCategory,
-        updateLabel,
+        deleteCategory,
         updateCategory,
         detachCategory,
         detachProductFromCategory,
@@ -172,105 +201,31 @@ export function MenuActionBar() {
     try {
       const viewSnapshot = builder.currentView;
 
-      // Capture "before" state for undo/redo.
-      const beforeAllCategoriesVisibility =
-        viewSnapshot === "all-categories" && actionId === "visibility"
-          ? selectedIdsSnapshot
-              .map((id) => {
-                const category = categories.find((c) => c.id === id);
-                if (!category) return null;
-                return { id, isVisible: category.isVisible };
-              })
-              .filter((x): x is { id: string; isVisible: boolean } => x !== null)
-          : null;
-
-      const beforeAllCategoriesRemovePairs =
-        viewSnapshot === "all-categories" && actionId === "remove"
-          ? selectedIdsSnapshot.flatMap((categoryId) =>
-              labels
-                .filter((label) => label.categories?.some((cat) => cat.id === categoryId))
-                .map((label) => ({ labelId: label.id, categoryId }))
-            )
-          : null;
-
+      // Execute the action
       const result = await executeForView(context);
 
-      if (viewSnapshot === "all-categories") {
-        if (actionId === "visibility" && beforeAllCategoriesVisibility?.length) {
-          const after = beforeAllCategoriesVisibility.map(({ id, isVisible }) => ({
-            id,
-            isVisible: !isVisible,
-          }));
-
-          builder.pushUndoAction({
-            action: "toggle-visibility:categories",
-            timestamp: new Date(),
-            data: {
-              undo: async () => {
-                await Promise.all(
-                  beforeAllCategoriesVisibility.map(({ id, isVisible }) =>
-                    updateCategory(id, { isVisible })
-                  )
-                );
-              },
-              redo: async () => {
-                await Promise.all(
-                  after.map(({ id, isVisible }) => updateCategory(id, { isVisible }))
-                );
-              },
-            },
-          });
-        }
-
-        if (actionId === "remove" && beforeAllCategoriesRemovePairs?.length) {
-          const pairs = beforeAllCategoriesRemovePairs;
-          builder.pushUndoAction({
-            action: "remove:detach-categories-from-labels",
-            timestamp: new Date(),
-            data: {
-              undo: async () => {
-                await Promise.all(
-                  pairs.map(({ labelId, categoryId }) => attachCategory(labelId, categoryId))
-                );
-              },
-              redo: async () => {
-                await Promise.all(
-                  pairs.map(({ labelId, categoryId }) => detachCategory(labelId, categoryId))
-                );
-              },
-            },
-          });
-        }
-
-        if (actionId === "clone") {
-          const originalIds = [...selectedIdsSnapshot];
-          let createdIds = (result as { createdIds?: string[] } | void)?.createdIds ?? [];
-
-          if (createdIds.length > 0) {
-            builder.pushUndoAction({
-              action: "clone:categories",
-              timestamp: new Date(),
-              data: {
-                undo: async () => {
-                  await Promise.all(createdIds.map((id) => deleteCategory(id)));
-                },
-                redo: async () => {
-                  const nextCreated: string[] = [];
-                  for (const categoryId of originalIds) {
-                    const res = await cloneCategory({ id: categoryId });
-                    const createdId = res.ok
-                      ? ((res.data as { id?: string } | undefined)?.id ?? undefined)
-                      : undefined;
-                    if (createdId) nextCreated.push(createdId);
-                  }
-                  createdIds = nextCreated;
-                },
-              },
-            });
-          }
+      // Declarative undo capture from action config
+      const captureUndoFn = action.captureUndo?.[viewSnapshot];
+      if (captureUndoFn) {
+        const undoAction = captureUndoFn(context, result);
+        if (undoAction) {
+          builder.pushUndoAction(undoAction);
         }
       }
 
+      // Auto-edit when cloning single label
+      if (
+        actionId === "clone" &&
+        (builder.currentView === "menu" || builder.currentView === "all-labels") &&
+        builder.selectedIds.length === 1
+      ) {
+        const createdIds = (result as { createdIds?: string[] } | void)?.createdIds ?? [];
+        if (createdIds.length === 1) {
+          builder.setEditing({ kind: "label", id: createdIds[0] });
+        }
+      }
+
+      // Auto-edit when cloning single category
       if (
         actionId === "clone" &&
         builder.currentView === "all-categories" &&

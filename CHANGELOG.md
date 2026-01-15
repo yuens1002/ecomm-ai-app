@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.63.0 - 2026-01-15
+
+- **Declarative undo/redo system**: Refactored scattered conditional logic into config-driven architecture
+  - Added `captureUndo` field to action config for view-specific undo capture logic
+  - Eliminated 100+ lines of conditional undo/redo logic in MenuActionBar component
+  - Undo actions now colocated with action definitions for better maintainability
+  - History stack remains view-scoped (10 operations per view, cleared on navigation)
+- **Menu Builder bug fixes**: Resolved multiple UX and accessibility issues
+  - Visibility toggle: Now works with undo/redo in all views (menu, all-labels, all-categories)
+  - Icon picker accessibility: Made trigger button tabbable with `opacity` pattern and proper `aria-label`
+  - DnD border indicator: Fixed missing border on 2nd-to-last and last rows during drag operations
+  - Clone action: Implemented for labels with full undo/redo support
+  - Add new action: Implemented for labels with automatic name editing and undo support
+  - Add new button: Now properly disabled when row selection is active
+- **Code quality improvements**: Extracted and standardized common patterns
+  - Created `actions/utils.ts` with centralized naming conventions and retry logic
+  - Standardized naming: "copy", "copy (2)", "copy (3)" for clones; "New Label", "New Label (2)" for new items
+  - Extracted `cloneItems()` and `captureCloneUndo()` helpers to eliminate duplication
+  - Removed ~200 lines of duplicated code across labels and categories
+  - Generic `retryWithUniqueConstraint()` for Prisma P2002 error handling
+- Metrics: TypeScript + ESLint clean; all existing tests passing
+
 ## 0.62.0 - 2026-01-14
 
 - **All Labels table view**: Implemented AllLabelsTableView with drag-drop reordering and inline editing

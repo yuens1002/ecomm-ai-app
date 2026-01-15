@@ -17,6 +17,12 @@ import {
   reorderCategoryLabels,
   updateCategoryLabel,
 } from "@/app/admin/(product-menu)/data/labels";
+import {
+  makeCloneName,
+  makeNewItemName,
+  retryWithUniqueConstraint,
+  stripCopySuffix,
+} from "./utils";
 
 export async function listLabels() {
   try {
@@ -54,37 +60,25 @@ export async function createLabel(input: unknown) {
 
 /**
  * Create a new label with a default name (server-owned workflow).
- * Handles name collision by appending (2), (3), etc.
+ * Handles name collision by appending (1), (2), (3), etc.
  */
 export async function createNewLabel() {
-  const baseName = "New Label";
-  const maxAttempts = 50;
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const name = attempt === 0 ? baseName : `${baseName} (${attempt + 1})`;
-
-    try {
-      const label = await createCategoryLabel({
-        name,
-        icon: null,
-        afterLabelId: null,
-      });
-      return { ok: true as const, data: label };
-    } catch (err) {
-      // If unique constraint error, try next name
-      if (
-        err instanceof Error &&
-        err.message.includes("Unique constraint")
-      ) {
-        continue;
-      }
-      // Re-throw other errors
-      const message = err instanceof Error ? err.message : "Failed to create label";
-      return { ok: false as const, error: message };
-    }
+  try {
+    return await retryWithUniqueConstraint({
+      makeName: (attempt) => makeNewItemName("Label", attempt),
+      create: async (name) => {
+        return await createCategoryLabel({
+          name,
+          icon: null,
+          afterLabelId: null,
+        });
+      },
+      errorMessage: "Could not generate unique label name",
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to create label";
+    return { ok: false as const, error: message };
   }
-
-  return { ok: false as const, error: "Could not generate unique label name" };
 }
 
 export async function updateLabel(id: unknown, input: unknown) {
@@ -205,6 +199,62 @@ export async function autoSortCategoriesInLabel(labelId: unknown) {
     return { ok: true as const, data: {} };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to auto-sort categories";
+    return { ok: false as const, error: message };
+  }
+}
+
+export async function cloneLabel(input: unknown) {
+  const parsed = z.object({ id: z.string().min(1) }).safeParse(input);
+  if (!parsed.success) {
+    return { ok: false as const, error: "Invalid input" };
+  }
+
+  try {
+    const original = await prisma.categoryLabel.findUnique({
+      where: { id: parsed.data.id },
+      include: {
+        categories: { orderBy: { order: "asc" } },
+      },
+    });
+
+    if (!original) {
+      return { ok: false as const, error: "Label not found" };
+    }
+
+    const baseName = stripCopySuffix(original.name);
+
+    return await retryWithUniqueConstraint({
+      makeName: (attempt) => makeCloneName(baseName, attempt),
+      create: async (name) => {
+        return await prisma.$transaction(async (tx) => {
+          const newLabel = await tx.categoryLabel.create({
+            data: {
+              name,
+              icon: original.icon,
+              isVisible: original.isVisible,
+              autoOrder: original.autoOrder,
+              order: original.order,
+            },
+          });
+
+          // Copy category attachments
+          if (original.categories.length > 0) {
+            await tx.categoryLabelCategory.createMany({
+              data: original.categories.map((entry) => ({
+                labelId: newLabel.id,
+                categoryId: entry.categoryId,
+                order: entry.order,
+              })),
+            });
+          }
+
+          return newLabel;
+        });
+      },
+      errorMessage: "Could not generate unique label name",
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to clone label";
     return { ok: false as const, error: message };
   }
 }

@@ -104,31 +104,29 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
               <DynamicIcon name={icon} size={16} />
             </button>
           ) : (
-            // No icon: show placeholder or [?] trigger
-            <div className="w-4 h-4 flex items-center justify-center">
-              {/* xs-sm: always show trigger; md+: show on hover */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={isLoading}
-                className={cn(
-                  "w-4 h-4 p-0 rounded",
-                  // xs-sm: always visible
-                  "flex",
-                  // md+: hidden unless hovered/open
-                  showTrigger ? "md:flex" : "md:hidden"
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsOpen(true);
-                }}
-              >
-                <CircleHelp className="w-4 h-4 text-muted-foreground" />
-              </Button>
-              {/* md+ placeholder when not hovered */}
-              {!showTrigger && <span className="hidden md:block w-4 h-4" />}
-            </div>
+            // No icon: show [?] trigger (always tabbable, visually hidden on md+ unless hovered/focused)
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={isLoading}
+              className={cn(
+                "w-4 h-4 p-0 rounded flex items-center justify-center",
+                // xs-sm: always visible
+                "opacity-100",
+                // md+: visually hidden unless hovered/open/focused (but still tabbable)
+                showTrigger
+                  ? "md:opacity-100"
+                  : "md:opacity-0 md:focus-visible:opacity-100"
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen(true);
+              }}
+              aria-label="Select icon"
+            >
+              <CircleHelp className="w-4 h-4 text-muted-foreground" />
+            </Button>
           )}
         </PopoverTrigger>
         <PopoverContent className="p-0 w-64" align="start">

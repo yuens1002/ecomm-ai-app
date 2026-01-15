@@ -78,6 +78,7 @@ export interface MenuBuilderActions {
   cloneSelected: () => Promise<void>;
   removeSelected: () => Promise<void>;
   toggleVisibility: () => Promise<void>;
+  createNewLabel: () => Promise<void>;
   createNewCategory: () => Promise<void>;
 
   // Undo/redo
