@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.63.1 - 2026-01-15
+
+- **DnD border fix**: Fixed drag-and-drop border indicator not showing when dragging to the last row
+  - Removed premature state clearing on `onDragLeave` that caused border flicker
+  - Border now persists correctly when hovering over bottom edge of last row
+- **Test coverage**: Added comprehensive unit tests for naming convention utilities
+  - 20 tests covering `stripCopySuffix`, `makeCloneName`, `makeNewItemName`, `isUniqueConstraintError`, and `retryWithUniqueConstraint`
+  - Tests verify naming patterns, error handling, retry logic, and edge cases
+- Metrics: Jest (20 new tests passing); TypeScript + ESLint clean
+
 ## 0.63.0 - 2026-01-15
 
 - **Declarative undo/redo system**: Refactored scattered conditional logic into config-driven architecture

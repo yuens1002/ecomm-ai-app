@@ -33,6 +33,8 @@ type TableRowProps = Omit<
 > & {
   isSelected?: boolean;
   isDragging?: boolean;
+  isDragOver?: boolean;
+  isLastRow?: boolean;
   /**
    * Called on single-click (delayed to distinguish from double-click).
    * Ignored if click target is an interactive element.
@@ -46,7 +48,19 @@ type TableRowProps = Omit<
 };
 
 export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
-  ({ isSelected, isDragging, className, onRowClick, onRowDoubleClick, ...props }, ref) => {
+  (
+    {
+      isSelected,
+      isDragging,
+      isDragOver: _isDragOver,
+      isLastRow: _isLastRow,
+      className,
+      onRowClick,
+      onRowDoubleClick,
+      ...props
+    },
+    ref
+  ) => {
     const clickTimeoutRef = useRef<number | null>(null);
 
     // Cleanup timeout on unmount
@@ -97,7 +111,9 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       <ShadcnTableRow
         ref={ref}
         className={cn(
-          "group cursor-pointer h-10 hover:bg-muted/40 border-b-0 border-l-2 border-l-transparent",
+          "group cursor-pointer h-10 hover:bg-muted/40 border-l-2 border-l-transparent",
+          // Always hide top/bottom borders - let drag indicator override with !important
+          "border-b-0 border-t-0",
           isSelected && "bg-accent/50 border-l-primary",
           isDragging && "opacity-50",
           className

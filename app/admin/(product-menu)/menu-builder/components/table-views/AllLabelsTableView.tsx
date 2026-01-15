@@ -161,8 +161,9 @@ export function AllLabelsTableView() {
     );
   }
 
-  const renderLabelRow = (label: MenuLabel, options?: { isPinned?: boolean }) => {
+  const renderLabelRow = (label: MenuLabel, options?: { isPinned?: boolean; isLastRow?: boolean }) => {
     const isPinned = options?.isPinned === true;
+    const isLastRow = options?.isLastRow === true;
     const isSelected = isLabelSelected(label.id);
     const isRowHovered = hoveredRowId === label.id;
     const dragClasses = getDragClasses(label.id);
@@ -174,6 +175,8 @@ export function AllLabelsTableView() {
         data-state={isSelected ? "selected" : undefined}
         isSelected={isSelected}
         isDragging={dragClasses.isDragging}
+        isDragOver={dragClasses.isDragOver}
+        isLastRow={isLastRow}
         draggable
         onDragStart={dragHandlers.onDragStart}
         onDragOver={dragHandlers.onDragOver}
@@ -185,8 +188,8 @@ export function AllLabelsTableView() {
         className={cn(
           dragClasses.isDragOver &&
             (dragClasses.dropPosition === "after"
-              ? "border-b-2 border-b-primary"
-              : "border-t-2 border-t-primary")
+              ? "!border-b-2 !border-b-primary"
+              : "!border-t-2 !border-t-primary")
         )}
         onRowClick={() => onToggleLabelId(label.id)}
         onRowDoubleClick={() => builder.navigateToLabel(label.id)}
@@ -273,6 +276,8 @@ export function AllLabelsTableView() {
     );
   };
 
+  const rows = table.getRowModel().rows;
+
   return (
     <>
       <TableHeader
@@ -287,7 +292,9 @@ export function AllLabelsTableView() {
 
       <TableBody>
         {pinnedLabel ? renderLabelRow(pinnedLabel, { isPinned: true }) : null}
-        {table.getRowModel().rows.map((row) => renderLabelRow(row.original))}
+        {rows.map((row, index) =>
+          renderLabelRow(row.original, { isLastRow: index === rows.length - 1 })
+        )}
       </TableBody>
     </>
   );

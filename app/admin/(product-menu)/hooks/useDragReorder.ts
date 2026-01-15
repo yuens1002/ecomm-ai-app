@@ -73,7 +73,9 @@ export function useDragReorder<TItem extends { id: string }>({
   }, []);
 
   const handleDragLeave = useCallback(() => {
-    setDragOverId(null);
+    // Don't clear drag-over state on leave - this prevents border flicker
+    // when dragging to the bottom edge of the last row. The state will be
+    // updated by the next onDragOver event, or cleared on drop/end.
   }, []);
 
   const handleDrop = useCallback(
