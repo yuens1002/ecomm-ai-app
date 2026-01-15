@@ -22,9 +22,13 @@ export async function listMenuData() {
           id: true,
           name: true,
           slug: true,
+          isDisabled: true,
+          createdAt: true,
           categories: {
             select: {
               categoryId: true,
+              order: true,
+              createdAt: true, // When product was attached to category
             },
           },
         },
@@ -36,7 +40,14 @@ export async function listMenuData() {
       id: product.id,
       name: product.name,
       slug: product.slug,
+      isDisabled: product.isDisabled,
+      createdAt: product.createdAt,
       categoryIds: product.categories.map((c) => c.categoryId),
+      categoryOrders: product.categories.map((c) => ({
+        categoryId: c.categoryId,
+        order: c.order,
+        attachedAt: c.createdAt, // When product was attached to this category
+      })),
     }));
 
     const categories = categoriesRaw.map((category) => ({
@@ -46,6 +57,7 @@ export async function listMenuData() {
       order: category.order,
       isVisible: category.isVisible,
       productCount: category._count.products,
+      createdAt: category.createdAt ?? new Date(), // Fallback for pre-migration data
       labels: category.labels.map((entry) => ({
         id: entry.label.id,
         name: entry.label.name,

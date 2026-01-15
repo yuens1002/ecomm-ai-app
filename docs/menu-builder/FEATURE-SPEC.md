@@ -165,17 +165,28 @@ CategoryLabel (Label)
 
 ### Category View (specific category)
 
+**Table Columns:** `checkbox | Products (sortable) | Added Order (sortable) | Visibility | Categories | dragHandle`
+
+- **Products**: Product name, sortable via header click
+- **Added Order**: Chronological order of when product was attached to this category, sortable via header click
+- **Visibility**: Eye icon indicating `isDisabled` state (read-only)
+- **Categories**: Other categories this product belongs to
+
 **Left:**
 
-- `[Plus] Products 🔽` - Link existing products to this category via dropdown
-- `[ArrowUpDown] Sort Order 🔽` - Product ordering: Manual (inherit), Alpha (A-Z, Z-A), Added (First, Last) - affects category page display (not shown on product menu)
+- `[Plus] Products 🔽` - Link existing products to this category via dropdown (disabled when items selected)
 - `[CornerUpLeft] Remove` - Remove selected products from category (detaches junction)
 
 **Right:**
 
-- `[ListChevronsDownUp] Expand All` - Expands all product rows
-- `[ListChevronsUpDown] Collapse All` - Collapses all product rows
 - `[Undo] Undo` / `[Redo] Redo` - Bidirectional undo/redo
+
+**Column Sorting UX:**
+- Sort state indicator (↑/↓) prepended to column label when sorted
+- ArrowUpDown toggle icon appears on header row hover (md+: hidden until hover)
+- Click toggles between asc ↔ desc only (first click = asc)
+- Reset to unsorted happens via: DnD reorder, different column sort, or undo
+- Newly attached products appear at top of list (order 0)
 
 ### All-Labels View
 

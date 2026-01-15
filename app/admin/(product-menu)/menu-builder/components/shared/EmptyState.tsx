@@ -5,8 +5,8 @@ export interface EmptyStateProps {
   icon: LucideIcon;
   title: string;
   description: string;
-  actionLabel: string;
-  onAction: () => void;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
 export function EmptyState({
@@ -23,9 +23,11 @@ export function EmptyState({
       </div>
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
       <p className="text-sm text-muted-foreground mb-6 max-w-sm">{description}</p>
-      <Button onClick={onAction} className="gap-2">
-        {actionLabel}
-      </Button>
+      {actionLabel && onAction && (
+        <Button onClick={onAction} className="gap-2">
+          {actionLabel}
+        </Button>
+      )}
     </div>
   );
 }

@@ -64,15 +64,26 @@ export const menuCategorySchema = z.object({
   order: z.number(),
   isVisible: z.boolean(),
   productCount: z.number(),
+  createdAt: z.coerce.date().optional().default(() => new Date()),
   labels: z.array(menuCategoryLabelItemSchema),
 });
 export type MenuCategory = z.infer<typeof menuCategorySchema>;
+
+export const menuProductCategoryOrderSchema = z.object({
+  categoryId: z.string(),
+  order: z.number(),
+  attachedAt: z.coerce.date(), // When product was attached to this category
+});
+export type MenuProductCategoryOrder = z.infer<typeof menuProductCategoryOrderSchema>;
 
 export const menuProductSchema = z.object({
   id: z.string(),
   name: z.string(),
   slug: z.string(),
+  isDisabled: z.boolean(),
+  createdAt: z.coerce.date(),
   categoryIds: z.array(z.string()),
+  categoryOrders: z.array(menuProductCategoryOrderSchema),
 });
 export type MenuProduct = z.infer<typeof menuProductSchema>;
 

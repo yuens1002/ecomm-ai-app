@@ -529,7 +529,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     label: "Products",
     tooltip: "Add products to category",
     kbd: [],
-    disabled: (state) => state.totalProducts === 0,
+    disabled: (state) => state.totalProducts === 0 || hasSelection(state),
     onClick: () => {},
   },
 

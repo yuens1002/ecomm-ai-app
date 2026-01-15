@@ -43,17 +43,21 @@ export const allCategoriesWidthPreset: ColumnWidthPreset = extendWidthPreset(
       cell: "w-56 min-w-56 md:w-72 md:min-w-72 pr-6",
     },
     labels: {
-      head: "max-w-xs min-w-56 pr-6",
-      cell: "pr-6",
+      head: "w-56 min-w-36 pr-6",
+      cell: "w-56 pr-6 min-w-36",
     },
     products: {
-      head: "min-w-24 pr-6",
-      cell: "pr-6",
+      head: "w-36 px-4",
+      cell: "px-4, text-center",
+    },
+    addedDate: {
+      head: "w-48 px-8",
+      cell: "px-8",
     },
     // Override base visibility to be explicit for this view.
     visibility: {
-      head: "min-w-24 pr-6",
-      cell: "pr-6",
+      head: "min-w-24 px-6",
+      cell: "pr-8",
     },
   }
 );
@@ -63,8 +67,8 @@ export const allLabelsWidthPreset: ColumnWidthPreset = extendWidthPreset(
   {
     // Icon column: 48px, center aligned
     icon: {
-      head: "w-16 min-w-12 max-w-16 text-center",
-      cell: "w-16 min-w-12 max-w-16",
+      head: "w-16",
+      cell: "w-16",
     },
     // Name column: fixed width
     name: {
@@ -80,6 +84,37 @@ export const allLabelsWidthPreset: ColumnWidthPreset = extendWidthPreset(
     visibility: {
       head: "w-28 min-w-28 max-w-28 px-6",
       cell: "px-6",
+    },
+    // Drag handle: 48px
+    dragHandle: {
+      head: "w-12 min-w-12 max-w-12 pr-2",
+      cell: "pr-2",
+    },
+  }
+);
+
+export const categoryViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
+  baseMenuBuilderWidthPreset,
+  {
+    // Products (name) column: sortable, fixed width
+    name: {
+      head: "w-56 min-w-56 md:w-72 md:min-w-72 pr-6",
+      cell: "w-56 min-w-56 md:w-72 md:min-w-72 pr-6",
+    },
+    // Added Order column: sortable
+    addedOrder: {
+      head: "w-40 pr-6 text-center",
+      cell: "pr-14 text-center",
+    },
+    // Visibility column: eye icon, centered
+    visibility: {
+      head: "w-24 min-w-24 max-w-24 px-4 text-center",
+      cell: "pr-6",
+    },
+    // Categories column: takes remaining space
+    categories: {
+      head: "pr-6",
+      cell: "pr-6 min-w-48",
     },
     // Drag handle: 48px
     dragHandle: {

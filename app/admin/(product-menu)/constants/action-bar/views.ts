@@ -38,10 +38,9 @@ export const VIEW_CONFIG: ViewConfig = {
   category: {
     left: [
       { id: "add-products", type: "dropdown", hasDropdown: true },
-      { id: "sort-order", type: "dropdown", hasDropdown: true },
-      { id: "remove", tooltip: "Remove from category" },
+      { id: "remove", tooltip: "Remove from categories" },
     ],
-    right: [{ id: "expand-all" }, { id: "collapse-all" }, { id: "undo" }, { id: "redo" }],
+    right: [{ id: "undo" }, { id: "redo" }],
   },
 
   // ─────────────────────────────────────────────────────────────

@@ -14,6 +14,15 @@ type SortableHeaderCellProps<TData> = {
   headClassName?: string;
 };
 
+/**
+ * Sortable table header cell with visual sort state indicator.
+ *
+ * UX Design:
+ * - Sort state indicator (↑/↓) prepended to label when column is sorted
+ * - ArrowUpDown toggle icon after label, hidden on md+ until hover (same as before)
+ * - Clicking cycles: unsorted → asc → desc → unsorted
+ * - After DnD reorder, parent should reset sorting via table.resetSorting()
+ */
 export function SortableHeaderCell<TData>({
   table,
   columnId,
@@ -24,17 +33,18 @@ export function SortableHeaderCell<TData>({
   const column = table.getColumn(columnId);
   const sortState = column?.getIsSorted();
 
-  const Icon = sortState === "asc" ? ArrowUp : sortState === "desc" ? ArrowDown : ArrowUpDown;
+  // Sort state indicator - shows current direction, only visible when sorted
+  const SortStateIcon = sortState === "asc" ? ArrowUp : sortState === "desc" ? ArrowDown : null;
 
-  const iconClassName = cn(
-    "absolute left-full ml-2 h-3.5 w-3.5 transition-opacity",
-    sortState
-      ? "opacity-100 text-foreground"
-      : "opacity-100 text-muted-foreground md:opacity-0 md:group-hover/header:opacity-100 md:group-focus-visible/sort:opacity-100"
+  // Toggle icon - always ArrowUpDown, keeps original hover behavior
+  // Mobile: always visible, md+: hidden until header row hover (group/header is on TableRow)
+  const toggleIconClassName = cn(
+    "ml-1.5 h-3.5 w-3.5 flex-shrink-0 transition-opacity text-muted-foreground",
+    "opacity-100 md:opacity-0 md:group-hover/header:opacity-100 md:group-focus-visible/sort:opacity-100"
   );
 
   const buttonClassName = cn(
-    "relative inline-flex max-w-full min-w-0 items-center",
+    "inline-flex max-w-full min-w-0 items-center",
     align === "left" && "text-left",
     align === "center" && "text-center",
     align === "right" && "text-right"
@@ -46,16 +56,27 @@ export function SortableHeaderCell<TData>({
     align === "right" && "flex justify-end"
   );
 
+  const handleClick = () => {
+    // Toggle between asc ↔ desc only (first click = asc)
+    // Reset to unsorted happens via: DnD reorder, different column sort, or undo
+    if (!sortState || sortState === "desc") {
+      column?.toggleSorting(false); // asc
+    } else {
+      column?.toggleSorting(true); // desc
+    }
+  };
+
   return (
     <TableHead className={cn("font-medium text-foreground", headClassName)}>
       <div className={containerClassName}>
         <button
           type="button"
           className={cn("group/sort", buttonClassName)}
-          onClick={() => column?.toggleSorting()}
+          onClick={handleClick}
         >
+          {SortStateIcon && <SortStateIcon className="mr-1 h-3.5 w-3.5 flex-shrink-0 text-foreground" />}
           <span className="min-w-0 truncate">{label}</span>
-          <Icon className={iconClassName} />
+          <ArrowUpDown className={toggleIconClassName} />
         </button>
       </div>
     </TableHead>

@@ -30,7 +30,7 @@ export function MenuBuilderTable() {
   const View = TABLE_VIEWS[config.tableViewId];
 
   return (
-    <ShadcnTable className="table-fixed min-w-[660px] w-full pt-4">
+    <ShadcnTable className="table-fixed min-w-[660px] w-full mt-4">
       <View />
     </ShadcnTable>
   );

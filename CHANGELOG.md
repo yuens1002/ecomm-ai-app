@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.64.0 - 2026-01-15
+
+- **Category Table View**: Implemented CategoryTableView with sortable columns and inline editing
+  - Columns: Checkbox, Product Name, Added Order, Visibility, Categories, Drag Handle
+  - Sortable columns: Name (alphabetical), Added Order (by order in category)
+  - Default sort: Added Order descending (newest first)
+  - Single-click selects (200ms delay), double-click navigates to product detail
+- **All Categories Added Date column**: Added "Added Date" column with default descending sort
+  - Shows category creation date with date-only formatting
+  - Default sort ensures newest categories appear first
+- **Sortable header UX improvements**: Enhanced column sorting experience
+  - Sort state indicator (↑/↓) prepended to column label when sorted
+  - Toggle icon (↕) appears on row hover (md+), always visible on mobile
+  - Click toggles between asc ↔ desc only (no unsorted in cycle)
+  - Sort resets to unsorted via: DnD reorder, different column sort, or undo
+- **useDragReorder callback**: Added `onReorderComplete` option for post-reorder actions
+- **Bug fixes**:
+  - Add-products action now disabled when row selection is active
+  - Fixed last row left border not showing on selection (override shadcn TableBody reset)
+- **Schema**: Added `createdAt` field to Category model for tracking creation dates
+- Metrics: TypeScript + ESLint clean; all existing tests passing
+
 ## 0.63.1 - 2026-01-15
 
 - **DnD border fix**: Fixed drag-and-drop border indicator not showing when dragging to the last row

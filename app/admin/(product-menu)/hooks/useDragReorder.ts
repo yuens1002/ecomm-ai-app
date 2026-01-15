@@ -20,6 +20,8 @@ export type UseDragReorderOptions<TItem extends { id: string }> = {
   items: TItem[];
   /** Callback to persist the new order (receives array of ids) */
   onReorder: (ids: string[]) => Promise<void>;
+  /** Optional callback fired after successful reorder (useful for resetting sort state) */
+  onReorderComplete?: () => void;
 };
 
 export type DragHandlers = {
@@ -51,6 +53,7 @@ export type DragHandlers = {
 export function useDragReorder<TItem extends { id: string }>({
   items,
   onReorder,
+  onReorderComplete,
 }: UseDragReorderOptions<TItem>) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -107,8 +110,11 @@ export function useDragReorder<TItem extends { id: string }>({
 
       setDragId(null);
       setDragOverId(null);
+
+      // Notify parent that reorder is complete (e.g., to reset column sorting)
+      onReorderComplete?.();
     },
-    [dragId, items, onReorder, dropPosition]
+    [dragId, items, onReorder, dropPosition, onReorderComplete]
   );
 
   const handleDragEnd = useCallback(() => {

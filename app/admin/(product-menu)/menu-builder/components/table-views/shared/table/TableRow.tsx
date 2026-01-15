@@ -53,7 +53,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       isSelected,
       isDragging,
       isDragOver: _isDragOver,
-      isLastRow: _isLastRow,
+      isLastRow,
       className,
       onRowClick,
       onRowDoubleClick,
@@ -111,10 +111,13 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       <ShadcnTableRow
         ref={ref}
         className={cn(
-          "group cursor-pointer h-10 hover:bg-muted/40 border-l-2 border-l-transparent",
-          // Always hide top/bottom borders - let drag indicator override with !important
-          "border-b-0 border-t-0",
-          isSelected && "bg-accent/50 border-l-primary",
+          "group cursor-pointer h-10 hover:bg-muted/40",
+          // Left border: use !important to override TableBody's [&_tr:last-child]:border-0
+          "!border-l-2",
+          isSelected ? "border-l-primary bg-accent/50" : "border-l-transparent",
+          // Hide top border, show bottom border only on last row (drag indicator overrides with !important)
+          "border-t-0",
+          isLastRow ? "border-b border-b-border" : "border-b-0",
           isDragging && "opacity-50",
           className
         )}

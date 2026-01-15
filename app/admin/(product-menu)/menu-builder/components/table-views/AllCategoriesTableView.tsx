@@ -53,6 +53,12 @@ const ALL_CATEGORIES_HEADER_COLUMNS: TableHeaderColumn[] = [
     width: allCategoriesWidthPreset.products.head,
   },
   {
+    id: "addedDate",
+    label: "Added Date",
+    align: "left",
+    width: allCategoriesWidthPreset.addedDate?.head,
+  },
+  {
     id: "visibility",
     label: "Visibility",
     align: "center",
@@ -79,7 +85,8 @@ export function AllCategoriesTableView() {
     onToggleId: onToggleCategoryId,
     isSelected: isCategorySelected,
   } = useContextSelectionModel(builder, { kind: "category", selectableIds: selectableCategoryIds });
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  // Default sort by addedDate desc (newest first) - no DnD in this view so always show sort indicator
+  const [sorting, setSorting] = React.useState<SortingState>([{ id: "addedDate", desc: true }]);
 
   const { pinnedRow: pinnedCategory, rowsForTable: categoriesForTable } = usePinnedRow({
     rows: categories,
@@ -156,6 +163,11 @@ export function AllCategoriesTableView() {
       {
         id: "products",
         accessorFn: (row) => getCategoryProductCountNumber(row.id),
+        sortingFn: "basic",
+      },
+      {
+        id: "addedDate",
+        accessorFn: (row) => row.createdAt.getTime(),
         sortingFn: "basic",
       },
       {
@@ -251,14 +263,15 @@ export function AllCategoriesTableView() {
           {getCategoryLabels(category.id)}
         </TableCell>
 
-        <TableCell
-          align="right"
-          className={"text-sm " + (allCategoriesWidthPreset.products.cell ?? "")}
-        >
+        <TableCell className={"text-sm " + (allCategoriesWidthPreset.products.cell ?? "")}>
           {(() => {
             const count = getCategoryProductCountNumber(category.id);
             return count > 0 ? count.toString() : "—";
           })()}
+        </TableCell>
+
+        <TableCell className={"text-sm text-muted-foreground " + (allCategoriesWidthPreset.addedDate?.cell ?? "")}>
+          {category.createdAt.toLocaleDateString()}
         </TableCell>
 
         <TableCell align="center" className={allCategoriesWidthPreset.visibility.cell}>

@@ -306,19 +306,21 @@ describe("Action Bar Configuration", () => {
       expect(labelActions.find((a) => a.id === "visibility")).toBeUndefined();
     });
 
-    it("should have expand/collapse in menu and category views", () => {
+    it("should have expand/collapse in menu view only", () => {
       const menuActions = ACTION_BAR_CONFIG.menu;
-      const categoryActions = ACTION_BAR_CONFIG.category;
 
       expect(menuActions.find((a) => a.id === "expand-all")).toBeDefined();
-      expect(categoryActions.find((a) => a.id === "collapse-all")).toBeDefined();
+      expect(menuActions.find((a) => a.id === "collapse-all")).toBeDefined();
     });
 
-    it("should not have expand/collapse in label view", () => {
+    it("should not have expand/collapse in label or category views", () => {
       const labelActions = ACTION_BAR_CONFIG.label;
+      const categoryActions = ACTION_BAR_CONFIG.category;
 
       expect(labelActions.find((a) => a.id === "expand-all")).toBeUndefined();
       expect(labelActions.find((a) => a.id === "collapse-all")).toBeUndefined();
+      expect(categoryActions.find((a) => a.id === "expand-all")).toBeUndefined();
+      expect(categoryActions.find((a) => a.id === "collapse-all")).toBeUndefined();
     });
   });
 
@@ -403,23 +405,11 @@ describe("Action Bar Configuration", () => {
                 "type": "dropdown",
               },
               {
-                "id": "sort-order",
-                "type": "dropdown",
-              },
-              {
                 "id": "remove",
                 "type": "button",
               },
             ],
             "right": [
-              {
-                "id": "expand-all",
-                "type": "button",
-              },
-              {
-                "id": "collapse-all",
-                "type": "button",
-              },
               {
                 "id": "undo",
                 "type": "button",

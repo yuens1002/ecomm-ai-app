@@ -131,6 +131,20 @@ export function useProductMenuMutations() {
       if (res.ok) await refresh();
       return res;
     },
+    reorderProductsInCategory: async (categoryId: unknown, productIds: unknown) => {
+      const res = await productActions.reorderProductsInCategory(categoryId, productIds);
+      if (res.ok) await refresh();
+      return res;
+    },
+    sortProductsInCategory: async (
+      categoryId: unknown,
+      sortBy: productActions.SortProductsBy,
+      direction: productActions.SortProductsDirection
+    ) => {
+      const res = await productActions.sortProductsInCategory(categoryId, sortBy, direction);
+      if (res.ok) await refresh();
+      return res;
+    },
 
     // Settings (server-backed)
     updateSettings: async (payload: unknown) => {
