@@ -14,53 +14,24 @@ import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuLabel } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
-import { EmptyState } from "../shared/EmptyState";
 import { CheckboxCell } from "./shared/cells/CheckboxCell";
 import { InlineIconCell } from "./shared/cells/InlineIconCell";
 import { InlineNameEditor } from "./shared/cells/InlineNameEditor";
 import { VisibilityCell } from "./shared/cells/VisibilityCell";
 import { allLabelsWidthPreset } from "./shared/table/columnWidthPresets";
+import { EmptyState } from "./shared/table/EmptyState";
 import { TableCell } from "./shared/table/TableCell";
 import { TableHeader, type TableHeaderColumn } from "./shared/table/TableHeader";
 import { TableRow } from "./shared/table/TableRow";
+import { TableViewWrapper } from "./shared/table/TableViewWrapper";
 
 const ALL_LABELS_HEADER_COLUMNS: TableHeaderColumn[] = [
-  {
-    id: "select",
-    label: "",
-    isCheckbox: true,
-    width: allLabelsWidthPreset.select?.head,
-  },
-  {
-    id: "icon",
-    label: "Icon",
-    align: "center",
-    width: allLabelsWidthPreset.icon?.head,
-  },
-  {
-    id: "name",
-    label: "Label",
-    align: "left",
-    width: allLabelsWidthPreset.name?.head,
-  },
-  {
-    id: "categories",
-    label: "Categories",
-    align: "left",
-    width: allLabelsWidthPreset.categories?.head,
-  },
-  {
-    id: "visibility",
-    label: "Visibility",
-    align: "center",
-    width: allLabelsWidthPreset.visibility?.head,
-  },
-  {
-    id: "dragHandle",
-    label: "",
-    align: "center",
-    width: allLabelsWidthPreset.dragHandle?.head,
-  },
+  { id: "select", label: "", isCheckbox: true },
+  { id: "icon", label: "Icon" },
+  { id: "name", label: "Label" },
+  { id: "categories", label: "Categories" },
+  { id: "visibility", label: "Visibility" },
+  { id: "dragHandle", label: "" },
 ];
 
 export function AllLabelsTableView() {
@@ -195,7 +166,7 @@ export function AllLabelsTableView() {
         onRowDoubleClick={() => builder.navigateToLabel(label.id)}
       >
         {/* Checkbox */}
-        <TableCell className={allLabelsWidthPreset.select?.cell} data-row-click-ignore>
+        <TableCell config={allLabelsWidthPreset.select} data-row-click-ignore>
           <CheckboxCell
             id={label.id}
             checked={isSelected}
@@ -208,19 +179,17 @@ export function AllLabelsTableView() {
         </TableCell>
 
         {/* Icon */}
-        <TableCell align="center" className={allLabelsWidthPreset.icon?.cell} data-row-click-ignore>
-          <div className="flex justify-center">
-            <InlineIconCell
-              id={label.id}
-              icon={label.icon}
-              onSave={handleIconSave}
-              isRowHovered={isRowHovered}
-            />
-          </div>
+        <TableCell config={allLabelsWidthPreset.icon} data-row-click-ignore>
+          <InlineIconCell
+            id={label.id}
+            icon={label.icon}
+            onSave={handleIconSave}
+            isRowHovered={isRowHovered}
+          />
         </TableCell>
 
         {/* Name */}
-        <TableCell className={allLabelsWidthPreset.name?.cell}>
+        <TableCell config={allLabelsWidthPreset.name}>
           <InlineNameEditor
             id={label.id}
             initialValue={label.name}
@@ -242,24 +211,22 @@ export function AllLabelsTableView() {
         </TableCell>
 
         {/* Categories */}
-        <TableCell className={"text-sm " + (allLabelsWidthPreset.categories?.cell ?? "")}>
+        <TableCell config={allLabelsWidthPreset.categories} className="text-sm">
           {getLabelCategories(label)}
         </TableCell>
 
         {/* Visibility */}
-        <TableCell align="center" className={allLabelsWidthPreset.visibility?.cell}>
-          <div className="flex justify-center">
-            <VisibilityCell
-              id={label.id}
-              isVisible={label.isVisible}
-              variant="switch"
-              onToggle={handleVisibilitySave}
-            />
-          </div>
+        <TableCell config={allLabelsWidthPreset.visibility}>
+          <VisibilityCell
+            id={label.id}
+            isVisible={label.isVisible}
+            variant="switch"
+            onToggle={handleVisibilitySave}
+          />
         </TableCell>
 
         {/* Drag Handle */}
-        <TableCell className={allLabelsWidthPreset.dragHandle?.cell} data-row-click-ignore>
+        <TableCell config={allLabelsWidthPreset.dragHandle} data-row-click-ignore>
           <div
             className={cn(
               "flex items-center justify-center cursor-grab active:cursor-grabbing",
@@ -279,15 +246,16 @@ export function AllLabelsTableView() {
   const rows = table.getRowModel().rows;
 
   return (
-    <>
+    <TableViewWrapper>
       <TableHeader
+        columns={ALL_LABELS_HEADER_COLUMNS}
+        preset={allLabelsWidthPreset}
         table={table}
         hasSelectAll
         allSelected={allSelected}
         someSelected={someSelected}
         selectAllDisabled={!isLabelSelectionActive}
         onSelectAll={onSelectAll}
-        columns={ALL_LABELS_HEADER_COLUMNS}
       />
 
       <TableBody>
@@ -296,6 +264,6 @@ export function AllLabelsTableView() {
           renderLabelRow(row.original, { isLastRow: index === rows.length - 1 })
         )}
       </TableBody>
-    </>
+    </TableViewWrapper>
   );
 }

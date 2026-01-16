@@ -17,12 +17,13 @@ import { useContextSelectionModel } from "../../../hooks/useContextSelectionMode
 import { useDragReorder } from "../../../hooks/useDragReorder";
 import type { MenuProduct } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
-import { EmptyState } from "../shared/EmptyState";
 import { CheckboxCell } from "./shared/cells/CheckboxCell";
 import { categoryViewWidthPreset } from "./shared/table/columnWidthPresets";
+import { EmptyState } from "./shared/table/EmptyState";
 import { TableCell } from "./shared/table/TableCell";
 import { TableHeader, type TableHeaderColumn } from "./shared/table/TableHeader";
 import { TableRow } from "./shared/table/TableRow";
+import { TableViewWrapper } from "./shared/table/TableViewWrapper";
 
 /** Product with order within current category and chronological added order */
 type CategoryProduct = MenuProduct & {
@@ -31,42 +32,12 @@ type CategoryProduct = MenuProduct & {
 };
 
 const CATEGORY_VIEW_HEADER_COLUMNS: TableHeaderColumn[] = [
-  {
-    id: "select",
-    label: "",
-    isCheckbox: true,
-    width: categoryViewWidthPreset.select?.head,
-  },
-  {
-    id: "name",
-    label: "Products",
-    align: "left",
-    width: categoryViewWidthPreset.name?.head,
-  },
-  {
-    id: "addedOrder",
-    label: "Added Order",
-    align: "center",
-    width: categoryViewWidthPreset.addedOrder?.head,
-  },
-  {
-    id: "visibility",
-    label: "Visibility",
-    align: "center",
-    width: categoryViewWidthPreset.visibility?.head,
-  },
-  {
-    id: "categories",
-    label: "Added to Categories",
-    align: "left",
-    width: categoryViewWidthPreset.categories?.head,
-  },
-  {
-    id: "dragHandle",
-    label: "",
-    align: "center",
-    width: categoryViewWidthPreset.dragHandle?.head,
-  },
+  { id: "select", label: "", isCheckbox: true },
+  { id: "name", label: "Products" },
+  { id: "addedOrder", label: "Added Order" },
+  { id: "visibility", label: "Visibility" },
+  { id: "categories", label: "Added to Categories" },
+  { id: "dragHandle", label: "" },
 ];
 
 export function CategoryTableView() {
@@ -235,7 +206,7 @@ export function CategoryTableView() {
         onRowClick={() => onToggleProductId(product.id)}
       >
         {/* Checkbox */}
-        <TableCell className={categoryViewWidthPreset.select?.cell} data-row-click-ignore>
+        <TableCell config={categoryViewWidthPreset.select} data-row-click-ignore>
           <CheckboxCell
             id={product.id}
             checked={isSelected}
@@ -248,33 +219,31 @@ export function CategoryTableView() {
         </TableCell>
 
         {/* Product Name */}
-        <TableCell className={categoryViewWidthPreset.name?.cell}>
+        <TableCell config={categoryViewWidthPreset.name}>
           <span className="truncate font-medium">{product.name}</span>
         </TableCell>
 
         {/* Added Order (chronological rank based on createdAt) */}
-        <TableCell className={categoryViewWidthPreset.addedOrder?.cell}>
+        <TableCell config={categoryViewWidthPreset.addedOrder}>
           <span className="text-muted-foreground text-sm">{product.addedOrderRank}</span>
         </TableCell>
 
         {/* Visibility (read-only icon) */}
-        <TableCell align="center" className={categoryViewWidthPreset.visibility?.cell}>
-          <div className="flex justify-center">
-            {product.isDisabled ? (
-              <EyeOff className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <Eye className="h-4 w-4 text-foreground" />
-            )}
-          </div>
+        <TableCell config={categoryViewWidthPreset.visibility}>
+          {product.isDisabled ? (
+            <EyeOff className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <Eye className="h-4 w-4 text-foreground" />
+          )}
         </TableCell>
 
         {/* Categories */}
-        <TableCell className={"text-sm " + (categoryViewWidthPreset.categories?.cell ?? "")}>
+        <TableCell config={categoryViewWidthPreset.categories} className="text-sm">
           {getProductCategories(product)}
         </TableCell>
 
         {/* Drag Handle */}
-        <TableCell className={categoryViewWidthPreset.dragHandle?.cell} data-row-click-ignore>
+        <TableCell config={categoryViewWidthPreset.dragHandle} data-row-click-ignore>
           <div
             className={cn(
               "flex items-center justify-center cursor-grab active:cursor-grabbing",
@@ -294,9 +263,10 @@ export function CategoryTableView() {
   const rows = table.getRowModel().rows;
 
   return (
-    <>
+    <TableViewWrapper>
       <TableHeader
         columns={CATEGORY_VIEW_HEADER_COLUMNS}
+        preset={categoryViewWidthPreset}
         table={table}
         hasSelectAll
         allSelected={allSelected}
@@ -310,6 +280,6 @@ export function CategoryTableView() {
           renderProductRow(row.original, { isLastRow: index === rows.length - 1 })
         )}
       </TableBody>
-    </>
+    </TableViewWrapper>
   );
 }

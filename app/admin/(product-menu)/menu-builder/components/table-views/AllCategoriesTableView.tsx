@@ -18,52 +18,23 @@ import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuCategory } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
-import { EmptyState } from "../shared/EmptyState";
 import { CheckboxCell } from "./shared/cells/CheckboxCell";
 import { InlineNameEditor } from "./shared/cells/InlineNameEditor";
 import { VisibilityCell } from "./shared/cells/VisibilityCell";
 import { allCategoriesWidthPreset } from "./shared/table/columnWidthPresets";
+import { EmptyState } from "./shared/table/EmptyState";
 import { TableCell } from "./shared/table/TableCell";
 import { TableHeader, type TableHeaderColumn } from "./shared/table/TableHeader";
 import { TableRow } from "./shared/table/TableRow";
+import { TableViewWrapper } from "./shared/table/TableViewWrapper";
 
 const ALL_CATEGORIES_HEADER_COLUMNS: TableHeaderColumn[] = [
-  {
-    id: "select",
-    label: "",
-    isCheckbox: true,
-    width: allCategoriesWidthPreset.select.head,
-  },
-  {
-    id: "name",
-    label: "Category",
-    align: "left",
-    width: allCategoriesWidthPreset.name.head,
-  },
-  {
-    id: "labels",
-    label: "Added to labels",
-    align: "left",
-    width: allCategoriesWidthPreset.labels.head,
-  },
-  {
-    id: "products",
-    label: "Products",
-    align: "right",
-    width: allCategoriesWidthPreset.products.head,
-  },
-  {
-    id: "addedDate",
-    label: "Added Date",
-    align: "left",
-    width: allCategoriesWidthPreset.addedDate?.head,
-  },
-  {
-    id: "visibility",
-    label: "Visibility",
-    align: "center",
-    width: allCategoriesWidthPreset.visibility.head,
-  },
+  { id: "select", label: "", isCheckbox: true },
+  { id: "name", label: "Category" },
+  { id: "labels", label: "Added to labels" },
+  { id: "products", label: "Products" },
+  { id: "addedDate", label: "Added Date" },
+  { id: "visibility", label: "Visibility" },
 ];
 
 export function AllCategoriesTableView() {
@@ -226,7 +197,7 @@ export function AllCategoriesTableView() {
         onRowClick={() => onToggleCategoryId(category.id)}
         onRowDoubleClick={() => builder.navigateToCategory(category.id)}
       >
-        <TableCell className={allCategoriesWidthPreset.select.cell} data-row-click-ignore>
+        <TableCell config={allCategoriesWidthPreset.select} data-row-click-ignore>
           <CheckboxCell
             id={category.id}
             checked={isSelected}
@@ -238,7 +209,7 @@ export function AllCategoriesTableView() {
           />
         </TableCell>
 
-        <TableCell className={allCategoriesWidthPreset.name.cell}>
+        <TableCell config={allCategoriesWidthPreset.name}>
           <InlineNameEditor
             id={category.id}
             initialValue={category.name}
@@ -259,51 +230,50 @@ export function AllCategoriesTableView() {
           />
         </TableCell>
 
-        <TableCell className={"text-sm " + (allCategoriesWidthPreset.labels.cell ?? "")}>
+        <TableCell config={allCategoriesWidthPreset.labels} className="text-sm">
           {getCategoryLabels(category.id)}
         </TableCell>
 
-        <TableCell className={"text-sm " + (allCategoriesWidthPreset.products.cell ?? "")}>
+        <TableCell config={allCategoriesWidthPreset.products} className="text-sm">
           {(() => {
             const count = getCategoryProductCountNumber(category.id);
             return count > 0 ? count.toString() : "—";
           })()}
         </TableCell>
 
-        <TableCell className={"text-sm text-muted-foreground " + (allCategoriesWidthPreset.addedDate?.cell ?? "")}>
+        <TableCell config={allCategoriesWidthPreset.addedDate} className="text-sm text-muted-foreground">
           {category.createdAt.toLocaleDateString()}
         </TableCell>
 
-        <TableCell align="center" className={allCategoriesWidthPreset.visibility.cell}>
-          <div className="flex justify-center">
-            <VisibilityCell
-              id={category.id}
-              isVisible={category.isVisible}
-              variant="switch"
-              onToggle={handleVisibilitySave}
-            />
-          </div>
+        <TableCell config={allCategoriesWidthPreset.visibility}>
+          <VisibilityCell
+            id={category.id}
+            isVisible={category.isVisible}
+            variant="switch"
+            onToggle={handleVisibilitySave}
+          />
         </TableCell>
       </TableRow>
     );
   };
 
   return (
-    <>
+    <TableViewWrapper>
       <TableHeader
+        columns={ALL_CATEGORIES_HEADER_COLUMNS}
+        preset={allCategoriesWidthPreset}
         table={table}
         hasSelectAll
         allSelected={allSelected}
         someSelected={someSelected}
         selectAllDisabled={!isCategorySelectionActive}
         onSelectAll={onSelectAll}
-        columns={ALL_CATEGORIES_HEADER_COLUMNS}
       />
 
       <TableBody>
         {pinnedCategory ? renderCategoryRow(pinnedCategory, { isPinned: true }) : null}
         {table.getRowModel().rows.map((row) => renderCategoryRow(row.original))}
       </TableBody>
-    </>
+    </TableViewWrapper>
   );
 }

@@ -2,6 +2,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { TableHeader as ShadcnTableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { Table } from "@tanstack/react-table";
+import type { ColumnWidthPreset } from "./columnWidthPresets";
 import { SortableHeaderCell } from "./SortableHeaderCell";
 
 /**
@@ -13,19 +14,18 @@ import { SortableHeaderCell } from "./SortableHeaderCell";
  * 3. Add width preset in columnWidthPresets.ts
  * 4. Add the TableCell in the row render function
  *
- * The `id` must match between header columns and TanStack columns to avoid
- * "[Table] Column with id 'xxx' does not exist" errors.
+ * The `id` must match between header columns, TanStack columns, and preset keys.
  */
 export type TableHeaderColumn = {
   id: string;
   label: string;
-  width?: string;
-  align?: "left" | "center" | "right";
   isCheckbox?: boolean;
 };
 
 type TableHeaderProps<TData> = {
   columns: TableHeaderColumn[];
+  /** Width preset - provides width and align for each column by id */
+  preset: ColumnWidthPreset;
   table?: Table<TData>;
   hasSelectAll?: boolean;
   allSelected?: boolean;
@@ -37,6 +37,7 @@ type TableHeaderProps<TData> = {
 
 export function TableHeader<TData = unknown>({
   columns,
+  preset,
   table,
   hasSelectAll = false,
   allSelected = false,
@@ -49,9 +50,13 @@ export function TableHeader<TData = unknown>({
     <ShadcnTableHeader className={cn("h-10 bg-muted/40 border-b", className)}>
       <TableRow className="group/header hover:bg-transparent">
         {columns.map((column) => {
+          const config = preset[column.id];
+          const width = config?.head;
+          const align = config?.align;
+
           if (column.isCheckbox && hasSelectAll) {
             return (
-              <TableHead key={column.id} className={cn("pl-2.5", column.width)}>
+              <TableHead key={column.id} className={cn("pl-2.5", width)}>
                 <div className="flex items-center">
                   <Checkbox
                     checked={
@@ -67,15 +72,11 @@ export function TableHeader<TData = unknown>({
           }
 
           if (column.isCheckbox) {
-            return <TableHead key={column.id} className={cn("pl-2.5", column.width)} />;
+            return <TableHead key={column.id} className={cn("pl-2.5", width)} />;
           }
 
           const alignClass =
-            column.align === "center"
-              ? "text-center"
-              : column.align === "right"
-                ? "text-right"
-                : "";
+            align === "center" ? "text-center" : align === "right" ? "text-right" : "";
 
           // Get sorting info from table if available
           const tableColumn = table?.getColumn(column.id);
@@ -88,8 +89,8 @@ export function TableHeader<TData = unknown>({
                 table={table}
                 columnId={column.id}
                 label={column.label}
-                align={column.align}
-                headClassName={cn(column.width)}
+                align={align}
+                headClassName={cn(width)}
               />
             );
           }
@@ -97,7 +98,7 @@ export function TableHeader<TData = unknown>({
           return (
             <TableHead
               key={column.id}
-              className={cn(column.width, alignClass, "font-medium text-foreground")}
+              className={cn(width, alignClass, "font-medium text-foreground")}
             >
               {column.label}
             </TableHead>

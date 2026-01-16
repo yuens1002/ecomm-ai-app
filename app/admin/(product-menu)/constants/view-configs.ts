@@ -14,7 +14,7 @@ export type ViewConfig = {
 
   /**
    * Declarative identifier for the table surface in this view.
-   * MenuBuilderTable maps this to an actual component.
+   * MenuTableRenderer maps this to an actual component.
    */
   tableViewId: TableViewId;
 

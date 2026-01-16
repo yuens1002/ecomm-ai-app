@@ -1,10 +1,11 @@
-export type ColumnWidthPreset = Record<
-  string,
-  {
-    head?: string;
-    cell?: string;
-  }
->;
+export type ColumnWidthEntry = {
+  head?: string;
+  cell?: string;
+  /** Single source of truth for column alignment (applies to both header and cell) */
+  align?: "left" | "center" | "right";
+};
+
+export type ColumnWidthPreset = Record<string, ColumnWidthEntry>;
 
 export function extendWidthPreset(
   base: ColumnWidthPreset,
@@ -39,25 +40,27 @@ export const allCategoriesWidthPreset: ColumnWidthPreset = extendWidthPreset(
   baseMenuBuilderWidthPreset,
   {
     name: {
-      head: "w-56 min-w-56 md:w-72 md:min-w-72 px-6",
-      cell: "w-56 min-w-56 md:w-72 md:min-w-72 pr-6",
+      head: "w-36 min-w-36 px-6",
+      cell: "w-36 min-w-36 pr-6",
     },
     labels: {
-      head: "w-56 min-w-36 pr-6",
-      cell: "w-56 pr-6 min-w-36",
+      head: "w-24 min-w-24 pr-6",
+      cell: "w-24 min-w-24 pr-6",
     },
     products: {
-      head: "w-36 px-4",
-      cell: "px-4, text-center",
+      head: "w-24 min-w-24 px-4",
+      cell: "w-24 min-w-24 px-4",
+      align: "center",
     },
     addedDate: {
-      head: "w-48 px-8",
-      cell: "px-8",
+      head: "w-48 min-w-16 px-8",
+      cell: "min-w-16 px-8",
     },
     // Override base visibility to be explicit for this view.
     visibility: {
-      head: "min-w-24 px-6",
-      cell: "pr-8",
+      head: "w-24 min-w-24 px-8",
+      cell: "w-24 min-w-24 px-8",
+      align: "right",
     },
   }
 );
@@ -69,6 +72,7 @@ export const allLabelsWidthPreset: ColumnWidthPreset = extendWidthPreset(
     icon: {
       head: "w-16",
       cell: "w-16",
+      align: "center",
     },
     // Name column: fixed width
     name: {
@@ -84,11 +88,13 @@ export const allLabelsWidthPreset: ColumnWidthPreset = extendWidthPreset(
     visibility: {
       head: "w-28 min-w-28 max-w-28 px-6",
       cell: "px-6",
+      align: "center",
     },
     // Drag handle: 48px
     dragHandle: {
       head: "w-12 min-w-12 max-w-12 pr-2",
       cell: "pr-2",
+      align: "center",
     },
   }
 );
@@ -101,15 +107,17 @@ export const categoryViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
       head: "w-56 min-w-56 md:w-72 md:min-w-72 pr-6",
       cell: "w-56 min-w-56 md:w-72 md:min-w-72 pr-6",
     },
-    // Added Order column: sortable
+    // Added Order column: sortable, centered
     addedOrder: {
-      head: "w-40 pr-6 text-center",
-      cell: "pr-14 text-center",
+      head: "w-40 pr-6",
+      cell: "pr-14",
+      align: "center",
     },
     // Visibility column: eye icon, centered
     visibility: {
-      head: "w-24 min-w-24 max-w-24 px-4 text-center",
+      head: "w-24 min-w-24 max-w-24 px-4",
       cell: "pr-6",
+      align: "center",
     },
     // Categories column: takes remaining space
     categories: {
@@ -120,6 +128,7 @@ export const categoryViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
     dragHandle: {
       head: "w-12 min-w-12 max-w-12 pr-2",
       cell: "pr-2",
+      align: "center",
     },
   }
 );

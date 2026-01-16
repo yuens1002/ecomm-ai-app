@@ -182,6 +182,7 @@ CategoryLabel (Label)
 - `[Undo] Undo` / `[Redo] Redo` - Bidirectional undo/redo
 
 **Column Sorting UX:**
+
 - Sort state indicator (↑/↓) prepended to column label when sorted
 - ArrowUpDown toggle icon appears on header row hover (md+: hidden until hover)
 - Click toggles between asc ↔ desc only (first click = asc)
@@ -214,7 +215,7 @@ CategoryLabel (Label)
 - `[Eye] Visibility` - Toggle visibility of selected items
 - `[Undo] Undo` / `[Redo] Redo` - Bidirectional undo/redo
 
-**Table Columns:** `checkbox | name | labels | products | visibility`
+**Table Columns:** `checkbox | name | labels | products | added date | visibility`
 
 ### Button State Logic
 
@@ -228,7 +229,7 @@ CategoryLabel (Label)
   - Example: "New Product" never shown (products not created here)
   - Example: Expand/Collapse hidden in flat all-views
 
-### Tooltips (https://ui.shadcn.com/docs/components/kbd)
+### Tooltips (<https://ui.shadcn.com/docs/components/kbd>)
 
 - **Desktop enabled buttons**: Show on hover with keyboard shortcut (use shadcn `Kbd` component)
   - Example: "Clone" with `<Kbd>Ctrl</Kbd>+<Kbd>D</Kbd>`
@@ -264,7 +265,7 @@ CategoryLabel (Label)
 - Row Selection (checkboxes)
 - Sorting (column headers)
 - Reusable column definitions
-- See: https://ui.shadcn.com/docs/components/data-table
+- See: <https://ui.shadcn.com/docs/components/data-table>
 
 ### Menu View
 

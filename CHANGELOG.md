@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.64.1 - 2026-01-16
+
+- **Column preset consolidation**: Single source of truth for table column config
+  - Added `align` property to `ColumnWidthEntry` type in presets
+  - `TableHeader` now reads width/align from preset via column id
+  - `TableCell` now accepts `config` prop for cell class and alignment
+  - Simplified header column definitions to just `id` and `label`
+- **Sort button alignment fix**: Positioned toggle icon absolutely to not affect text centering
+- **Skeleton loading state**: Replaced spinner with layout-matching skeleton in MenuBuilder
+- **Cell alignment cleanup**: Removed redundant `flex justify-center` wrappers
+  - VisibilityCell and InlineIconCell now centered via `text-center` from preset
+  - InlineIconCell changed to `inline-flex` for proper centering
+- Metrics: TypeScript + ESLint clean
+
 ## 0.64.0 - 2026-01-15
 
 - **Category Table View**: Implemented CategoryTableView with sortable columns and inline editing

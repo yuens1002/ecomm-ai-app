@@ -36,15 +36,15 @@ export function SortableHeaderCell<TData>({
   // Sort state indicator - shows current direction, only visible when sorted
   const SortStateIcon = sortState === "asc" ? ArrowUp : sortState === "desc" ? ArrowDown : null;
 
-  // Toggle icon - always ArrowUpDown, keeps original hover behavior
-  // Mobile: always visible, md+: hidden until header row hover (group/header is on TableRow)
+  // Toggle icon - positioned absolutely so it doesn't affect text alignment
+  // Mobile: always visible, md+: hidden until header row hover or button focus
   const toggleIconClassName = cn(
-    "ml-1.5 h-3.5 w-3.5 flex-shrink-0 transition-opacity text-muted-foreground",
+    "absolute left-full ml-1.5 h-3.5 w-3.5 flex-shrink-0 transition-opacity text-muted-foreground",
     "opacity-100 md:opacity-0 md:group-hover/header:opacity-100 md:group-focus-visible/sort:opacity-100"
   );
 
   const buttonClassName = cn(
-    "inline-flex max-w-full min-w-0 items-center",
+    "relative inline-flex max-w-full min-w-0 items-center",
     align === "left" && "text-left",
     align === "center" && "text-center",
     align === "right" && "text-right"

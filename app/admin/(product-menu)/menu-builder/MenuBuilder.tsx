@@ -1,11 +1,12 @@
 "use client";
 
 import { PageTitle } from "@/components/admin/PageTitle";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MenuBuilderProvider, useMenuBuilder } from "./MenuBuilderProvider";
 import { MenuNavBar } from "./components/MenuNavBar";
 import { MenuSettingsDialog } from "./components/MenuSettingsDialog";
 import { MenuActionBar } from "./components/menu-action-bar";
-import { MenuBuilderTable } from "./components/table-views/shared/table/MenuBuilderTable";
+import { MenuTableRenderer as MenuTable } from "./components/table-views/MenuTableRenderer";
 
 /**
  * Menu Builder Content - Main Component
@@ -20,10 +21,30 @@ function MenuBuilderContent() {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-sm text-muted-foreground">Loading menu data...</p>
+      <div className="space-y-6">
+        {/* PageTitle skeleton */}
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+
+        {/* NavBar skeleton */}
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-9 w-24" />
+        </div>
+
+        {/* ActionBar skeleton */}
+        <Skeleton className="h-10 w-full" />
+
+        {/* Table skeleton */}
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
         </div>
       </div>
     );
@@ -52,7 +73,7 @@ function MenuBuilderContent() {
       <MenuNavBar />
       <MenuActionBar />
 
-      <MenuBuilderTable />
+      <MenuTable />
     </>
   );
 }
