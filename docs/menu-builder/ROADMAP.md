@@ -1,8 +1,8 @@
 # Menu Builder - Development Roadmap
 
-**Last Updated:** 2026-01-14
+**Last Updated:** 2026-01-16
 **Current Branch:** `unify-menu-builder`
-**Status:** Phase 1 Complete ✅ | Phase 2 In Progress 🚧
+**Status:** Phase 1 Complete ✅ | Phase 2 In Progress 🚧 (3/5 views)
 
 ---
 
@@ -16,10 +16,10 @@ Build a sophisticated admin interface for managing a 3-level product catalog hie
 
 ```
 Foundation  ████████████████████████ 100% ✅
-Table Views ████████░░░░░░░░░░░░░░░  40% 🚧
-Advanced    ░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️
+Table Views ██████████████░░░░░░░░░  60% 🚧
+Advanced    ████░░░░░░░░░░░░░░░░░░░  20% 🚧
 ─────────────────────────────────────────
-Total       ██████████░░░░░░░░░░░░░  47%
+Total       ██████████████░░░░░░░░░  60%
 ```
 
 ---
@@ -79,7 +79,7 @@ Total       ██████████░░░░░░░░░░░░�
 
 **Target:** Complete all 5 table views
 **Timeline:** 4-6 weeks
-**Current:** 2/5 views shipped (40%)
+**Current:** 3/5 views shipped (60%)
 
 ### 2.1 All Labels Table View ✅ COMPLETE (Jan 14, 2026)
 
@@ -212,42 +212,65 @@ Total       ██████████░░░░░░░░░░░░�
 
 ---
 
-### 2.4 Category View (Product Assignment) ⏸️ NOT STARTED
+### 2.4 Category View (Product Assignment) ✅ COMPLETE (Jan 15-16, 2026)
 
-**Complexity:** High (product assignment UX)
-**Effort:** 4-5 days
-**Dependencies:** 2.3 (Label view pattern established)
+**Complexity:** Medium (simplified from original spec)
+**Effort:** 2 days
+**Dependencies:** 2.1 (reused AllLabels patterns)
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] Create `CategoryTableView.tsx` component
-- [ ] Show ALL products (not just assigned)
-- [ ] Checkbox column for bulk selection
-- [ ] "Assigned" column (checkmark if in category)
-- [ ] "Primary" indicator for isPrimary products
-- [ ] "Add to Category" / "Remove from Category" actions
-- [ ] "Set as Primary" action
-- [ ] "Added in Categories" column showing cross-references
-- [ ] Search/filter products
+- [x] Created `CategoryTableView.tsx` component
+- [x] Shows products assigned to selected category
+- [x] Columns: Checkbox, Product Name, Added Order, Visibility, Categories, Drag Handle
+- [x] Sortable columns: Name (alphabetical), Added Order (chronological rank)
+- [x] Single-click selects (200ms delay), double-click navigates to product detail
+- [x] Drag-and-drop row reordering (resets column sort on manual reorder)
+- [x] "Added to Categories" column showing cross-references (excludes current category)
+- [x] Selection state management for bulk remove action
 
-**Files to Create:**
+**Table Behavior:**
+
+- **Column sorting** - Name and Added Order are sortable (TanStack Table)
+- **Sort indicators** - ↑/↓ prepended to label, ↕ toggle icon on hover
+- **DnD + Sort interaction** - Manual reorder clears column sort state
+- **Single-click** - Toggles row selection (200ms delay)
+- **Double-click** - Navigates to product detail view
+- **Drag handle** - Always visible on mobile, hover-only on desktop
+
+**Shared Infrastructure Created (v0.64.0-0.64.3):**
+
+| Feature | Description |
+|---------|-------------|
+| `SortableHeaderCell` | Reusable sortable column header with TanStack Table integration |
+| `columnWidthPresets` | Single source of truth for column width, cell, and alignment config |
+| `TableHeader` preset prop | Reads width/align from preset by column id |
+| `TableCell` config prop | Accepts preset entry for cell styling |
+
+**Files Created:**
 
 - `app/admin/(product-menu)/menu-builder/components/table-views/CategoryTableView.tsx`
-- `app/admin/(product-menu)/menu-builder/components/table-views/shared/ProductCheckboxCell.tsx`
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/SortableHeaderCell.tsx`
 
-**Files to Modify:**
+**Files Modified:**
 
-- `app/admin/(product-menu)/menu-builder/components/table-views/TableViewRenderer.tsx`
-- `app/admin/(product-menu)/actions/product-menu-actions.ts` (add product assignment actions)
-- `app/admin/(product-menu)/data/categories.ts` (add product assignment helpers)
+- `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableRenderer.tsx`
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/columnWidthPresets.ts`
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/TableHeader.tsx`
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/TableCell.tsx`
+- `app/admin/(product-menu)/hooks/useDragReorder.ts` (added `onReorderComplete` callback)
 
-**Acceptance Criteria:**
+**Key Commits:**
 
-- Shows all products with assignment status
-- Can add/remove products in bulk
-- Can set primary product
-- Shows which other categories contain each product
-- Product search/filter works
+- `6ab7444` - feat: add Category Table View with sortable columns (v0.64.0)
+- `96cab74` - refactor: consolidate column alignment into presets (v0.64.1)
+- `a2743ff` - fix: icon vertical alignment and table view tweaks (v0.64.2)
+- `94de810` - fix: standardize disabled button styling (v0.64.3)
+
+**Deferred to Future:**
+
+- [ ] Search/filter products (Phase 3.5)
+- [ ] "Set as Primary" action (future enhancement)
 
 ---
 
@@ -291,11 +314,11 @@ Total       ██████████░░░░░░░░░░░░�
 
 ---
 
-## Phase 3: Advanced Features ⏸️ NOT STARTED
+## Phase 3: Advanced Features 🚧 IN PROGRESS
 
 **Target:** Polish and power-user features
 **Timeline:** 2-4 weeks
-**Status:** 0% (waiting for Phase 2 completion)
+**Status:** 20% (undo/redo system complete)
 
 ### 3.1 Drag-and-Drop System ⏸️
 
@@ -339,24 +362,35 @@ Total       ██████████░░░░░░░░░░░░�
 
 ---
 
-### 3.3 Undo/Redo System ⏸️
+### 3.3 Undo/Redo System ✅ COMPLETE (Jan 15, 2026)
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] 10-operation stack per view (session storage)
-- [ ] Serializable state snapshots
-- [ ] Toast notifications on undo/redo
-- [ ] Action types (create, update, delete, reorder, clone)
-- [ ] Batch operations (undo bulk delete as one action)
-- [ ] Clear stack on view change
+- [x] 10-operation stack per view (in-memory)
+- [x] Declarative `captureUndo` field in action config
+- [x] Toast notifications on undo/redo
+- [x] Action types: create, update, delete, reorder, clone
+- [x] View-scoped history (cleared on navigation)
+- [x] Colocated undo logic with action definitions
 
-**Files to Create:**
+**Key Commit:**
 
-- `app/admin/(product-menu)/menu-builder/hooks/useUndoRedo.ts`
+- `26546fb` - feat: declarative undo/redo system and menu builder fixes (v0.63.0)
 
-**Files to Modify:**
+**Architecture:**
 
-- `app/admin/(product-menu)/hooks/useMenuBuilderState.ts` (wire undo/redo)
+- Undo capture logic defined in `ACTION_BAR_CONFIG` via `captureUndo` field
+- Eliminated 100+ lines of conditional undo/redo logic
+- History stack managed by `useUndoRedoStack` hook
+- Actions automatically capture undo state based on config
+
+**Files Created:**
+
+- `app/admin/(product-menu)/hooks/useUndoRedoStack.ts`
+
+**Files Modified:**
+
+- `app/admin/(product-menu)/constants/action-bar/actions.ts` (added `captureUndo` to actions)
 
 ---
 
@@ -404,10 +438,10 @@ app/admin/(product-menu)/
 │        ├─ AllCategoriesTableView.tsx ✅
 │        ├─ AllLabelsTableView.tsx  ✅ (2.1)
 │        ├─ LabelTableView.tsx      ⏸️ (2.3)
-│        ├─ CategoryTableView.tsx   ⏸️ (2.4)
+│        ├─ CategoryTableView.tsx   ✅ (2.4)
 │        ├─ MenuTableView.tsx       ⏸️ (2.5)
 │        └─ shared/
-│           ├─ table/               ✅ (TableRow, TableCell, TableHeader, columnWidthPresets)
+│           ├─ table/               ✅ (TableRow, TableCell, TableHeader, SortableHeaderCell, columnWidthPresets)
 │           ├─ cells/               ✅ (CheckboxCell, InlineNameEditor, InlineIconCell, VisibilityCell)
 │           ├─ ContextMenuCell.tsx  ⏸️ (2.2)
 │           └─ DraggableRow.tsx     ⏸️ (2.3)
@@ -419,10 +453,10 @@ app/admin/(product-menu)/
 │  ├─ useContextSelectionModel.ts   ✅
 │  ├─ useContextRowUiState.ts       ✅ (enhanced: autoClearPinned option)
 │  ├─ usePinnedRow.ts               ✅ (enhanced: built-in default sort)
-│  ├─ useDragReorder.ts             ✅ (NEW: row drag-and-drop)
-│  ├─ useInlineEditHandlers.ts      ✅ (NEW: name/icon/visibility with undo)
-│  ├─ useKeyboardShortcuts.ts       ⏸️ (3.2)
-│  └─ useUndoRedo.ts                ⏸️ (3.3)
+│  ├─ useDragReorder.ts             ✅ (enhanced: onReorderComplete callback)
+│  ├─ useInlineEditHandlers.ts      ✅ (name/icon/visibility with undo)
+│  ├─ useUndoRedoStack.ts           ✅ (declarative undo/redo system)
+│  └─ useKeyboardShortcuts.ts       ⏸️ (3.2)
 │
 ├─ constants/
 │  ├─ action-bar/                   ✅ (colocated config)
@@ -508,25 +542,60 @@ app/admin/(product-menu)/
 - `TableRow` component now handles click/double-click timeout internally
 - ~80 lines of boilerplate removed from each table view
 
+### Jan 15, 2026: Declarative Undo/Redo System
+
+**Decision:** Colocate undo capture logic with action definitions via `captureUndo` field
+**Rationale:** Scattered conditional undo logic was hard to maintain and extend
+**Impact:**
+- Eliminated 100+ lines of conditional undo/redo logic in MenuActionBar
+- Undo actions now defined alongside action handlers
+- New actions automatically get undo support by adding `captureUndo` field
+- History stack view-scoped (10 operations, cleared on navigation)
+
+### Jan 15-16, 2026: Category Table View with Sortable Columns
+
+**Decision:** Implement sortable columns using TanStack Table with DnD integration
+**Rationale:** Category view needed both column sorting AND drag-drop reordering
+**Impact:**
+- Created `SortableHeaderCell` component for reusable sortable headers
+- Added `onReorderComplete` callback to `useDragReorder` for sort reset
+- Sort indicators (↑/↓) prepend to column label when sorted
+- Toggle icon (↕) appears on hover for sortable columns
+
+### Jan 16, 2026: Column Preset Consolidation
+
+**Decision:** Single source of truth for column width, cell, and alignment config
+**Rationale:** Alignment could be set in 3 places (header, preset, cell) causing confusion
+**Impact:**
+- Added `align` property to `ColumnWidthEntry` type
+- `TableHeader` reads width/align from preset by column id
+- `TableCell` accepts `config` prop for cell styling
+- Simplified header column definitions to just `id` and `label`
+- Eliminated redundant alignment props across all table views
+
 ---
 
 ## Next Action
 
-**Immediate Next Step:** Context Menu Infrastructure (2.2) or Label View (2.3)
+**Immediate Next Step:** Label View (2.3) or Menu View (2.5)
 
-Both can be done in parallel:
-
-### Option A: Context Menu Infrastructure (2.2)
-- Medium complexity
-- New pattern (right-click + three-dot menu)
-- Reuses ACTION_BAR_CONFIG for action definitions
-- Enables row-level actions without selection
-
-### Option B: Label View (2.3)
+### Option A: Label View (2.3) - Recommended
 - Medium complexity
 - Shows categories within selected label
 - Requires drag-and-drop for category reordering
-- Can reuse `useDragReorder` hook from 2.1
+- Can reuse `useDragReorder` hook and `SortableHeaderCell` from Category View
+
+### Option B: Menu View (2.5)
+- High complexity
+- 3-level expand/collapse (Labels → Categories → Products)
+- Most complex view but enables full hierarchy editing
+- Consider after Label View is complete
+
+### Option C: Context Menu Infrastructure (2.2)
+- Medium complexity
+- New pattern (right-click + three-dot menu)
+- Reuses ACTION_BAR_CONFIG for action definitions
+- Can be done in parallel with view work
 
 **Command to Start:**
 
@@ -534,14 +603,14 @@ Both can be done in parallel:
 # Ensure clean state
 git status
 
-# Continue on current branch or create new
+# Continue on current branch
 npm run dev
 ```
 
 **Files to Read First:**
 
-- `app/admin/(product-menu)/menu-builder/components/table-views/AllLabelsTableView.tsx` (reference for new hooks)
-- `app/admin/(product-menu)/hooks/useDragReorder.ts` (for Label view drag-drop)
+- `app/admin/(product-menu)/menu-builder/components/table-views/CategoryTableView.tsx` (reference for sortable columns)
+- `app/admin/(product-menu)/menu-builder/components/table-views/AllLabelsTableView.tsx` (reference for drag-drop)
 - `docs/menu-builder/FEATURE-SPEC.md` (Label view section)
 
 ---
@@ -559,23 +628,30 @@ npm run dev
 
 **Reference Implementations:**
 
-- `AllLabelsTableView.tsx` is the **golden example** for table views with drag-and-drop
-- `AllCategoriesTableView.tsx` is the **golden example** for table views with column sorting
+- `CategoryTableView.tsx` is the **golden example** for table views with sortable columns + drag-and-drop
+- `AllLabelsTableView.tsx` is the **golden example** for table views with drag-and-drop only
+- `AllCategoriesTableView.tsx` is the **golden example** for table views with inline editing
+
+**Reusable Components:**
+
+- `SortableHeaderCell` - For sortable column headers with TanStack Table
+- `columnWidthPresets` - Single source of truth for column config (width, cell, align)
 
 **Reusable Hooks:**
 
-- `useDragReorder` - For any table view needing row reordering
+- `useDragReorder` - For any table view needing row reordering (supports `onReorderComplete`)
 - `useInlineEditHandlers` - For any table view with name/icon/visibility editing
 - `usePinnedRow` - For any table view with pinned newly-created rows
 - `useContextRowUiState` - For any table view with editing state
+- `useUndoRedoStack` - For view-scoped undo/redo with declarative capture
 
 **Ask Claude Code:**
 
-- "Show me the AllLabels implementation"
-- "Explain how useDragReorder works"
+- "Show me the CategoryTableView implementation"
+- "Explain how SortableHeaderCell works"
 - "Help me implement the Label view"
 
 ---
 
-**Last Updated:** 2026-01-14
+**Last Updated:** 2026-01-16
 **Project Owner:** yuens1002

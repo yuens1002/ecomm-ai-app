@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.64.4 - 2026-01-16
+
+- **Checkbox contrast improvement**: Improved unchecked checkbox border visibility in light mode
+  - Changed from `border-input` to `border-muted-foreground/50` for better contrast
+  - Dark mode retains original `border-input` for accessibility
+- **Added Order text styling**: Removed `text-muted-foreground` from Added Order column in CategoryTableView
+  - Numeric data now uses standard text color, consistent with product count columns
+- **Roadmap update**: Updated docs/menu-builder/roadmap.md with Phase 2 progress (3/5 views complete)
+
 ## 0.64.3 - 2026-01-16
 
 - **Standardize disabled button styling**: Unified action bar button disabled states

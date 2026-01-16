@@ -225,7 +225,7 @@ export function CategoryTableView() {
 
         {/* Added Order (chronological rank based on createdAt) */}
         <TableCell config={categoryViewWidthPreset.addedOrder}>
-          <span className="text-muted-foreground text-sm">{product.addedOrderRank}</span>
+          <span className="text-sm">{product.addedOrderRank}</span>
         </TableCell>
 
         {/* Visibility (read-only icon) */}

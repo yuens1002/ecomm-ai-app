@@ -47,7 +47,7 @@ export function TableHeader<TData = unknown>({
   className,
 }: TableHeaderProps<TData>) {
   return (
-    <ShadcnTableHeader className={cn("h-10 bg-muted/40 border-b", className)}>
+    <ShadcnTableHeader className={cn("h-10 border-b-2", className)}>
       <TableRow className="group/header hover:bg-transparent">
         {columns.map((column) => {
           const config = preset[column.id];
