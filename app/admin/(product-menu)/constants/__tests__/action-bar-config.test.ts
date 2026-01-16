@@ -27,6 +27,9 @@ describe("Action Bar Configuration", () => {
       detachProductFromCategory: jest
         .fn<ProductMenuMutations["detachProductFromCategory"]>()
         .mockResolvedValue({ ok: true }),
+      attachProductToCategory: jest
+        .fn<NonNullable<ProductMenuMutations["attachProductToCategory"]>>()
+        .mockResolvedValue({ ok: true }),
     };
 
     return {
@@ -321,6 +324,96 @@ describe("Action Bar Configuration", () => {
       expect(labelActions.find((a) => a.id === "collapse-all")).toBeUndefined();
       expect(categoryActions.find((a) => a.id === "expand-all")).toBeUndefined();
       expect(categoryActions.find((a) => a.id === "collapse-all")).toBeUndefined();
+    });
+  });
+
+  describe("Undo/Redo - captureUndo", () => {
+    describe("Remove action - category view", () => {
+      it("should capture undo for product removal from category", () => {
+        const context = createMockContext({
+          selectedIds: ["product-1", "product-2"],
+          currentCategoryId: "category-1",
+        });
+        const removeAction = ACTION_BAR_CONFIG.category.find((a) => a.id === "remove");
+        const captureUndoFn = removeAction?.captureUndo?.category;
+
+        expect(captureUndoFn).toBeDefined();
+
+        const undoAction = captureUndoFn!(context, undefined);
+
+        expect(undoAction).not.toBeNull();
+        expect(undoAction?.action).toBe("remove:detach-products-from-category");
+        expect(undoAction?.data.undo).toBeInstanceOf(Function);
+        expect(undoAction?.data.redo).toBeInstanceOf(Function);
+      });
+
+      it("should return null when no category is selected", () => {
+        const context = createMockContext({
+          selectedIds: ["product-1"],
+          currentCategoryId: undefined,
+        });
+        const removeAction = ACTION_BAR_CONFIG.category.find((a) => a.id === "remove");
+        const captureUndoFn = removeAction?.captureUndo?.category;
+
+        const undoAction = captureUndoFn!(context, undefined);
+
+        expect(undoAction).toBeNull();
+      });
+
+      it("should return null when no products are selected", () => {
+        const context = createMockContext({
+          selectedIds: [],
+          currentCategoryId: "category-1",
+        });
+        const removeAction = ACTION_BAR_CONFIG.category.find((a) => a.id === "remove");
+        const captureUndoFn = removeAction?.captureUndo?.category;
+
+        const undoAction = captureUndoFn!(context, undefined);
+
+        expect(undoAction).toBeNull();
+      });
+
+      it("should call attachProductToCategory on undo", async () => {
+        const context = createMockContext({
+          selectedIds: ["product-1", "product-2"],
+          currentCategoryId: "category-1",
+        });
+        const removeAction = ACTION_BAR_CONFIG.category.find((a) => a.id === "remove");
+        const captureUndoFn = removeAction?.captureUndo?.category;
+
+        const undoAction = captureUndoFn!(context, undefined);
+        await undoAction?.data.undo();
+
+        expect(context.mutations.attachProductToCategory).toHaveBeenCalledWith(
+          "product-1",
+          "category-1"
+        );
+        expect(context.mutations.attachProductToCategory).toHaveBeenCalledWith(
+          "product-2",
+          "category-1"
+        );
+      });
+
+      it("should call detachProductFromCategory on redo", async () => {
+        const context = createMockContext({
+          selectedIds: ["product-1", "product-2"],
+          currentCategoryId: "category-1",
+        });
+        const removeAction = ACTION_BAR_CONFIG.category.find((a) => a.id === "remove");
+        const captureUndoFn = removeAction?.captureUndo?.category;
+
+        const undoAction = captureUndoFn!(context, undefined);
+        await undoAction?.data.redo();
+
+        expect(context.mutations.detachProductFromCategory).toHaveBeenCalledWith(
+          "product-1",
+          "category-1"
+        );
+        expect(context.mutations.detachProductFromCategory).toHaveBeenCalledWith(
+          "product-2",
+          "category-1"
+        );
+      });
     });
   });
 

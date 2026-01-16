@@ -210,6 +210,38 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     },
 
     captureUndo: {
+      category: ({ selectedIds, currentCategoryId, mutations }) => {
+        if (!currentCategoryId) return null;
+
+        const pairs = selectedIds.map((productId) => ({
+          productId,
+          categoryId: currentCategoryId,
+        }));
+
+        if (pairs.length === 0) return null;
+
+        return {
+          action: "remove:detach-products-from-category",
+          timestamp: new Date(),
+          data: {
+            undo: async () => {
+              if (!mutations.attachProductToCategory) return;
+              await Promise.all(
+                pairs.map(({ productId, categoryId }) =>
+                  mutations.attachProductToCategory!(productId, categoryId)
+                )
+              );
+            },
+            redo: async () => {
+              await Promise.all(
+                pairs.map(({ productId, categoryId }) =>
+                  mutations.detachProductFromCategory(productId, categoryId)
+                )
+              );
+            },
+          },
+        };
+      },
       "all-categories": ({ selectedIds, labels, mutations }) => {
         const pairs = selectedIds.flatMap((categoryId) =>
           labels

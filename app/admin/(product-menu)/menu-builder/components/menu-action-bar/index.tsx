@@ -191,6 +191,7 @@ export function MenuActionBar() {
         updateCategory,
         detachCategory,
         detachProductFromCategory,
+        attachProductToCategory,
         attachCategory,
       },
       labels,

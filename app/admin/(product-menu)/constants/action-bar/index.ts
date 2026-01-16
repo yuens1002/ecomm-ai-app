@@ -21,6 +21,7 @@ function hydrateSlot(slot: ActionSlot, position: ActionPosition): ActionDefiniti
     ariaLabel: base.ariaLabel,
     onClick: base.onClick,
     execute: base.execute,
+    captureUndo: base.captureUndo,
     // Effects (flattened from base.effects)
     refresh: base.effects?.refresh,
     errorMessage: base.effects?.errorMessage,

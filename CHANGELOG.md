@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.64.5 - 2026-01-16
+
+- **Category view undo/redo**: Added undo/redo support for remove action in CategoryTableView
+  - Undo re-attaches products via `attachProductToCategory`
+  - Redo detaches them again via `detachProductFromCategory`
+  - Added `captureUndo` to hydration (was missing from action definitions)
+- **Tests**: Added 5 tests for category view undo/redo functionality
+
 ## 0.64.4 - 2026-01-16
 
 - **Checkbox contrast improvement**: Improved unchecked checkbox border visibility in light mode

@@ -71,6 +71,10 @@ export type ProductMenuMutations = {
     productId: string,
     categoryId: string
   ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  attachProductToCategory?: (
+    productId: string,
+    categoryId: string
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
   attachCategory?: (
     labelId: string,
     categoryId: string
