@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.64.3 - 2026-01-16
+
+- **Standardize disabled button styling**: Unified action bar button disabled states
+  - All buttons now use native `disabled` prop with consistent `opacity-50` effect
+  - Removed inconsistent `aria-disabled` + `text-muted-foreground` pattern
+  - Removed redundant `text-muted-foreground` classes from already-disabled buttons
+
 ## 0.64.2 - 2026-01-16
 
 - **Icon vertical alignment fix**: Added `align-middle` to InlineIconCell for proper vertical centering

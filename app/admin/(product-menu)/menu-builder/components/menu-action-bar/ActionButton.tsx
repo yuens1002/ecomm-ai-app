@@ -34,13 +34,9 @@ export function ActionButton({
         <Button
           variant="ghost"
           size="icon"
-          aria-disabled={disabled}
-          onClick={disabled ? undefined : onClick}
+          disabled={disabled}
+          onClick={onClick}
           aria-label={ariaLabel || tooltip}
-          className={
-            disabled ? "text-muted-foreground pointer-events-none" : ""
-          }
-          tabIndex={0}
         >
           <Icon className="size-4" />
         </Button>

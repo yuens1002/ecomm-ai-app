@@ -44,7 +44,6 @@ export function ActionDropdownButton({
             size="sm"
             disabled={disabled}
             aria-label={ariaLabel || tooltip}
-            className="text-muted-foreground"
           >
             <Icon className="size-4 mr-2" />
             {label}

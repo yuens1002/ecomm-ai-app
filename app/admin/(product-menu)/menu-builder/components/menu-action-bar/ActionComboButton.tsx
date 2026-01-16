@@ -48,15 +48,9 @@ export function ActionComboButton({
           <Button
             variant="outline"
             size="sm"
-            aria-disabled={newButton.disabled}
-            onClick={newButton.disabled ? undefined : newButton.onClick}
+            disabled={newButton.disabled}
+            onClick={newButton.onClick}
             aria-label={newButton.ariaLabel || newButton.tooltip}
-            className={
-              newButton.disabled
-                ? "text-muted-foreground pointer-events-none"
-                : ""
-            }
-            tabIndex={0}
           >
             <NewIcon className="size-4 mr-2" />
             {newButton.label}
@@ -89,7 +83,6 @@ export function ActionComboButton({
               size="sm"
               disabled={addButton.disabled}
               aria-label={addButton.tooltip}
-              className="text-muted-foreground"
             >
               <ChevronDown className="size-4" />
             </Button>
