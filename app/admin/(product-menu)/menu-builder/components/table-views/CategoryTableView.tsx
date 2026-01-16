@@ -231,9 +231,9 @@ export function CategoryTableView() {
         {/* Visibility (read-only icon) */}
         <TableCell config={categoryViewWidthPreset.visibility}>
           {product.isDisabled ? (
-            <EyeOff className="h-4 w-4 text-muted-foreground" />
+            <EyeOff className="text-muted-foreground inline" />
           ) : (
-            <Eye className="h-4 w-4 text-foreground" />
+            <Eye className="h-4 w-4 text-foreground inline" />
           )}
         </TableCell>
 

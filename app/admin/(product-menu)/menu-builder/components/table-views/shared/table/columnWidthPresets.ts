@@ -109,19 +109,19 @@ export const categoryViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
     },
     // Added Order column: sortable, centered
     addedOrder: {
-      head: "w-40 pr-6",
-      cell: "pr-14",
+      head: "w-40 px-6",
+      cell: "px-6",
       align: "center",
     },
     // Visibility column: eye icon, centered
     visibility: {
-      head: "w-24 min-w-24 max-w-24 px-4",
-      cell: "pr-6",
+      head: "w-24 min-w-24 max-w-24 px-6",
+      cell: "w-24 min-w-24 max-w-24 px-6",
       align: "center",
     },
     // Categories column: takes remaining space
     categories: {
-      head: "pr-6",
+      head: "w-48 min-w-48 pr-6",
       cell: "pr-6 min-w-48",
     },
     // Drag handle: 48px

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.64.2 - 2026-01-16
+
+- **Icon vertical alignment fix**: Added `align-middle` to InlineIconCell for proper vertical centering
+- **Category table view tweaks**: Adjusted column widths and icon inline display
+- **Header truncation**: Added `truncate` class to non-sortable headers
+
 ## 0.64.1 - 2026-01-16
 
 - **Column preset consolidation**: Single source of truth for table column config

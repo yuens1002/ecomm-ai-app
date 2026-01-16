@@ -98,7 +98,7 @@ export function TableHeader<TData = unknown>({
           return (
             <TableHead
               key={column.id}
-              className={cn(width, alignClass, "font-medium text-foreground")}
+              className={cn(width, alignClass, "font-medium text-foreground truncate")}
             >
               {column.label}
             </TableHead>

@@ -77,7 +77,7 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
   const showTrigger = isRowHovered || isOpen;
 
   return (
-    <div className="inline-flex items-center justify-center w-4 h-4" data-row-click-ignore>
+    <div className="inline-flex items-center justify-center w-4 h-4 align-middle" data-row-click-ignore>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           {icon ? (
