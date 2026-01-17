@@ -235,3 +235,17 @@ We define CSS variables for each theme.
 .animate-highlight-pulse {
   animation: highlight-pulse 0.6s ease-out 2;
 }
+
+/* Flash animation for auto-expanded rows during drag */
+@keyframes auto-expand-flash {
+  0% {
+    background-color: oklch(0.7 0.1 250 / 0.3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-auto-expand-flash {
+  animation: auto-expand-flash 0.5s ease-out;
+}

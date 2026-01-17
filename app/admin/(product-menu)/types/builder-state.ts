@@ -36,6 +36,10 @@ export type BuilderState = {
   totalLabels: number;
   totalCategories: number;
   totalProducts: number;
+
+  // Expand/collapse state (for menu view)
+  expandedIds: Set<string>;
+  expandableIds: string[];
 };
 
 export type HistoryEntry = {
@@ -71,7 +75,8 @@ export interface MenuBuilderActions {
 
   // Expand/collapse
   toggleExpand: (id: string) => void;
-  expandAll: (ids: string[]) => void;
+  /** Expand all expandable items. If ids not provided, expands all labels and categories with children. */
+  expandAll: (ids?: string[]) => void;
   collapseAll: () => void;
 
   // CRUD operations

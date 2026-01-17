@@ -10,3 +10,14 @@ export const modKey = isMac ? "⌘" : "Ctrl";
 export const hasSelection = (state: BuilderState): boolean => state.selectedIds.length > 0;
 export const hasUndoHistory = (state: BuilderState): boolean => state.undoStack.length > 0;
 export const hasRedoHistory = (state: BuilderState): boolean => state.redoStack.length > 0;
+
+// Expand/collapse helpers
+export const allExpanded = (state: BuilderState): boolean => {
+  const { expandedIds, expandableIds } = state;
+  if (expandableIds.length === 0) return true;
+  return expandableIds.every((id) => expandedIds.has(id));
+};
+
+export const allCollapsed = (state: BuilderState): boolean => {
+  return state.expandedIds.size === 0;
+};

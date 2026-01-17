@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -77,7 +76,7 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
   const showTrigger = isRowHovered || isOpen;
 
   return (
-    <div className="inline-flex items-center justify-center w-4 h-4 align-middle" data-row-click-ignore>
+    <div className="inline-flex items-center justify-center" data-row-click-ignore>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           {icon ? (
@@ -86,12 +85,12 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
               type="button"
               disabled={isLoading}
               className={cn(
-                "w-4 h-4 flex items-center justify-center rounded transition-opacity",
+                "flex items-center justify-center rounded-md px-1.5 py-1 transition-opacity hover:bg-accent",
                 // xs-sm: always show as interactive
                 "opacity-100",
                 // md+: show as static icon unless hovered/open
                 showTrigger
-                  ? "md:opacity-100 md:hover:bg-accent md:cursor-pointer"
+                  ? "md:opacity-100 md:cursor-pointer"
                   : "md:cursor-default"
               )}
               onClick={(e) => {
@@ -105,13 +104,11 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
             </button>
           ) : (
             // No icon: show [?] trigger (always tabbable, visually hidden on md+ unless hovered/focused)
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              size="sm"
               disabled={isLoading}
               className={cn(
-                "w-4 h-4 p-0 rounded flex items-center justify-center",
+                "flex items-center justify-center rounded-md px-1.5 py-1 hover:bg-accent",
                 // xs-sm: always visible
                 "opacity-100",
                 // md+: visually hidden unless hovered/open/focused (but still tabbable)
@@ -126,7 +123,7 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
               aria-label="Select icon"
             >
               <CircleHelp className="w-4 h-4 text-muted-foreground" />
-            </Button>
+            </button>
           )}
         </PopoverTrigger>
         <PopoverContent className="p-0 w-64" align="start">

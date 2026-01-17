@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.66.0 - 2026-01-17
+
+- **Menu Table View enhancements**: UI polish and action bar improvements
+  - Fixed row click selection for label rows (removed errant `data-row-click-ignore`)
+  - Product selection now uses composite keys (`parentId-id`) for unique selection per category
+  - Icon cell hover styling with background color for better UX
+  - Adjusted spacing between chevron, icon, and name elements
+- **Action bar state-aware disabling**:
+  - "Add Labels" disabled when row selection is active
+  - "Expand All" disabled when all expandable items are already expanded
+  - "Collapse All" disabled when all items are already collapsed
+  - Added `expandedIds` and `expandableIds` to `BuilderState` type
+  - New helpers: `allExpanded()` and `allCollapsed()` in action bar shared utilities
+- **Drag-hover auto-expand** (foundation for cross-boundary DnD):
+  - Hovering over collapsed label/category for 500ms during drag auto-expands it
+  - Flash animation (`animate-auto-expand-flash`) on auto-expanded rows
+  - Timer management with proper cleanup on drag end/leave
+
 ## 0.65.2 - 2026-01-17
 
 - **Table view column reordering**: Standardized Visibility column placement across all views

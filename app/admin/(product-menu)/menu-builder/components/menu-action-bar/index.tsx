@@ -8,6 +8,7 @@ import {
   type ActionContext,
   type ActionId,
 } from "../../../constants/action-bar-config";
+import { getExpandableIds } from "../table-views/MenuTableView/useFlattenedMenuRows";
 import { DROPDOWN_REGISTRY, type DropdownContext } from "../../../constants/dropdown-registry";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { ActionButton } from "./ActionButton";
@@ -60,15 +61,22 @@ export function MenuActionBar() {
     });
   }, [builder.currentView, builder.selectedIds, categories]);
 
-  // Build state object for action bar config (with data counts)
+  // Compute expandable IDs (labels with categories, categories with products)
+  const expandableIds = useMemo(
+    () => getExpandableIds(labels, products),
+    [labels, products]
+  );
+
+  // Build state object for action bar config (with data counts and expand state)
   const state = useMemo(
     () => ({
       ...builder,
       totalLabels: labels.length,
       totalCategories: categories.length,
       totalProducts: products.length,
+      expandableIds,
     }),
-    [builder, labels.length, categories.length, products.length]
+    [builder, labels.length, categories.length, products.length, expandableIds]
   );
 
   // Build actions object for action bar config
@@ -80,7 +88,9 @@ export function MenuActionBar() {
 
     // Expand/collapse
     toggleExpand: builder.toggleExpand,
-    expandAll: builder.expandAll,
+    expandAll: () => {
+      builder.expandAll(expandableIds);
+    },
     collapseAll: builder.collapseAll,
 
     // Navigation
@@ -189,6 +199,7 @@ export function MenuActionBar() {
 
     const context: ActionContext = {
       selectedIds: builder.selectedIds,
+      selectedKind: builder.selectedKind,
       currentLabelId: builder.currentLabelId,
       currentCategoryId: builder.currentCategoryId,
       mutations: {

@@ -134,6 +134,42 @@ export const categoryViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
   }
 );
 
+export const menuViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
+  baseMenuBuilderWidthPreset,
+  {
+    // Name column: takes remaining space (no fixed width)
+    // Includes icon + chevron + hierarchical indentation
+    name: {
+      head: "px-6",
+      cell: "pr-6 min-w-48",
+    },
+    // Categories count column: shown only for labels, centered
+    categories: {
+      head: "w-28 min-w-28 px-4",
+      cell: "w-28 min-w-28 px-4",
+      align: "center",
+    },
+    // Products count column: shown for labels and categories, centered
+    products: {
+      head: "w-28 min-w-28 px-4",
+      cell: "w-28 min-w-28 px-4",
+      align: "center",
+    },
+    // Visibility column: eye icon, centered
+    visibility: {
+      head: "w-28 min-w-28 px-4",
+      cell: "w-28 min-w-28 px-4",
+      align: "center",
+    },
+    // Drag handle: 48px
+    dragHandle: {
+      head: "w-12 min-w-12 max-w-12 pr-2",
+      cell: "pr-2",
+      align: "center",
+    },
+  }
+);
+
 export const labelViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
   baseMenuBuilderWidthPreset,
   {

@@ -34,6 +34,7 @@ describe("Action Bar Configuration", () => {
 
     return {
       selectedIds: ["id1", "id2"],
+      selectedKind: null,
       currentLabelId: "label-1",
       currentCategoryId: "category-1",
       mutations: mockMutations,
@@ -61,6 +62,8 @@ describe("Action Bar Configuration", () => {
     totalLabels: 5,
     totalCategories: 5,
     totalProducts: 10,
+    expandedIds: new Set<string>(),
+    expandableIds: [],
     ...overrides,
   });
 
@@ -110,8 +113,8 @@ describe("Action Bar Configuration", () => {
       expect(removeAction?.execute?.["all-categories"]).toBeInstanceOf(Function);
     });
 
-    it("should hide labels in menu view", async () => {
-      const context = createMockContext();
+    it("should hide labels in menu view when selectedKind is label", async () => {
+      const context = createMockContext({ selectedKind: "label" });
       const removeAction = ACTION_BAR_CONFIG.menu.find((a) => a.id === "remove");
 
       await removeAction?.execute?.menu?.(context);
@@ -180,19 +183,18 @@ describe("Action Bar Configuration", () => {
   });
 
   describe("Shared Actions - Visibility", () => {
-    it("should have execute logic for menu and all-* views", () => {
-      const visibilityAction = ACTION_BAR_CONFIG.menu.find((a) => a.id === "visibility");
+    it("should have execute logic for all-labels and all-categories views", () => {
+      const visibilityAction = ACTION_BAR_CONFIG["all-labels"].find((a) => a.id === "visibility");
 
-      expect(visibilityAction?.execute?.menu).toBeInstanceOf(Function);
       expect(visibilityAction?.execute?.["all-labels"]).toBeInstanceOf(Function);
       expect(visibilityAction?.execute?.["all-categories"]).toBeInstanceOf(Function);
     });
 
-    it("should toggle label visibility in menu view", async () => {
+    it("should toggle label visibility in all-labels view", async () => {
       const context = createMockContext();
-      const visibilityAction = ACTION_BAR_CONFIG.menu.find((a) => a.id === "visibility");
+      const visibilityAction = ACTION_BAR_CONFIG["all-labels"].find((a) => a.id === "visibility");
 
-      await visibilityAction?.execute?.menu?.(context);
+      await visibilityAction?.execute?.["all-labels"]?.(context);
 
       // Label 1 is visible, should become hidden
       expect(context.mutations.updateLabel).toHaveBeenCalledWith("id1", {
@@ -299,9 +301,9 @@ describe("Action Bar Configuration", () => {
   });
 
   describe("View-specific Action Availability", () => {
-    it("should have visibility action in menu view", () => {
+    it("should not have visibility action in menu view", () => {
       const menuActions = ACTION_BAR_CONFIG.menu;
-      expect(menuActions.find((a) => a.id === "visibility")).toBeDefined();
+      expect(menuActions.find((a) => a.id === "visibility")).toBeUndefined();
     });
 
     it("should not have visibility action in label view", () => {
@@ -555,10 +557,6 @@ describe("Action Bar Configuration", () => {
               },
             ],
             "right": [
-              {
-                "id": "visibility",
-                "type": "button",
-              },
               {
                 "id": "expand-all",
                 "type": "button",

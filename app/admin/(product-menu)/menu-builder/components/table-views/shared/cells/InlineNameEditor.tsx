@@ -101,13 +101,13 @@ export function InlineNameEditor({
     return (
       <button
         onClick={onStartEdit}
-        className="group inline-flex max-w-full min-w-0 items-center gap-2 text-sm text-left hover:bg-accent rounded-md px-2 py-1"
+        className="group inline-flex items-center gap-2 text-sm text-left hover:bg-accent rounded-md px-2 py-1"
       >
         <span
           className={
             isGenericName
-              ? "min-w-0 truncate italic text-muted-foreground"
-              : `min-w-0 truncate ${isHidden ? "text-muted-foreground" : "text-foreground"}`
+              ? "italic text-muted-foreground"
+              : isHidden ? "text-muted-foreground" : "text-foreground"
           }
         >
           {value}
@@ -118,14 +118,14 @@ export function InlineNameEditor({
   }
 
   return (
-    <div ref={containerRef} onBlur={handleContainerBlur} className="flex items-center gap-1">
+    <div ref={containerRef} onBlur={handleContainerBlur} className="inline-flex items-center gap-1">
       <p
         ref={editableRef}
         contentEditable={!isLoading}
         onKeyDown={handleKeyDown}
         suppressContentEditableWarning
         tabIndex={0}
-        className="outline-none rounded-md px-2 py-1 text-sm focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring min-w-0"
+        className="outline-none rounded-md px-2 py-1 text-sm focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
       >
         {value}
       </p>

@@ -82,6 +82,7 @@ export type ProductMenuMutations = {
 
 export type ActionContext = {
   selectedIds: string[];
+  selectedKind: "label" | "category" | "product" | null;
   currentLabelId?: string;
   currentCategoryId?: string;
   mutations: ProductMenuMutations;

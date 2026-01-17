@@ -1,3 +1,3 @@
 "use client";
 
-export { PlaceholderTableView as MenuTableView } from "./PlaceholderTableView";
+export { MenuTableView } from "./MenuTableView/MenuTableView";

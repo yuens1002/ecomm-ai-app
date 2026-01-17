@@ -10,7 +10,7 @@ import {
   Undo,
 } from "lucide-react";
 import type { ActionBase, ActionContext, ActionExecuteResult, ActionId } from "./model";
-import { hasRedoHistory, hasSelection, hasUndoHistory, modKey } from "./shared";
+import { allCollapsed, allExpanded, hasRedoHistory, hasSelection, hasUndoHistory, modKey } from "./shared";
 
 // ─────────────────────────────────────────────────────────────
 // UTILS - Common execute patterns
@@ -132,8 +132,16 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     },
 
     execute: {
-      menu: async ({ selectedIds, labels, mutations }) =>
-        cloneItems(selectedIds, labels, mutations.cloneLabel),
+      menu: async ({ selectedIds, selectedKind, labels, categories, mutations }) => {
+        // Clone based on selected entity type
+        if (selectedKind === "label") {
+          return cloneItems(selectedIds, labels, mutations.cloneLabel);
+        } else if (selectedKind === "category") {
+          return cloneItems(selectedIds, categories, mutations.cloneCategory);
+        }
+        // Products cannot be cloned in menu view
+        return { createdIds: [] };
+      },
       "all-labels": async ({ selectedIds, labels, mutations }) =>
         cloneItems(selectedIds, labels, mutations.cloneLabel),
       "all-categories": async ({ selectedIds, categories, mutations }) =>
@@ -141,8 +149,14 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     },
 
     captureUndo: {
-      menu: ({ selectedIds, mutations }, result) =>
-        captureCloneUndo("clone:labels", selectedIds, result, mutations.deleteLabel, mutations.cloneLabel),
+      menu: ({ selectedIds, selectedKind, mutations }, result) => {
+        if (selectedKind === "label") {
+          return captureCloneUndo("clone:labels", selectedIds, result, mutations.deleteLabel, mutations.cloneLabel);
+        } else if (selectedKind === "category") {
+          return captureCloneUndo("clone:categories", selectedIds, result, mutations.deleteCategory, mutations.cloneCategory);
+        }
+        return null;
+      },
       "all-labels": ({ selectedIds, mutations }, result) =>
         captureCloneUndo("clone:labels", selectedIds, result, mutations.deleteLabel, mutations.cloneLabel),
       "all-categories": ({ selectedIds, mutations }, result) =>
@@ -186,7 +200,33 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     },
 
     execute: {
-      menu: hideLabels,
+      menu: async ({ selectedIds, selectedKind, labels, products, mutations }) => {
+        // Remove based on selected entity type
+        if (selectedKind === "label") {
+          // Hide labels from menu (set isVisible: false)
+          await Promise.all(selectedIds.map((id) => mutations.updateLabel(id, { isVisible: false })));
+        } else if (selectedKind === "category") {
+          // Detach categories from their parent labels
+          await Promise.all(
+            selectedIds.flatMap((categoryId) =>
+              labels
+                .filter((label) => label.categories?.some((cat) => cat.id === categoryId))
+                .map((label) => mutations.detachCategory(label.id, categoryId))
+            )
+          );
+        } else if (selectedKind === "product") {
+          // Detach products from their actual parent categories (using product.categoryIds)
+          await Promise.all(
+            selectedIds.flatMap((productId) => {
+              const product = products.find((p) => p.id === productId);
+              if (!product) return [];
+              return product.categoryIds.map((categoryId) =>
+                mutations.detachProductFromCategory(productId, categoryId)
+              );
+            })
+          );
+        }
+      },
       "all-labels": hideLabels,
       label: async ({ selectedIds, currentLabelId, mutations }) => {
         if (!currentLabelId) return;
@@ -210,6 +250,93 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     },
 
     captureUndo: {
+      menu: ({ selectedIds, selectedKind, labels, products, mutations }) => {
+        if (selectedKind === "label") {
+          // Store visibility state for undo
+          const labelIds = [...selectedIds];
+          if (labelIds.length === 0) return null;
+
+          return {
+            action: "remove:hide-labels-from-menu",
+            timestamp: new Date(),
+            data: {
+              undo: async () => {
+                await Promise.all(
+                  labelIds.map((id) => mutations.updateLabel(id, { isVisible: true }))
+                );
+              },
+              redo: async () => {
+                await Promise.all(
+                  labelIds.map((id) => mutations.updateLabel(id, { isVisible: false }))
+                );
+              },
+            },
+          };
+        } else if (selectedKind === "category") {
+          // Store label-category pairs for undo
+          const pairs = selectedIds.flatMap((categoryId) =>
+            labels
+              .filter((label) => label.categories?.some((cat) => cat.id === categoryId))
+              .map((label) => ({ labelId: label.id, categoryId }))
+          );
+
+          if (pairs.length === 0) return null;
+
+          return {
+            action: "remove:detach-categories-from-menu",
+            timestamp: new Date(),
+            data: {
+              undo: async () => {
+                if (!mutations.attachCategory) return;
+                await Promise.all(
+                  pairs.map(({ labelId, categoryId }) =>
+                    mutations.attachCategory!(labelId, categoryId)
+                  )
+                );
+              },
+              redo: async () => {
+                await Promise.all(
+                  pairs.map(({ labelId, categoryId }) =>
+                    mutations.detachCategory(labelId, categoryId)
+                  )
+                );
+              },
+            },
+          };
+        } else if (selectedKind === "product") {
+          // Store product-category pairs for undo
+          const pairs = selectedIds.flatMap((productId) => {
+            const product = products.find((p) => p.id === productId);
+            if (!product) return [];
+            return product.categoryIds.map((categoryId) => ({ productId, categoryId }));
+          });
+
+          if (pairs.length === 0) return null;
+
+          return {
+            action: "remove:detach-products-from-menu",
+            timestamp: new Date(),
+            data: {
+              undo: async () => {
+                if (!mutations.attachProductToCategory) return;
+                await Promise.all(
+                  pairs.map(({ productId, categoryId }) =>
+                    mutations.attachProductToCategory!(productId, categoryId)
+                  )
+                );
+              },
+              redo: async () => {
+                await Promise.all(
+                  pairs.map(({ productId, categoryId }) =>
+                    mutations.detachProductFromCategory(productId, categoryId)
+                  )
+                );
+              },
+            },
+          };
+        }
+        return null;
+      },
       label: ({ selectedIds, currentLabelId, mutations }) => {
         if (!currentLabelId) return null;
 
@@ -471,9 +598,9 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     label: "Expand All",
     tooltip: "Expand all sections",
     kbd: [modKey, "↓"],
-    disabled: () => false,
+    disabled: (state) => allExpanded(state),
     onClick: (_state, actions) => {
-      actions.expandAll([]);
+      actions.expandAll();
     },
   },
 
@@ -486,7 +613,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     label: "Collapse All",
     tooltip: "Collapse all sections",
     kbd: [modKey, "↑"],
-    disabled: () => false,
+    disabled: (state) => allCollapsed(state),
     onClick: (_state, actions) => {
       actions.collapseAll();
     },
@@ -552,7 +679,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     label: "Add Label(s)",
     tooltip: "Add labels to menu",
     kbd: [],
-    disabled: (state) => state.totalLabels === 0,
+    disabled: (state) => state.totalLabels === 0 || hasSelection(state),
     onClick: () => {},
   },
 

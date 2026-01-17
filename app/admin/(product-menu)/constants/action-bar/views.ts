@@ -9,10 +9,9 @@ export const VIEW_CONFIG: ViewConfig = {
       { id: "new-label", type: "combo", comboWith: "add-labels" },
       { id: "add-labels", type: "combo", comboWith: "new-label" },
       { id: "clone" },
-      { id: "remove", tooltip: "Hide from menu" },
+      { id: "remove", tooltip: "Remove from menu" },
     ],
     right: [
-      { id: "visibility" },
       { id: "expand-all" },
       { id: "collapse-all" },
       { id: "undo" },

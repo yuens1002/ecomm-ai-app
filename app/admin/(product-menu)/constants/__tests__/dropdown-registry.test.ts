@@ -17,6 +17,8 @@ describe("Dropdown Registry", () => {
       totalLabels: 5,
       totalCategories: 5,
       totalProducts: 10,
+      expandedIds: new Set<string>(),
+      expandableIds: [],
     } as BuilderState,
     labels: [
       { id: "label-1", name: "Label 1", isVisible: true } as MenuLabel,
