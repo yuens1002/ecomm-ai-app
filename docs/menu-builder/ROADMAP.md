@@ -1,8 +1,8 @@
 # Menu Builder - Development Roadmap
 
-**Last Updated:** 2026-01-16
-**Current Branch:** `unify-menu-builder`
-**Status:** Phase 1 Complete ✅ | Phase 2 In Progress 🚧 (3/5 views)
+**Last Updated:** 2026-01-17
+**Current Branch:** `feat/label-table-view`
+**Status:** Phase 1 Complete ✅ | Phase 2 In Progress 🚧 (4/5 views complete)
 
 ---
 
@@ -16,10 +16,10 @@ Build a sophisticated admin interface for managing a 3-level product catalog hie
 
 ```(text)
 Foundation  ████████████████████████ 100% ✅
-Table Views ██████████████░░░░░░░░░  60% 🚧
+Table Views ██████████████████░░░░░  80% 🚧
 Advanced    ████░░░░░░░░░░░░░░░░░░░  20% 🚧
 ─────────────────────────────────────────
-Total       ██████████████░░░░░░░░░  60%
+Total       ████████████████░░░░░░░  70%
 ```
 
 ---
@@ -79,7 +79,7 @@ Total       ██████████████░░░░░░░░�
 
 **Target:** Complete all 5 table views
 **Timeline:** 4-6 weeks
-**Current:** 3/5 views shipped (60%)
+**Current:** 4/5 views shipped (80%)
 
 ### 2.1 All Labels Table View ✅ COMPLETE (Jan 14, 2026)
 
@@ -175,41 +175,62 @@ Total       ██████████████░░░░░░░░�
 
 ---
 
-### 2.3 Label View (2-Level Hierarchy) ⏸️ NOT STARTED
+### 2.3 Label View ✅ COMPLETE (Jan 17, 2026)
 
 **Complexity:** Medium
-**Effort:** 3-4 days
+**Effort:** 2-3 days
 **Dependencies:** 2.1 (All Labels view should exist first)
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] Create `LabelTableView.tsx` component
-- [ ] Show categories within selected label
-- [ ] Expandable/collapsible category rows
-- [ ] Product count per category
-- [ ] Drag-and-drop category reordering (native HTML5)
-- [ ] "Add Categories" dropdown
-- [ ] "Remove from Label" action
-- [ ] Handle `autoOrder` mode (disable DnD when true)
-- [ ] "Redo/Undo" action
+- [x] Created `LabelTableView.tsx` component
+- [x] Single-level table showing categories within selected label
+- [x] Columns: Checkbox, Name, Added Order, Products, Visibility, Drag Handle
+- [x] TanStack sortable columns (Name, Added Order)
+- [x] Drag-and-drop category reordering (reuses `useDragReorder`)
+- [x] Products column: comma-separated product names (read-only)
+- [x] Single-click selects, double-click navigates to category view
+- [x] Selection model for bulk remove with undo/redo
+- [x] Column sort persists to database via `usePersistColumnSort` hook
+- [x] Added `attachedAt` field to junction table for chronological tracking
+- [x] Removed `sort-mode` action from action bar (replaced by column sorting)
 
-**Files to Create:**
+**Table Behavior:**
+
+- **Column sorting** - Name and Added Order are sortable (TanStack Table)
+- **Sort indicators** - ↑/↓ prepended to label when sorted
+- **DnD + Sort interaction** - Manual reorder clears column sort state
+- **Single-click** - Toggles row selection (200ms delay)
+- **Double-click** - Navigates to category view (for product management)
+- **Drag handle** - Always visible on mobile, hover-only on desktop
+
+**Schema Changes:**
+
+- Added `createdAt` column to `CategoryLabelCategory` junction table
+- Used as `attachedAt` for chronological Added Order ranking
+
+**New Reusable Hooks Created:**
+
+| Hook | Purpose |
+|------|---------|
+| `usePersistColumnSort` | Persist TanStack column sort order to database |
+
+**Files Created:**
 
 - `app/admin/(product-menu)/menu-builder/components/table-views/LabelTableView.tsx`
-- `app/admin/(product-menu)/menu-builder/components/table-views/shared/DraggableRow.tsx`
+- `app/admin/(product-menu)/hooks/usePersistColumnSort.ts`
+- `prisma/migrations/20260117114116_add_createdat_to_category_label_category/migration.sql`
 
-**Files to Modify:**
+**Files Modified:**
 
-- `app/admin/(product-menu)/menu-builder/components/table-views/TableViewRenderer.tsx`
-- `app/admin/(product-menu)/constants/action-bar-config.ts` (add "Add Categories" logic)
-
-**Acceptance Criteria:**
-
-- Shows categories in correct order (respects junction table)
-- Drag-and-drop updates order in database
-- Auto-order mode disables manual reordering
-- Can add categories from dropdown
-- Can remove categories from label
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/columnWidthPresets.ts`
+- `app/admin/(product-menu)/constants/action-bar/actions.ts` (added `captureUndo.label`)
+- `app/admin/(product-menu)/constants/action-bar/views.ts` (removed `sort-mode`)
+- `app/admin/(product-menu)/constants/action-bar/model.ts` (removed `sort-mode` ActionId)
+- `app/admin/(product-menu)/constants/__tests__/action-bar-config.test.ts` (updated snapshot)
+- `app/admin/(product-menu)/data/labels.ts` (include `attachedAt` in DTO)
+- `app/admin/(product-menu)/types/menu.ts` (added `attachedAt` to schema)
+- `app/admin/(product-menu)/menu-builder/components/table-views/CategoryTableView.tsx` (uses `usePersistColumnSort`)
 
 ---
 
@@ -438,7 +459,7 @@ app/admin/(product-menu)/
 │        ├─ PlaceholderTableView.tsx ✅
 │        ├─ AllCategoriesTableView.tsx ✅
 │        ├─ AllLabelsTableView.tsx  ✅ (2.1)
-│        ├─ LabelTableView.tsx      ⏸️ (2.3)
+│        ├─ LabelTableView.tsx      ✅ (2.3)
 │        ├─ CategoryTableView.tsx   ✅ (2.4)
 │        ├─ MenuTableView.tsx       ⏸️ (2.5)
 │        └─ shared/
@@ -457,6 +478,7 @@ app/admin/(product-menu)/
 │  ├─ useDragReorder.ts             ✅ (enhanced: onReorderComplete callback)
 │  ├─ useInlineEditHandlers.ts      ✅ (name/icon/visibility with undo)
 │  ├─ useUndoRedoStack.ts           ✅ (declarative undo/redo system)
+│  ├─ usePersistColumnSort.ts       ✅ (persist TanStack sort to DB)
 │  └─ useKeyboardShortcuts.ts       ⏸️ (3.2)
 │
 ├─ constants/
@@ -578,32 +600,54 @@ app/admin/(product-menu)/
 - Simplified header column definitions to just `id` and `label`
 - Eliminated redundant alignment props across all table views
 
+### Jan 17, 2026: Label View Simplification
+
+**Decision:** Single-level table with TanStack sorting instead of 2-level hierarchy with autoOrder mode
+**Rationale:**
+- 2-level hierarchy (categories → products) added complexity for little value
+- autoOrder toggle is redundant when TanStack provides 5 sorting options
+- Double-click to drill into category keeps product management in Category View
+- Matches existing CategoryTableView pattern (reuse code)
+
+**Impact:**
+
+- Removed: 2-level expand/collapse, autoOrder mode, sort-mode action
+- Added: TanStack sortable columns (Name, Added Order)
+- Products shown as comma-separated list (read-only preview)
+- Simpler implementation, consistent UX across views
+
+### Jan 17, 2026: Reusable Column Sort Persist Hook
+
+**Decision:** Extract column sort persistence into `usePersistColumnSort` hook
+**Rationale:**
+- Both LabelTableView and CategoryTableView needed identical logic
+- Pattern: watch TanStack sorting state → persist to DB via mutation
+- Guards against concurrent persists with a ref
+
+**Impact:**
+
+- Created `usePersistColumnSort.ts` hook
+- Reduced duplication across table views
+- Reusable for any table that needs sort-to-DB persistence
+- Clear API: `{ sorting, contextId, table, onPersist }`
+
 ---
 
 ## Next Action
 
-**Immediate Next Step:** Label View (2.3) or Menu View (2.5)
+**Immediate Next Step:** Menu View (2.5) - NOT STARTED
 
-### Option A: Label View (2.3) - Recommended
+### Menu View (2.5) - Next
 
-- Medium complexity
-- Shows categories within selected label
-- Requires drag-and-drop for category reordering
-- Can reuse `useDragReorder` hook and `SortableHeaderCell` from Category View
-
-### Option B: Menu View (2.5)
-
-- High complexity
+- Very High complexity (most complex view)
 - 3-level expand/collapse (Labels → Categories → Products)
-- Most complex view but enables full hierarchy editing
-- Consider after Label View is complete
+- Drag-and-drop across all levels
+- Drop zone visual feedback
+- Lazy loading for performance
 
-### Option C: Context Menu Infrastructure (2.2)
+### Also Available
 
-- Medium complexity
-- New pattern (right-click + three-dot menu)
-- Reuses ACTION_BAR_CONFIG for action definitions
-- Can be done in parallel with view work
+- **Context Menu Infrastructure (2.2)** - Can be done in parallel
 
 **Command to Start:**
 
@@ -611,15 +655,15 @@ app/admin/(product-menu)/
 # Ensure clean state
 git status
 
-# Continue on current branch
+# Continue development
 npm run dev
 ```
 
 **Files to Read First:**
 
-- `app/admin/(product-menu)/menu-builder/components/table-views/CategoryTableView.tsx` (reference for sortable columns)
-- `app/admin/(product-menu)/menu-builder/components/table-views/AllLabelsTableView.tsx` (reference for drag-drop)
-- `docs/menu-builder/FEATURE-SPEC.md` (Label view section)
+- `app/admin/(product-menu)/menu-builder/components/table-views/LabelTableView.tsx` (reference for category listing)
+- `app/admin/(product-menu)/menu-builder/components/table-views/CategoryTableView.tsx` (reference for product listing)
+- `docs/menu-builder/FEATURE-SPEC.md` (Menu view section)
 
 ---
 
@@ -652,6 +696,7 @@ npm run dev
 - `usePinnedRow` - For any table view with pinned newly-created rows
 - `useContextRowUiState` - For any table view with editing state
 - `useUndoRedoStack` - For view-scoped undo/redo with declarative capture
+- `usePersistColumnSort` - For persisting TanStack column sort to database
 
 **Ask Claude Code:**
 
@@ -661,5 +706,5 @@ npm run dev
 
 ---
 
-**Last Updated:** 2026-01-16
+**Last Updated:** 2026-01-17
 **Project Owner:** yuens1002

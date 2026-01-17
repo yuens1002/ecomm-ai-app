@@ -18,7 +18,6 @@ export const ALL_ACTION_IDS = [
   "new-label",
   "add-labels",
   "add-categories",
-  "sort-mode",
   "add-products",
   "sort-order",
   "new-category",

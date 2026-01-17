@@ -210,6 +210,38 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     },
 
     captureUndo: {
+      label: ({ selectedIds, currentLabelId, mutations }) => {
+        if (!currentLabelId) return null;
+
+        const pairs = selectedIds.map((categoryId) => ({
+          labelId: currentLabelId,
+          categoryId,
+        }));
+
+        if (pairs.length === 0) return null;
+
+        return {
+          action: "remove:detach-categories-from-label",
+          timestamp: new Date(),
+          data: {
+            undo: async () => {
+              if (!mutations.attachCategory) return;
+              await Promise.all(
+                pairs.map(({ labelId, categoryId }) =>
+                  mutations.attachCategory!(labelId, categoryId)
+                )
+              );
+            },
+            redo: async () => {
+              await Promise.all(
+                pairs.map(({ labelId, categoryId }) =>
+                  mutations.detachCategory(labelId, categoryId)
+                )
+              );
+            },
+          },
+        };
+      },
       category: ({ selectedIds, currentCategoryId, mutations }) => {
         if (!currentCategoryId) return null;
 
@@ -535,21 +567,6 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     kbd: [],
     disabled: (state) => state.totalCategories === 0,
     onClick: () => {},
-  },
-
-  // ─────────────────────────────────────────────────────────────
-  // SORT MODE
-  // ─────────────────────────────────────────────────────────────
-  "sort-mode": {
-    id: "sort-mode",
-    icon: ArrowUpDown,
-    label: "Sort Mode",
-    tooltip: "Category ordering mode",
-    kbd: [modKey, "R"],
-    disabled: () => false,
-    onClick: async (state) => {
-      console.log("Sort Mode clicked", state);
-    },
   },
 
   // ─────────────────────────────────────────────────────────────

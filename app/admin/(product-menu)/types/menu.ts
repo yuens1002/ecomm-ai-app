@@ -10,6 +10,7 @@ export const menuCategoryInLabelSchema = z.object({
   name: z.string(),
   slug: z.string(),
   order: z.number(),
+  attachedAt: z.coerce.date().catch(() => new Date()),
 });
 export type MenuCategoryInLabel = z.infer<typeof menuCategoryInLabelSchema>;
 

@@ -78,6 +78,7 @@ model CategoryLabelCategory {
   labelId    String
   categoryId String
   order      Int           @default(0)
+  createdAt  DateTime      @default(now())
   label      CategoryLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
   category   Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 

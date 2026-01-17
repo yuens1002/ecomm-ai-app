@@ -16,6 +16,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { useDragReorder } from "../../../hooks/useDragReorder";
+import { usePersistColumnSort } from "../../../hooks/usePersistColumnSort";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuProduct } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
@@ -113,12 +114,37 @@ export function CategoryTableView() {
     selectableIds: selectableProductIds,
   });
 
+  // Push undo action for reorder
+  const pushReorderUndo = useCallback(
+    (previousIds: string[], newIds: string[]) => {
+      if (!currentCategoryId) return;
+      const categoryId = currentCategoryId;
+
+      builder.pushUndoAction({
+        action: "reorder:products-in-category",
+        timestamp: new Date(),
+        data: {
+          undo: async () => {
+            await reorderProductsInCategory(categoryId, previousIds);
+          },
+          redo: async () => {
+            await reorderProductsInCategory(categoryId, newIds);
+          },
+        },
+      });
+    },
+    [currentCategoryId, builder, reorderProductsInCategory]
+  );
+
   // Drag & Drop handlers - reset sorting when manual reorder occurs
   const { getDragHandlers, getDragClasses } = useDragReorder({
     items: categoryProducts,
     onReorder: async (ids) => {
       if (currentCategoryId) {
+        // Capture old order before mutation (categoryProducts still has old order)
+        const previousIds = categoryProducts.map((p) => p.id);
         await reorderProductsInCategory(currentCategoryId, ids);
+        pushReorderUndo(previousIds, ids);
       }
     },
     onReorderComplete: () => {
@@ -166,6 +192,14 @@ export function CategoryTableView() {
     onSortingChange: setSorting,
     state: { sorting },
     getRowId: (row) => row.id,
+  });
+
+  // Persist sort order to database when column sorting is applied
+  usePersistColumnSort({
+    sorting,
+    contextId: currentCategoryId,
+    table,
+    onPersist: reorderProductsInCategory,
   });
 
   const allSelected = selectionState.allSelected;

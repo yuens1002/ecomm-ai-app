@@ -10,7 +10,17 @@ import { prisma } from "@/lib/prisma";
 const labelInclude = {
   categories: {
     orderBy: { order: "asc" },
-    include: { category: true },
+    select: {
+      order: true,
+      createdAt: true, // Junction table's createdAt (when category was attached to label)
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
   },
 } satisfies Prisma.CategoryLabelInclude;
 
@@ -21,7 +31,7 @@ export type MenuLabelDto = {
   order: number;
   isVisible: boolean;
   autoOrder: boolean;
-  categories: Array<{ id: string; name: string; slug: string; order: number }>;
+  categories: Array<{ id: string; name: string; slug: string; order: number; attachedAt: Date }>;
 };
 
 function mapLabel(
@@ -39,6 +49,7 @@ function mapLabel(
       name: entry.category.name,
       slug: entry.category.slug,
       order: entry.order,
+      attachedAt: entry.createdAt,
     })),
   };
 }

@@ -520,10 +520,6 @@ describe("Action Bar Configuration", () => {
                 "type": "dropdown",
               },
               {
-                "id": "sort-mode",
-                "type": "dropdown",
-              },
-              {
                 "id": "remove",
                 "type": "button",
               },

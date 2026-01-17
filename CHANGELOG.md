@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.65.0 - 2026-01-17
+
+- **Label Table View (2.3)**: Complete implementation of Label View for category management
+  - Single-level table showing categories within selected label
+  - TanStack sortable columns (Name, Added Order)
+  - Drag-and-drop category reordering with undo/redo support
+  - Products column showing comma-separated product names
+  - Double-click navigates to category view
+  - Column sort persists to database automatically
+- **Schema change**: Added `createdAt` column to `CategoryLabelCategory` junction table
+  - Used as `attachedAt` for chronological Added Order ranking
+  - Migration: `20260117114116_add_createdat_to_category_label_category`
+- **New hook**: `usePersistColumnSort` for persisting TanStack column sort to database
+  - Reusable across any table view with sort-to-DB needs
+  - Guards against concurrent persists
+- **Cleanup**: Removed `sort-mode` action from action bar (replaced by column sorting)
+
 ## 0.64.6 - 2026-01-17
 
 - **Product pinning**: Newly added products are pinned to top of CategoryTableView

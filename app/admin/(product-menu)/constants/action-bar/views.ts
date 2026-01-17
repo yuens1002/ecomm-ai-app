@@ -26,7 +26,6 @@ export const VIEW_CONFIG: ViewConfig = {
   label: {
     left: [
       { id: "add-categories", type: "dropdown", hasDropdown: true },
-      { id: "sort-mode", type: "dropdown", hasDropdown: true },
       { id: "remove", tooltip: "Remove from label" },
     ],
     right: [{ id: "undo" }, { id: "redo" }],

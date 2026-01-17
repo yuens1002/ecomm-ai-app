@@ -132,3 +132,37 @@ export const categoryViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
     },
   }
 );
+
+export const labelViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
+  baseMenuBuilderWidthPreset,
+  {
+    // Category name column: sortable, fixed width
+    name: {
+      head: "w-48 min-w-48 md:w-56 md:min-w-56 pr-6",
+      cell: "w-48 min-w-48 md:w-56 md:min-w-56 pr-6",
+    },
+    // Added Order column: sortable, centered
+    addedOrder: {
+      head: "w-40 px-6",
+      cell: "px-6",
+      align: "center",
+    },
+    // Products column: comma-separated list, takes remaining space
+    products: {
+      head: "pr-6",
+      cell: "pr-6 min-w-48",
+    },
+    // Visibility column: eye icon, centered
+    visibility: {
+      head: "w-24 min-w-24 max-w-24 px-6",
+      cell: "w-24 min-w-24 max-w-24 px-6",
+      align: "center",
+    },
+    // Drag handle: 48px
+    dragHandle: {
+      head: "w-12 min-w-12 max-w-12 pr-2",
+      cell: "pr-2",
+      align: "center",
+    },
+  }
+);
