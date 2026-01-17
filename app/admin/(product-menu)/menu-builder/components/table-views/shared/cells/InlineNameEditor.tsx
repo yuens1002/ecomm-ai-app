@@ -7,6 +7,8 @@ type InlineNameEditorProps = {
   id: string;
   initialValue: string;
   isEditing: boolean;
+  /** When true, applies muted text styling (for hidden/not visible rows) */
+  isHidden?: boolean;
   onStartEdit: () => void;
   onCancelEdit: () => void;
   onSave: (id: string, name: string) => Promise<void>;
@@ -16,6 +18,7 @@ export function InlineNameEditor({
   id,
   initialValue,
   isEditing,
+  isHidden,
   onStartEdit,
   onCancelEdit,
   onSave,
@@ -104,7 +107,7 @@ export function InlineNameEditor({
           className={
             isGenericName
               ? "min-w-0 truncate italic text-muted-foreground"
-              : "min-w-0 truncate text-foreground"
+              : `min-w-0 truncate ${isHidden ? "text-muted-foreground" : "text-foreground"}`
           }
         >
           {value}

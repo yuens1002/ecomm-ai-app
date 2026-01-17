@@ -46,24 +46,16 @@ const LABEL_VIEW_HEADER_COLUMNS: TableHeaderColumn[] = [
 ];
 
 export function LabelTableView() {
-  const {
-    builder,
-    labels,
-    categories,
-    products,
-    reorderCategoriesInLabel,
-  } = useMenuBuilder();
+  const { builder, labels, categories, products, reorderCategoriesInLabel } = useMenuBuilder();
 
   const currentLabelId = builder.currentLabelId;
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
   // Pinning support for newly added categories
-  const { pinnedId: pinnedCategoryId } = useContextRowUiState(
-    builder,
-    "category",
-    { autoClearPinned: true }
-  );
+  const { pinnedId: pinnedCategoryId } = useContextRowUiState(builder, "category", {
+    autoClearPinned: true,
+  });
 
   // Get current label
   const currentLabel = useMemo(() => {
@@ -96,9 +88,7 @@ export function LabelTableView() {
         .filter((p) => p.categoryIds.includes(cat.id))
         .map((p) => p.name);
 
-      const productNames = categoryProducts.length > 0
-        ? categoryProducts.join(", ")
-        : "—";
+      const productNames = categoryProducts.length > 0 ? categoryProducts.join(", ") : "—";
 
       return {
         ...cat,
@@ -119,10 +109,7 @@ export function LabelTableView() {
   });
 
   // Selection model for remove action
-  const selectableCategoryIds = useMemo(
-    () => labelCategories.map((c) => c.id),
-    [labelCategories]
-  );
+  const selectableCategoryIds = useMemo(() => labelCategories.map((c) => c.id), [labelCategories]);
   const {
     isSelectionActive: isCategorySelectionActive,
     selectionState,
@@ -253,6 +240,7 @@ export function LabelTableView() {
         key={category.id}
         data-state={isSelected ? "selected" : undefined}
         isSelected={isSelected}
+        isHidden={!category.isVisible}
         isDragging={dragClasses.isDragging}
         isDragOver={dragClasses.isDragOver}
         isLastRow={isLastRow}
@@ -297,14 +285,14 @@ export function LabelTableView() {
         </TableCell>
 
         {/* Products (comma-separated) */}
-        <TableCell config={labelViewWidthPreset.products} className="text-sm text-muted-foreground">
+        <TableCell config={labelViewWidthPreset.products} className="text-sm">
           <span className="truncate">{category.productNames}</span>
         </TableCell>
 
         {/* Visibility (read-only icon) */}
         <TableCell config={labelViewWidthPreset.visibility}>
           {category.isVisible ? (
-            <Eye className="h-4 w-4 text-foreground inline" />
+            <Eye className="h-4 w-4 inline" />
           ) : (
             <EyeOff className="h-4 w-4 text-muted-foreground inline" />
           )}

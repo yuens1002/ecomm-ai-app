@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.65.1 - 2026-01-17
+
+- **Row visibility styling**: Added `isHidden` prop to TableRow and InlineNameEditor for muted text on hidden rows
+  - All table views now show muted text when entity visibility is toggled off
+  - TableRow applies `text-muted-foreground` when `isHidden` is true
+  - InlineNameEditor respects `isHidden` prop for consistent styling
+  - Removed hardcoded `text-muted-foreground` from Added Date column in AllCategoriesTableView
+
 ## 0.65.0 - 2026-01-17
 
 - **Label Table View (2.3)**: Complete implementation of Label View for category management

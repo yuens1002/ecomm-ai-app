@@ -145,6 +145,7 @@ export function AllLabelsTableView() {
         key={label.id}
         data-state={isSelected ? "selected" : undefined}
         isSelected={isSelected}
+        isHidden={!label.isVisible}
         isDragging={dragClasses.isDragging}
         isDragOver={dragClasses.isDragOver}
         isLastRow={isLastRow}
@@ -194,6 +195,7 @@ export function AllLabelsTableView() {
             id={label.id}
             initialValue={label.name}
             isEditing={editingLabelId === label.id}
+            isHidden={!label.isVisible}
             onStartEdit={() => builder.setEditing({ kind: "label", id: label.id })}
             onCancelEdit={() => {
               clearEditing();

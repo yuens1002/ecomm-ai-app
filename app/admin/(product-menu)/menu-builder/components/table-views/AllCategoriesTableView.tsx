@@ -194,6 +194,7 @@ export function AllCategoriesTableView() {
         key={category.id}
         data-state={isSelected ? "selected" : undefined}
         isSelected={isSelected}
+        isHidden={!category.isVisible}
         onRowClick={() => onToggleCategoryId(category.id)}
         onRowDoubleClick={() => builder.navigateToCategory(category.id)}
       >
@@ -214,6 +215,7 @@ export function AllCategoriesTableView() {
             id={category.id}
             initialValue={category.name}
             isEditing={editingCategoryId === category.id}
+            isHidden={!category.isVisible}
             onStartEdit={() => builder.setEditing({ kind: "category", id: category.id })}
             onCancelEdit={() => {
               clearEditing();
@@ -241,7 +243,7 @@ export function AllCategoriesTableView() {
           })()}
         </TableCell>
 
-        <TableCell config={allCategoriesWidthPreset.addedDate} className="text-sm text-muted-foreground">
+        <TableCell config={allCategoriesWidthPreset.addedDate} className="text-sm">
           {category.createdAt.toLocaleDateString()}
         </TableCell>
 

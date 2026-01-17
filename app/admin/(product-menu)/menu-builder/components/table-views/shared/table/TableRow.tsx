@@ -35,6 +35,8 @@ type TableRowProps = Omit<
   isDragging?: boolean;
   isDragOver?: boolean;
   isLastRow?: boolean;
+  /** When true, applies muted text styling to indicate the row is hidden/not visible */
+  isHidden?: boolean;
   /**
    * Called on single-click (delayed to distinguish from double-click).
    * Ignored if click target is an interactive element.
@@ -54,6 +56,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       isDragging,
       isDragOver: _isDragOver,
       isLastRow,
+      isHidden,
       className,
       onRowClick,
       onRowDoubleClick,
@@ -119,6 +122,8 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
           "border-t-0",
           isLastRow ? "border-b border-b-border" : "border-b-0",
           isDragging && "opacity-50",
+          // Muted text styling for hidden/not visible rows
+          isHidden && "text-muted-foreground",
           className
         )}
         onClick={onRowClick ? handleClick : undefined}

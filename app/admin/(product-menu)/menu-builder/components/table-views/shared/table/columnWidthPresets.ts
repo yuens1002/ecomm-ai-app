@@ -104,25 +104,25 @@ export const categoryViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
   {
     // Products (name) column: sortable, fixed width
     name: {
-      head: "w-56 min-w-56 md:w-72 md:min-w-72 pr-6",
-      cell: "w-56 min-w-56 md:w-72 md:min-w-72 pr-6",
+      head: "w-40 min-w-40 pr-6",
+      cell: "w-40 min-w-40 pr-6",
     },
     // Added Order column: sortable, centered
     addedOrder: {
-      head: "w-40 px-6",
+      head: "w-36 px-6",
       cell: "px-6",
       align: "center",
     },
     // Visibility column: eye icon, centered
     visibility: {
-      head: "w-24 min-w-24 max-w-24 px-6",
-      cell: "w-24 min-w-24 max-w-24 px-6",
+      head: "w-30 min-w-30 max-w-30 px-6",
+      cell: "w-30 min-w-30 max-w-30 px-6",
       align: "center",
     },
     // Categories column: takes remaining space
     categories: {
-      head: "w-48 min-w-48 pr-6",
-      cell: "pr-6 min-w-48",
+      head: "pr-6",
+      cell: "pr-6",
     },
     // Drag handle: 48px
     dragHandle: {
@@ -154,8 +154,8 @@ export const labelViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
     },
     // Visibility column: eye icon, centered
     visibility: {
-      head: "w-24 min-w-24 max-w-24 px-6",
-      cell: "w-24 min-w-24 max-w-24 px-6",
+      head: "w-30 min-w-24 px-6",
+      cell: "w-30 min-w-24 px-6",
       align: "center",
     },
     // Drag handle: 48px

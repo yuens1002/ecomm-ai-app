@@ -239,6 +239,7 @@ export function CategoryTableView() {
         key={product.id}
         data-state={isSelected ? "selected" : undefined}
         isSelected={isSelected}
+        isHidden={product.isDisabled}
         isDragging={dragClasses.isDragging}
         isDragOver={dragClasses.isDragOver}
         isLastRow={isLastRow}

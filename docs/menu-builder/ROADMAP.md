@@ -1,7 +1,7 @@
 # Menu Builder - Development Roadmap
 
 **Last Updated:** 2026-01-17
-**Current Branch:** `feat/label-table-view`
+**Current Branch:** `main`
 **Status:** Phase 1 Complete ✅ | Phase 2 In Progress 🚧 (4/5 views complete)
 
 ---
@@ -121,9 +121,11 @@ Total       ████████████████░░░░░░�
 
 **Enhanced Components:**
 
-| Component  | Enhancement                                                                    |
-|------------|--------------------------------------------------------------------------------|
-| `TableRow` | Built-in click/double-click handling via `onRowClick`/`onRowDoubleClick` props |
+| Component          | Enhancement                                                                    |
+|--------------------|--------------------------------------------------------------------------------|
+| `TableRow`         | Built-in click/double-click handling via `onRowClick`/`onRowDoubleClick` props |
+| `TableRow`         | `isHidden` prop for muted text styling on hidden/not visible rows              |
+| `InlineNameEditor` | `isHidden` prop for muted text styling inheritance                             |
 
 **Files Created:**
 
