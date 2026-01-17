@@ -40,8 +40,8 @@ const LABEL_VIEW_HEADER_COLUMNS: TableHeaderColumn[] = [
   { id: "select", label: "", isCheckbox: true },
   { id: "name", label: "Categories" },
   { id: "addedOrder", label: "Added Order" },
-  { id: "products", label: "Products" },
   { id: "visibility", label: "Visibility" },
+  { id: "products", label: "Products" },
   { id: "dragHandle", label: "" },
 ];
 
@@ -284,11 +284,6 @@ export function LabelTableView() {
           <span className="text-sm">{category.addedOrderRank}</span>
         </TableCell>
 
-        {/* Products (comma-separated) */}
-        <TableCell config={labelViewWidthPreset.products} className="text-sm">
-          <span className="truncate">{category.productNames}</span>
-        </TableCell>
-
         {/* Visibility (read-only icon) */}
         <TableCell config={labelViewWidthPreset.visibility}>
           {category.isVisible ? (
@@ -296,6 +291,11 @@ export function LabelTableView() {
           ) : (
             <EyeOff className="h-4 w-4 text-muted-foreground inline" />
           )}
+        </TableCell>
+
+        {/* Products (comma-separated) */}
+        <TableCell config={labelViewWidthPreset.products} className="text-sm">
+          <span className="truncate">{category.productNames}</span>
         </TableCell>
 
         {/* Drag Handle */}

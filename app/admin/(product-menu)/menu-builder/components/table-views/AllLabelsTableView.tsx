@@ -29,8 +29,8 @@ const ALL_LABELS_HEADER_COLUMNS: TableHeaderColumn[] = [
   { id: "select", label: "", isCheckbox: true },
   { id: "icon", label: "Icon" },
   { id: "name", label: "Label" },
-  { id: "categories", label: "Categories" },
   { id: "visibility", label: "Visibility" },
+  { id: "categories", label: "Categories" },
   { id: "dragHandle", label: "" },
 ];
 
@@ -212,11 +212,6 @@ export function AllLabelsTableView() {
           />
         </TableCell>
 
-        {/* Categories */}
-        <TableCell config={allLabelsWidthPreset.categories} className="text-sm">
-          {getLabelCategories(label)}
-        </TableCell>
-
         {/* Visibility */}
         <TableCell config={allLabelsWidthPreset.visibility}>
           <VisibilityCell
@@ -225,6 +220,11 @@ export function AllLabelsTableView() {
             variant="switch"
             onToggle={handleVisibilitySave}
           />
+        </TableCell>
+
+        {/* Categories */}
+        <TableCell config={allLabelsWidthPreset.categories} className="text-sm">
+          {getLabelCategories(label)}
         </TableCell>
 
         {/* Drag Handle */}

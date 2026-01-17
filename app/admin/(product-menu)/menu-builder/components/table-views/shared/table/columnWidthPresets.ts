@@ -40,12 +40,8 @@ export const allCategoriesWidthPreset: ColumnWidthPreset = extendWidthPreset(
   baseMenuBuilderWidthPreset,
   {
     name: {
-      head: "w-36 min-w-36 px-6",
-      cell: "w-36 min-w-36 pr-6",
-    },
-    labels: {
-      head: "w-24 min-w-24 pr-6",
-      cell: "w-24 min-w-24 pr-6",
+      head: "w-90 min-w-36 px-6",
+      cell: "w-90 min-w-36 pr-6",
     },
     products: {
       head: "w-24 min-w-24 px-4",
@@ -53,14 +49,19 @@ export const allCategoriesWidthPreset: ColumnWidthPreset = extendWidthPreset(
       align: "center",
     },
     addedDate: {
-      head: "w-48 min-w-16 px-8",
-      cell: "min-w-16 px-8",
+      head: "w-36 min-w-32 px-4",
+      cell: "w-36 min-w-32 px-4",
+      align: "center",
     },
-    // Override base visibility to be explicit for this view.
     visibility: {
-      head: "w-24 min-w-24 px-8",
-      cell: "w-24 min-w-24 px-8",
-      align: "right",
+      head: "w-24 min-w-24 px-4",
+      cell: "w-24 min-w-24 px-4",
+      align: "center",
+    },
+    // Labels column: last column, takes remaining space
+    labels: {
+      head: "pr-6",
+      cell: "pr-6 min-w-48",
     },
   }
 );
@@ -104,8 +105,8 @@ export const categoryViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
   {
     // Products (name) column: sortable, fixed width
     name: {
-      head: "w-40 min-w-40 pr-6",
-      cell: "w-40 min-w-40 pr-6",
+      head: "w-80 min-w-40 pr-6",
+      cell: "w-80 min-w-40 pr-6",
     },
     // Added Order column: sortable, centered
     addedOrder: {

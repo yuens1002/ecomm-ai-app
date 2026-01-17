@@ -31,10 +31,10 @@ import { TableViewWrapper } from "./shared/table/TableViewWrapper";
 const ALL_CATEGORIES_HEADER_COLUMNS: TableHeaderColumn[] = [
   { id: "select", label: "", isCheckbox: true },
   { id: "name", label: "Category" },
-  { id: "labels", label: "Added to labels" },
   { id: "products", label: "Products" },
   { id: "addedDate", label: "Added Date" },
   { id: "visibility", label: "Visibility" },
+  { id: "labels", label: "Added to Labels" },
 ];
 
 export function AllCategoriesTableView() {
@@ -232,10 +232,6 @@ export function AllCategoriesTableView() {
           />
         </TableCell>
 
-        <TableCell config={allCategoriesWidthPreset.labels} className="text-sm">
-          {getCategoryLabels(category.id)}
-        </TableCell>
-
         <TableCell config={allCategoriesWidthPreset.products} className="text-sm">
           {(() => {
             const count = getCategoryProductCountNumber(category.id);
@@ -254,6 +250,10 @@ export function AllCategoriesTableView() {
             variant="switch"
             onToggle={handleVisibilitySave}
           />
+        </TableCell>
+
+        <TableCell config={allCategoriesWidthPreset.labels} className="text-sm">
+          {getCategoryLabels(category.id)}
         </TableCell>
       </TableRow>
     );

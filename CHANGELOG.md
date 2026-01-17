@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.65.2 - 2026-01-17
+
+- **Table view column reordering**: Standardized Visibility column placement across all views
+  - Visibility column now positioned as second-to-last data column in all table views
+  - AllCategoriesTableView: Moved "Added to Labels" to last column (takes remaining space)
+  - AllCategoriesTableView: Center-aligned Added Date and Visibility columns
+  - AllCategoriesTableView: Fixed header casing to "Added to Labels"
+
 ## 0.65.1 - 2026-01-17
 
 - **Row visibility styling**: Added `isHidden` prop to TableRow and InlineNameEditor for muted text on hidden rows
