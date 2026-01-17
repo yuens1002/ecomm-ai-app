@@ -39,6 +39,9 @@ describe("Dropdown Registry", () => {
     detachProductFromCategory: jest
       .fn<DropdownContext["detachProductFromCategory"]>()
       .mockResolvedValue({ ok: true }),
+    setPinnedNew: jest.fn<DropdownContext["setPinnedNew"]>(),
+    pushUndoAction: jest.fn<DropdownContext["pushUndoAction"]>(),
+    toast: jest.fn<DropdownContext["toast"]>(),
     ...overrides,
   });
 
@@ -144,6 +147,33 @@ describe("Dropdown Registry", () => {
 
       expect(props.attachProductToCategory).toBe(context.attachProductToCategory);
       expect(props.detachProductFromCategory).toBe(context.detachProductFromCategory);
+    });
+
+    it("should include setPinnedNew for pinning newly added products", () => {
+      const context = createMockContext();
+      const config = DROPDOWN_REGISTRY["add-products"];
+      const props = config.buildProps(context);
+
+      expect(props).toHaveProperty("setPinnedNew");
+      expect(props.setPinnedNew).toBe(context.setPinnedNew);
+    });
+
+    it("should include pushUndoAction for undo/redo support", () => {
+      const context = createMockContext();
+      const config = DROPDOWN_REGISTRY["add-products"];
+      const props = config.buildProps(context);
+
+      expect(props).toHaveProperty("pushUndoAction");
+      expect(props.pushUndoAction).toBe(context.pushUndoAction);
+    });
+
+    it("should include toast for notifications", () => {
+      const context = createMockContext();
+      const config = DROPDOWN_REGISTRY["add-products"];
+      const props = config.buildProps(context);
+
+      expect(props).toHaveProperty("toast");
+      expect(props.toast).toBe(context.toast);
     });
   });
 

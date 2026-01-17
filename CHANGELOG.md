@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.64.6 - 2026-01-17
+
+- **Product pinning**: Newly added products are pinned to top of CategoryTableView
+  - Integrated `useContextRowUiState` and `usePinnedRow` hooks
+  - Pinned row appears at top when no column sorting is active
+- **Undo/redo for add products**: Add/remove products via dropdown now supports undo/redo
+  - Added `pushUndoAction` to DropdownContext
+  - Both attach and detach actions are undoable
+- **Toast notifications**: Added feedback for category view actions
+  - Add/remove product success/failure toasts with product name
+  - Undo/redo success/failure toasts
+  - Added `toast` to DropdownContext for reusable notifications
+
 ## 0.64.5 - 2026-01-16
 
 - **Category view undo/redo**: Added undo/redo support for remove action in CategoryTableView

@@ -13,8 +13,10 @@ import {
 import { Eye, EyeOff, GripVertical, Package } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
+import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { useDragReorder } from "../../../hooks/useDragReorder";
+import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuProduct } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { CheckboxCell } from "./shared/cells/CheckboxCell";
@@ -46,6 +48,13 @@ export function CategoryTableView() {
   const currentCategoryId = builder.currentCategoryId;
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
   const [sorting, setSorting] = React.useState<SortingState>([]);
+
+  // Pinning support for newly added products
+  const { pinnedId: pinnedProductId, clearPinnedIfMatches: _clearPinnedIfMatches } = useContextRowUiState(
+    builder,
+    "product",
+    { autoClearPinned: true }
+  );
 
   // Get products for current category, sorted by their order within this category
   const categoryProducts = useMemo((): CategoryProduct[] => {
@@ -81,6 +90,15 @@ export function CategoryTableView() {
       }))
       .sort((a, b) => a.orderInCategory - b.orderInCategory);
   }, [products, currentCategoryId]);
+
+  // Separate pinned row from table rows
+  const { pinnedRow: pinnedProduct, rowsForTable: productsForTable } = usePinnedRow({
+    rows: categoryProducts,
+    pinnedId: pinnedProductId,
+    isSortingActive: sorting.length > 0,
+    // Uses default sort by orderInCategory (already sorted in categoryProducts)
+    defaultSort: null, // Disable additional sorting - categoryProducts is pre-sorted
+  });
 
   // Selection model for remove action
   const selectableProductIds = useMemo(() => categoryProducts.map((p) => p.id), [categoryProducts]);
@@ -141,7 +159,7 @@ export function CategoryTableView() {
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: categoryProducts,
+    data: productsForTable,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -174,7 +192,8 @@ export function CategoryTableView() {
     );
   }
 
-  const renderProductRow = (product: CategoryProduct, options?: { isLastRow?: boolean }) => {
+  const renderProductRow = (product: CategoryProduct, options?: { isPinned?: boolean; isLastRow?: boolean }) => {
+    const _isPinned = options?.isPinned === true;
     const isLastRow = options?.isLastRow === true;
     const isSelected = isProductSelected(product.id);
     const isRowHovered = hoveredRowId === product.id;
@@ -276,6 +295,7 @@ export function CategoryTableView() {
       />
 
       <TableBody>
+        {pinnedProduct ? renderProductRow(pinnedProduct, { isPinned: true }) : null}
         {rows.map((row, index) =>
           renderProductRow(row.original, { isLastRow: index === rows.length - 1 })
         )}

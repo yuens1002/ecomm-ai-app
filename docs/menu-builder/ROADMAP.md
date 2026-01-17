@@ -14,7 +14,7 @@ Build a sophisticated admin interface for managing a 3-level product catalog hie
 
 ## Overall Progress
 
-```
+```(text)
 Foundation  ████████████████████████ 100% ✅
 Table Views ██████████████░░░░░░░░░  60% 🚧
 Advanced    ████░░░░░░░░░░░░░░░░░░░  20% 🚧
@@ -107,22 +107,22 @@ Total       ██████████████░░░░░░░░�
 
 **New Reusable Hooks Created:**
 
-| Hook | Purpose |
-|------|---------|
-| `useDragReorder` | Drag-and-drop row reordering with `getDragHandlers()` and `getDragClasses()` |
-| `useInlineEditHandlers` | Name/icon/visibility save handlers with undo/redo |
+| Hook                    | Purpose                                                                      |
+|-------------------------|------------------------------------------------------------------------------|
+| `useDragReorder`        | Drag-and-drop row reordering with `getDragHandlers()` and `getDragClasses()` |
+| `useInlineEditHandlers` | Name/icon/visibility save handlers with undo/redo                            |
 
 **Enhanced Existing Hooks:**
 
-| Hook | Enhancement |
-|------|-------------|
-| `usePinnedRow` | Built-in default sort by `order` field (descending) |
-| `useContextRowUiState` | `autoClearPinned` option for automatic cleanup |
+| Hook                   | Enhancement                                                    |
+|------------------------|----------------------------------------------------------------|
+| `usePinnedRow`         | Built-in default sort by `order` field (descending)            |
+| `useContextRowUiState` | `autoClearPinned` option for automatic cleanup                 |
 
 **Enhanced Components:**
 
-| Component | Enhancement |
-|-----------|-------------|
+| Component  | Enhancement                                                                    |
+|------------|--------------------------------------------------------------------------------|
 | `TableRow` | Built-in click/double-click handling via `onRowClick`/`onRowDoubleClick` props |
 
 **Files Created:**
@@ -191,6 +191,7 @@ Total       ██████████████░░░░░░░░�
 - [ ] "Add Categories" dropdown
 - [ ] "Remove from Label" action
 - [ ] Handle `autoOrder` mode (disable DnD when true)
+- [ ] "Redo/Undo" action
 
 **Files to Create:**
 
@@ -240,12 +241,12 @@ Total       ██████████████░░░░░░░░�
 
 **Shared Infrastructure Created (v0.64.0-0.64.3):**
 
-| Feature | Description |
-|---------|-------------|
-| `SortableHeaderCell` | Reusable sortable column header with TanStack Table integration |
-| `columnWidthPresets` | Single source of truth for column width, cell, and alignment config |
-| `TableHeader` preset prop | Reads width/align from preset by column id |
-| `TableCell` config prop | Accepts preset entry for cell styling |
+| Feature                   | Description                                                         |
+|---------------------------|---------------------------------------------------------------------|
+| `SortableHeaderCell`      | Reusable sortable column header with TanStack Table integration     |
+| `columnWidthPresets`      | Single source of truth for column width, cell, and alignment config |
+| `TableHeader` preset prop | Reads width/align from preset by column id                          |
+| `TableCell` config prop   | Accepts preset entry for cell styling                               |
 
 **Files Created:**
 
@@ -535,6 +536,7 @@ app/admin/(product-menu)/
 **Decision:** Extract common table view patterns into reusable hooks
 **Rationale:** AllLabels and AllCategories shared significant boilerplate (click handling, drag-drop, inline edits with undo)
 **Impact:**
+
 - `useDragReorder` - Centralized drag-and-drop row reordering
 - `useInlineEditHandlers` - Name/icon/visibility handlers with automatic undo/redo
 - `usePinnedRow` enhanced with built-in default order sort
@@ -547,6 +549,7 @@ app/admin/(product-menu)/
 **Decision:** Colocate undo capture logic with action definitions via `captureUndo` field
 **Rationale:** Scattered conditional undo logic was hard to maintain and extend
 **Impact:**
+
 - Eliminated 100+ lines of conditional undo/redo logic in MenuActionBar
 - Undo actions now defined alongside action handlers
 - New actions automatically get undo support by adding `captureUndo` field
@@ -557,6 +560,7 @@ app/admin/(product-menu)/
 **Decision:** Implement sortable columns using TanStack Table with DnD integration
 **Rationale:** Category view needed both column sorting AND drag-drop reordering
 **Impact:**
+
 - Created `SortableHeaderCell` component for reusable sortable headers
 - Added `onReorderComplete` callback to `useDragReorder` for sort reset
 - Sort indicators (↑/↓) prepend to column label when sorted
@@ -567,6 +571,7 @@ app/admin/(product-menu)/
 **Decision:** Single source of truth for column width, cell, and alignment config
 **Rationale:** Alignment could be set in 3 places (header, preset, cell) causing confusion
 **Impact:**
+
 - Added `align` property to `ColumnWidthEntry` type
 - `TableHeader` reads width/align from preset by column id
 - `TableCell` accepts `config` prop for cell styling
@@ -580,18 +585,21 @@ app/admin/(product-menu)/
 **Immediate Next Step:** Label View (2.3) or Menu View (2.5)
 
 ### Option A: Label View (2.3) - Recommended
+
 - Medium complexity
 - Shows categories within selected label
 - Requires drag-and-drop for category reordering
 - Can reuse `useDragReorder` hook and `SortableHeaderCell` from Category View
 
 ### Option B: Menu View (2.5)
+
 - High complexity
 - 3-level expand/collapse (Labels → Categories → Products)
 - Most complex view but enables full hierarchy editing
 - Consider after Label View is complete
 
 ### Option C: Context Menu Infrastructure (2.2)
+
 - Medium complexity
 - New pattern (right-click + three-dot menu)
 - Reuses ACTION_BAR_CONFIG for action definitions

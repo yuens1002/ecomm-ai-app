@@ -8,7 +8,8 @@
 import { AddLabelsDropdown } from "../menu-builder/components/menu-action-bar/AddLabelsDropdown";
 import { AddCategoriesDropdown } from "../menu-builder/components/menu-action-bar/AddCategoriesDropdown";
 import { AddProductsDropdown } from "../menu-builder/components/menu-action-bar/AddProductsDropdown";
-import type { BuilderState } from "../types/builder-state";
+import type { UndoAction } from "./action-bar/model";
+import type { BuilderState, SelectedEntityKind } from "../types/builder-state";
 import type { MenuLabel, MenuCategory, MenuProduct } from "../types/menu";
 
 /**
@@ -19,6 +20,9 @@ type AttachCategoryFn = (labelId: string, categoryId: string) => Promise<{ ok: b
 type DetachCategoryFn = (labelId: string, categoryId: string) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
 type AttachProductToCategoryFn = (productId: string, categoryId: string) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
 type DetachProductFromCategoryFn = (productId: string, categoryId: string) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+type SetPinnedNewFn = (next: { kind: SelectedEntityKind; id: string } | null) => void;
+type PushUndoActionFn = (action: UndoAction) => void;
+type ToastFn = (props: { title: string; description?: string; variant?: "default" | "destructive" }) => void;
 
 /**
  * Context passed to dropdown registry for building props
@@ -33,6 +37,9 @@ export type DropdownContext = {
   detachCategory: DetachCategoryFn;
   attachProductToCategory: AttachProductToCategoryFn;
   detachProductFromCategory: DetachProductFromCategoryFn;
+  setPinnedNew: SetPinnedNewFn;
+  pushUndoAction: PushUndoActionFn;
+  toast: ToastFn;
 };
 
 /**
@@ -63,6 +70,9 @@ export const DROPDOWN_REGISTRY = {
       products: context.products,
       attachProductToCategory: context.attachProductToCategory,
       detachProductFromCategory: context.detachProductFromCategory,
+      setPinnedNew: context.setPinnedNew,
+      pushUndoAction: context.pushUndoAction,
+      toast: context.toast,
     }),
   },
 } as const;

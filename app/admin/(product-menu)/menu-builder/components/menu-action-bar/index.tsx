@@ -90,11 +90,21 @@ export function MenuActionBar() {
     navigateBack: builder.navigateBack,
 
     // Undo/redo
-    undo: () => {
-      void builder.undo();
+    undo: async () => {
+      try {
+        await builder.undo();
+        toast({ title: "Undo", description: "Action undone" });
+      } catch {
+        toast({ title: "Undo failed", description: "Could not undo action", variant: "destructive" });
+      }
     },
-    redo: () => {
-      void builder.redo();
+    redo: async () => {
+      try {
+        await builder.redo();
+        toast({ title: "Redo", description: "Action redone" });
+      } catch {
+        toast({ title: "Redo failed", description: "Could not redo action", variant: "destructive" });
+      }
     },
 
     // CRUD operations - now handled by action.execute
@@ -282,6 +292,9 @@ export function MenuActionBar() {
       detachCategory,
       attachProductToCategory,
       detachProductFromCategory,
+      setPinnedNew: builder.setPinnedNew,
+      pushUndoAction: builder.pushUndoAction,
+      toast,
     }),
     [
       state,
@@ -293,6 +306,9 @@ export function MenuActionBar() {
       detachCategory,
       attachProductToCategory,
       detachProductFromCategory,
+      builder.setPinnedNew,
+      builder.pushUndoAction,
+      toast,
     ]
   );
 

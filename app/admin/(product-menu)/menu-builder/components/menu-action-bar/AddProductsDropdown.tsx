@@ -2,6 +2,17 @@ import { useState, useMemo } from "react";
 import { DropdownContent } from "./DropdownContent";
 import type { MenuProduct } from "../../../types/menu";
 
+type UndoAction = {
+  action: string;
+  timestamp: Date;
+  data: {
+    undo: () => Promise<void>;
+    redo: () => Promise<void>;
+  };
+};
+
+type ToastFn = (props: { title: string; description?: string; variant?: "default" | "destructive" }) => void;
+
 type AddProductsDropdownProps = {
   currentCategoryId: string;
   products: MenuProduct[];
@@ -13,6 +24,9 @@ type AddProductsDropdownProps = {
     productId: string,
     categoryId: string
   ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  setPinnedNew: (next: { kind: "product"; id: string } | null) => void;
+  pushUndoAction: (action: UndoAction) => void;
+  toast: ToastFn;
 };
 
 /**
@@ -58,6 +72,9 @@ export function AddProductsDropdown({
   products,
   attachProductToCategory,
   detachProductFromCategory,
+  setPinnedNew,
+  pushUndoAction,
+  toast,
 }: AddProductsDropdownProps) {
   const [productSearch, setProductSearch] = useState("");
 
@@ -106,28 +123,74 @@ export function AddProductsDropdown({
         },
       ]}
       onItemToggle={async (productId, checked) => {
-        console.log(
-          "[Add Products]",
-          checked ? "Attaching" : "Detaching",
-          "product:",
-          productId
-        );
+        const product = products.find((p) => p.id === productId);
+        const productName = product?.name ?? "Product";
+
         try {
           if (checked) {
             const result = await attachProductToCategory(
               productId,
               currentCategoryId
             );
-            console.log("[Add Products] Attach result:", result);
+            if (result.ok) {
+              // Pin the newly added product to show it at the top
+              setPinnedNew({ kind: "product", id: productId });
+              // Capture undo action for attach
+              pushUndoAction({
+                action: "add-product-to-category",
+                timestamp: new Date(),
+                data: {
+                  undo: async () => {
+                    await detachProductFromCategory(productId, currentCategoryId);
+                  },
+                  redo: async () => {
+                    await attachProductToCategory(productId, currentCategoryId);
+                  },
+                },
+              });
+              toast({ title: "Product added", description: `${productName} added to category` });
+            } else {
+              toast({
+                title: "Failed to add product",
+                description: result.error ?? "Please try again",
+                variant: "destructive",
+              });
+            }
           } else {
             const result = await detachProductFromCategory(
               productId,
               currentCategoryId
             );
-            console.log("[Add Products] Detach result:", result);
+            if (result.ok) {
+              // Capture undo action for detach
+              pushUndoAction({
+                action: "remove-product-from-category",
+                timestamp: new Date(),
+                data: {
+                  undo: async () => {
+                    await attachProductToCategory(productId, currentCategoryId);
+                  },
+                  redo: async () => {
+                    await detachProductFromCategory(productId, currentCategoryId);
+                  },
+                },
+              });
+              toast({ title: "Product removed", description: `${productName} removed from category` });
+            } else {
+              toast({
+                title: "Failed to remove product",
+                description: result.error ?? "Please try again",
+                variant: "destructive",
+              });
+            }
           }
         } catch (error) {
           console.error("[Add Products] Error:", error);
+          toast({
+            title: checked ? "Failed to add product" : "Failed to remove product",
+            description: "An unexpected error occurred",
+            variant: "destructive",
+          });
         }
       }}
       emptyMessage="No products found"
