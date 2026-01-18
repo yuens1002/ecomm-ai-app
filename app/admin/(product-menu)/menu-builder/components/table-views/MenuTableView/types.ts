@@ -7,6 +7,14 @@ import type { MenuLabel, MenuProduct } from "../../../../types/menu";
 export type MenuRowLevel = "label" | "category" | "product";
 
 /**
+ * Tri-state checkbox values for hierarchical selection.
+ * - checked: Entity is selected (for parents: all descendants are selected)
+ * - indeterminate: Some descendants are selected (parents only)
+ * - unchecked: Entity is not selected and no descendants are selected
+ */
+export type CheckboxState = "checked" | "indeterminate" | "unchecked";
+
+/**
  * Base properties for all flattened menu rows.
  */
 type FlatMenuRowBase = {
@@ -69,6 +77,8 @@ export type FlatProductRow = FlatMenuRowBase & {
   level: "product";
   /** Parent category ID */
   parentId: string;
+  /** Grandparent label ID (for ancestry tracking) */
+  grandParentId: string;
   /** Order within parent category */
   orderInCategory: number;
   /** Original product data */

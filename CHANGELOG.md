@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.66.1 - 2026-01-18
+
+- **Hierarchical selection state hook**: New `useMenuSelectionState` for Menu Table View
+  - Tri-state checkbox support (checked/indeterminate/unchecked) for parent rows
+  - Pre-built hierarchy maps for O(1) ancestry lookups
+  - Composite keys for all entities to avoid ID collisions across parents
+  - Labels: `labelId`, Categories: `labelId-categoryId`, Products: `labelId-categoryId-productId`
+  - Simple visibility rule: same-kind checkboxes only when selection active
+  - Master switch behavior for label toggle in category/product mode
+
 ## 0.66.0 - 2026-01-17
 
 - **Menu Table View enhancements**: UI polish and action bar improvements

@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { Eye, EyeOff, GripVertical, LayoutGrid } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../../hooks/useContextRowUiState";
-import { useContextSelectionModel } from "../../../../hooks/useContextSelectionModel";
 import { useInlineEditHandlers } from "../../../../hooks/useInlineEditHandlers";
 import { useMenuBuilder } from "../../../MenuBuilderProvider";
 import { CheckboxCell } from "../shared/cells/CheckboxCell";
@@ -27,6 +26,7 @@ import type {
 } from "./types";
 import { isCategoryRow, isLabelRow, isProductRow } from "./types";
 import { useFlattenedMenuRows } from "./useFlattenedMenuRows";
+import { useMenuSelectionState } from "./useMenuSelectionState";
 import { useMenuTableDragReorder } from "./useMenuTableDragReorder";
 
 /** Indentation in pixels per hierarchy level */
@@ -91,38 +91,20 @@ export function MenuTableView() {
     clearPinnedIfMatches,
   } = useContextRowUiState(builder, "label", { autoClearPinned: true });
 
-  // Get IDs for labels, categories, and products separately for selection
-  const labelIds = useMemo(() => visibleLabels.map((l) => l.id), [visibleLabels]);
-  const categoryIds = useMemo(
-    () => rows.filter(isCategoryRow).map((r) => r.id),
-    [rows]
-  );
-  // Use composite key (parentId-id) for product selection to handle products in multiple categories
-  const productIds = useMemo(
-    () => rows.filter(isProductRow).map((r) => `${r.parentId}-${r.id}`),
-    [rows]
-  );
-
-  // Selection models - only one kind can be selected at a time
+  // Hierarchical selection state with tri-state checkboxes
   const {
-    isSelectionActive: isLabelSelectionActive,
-    selectionState: labelSelectionState,
-    onSelectAll: onSelectAllLabels,
-    onToggleId: onToggleLabelId,
-    isSelected: isLabelSelected,
-  } = useContextSelectionModel(builder, { kind: "label", selectableIds: labelIds });
-
-  const {
-    isSelectionActive: isCategorySelectionActive,
-    onToggleId: onToggleCategoryId,
-    isSelected: isCategorySelected,
-  } = useContextSelectionModel(builder, { kind: "category", selectableIds: categoryIds });
-
-  const {
-    isSelectionActive: isProductSelectionActive,
-    onToggleId: onToggleProductId,
-    isSelected: isProductSelected,
-  } = useContextSelectionModel(builder, { kind: "product", selectableIds: productIds });
+    getRowCheckboxState,
+    getRowCheckboxVisible,
+    onToggleRow,
+    headerState,
+    onSelectAllLabels,
+    isSelectAllDisabled,
+  } = useMenuSelectionState({
+    rows,
+    labels: visibleLabels,
+    products,
+    builder,
+  });
 
   // Inline edit handlers for label name, icon
   const { handleNameSave, handleIconSave } = useInlineEditHandlers({
@@ -168,20 +150,9 @@ export function MenuTableView() {
   // Handle row click (toggle selection by level)
   const handleRowClick = useCallback(
     (row: FlatMenuRow) => {
-      switch (row.level) {
-        case "label":
-          onToggleLabelId(row.id);
-          break;
-        case "category":
-          onToggleCategoryId(row.id);
-          break;
-        case "product":
-          // Use composite key for products to handle same product in multiple categories
-          onToggleProductId(`${row.parentId}-${row.id}`);
-          break;
-      }
+      onToggleRow(row);
     },
-    [onToggleLabelId, onToggleCategoryId, onToggleProductId]
+    [onToggleRow]
   );
 
   // Handle double-click navigation
@@ -205,7 +176,10 @@ export function MenuTableView() {
   // Render a label row
   const renderLabelRow = (row: FlatLabelRow, isLastRow: boolean) => {
     const label = row.data;
-    const isSelected = isLabelSelected(row.id);
+    const checkboxState = getRowCheckboxState(row);
+    const checkboxVisible = getRowCheckboxVisible(row);
+    const isSelected = checkboxState === "checked";
+    const isIndeterminate = checkboxState === "indeterminate";
     const isRowHovered = hoveredRowId === row.id;
     const dragClasses = getDragClasses(row);
     const dragHandlers = getDragHandlers(row);
@@ -215,7 +189,7 @@ export function MenuTableView() {
       <TableRow
         key={row.id}
         data-state={isSelected ? "selected" : undefined}
-        isSelected={isSelected}
+        isSelected={isSelected || isIndeterminate}
         isDragging={dragClasses.isDragging}
         isDragOver={dragClasses.isDragOver}
         isLastRow={isLastRow}
@@ -242,10 +216,11 @@ export function MenuTableView() {
           <CheckboxCell
             id={row.id}
             checked={isSelected}
-            onToggle={onToggleLabelId}
-            isSelectable={isLabelSelectionActive}
-            disabled={!isLabelSelectionActive}
-            alwaysVisible={isSelected}
+            indeterminate={isIndeterminate}
+            onToggle={() => onToggleRow(row)}
+            isSelectable={checkboxVisible}
+            disabled={!checkboxVisible}
+            alwaysVisible={isSelected || isIndeterminate}
             ariaLabel={`Select ${row.name}`}
           />
         </TableCell>
@@ -324,16 +299,21 @@ export function MenuTableView() {
 
   // Render a category row
   const renderCategoryRow = (row: FlatCategoryRow, isLastRow: boolean) => {
-    const isSelected = isCategorySelected(row.id);
-    const isRowHovered = hoveredRowId === row.id;
+    // Use composite key to handle same category under multiple labels
+    const rowKey = `${row.parentId}-${row.id}`;
+    const checkboxState = getRowCheckboxState(row);
+    const checkboxVisible = getRowCheckboxVisible(row);
+    const isSelected = checkboxState === "checked";
+    const isIndeterminate = checkboxState === "indeterminate";
+    const isRowHovered = hoveredRowId === rowKey;
     const dragClasses = getDragClasses(row);
     const dragHandlers = getDragHandlers(row);
 
     return (
       <TableRow
-        key={row.id}
+        key={rowKey}
         data-state={isSelected ? "selected" : undefined}
-        isSelected={isSelected}
+        isSelected={isSelected || isIndeterminate}
         isHidden={!row.isVisible}
         isDragging={dragClasses.isDragging}
         isDragOver={dragClasses.isDragOver}
@@ -344,7 +324,7 @@ export function MenuTableView() {
         onDragLeave={dragHandlers.onDragLeave}
         onDrop={dragHandlers.onDrop}
         onDragEnd={dragHandlers.onDragEnd}
-        onMouseEnter={() => setHoveredRowId(row.id)}
+        onMouseEnter={() => setHoveredRowId(rowKey)}
         onMouseLeave={() => setHoveredRowId(null)}
         className={cn(
           dragClasses.isDragOver &&
@@ -361,10 +341,11 @@ export function MenuTableView() {
           <CheckboxCell
             id={row.id}
             checked={isSelected}
-            onToggle={onToggleCategoryId}
-            isSelectable={isCategorySelectionActive}
-            disabled={!isCategorySelectionActive}
-            alwaysVisible={isSelected}
+            indeterminate={isIndeterminate}
+            onToggle={() => onToggleRow(row)}
+            isSelectable={checkboxVisible}
+            disabled={!checkboxVisible}
+            alwaysVisible={isSelected || isIndeterminate}
             ariaLabel={`Select ${row.name}`}
           />
         </TableCell>
@@ -378,7 +359,7 @@ export function MenuTableView() {
             <ChevronToggleCell
               isExpanded={row.isExpanded}
               isExpandable={row.isExpandable}
-              onToggle={() => builder.toggleExpand(row.id)}
+              onToggle={() => builder.toggleExpand(`${row.parentId}-${row.id}`)}
               ariaLabel={`${row.isExpanded ? "Collapse" : "Expand"} ${row.name}`}
             />
             <span className="truncate font-medium pl-1.5">{row.name}</span>
@@ -424,10 +405,13 @@ export function MenuTableView() {
 
   // Render a product row
   const renderProductRow = (row: FlatProductRow, isLastRow: boolean) => {
-    // Use composite key: parentId-id to handle products in multiple categories
-    const rowKey = `${row.parentId}-${row.id}`;
-    const isSelected = isProductSelected(rowKey);
-    const isRowHovered = hoveredRowId === row.id;
+    // Use composite key: grandParentId-parentId-id to uniquely identify product in category under label
+    const rowKey = `${row.grandParentId}-${row.parentId}-${row.id}`;
+    const checkboxState = getRowCheckboxState(row);
+    const checkboxVisible = getRowCheckboxVisible(row);
+    const isSelected = checkboxState === "checked";
+    // Products are leaf nodes - no indeterminate state
+    const isRowHovered = hoveredRowId === rowKey;
     const dragClasses = getDragClasses(row);
     const dragHandlers = getDragHandlers(row);
 
@@ -446,7 +430,7 @@ export function MenuTableView() {
         onDragLeave={dragHandlers.onDragLeave}
         onDrop={dragHandlers.onDrop}
         onDragEnd={dragHandlers.onDragEnd}
-        onMouseEnter={() => setHoveredRowId(row.id)}
+        onMouseEnter={() => setHoveredRowId(rowKey)}
         onMouseLeave={() => setHoveredRowId(null)}
         className={cn(
           dragClasses.isDragOver &&
@@ -462,9 +446,9 @@ export function MenuTableView() {
           <CheckboxCell
             id={rowKey}
             checked={isSelected}
-            onToggle={onToggleProductId}
-            isSelectable={isProductSelectionActive}
-            disabled={!isProductSelectionActive}
+            onToggle={() => onToggleRow(row)}
+            isSelectable={checkboxVisible}
+            disabled={!checkboxVisible}
             alwaysVisible={isSelected}
             ariaLabel={`Select ${row.name}`}
           />
@@ -552,9 +536,9 @@ export function MenuTableView() {
         columns={MENU_VIEW_HEADER_COLUMNS}
         preset={menuViewWidthPreset}
         hasSelectAll
-        allSelected={labelSelectionState.allSelected}
-        someSelected={labelSelectionState.someSelected}
-        selectAllDisabled={!isLabelSelectionActive}
+        allSelected={headerState.allSelected}
+        someSelected={headerState.someSelected}
+        selectAllDisabled={isSelectAllDisabled}
         onSelectAll={onSelectAllLabels}
       />
 

@@ -9,6 +9,8 @@ type CheckboxCellProps = {
   alwaysVisible?: boolean;
   ariaLabel?: string;
   isSelectable?: boolean;
+  /** When true, shows indeterminate state (some descendants selected) */
+  indeterminate?: boolean;
 };
 
 export function CheckboxCell({
@@ -19,6 +21,7 @@ export function CheckboxCell({
   alwaysVisible,
   ariaLabel,
   isSelectable = true,
+  indeterminate = false,
 }: CheckboxCellProps) {
   const pointerToggleRef = React.useRef(false);
 
@@ -40,7 +43,7 @@ export function CheckboxCell({
       }
     >
       <Checkbox
-        checked={checked}
+        checked={indeterminate ? "indeterminate" : checked}
         onCheckedChange={() => {
           onToggle(id);
 

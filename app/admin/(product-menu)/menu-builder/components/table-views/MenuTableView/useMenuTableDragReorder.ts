@@ -166,7 +166,12 @@ export function useMenuTableDragReorder({
           clearHoverExpandTimer();
           hoverExpandTargetRef.current = targetId;
           hoverExpandTimerRef.current = setTimeout(() => {
-            onExpandItem(targetId);
+            // Build expand key: labels use id, categories use composite key (parentId-id)
+            const expandKey =
+              targetRow.level === "category" && targetRow.parentId
+                ? `${targetRow.parentId}-${targetRow.id}`
+                : targetRow.id;
+            onExpandItem(expandKey);
             setDragState((prev) => ({ ...prev, autoExpandedId: targetId }));
             hoverExpandTargetRef.current = null;
           }, HOVER_EXPAND_DELAY_MS);

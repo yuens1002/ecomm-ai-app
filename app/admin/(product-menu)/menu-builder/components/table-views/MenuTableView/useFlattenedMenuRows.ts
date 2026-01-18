@@ -94,7 +94,9 @@ export function useFlattenedMenuRows({
         for (const catInLabel of sortedCategories) {
           const fullCategory = categoryMap.get(catInLabel.id);
           const categoryProducts = productsByCategoryId.get(catInLabel.id) ?? [];
-          const isCategoryExpanded = expandedIds.has(catInLabel.id);
+          // Use composite key for category expand state to handle same category under multiple labels
+          const categoryExpandKey = `${label.id}-${catInLabel.id}`;
+          const isCategoryExpanded = expandedIds.has(categoryExpandKey);
           const hasProducts = categoryProducts.length > 0;
 
           // Add category row
@@ -147,6 +149,7 @@ export function useFlattenedMenuRows({
                 isExpandable: false,
                 isExpanded: false,
                 parentId: catInLabel.id,
+                grandParentId: label.id,
                 orderInCategory,
                 data: product,
               };
@@ -185,9 +188,10 @@ export function getExpandableIds(
       expandableIds.push(label.id);
 
       // Category is expandable if it has products
+      // Use composite key to handle same category under multiple labels
       for (const cat of label.categories) {
         if (categoryHasProducts.has(cat.id)) {
-          expandableIds.push(cat.id);
+          expandableIds.push(`${label.id}-${cat.id}`);
         }
       }
     }
