@@ -68,9 +68,9 @@ export type UndoableAction = {
  * Actions available in the menu builder for manipulating state and data.
  */
 export interface MenuBuilderActions {
-  // Selection
-  toggleSelection: (id: string, options?: { kind?: SelectedEntityKind }) => void;
-  selectAll: (ids: string[], options?: { kind?: SelectedEntityKind }) => void;
+  // Selection (kind is derived from prefixed keys, not passed explicitly)
+  toggleSelection: (id: string) => void;
+  selectAll: (ids: string[]) => void;
   clearSelection: () => void;
 
   // Expand/collapse

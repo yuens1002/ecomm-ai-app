@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.66.2 - 2026-01-18
+
+- **Unified selection model with kind-prefixed keys**:
+  - Refactored `useContextSelectionModel` to use kind-prefixed keys (`label:id`, `category:labelId-catId`, `product:...`)
+  - Kind is now derived from keys, not stored separately - enables mixed selections in Menu Table View
+  - Added `hasSameKindSelection` helper for action validation (clone/remove disabled when mixed)
+  - Removed kind guards from `toggleSelection`/`selectAll` to allow selecting across entity types
+  - Consolidated duplicate hooks - deleted `useMenuSelectionState` in favor of unified model
+- **Auto-expand on check**: Checking a label/category checkbox auto-expands to show children
+- **Action bar improvements**: Clone/remove show "select items of same type" message when mixed kinds selected
+
 ## 0.66.1 - 2026-01-18
 
 - **Hierarchical selection state hook**: New `useMenuSelectionState` for Menu Table View

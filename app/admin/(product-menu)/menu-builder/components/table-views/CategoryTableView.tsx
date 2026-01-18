@@ -14,7 +14,7 @@ import { Eye, EyeOff, GripVertical, Package } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
-import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
+import { useContextSelectionModel, createKey } from "../../../hooks/useContextSelectionModel";
 import { useDragReorder } from "../../../hooks/useDragReorder";
 import { usePersistColumnSort } from "../../../hooks/usePersistColumnSort";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
@@ -102,17 +102,16 @@ export function CategoryTableView() {
   });
 
   // Selection model for remove action
-  const selectableProductIds = useMemo(() => categoryProducts.map((p) => p.id), [categoryProducts]);
+  const selectableProductKeys = useMemo(
+    () => categoryProducts.map((p) => createKey("product", p.id)),
+    [categoryProducts]
+  );
   const {
-    isSelectionActive: isProductSelectionActive,
     selectionState,
     onSelectAll,
-    onToggleId: onToggleProductId,
-    isSelected: isProductSelected,
-  } = useContextSelectionModel(builder, {
-    kind: "product",
-    selectableIds: selectableProductIds,
-  });
+    onToggle,
+    isSelected,
+  } = useContextSelectionModel(builder, { selectableKeys: selectableProductKeys });
 
   // Push undo action for reorder
   const pushReorderUndo = useCallback(
@@ -229,7 +228,8 @@ export function CategoryTableView() {
   const renderProductRow = (product: CategoryProduct, options?: { isPinned?: boolean; isLastRow?: boolean }) => {
     const _isPinned = options?.isPinned === true;
     const isLastRow = options?.isLastRow === true;
-    const isSelected = isProductSelected(product.id);
+    const productKey = createKey("product", product.id);
+    const isProductSelected = isSelected(productKey);
     const isRowHovered = hoveredRowId === product.id;
     const dragClasses = getDragClasses(product.id);
     const dragHandlers = getDragHandlers(product.id);
@@ -237,8 +237,8 @@ export function CategoryTableView() {
     return (
       <TableRow
         key={product.id}
-        data-state={isSelected ? "selected" : undefined}
-        isSelected={isSelected}
+        data-state={isProductSelected ? "selected" : undefined}
+        isSelected={isProductSelected}
         isHidden={product.isDisabled}
         isDragging={dragClasses.isDragging}
         isDragOver={dragClasses.isDragOver}
@@ -257,17 +257,16 @@ export function CategoryTableView() {
               ? "!border-b-2 !border-b-primary"
               : "!border-t-2 !border-t-primary")
         )}
-        onRowClick={() => onToggleProductId(product.id)}
+        onRowClick={() => onToggle(productKey)}
       >
         {/* Checkbox */}
         <TableCell config={categoryViewWidthPreset.select} data-row-click-ignore>
           <CheckboxCell
             id={product.id}
-            checked={isSelected}
-            onToggle={onToggleProductId}
-            isSelectable={isProductSelectionActive}
-            disabled={!isProductSelectionActive}
-            alwaysVisible={isSelected}
+            checked={isProductSelected}
+            onToggle={() => onToggle(productKey)}
+            isSelectable
+            alwaysVisible={isProductSelected}
             ariaLabel={`Select ${product.name}`}
           />
         </TableCell>
@@ -325,7 +324,6 @@ export function CategoryTableView() {
         hasSelectAll
         allSelected={allSelected}
         someSelected={someSelected}
-        selectAllDisabled={!isProductSelectionActive}
         onSelectAll={onSelectAll}
       />
 

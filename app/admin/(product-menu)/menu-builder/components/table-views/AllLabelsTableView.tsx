@@ -8,7 +8,7 @@ import { GripVertical, Tag } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
-import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
+import { useContextSelectionModel, createKey } from "../../../hooks/useContextSelectionModel";
 import { useDragReorder } from "../../../hooks/useDragReorder";
 import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
@@ -46,14 +46,16 @@ export function AllLabelsTableView() {
     clearPinnedIfMatches,
   } = useContextRowUiState(builder, "label", { autoClearPinned: true });
 
-  const selectableLabelIds = useMemo(() => labels.map((l) => l.id), [labels]);
+  const selectableLabelKeys = useMemo(
+    () => labels.map((l) => createKey("label", l.id)),
+    [labels]
+  );
   const {
-    isSelectionActive: isLabelSelectionActive,
     selectionState,
     onSelectAll,
-    onToggleId: onToggleLabelId,
-    isSelected: isLabelSelected,
-  } = useContextSelectionModel(builder, { kind: "label", selectableIds: selectableLabelIds });
+    onToggle,
+    isSelected,
+  } = useContextSelectionModel(builder, { selectableKeys: selectableLabelKeys });
 
   const { pinnedRow: pinnedLabel, rowsForTable: labelsForTable } = usePinnedRow({
     rows: labels,
@@ -135,7 +137,8 @@ export function AllLabelsTableView() {
   const renderLabelRow = (label: MenuLabel, options?: { isPinned?: boolean; isLastRow?: boolean }) => {
     const isPinned = options?.isPinned === true;
     const isLastRow = options?.isLastRow === true;
-    const isSelected = isLabelSelected(label.id);
+    const labelKey = createKey("label", label.id);
+    const isLabelSelected = isSelected(labelKey);
     const isRowHovered = hoveredRowId === label.id;
     const dragClasses = getDragClasses(label.id);
     const dragHandlers = getDragHandlers(label.id);
@@ -143,8 +146,8 @@ export function AllLabelsTableView() {
     return (
       <TableRow
         key={label.id}
-        data-state={isSelected ? "selected" : undefined}
-        isSelected={isSelected}
+        data-state={isLabelSelected ? "selected" : undefined}
+        isSelected={isLabelSelected}
         isHidden={!label.isVisible}
         isDragging={dragClasses.isDragging}
         isDragOver={dragClasses.isDragOver}
@@ -163,18 +166,17 @@ export function AllLabelsTableView() {
               ? "!border-b-2 !border-b-primary"
               : "!border-t-2 !border-t-primary")
         )}
-        onRowClick={() => onToggleLabelId(label.id)}
+        onRowClick={() => onToggle(labelKey)}
         onRowDoubleClick={() => builder.navigateToLabel(label.id)}
       >
         {/* Checkbox */}
         <TableCell config={allLabelsWidthPreset.select} data-row-click-ignore>
           <CheckboxCell
             id={label.id}
-            checked={isSelected}
-            onToggle={onToggleLabelId}
-            isSelectable={isLabelSelectionActive}
-            disabled={!isLabelSelectionActive}
-            alwaysVisible={isSelected}
+            checked={isLabelSelected}
+            onToggle={() => onToggle(labelKey)}
+            isSelectable
+            alwaysVisible={isLabelSelected}
             ariaLabel={`Select ${label.name}`}
           />
         </TableCell>
@@ -256,7 +258,6 @@ export function AllLabelsTableView() {
         hasSelectAll
         allSelected={allSelected}
         someSelected={someSelected}
-        selectAllDisabled={!isLabelSelectionActive}
         onSelectAll={onSelectAll}
       />
 

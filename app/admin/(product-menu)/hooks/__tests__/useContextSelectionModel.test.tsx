@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 
-import { useContextSelectionModel } from "../useContextSelectionModel";
+import { useContextSelectionModel, createKey } from "../useContextSelectionModel";
 
 import type { SelectedEntityKind } from "../../types/builder-state";
 
@@ -19,27 +19,13 @@ function createSelectionBuilder(initial: SelectionState) {
     get selectedKind() {
       return state.kind;
     },
-    toggleSelection: jest.fn((id: string, options?: { kind?: SelectedEntityKind }) => {
-      const kind = options?.kind;
+    toggleSelection: jest.fn((id: string) => {
       const isRemoving = state.ids.includes(id);
-
-      if (!isRemoving && kind && state.kind && state.kind !== kind && state.ids.length > 0) {
-        // match builder "same-entity only" gating
-        return;
-      }
-
       const nextIds = isRemoving ? state.ids.filter((x) => x !== id) : [...state.ids, id];
-      const nextKind = nextIds.length === 0 ? null : (kind ?? state.kind);
-      state = { ids: nextIds, kind: nextKind };
+      state = { ids: nextIds, kind: null }; // Kind is derived from keys, not stored
     }),
-    selectAll: jest.fn((ids: string[], options?: { kind?: SelectedEntityKind }) => {
-      const kind = options?.kind;
-      if (kind && state.kind && state.kind !== kind && state.ids.length > 0) {
-        // match builder "same-entity only" gating
-        return;
-      }
-
-      state = { ids, kind: ids.length === 0 ? null : (kind ?? state.kind) };
+    selectAll: jest.fn((ids: string[]) => {
+      state = { ids, kind: null }; // Kind is derived from keys, not stored
     }),
     clearSelection: jest.fn(() => {
       state = { ids: [], kind: null };
@@ -51,39 +37,19 @@ function createSelectionBuilder(initial: SelectionState) {
 }
 
 describe("useContextSelectionModel", () => {
-  it("reports isSelectionActive when selectedKind is null or same kind", () => {
-    const builder = createSelectionBuilder({ ids: [], kind: null });
-
-    const { result, rerender } = renderHook(
-      ({ kind }: { kind: SelectedEntityKind }) =>
-        useContextSelectionModel(builder, {
-          kind,
-          selectableIds: ["a"],
-        }),
-      { initialProps: { kind: "category" as SelectedEntityKind } }
-    );
-
-    expect(result.current.isSelectionActive).toBe(true);
-
-    act(() => {
-      builder.selectAll(["x"], { kind: "label" });
+  it("computes selectionState based on intersection with selectableKeys", () => {
+    const builder = createSelectionBuilder({
+      ids: [createKey("category", "a"), createKey("category", "c"), createKey("category", "zzz")],
+      kind: "category",
     });
-    rerender({ kind: "category" });
-
-    expect(builder.getState()).toEqual({ ids: ["x"], kind: "label" });
-    expect(result.current.isSelectionActive).toBe(false);
-
-    rerender({ kind: "label" });
-    expect(result.current.isSelectionActive).toBe(true);
-  });
-
-  it("computes selectionState based on intersection with selectableIds", () => {
-    const builder = createSelectionBuilder({ ids: ["a", "c", "zzz"], kind: "category" });
 
     const { result } = renderHook(() =>
       useContextSelectionModel(builder, {
-        kind: "category",
-        selectableIds: ["a", "b", "c"],
+        selectableKeys: [
+          createKey("category", "a"),
+          createKey("category", "b"),
+          createKey("category", "c"),
+        ],
       })
     );
 
@@ -97,11 +63,10 @@ describe("useContextSelectionModel", () => {
   it("onSelectAll selects all when not all selected, and clears when all selected", () => {
     const builder = createSelectionBuilder({ ids: [], kind: null });
 
+    const selectableKeys = [createKey("category", "a"), createKey("category", "b")];
+
     const { result, rerender } = renderHook(() =>
-      useContextSelectionModel(builder, {
-        kind: "category",
-        selectableIds: ["a", "b"],
-      })
+      useContextSelectionModel(builder, { selectableKeys })
     );
 
     act(() => {
@@ -109,8 +74,8 @@ describe("useContextSelectionModel", () => {
     });
     rerender();
 
-    expect(builder.getState()).toEqual({ ids: ["a", "b"], kind: "category" });
-    expect(builder.selectAll).toHaveBeenCalledWith(["a", "b"], { kind: "category" });
+    expect(builder.getState()).toEqual({ ids: selectableKeys, kind: null });
+    expect(builder.selectAll).toHaveBeenCalledWith(selectableKeys);
 
     act(() => {
       result.current.onSelectAll();
@@ -121,37 +86,93 @@ describe("useContextSelectionModel", () => {
     expect(builder.clearSelection).toHaveBeenCalled();
   });
 
-  it("onToggleId is a no-op when selection is not active", () => {
-    const builder = createSelectionBuilder({ ids: ["x"], kind: "label" });
+  it("onToggle toggles selection for a key", () => {
+    const builder = createSelectionBuilder({ ids: [], kind: null });
+    const categoryKey = createKey("category", "a");
 
     const { result, rerender } = renderHook(() =>
       useContextSelectionModel(builder, {
-        kind: "category",
-        selectableIds: ["a"],
+        selectableKeys: [categoryKey],
       })
     );
 
-    expect(result.current.isSelectionActive).toBe(false);
-
     act(() => {
-      result.current.onToggleId("a");
+      result.current.onToggle(categoryKey);
     });
     rerender();
 
-    expect(builder.getState()).toEqual({ ids: ["x"], kind: "label" });
+    expect(builder.getState()).toEqual({ ids: [categoryKey], kind: null });
+    expect(builder.toggleSelection).toHaveBeenCalledWith(categoryKey);
   });
 
-  it("isSelected reflects builder.selectedIds", () => {
-    const builder = createSelectionBuilder({ ids: ["a"], kind: "category" });
+  it("isSelected reflects builder.selectedIds using keys", () => {
+    const keyA = createKey("category", "a");
+    const keyB = createKey("category", "b");
+    const builder = createSelectionBuilder({ ids: [keyA], kind: "category" });
 
     const { result } = renderHook(() =>
       useContextSelectionModel(builder, {
-        kind: "category",
-        selectableIds: ["a", "b"],
+        selectableKeys: [keyA, keyB],
       })
     );
 
-    expect(result.current.isSelected("a")).toBe(true);
-    expect(result.current.isSelected("b")).toBe(false);
+    expect(result.current.isSelected(keyA)).toBe(true);
+    expect(result.current.isSelected(keyB)).toBe(false);
+  });
+
+  it("selectedKind is derived from selected keys", () => {
+    const labelKey = createKey("label", "l1");
+    const builder = createSelectionBuilder({ ids: [labelKey], kind: "label" });
+
+    const { result } = renderHook(() =>
+      useContextSelectionModel(builder, {
+        selectableKeys: [labelKey],
+      })
+    );
+
+    expect(result.current.selectedKind).toBe("label");
+    expect(result.current.isSameKind).toBe(true);
+  });
+
+  it("selectedKind is null when mixed kinds are selected", () => {
+    const labelKey = createKey("label", "l1");
+    const categoryKey = createKey("category", "c1");
+    const builder = createSelectionBuilder({ ids: [labelKey, categoryKey], kind: null });
+
+    const { result } = renderHook(() =>
+      useContextSelectionModel(builder, {
+        selectableKeys: [labelKey, categoryKey],
+      })
+    );
+
+    expect(result.current.selectedKind).toBe(null);
+    expect(result.current.isSameKind).toBe(false);
+  });
+
+  it("canPerformAction requires same kind and all checked", () => {
+    const keyA = createKey("category", "a");
+    const keyB = createKey("category", "b");
+    const builder = createSelectionBuilder({ ids: [keyA, keyB], kind: "category" });
+
+    const { result } = renderHook(() =>
+      useContextSelectionModel(builder, {
+        selectableKeys: [keyA, keyB],
+      })
+    );
+
+    // All same kind and all checked (no hierarchy, so all leaves)
+    expect(result.current.canPerformAction).toBe(true);
+  });
+
+  it("canPerformAction is false when no selection", () => {
+    const builder = createSelectionBuilder({ ids: [], kind: null });
+
+    const { result } = renderHook(() =>
+      useContextSelectionModel(builder, {
+        selectableKeys: [createKey("category", "a")],
+      })
+    );
+
+    expect(result.current.canPerformAction).toBe(false);
   });
 });

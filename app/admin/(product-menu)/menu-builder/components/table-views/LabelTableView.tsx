@@ -14,7 +14,7 @@ import { Eye, EyeOff, GripVertical, Layers } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
-import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
+import { useContextSelectionModel, createKey } from "../../../hooks/useContextSelectionModel";
 import { useDragReorder } from "../../../hooks/useDragReorder";
 import { usePersistColumnSort } from "../../../hooks/usePersistColumnSort";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
@@ -109,17 +109,16 @@ export function LabelTableView() {
   });
 
   // Selection model for remove action
-  const selectableCategoryIds = useMemo(() => labelCategories.map((c) => c.id), [labelCategories]);
+  const selectableCategoryKeys = useMemo(
+    () => labelCategories.map((c) => createKey("category", c.id)),
+    [labelCategories]
+  );
   const {
-    isSelectionActive: isCategorySelectionActive,
     selectionState,
     onSelectAll,
-    onToggleId: onToggleCategoryId,
-    isSelected: isCategorySelected,
-  } = useContextSelectionModel(builder, {
-    kind: "category",
-    selectableIds: selectableCategoryIds,
-  });
+    onToggle,
+    isSelected,
+  } = useContextSelectionModel(builder, { selectableKeys: selectableCategoryKeys });
 
   // Push undo action for reorder
   const pushReorderUndo = useCallback(
@@ -230,7 +229,8 @@ export function LabelTableView() {
   ) => {
     const _isPinned = options?.isPinned === true;
     const isLastRow = options?.isLastRow === true;
-    const isSelected = isCategorySelected(category.id);
+    const categoryKey = createKey("category", category.id);
+    const isCategorySelected = isSelected(categoryKey);
     const isRowHovered = hoveredRowId === category.id;
     const dragClasses = getDragClasses(category.id);
     const dragHandlers = getDragHandlers(category.id);
@@ -238,8 +238,8 @@ export function LabelTableView() {
     return (
       <TableRow
         key={category.id}
-        data-state={isSelected ? "selected" : undefined}
-        isSelected={isSelected}
+        data-state={isCategorySelected ? "selected" : undefined}
+        isSelected={isCategorySelected}
         isHidden={!category.isVisible}
         isDragging={dragClasses.isDragging}
         isDragOver={dragClasses.isDragOver}
@@ -258,18 +258,17 @@ export function LabelTableView() {
               ? "!border-b-2 !border-b-primary"
               : "!border-t-2 !border-t-primary")
         )}
-        onRowClick={() => onToggleCategoryId(category.id)}
+        onRowClick={() => onToggle(categoryKey)}
         onRowDoubleClick={() => handleNavigateToCategory(category.id)}
       >
         {/* Checkbox */}
         <TableCell config={labelViewWidthPreset.select} data-row-click-ignore>
           <CheckboxCell
             id={category.id}
-            checked={isSelected}
-            onToggle={onToggleCategoryId}
-            isSelectable={isCategorySelectionActive}
-            disabled={!isCategorySelectionActive}
-            alwaysVisible={isSelected}
+            checked={isCategorySelected}
+            onToggle={() => onToggle(categoryKey)}
+            isSelectable
+            alwaysVisible={isCategorySelected}
             ariaLabel={`Select ${category.name}`}
           />
         </TableCell>
@@ -327,7 +326,6 @@ export function LabelTableView() {
         hasSelectAll
         allSelected={allSelected}
         someSelected={someSelected}
-        selectAllDisabled={!isCategorySelectionActive}
         onSelectAll={onSelectAll}
       />
 

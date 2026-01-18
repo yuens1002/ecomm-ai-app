@@ -10,7 +10,7 @@ import {
   Undo,
 } from "lucide-react";
 import type { ActionBase, ActionContext, ActionExecuteResult, ActionId } from "./model";
-import { allCollapsed, allExpanded, hasRedoHistory, hasSelection, hasUndoHistory, modKey } from "./shared";
+import { allCollapsed, allExpanded, hasRedoHistory, hasSameKindSelection, hasSelection, hasUndoHistory, modKey } from "./shared";
 
 // ─────────────────────────────────────────────────────────────
 // UTILS - Common execute patterns
@@ -124,9 +124,13 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     label: "Clone",
     tooltip: "Duplicate selected items",
     kbd: [modKey, "D"],
-    disabled: (state) => !hasSelection(state),
+    disabled: (state) => !hasSameKindSelection(state),
     ariaLabel: (state) =>
-      hasSelection(state) ? "Clone selected items" : "Clone disabled - no items selected",
+      hasSameKindSelection(state)
+        ? "Clone selected items"
+        : hasSelection(state)
+          ? "Clone disabled - select items of same type"
+          : "Clone disabled - no items selected",
     onClick: async (_state, actions) => {
       await actions.cloneSelected();
     },
@@ -192,9 +196,13 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     label: "Remove",
     tooltip: "Remove selected items",
     kbd: [modKey, "⌫"],
-    disabled: (state) => !hasSelection(state),
+    disabled: (state) => !hasSameKindSelection(state),
     ariaLabel: (state) =>
-      hasSelection(state) ? "Remove selected items" : "Remove disabled - no items selected",
+      hasSameKindSelection(state)
+        ? "Remove selected items"
+        : hasSelection(state)
+          ? "Remove disabled - select items of same type"
+          : "Remove disabled - no items selected",
     onClick: async (_state, actions) => {
       await actions.removeSelected();
     },

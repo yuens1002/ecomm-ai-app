@@ -13,7 +13,7 @@ import { FileSpreadsheet } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
-import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
+import { useContextSelectionModel, createKey } from "../../../hooks/useContextSelectionModel";
 import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuCategory } from "../../../types/menu";
@@ -48,14 +48,16 @@ export function AllCategoriesTableView() {
     clearPinnedIfMatches,
   } = useContextRowUiState(builder, "category", { autoClearPinned: true });
 
-  const selectableCategoryIds = useMemo(() => categories.map((c) => c.id), [categories]);
+  const selectableCategoryKeys = useMemo(
+    () => categories.map((c) => createKey("category", c.id)),
+    [categories]
+  );
   const {
-    isSelectionActive: isCategorySelectionActive,
     selectionState,
     onSelectAll,
-    onToggleId: onToggleCategoryId,
-    isSelected: isCategorySelected,
-  } = useContextSelectionModel(builder, { kind: "category", selectableIds: selectableCategoryIds });
+    onToggle,
+    isSelected,
+  } = useContextSelectionModel(builder, { selectableKeys: selectableCategoryKeys });
   // Default sort by addedDate desc (newest first) - no DnD in this view so always show sort indicator
   const [sorting, setSorting] = React.useState<SortingState>([{ id: "addedDate", desc: true }]);
 
@@ -187,25 +189,25 @@ export function AllCategoriesTableView() {
 
   const renderCategoryRow = (category: MenuCategory, options?: { isPinned?: boolean }) => {
     const isPinned = options?.isPinned === true;
-    const isSelected = isCategorySelected(category.id);
+    const categoryKey = createKey("category", category.id);
+    const isCategorySelected = isSelected(categoryKey);
 
     return (
       <TableRow
         key={category.id}
-        data-state={isSelected ? "selected" : undefined}
-        isSelected={isSelected}
+        data-state={isCategorySelected ? "selected" : undefined}
+        isSelected={isCategorySelected}
         isHidden={!category.isVisible}
-        onRowClick={() => onToggleCategoryId(category.id)}
+        onRowClick={() => onToggle(categoryKey)}
         onRowDoubleClick={() => builder.navigateToCategory(category.id)}
       >
         <TableCell config={allCategoriesWidthPreset.select} data-row-click-ignore>
           <CheckboxCell
             id={category.id}
-            checked={isSelected}
-            onToggle={onToggleCategoryId}
-            isSelectable={isCategorySelectionActive}
-            disabled={!isCategorySelectionActive}
-            alwaysVisible={isSelected}
+            checked={isCategorySelected}
+            onToggle={() => onToggle(categoryKey)}
+            isSelectable
+            alwaysVisible={isCategorySelected}
             ariaLabel={`Select ${category.name}`}
           />
         </TableCell>
@@ -268,7 +270,6 @@ export function AllCategoriesTableView() {
         hasSelectAll
         allSelected={allSelected}
         someSelected={someSelected}
-        selectAllDisabled={!isCategorySelectionActive}
         onSelectAll={onSelectAll}
       />
 

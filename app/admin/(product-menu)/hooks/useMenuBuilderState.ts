@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import type { HistoryEntry, SelectedEntityKind, ViewType } from "../types/builder-state";
+import { getKindFromKey } from "./useContextSelectionModel";
 
 type ActiveRow = {
   kind: SelectedEntityKind;
@@ -112,35 +113,18 @@ export function useMenuBuilderState() {
   }, [currentView, currentLabelId, navigateToLabel, navigateToView]);
 
   // ==================== SELECTION ACTIONS ====================
-  const toggleSelection = useCallback((id: string, options?: { kind?: SelectedEntityKind }) => {
+  // Note: Kind is now derived from prefixed keys, so we allow mixed kinds
+  // and let the action bar handle disabling actions when mixed.
+  const toggleSelection = useCallback((id: string) => {
     setSelection((prev) => {
-      const kind = options?.kind;
       const isRemoving = prev.ids.includes(id);
-
-      if (!isRemoving && kind && prev.kind && prev.kind !== kind && prev.ids.length > 0) {
-        // Selection is "same-entity only" once started.
-        return prev;
-      }
-
       const nextIds = isRemoving ? prev.ids.filter((i) => i !== id) : [...prev.ids, id];
-      const nextKind = nextIds.length === 0 ? null : (kind ?? prev.kind);
-      return { ids: nextIds, kind: nextKind };
+      return { ids: nextIds, kind: null }; // Kind derived from keys, not stored
     });
   }, []);
 
-  const selectAll = useCallback((ids: string[], options?: { kind?: SelectedEntityKind }) => {
-    setSelection((prev) => {
-      const kind = options?.kind;
-      if (kind && prev.kind && prev.kind !== kind && prev.ids.length > 0) {
-        // Avoid switching entity kind when the user already has a selection.
-        return prev;
-      }
-
-      return {
-        ids,
-        kind: ids.length === 0 ? null : (kind ?? prev.kind),
-      };
-    });
+  const selectAll = useCallback((ids: string[]) => {
+    setSelection({ ids, kind: null }); // Kind derived from keys, not stored
   }, []);
 
   const clearSelection = useCallback(() => {
@@ -230,6 +214,16 @@ export function useMenuBuilderState() {
     }
   }, [redoStack, currentView]);
 
+  // Derive selectedKind from prefixed keys - returns null if mixed kinds
+  const derivedSelectedKind = useMemo((): SelectedEntityKind | null => {
+    if (selection.ids.length === 0) return null;
+    const kinds = new Set(selection.ids.map(getKindFromKey));
+    if (kinds.size === 1) {
+      return [...kinds][0];
+    }
+    return null; // Mixed kinds
+  }, [selection.ids]);
+
   return {
     // Navigation state
     currentView,
@@ -238,7 +232,7 @@ export function useMenuBuilderState() {
 
     // UI state
     selectedIds: selection.ids,
-    selectedKind: selection.kind,
+    selectedKind: derivedSelectedKind,
     expandedIds,
     editingRow,
     pinnedNewRow,

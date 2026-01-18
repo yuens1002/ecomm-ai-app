@@ -64,5 +64,5 @@ export const ACTION_BAR_CONFIG: Record<ViewType, ActionDefinition[]> = {
 
 export { ACTIONS } from "./actions";
 export * from "./model";
-export { hasRedoHistory, hasSelection, hasUndoHistory, modKey } from "./shared";
+export { hasRedoHistory, hasSameKindSelection, hasSelection, hasUndoHistory, modKey } from "./shared";
 export { VIEW_CONFIG } from "./views";

@@ -8,7 +8,8 @@ import {
   type ActionContext,
   type ActionId,
 } from "../../../constants/action-bar-config";
-import { getExpandableIds } from "../table-views/MenuTableView/useFlattenedMenuRows";
+import { getIdFromKey } from "../../../hooks/useContextSelectionModel";
+import { getExpandableIds } from "../../../hooks/useFlattenedMenuRows";
 import { DROPDOWN_REGISTRY, type DropdownContext } from "../../../constants/dropdown-registry";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { ActionButton } from "./ActionButton";
@@ -198,7 +199,8 @@ export function MenuActionBar() {
     }
 
     const context: ActionContext = {
-      selectedIds: builder.selectedIds,
+      // Extract raw IDs from prefixed keys (e.g., "label:abc" -> "abc")
+      selectedIds: builder.selectedIds.map(getIdFromKey),
       selectedKind: builder.selectedKind,
       currentLabelId: builder.currentLabelId,
       currentCategoryId: builder.currentCategoryId,
