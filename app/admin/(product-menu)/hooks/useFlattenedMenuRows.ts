@@ -9,7 +9,7 @@ import type {
   FlatLabelRow,
   FlatMenuRow,
   FlatProductRow,
-} from "../menu-builder/components/table-views/MenuTableView/types";
+} from "../menu-builder/components/table-views/MenuTableView.types";
 
 type UseFlattenedMenuRowsOptions = {
   labels: MenuLabel[];

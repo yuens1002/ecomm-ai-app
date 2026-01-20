@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.66.3 - 2026-01-19
+
+- **HierarchyNameCell component**: CVA-based slot component for depth-based indentation
+  - Depth variants (0/1/2) with Tailwind classes for consistent hierarchy indentation
+  - Slots: HierarchyCheckbox, HierarchyChevron, HierarchyIcon, HierarchyName
+  - Negative margin on chevron slot to compensate for button hover padding
+- **Expand/collapse sync with selection**: Clicking or checking expands, unchecking collapses
+- **Flatten MenuTableView structure**: Moved types to sibling file, deleted subdirectory
+- **Spacing refinements**: Tighter icon-name gap, reduced checkbox margins for alignment
+
 ## 0.66.2 - 2026-01-18
 
 - **Unified selection model with kind-prefixed keys**:

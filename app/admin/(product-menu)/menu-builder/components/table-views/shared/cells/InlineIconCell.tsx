@@ -85,7 +85,7 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
               type="button"
               disabled={isLoading}
               className={cn(
-                "flex items-center justify-center rounded-md px-1.5 py-1 transition-opacity hover:bg-accent",
+                "flex items-center justify-center rounded-md p-1 transition-opacity hover:bg-accent",
                 // xs-sm: always show as interactive
                 "opacity-100",
                 // md+: show as static icon unless hovered/open
@@ -108,7 +108,7 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
               type="button"
               disabled={isLoading}
               className={cn(
-                "flex items-center justify-center rounded-md px-1.5 py-1 hover:bg-accent",
+                "flex items-center justify-center rounded-md p-1 hover:bg-accent",
                 // xs-sm: always visible
                 "opacity-100",
                 // md+: visually hidden unless hovered/open/focused (but still tabbable)

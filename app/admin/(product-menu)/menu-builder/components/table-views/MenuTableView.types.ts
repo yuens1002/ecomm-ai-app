@@ -1,4 +1,4 @@
-import type { MenuLabel, MenuProduct } from "../../../../types/menu";
+import type { MenuLabel, MenuProduct } from "../../../types/menu";
 
 /**
  * Row levels in the menu hierarchy.

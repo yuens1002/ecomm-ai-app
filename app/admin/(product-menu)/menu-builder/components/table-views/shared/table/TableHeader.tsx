@@ -19,7 +19,10 @@ import { SortableHeaderCell } from "./SortableHeaderCell";
 export type TableHeaderColumn = {
   id: string;
   label: string;
+  /** Renders as a standalone checkbox column (no label) */
   isCheckbox?: boolean;
+  /** Renders a checkbox before the label (used for hierarchy name columns) */
+  hasInlineCheckbox?: boolean;
 };
 
 type TableHeaderProps<TData> = {
@@ -73,6 +76,28 @@ export function TableHeader<TData = unknown>({
 
           if (column.isCheckbox) {
             return <TableHead key={column.id} className={cn("pl-2.5", width)} />;
+          }
+
+          // Inline checkbox with label (used for hierarchy name columns)
+          // mr-4 (16px) + gap-2 (8px) = 24px, accounts for chevron button's internal padding
+          if (column.hasInlineCheckbox && hasSelectAll) {
+            return (
+              <TableHead key={column.id} className={cn(width, "font-medium text-foreground")}>
+                <div className="h-full flex items-center gap-2">
+                  <div className="flex-shrink-0 mr-4 flex items-center">
+                    <Checkbox
+                      checked={
+                        selectAllDisabled ? false : allSelected || (someSelected && "indeterminate")
+                      }
+                      onCheckedChange={selectAllDisabled ? undefined : onSelectAll}
+                      disabled={selectAllDisabled}
+                      aria-label="Select all"
+                    />
+                  </div>
+                  <span>{column.label}</span>
+                </div>
+              </TableHead>
+            );
           }
 
           const alignClass =

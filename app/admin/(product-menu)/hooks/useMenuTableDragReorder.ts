@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MenuLabel, MenuProduct } from "../types/menu";
-import type { FlatMenuRow, MenuRowLevel } from "../menu-builder/components/table-views/MenuTableView/types";
+import type { FlatMenuRow, MenuRowLevel } from "../menu-builder/components/table-views/MenuTableView.types";
 
 /** Delay in ms before auto-expanding a collapsed item on hover */
 const HOVER_EXPAND_DELAY_MS = 500;
