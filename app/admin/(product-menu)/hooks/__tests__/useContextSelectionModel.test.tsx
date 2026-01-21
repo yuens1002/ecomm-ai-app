@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 
-import { useContextSelectionModel, createKey } from "../useContextSelectionModel";
-
+import { useContextSelectionModel } from "../useContextSelectionModel";
+import { createKey } from "../../types/identity-registry";
 import type { SelectedEntityKind } from "../../types/builder-state";
 
 type SelectionState = {

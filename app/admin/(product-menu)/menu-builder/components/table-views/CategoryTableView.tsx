@@ -14,8 +14,11 @@ import { Eye, EyeOff, GripVertical, Package } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
-import { useContextSelectionModel, createKey } from "../../../hooks/useContextSelectionModel";
+import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { useDragReorder } from "../../../hooks/useDragReorder";
+import { buildFlatRegistry } from "../../../hooks/useIdentityRegistry";
+import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
+import { createKey } from "../../../types/identity-registry";
 import { usePersistColumnSort } from "../../../hooks/usePersistColumnSort";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuProduct } from "../../../types/menu";
@@ -101,17 +104,21 @@ export function CategoryTableView() {
     defaultSort: null, // Disable additional sorting - categoryProducts is pre-sorted
   });
 
+  // Build registry for this flat view
+  const registry = useMemo(() => buildFlatRegistry(categoryProducts, "product"), [categoryProducts]);
+
   // Selection model for remove action
-  const selectableProductKeys = useMemo(
-    () => categoryProducts.map((p) => createKey("product", p.id)),
-    [categoryProducts]
-  );
   const {
     selectionState,
     onSelectAll,
     onToggle,
     isSelected,
-  } = useContextSelectionModel(builder, { selectableKeys: selectableProductKeys });
+  } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
+
+  // Unified click handler (no navigation for products in category view)
+  const { handleClick } = useRowClickHandler(registry, {
+    onToggle,
+  });
 
   // Push undo action for reorder
   const pushReorderUndo = useCallback(
@@ -257,7 +264,7 @@ export function CategoryTableView() {
               ? "!border-b-2 !border-b-primary"
               : "!border-t-2 !border-t-primary")
         )}
-        onRowClick={() => onToggle(productKey)}
+        onRowClick={() => handleClick(productKey)}
       >
         {/* Checkbox */}
         <TableCell config={categoryViewWidthPreset.select} data-row-click-ignore>

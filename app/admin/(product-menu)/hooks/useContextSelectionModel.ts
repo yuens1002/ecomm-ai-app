@@ -2,6 +2,10 @@
 
 import { useCallback, useMemo } from "react";
 import type { SelectedEntityKind } from "../types/builder-state";
+import {
+  getActionableRoots,
+  getKindFromKey as getKindFromKeyBase,
+} from "../types/identity-registry";
 
 type BuilderSelectionApi = {
   selectedIds: string[];
@@ -40,35 +44,9 @@ type UseContextSelectionModelOptions = {
   hierarchy?: HierarchyConfig;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// KEY FORMAT UTILITIES
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Key format: "kind:id" where kind is "label", "category", or "product"
- *
- * Examples:
- * - Label: "label:abc123"
- * - Category: "category:labelId-categoryId"
- * - Product: "product:labelId-categoryId-productId"
- */
-
-export const createKey = (kind: SelectedEntityKind, id: string): string => `${kind}:${id}`;
-
-export const parseKey = (key: string): { kind: SelectedEntityKind; id: string } => {
-  const colonIndex = key.indexOf(":");
-  if (colonIndex === -1) {
-    // Legacy key without prefix - treat as unknown, caller should handle
-    return { kind: "label", id: key };
-  }
-  const kind = key.slice(0, colonIndex) as SelectedEntityKind;
-  const id = key.slice(colonIndex + 1);
-  return { kind, id };
-};
-
-export const getKindFromKey = (key: string): SelectedEntityKind => parseKey(key).kind;
-
-export const getIdFromKey = (key: string): string => parseKey(key).id;
+// Type-safe wrapper for identity-registry's getKindFromKey
+const getKindFromKey = (key: string): SelectedEntityKind =>
+  getKindFromKeyBase(key) as SelectedEntityKind;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HOOK
@@ -110,13 +88,19 @@ export function useContextSelectionModel(
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
-   * Compute selected kind(s) from selected keys.
-   * Returns the kind if all selected are same kind, null if mixed or empty.
+   * Compute selected kind from actionable root keys.
+   * Returns the kind if all roots are same kind, null if mixed or empty.
+   *
+   * Actionable roots are selected keys whose parents are NOT selected.
+   * This filters out descendants and only considers the items to act on.
    */
   const selectedKind = useMemo((): SelectedEntityKind | null => {
     if (builder.selectedIds.length === 0) return null;
 
-    const kinds = new Set(builder.selectedIds.map(getKindFromKey));
+    const roots = getActionableRoots(builder.selectedIds);
+    if (roots.length === 0) return null;
+
+    const kinds = new Set(roots.map(getKindFromKey));
     if (kinds.size === 1) {
       return [...kinds][0];
     }
@@ -178,20 +162,34 @@ export function useContextSelectionModel(
   );
 
   /**
-   * Check if all selected items have "checked" state (not indeterminate).
-   * Used for action validation - actions require complete selections.
+   * Get actionable root keys - items whose parents are not selected.
+   * Memoized for use in multiple checks.
    */
-  const allSelectedAreChecked = useMemo((): boolean => {
-    if (builder.selectedIds.length === 0) return false;
+  const actionableRoots = useMemo(
+    () => getActionableRoots(builder.selectedIds),
+    [builder.selectedIds]
+  );
 
-    return builder.selectedIds.every((key) => getCheckboxState(key) === "checked");
-  }, [builder.selectedIds, getCheckboxState]);
+  /**
+   * Check if all actionable roots have "checked" state (not indeterminate).
+   * Used for action validation - actions require complete selections.
+   *
+   * A root is "complete" if all its descendants are selected (checked state).
+   */
+  const allRootsAreChecked = useMemo((): boolean => {
+    if (actionableRoots.length === 0) return false;
+
+    return actionableRoots.every((key) => getCheckboxState(key) === "checked");
+  }, [actionableRoots, getCheckboxState]);
 
   /**
    * Whether actions (clone, remove) can be performed.
-   * Requires: has selection + same kind + all checked (complete subtrees).
+   * Requires:
+   * - Has selection
+   * - All actionable roots are same kind
+   * - All actionable roots are complete (checked state)
    */
-  const canPerformAction = builder.selectedIds.length > 0 && isSameKind && allSelectedAreChecked;
+  const canPerformAction = actionableRoots.length > 0 && isSameKind && allRootsAreChecked;
 
   // ─────────────────────────────────────────────────────────────────────────
   // TOGGLE HANDLERS
@@ -244,19 +242,19 @@ export function useContextSelectionModel(
       const currentState = getCheckboxState(key);
 
       if (currentState === "checked") {
-        // Deselect all descendants
-        const descendantSet = new Set(descendants);
-        const remainingIds = builder.selectedIds.filter((id) => !descendantSet.has(id));
+        // Deselect parent and all descendants
+        const keysToRemove = new Set([key, ...descendants]);
+        const remainingIds = builder.selectedIds.filter((id) => !keysToRemove.has(id));
         if (remainingIds.length === 0) {
           builder.clearSelection();
         } else {
           builder.selectAll(remainingIds);
         }
       } else {
-        // Select all descendants (handles both unchecked and indeterminate)
-        const descendantSet = new Set(descendants);
-        const existingNonDescendants = builder.selectedIds.filter((id) => !descendantSet.has(id));
-        const newIds = [...existingNonDescendants, ...descendants];
+        // Select parent and all descendants (handles both unchecked and indeterminate)
+        const keysToAdd = new Set([key, ...descendants]);
+        const existingOther = builder.selectedIds.filter((id) => !keysToAdd.has(id));
+        const newIds = [...existingOther, key, ...descendants];
         builder.selectAll(newIds);
       }
     },
@@ -288,7 +286,8 @@ export function useContextSelectionModel(
 
     // Action validation
     canPerformAction,
-    allSelectedAreChecked,
+    allRootsAreChecked,
+    actionableRoots,
 
     // Selection info
     hasSelection: builder.selectedIds.length > 0,

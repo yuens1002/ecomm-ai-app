@@ -13,8 +13,11 @@ import { FileSpreadsheet } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
-import { useContextSelectionModel, createKey } from "../../../hooks/useContextSelectionModel";
+import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
+import { buildFlatRegistry } from "../../../hooks/useIdentityRegistry";
 import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
+import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
+import { createKey } from "../../../types/identity-registry";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuCategory } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
@@ -48,16 +51,21 @@ export function AllCategoriesTableView() {
     clearPinnedIfMatches,
   } = useContextRowUiState(builder, "category", { autoClearPinned: true });
 
-  const selectableCategoryKeys = useMemo(
-    () => categories.map((c) => createKey("category", c.id)),
-    [categories]
-  );
+  // Build registry for this flat view
+  const registry = useMemo(() => buildFlatRegistry(categories, "category"), [categories]);
+
   const {
     selectionState,
     onSelectAll,
     onToggle,
     isSelected,
-  } = useContextSelectionModel(builder, { selectableKeys: selectableCategoryKeys });
+  } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
+
+  // Unified click handler
+  const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
+    onToggle,
+    navigate: (kind, entityId) => builder.navigateToCategory(entityId),
+  });
   // Default sort by addedDate desc (newest first) - no DnD in this view so always show sort indicator
   const [sorting, setSorting] = React.useState<SortingState>([{ id: "addedDate", desc: true }]);
 
@@ -198,8 +206,8 @@ export function AllCategoriesTableView() {
         data-state={isCategorySelected ? "selected" : undefined}
         isSelected={isCategorySelected}
         isHidden={!category.isVisible}
-        onRowClick={() => onToggle(categoryKey)}
-        onRowDoubleClick={() => builder.navigateToCategory(category.id)}
+        onRowClick={() => handleClick(categoryKey)}
+        onRowDoubleClick={() => handleDoubleClick(categoryKey)}
       >
         <TableCell config={allCategoriesWidthPreset.select} data-row-click-ignore>
           <CheckboxCell

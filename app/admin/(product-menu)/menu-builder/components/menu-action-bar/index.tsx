@@ -8,7 +8,7 @@ import {
   type ActionContext,
   type ActionId,
 } from "../../../constants/action-bar-config";
-import { getIdFromKey } from "../../../hooks/useContextSelectionModel";
+import { getEntityIdFromKey, getActionableRoots } from "../../../types/identity-registry";
 import { getExpandableIds } from "../../../hooks/useFlattenedMenuRows";
 import { DROPDOWN_REGISTRY, type DropdownContext } from "../../../constants/dropdown-registry";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
@@ -198,9 +198,12 @@ export function MenuActionBar() {
       return;
     }
 
+    // Get actionable root keys (items whose parents are not selected)
+    const actionableRoots = getActionableRoots(builder.selectedIds);
+
     const context: ActionContext = {
-      // Extract raw IDs from prefixed keys (e.g., "label:abc" -> "abc")
-      selectedIds: builder.selectedIds.map(getIdFromKey),
+      // Extract entity IDs from actionable roots only
+      selectedIds: actionableRoots.map(getEntityIdFromKey),
       selectedKind: builder.selectedKind,
       currentLabelId: builder.currentLabelId,
       currentCategoryId: builder.currentCategoryId,

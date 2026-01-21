@@ -89,10 +89,7 @@ export async function createCategoryLabel(input: {
   const name = input.name.trim();
   if (!name) throw new Error("Name is required");
 
-  // Ensure uniqueness on name
-  const existing = await prisma.categoryLabel.findUnique({ where: { name } });
-  if (existing) throw new Error("Label name must be unique");
-
+  // Let Prisma's unique constraint (P2002) handle uniqueness
   const order = await insertLabelOrder(input.afterLabelId ?? null);
 
   return prisma.categoryLabel.create({
@@ -114,13 +111,7 @@ export async function updateCategoryLabel(input: {
   const nextName = input.name === undefined ? undefined : input.name.trim();
   if (nextName !== undefined && !nextName) throw new Error("Name cannot be empty");
 
-  if (nextName) {
-    const dup = await prisma.categoryLabel.findFirst({
-      where: { name: nextName, id: { not: input.id } },
-    });
-    if (dup) throw new Error("Label name must be unique");
-  }
-
+  // Let Prisma's unique constraint (P2002) handle uniqueness
   return prisma.categoryLabel.update({
     where: { id: input.id },
     data: {

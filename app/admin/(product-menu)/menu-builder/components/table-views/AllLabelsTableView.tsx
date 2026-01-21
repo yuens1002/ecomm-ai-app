@@ -8,8 +8,11 @@ import { GripVertical, Tag } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
-import { useContextSelectionModel, createKey } from "../../../hooks/useContextSelectionModel";
+import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { useDragReorder } from "../../../hooks/useDragReorder";
+import { buildFlatRegistry } from "../../../hooks/useIdentityRegistry";
+import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
+import { createKey } from "../../../types/identity-registry";
 import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuLabel } from "../../../types/menu";
@@ -46,16 +49,21 @@ export function AllLabelsTableView() {
     clearPinnedIfMatches,
   } = useContextRowUiState(builder, "label", { autoClearPinned: true });
 
-  const selectableLabelKeys = useMemo(
-    () => labels.map((l) => createKey("label", l.id)),
-    [labels]
-  );
+  // Build registry for this flat view
+  const registry = useMemo(() => buildFlatRegistry(labels, "label"), [labels]);
+
   const {
     selectionState,
     onSelectAll,
     onToggle,
     isSelected,
-  } = useContextSelectionModel(builder, { selectableKeys: selectableLabelKeys });
+  } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
+
+  // Unified click handler
+  const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
+    onToggle,
+    navigate: (kind, entityId) => builder.navigateToLabel(entityId),
+  });
 
   const { pinnedRow: pinnedLabel, rowsForTable: labelsForTable } = usePinnedRow({
     rows: labels,
@@ -166,8 +174,8 @@ export function AllLabelsTableView() {
               ? "!border-b-2 !border-b-primary"
               : "!border-t-2 !border-t-primary")
         )}
-        onRowClick={() => onToggle(labelKey)}
-        onRowDoubleClick={() => builder.navigateToLabel(label.id)}
+        onRowClick={() => handleClick(labelKey)}
+        onRowDoubleClick={() => handleDoubleClick(labelKey)}
       >
         {/* Checkbox */}
         <TableCell config={allLabelsWidthPreset.select} data-row-click-ignore>

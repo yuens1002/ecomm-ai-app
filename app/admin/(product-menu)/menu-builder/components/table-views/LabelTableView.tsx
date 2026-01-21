@@ -14,8 +14,11 @@ import { Eye, EyeOff, GripVertical, Layers } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
-import { useContextSelectionModel, createKey } from "../../../hooks/useContextSelectionModel";
+import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { useDragReorder } from "../../../hooks/useDragReorder";
+import { buildFlatRegistry } from "../../../hooks/useIdentityRegistry";
+import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
+import { createKey } from "../../../types/identity-registry";
 import { usePersistColumnSort } from "../../../hooks/usePersistColumnSort";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuCategoryInLabel } from "../../../types/menu";
@@ -108,17 +111,22 @@ export function LabelTableView() {
     defaultSort: null, // labelCategories is pre-sorted by order
   });
 
+  // Build registry for this flat view
+  const registry = useMemo(() => buildFlatRegistry(labelCategories, "category"), [labelCategories]);
+
   // Selection model for remove action
-  const selectableCategoryKeys = useMemo(
-    () => labelCategories.map((c) => createKey("category", c.id)),
-    [labelCategories]
-  );
   const {
     selectionState,
     onSelectAll,
     onToggle,
     isSelected,
-  } = useContextSelectionModel(builder, { selectableKeys: selectableCategoryKeys });
+  } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
+
+  // Unified click handler
+  const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
+    onToggle,
+    navigate: (kind, entityId) => builder.navigateToCategory(entityId),
+  });
 
   // Push undo action for reorder
   const pushReorderUndo = useCallback(
@@ -158,14 +166,6 @@ export function LabelTableView() {
       setSorting([]);
     },
   });
-
-  // Navigation handler for double-click
-  const handleNavigateToCategory = useCallback(
-    (categoryId: string) => {
-      builder.navigateToCategory(categoryId);
-    },
-    [builder]
-  );
 
   // Column definitions - name and addedOrder are sortable
   const columns = useMemo<ColumnDef<LabelCategory>[]>(
@@ -258,8 +258,8 @@ export function LabelTableView() {
               ? "!border-b-2 !border-b-primary"
               : "!border-t-2 !border-t-primary")
         )}
-        onRowClick={() => onToggle(categoryKey)}
-        onRowDoubleClick={() => handleNavigateToCategory(category.id)}
+        onRowClick={() => handleClick(categoryKey)}
+        onRowDoubleClick={() => handleDoubleClick(categoryKey)}
       >
         {/* Checkbox */}
         <TableCell config={labelViewWidthPreset.select} data-row-click-ignore>

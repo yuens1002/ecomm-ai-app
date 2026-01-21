@@ -33,6 +33,7 @@ describe("product-menu labels DTO", () => {
 
   it("maps categoryLabel.findMany payload to MenuLabelDto", async () => {
     // Deliberately make `category.order` differ from the label-category assignment order.
+    const attachedDate = new Date("2024-01-15T10:00:00Z");
     prismaMock.categoryLabel.findMany.mockResolvedValueOnce([
       {
         id: "lbl_1",
@@ -44,6 +45,7 @@ describe("product-menu labels DTO", () => {
         categories: [
           {
             order: 7,
+            createdAt: attachedDate, // Junction table createdAt -> attachedAt in DTO
             category: {
               id: "cat_1",
               name: "Espresso",
@@ -67,7 +69,13 @@ describe("product-menu labels DTO", () => {
         include: expect.objectContaining({
           categories: expect.objectContaining({
             orderBy: { order: "asc" },
-            include: { category: true },
+            select: expect.objectContaining({
+              order: true,
+              createdAt: true,
+              category: expect.objectContaining({
+                select: { id: true, name: true, slug: true },
+              }),
+            }),
           }),
         }),
       }) satisfies Prisma.CategoryLabelFindManyArgs
@@ -87,6 +95,7 @@ describe("product-menu labels DTO", () => {
             name: "Espresso",
             slug: "espresso",
             order: 7,
+            attachedAt: attachedDate,
           },
         ],
       },

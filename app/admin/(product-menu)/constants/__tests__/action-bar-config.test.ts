@@ -231,8 +231,8 @@ describe("Action Bar Configuration", () => {
       expect(removeAction?.disabled(state)).toBe(true);
     });
 
-    it("should enable actions when items selected", () => {
-      const state = createMockState({ selectedIds: ["id1"] });
+    it("should enable actions when items selected with same kind", () => {
+      const state = createMockState({ selectedIds: ["label:id1"], selectedKind: "label" });
       const removeAction = ACTION_BAR_CONFIG.menu.find((a) => a.id === "remove");
 
       expect(removeAction?.disabled(state)).toBe(false);

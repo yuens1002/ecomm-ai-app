@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import type { HistoryEntry, SelectedEntityKind, ViewType } from "../types/builder-state";
-import { getKindFromKey } from "./useContextSelectionModel";
+import { getActionableKind } from "../types/identity-registry";
 
 type ActiveRow = {
   kind: SelectedEntityKind;
@@ -214,14 +214,12 @@ export function useMenuBuilderState() {
     }
   }, [redoStack, currentView]);
 
-  // Derive selectedKind from prefixed keys - returns null if mixed kinds
+  // Derive selectedKind from actionable root keys - returns null if mixed kinds
+  // Uses getActionableKind to filter out descendants and only consider root items
   const derivedSelectedKind = useMemo((): SelectedEntityKind | null => {
     if (selection.ids.length === 0) return null;
-    const kinds = new Set(selection.ids.map(getKindFromKey));
-    if (kinds.size === 1) {
-      return [...kinds][0];
-    }
-    return null; // Mixed kinds
+    const kind = getActionableKind(selection.ids);
+    return kind as SelectedEntityKind | null;
   }, [selection.ids]);
 
   return {
