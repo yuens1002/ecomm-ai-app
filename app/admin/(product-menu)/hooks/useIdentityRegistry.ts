@@ -4,7 +4,7 @@
  * Factory functions to create IdentityRegistry instances for different view types.
  */
 
-import type { MenuLabel, MenuProduct } from "../types/menu";
+import type { MenuLabel } from "../types/menu";
 import {
   type RowIdentity,
   type IdentityRegistry,
@@ -121,16 +121,6 @@ export function buildMenuRegistry(labels: MenuLabel[]): IdentityRegistry {
   }
 
   return createRegistry(identities, orderedKeys, keysByKind);
-}
-
-/**
- * @deprecated Use buildMenuRegistry instead. This alias exists for backwards compatibility.
- */
-export function buildMenuHierarchyRegistry(
-  labels: MenuLabel[],
-  _products: MenuProduct[]
-): IdentityRegistry {
-  return buildMenuRegistry(labels);
 }
 
 /**

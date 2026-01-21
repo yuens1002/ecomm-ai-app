@@ -34,7 +34,7 @@ import type {
 import { isCategoryRow, isLabelRow, isProductRow } from "./MenuTableView.types";
 import { useFlattenedMenuRows } from "../../../hooks/useFlattenedMenuRows";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
-import { buildMenuHierarchyRegistry } from "../../../hooks/useIdentityRegistry";
+import { buildMenuRegistry } from "../../../hooks/useIdentityRegistry";
 import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
 import { createKey } from "../../../types/identity-registry";
 import { useMenuTableDragReorder } from "../../../hooks/useMenuTableDragReorder";
@@ -50,17 +50,21 @@ const MENU_VIEW_HEADER_COLUMNS: TableHeaderColumn[] = [
 ];
 
 /**
- * MenuTableView - 3-level hierarchical table showing Labels → Categories → Products
+ * MenuTableView - 2-level hierarchical table showing Labels → Categories
  *
  * Features:
  * - Only shows visible labels (isVisible=true)
- * - Expand/collapse for labels and categories
- * - Level-based indentation (0px labels, 24px categories, 48px products)
+ * - Expand/collapse for labels
+ * - Level-based indentation (0px labels, 24px categories)
  * - Drag-and-drop reordering (same-level and same-parent only)
  * - Auto-collapse all on label drag
  * - Selection (single entity type at a time)
  * - Inline editing for label names and icons
  * - Eye icon for visibility (read-only display)
+ * - Product count shown as info column (products managed in Category Detail)
+ *
+ * Note: Products are not included in the selection registry. Product count
+ * is displayed but product management is done in Category Detail view.
  */
 export function MenuTableView() {
   const {
@@ -99,9 +103,10 @@ export function MenuTableView() {
   } = useContextRowUiState(builder, "label", { autoClearPinned: true });
 
   // Build registry for hierarchical selection (uses kind-prefixed keys)
+  // Note: Registry is 2-level only (labels + categories), products are display-only
   const registry = useMemo(
-    () => buildMenuHierarchyRegistry(visibleLabels, products),
-    [visibleLabels, products]
+    () => buildMenuRegistry(visibleLabels),
+    [visibleLabels]
   );
 
   // Unified selection model with hierarchy support for tri-state checkboxes

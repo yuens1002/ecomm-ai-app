@@ -1,12 +1,17 @@
 # Changelog
 
+## 0.66.6 - 2026-01-21
+
+- **Updated MenuTableView to use buildMenuRegistry**: Uses 2-level registry (labels + categories)
+- **Removed deprecated buildMenuHierarchyRegistry**: No longer needed after consumer update
+- **Updated MenuTableView docstring**: Reflects 2-level hierarchy with product count info column
+
 ## 0.66.5 - 2026-01-21
 
 - **Simplified buildMenuRegistry to 2-level hierarchy**: Labels + Categories only
   - Products removed from menu registry (product count shown as info column)
   - Categories are leaf nodes with `expandKey: null`
   - Labels can receive category drops (`canReceiveDrop: true`)
-  - Deprecated `buildMenuHierarchyRegistry` alias kept for backwards compatibility
 
 ## 0.66.4 - 2026-01-21
 
