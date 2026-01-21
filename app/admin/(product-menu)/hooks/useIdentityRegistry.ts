@@ -35,7 +35,7 @@ export function buildFlatRegistry<T extends { id: string }>(
       depth: 0,
       parentKey: null,
       childKeys: [],
-      expandKey: null,
+      isExpandable: false,
       canReceiveDrop: false,
     };
 
@@ -64,13 +64,19 @@ export function buildMenuRegistry(labels: MenuLabel[]): IdentityRegistry {
     category: [],
   };
 
+  // Sort labels by order to match useFlattenedMenuRows
+  const sortedLabels = [...labels].sort((a, b) => a.order - b.order);
+
   // Process labels and their categories (2 levels only)
-  for (const label of labels) {
+  for (const label of sortedLabels) {
     const labelKey = createKey("label", label.id);
     const categoryKeys: string[] = [];
 
+    // Sort categories by order within label to match useFlattenedMenuRows
+    const sortedCategories = [...label.categories].sort((a, b) => a.order - b.order);
+
     // Process categories within this label
-    for (const category of label.categories) {
+    for (const category of sortedCategories) {
       const categoryKey = createKey("category", label.id, category.id);
 
       // Category identity - leaf node in 2-level menu view
@@ -81,7 +87,7 @@ export function buildMenuRegistry(labels: MenuLabel[]): IdentityRegistry {
         depth: 1,
         parentKey: labelKey,
         childKeys: [], // Leaf node
-        expandKey: null, // Not expandable
+        isExpandable: false, // Leaf node
         canReceiveDrop: false,
       };
 
@@ -100,7 +106,7 @@ export function buildMenuRegistry(labels: MenuLabel[]): IdentityRegistry {
       depth: 0,
       parentKey: null,
       childKeys: categoryKeys,
-      expandKey: hasCategories ? labelKey : null,
+      isExpandable: hasCategories,
       canReceiveDrop: true, // Labels can receive category drops
     };
 
@@ -108,13 +114,14 @@ export function buildMenuRegistry(labels: MenuLabel[]): IdentityRegistry {
     keysByKind.label.push(labelKey);
   }
 
-  // Build ordered keys: label, then its categories
+  // Build ordered keys: label, then its categories (using sorted data)
   const orderedKeys: string[] = [];
-  for (const label of labels) {
+  for (const label of sortedLabels) {
     const labelKey = createKey("label", label.id);
     orderedKeys.push(labelKey);
 
-    for (const category of label.categories) {
+    const sortedCats = [...label.categories].sort((a, b) => a.order - b.order);
+    for (const category of sortedCats) {
       const categoryKey = createKey("category", label.id, category.id);
       orderedKeys.push(categoryKey);
     }

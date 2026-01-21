@@ -52,12 +52,29 @@ export function useActionHandler(
   const { mutations, onSuccess, onError } = options;
 
   /**
+   * Sort keys by visual order (position in registry.allKeys).
+   * This ensures cloned items appear in the same order as the table.
+   */
+  const sortByVisualOrder = useCallback(
+    (keys: string[]): string[] => {
+      const keySet = new Set(keys);
+      // Filter allKeys to only include selected keys, preserving visual order
+      return registry.allKeys.filter((key) => keySet.has(key)) as string[];
+    },
+    [registry]
+  );
+
+  /**
    * Clone selected items.
+   * Items are processed in visual order (table order) to maintain consistency.
    */
   const handleClone = useCallback(
     async (keys: string[]) => {
       try {
-        for (const key of keys) {
+        // Sort by visual order to maintain table order for cloned items
+        const sortedKeys = sortByVisualOrder(keys);
+
+        for (const key of sortedKeys) {
           const identity = registry.get(key);
           if (!identity) continue;
 
@@ -88,7 +105,7 @@ export function useActionHandler(
         onError?.(error instanceof Error ? error : new Error(String(error)));
       }
     },
-    [registry, mutations, onSuccess, onError]
+    [registry, mutations, onSuccess, onError, sortByVisualOrder]
   );
 
   /**

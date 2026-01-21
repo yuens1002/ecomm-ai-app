@@ -32,6 +32,10 @@ export type UseInlineEditHandlersOptions<TItem extends { id: string }> = {
   updateItem: (id: string, data: Partial<TItem>) => Promise<UpdateResult>;
   /** Optional callback after successful save */
   onSaveComplete?: () => void;
+  /** Optional function to check if a name already exists (for duplicate validation) */
+  isDuplicateName?: (name: string, excludeId: string) => boolean;
+  /** Optional callback when an error occurs (e.g., show toast) */
+  onError?: (message: string) => void;
 };
 
 /**
@@ -51,7 +55,7 @@ export type UseInlineEditHandlersOptions<TItem extends { id: string }> = {
  */
 export function useInlineEditHandlers<
   TItem extends { id: string; name?: string; icon?: string | null; isVisible?: boolean },
->({ builder, entityKind, getItem, updateItem, onSaveComplete }: UseInlineEditHandlersOptions<TItem>) {
+>({ builder, entityKind, getItem, updateItem, onSaveComplete, isDuplicateName, onError }: UseInlineEditHandlersOptions<TItem>) {
   /**
    * Handle name field save with undo/redo support
    */
@@ -60,10 +64,21 @@ export function useInlineEditHandlers<
       const item = getItem(id);
       if (!item || !("name" in item)) return;
 
+      // Check for duplicate name before saving
+      if (isDuplicateName?.(name, id)) {
+        onError?.(`A ${entityKind} with this name already exists`);
+        return;
+      }
+
       const previousName = item.name;
       const res = await updateItem(id, { name } as Partial<TItem>);
 
-      if (res.ok && previousName !== name) {
+      if (!res.ok) {
+        onError?.(res.error ?? `Failed to update ${entityKind} name`);
+        return;
+      }
+
+      if (previousName !== name) {
         builder.pushUndoAction({
           action: `rename-${entityKind}`,
           timestamp: new Date(),
@@ -80,7 +95,7 @@ export function useInlineEditHandlers<
 
       onSaveComplete?.();
     },
-    [builder, entityKind, getItem, updateItem, onSaveComplete]
+    [builder, entityKind, getItem, updateItem, onSaveComplete, isDuplicateName, onError]
   );
 
   /**

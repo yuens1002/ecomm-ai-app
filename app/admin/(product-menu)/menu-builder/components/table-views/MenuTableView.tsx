@@ -2,6 +2,7 @@
 "use no memo";
 
 import { TableBody } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Eye, EyeOff, GripVertical, LayoutGrid } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
@@ -140,6 +141,19 @@ export function MenuTableView() {
     },
   });
 
+  const { toast } = useToast();
+
+  // Check if a label name already exists (case-insensitive)
+  const isDuplicateLabelName = useCallback(
+    (name: string, excludeId: string) => {
+      const normalizedName = name.trim().toLowerCase();
+      return labels.some(
+        (l) => l.id !== excludeId && l.name.trim().toLowerCase() === normalizedName
+      );
+    },
+    [labels]
+  );
+
   // Inline edit handlers for label name, icon
   const { handleNameSave, handleIconSave } = useInlineEditHandlers({
     builder,
@@ -147,6 +161,8 @@ export function MenuTableView() {
     getItem: (id) => labels.find((l) => l.id === id),
     updateItem: updateLabel,
     onSaveComplete: clearEditing,
+    isDuplicateName: isDuplicateLabelName,
+    onError: (message) => toast({ title: "Error", description: message, variant: "destructive" }),
   });
 
   // Hierarchical drag-and-drop with auto-collapse on label drag and hover-to-expand

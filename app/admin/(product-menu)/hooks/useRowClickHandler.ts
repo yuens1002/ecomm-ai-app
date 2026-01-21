@@ -62,6 +62,7 @@ export function useRowClickHandler(
   const {
     onToggle,
     onToggleWithHierarchy,
+    getCheckboxState,
     toggleExpand,
     navigate,
   } = options;
@@ -70,8 +71,9 @@ export function useRowClickHandler(
    * Handle single click on a row.
    *
    * Behavior:
-   * 1. If expandable, toggle expand/collapse state
-   * 2. Toggle selection (cascade to children if parent)
+   * - Parent rows (expandable): Toggle expand/collapse AND toggle selection with hierarchy
+   *   - Exception: If indeterminate, don't collapse (keep expanded to show newly selected children)
+   * - Leaf rows: Toggle selection
    */
   const handleClick = useCallback(
     (key: string) => {
@@ -79,20 +81,27 @@ export function useRowClickHandler(
       if (!identity) return;
 
       // 1. Toggle expand/collapse if this row is expandable
-      if (identity.expandKey && toggleExpand) {
-        toggleExpand(identity.expandKey);
+      // Exception: Don't collapse if indeterminate (selecting all children - keep visible)
+      if (identity.isExpandable && toggleExpand) {
+        const checkboxState = getCheckboxState?.(key);
+        const isIndeterminate = checkboxState === "indeterminate";
+
+        // Only toggle expand if NOT indeterminate
+        // When indeterminate, clicking selects all children - keep parent expanded
+        if (!isIndeterminate) {
+          toggleExpand(identity.entityId);
+        }
       }
 
       // 2. Toggle selection
+      // Use hierarchy toggle for parent rows (has children), simple toggle for leaf rows
       if (identity.childKeys.length > 0 && onToggleWithHierarchy) {
-        // Parent row - use hierarchy-aware toggle
         onToggleWithHierarchy(key);
       } else {
-        // Leaf row - simple toggle
         onToggle(key);
       }
     },
-    [registry, onToggle, onToggleWithHierarchy, toggleExpand]
+    [registry, onToggle, onToggleWithHierarchy, getCheckboxState, toggleExpand]
   );
 
   /**

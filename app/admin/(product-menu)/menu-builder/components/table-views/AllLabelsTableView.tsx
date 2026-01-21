@@ -2,6 +2,7 @@
 "use no memo";
 
 import { TableBody } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
 import { GripVertical, Tag } from "lucide-react";
@@ -80,6 +81,19 @@ export function AllLabelsTableView() {
     },
   });
 
+  const { toast } = useToast();
+
+  // Check if a label name already exists (case-insensitive)
+  const isDuplicateLabelName = useCallback(
+    (name: string, excludeId: string) => {
+      const normalizedName = name.trim().toLowerCase();
+      return labels.some(
+        (l) => l.id !== excludeId && l.name.trim().toLowerCase() === normalizedName
+      );
+    },
+    [labels]
+  );
+
   // Inline edit handlers with undo/redo
   const { handleNameSave, handleIconSave, handleVisibilitySave } = useInlineEditHandlers({
     builder,
@@ -87,6 +101,8 @@ export function AllLabelsTableView() {
     getItem: (id) => labels.find((l) => l.id === id),
     updateItem: updateLabel,
     onSaveComplete: clearEditing,
+    isDuplicateName: isDuplicateLabelName,
+    onError: (message) => toast({ title: "Error", description: message, variant: "destructive" }),
   });
 
   // Helper: Get comma-separated category names for a label

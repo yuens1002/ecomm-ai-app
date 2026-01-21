@@ -29,8 +29,10 @@ export function InlineNameEditor({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const trimmedValue = value.trim();
-  const isDefaultNewName = /^new (category|label)(?:\s*\(\d+\)|\s+\d+)?$/i.test(trimmedValue);
-  const isCloneCopyName = /\bcopy(?:\s*\(\d+\)|\s+\d+)?$/i.test(trimmedValue);
+  // Match "New Label", "New Label2", "New Category3", etc.
+  const isDefaultNewName = /^new (category|label)\d*$/i.test(trimmedValue);
+  // Match "Name copy", "Name copy2", "Name copy3", etc.
+  const isCloneCopyName = /\scopy\d*$/i.test(trimmedValue);
   const isGenericName = isDefaultNewName || isCloneCopyName;
 
   // Focus and select text when entering edit mode

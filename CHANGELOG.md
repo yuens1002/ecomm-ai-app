@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.66.10 - 2026-01-21
+
+- **Updated naming convention**: "New Label", "New Label2" and "Name copy", "Name copy2" (number directly attached)
+- **Restored font styling for default names**: Italic muted text for generic names
+- **Added duplicate label name validation**: Toast error shown when trying to save duplicate name
+- **Refactored `expandKey` to `isExpandable: boolean`**: Simplified identity registry field
+- **Fixed registry ordering**: Labels and categories now sorted by `order` to match visual table order
+- **Fixed clone item ordering**: Items processed in visual order for consistent results
+- **Fixed indeterminate state behavior**: Parent doesn't collapse when selecting all children from indeterminate state
+
 ## 0.66.9 - 2026-01-21
 
 - **Fixed expand/collapse action icons**: Swapped icons (ListChevronsUpDown for expand, ListChevronsDownUp for collapse)

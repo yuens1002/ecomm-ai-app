@@ -6,56 +6,56 @@ import { Prisma } from "@prisma/client";
 
 /**
  * Strip copy suffix from a name
- * @param name - Original name (e.g., "Blends copy (2)")
+ * @param name - Original name (e.g., "Blends copy2")
  * @returns Base name without suffix (e.g., "Blends")
  *
  * @example
  * stripCopySuffix("Blends") // "Blends"
  * stripCopySuffix("Blends copy") // "Blends"
- * stripCopySuffix("Blends copy (2)") // "Blends"
- * stripCopySuffix("Blends copy (10)") // "Blends"
+ * stripCopySuffix("Blends copy2") // "Blends"
+ * stripCopySuffix("Blends copy10") // "Blends"
  */
 export function stripCopySuffix(name: string): string {
-  // Pattern: " copy" OR " copy (n)"
-  const copySuffixPattern = /(.*)\s+copy(?:\s*\(\d+\))?\s*$/i;
+  // Pattern: " copy" OR " copy[n]" (number directly attached)
+  const copySuffixPattern = /(.*)\s+copy\d*\s*$/i;
   const match = name.match(copySuffixPattern);
   return match ? match[1].trim() : name.trim();
 }
 
 /**
- * Generate clone name following convention: "copy", "copy (2)", "copy (3)", ...
+ * Generate clone name following convention: "copy", "copy2", "copy3", ...
  * @param baseName - Base name without suffix (e.g., "Blends")
  * @param attempt - Attempt number (0-indexed)
- * @returns Clone name (e.g., "Blends copy" on first attempt, "Blends copy (2)" on second)
+ * @returns Clone name (e.g., "Blends copy" on first attempt, "Blends copy2" on second)
  *
  * @example
  * makeCloneName("Blends", 0) // "Blends copy"
- * makeCloneName("Blends", 1) // "Blends copy (2)"
- * makeCloneName("Blends", 2) // "Blends copy (3)"
+ * makeCloneName("Blends", 1) // "Blends copy2"
+ * makeCloneName("Blends", 2) // "Blends copy3"
  */
 export function makeCloneName(baseName: string, attempt: number): string {
   if (attempt === 0) {
     return `${baseName} copy`;
   }
-  return `${baseName} copy (${attempt + 1})`;
+  return `${baseName} copy${attempt + 1}`;
 }
 
 /**
- * Generate new item name following convention: "New [Type]", "New [Type] (2)", ...
+ * Generate new item name following convention: "New [Type]", "New [Type]2", ...
  * @param entityType - Entity type (e.g., "Label", "Category")
  * @param attempt - Attempt number (0-indexed)
- * @returns New item name (e.g., "New Label" on first attempt, "New Label (2)" on second)
+ * @returns New item name (e.g., "New Label" on first attempt, "New Label2" on second)
  *
  * @example
  * makeNewItemName("Label", 0) // "New Label"
- * makeNewItemName("Label", 1) // "New Label (2)"
+ * makeNewItemName("Label", 1) // "New Label2"
  * makeNewItemName("Category", 0) // "New Category"
  */
 export function makeNewItemName(entityType: string, attempt: number): string {
   if (attempt === 0) {
     return `New ${entityType}`;
   }
-  return `New ${entityType} (${attempt + 1})`;
+  return `New ${entityType}${attempt + 1}`;
 }
 
 // ─────────────────────────────────────────────────────────────

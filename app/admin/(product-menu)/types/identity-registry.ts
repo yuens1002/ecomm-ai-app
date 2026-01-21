@@ -40,8 +40,8 @@ export type RowIdentity = {
   /** Keys of all descendants for selection cascade. Empty if leaf. */
   readonly childKeys: readonly string[];
 
-  /** Expand/collapse key. Null if not expandable (leaf node). */
-  readonly expandKey: string | null;
+  /** Whether this row can be expanded (has children). */
+  readonly isExpandable: boolean;
 
   /** Whether this item can receive drops (e.g., labels can receive categories) */
   readonly canReceiveDrop: boolean;
@@ -80,8 +80,8 @@ export type IdentityRegistry = {
   /** Get child keys for selection cascade */
   getChildKeys(key: string): readonly string[];
 
-  /** Get expand key for collapse/expand */
-  getExpandKey(key: string): string | null;
+  /** Check if row is expandable */
+  isExpandable(key: string): boolean;
 
   /** Check if item can receive drops */
   canReceiveDrop(key: string): boolean;
@@ -124,8 +124,8 @@ export function createRegistry(
       return identities.get(key)?.childKeys ?? [];
     },
 
-    getExpandKey(key: string): string | null {
-      return identities.get(key)?.expandKey ?? null;
+    isExpandable(key: string): boolean {
+      return identities.get(key)?.isExpandable ?? false;
     },
 
     canReceiveDrop(key: string): boolean {

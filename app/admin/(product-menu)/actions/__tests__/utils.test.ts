@@ -15,15 +15,15 @@ describe("actions/utils", () => {
       expect(stripCopySuffix("Blends copy")).toBe("Blends");
     });
 
-    it("should strip 'copy (n)' suffix from name", () => {
-      expect(stripCopySuffix("Blends copy (2)")).toBe("Blends");
-      expect(stripCopySuffix("Blends copy (10)")).toBe("Blends");
-      expect(stripCopySuffix("Blends copy (999)")).toBe("Blends");
+    it("should strip 'copy[n]' suffix from name (number directly attached)", () => {
+      expect(stripCopySuffix("Blends copy2")).toBe("Blends");
+      expect(stripCopySuffix("Blends copy10")).toBe("Blends");
+      expect(stripCopySuffix("Blends copy999")).toBe("Blends");
     });
 
     it("should handle case-insensitive matching", () => {
       expect(stripCopySuffix("Blends Copy")).toBe("Blends");
-      expect(stripCopySuffix("Blends COPY (2)")).toBe("Blends");
+      expect(stripCopySuffix("Blends COPY2")).toBe("Blends");
     });
 
     it("should return original name if no copy suffix", () => {
@@ -47,15 +47,15 @@ describe("actions/utils", () => {
       expect(makeCloneName("Blends", 0)).toBe("Blends copy");
     });
 
-    it("should generate 'copy (n)' for subsequent attempts", () => {
-      expect(makeCloneName("Blends", 1)).toBe("Blends copy (2)");
-      expect(makeCloneName("Blends", 2)).toBe("Blends copy (3)");
-      expect(makeCloneName("Blends", 9)).toBe("Blends copy (10)");
+    it("should generate 'copy[n]' for subsequent attempts (number directly attached)", () => {
+      expect(makeCloneName("Blends", 1)).toBe("Blends copy2");
+      expect(makeCloneName("Blends", 2)).toBe("Blends copy3");
+      expect(makeCloneName("Blends", 9)).toBe("Blends copy10");
     });
 
     it("should work with different base names", () => {
       expect(makeCloneName("Coffee Beans", 0)).toBe("Coffee Beans copy");
-      expect(makeCloneName("Coffee Beans", 1)).toBe("Coffee Beans copy (2)");
+      expect(makeCloneName("Coffee Beans", 1)).toBe("Coffee Beans copy2");
     });
   });
 
@@ -65,10 +65,10 @@ describe("actions/utils", () => {
       expect(makeNewItemName("Category", 0)).toBe("New Category");
     });
 
-    it("should generate 'New [Type] (n)' for subsequent attempts", () => {
-      expect(makeNewItemName("Label", 1)).toBe("New Label (2)");
-      expect(makeNewItemName("Label", 2)).toBe("New Label (3)");
-      expect(makeNewItemName("Category", 1)).toBe("New Category (2)");
+    it("should generate 'New [Type][n]' for subsequent attempts (number directly attached)", () => {
+      expect(makeNewItemName("Label", 1)).toBe("New Label2");
+      expect(makeNewItemName("Label", 2)).toBe("New Label3");
+      expect(makeNewItemName("Category", 1)).toBe("New Category2");
     });
   });
 
