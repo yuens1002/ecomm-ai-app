@@ -62,10 +62,10 @@ export function MenuActionBar() {
     });
   }, [builder.currentView, builder.selectedIds, categories]);
 
-  // Compute expandable IDs (labels with categories, categories with products)
+  // Compute expandable IDs (labels with categories only in 2-level view)
   const expandableIds = useMemo(
-    () => getExpandableIds(labels, products),
-    [labels, products]
+    () => getExpandableIds(labels),
+    [labels]
   );
 
   // Build state object for action bar config (with data counts and expand state)

@@ -29,9 +29,8 @@ import type {
   FlatCategoryRow,
   FlatLabelRow,
   FlatMenuRow,
-  FlatProductRow,
 } from "./MenuTableView.types";
-import { isCategoryRow, isLabelRow, isProductRow } from "./MenuTableView.types";
+import { isCategoryRow, isLabelRow } from "./MenuTableView.types";
 import { useFlattenedMenuRows } from "../../../hooks/useFlattenedMenuRows";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { buildMenuRegistry } from "../../../hooks/useIdentityRegistry";
@@ -182,16 +181,16 @@ export function MenuTableView() {
     [getBaseDragHandlers, builder]
   );
 
-  // Helper: Get row key based on row type
+  // Helper: Get row key based on row type (2-level: labels and categories only)
   const getRowKey = useCallback((row: FlatMenuRow): string => {
     if (isLabelRow(row)) {
       return createKey("label", row.id);
-    } else if (isCategoryRow(row)) {
-      return createKey("category", row.parentId, row.id);
-    } else {
-      const productRow = row as FlatProductRow;
-      return createKey("product", productRow.grandParentId, productRow.parentId, productRow.id);
     }
+    if (isCategoryRow(row)) {
+      return createKey("category", row.parentId, row.id);
+    }
+    // Should never reach here in 2-level view
+    return "";
   }, []);
 
   // Render a label row
@@ -321,14 +320,14 @@ export function MenuTableView() {
     );
   };
 
-  // Render a category row
+  // Render a category row (leaf node in 2-level view - no chevron)
   const renderCategoryRow = (row: FlatCategoryRow, isLastRow: boolean) => {
     // Use composite key to handle same category under multiple labels
     const compositeId = `${row.parentId}-${row.id}`;
     const categoryKey = getRowKey(row);
     const checkboxState = getCheckboxState(categoryKey);
     const isSelected = checkboxState === "checked";
-    const isIndeterminate = checkboxState === "indeterminate";
+    // Categories are leaf nodes in 2-level view - no indeterminate state
     const isRowHovered = hoveredRowId === compositeId;
     const dragClasses = getDragClasses(row);
     const dragHandlers = getDragHandlers(row);
@@ -337,7 +336,7 @@ export function MenuTableView() {
       <TableRow
         key={compositeId}
         data-state={isSelected ? "selected" : undefined}
-        isSelected={isSelected || isIndeterminate}
+        isSelected={isSelected}
         isHidden={!row.isVisible}
         isDragging={dragClasses.isDragging}
         isDragOver={dragClasses.isDragOver}
@@ -354,34 +353,24 @@ export function MenuTableView() {
           dragClasses.isDragOver &&
             (dragClasses.dropPosition === "after"
               ? "!border-b-2 !border-b-primary"
-              : "!border-t-2 !border-t-primary"),
-          dragClasses.isAutoExpanded && "animate-auto-expand-flash"
+              : "!border-t-2 !border-t-primary")
         )}
         onRowClick={() => handleClick(categoryKey)}
         onRowDoubleClick={() => handleDoubleClick(categoryKey)}
       >
-        {/* Name with checkbox, chevron and indent */}
+        {/* Name with checkbox and indent (no chevron - leaf node) */}
         <TableCell config={menuViewWidthPreset.name}>
           <HierarchyNameCell depth={1}>
             <HierarchyCheckbox>
               <CheckboxCell
                 id={compositeId}
                 checked={isSelected}
-                indeterminate={isIndeterminate}
                 onToggle={() => handleClick(categoryKey)}
                 isSelectable
-                alwaysVisible={isSelected || isIndeterminate}
+                alwaysVisible={isSelected}
                 ariaLabel={`Select ${row.name}`}
               />
             </HierarchyCheckbox>
-            <HierarchyChevron>
-              <ChevronToggleCell
-                isExpanded={row.isExpanded}
-                isExpandable={row.isExpandable}
-                onToggle={() => builder.toggleExpand(`${row.parentId}-${row.id}`)}
-                ariaLabel={`${row.isExpanded ? "Collapse" : "Expand"} ${row.name}`}
-              />
-            </HierarchyChevron>
             <HierarchyName>
               <span className="truncate font-medium">{row.name}</span>
             </HierarchyName>
@@ -425,101 +414,7 @@ export function MenuTableView() {
     );
   };
 
-  // Render a product row
-  const renderProductRow = (row: FlatProductRow, isLastRow: boolean) => {
-    // Use composite key: grandParentId-parentId-id to uniquely identify product in category under label
-    const compositeId = `${row.grandParentId}-${row.parentId}-${row.id}`;
-    const productKey = getRowKey(row);
-    const checkboxState = getCheckboxState(productKey);
-    const isSelected = checkboxState === "checked";
-    // Products are leaf nodes - no indeterminate state
-    const isRowHovered = hoveredRowId === compositeId;
-    const dragClasses = getDragClasses(row);
-    const dragHandlers = getDragHandlers(row);
-
-    return (
-      <TableRow
-        key={compositeId}
-        data-state={isSelected ? "selected" : undefined}
-        isSelected={isSelected}
-        isHidden={!row.isVisible}
-        isDragging={dragClasses.isDragging}
-        isDragOver={dragClasses.isDragOver}
-        isLastRow={isLastRow}
-        draggable
-        onDragStart={dragHandlers.onDragStart}
-        onDragOver={dragHandlers.onDragOver}
-        onDragLeave={dragHandlers.onDragLeave}
-        onDrop={dragHandlers.onDrop}
-        onDragEnd={dragHandlers.onDragEnd}
-        onMouseEnter={() => setHoveredRowId(compositeId)}
-        onMouseLeave={() => setHoveredRowId(null)}
-        className={cn(
-          dragClasses.isDragOver &&
-            (dragClasses.dropPosition === "after"
-              ? "!border-b-2 !border-b-primary"
-              : "!border-t-2 !border-t-primary")
-        )}
-        onRowClick={() => handleClick(productKey)}
-        onRowDoubleClick={() => handleDoubleClick(productKey)}
-      >
-        {/* Name with checkbox and indent (no chevron - no-descendant row) */}
-        <TableCell config={menuViewWidthPreset.name}>
-          <HierarchyNameCell depth={2}>
-            <HierarchyCheckbox>
-              <CheckboxCell
-                id={compositeId}
-                checked={isSelected}
-                onToggle={() => handleClick(productKey)}
-                isSelectable
-                alwaysVisible={isSelected}
-                ariaLabel={`Select ${row.name}`}
-              />
-            </HierarchyCheckbox>
-            <HierarchyName>
-              <span className="truncate">{row.name}</span>
-            </HierarchyName>
-          </HierarchyNameCell>
-        </TableCell>
-
-        {/* Categories count (empty for products) */}
-        <TableCell config={menuViewWidthPreset.categories}>
-          <span className="text-sm text-muted-foreground">—</span>
-        </TableCell>
-
-        {/* Visibility (eye icon, centered) */}
-        <TableCell config={menuViewWidthPreset.visibility}>
-          <div className="flex items-center justify-center">
-            {row.isVisible ? (
-              <Eye className="h-4 w-4" />
-            ) : (
-              <EyeOff className="h-4 w-4" />
-            )}
-          </div>
-        </TableCell>
-
-        {/* Products count (empty for products) */}
-        <TableCell config={menuViewWidthPreset.products}>
-          <span className="text-sm text-muted-foreground">—</span>
-        </TableCell>
-
-        {/* Drag Handle */}
-        <TableCell config={menuViewWidthPreset.dragHandle} data-row-click-ignore>
-          <div
-            className={cn(
-              "flex items-center justify-center cursor-grab active:cursor-grabbing",
-              "opacity-100",
-              isRowHovered ? "md:opacity-100" : "md:opacity-0"
-            )}
-          >
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
-          </div>
-        </TableCell>
-      </TableRow>
-    );
-  };
-
-  // Render a row based on its type
+  // Render a row based on its type (2-level: labels and categories only)
   const renderRow = (row: FlatMenuRow, index: number, totalRows: number) => {
     const isLastRow = index === totalRows - 1;
 
@@ -528,9 +423,6 @@ export function MenuTableView() {
     }
     if (isCategoryRow(row)) {
       return renderCategoryRow(row, isLastRow);
-    }
-    if (isProductRow(row)) {
-      return renderProductRow(row, isLastRow);
     }
     return null;
   };

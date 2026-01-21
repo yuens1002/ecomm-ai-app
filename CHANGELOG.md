@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.66.8 - 2026-01-21
+
+- **Simplified MenuTableView to 2-level hierarchy**: Labels → Categories only (no products)
+  - Products removed from row rendering (only product count shown)
+  - Categories are leaf nodes (no chevron, no expand/collapse)
+  - Updated `useFlattenedMenuRows` to not produce product rows
+  - Updated `getExpandableIds` to only return label IDs
+  - Product management moved to Category Detail view
+
 ## 0.66.7 - 2026-01-21
 
 - **Removed dead code from useFlattenedMenuRows**: Deleted unused `MenuHierarchy` type and `buildMenuHierarchy` function (replaced by IdentityRegistry)
