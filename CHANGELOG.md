@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.66.5 - 2026-01-21
+
+- **Simplified buildMenuRegistry to 2-level hierarchy**: Labels + Categories only
+  - Products removed from menu registry (product count shown as info column)
+  - Categories are leaf nodes with `expandKey: null`
+  - Labels can receive category drops (`canReceiveDrop: true`)
+  - Deprecated `buildMenuHierarchyRegistry` alias kept for backwards compatibility
+
+## 0.66.4 - 2026-01-21
+
+- **Updated RowIdentity type**: Replaced `ancestry: string[]` with `parentKey: string | null`
+- **Added canReceiveDrop field**: For DnD drop target validation
+- **Updated IdentityRegistry interface**: `getParentId` → `getParentKey`, added `canReceiveDrop()`
+- **Updated useActionHandler**: Uses `parentKey` instead of `ancestry.at(-1)`
+
 ## 0.66.3 - 2026-01-19
 
 - **HierarchyNameCell component**: CVA-based slot component for depth-based indentation

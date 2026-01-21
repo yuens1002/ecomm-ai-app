@@ -48,110 +48,50 @@ export function buildFlatRegistry<T extends { id: string }>(
 }
 
 /**
- * Build a hierarchical registry for the Menu table view.
+ * Build a 2-level hierarchical registry for the Menu table view.
  *
  * Structure:
- * - Labels (depth 0) - expandable, contains categories, can receive drops
- * - Categories (depth 1) - expandable if has products, leaf in 2-level view
- * - Products (depth 2) - leaf nodes (included for backwards compatibility)
+ * - Labels (depth 0) - expandable if has categories, can receive category drops
+ * - Categories (depth 1) - leaf nodes, no children in menu view
  *
- * Note: Products are included for now but will be removed in Phase 3
- * when we simplify to 2-level hierarchy.
+ * Products are NOT included in the menu registry. Product count is displayed
+ * as an info column but products are managed in Category Detail view.
  */
-export function buildMenuHierarchyRegistry(
-  labels: MenuLabel[],
-  products: MenuProduct[]
-): IdentityRegistry {
+export function buildMenuRegistry(labels: MenuLabel[]): IdentityRegistry {
   const identities = new Map<string, RowIdentity>();
-  const allKeys: string[] = [];
   const keysByKind: Record<string, string[]> = {
     label: [],
     category: [],
-    product: [],
   };
 
-  // Build product lookup: categoryId -> products in that category
-  const productsByCategory = new Map<string, MenuProduct[]>();
-  for (const product of products) {
-    for (const categoryId of product.categoryIds) {
-      const existing = productsByCategory.get(categoryId) ?? [];
-      existing.push(product);
-      productsByCategory.set(categoryId, existing);
-    }
-  }
-
-  // Process labels and their descendants
+  // Process labels and their categories (2 levels only)
   for (const label of labels) {
     const labelKey = createKey("label", label.id);
-    const labelChildKeys: string[] = [];
+    const categoryKeys: string[] = [];
 
     // Process categories within this label
     for (const category of label.categories) {
       const categoryKey = createKey("category", label.id, category.id);
-      const categoryChildKeys: string[] = [];
 
-      // Process products within this category (under this label context)
-      const categoryProducts = productsByCategory.get(category.id) ?? [];
-
-      // Sort products by their order for this specific category
-      const sortedProducts = [...categoryProducts].sort((a, b) => {
-        const orderA =
-          a.categoryOrders.find((o) => o.categoryId === category.id)?.order ??
-          0;
-        const orderB =
-          b.categoryOrders.find((o) => o.categoryId === category.id)?.order ??
-          0;
-        return orderA - orderB;
-      });
-
-      for (const product of sortedProducts) {
-        const productKey = createKey(
-          "product",
-          label.id,
-          category.id,
-          product.id
-        );
-
-        const productIdentity: RowIdentity = {
-          key: productKey,
-          kind: "product",
-          entityId: product.id,
-          depth: 2,
-          parentKey: categoryKey,
-          childKeys: [],
-          expandKey: null,
-          canReceiveDrop: false,
-        };
-
-        identities.set(productKey, productIdentity);
-        allKeys.push(productKey);
-        keysByKind.product.push(productKey);
-        categoryChildKeys.push(productKey);
-      }
-
-      // Category identity - expandable if has products
-      const categoryExpandKey =
-        categoryChildKeys.length > 0 ? categoryKey : null;
-
+      // Category identity - leaf node in 2-level menu view
       const categoryIdentity: RowIdentity = {
         key: categoryKey,
         kind: "category",
         entityId: category.id,
         depth: 1,
         parentKey: labelKey,
-        childKeys: categoryChildKeys,
-        expandKey: categoryExpandKey,
+        childKeys: [], // Leaf node
+        expandKey: null, // Not expandable
         canReceiveDrop: false,
       };
 
       identities.set(categoryKey, categoryIdentity);
-      allKeys.push(categoryKey);
+      categoryKeys.push(categoryKey);
       keysByKind.category.push(categoryKey);
-      labelChildKeys.push(categoryKey, ...categoryChildKeys);
     }
 
     // Label identity - expandable if has categories, can receive category drops
-    const hasCategories = label.categories.length > 0;
+    const hasCategories = categoryKeys.length > 0;
 
     const labelIdentity: RowIdentity = {
       key: labelKey,
@@ -159,17 +99,16 @@ export function buildMenuHierarchyRegistry(
       entityId: label.id,
       depth: 0,
       parentKey: null,
-      childKeys: labelChildKeys,
+      childKeys: categoryKeys,
       expandKey: hasCategories ? labelKey : null,
       canReceiveDrop: true, // Labels can receive category drops
     };
 
     identities.set(labelKey, labelIdentity);
-    allKeys.push(labelKey);
     keysByKind.label.push(labelKey);
   }
 
-  // Reorder allKeys to match tree order: label, then its children
+  // Build ordered keys: label, then its categories
   const orderedKeys: string[] = [];
   for (const label of labels) {
     const labelKey = createKey("label", label.id);
@@ -178,31 +117,20 @@ export function buildMenuHierarchyRegistry(
     for (const category of label.categories) {
       const categoryKey = createKey("category", label.id, category.id);
       orderedKeys.push(categoryKey);
-
-      const categoryProducts = productsByCategory.get(category.id) ?? [];
-      const sortedProducts = [...categoryProducts].sort((a, b) => {
-        const orderA =
-          a.categoryOrders.find((o) => o.categoryId === category.id)?.order ??
-          0;
-        const orderB =
-          b.categoryOrders.find((o) => o.categoryId === category.id)?.order ??
-          0;
-        return orderA - orderB;
-      });
-
-      for (const product of sortedProducts) {
-        const productKey = createKey(
-          "product",
-          label.id,
-          category.id,
-          product.id
-        );
-        orderedKeys.push(productKey);
-      }
     }
   }
 
   return createRegistry(identities, orderedKeys, keysByKind);
+}
+
+/**
+ * @deprecated Use buildMenuRegistry instead. This alias exists for backwards compatibility.
+ */
+export function buildMenuHierarchyRegistry(
+  labels: MenuLabel[],
+  _products: MenuProduct[]
+): IdentityRegistry {
+  return buildMenuRegistry(labels);
 }
 
 /**
