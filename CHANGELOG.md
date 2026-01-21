@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.66.7 - 2026-01-21
+
+- **Removed dead code from useFlattenedMenuRows**: Deleted unused `MenuHierarchy` type and `buildMenuHierarchy` function (replaced by IdentityRegistry)
+
 ## 0.66.6 - 2026-01-21
 
 - **Updated MenuTableView to use buildMenuRegistry**: Uses 2-level registry (labels + categories)
