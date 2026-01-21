@@ -150,7 +150,7 @@ export function MenuTableView() {
   });
 
   // Hierarchical drag-and-drop with auto-collapse on label drag and hover-to-expand
-  const { getDragHandlers: getBaseDragHandlers, getDragClasses } = useMenuTableDragReorder({
+  const { getDragHandlers: getBaseDragHandlers, getDragClasses, dragState } = useMenuTableDragReorder({
     rows,
     labels: visibleLabels,
     products,
@@ -251,6 +251,7 @@ export function MenuTableView() {
                 isExpandable={row.isExpandable}
                 onToggle={() => builder.toggleExpand(row.id)}
                 ariaLabel={`${row.isExpanded ? "Collapse" : "Expand"} ${row.name}`}
+                disabled={dragState.isDraggingLabel}
               />
             </HierarchyChevron>
             {/* Icon + Name as visual unit with tighter spacing */}

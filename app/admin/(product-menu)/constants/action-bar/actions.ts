@@ -602,7 +602,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
   // ─────────────────────────────────────────────────────────────
   "expand-all": {
     id: "expand-all",
-    icon: ListChevronsDownUp,
+    icon: ListChevronsUpDown,
     label: "Expand All",
     tooltip: "Expand all sections",
     kbd: [modKey, "↓"],
@@ -617,7 +617,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
   // ─────────────────────────────────────────────────────────────
   "collapse-all": {
     id: "collapse-all",
-    icon: ListChevronsUpDown,
+    icon: ListChevronsDownUp,
     label: "Collapse All",
     tooltip: "Collapse all sections",
     kbd: [modKey, "↑"],

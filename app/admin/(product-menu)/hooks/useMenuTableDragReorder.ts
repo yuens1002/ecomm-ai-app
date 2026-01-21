@@ -43,6 +43,8 @@ type DragState = {
   dropPosition: "before" | "after";
   /** ID of item that was just auto-expanded (for animation) */
   autoExpandedId: string | null;
+  /** True when dragging a label - disables expand on all labels */
+  isDraggingLabel: boolean;
 };
 
 /**
@@ -69,6 +71,7 @@ export function useMenuTableDragReorder({
     dragOverId: null,
     dropPosition: "before",
     autoExpandedId: null,
+    isDraggingLabel: false,
   });
 
   // Ref for hover-to-expand timer
@@ -139,6 +142,7 @@ export function useMenuTableDragReorder({
         dragOverId: null,
         dropPosition: "before",
         autoExpandedId: null,
+        isDraggingLabel: row.level === "label",
       });
     },
     []
@@ -151,33 +155,31 @@ export function useMenuTableDragReorder({
 
       const targetRow = getRow(targetId);
 
-      // Check if this is a collapsed expandable item (for hover-to-expand)
-      // Only expand if the dragged item could potentially be dropped inside
-      const canExpandForDrop =
+      // Auto-expand collapsed labels when dragging categories over them
+      // This provides visual feedback even though categories can't be dropped into different labels
+      // DISABLED when dragging labels (all labels stay collapsed during label reorder)
+      const canHoverExpand =
         targetRow &&
+        targetRow.level === "label" &&
         targetRow.isExpandable &&
         !targetRow.isExpanded &&
         onExpandItem &&
-        dragState.dragId;
+        dragState.dragId &&
+        dragState.dragLevel === "category"; // Only for category drag, not label drag
 
-      if (canExpandForDrop) {
+      if (canHoverExpand) {
         // Start hover expand timer if not already timing this target
         if (hoverExpandTargetRef.current !== targetId) {
           clearHoverExpandTimer();
           hoverExpandTargetRef.current = targetId;
           hoverExpandTimerRef.current = setTimeout(() => {
-            // Build expand key: labels use id, categories use composite key (parentId-id)
-            const expandKey =
-              targetRow.level === "category" && targetRow.parentId
-                ? `${targetRow.parentId}-${targetRow.id}`
-                : targetRow.id;
-            onExpandItem(expandKey);
+            onExpandItem(targetRow.id);
             setDragState((prev) => ({ ...prev, autoExpandedId: targetId }));
             hoverExpandTargetRef.current = null;
           }, HOVER_EXPAND_DELAY_MS);
         }
       } else if (hoverExpandTargetRef.current !== targetId) {
-        // Clear timer if hovering a different non-expandable item
+        // Clear timer if hovering a different item
         clearHoverExpandTimer();
       }
 
@@ -200,7 +202,7 @@ export function useMenuTableDragReorder({
         dropPosition: position,
       }));
     },
-    [isValidDrop, getRow, onExpandItem, dragState.dragId, clearHoverExpandTimer]
+    [isValidDrop, getRow, onExpandItem, dragState.dragId, dragState.dragLevel, clearHoverExpandTimer]
   );
 
   // Handle drag leave
@@ -222,6 +224,7 @@ export function useMenuTableDragReorder({
           dragOverId: null,
           dropPosition: "before",
           autoExpandedId: null,
+          isDraggingLabel: false,
         });
         return;
       }
@@ -271,6 +274,7 @@ export function useMenuTableDragReorder({
           dragOverId: null,
           dropPosition: "before",
           autoExpandedId: null,
+          isDraggingLabel: false,
         });
         return;
       }
@@ -351,6 +355,7 @@ export function useMenuTableDragReorder({
         dragOverId: null,
         dropPosition: "before",
         autoExpandedId: null,
+        isDraggingLabel: false,
       });
     },
     [dragState, isValidDrop, labels, products, reorderFunctions, pushUndoAction, clearHoverExpandTimer]
@@ -366,6 +371,7 @@ export function useMenuTableDragReorder({
       dragOverId: null,
       dropPosition: "before",
       autoExpandedId: null,
+      isDraggingLabel: false,
     });
   }, [clearHoverExpandTimer]);
 

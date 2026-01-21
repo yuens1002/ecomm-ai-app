@@ -62,8 +62,6 @@ export function useRowClickHandler(
   const {
     onToggle,
     onToggleWithHierarchy,
-    getCheckboxState,
-    expandedIds,
     toggleExpand,
     navigate,
   } = options;
@@ -72,7 +70,7 @@ export function useRowClickHandler(
    * Handle single click on a row.
    *
    * Behavior:
-   * 1. If expandable, sync expand/collapse with selection state
+   * 1. If expandable, toggle expand/collapse state
    * 2. Toggle selection (cascade to children if parent)
    */
   const handleClick = useCallback(
@@ -80,15 +78,9 @@ export function useRowClickHandler(
       const identity = registry.get(key);
       if (!identity) return;
 
-      // 1. Sync expand/collapse with selection state (if expandable)
-      if (identity.expandKey && toggleExpand && expandedIds && getCheckboxState) {
-        const willSelect = getCheckboxState(key) !== "checked";
-        const isExpanded = expandedIds.has(identity.expandKey);
-
-        // Expand when selecting, collapse when deselecting
-        if (willSelect !== isExpanded) {
-          toggleExpand(identity.expandKey);
-        }
+      // 1. Toggle expand/collapse if this row is expandable
+      if (identity.expandKey && toggleExpand) {
+        toggleExpand(identity.expandKey);
       }
 
       // 2. Toggle selection
@@ -100,7 +92,7 @@ export function useRowClickHandler(
         onToggle(key);
       }
     },
-    [registry, onToggle, onToggleWithHierarchy, getCheckboxState, expandedIds, toggleExpand]
+    [registry, onToggle, onToggleWithHierarchy, toggleExpand]
   );
 
   /**

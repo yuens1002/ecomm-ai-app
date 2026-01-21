@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.66.9 - 2026-01-21
+
+- **Fixed expand/collapse action icons**: Swapped icons (ListChevronsUpDown for expand, ListChevronsDownUp for collapse)
+- **Improved label drag behavior**:
+  - All labels collapse when starting label drag
+  - Expand disabled on all labels until drag completes
+  - Added `isDraggingLabel` state to drag hook
+  - Added `disabled` prop to ChevronToggleCell
+- **Auto-expand on category drag**: Labels expand on hover when dragging categories (visual feedback)
+- **Single-click expand toggle**: Clicking on expandable rows now toggles expand/collapse independently
+
 ## 0.66.8 - 2026-01-21
 
 - **Simplified MenuTableView to 2-level hierarchy**: Labels → Categories only (no products)
