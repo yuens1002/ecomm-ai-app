@@ -11,11 +11,15 @@ type ReorderResult = { ok: boolean; error?: string };
 type ReorderFunctions = {
   reorderLabels: (ids: string[]) => Promise<ReorderResult>;
   reorderCategoriesInLabel: (labelId: string, ids: string[]) => Promise<ReorderResult>;
-  /** Move a category from one label to another (cross-boundary) */
+  /** Move a category from one label to another (cross-boundary) with position */
   moveCategoryToLabel: (
     categoryId: string,
     fromLabelId: string,
-    toLabelId: string
+    toLabelId: string,
+    /** Category to insert relative to (null = append to end) */
+    targetCategoryId: string | null,
+    /** Insert before or after target */
+    dropPosition: "before" | "after"
   ) => Promise<ReorderResult>;
 };
 
@@ -273,18 +277,43 @@ export function useMenuTableDragReorder({
    * Execute a cross-boundary category move.
    */
   const executeCrossBoundaryMove = useCallback(
-    async (categoryId: string, fromLabelId: string, toLabelId: string) => {
-      await reorderFunctions.moveCategoryToLabel(categoryId, fromLabelId, toLabelId);
+    async (
+      categoryId: string,
+      fromLabelId: string,
+      toLabelId: string,
+      targetCategoryId: string | null,
+      dropPosition: "before" | "after"
+    ) => {
+      await reorderFunctions.moveCategoryToLabel(
+        categoryId,
+        fromLabelId,
+        toLabelId,
+        targetCategoryId,
+        dropPosition
+      );
 
       pushUndoAction({
         action: "move:category-to-label",
         timestamp: new Date(),
         data: {
           undo: async () => {
-            await reorderFunctions.moveCategoryToLabel(categoryId, toLabelId, fromLabelId);
+            // Undo: move back to original label (append to end for simplicity)
+            await reorderFunctions.moveCategoryToLabel(
+              categoryId,
+              toLabelId,
+              fromLabelId,
+              null,
+              "after"
+            );
           },
           redo: async () => {
-            await reorderFunctions.moveCategoryToLabel(categoryId, fromLabelId, toLabelId);
+            await reorderFunctions.moveCategoryToLabel(
+              categoryId,
+              fromLabelId,
+              toLabelId,
+              targetCategoryId,
+              dropPosition
+            );
           },
         },
       });
@@ -387,7 +416,16 @@ export function useMenuTableDragReorder({
             targetRow.level === "label" ? targetRow.id : targetRow.parentId;
 
           if (targetLabelId && targetLabelId !== dragParentId) {
-            await executeCrossBoundaryMove(dragId, dragParentId, targetLabelId);
+            // If dropping on a label row, append to end (targetCategoryId = null)
+            // If dropping on a category row, insert relative to that category
+            const targetCategoryId = targetRow.level === "category" ? targetRow.id : null;
+            await executeCrossBoundaryMove(
+              dragId,
+              dragParentId,
+              targetLabelId,
+              targetCategoryId,
+              dropPosition
+            );
           }
         } else {
           // Same-parent reorder

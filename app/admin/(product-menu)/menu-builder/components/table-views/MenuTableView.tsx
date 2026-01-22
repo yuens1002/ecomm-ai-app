@@ -183,9 +183,15 @@ export function MenuTableView() {
     onError: (message) => toast({ title: "Error", description: message, variant: "destructive" }),
   });
 
-  // Move category from one label to another (detach + attach)
+  // Move category from one label to another (detach + attach + reorder)
   const moveCategoryToLabel = useCallback(
-    async (categoryId: string, fromLabelId: string, toLabelId: string) => {
+    async (
+      categoryId: string,
+      fromLabelId: string,
+      toLabelId: string,
+      targetCategoryId: string | null,
+      dropPosition: "before" | "after"
+    ) => {
       // Get category and label names for toast
       const category = categories.find((c) => c.id === categoryId);
       const toLabel = labels.find((l) => l.id === toLabelId);
@@ -216,6 +222,30 @@ export function MenuTableView() {
         return { ok: false, error: attachResult.error };
       }
 
+      // Reorder to place at correct position
+      if (targetCategoryId) {
+        // Get current categories in target label (sorted by order)
+        const targetLabelData = toLabel;
+        if (targetLabelData) {
+          const currentCategoryIds = targetLabelData.categories
+            .slice()
+            .sort((a, b) => a.order - b.order)
+            .map((c) => c.id);
+
+          // Find target index and insert the moved category
+          const targetIndex = currentCategoryIds.indexOf(targetCategoryId);
+          if (targetIndex !== -1) {
+            // Remove the moved category from current position (it was just attached, likely at end)
+            const newOrder = currentCategoryIds.filter((id) => id !== categoryId);
+            // Insert at the correct position
+            const insertIndex = dropPosition === "before" ? targetIndex : targetIndex + 1;
+            newOrder.splice(insertIndex, 0, categoryId);
+            // Apply the new order
+            await reorderCategoriesInLabel(toLabelId, newOrder);
+          }
+        }
+      }
+
       // Show success toast
       toast({
         title: "Category moved",
@@ -224,7 +254,7 @@ export function MenuTableView() {
 
       return { ok: true };
     },
-    [categories, labels, attachCategory, detachCategory, toast]
+    [categories, labels, attachCategory, detachCategory, reorderCategoriesInLabel, toast]
   );
 
   // Hierarchical drag-and-drop with expand on enter, collapse on leave

@@ -99,6 +99,7 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
                   setIsOpen(true);
                 }
               }}
+              onPointerDown={(e) => e.stopPropagation()}
             >
               <DynamicIcon name={icon} size={16} />
             </button>
@@ -120,13 +121,19 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
                 e.stopPropagation();
                 setIsOpen(true);
               }}
+              onPointerDown={(e) => e.stopPropagation()}
               aria-label="Select icon"
             >
               <CircleHelp className="w-4 h-4 text-muted-foreground" />
             </button>
           )}
         </PopoverTrigger>
-        <PopoverContent className="p-0 w-64" align="start">
+        <PopoverContent
+          className="p-0 w-64"
+          align="start"
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           <Command shouldFilter={false}>
             <CommandInput
               placeholder="Search icons..."

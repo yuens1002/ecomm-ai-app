@@ -217,6 +217,9 @@ We define CSS variables for each theme.
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  .scrollbar-gutter-stable {
+    scrollbar-gutter: stable;
+  }
 }
 
 /* Highlight animation for newly added items */

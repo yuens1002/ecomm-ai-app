@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.66.12 - 2026-01-21
+
+- **Fixed cross-boundary DnD positioning**: Categories now land at correct drop position (not always at top)
+- **Fixed scrollbar flash**: Added `scrollbar-gutter: stable` to admin layout to prevent scrollbar appearing/disappearing during animations
+- **Fixed icon picker row toggle**: Added stopPropagation to prevent icon selection from toggling row expand state
+- **Improved collapse animation**: Separate exit transition (0.15s easeIn) for snappier collapse
+
 ## 0.66.11 - 2026-01-21
 
 - **Cross-boundary drag-and-drop**: Move categories between labels with undo/redo support

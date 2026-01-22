@@ -39,7 +39,9 @@ const ROW_HEIGHT = 40;
 /**
  * Get animation props for cascade expand/collapse.
  * - Expand: rows start at parent position and slide down to their spot
- * - Collapse: rows slide up to parent position
+ * - Collapse: rows slide up to parent position and fade out
+ *
+ * Note: Parent container uses scrollbar-gutter: stable to prevent scrollbar flash.
  */
 export const getRowAnimationProps = (
   staggerIndex?: number,
@@ -51,14 +53,22 @@ export const getRowAnimationProps = (
 
   return {
     initial: { opacity: 0, y: initialY },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: initialY },
-    transition: {
-      duration: 0.2,
-      ease: "easeOut",
-      // Expand: stagger by index (first to last)
-      // Collapse: reverse stagger (last to first) using siblingCount
-      delay: index * STAGGER_DELAY,
+    animate: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.2,
+        ease: "easeOut",
+        delay: index * STAGGER_DELAY,
+      },
+    },
+    exit: {
+      opacity: 0,
+      y: initialY,
+      transition: {
+        duration: 0.15,
+        ease: "easeIn",
+      },
     },
   };
 };
