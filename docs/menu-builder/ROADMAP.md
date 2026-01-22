@@ -1,14 +1,15 @@
 # Menu Builder - Development Roadmap
 
-**Last Updated:** 2026-01-17
+**Last Updated:** 2026-01-21
 **Current Branch:** `feat/menu-table-view`
-**Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ (5/5 views)
+**Current Version:** v0.66.10
+**Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ (5/5 views) | Phase 3 In Progress 🚧
 
 ---
 
 ## Project Vision
 
-Build a sophisticated admin interface for managing a 3-level product catalog hierarchy (Labels → Categories → Products) with a config-driven, zero-conditional architecture.
+Build a sophisticated admin interface for managing a 2-level menu hierarchy (Labels → Categories) with a config-driven, zero-conditional architecture. Products are managed at the Category level.
 
 ---
 
@@ -17,10 +18,19 @@ Build a sophisticated admin interface for managing a 3-level product catalog hie
 ```(text)
 Foundation  ████████████████████████ 100% ✅
 Table Views ████████████████████████ 100% ✅
-Advanced    ████░░░░░░░░░░░░░░░░░░░  20% 🚧
+Advanced    ██████████░░░░░░░░░░░░░  40% 🚧
 ─────────────────────────────────────────
-Total       ██████████████████░░░░░  75%
+Total       ███████████████████░░░░  80%
 ```
+
+### Recent Completions (v0.66.x)
+- ✅ IdentityRegistry architecture (unified row identity management)
+- ✅ 2-level Menu View (Labels → Categories, products as count only)
+- ✅ Same-level DnD with auto-collapse/expand behaviors
+- ✅ Unified selection model with tri-state checkboxes
+- ✅ Single-click expand+select behavior
+- ✅ Duplicate label name validation with toast
+- ✅ Updated naming convention ("New Label2", "Name copy2")
 
 ---
 
@@ -298,60 +308,74 @@ Total       ██████████████████░░░░�
 
 ---
 
-### 2.5 Menu View (3-Level Hierarchy) ✅ COMPLETE (Jan 17, 2026)
+### 2.5 Menu View (2-Level Hierarchy) ✅ COMPLETE (Jan 17-21, 2026)
 
-**Complexity:** Very High (most complex view)
+**Complexity:** High
 **Effort:** 5-7 days
 **Dependencies:** 2.3, 2.4 (all patterns established)
 
 **Implemented Features:**
 
-- [x] Created `MenuTableView/` folder with modular structure
-- [x] 3-level expand/collapse (Labels → Categories → Products)
-- [x] Columns: Checkbox, Name (with chevron + indent), Categories count, Products count, Visibility, Drag Handle
-- [x] Hierarchical indentation (0px → 24px → 48px)
+- [x] Created `MenuTableView.tsx` component (simplified from folder structure)
+- [x] 2-level expand/collapse (Labels → Categories only)
+- [x] Products shown as count only (managed in Category Detail view)
+- [x] Columns: Checkbox, Name (with chevron + indent), Categories count, Visibility, Products count, Drag Handle
+- [x] Hierarchical indentation via `HierarchyNameCell` component (depth 0 = 0px, depth 1 = 24px)
 - [x] ChevronToggleCell for expand/collapse interaction
 - [x] Inline icon editing for labels via InlineIconCell
 - [x] Inline name editing for labels via InlineNameEditor
 - [x] Same-level drag-and-drop reordering with undo/redo
 - [x] Expand All / Collapse All action bar buttons
 - [x] Action bar state-aware disabling (expand-all disabled when all expanded, etc.)
-- [x] Drag-hover auto-expand (500ms delay, flash animation)
-- [x] Product selection uses composite keys for unique selection per category
+- [x] Drag-hover auto-expand for category drag (500ms delay, flash animation)
+- [x] Auto-collapse all labels when starting label drag
+- [x] Chevron disabled during label drag
+- [x] Single-click toggles both expand/collapse AND selection (with hierarchy cascade)
+- [x] Indeterminate state doesn't collapse on click (keeps parent expanded to show selected children)
 
 **Table Behavior:**
 
 - **No column sorting** - Row order dictates hierarchy, controlled via DnD
-- **Single-click** - Toggles row selection (same entity type only)
+- **Single-click on label** - Toggles expand/collapse AND selection (with hierarchy cascade)
+- **Single-click on category** - Toggles selection
 - **Double-click** - Navigates into label or category view
-- **Expand/collapse** - Chevron click or action bar buttons
+- **Expand/collapse** - Chevron click, row click, or action bar buttons
 - **Drag handle** - Always visible on mobile, hover-only on desktop
-- **Same-level DnD only** - Categories reorder within same label, products within same category
+- **Same-level DnD only** - Labels reorder among labels, categories within same label
 
-**Architecture Decision:** Manual rendering instead of TanStack Table
-- Variable row types (label/category/product) with different columns
-- Hierarchical indentation doesn't fit TanStack's column model
-- `useFlattenedMenuRows` hook transforms hierarchy to flat row list
+**Architecture Decisions:**
 
-**Files Created:**
+1. **Manual rendering instead of TanStack Table** - Variable row types with different columns
+2. **2-level hierarchy** - Products excluded from menu view (managed in Category Detail)
+3. **IdentityRegistry pattern** - Unified row identity for selection, actions, and navigation
+4. **Kind-prefixed keys** - `"label:id"`, `"category:labelId-catId"` for unique selection
 
-- `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableView/MenuTableView.tsx`
-- `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableView/types.ts`
-- `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableView/useFlattenedMenuRows.ts`
-- `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableView/useMenuTableDragReorder.ts`
+**Key Hooks:**
+
+| Hook | Purpose |
+|------|---------|
+| `useIdentityRegistry` / `buildMenuRegistry` | Build registry mapping keys to row identities |
+| `useRowClickHandler` | Unified click handling (expand + selection) |
+| `useContextSelectionModel` | Hierarchical selection with tri-state checkboxes |
+| `useFlattenedMenuRows` | Transform hierarchy to flat row list |
+| `useMenuTableDragReorder` | Hierarchical DnD with auto-expand |
+
+**Files Created/Modified:**
+
+- `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableView.tsx`
+- `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableView.types.ts`
+- `app/admin/(product-menu)/hooks/useFlattenedMenuRows.ts`
+- `app/admin/(product-menu)/hooks/useMenuTableDragReorder.ts`
+- `app/admin/(product-menu)/hooks/useIdentityRegistry.ts`
+- `app/admin/(product-menu)/hooks/useRowClickHandler.ts`
+- `app/admin/(product-menu)/hooks/useContextSelectionModel.ts` (enhanced)
+- `app/admin/(product-menu)/types/identity-registry.ts`
 - `app/admin/(product-menu)/menu-builder/components/table-views/shared/cells/ChevronToggleCell.tsx`
-
-**Files Modified:**
-
-- `app/admin/(product-menu)/types/builder-state.ts` (added expandedIds, expandableIds)
-- `app/admin/(product-menu)/constants/action-bar/shared.ts` (added allExpanded, allCollapsed helpers)
-- `app/admin/(product-menu)/constants/action-bar/actions.ts` (state-aware disabled logic)
-- `app/admin/(product-menu)/menu-builder/components/menu-action-bar/index.tsx` (expandableIds in state)
-- `app/globals.css` (added animate-auto-expand-flash animation)
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/cells/HierarchyNameCell.tsx`
 
 **Deferred to Phase 3:**
 
-- [ ] Cross-boundary drag-and-drop (move items between parents) - See section 3.6
+- [ ] Cross-boundary drag-and-drop (move categories between labels) - See section 3.6
 
 ---
 
@@ -359,22 +383,25 @@ Total       ██████████████████░░░░�
 
 **Target:** Polish and power-user features
 **Timeline:** 2-4 weeks
-**Status:** 20% (undo/redo system complete)
+**Status:** 40% (undo/redo complete, same-level DnD complete, identity registry complete)
 
-### 3.1 Drag-and-Drop System ⏸️
+### 3.1 Same-Level Drag-and-Drop ✅ COMPLETE
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] Native HTML5 DnD implementation
-- [ ] Visual feedback (ghost preview, drop zones)
-- [ ] Constraint validation (prevent invalid drops)
-- [ ] Optimistic updates (instant UI, then sync)
-- [ ] Error handling and rollback
-- [ ] Touch device support
+- [x] Native HTML5 DnD implementation (`useDragReorder`, `useMenuTableDragReorder`)
+- [x] Visual feedback (drag state classes, drop position indicators)
+- [x] Same-level constraint validation (prevent cross-level drops)
+- [x] Optimistic updates with undo/redo support
+- [x] Auto-collapse all labels when starting label drag
+- [x] Chevron disabled during label drag
+- [x] Hover-to-expand for category drag (500ms delay)
+- [x] Flash animation on auto-expanded rows
 
-**Files to Create:**
+**Files:**
 
-- `app/admin/(product-menu)/menu-builder/hooks/useDragAndDrop.ts`
+- `app/admin/(product-menu)/hooks/useDragReorder.ts` (flat tables)
+- `app/admin/(product-menu)/hooks/useMenuTableDragReorder.ts` (hierarchical menu table)
 
 ---
 
@@ -464,93 +491,115 @@ Total       ██████████████████░░░░�
 
 ---
 
-### 3.6 Cross-Boundary Drag-and-Drop ⏸️ NOT STARTED
+### 3.6 Cross-Boundary Drag-and-Drop ✅ COMPLETE
+
+**Complexity:** Medium (simplified from 3-level to 2-level)
+**Effort:** 2-3 days
+**Dependencies:** Menu View (2.5) complete ✅
+**Completed:** Jan 21, 2026
+
+**Overview:**
+Dragging categories across label boundaries in Menu Table View:
+- Move a **category** from one label to another
+
+Note: Products are not shown in menu view (2-level hierarchy), so cross-boundary product moves are not applicable here.
+
+**Implemented Features:**
+
+1. **Drop validation (`getDropInfo` in useMenuTableDragReorder.ts):**
+   - [x] Allow category drops on different labels (returns `dropType: 'move-to-label'`)
+   - [x] Allow category drops ON label rows (move into that label)
+   - [x] Label-to-label reordering unchanged (`dropType: 'reorder'`)
+
+2. **Drop handling:**
+   - [x] Detect cross-boundary vs same-parent drop via `dropType`
+   - [x] Cross-boundary move: `detachCategory` + `attachCategory`
+   - [x] Toast notification: "Moved [Category] to [Label]"
+
+3. **Visual feedback:**
+   - [x] White flash (2x blink) on valid cross-boundary drop targets
+   - [x] Drop position indicator (border top/bottom) for all valid drops
+   - [x] `dropType` exposed via `getDragClasses()` for styling differentiation
+
+4. **Undo/redo support:**
+   - [x] Cross-boundary moves are undoable (reverse detach/attach)
+   - [x] Pushed to undo stack with `action: 'move:category-to-label'`
+
+5. **Auto-expand on drag:**
+   - [x] Collapsed labels expand immediately when dragging category over them
+   - [x] Labels collapse when drag leaves their territory (label + descendants)
+   - [x] Tracks `autoExpandedLabelRef` to know which label to collapse
+
+**Files Modified:**
+
+- `app/admin/(product-menu)/hooks/useMenuTableDragReorder.ts`
+  - Added `getDropInfo()` returning `{ valid, dropType }`
+  - Added `dropType: 'reorder' | 'move-to-label'` to DragState
+  - Added `getLabelOwner()` for territory-based collapse logic
+  - Added `onCollapseItem` callback option
+- `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableView.tsx`
+  - Added `moveCategoryToLabel` function using detach/attach mutations
+  - Added `animate-drop-target-flash` class for cross-boundary visual feedback
+- `app/globals.css`
+  - Added `animate-drop-target-flash` keyframes (white 2x blink)
+  - Updated `animate-auto-expand-flash` to match (white 2x blink)
+
+**Limitations (single-item only):**
+
+- Only supports dragging ONE category at a time
+- Multi-select drag is NOT supported (see section 3.7)
+
+---
+
+### 3.7 Multi-Select Drag-and-Drop 📋 FUTURE
 
 **Complexity:** High
 **Effort:** 3-5 days
-**Dependencies:** Menu View (2.5) complete
-**Priority:** Medium (nice-to-have, current same-level DnD is functional)
+**Dependencies:** Cross-boundary DnD (3.6) complete ✅
+**Priority:** Low (enhancement, not core functionality)
 
 **Overview:**
-Enable dragging items across parent boundaries in Menu Table View:
-- Move a **category** from one label to another
-- Move a **product** from one category to another
+Enable dragging multiple selected items at once, moving them together to a new location or label.
 
-Currently, DnD only supports same-level reordering (categories within same label, products within same category).
+**Current Limitation:**
+- Selection model supports multi-select (checkboxes)
+- Drag only operates on the single item being dragged
+- Selected items are ignored during drag operations
 
-**Current Limitation (isValidDrop in useMenuTableDragReorder.ts):**
-```typescript
-// Must be same level
-if (targetRow.level !== dragState.dragLevel) return false;
+**Proposed Behavior:**
 
-// Must have same parent (for categories and products)
-if (dragState.dragLevel !== "label" && targetRow.parentId !== dragState.dragParentId) {
-  return false;
-}
-```
+1. **Drag initiation:**
+   - If dragged item is part of selection → drag ALL selected items
+   - If dragged item is NOT selected → drag only that item (current behavior)
+   - Visual: Ghost showing count badge "Moving 3 categories"
+
+2. **Drop handling:**
+   - Same-parent reorder: Move all selected items to drop position (maintain relative order)
+   - Cross-boundary move: Move all selected categories to target label
+
+3. **Constraints:**
+   - All selected items must be same level (can't mix labels and categories)
+   - For categories: can be from different parent labels
+   - Labels: multi-select reorder only (no cross-boundary concept)
+
+4. **Visual feedback:**
+   - Drag ghost shows item count
+   - All selected rows get "being-dragged" styling
+   - Drop indicator spans the group
 
 **Tasks:**
 
-1. **Update `isValidDrop` logic:**
-   - [ ] Allow category drops on different labels (same level, different parent)
-   - [ ] Allow product drops on different categories (same level, different parent)
-   - [ ] Prevent cross-level drops (can't drop label into category)
-
-2. **Update `handleDrop` logic:**
-   - [ ] Detect cross-boundary vs same-parent drop
-   - [ ] For cross-boundary category move:
-     - Call `detachCategory(oldLabelId, categoryId)`
-     - Call `attachCategory(newLabelId, categoryId)`
-     - Set order in new parent
-   - [ ] For cross-boundary product move:
-     - Call `detachProductFromCategory(productId, oldCategoryId)`
-     - Call `attachProductToCategory(productId, newCategoryId)`
-     - Set order in new parent
-
-3. **Visual feedback:**
-   - [ ] Highlight valid drop targets (labels when dragging category, categories when dragging product)
-   - [ ] Dimmed/disabled appearance for invalid targets
-   - [ ] Drop indicator showing "move to" vs "reorder within"
-
-4. **Undo/redo support:**
-   - [ ] Capture source parent ID, target parent ID, and position
-   - [ ] Undo: move back to original parent at original position
-   - [ ] Redo: repeat the move
-
-5. **Hover-to-expand integration:**
-   - [x] Foundation already in place (auto-expand collapsed items on 500ms hover)
-   - [ ] Verify behavior when dragging across expanded/collapsed boundaries
-
-**Files to Modify:**
-
-- `useMenuTableDragReorder.ts` - Update `isValidDrop`, `handleDrop`, add cross-boundary mutations
-- `MenuTableView.tsx` - Add visual feedback for cross-boundary drop zones
-- `types.ts` - Potentially add `dropType: 'reorder' | 'move'` to drag state
-
-**Mutations Required:**
-
-| Mutation | Exists | Notes |
-|----------|--------|-------|
-| `detachCategory(labelId, categoryId)` | ✅ | Already in useProductMenuMutations |
-| `attachCategory(labelId, categoryId)` | ✅ | Already in useProductMenuMutations |
-| `detachProductFromCategory(productId, categoryId)` | ✅ | Already in useProductMenuMutations |
-| `attachProductToCategory(productId, categoryId)` | ✅ | Already in useProductMenuMutations |
-
-**Acceptance Criteria:**
-
-- [ ] Can drag category to different label
-- [ ] Can drag product to different category
-- [ ] Visual feedback clearly indicates valid/invalid drop targets
-- [ ] Undo/redo works for cross-boundary moves
-- [ ] Hover-to-expand opens collapsed targets during drag
-- [ ] Original same-level reordering still works
-- [ ] No data loss on failed drops (proper error handling)
+- [ ] Update `handleDragStart` to capture all selected IDs if dragged item is selected
+- [ ] Update `handleDrop` to process multiple items
+- [ ] Add drag ghost with count badge
+- [ ] Update undo/redo to handle batch operations
+- [ ] Handle mixed-parent category selections (move all to same target)
 
 **UX Considerations:**
 
-- **Confirmation dialog?** - Probably not needed for move operations (undo is available)
-- **Toast notification** - Show "Moved [item] to [new parent]" on successful cross-boundary move
-- **Animation** - Item should visually "fly" to new location (optional polish)
+- **Atomic operation** - All items move together or none do
+- **Undo granularity** - Single undo reverses entire batch move
+- **Selection after move** - Keep items selected (with updated keys for cross-boundary)
 
 ---
 
@@ -570,26 +619,28 @@ app/admin/(product-menu)/
 │        ├─ AllLabelsTableView.tsx  ✅ (2.1)
 │        ├─ LabelTableView.tsx      ✅ (2.3)
 │        ├─ CategoryTableView.tsx   ✅ (2.4)
-│        ├─ MenuTableView/          ✅ (2.5)
-│        │  ├─ MenuTableView.tsx    ✅ (main component)
-│        │  ├─ types.ts             ✅ (FlatMenuRow discriminated union)
-│        │  ├─ useFlattenedMenuRows.ts ✅ (hierarchy → flat list)
-│        │  └─ useMenuTableDragReorder.ts ✅ (hierarchical DnD)
+│        ├─ MenuTableView.tsx       ✅ (2.5 - 2-level hierarchy)
+│        ├─ MenuTableView.types.ts  ✅ (FlatMenuRow discriminated union)
 │        └─ shared/
 │           ├─ table/               ✅ (TableRow, TableCell, TableHeader, SortableHeaderCell, columnWidthPresets)
-│           ├─ cells/               ✅ (CheckboxCell, InlineNameEditor, InlineIconCell, VisibilityCell, ChevronToggleCell)
-│           ├─ ContextMenuCell.tsx  ⏸️ (2.2)
-│           └─ DraggableRow.tsx     ⏸️ (2.3)
+│           ├─ cells/               ✅ (CheckboxCell, InlineNameEditor, InlineIconCell, VisibilityCell, ChevronToggleCell, HierarchyNameCell)
+│           ├─ ContextMenuCell.tsx  ⏸️ (future)
+│           └─ DraggableRow.tsx     ⏸️ (future)
 │
 ├─ hooks/
 │  ├─ useMenuBuilderState.ts        ✅
 │  ├─ useProductMenuData.ts         ✅
 │  ├─ useProductMenuMutations.ts    ✅
-│  ├─ useContextSelectionModel.ts   ✅
+│  ├─ useContextSelectionModel.ts   ✅ (enhanced: hierarchy support, tri-state checkboxes)
 │  ├─ useContextRowUiState.ts       ✅ (enhanced: autoClearPinned option)
 │  ├─ usePinnedRow.ts               ✅ (enhanced: built-in default sort)
-│  ├─ useDragReorder.ts             ✅ (enhanced: onReorderComplete callback)
-│  ├─ useInlineEditHandlers.ts      ✅ (name/icon/visibility with undo)
+│  ├─ useDragReorder.ts             ✅ (flat table DnD)
+│  ├─ useMenuTableDragReorder.ts    ✅ (hierarchical DnD with auto-expand)
+│  ├─ useFlattenedMenuRows.ts       ✅ (hierarchy → flat row list)
+│  ├─ useIdentityRegistry.ts        ✅ (buildFlatRegistry, buildMenuRegistry)
+│  ├─ useRowClickHandler.ts         ✅ (unified click handling)
+│  ├─ useActionHandler.ts           ✅ (clone/remove with visual order)
+│  ├─ useInlineEditHandlers.ts      ✅ (name/icon/visibility with undo + duplicate validation)
 │  ├─ useUndoRedoStack.ts           ✅ (declarative undo/redo system)
 │  ├─ usePersistColumnSort.ts       ✅ (persist TanStack sort to DB)
 │  └─ useKeyboardShortcuts.ts       ⏸️ (3.2)
@@ -604,6 +655,12 @@ app/admin/(product-menu)/
 │  ├─ view-configs.ts               ✅
 │  └─ dropdown-registry.ts          ✅
 │
+├─ actions/
+│  ├─ utils.ts                      ✅ (naming conventions: "New Label2", "Name copy2")
+│  ├─ labels.ts                     ✅
+│  ├─ categories.ts                 ✅
+│  └─ __tests__/                    ✅
+│
 ├─ data/                            ✅
 │  ├─ categories.ts
 │  ├─ labels.ts
@@ -612,7 +669,8 @@ app/admin/(product-menu)/
 └─ types/                           ✅
    ├─ builder-state.ts
    ├─ menu.ts
-   └─ category.ts
+   ├─ category.ts
+   └─ identity-registry.ts          ✅ (RowIdentity, IdentityRegistry, key utilities)
 ```
 
 ---
@@ -748,38 +806,28 @@ app/admin/(product-menu)/
 
 ## Next Action
 
-**Phase 2 Complete!** All 5 table views shipped.
+**Last Completed:** Cross-Boundary Drag-and-Drop (3.6) - Jan 21, 2026
 
-### Recommended Next Steps (Phase 3)
+### Recently Completed (3.6)
 
-1. **Context Menu Infrastructure (3.2)** - Right-click menus for power users
-2. **Keyboard Shortcuts (3.2)** - Ctrl+Z, Ctrl+D, etc.
-3. **Cross-Boundary DnD (3.6)** - Move items between parents (medium priority)
+- [x] Cross-boundary category moves between labels
+- [x] `getDropInfo()` with `dropType: 'reorder' | 'move-to-label'`
+- [x] Auto-expand on drag enter, collapse on leave territory
+- [x] White 2x blink animation for visual feedback
+- [x] Undo/redo support for cross-boundary moves
+- [x] Toast notification on successful move
 
-### Cross-Boundary DnD (3.6) - Scoped
+### Immediate Next Steps
 
-Enable dragging categories between labels and products between categories. Foundation is ready:
-- Hover-to-expand auto-opens collapsed targets during drag
-- All required mutations exist (attach/detach)
-- Same-level DnD pattern can be extended
+1. **Keyboard Shortcuts (3.2)** - Ctrl+Z, Ctrl+D, arrow navigation
+2. **Context Menu Infrastructure** - Right-click menus
+3. **Search & Filter (3.5)** - Global search in action bar
 
-**Effort:** 3-5 days
-**Files:** `useMenuTableDragReorder.ts`, `MenuTableView.tsx`
+### Future Enhancements
 
-**Command to Start:**
-
-```bash
-# Ensure clean state
-git status
-
-# Continue development
-npm run dev
-```
-
-**Files to Read First:**
-
-- `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableView/useMenuTableDragReorder.ts`
-- `app/admin/(product-menu)/hooks/useProductMenuMutations.ts` (attach/detach mutations)
+1. **Multi-Select Drag (3.7)** - Drag multiple selected items together
+   - Low priority, enhancement over current single-item drag
+   - See section 3.7 for full spec
 
 ---
 
@@ -807,20 +855,36 @@ npm run dev
 
 **Reusable Hooks:**
 
-- `useDragReorder` - For any table view needing row reordering (supports `onReorderComplete`)
-- `useInlineEditHandlers` - For any table view with name/icon/visibility editing
-- `usePinnedRow` - For any table view with pinned newly-created rows
-- `useContextRowUiState` - For any table view with editing state
-- `useUndoRedoStack` - For view-scoped undo/redo with declarative capture
-- `usePersistColumnSort` - For persisting TanStack column sort to database
+| Hook | Purpose |
+|------|---------|
+| `useDragReorder` | Flat table row reordering (supports `onReorderComplete`) |
+| `useMenuTableDragReorder` | Hierarchical DnD with auto-expand and level constraints |
+| `useInlineEditHandlers` | Name/icon/visibility editing with undo + duplicate validation |
+| `usePinnedRow` | Pinned newly-created rows with default sort |
+| `useContextRowUiState` | Editing state with `autoClearPinned` option |
+| `useUndoRedoStack` | View-scoped undo/redo with declarative capture |
+| `usePersistColumnSort` | Persist TanStack column sort to database |
+| `useIdentityRegistry` | Build row identity registries (flat or hierarchical) |
+| `useRowClickHandler` | Unified click handling (selection + expand toggle) |
+| `useContextSelectionModel` | Hierarchical selection with tri-state checkboxes |
+| `useFlattenedMenuRows` | Transform hierarchy to flat row list for rendering |
+| `useActionHandler` | Clone/remove operations with visual order preservation |
+
+**Key Types:**
+
+| Type | Purpose |
+|------|---------|
+| `RowIdentity` | Complete identity for any row (key, kind, entityId, depth, parent/child) |
+| `IdentityRegistry` | Container with O(1) lookups for row identities |
+| `FlatMenuRow` | Discriminated union for menu table rows (label \| category) |
 
 **Ask Claude Code:**
 
-- "Show me the CategoryTableView implementation"
-- "Explain how SortableHeaderCell works"
-- "Help me implement the Label view"
+- "Show me the MenuTableView implementation"
+- "Explain how useMenuTableDragReorder works"
+- "Help me implement cross-boundary DnD"
 
 ---
 
-**Last Updated:** 2026-01-17
+**Last Updated:** 2026-01-21
 **Project Owner:** yuens1002

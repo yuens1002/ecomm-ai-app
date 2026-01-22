@@ -679,13 +679,13 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
   },
 
   // ─────────────────────────────────────────────────────────────
-  // ADD LABELS
+  // ADD/REMOVE LABELS
   // ─────────────────────────────────────────────────────────────
   "add-labels": {
     id: "add-labels",
     icon: Plus,
-    label: "Add Label(s)",
-    tooltip: "Add labels to menu",
+    label: "Labels",
+    tooltip: "Add/remove labels to menu",
     kbd: [],
     disabled: (state) => state.totalLabels === 0 || hasSelection(state),
     onClick: () => {},

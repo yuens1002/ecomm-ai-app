@@ -4,8 +4,9 @@
 import { TableBody } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { AnimatePresence } from "motion/react";
 import { Eye, EyeOff, GripVertical, LayoutGrid } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
@@ -75,7 +76,8 @@ export function MenuTableView() {
     updateLabel,
     reorderLabels,
     reorderCategoriesInLabel,
-    reorderProductsInCategory,
+    attachCategory,
+    detachCategory,
   } = useMenuBuilder();
 
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
@@ -121,13 +123,29 @@ export function MenuTableView() {
     hierarchy: { getDescendants: (key) => registry.getChildKeys(key) as string[] },
   });
 
+  // Debounced expand/collapse to prevent rapid toggling
+  const EXPAND_DEBOUNCE_MS = 500;
+  const lastExpandTimeRef = useRef<number>(0);
+
+  const debouncedToggleExpand = useCallback(
+    (id: string) => {
+      const now = Date.now();
+      if (now - lastExpandTimeRef.current < EXPAND_DEBOUNCE_MS) {
+        return; // Ignore rapid toggles
+      }
+      lastExpandTimeRef.current = now;
+      builder.toggleExpand(id);
+    },
+    [builder]
+  );
+
   // Unified click handler with expand/collapse sync
   const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
     onToggle,
     onToggleWithHierarchy,
     getCheckboxState,
     expandedIds: builder.expandedIds,
-    toggleExpand: builder.toggleExpand,
+    toggleExpand: debouncedToggleExpand,
     navigate: (kind, entityId) => {
       switch (kind) {
         case "label":
@@ -165,18 +183,62 @@ export function MenuTableView() {
     onError: (message) => toast({ title: "Error", description: message, variant: "destructive" }),
   });
 
-  // Hierarchical drag-and-drop with auto-collapse on label drag and hover-to-expand
+  // Move category from one label to another (detach + attach)
+  const moveCategoryToLabel = useCallback(
+    async (categoryId: string, fromLabelId: string, toLabelId: string) => {
+      // Get category and label names for toast
+      const category = categories.find((c) => c.id === categoryId);
+      const toLabel = labels.find((l) => l.id === toLabelId);
+      const categoryName = category?.name ?? "Category";
+      const labelName = toLabel?.name ?? "Label";
+
+      // Detach from source label
+      const detachResult = await detachCategory(fromLabelId, categoryId);
+      if (!detachResult.ok) {
+        toast({
+          title: "Move failed",
+          description: `Failed to remove from source label`,
+          variant: "destructive",
+        });
+        return { ok: false, error: detachResult.error };
+      }
+
+      // Attach to target label
+      const attachResult = await attachCategory(toLabelId, categoryId);
+      if (!attachResult.ok) {
+        // Try to revert the detach
+        await attachCategory(fromLabelId, categoryId);
+        toast({
+          title: "Move failed",
+          description: `Failed to add to target label`,
+          variant: "destructive",
+        });
+        return { ok: false, error: attachResult.error };
+      }
+
+      // Show success toast
+      toast({
+        title: "Category moved",
+        description: `Moved "${categoryName}" to "${labelName}"`,
+      });
+
+      return { ok: true };
+    },
+    [categories, labels, attachCategory, detachCategory, toast]
+  );
+
+  // Hierarchical drag-and-drop with expand on enter, collapse on leave
   const { getDragHandlers: getBaseDragHandlers, getDragClasses, dragState } = useMenuTableDragReorder({
     rows,
     labels: visibleLabels,
-    products,
     reorderFunctions: {
       reorderLabels,
       reorderCategoriesInLabel,
-      reorderProductsInCategory,
+      moveCategoryToLabel,
     },
     pushUndoAction: builder.pushUndoAction,
     onExpandItem: builder.toggleExpand,
+    onCollapseItem: builder.toggleExpand,
   });
 
   // Wrap drag handlers to auto-collapse on label drag start
@@ -238,10 +300,15 @@ export function MenuTableView() {
         onMouseEnter={() => setHoveredRowId(row.id)}
         onMouseLeave={() => setHoveredRowId(null)}
         className={cn(
+          // Drop position indicator for reorder (same parent)
           dragClasses.isDragOver &&
+            dragClasses.dropType === "reorder" &&
             (dragClasses.dropPosition === "after"
               ? "!border-b-2 !border-b-primary"
               : "!border-t-2 !border-t-primary"),
+          // Flash animation for cross-boundary move target or auto-expanded
+          (dragClasses.isDragOver && dragClasses.dropType === "move-to-label") &&
+            "animate-drop-target-flash",
           dragClasses.isAutoExpanded && "animate-auto-expand-flash"
         )}
         onRowClick={() => handleClick(labelKey)}
@@ -265,7 +332,7 @@ export function MenuTableView() {
               <ChevronToggleCell
                 isExpanded={row.isExpanded}
                 isExpandable={row.isExpandable}
-                onToggle={() => builder.toggleExpand(row.id)}
+                onToggle={() => debouncedToggleExpand(row.id)}
                 ariaLabel={`${row.isExpanded ? "Collapse" : "Expand"} ${row.name}`}
                 disabled={dragState.isDraggingLabel}
               />
@@ -338,7 +405,7 @@ export function MenuTableView() {
   };
 
   // Render a category row (leaf node in 2-level view - no chevron)
-  const renderCategoryRow = (row: FlatCategoryRow, isLastRow: boolean) => {
+  const renderCategoryRow = (row: FlatCategoryRow, isLastRow: boolean, staggerIndex: number) => {
     // Use composite key to handle same category under multiple labels
     const compositeId = `${row.parentId}-${row.id}`;
     const categoryKey = getRowKey(row);
@@ -352,6 +419,9 @@ export function MenuTableView() {
     return (
       <TableRow
         key={compositeId}
+        animated
+        layoutId={compositeId}
+        staggerIndex={staggerIndex}
         data-state={isSelected ? "selected" : undefined}
         isSelected={isSelected}
         isHidden={!row.isVisible}
@@ -367,6 +437,7 @@ export function MenuTableView() {
         onMouseEnter={() => setHoveredRowId(compositeId)}
         onMouseLeave={() => setHoveredRowId(null)}
         className={cn(
+          // Drop position indicator - same style for reorder and move
           dragClasses.isDragOver &&
             (dragClasses.dropPosition === "after"
               ? "!border-b-2 !border-b-primary"
@@ -431,7 +502,22 @@ export function MenuTableView() {
     );
   };
 
-  // Render a row based on its type (2-level: labels and categories only)
+  // Pre-calculate stagger indices for cascade animation
+  // Each category gets its index among siblings (categories with same parentId)
+  const staggerIndices = useMemo(() => {
+    const indices = new Map<string, number>();
+    const counters = new Map<string, number>();
+
+    for (const row of rows) {
+      if (isCategoryRow(row)) {
+        const count = counters.get(row.parentId) ?? 0;
+        indices.set(`${row.parentId}-${row.id}`, count);
+        counters.set(row.parentId, count + 1);
+      }
+    }
+    return indices;
+  }, [rows]);
+
   const renderRow = (row: FlatMenuRow, index: number, totalRows: number) => {
     const isLastRow = index === totalRows - 1;
 
@@ -439,7 +525,8 @@ export function MenuTableView() {
       return renderLabelRow(row, isLastRow);
     }
     if (isCategoryRow(row)) {
-      return renderCategoryRow(row, isLastRow);
+      const staggerIndex = staggerIndices.get(`${row.parentId}-${row.id}`) ?? 0;
+      return renderCategoryRow(row, isLastRow, staggerIndex);
     }
     return null;
   };
@@ -467,7 +554,9 @@ export function MenuTableView() {
       />
 
       <TableBody>
-        {rows.map((row, index) => renderRow(row, index, rows.length))}
+        <AnimatePresence initial={false}>
+          {rows.map((row, index) => renderRow(row, index, rows.length))}
+        </AnimatePresence>
       </TableBody>
     </TableViewWrapper>
   );

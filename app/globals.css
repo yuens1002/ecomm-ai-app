@@ -236,16 +236,37 @@ We define CSS variables for each theme.
   animation: highlight-pulse 0.6s ease-out 2;
 }
 
-/* Flash animation for auto-expanded rows during drag */
+/* Flash animation for auto-expanded rows during drag - blinks white 2x */
 @keyframes auto-expand-flash {
-  0% {
-    background-color: oklch(0.7 0.1 250 / 0.3);
-  }
+  0%,
+  50%,
   100% {
     background-color: transparent;
+  }
+  25%,
+  75% {
+    background-color: oklch(1 0 0 / 0.4);
   }
 }
 
 .animate-auto-expand-flash {
-  animation: auto-expand-flash 0.5s ease-out;
+  animation: auto-expand-flash 0.6s ease-out;
 }
+
+/* Flash animation for cross-boundary drop target - blinks white 2x */
+@keyframes drop-target-flash {
+  0%,
+  50%,
+  100% {
+    background-color: transparent;
+  }
+  25%,
+  75% {
+    background-color: oklch(1 0 0 / 0.4);
+  }
+}
+
+.animate-drop-target-flash {
+  animation: drop-target-flash 0.6s ease-in-out;
+}
+

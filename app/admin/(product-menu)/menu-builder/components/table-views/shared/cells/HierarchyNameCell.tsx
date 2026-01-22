@@ -23,8 +23,8 @@ const hierarchyVariants = cva("flex items-center gap-2", {
   variants: {
     depth: {
       0: "", // Labels: no indent
-      1: "pl-17", // Categories: 32px indent (near Name column start)
-      2: "pl-19", // No-descendant rows: 56px indent (no chevron, space shifts left)
+      1: "pl-23", // Categories: 32px indent (near Name column start)
+      2: "pl-36", // No-descendant rows: 56px indent (no chevron, space shifts left)
     },
   },
   defaultVariants: {

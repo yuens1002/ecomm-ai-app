@@ -1,7 +1,11 @@
 import { TableRow as ShadcnTableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { motion, type MotionProps } from "motion/react";
 import * as React from "react";
 import { useCallback, useEffect, useRef } from "react";
+
+/** Motion-enabled table row for animations */
+const MotionTr = motion.tr;
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
@@ -27,6 +31,38 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 /** Delay in ms before single-click fires (allows double-click to cancel) */
 const CLICK_DELAY_MS = 200;
 
+/** Stagger delay between each row in cascade animation (seconds) */
+const STAGGER_DELAY = 0.04;
+/** Row height for calculating animation offset (matches h-10 = 2.5rem = 40px) */
+const ROW_HEIGHT = 40;
+
+/**
+ * Get animation props for cascade expand/collapse.
+ * - Expand: rows start at parent position and slide down to their spot
+ * - Collapse: rows slide up to parent position
+ */
+export const getRowAnimationProps = (
+  staggerIndex?: number,
+  _siblingCount?: number
+): MotionProps => {
+  const index = staggerIndex ?? 0;
+  // Start position: offset up by (index + 1) rows to appear at parent level
+  const initialY = -(index + 1) * ROW_HEIGHT;
+
+  return {
+    initial: { opacity: 0, y: initialY },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: initialY },
+    transition: {
+      duration: 0.2,
+      ease: "easeOut",
+      // Expand: stagger by index (first to last)
+      // Collapse: reverse stagger (last to first) using siblingCount
+      delay: index * STAGGER_DELAY,
+    },
+  };
+};
+
 type TableRowProps = Omit<
   React.ComponentPropsWithoutRef<typeof ShadcnTableRow>,
   "onClick" | "onDoubleClick"
@@ -37,6 +73,12 @@ type TableRowProps = Omit<
   isLastRow?: boolean;
   /** When true, applies muted text styling to indicate the row is hidden/not visible */
   isHidden?: boolean;
+  /** When true, enables motion animations (use with AnimatePresence) */
+  animated?: boolean;
+  /** Unique key for AnimatePresence exit animations (required when animated=true) */
+  layoutId?: string;
+  /** Index for staggered cascade animation (0 = no delay, 1+ = incremental delay) */
+  staggerIndex?: number;
   /**
    * Called on single-click (delayed to distinguish from double-click).
    * Ignored if click target is an interactive element.
@@ -49,6 +91,18 @@ type TableRowProps = Omit<
   onRowDoubleClick?: () => void;
 };
 
+/** HTML drag event props that conflict with motion's drag system */
+type HtmlDragProps = {
+  draggable?: boolean;
+  onDrag?: React.DragEventHandler<HTMLTableRowElement>;
+  onDragEnd?: React.DragEventHandler<HTMLTableRowElement>;
+  onDragEnter?: React.DragEventHandler<HTMLTableRowElement>;
+  onDragLeave?: React.DragEventHandler<HTMLTableRowElement>;
+  onDragOver?: React.DragEventHandler<HTMLTableRowElement>;
+  onDragStart?: React.DragEventHandler<HTMLTableRowElement>;
+  onDrop?: React.DragEventHandler<HTMLTableRowElement>;
+};
+
 export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
   (
     {
@@ -57,13 +111,35 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       isDragOver: _isDragOver,
       isLastRow,
       isHidden,
+      animated,
+      layoutId,
+      staggerIndex,
       className,
       onRowClick,
       onRowDoubleClick,
+      // Extract HTML drag props to pass explicitly (conflict with motion's drag system)
+      draggable,
+      onDrag,
+      onDragEnd,
+      onDragEnter,
+      onDragLeave,
+      onDragOver,
+      onDragStart,
+      onDrop,
       ...props
     },
     ref
   ) => {
+    const htmlDragProps: HtmlDragProps = {
+      draggable: draggable === true || draggable === "true" ? true : undefined,
+      onDrag,
+      onDragEnd,
+      onDragEnter,
+      onDragLeave,
+      onDragOver,
+      onDragStart,
+      onDrop,
+    };
     const clickTimeoutRef = useRef<number | null>(null);
 
     // Cleanup timeout on unmount
@@ -110,24 +186,44 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       [onRowDoubleClick]
     );
 
+    const rowClassName = cn(
+      "group cursor-pointer h-10 hover:bg-muted/40",
+      // Left border: use !important to override TableBody's [&_tr:last-child]:border-0
+      "!border-l-2",
+      isSelected ? "border-l-primary bg-accent/50" : "border-l-transparent",
+      // Hide top border, show bottom border only on last row (drag indicator overrides with !important)
+      "border-t-0",
+      isLastRow ? "border-b border-b-border" : "border-b-0",
+      isDragging && "opacity-50",
+      // Muted text styling for hidden/not visible rows
+      isHidden && "text-muted-foreground",
+      className
+    );
+
+    // Use motion.tr for animated rows (enables AnimatePresence exit animations)
+    // Cast props to bypass motion's type conflicts (HTML5 events work at runtime)
+    if (animated) {
+      return (
+        <MotionTr
+          ref={ref}
+          layoutId={layoutId}
+          className={rowClassName}
+          onClick={onRowClick ? handleClick : undefined}
+          onDoubleClick={onRowDoubleClick ? handleDoubleClick : undefined}
+          {...getRowAnimationProps(staggerIndex)}
+          {...(htmlDragProps as Record<string, unknown>)}
+          {...(props as Record<string, unknown>)}
+        />
+      );
+    }
+
     return (
       <ShadcnTableRow
         ref={ref}
-        className={cn(
-          "group cursor-pointer h-10 hover:bg-muted/40",
-          // Left border: use !important to override TableBody's [&_tr:last-child]:border-0
-          "!border-l-2",
-          isSelected ? "border-l-primary bg-accent/50" : "border-l-transparent",
-          // Hide top border, show bottom border only on last row (drag indicator overrides with !important)
-          "border-t-0",
-          isLastRow ? "border-b border-b-border" : "border-b-0",
-          isDragging && "opacity-50",
-          // Muted text styling for hidden/not visible rows
-          isHidden && "text-muted-foreground",
-          className
-        )}
+        className={rowClassName}
         onClick={onRowClick ? handleClick : undefined}
         onDoubleClick={onRowDoubleClick ? handleDoubleClick : undefined}
+        {...htmlDragProps}
         {...props}
       />
     );

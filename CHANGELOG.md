@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.66.11 - 2026-01-21
+
+- **Cross-boundary drag-and-drop**: Move categories between labels with undo/redo support
+- **Motion animations for expand/collapse**: Cascade animation with staggered delays using motion library
+- **Auto-expand/collapse on drag**: Labels expand on drag enter, collapse when leaving territory
+- **Selection-synced expand state**: Check → expand, uncheck → collapse (not toggle)
+- **AddLabelsDropdown improvements**: Search, "Added"/"Available" sections, alphabetical sort
+- **White flash animation**: 2x blink for cross-boundary drop targets and auto-expanded rows
+
 ## 0.66.10 - 2026-01-21
 
 - **Updated naming convention**: "New Label", "New Label2" and "Name copy", "Name copy2" (number directly attached)

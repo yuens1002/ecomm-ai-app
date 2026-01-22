@@ -63,6 +63,7 @@ export function useRowClickHandler(
     onToggle,
     onToggleWithHierarchy,
     getCheckboxState,
+    expandedIds,
     toggleExpand,
     navigate,
   } = options;
@@ -71,24 +72,33 @@ export function useRowClickHandler(
    * Handle single click on a row.
    *
    * Behavior:
-   * - Parent rows (expandable): Toggle expand/collapse AND toggle selection with hierarchy
-   *   - Exception: If indeterminate, don't collapse (keep expanded to show newly selected children)
-   * - Leaf rows: Toggle selection
+   * - Parent rows (expandable): Sync expand state with resulting selection state
+   *   - Selecting (→ checked) → Expand
+   *   - Deselecting (→ unchecked) → Collapse
+   * - Leaf rows: Toggle selection only
    */
   const handleClick = useCallback(
     (key: string) => {
       const identity = registry.get(key);
       if (!identity) return;
 
-      // 1. Toggle expand/collapse if this row is expandable
-      // Exception: Don't collapse if indeterminate (selecting all children - keep visible)
-      if (identity.isExpandable && toggleExpand) {
+      // 1. Sync expand state with selection if this row is expandable
+      if (identity.isExpandable && toggleExpand && expandedIds) {
         const checkboxState = getCheckboxState?.(key);
-        const isIndeterminate = checkboxState === "indeterminate";
+        const isCurrentlyExpanded = expandedIds.has(identity.entityId);
 
-        // Only toggle expand if NOT indeterminate
-        // When indeterminate, clicking selects all children - keep parent expanded
-        if (!isIndeterminate) {
+        // Determine what selection state will be AFTER toggle:
+        // - unchecked → checked (selecting)
+        // - checked → unchecked (deselecting)
+        // - indeterminate → checked (selecting all)
+        const willBeSelected = checkboxState !== "checked";
+
+        // Sync expand with selection result:
+        // - Selecting → Expand (if not already expanded)
+        // - Deselecting → Collapse (if not already collapsed)
+        if (willBeSelected && !isCurrentlyExpanded) {
+          toggleExpand(identity.entityId);
+        } else if (!willBeSelected && isCurrentlyExpanded) {
           toggleExpand(identity.entityId);
         }
       }
@@ -101,7 +111,7 @@ export function useRowClickHandler(
         onToggle(key);
       }
     },
-    [registry, onToggle, onToggleWithHierarchy, getCheckboxState, toggleExpand]
+    [registry, onToggle, onToggleWithHierarchy, getCheckboxState, expandedIds, toggleExpand]
   );
 
   /**
