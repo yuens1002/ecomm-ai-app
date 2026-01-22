@@ -9,6 +9,7 @@ import {
   type ActionId,
 } from "../../../constants/action-bar-config";
 import { DROPDOWN_REGISTRY, type DropdownContext } from "../../../constants/dropdown-registry";
+import { useKeyboardShortcuts } from "../../../hooks/useKeyboardShortcuts";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { ActionButton } from "./ActionButton";
 import { ActionComboButton } from "./ActionComboButton";
@@ -316,6 +317,13 @@ export function MenuActionBar() {
       toast,
     ]
   );
+
+  // Enable keyboard shortcuts for current view's actions
+  useKeyboardShortcuts({
+    actions,
+    state,
+    builderActions,
+  });
 
   // Helper to build dropdown content from registry
   const buildDropdownContent = (actionId: ActionId): React.ReactNode => {
