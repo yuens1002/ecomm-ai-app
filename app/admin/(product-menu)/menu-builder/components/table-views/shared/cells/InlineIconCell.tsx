@@ -85,7 +85,7 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
               type="button"
               disabled={isLoading}
               className={cn(
-                "flex items-center justify-center rounded-md p-1 transition-opacity hover:bg-accent",
+                "flex items-center justify-center rounded-md p-1 transition-opacity hover:bg-accent outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
                 // xs-sm: always show as interactive
                 "opacity-100",
                 // md+: show as static icon unless hovered/open
@@ -109,7 +109,7 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
               type="button"
               disabled={isLoading}
               className={cn(
-                "flex items-center justify-center rounded-md p-1 hover:bg-accent",
+                "flex items-center justify-center rounded-md p-1 hover:bg-accent outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
                 // xs-sm: always visible
                 "opacity-100",
                 // md+: visually hidden unless hovered/open/focused (but still tabbable)
@@ -133,6 +133,11 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
           align="start"
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => {
+            // Stop the click from propagating to underlying elements (like table rows)
+            e.detail.originalEvent.stopPropagation();
+          }}
         >
           <Command shouldFilter={false}>
             <CommandInput

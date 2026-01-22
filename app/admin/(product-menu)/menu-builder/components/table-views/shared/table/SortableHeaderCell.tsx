@@ -44,7 +44,7 @@ export function SortableHeaderCell<TData>({
   );
 
   const buttonClassName = cn(
-    "relative inline-flex max-w-full min-w-0 items-center",
+    "relative inline-flex max-w-full min-w-0 items-center rounded-md outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
     align === "left" && "text-left",
     align === "center" && "text-center",
     align === "right" && "text-right"

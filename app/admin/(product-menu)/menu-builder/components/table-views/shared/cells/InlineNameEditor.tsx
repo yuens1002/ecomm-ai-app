@@ -103,7 +103,7 @@ export function InlineNameEditor({
     return (
       <button
         onClick={onStartEdit}
-        className="group inline-flex items-center gap-2 text-sm text-left hover:bg-accent rounded-md pl-1 pr-2 py-1"
+        className="group inline-flex items-center gap-2 text-sm text-left hover:bg-accent rounded-md pl-1 pr-2 py-1 outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]"
       >
         <span
           className={
@@ -120,14 +120,14 @@ export function InlineNameEditor({
   }
 
   return (
-    <div ref={containerRef} onBlur={handleContainerBlur} className="inline-flex items-center gap-1">
+    <div ref={containerRef} onBlur={handleContainerBlur} className="inline-flex items-center gap-1 pr-1">
       <p
         ref={editableRef}
         contentEditable={!isLoading}
         onKeyDown={handleKeyDown}
         suppressContentEditableWarning
         tabIndex={0}
-        className="outline-none rounded-md pl-1 pr-2 py-1 text-sm focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
+        className="outline-none rounded-md pl-1 pr-2 py-1 text-sm focus-visible:ring-ring/50 focus-visible:ring-[3px]"
       >
         {value}
       </p>

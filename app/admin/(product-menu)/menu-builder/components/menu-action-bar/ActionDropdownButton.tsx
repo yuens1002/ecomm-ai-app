@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -34,6 +35,8 @@ export function ActionDropdownButton({
   ariaLabel,
   dropdownContent,
 }: ActionDropdownButtonProps) {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   if (disabled) {
     // Render as a plain disabled button when disabled
     return (
@@ -55,8 +58,8 @@ export function ActionDropdownButton({
   }
 
   return (
-    <DropdownMenu>
-      <Tooltip>
+    <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+      <Tooltip open={isDropdownOpen ? false : undefined}>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" aria-label={ariaLabel || tooltip}>
@@ -85,7 +88,15 @@ export function ActionDropdownButton({
           )}
         </TooltipContent>
       </Tooltip>
-      <DropdownMenuContent align="end" className="w-[300px]">
+      <DropdownMenuContent
+        align="end"
+        className="w-[300px]"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => {
+          // Stop the click from propagating to underlying elements (like table rows)
+          e.detail.originalEvent.stopPropagation();
+        }}
+      >
         {dropdownContent}
       </DropdownMenuContent>
     </DropdownMenu>

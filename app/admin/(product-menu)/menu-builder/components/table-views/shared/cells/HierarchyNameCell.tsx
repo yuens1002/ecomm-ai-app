@@ -111,11 +111,12 @@ export function HierarchyIcon({ children, className }: SlotProps) {
 
 /**
  * Slot for the name/text within HierarchyNameCell.
- * Uses truncate and min-w-0 to handle long names properly.
+ * Uses min-w-0 to handle long names properly.
+ * Note: overflow-visible allows focus rings to display fully.
  */
 export function HierarchyName({ children, className }: SlotProps) {
   return (
-    <div data-slot="hierarchy-name" className={cn("truncate min-w-0", className)}>
+    <div data-slot="hierarchy-name" className={cn("min-w-0 overflow-visible", className)}>
       {children}
     </div>
   );

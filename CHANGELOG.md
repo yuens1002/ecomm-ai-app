@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.66.13 - 2026-01-21
+
+- **Standardized focus rings**: All custom components now use shadcn's focus ring style (`ring-ring/50 ring-[3px]`)
+- **Fixed dropdown click propagation**: Clicking outside dropdowns/popovers no longer triggers underlying elements
+- **Fixed tooltip flash on dropdown close**: Tooltips stay hidden when their associated dropdown closes
+- **Fixed focus ring clipping**: HierarchyName now uses `overflow-visible` to prevent focus ring cutoff
+
 ## 0.66.12 - 2026-01-21
 
 - **Fixed cross-boundary DnD positioning**: Categories now land at correct drop position (not always at top)

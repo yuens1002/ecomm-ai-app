@@ -57,6 +57,11 @@ export function NavItem({
         <DropdownMenuContent
           align="start"
           className="min-w-[200px] max-h-[200px] overflow-y-auto"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => {
+            // Stop the click from propagating to underlying elements
+            e.detail.originalEvent.stopPropagation();
+          }}
         >
           {children}
         </DropdownMenuContent>

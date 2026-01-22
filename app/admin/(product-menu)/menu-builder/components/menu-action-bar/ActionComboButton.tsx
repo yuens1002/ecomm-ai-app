@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -38,6 +39,7 @@ export function ActionComboButton({
   newButton,
   addButton,
 }: ActionComboButtonProps) {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const NewIcon = newButton.icon;
 
   return (
@@ -89,8 +91,8 @@ export function ActionComboButton({
           </TooltipTrigger>
         </Tooltip>
       ) : (
-        <DropdownMenu>
-          <Tooltip>
+        <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+          <Tooltip open={isDropdownOpen ? false : undefined}>
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -106,7 +108,15 @@ export function ActionComboButton({
               <span>{addButton.tooltip}</span>
             </TooltipContent>
           </Tooltip>
-          <DropdownMenuContent align="start" className="w-[300px]">
+          <DropdownMenuContent
+            align="start"
+            className="w-[300px]"
+            onCloseAutoFocus={(e) => e.preventDefault()}
+            onPointerDownOutside={(e) => {
+              // Stop the click from propagating to underlying elements (like table rows)
+              e.detail.originalEvent.stopPropagation();
+            }}
+          >
             {addButton.dropdownContent}
           </DropdownMenuContent>
         </DropdownMenu>
