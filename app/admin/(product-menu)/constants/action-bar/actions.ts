@@ -660,45 +660,84 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
 
     captureUndo: {
       "all-labels": ({ selectedIds, labels, mutations }) => {
+        // Capture full state of labels to be deleted (including category relationships)
         const deletedLabels = selectedIds
           .map((id) => labels.find((l) => l.id === id))
-          .filter((l): l is NonNullable<typeof l> => l !== undefined);
+          .filter((l): l is NonNullable<typeof l> => l !== undefined)
+          .map((label) => ({
+            name: label.name,
+            icon: label.icon,
+            isVisible: label.isVisible,
+            autoOrder: label.autoOrder,
+            order: label.order,
+            categoryIds: label.categories.map((c) => c.id),
+          }));
 
         if (deletedLabels.length === 0) return null;
+
+        // Track IDs of restored labels for redo
+        let restoredIds: string[] = [];
 
         return {
           action: "delete:labels",
           timestamp: new Date(),
           data: {
             undo: async () => {
-              // TODO: Implement label recreation with relationships
-              console.log("Undo delete labels - to be implemented", deletedLabels);
+              if (!mutations.restoreLabel) return;
+              restoredIds = [];
+              for (const labelData of deletedLabels) {
+                const res = await mutations.restoreLabel(labelData);
+                if (res.ok && res.data) {
+                  const newId = (res.data as { id?: string })?.id;
+                  if (newId) restoredIds.push(newId);
+                }
+              }
             },
             redo: async () => {
               if (!mutations.deleteLabel) return;
-              await Promise.all(deletedLabels.map((l) => mutations.deleteLabel!(l.id)));
+              await Promise.all(restoredIds.map((id) => mutations.deleteLabel!(id)));
+              restoredIds = [];
             },
           },
         };
       },
       "all-categories": ({ selectedIds, categories, mutations }) => {
+        // Capture full state of categories to be deleted (including label relationships)
         const deletedCategories = selectedIds
           .map((id) => categories.find((c) => c.id === id))
-          .filter((c): c is NonNullable<typeof c> => c !== undefined);
+          .filter((c): c is NonNullable<typeof c> => c !== undefined)
+          .map((category) => ({
+            name: category.name,
+            slug: category.slug,
+            isVisible: category.isVisible,
+            order: category.order,
+            labelIds: category.labels.map((l) => l.id),
+          }));
 
         if (deletedCategories.length === 0) return null;
+
+        // Track IDs of restored categories for redo
+        let restoredIds: string[] = [];
 
         return {
           action: "delete:categories",
           timestamp: new Date(),
           data: {
             undo: async () => {
-              // TODO: Implement category recreation with relationships
-              console.log("Undo delete categories - to be implemented", deletedCategories);
+              if (!mutations.restoreCategory) return;
+              restoredIds = [];
+              for (const categoryData of deletedCategories) {
+                const res = await mutations.restoreCategory(categoryData);
+                if (res.ok && res.data) {
+                  const newId = (res.data as { id?: string })?.id;
+                  if (newId) restoredIds.push(newId);
+                }
+              }
             },
             redo: async () => {
               if (!mutations.deleteCategory) return;
-              await Promise.all(deletedCategories.map((c) => mutations.deleteCategory!(c.id)));
+              await Promise.all(restoredIds.map((id) => mutations.deleteCategory!(id)));
+              restoredIds = [];
             },
           },
         };
