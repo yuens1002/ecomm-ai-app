@@ -1,5 +1,6 @@
 import {
   ArrowUpDown,
+  ConciergeBell,
   Copy,
   CornerUpLeft,
   Eye,
@@ -7,6 +8,7 @@ import {
   ListChevronsUpDown,
   Plus,
   Redo,
+  Trash2,
   Undo,
 } from "lucide-react";
 import type { ActionBase, ActionContext, ActionExecuteResult, ActionId } from "./model";
@@ -339,7 +341,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: Eye,
     label: "Visibility",
     tooltip: "Toggle visibility",
-    kbd: ["Space"],
+    kbd: [modKey, "Space"],
     disabled: (state) => !hasSelection(state),
     ariaLabel: (state) =>
       hasSelection(state)
@@ -611,6 +613,108 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
       hasSelection(state) ? "New category disabled - clear selection first" : "Add new category",
     onClick: async (_state, actions) => {
       await actions.createNewCategory();
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // HELP
+  // ─────────────────────────────────────────────────────────────
+  help: {
+    id: "help",
+    icon: ConciergeBell,
+    label: "Help",
+    tooltip: "View help",
+    kbd: [],
+    disabled: () => false,
+    onClick: () => {}, // Handled by HelpPopoverButton component
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // DELETE
+  // ─────────────────────────────────────────────────────────────
+  delete: {
+    id: "delete",
+    icon: Trash2,
+    label: "Delete",
+    tooltip: "Permanently delete selected items",
+    kbd: [modKey, "Shift", "⌫"],
+    disabled: (state) => !hasSelection(state),
+    ariaLabel: (state) =>
+      hasSelection(state)
+        ? "Permanently delete selected items"
+        : "Delete disabled - no items selected",
+    onClick: async (_state, actions) => {
+      await actions.deleteSelected();
+    },
+
+    execute: {
+      "all-labels": async ({ selectedIds, mutations }) => {
+        if (!mutations.deleteLabel) return;
+        await Promise.all(selectedIds.map((id) => mutations.deleteLabel!(id)));
+      },
+      "all-categories": async ({ selectedIds, mutations }) => {
+        if (!mutations.deleteCategory) return;
+        await Promise.all(selectedIds.map((id) => mutations.deleteCategory!(id)));
+      },
+    },
+
+    captureUndo: {
+      "all-labels": ({ selectedIds, labels, mutations }) => {
+        const deletedLabels = selectedIds
+          .map((id) => labels.find((l) => l.id === id))
+          .filter((l): l is NonNullable<typeof l> => l !== undefined);
+
+        if (deletedLabels.length === 0) return null;
+
+        return {
+          action: "delete:labels",
+          timestamp: new Date(),
+          data: {
+            undo: async () => {
+              // TODO: Implement label recreation with relationships
+              console.log("Undo delete labels - to be implemented", deletedLabels);
+            },
+            redo: async () => {
+              if (!mutations.deleteLabel) return;
+              await Promise.all(deletedLabels.map((l) => mutations.deleteLabel!(l.id)));
+            },
+          },
+        };
+      },
+      "all-categories": ({ selectedIds, categories, mutations }) => {
+        const deletedCategories = selectedIds
+          .map((id) => categories.find((c) => c.id === id))
+          .filter((c): c is NonNullable<typeof c> => c !== undefined);
+
+        if (deletedCategories.length === 0) return null;
+
+        return {
+          action: "delete:categories",
+          timestamp: new Date(),
+          data: {
+            undo: async () => {
+              // TODO: Implement category recreation with relationships
+              console.log("Undo delete categories - to be implemented", deletedCategories);
+            },
+            redo: async () => {
+              if (!mutations.deleteCategory) return;
+              await Promise.all(deletedCategories.map((c) => mutations.deleteCategory!(c.id)));
+            },
+          },
+        };
+      },
+    },
+
+    effects: {
+      refresh: {
+        "all-labels": ["labels"],
+        "all-categories": ["categories"],
+      },
+      successToast: {
+        "all-labels": { title: "Labels deleted" },
+        "all-categories": { title: "Categories deleted" },
+      },
+      failureToast: { title: "Delete failed", description: "Please try again." },
     },
   },
 };

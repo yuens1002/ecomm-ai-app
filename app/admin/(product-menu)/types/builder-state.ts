@@ -80,6 +80,7 @@ export interface MenuBuilderActions {
   toggleVisibility: () => Promise<void>;
   createNewLabel: () => Promise<void>;
   createNewCategory: () => Promise<void>;
+  deleteSelected: () => Promise<void>;
 
   // Undo/redo
   undo: () => void;

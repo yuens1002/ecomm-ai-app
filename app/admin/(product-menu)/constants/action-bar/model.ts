@@ -21,6 +21,8 @@ export const ALL_ACTION_IDS = [
   "add-products",
   "sort-order",
   "new-category",
+  "help",
+  "delete",
 ] as const;
 
 export type ActionId = (typeof ALL_ACTION_IDS)[number];

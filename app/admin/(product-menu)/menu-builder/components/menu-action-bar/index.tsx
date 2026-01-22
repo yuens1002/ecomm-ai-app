@@ -117,6 +117,9 @@ export function MenuActionBar() {
     toggleVisibility: async () => {
       await executeActionFromConfig("visibility");
     },
+    deleteSelected: async () => {
+      await executeActionFromConfig("delete");
+    },
 
     createNewLabel: async () => {
       const createdId = await createNewLabel();
