@@ -13,6 +13,7 @@ import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { ActionButton } from "./ActionButton";
 import { ActionComboButton } from "./ActionComboButton";
 import { ActionDropdownButton } from "./ActionDropdownButton";
+import { DeleteAlertButton } from "./DeleteAlertButton";
 import { HelpPopoverButton } from "./HelpPopoverButton";
 
 /**
@@ -403,6 +404,23 @@ export function MenuActionBar() {
     // Special rendering for help button
     if (action.id === "help") {
       return <HelpPopoverButton key={action.id} currentView={builder.currentView} />;
+    }
+
+    // Special rendering for delete button (with confirmation dialog)
+    if (action.id === "delete") {
+      const isDisabled = action.disabled(state);
+      return (
+        <DeleteAlertButton
+          key={action.id}
+          disabled={isDisabled}
+          selectedCount={builder.selectedIds.length}
+          currentView={builder.currentView}
+          kbd={action.kbd}
+          onConfirm={async () => {
+            await builderActions.deleteSelected();
+          }}
+        />
+      );
     }
 
     const isDisabled =
