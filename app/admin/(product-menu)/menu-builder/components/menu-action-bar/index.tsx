@@ -13,6 +13,7 @@ import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { ActionButton } from "./ActionButton";
 import { ActionComboButton } from "./ActionComboButton";
 import { ActionDropdownButton } from "./ActionDropdownButton";
+import { HelpPopoverButton } from "./HelpPopoverButton";
 
 /**
  * MenuActionBar - Action buttons for current view
@@ -399,6 +400,11 @@ export function MenuActionBar() {
   };
 
   const renderAction = (action: (typeof actions)[0], _index: number) => {
+    // Special rendering for help button
+    if (action.id === "help") {
+      return <HelpPopoverButton key={action.id} currentView={builder.currentView} />;
+    }
+
     const isDisabled =
       action.disabled(state) ||
       (action.id === "remove" &&
