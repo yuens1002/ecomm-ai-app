@@ -81,6 +81,16 @@ function parseKbd(kbd: string[]): { modifiers: Set<string>; key: string } | null
 }
 
 /**
+ * Characters that require Shift to type (on US keyboard).
+ * When matching these, we ignore the Shift modifier from the event
+ * unless explicitly required in the shortcut.
+ */
+const SHIFTED_CHARS = new Set([
+  "?", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
+  "_", "+", "{", "}", "|", ":", '"', "<", ">", "~",
+]);
+
+/**
  * Checks if a keyboard event matches the parsed shortcut
  */
 function eventMatchesShortcut(
@@ -93,6 +103,13 @@ function eventMatchesShortcut(
   if (event.ctrlKey) eventMods.add("ctrl");
   if (event.shiftKey) eventMods.add("shift");
   if (event.altKey) eventMods.add("alt");
+
+  // For shifted characters (like ?), ignore the Shift modifier from the event
+  // unless the shortcut explicitly requires Shift
+  const isShiftedChar = SHIFTED_CHARS.has(event.key);
+  if (isShiftedChar && !shortcut.modifiers.has("shift")) {
+    eventMods.delete("shift");
+  }
 
   // Compare modifier sets
   if (shortcut.modifiers.size !== eventMods.size) return false;
