@@ -12,6 +12,9 @@ import type { DnDEligibility, DraggedEntity } from "./dnd/useDnDEligibility";
 /** Throttle delay for dragOver events (ms) */
 const DRAG_OVER_THROTTLE_MS = 50;
 
+/** Delay before auto-expanding a collapsed label on drag hover (ms) */
+const AUTO_EXPAND_DELAY_MS = 500;
+
 type ReorderResult = { ok: boolean; error?: string };
 
 /** Info about a category being dragged (for batch moves) */
@@ -60,6 +63,12 @@ type UseMenuTableDragReorderOptions = {
   eligibility: DnDEligibility;
   /** Identity registry for entity lookups and drop validation */
   registry: IdentityRegistry;
+  /**
+   * Callback to update selection after cross-boundary moves.
+   * Called with the new keys after categories move to a different label.
+   * This is needed because category keys include the parent label ID.
+   */
+  onSelectionUpdate?: (newKeys: string[]) => void;
 };
 
 export type HierarchicalDragHandlers = {
@@ -139,11 +148,17 @@ export function useMenuTableDragReorder({
   onCollapseItem,
   eligibility,
   registry,
+  onSelectionUpdate,
 }: UseMenuTableDragReorderOptions) {
   const [dragState, setDragState] = useState<DragState>(INITIAL_DRAG_STATE);
 
   // Track the currently auto-expanded label ID
   const autoExpandedLabelRef = useRef<string | null>(null);
+
+  // Timer for delayed auto-expansion
+  const autoExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track which label the expansion timer is for
+  const pendingExpandLabelRef = useRef<string | null>(null);
 
   // Clear auto-expanded animation state after a delay
   useEffect(() => {
@@ -155,11 +170,30 @@ export function useMenuTableDragReorder({
     }
   }, [dragState.autoExpandedId]);
 
-  // Helper to clear drag state
-  const clearDragState = useCallback(() => {
-    autoExpandedLabelRef.current = null;
-    setDragState(INITIAL_DRAG_STATE);
+  // Helper to clear any pending expansion timer
+  const clearExpandTimer = useCallback(() => {
+    if (autoExpandTimerRef.current) {
+      clearTimeout(autoExpandTimerRef.current);
+      autoExpandTimerRef.current = null;
+    }
+    pendingExpandLabelRef.current = null;
   }, []);
+
+  // Helper to clear drag state and collapse auto-expanded labels
+  const clearDragState = useCallback(
+    (wasDropped: boolean = false) => {
+      clearExpandTimer();
+
+      // Collapse auto-expanded label if drag ended without a drop
+      if (!wasDropped && autoExpandedLabelRef.current && onCollapseItem) {
+        onCollapseItem(autoExpandedLabelRef.current);
+      }
+
+      autoExpandedLabelRef.current = null;
+      setDragState(INITIAL_DRAG_STATE);
+    },
+    [clearExpandTimer, onCollapseItem]
+  );
 
   // Memoize rows lookup for O(1) access
   const rowsById = useMemo(() => new Map(rows.map((r) => [r.id, r])), [rows]);
@@ -172,17 +206,28 @@ export function useMenuTableDragReorder({
     [eligibility.draggedEntities]
   );
 
-  // Build dragged categories info from eligibility
+  // Build dragged categories info from eligibility, sorted by visual order
   const draggedCategoriesFromEligibility = useMemo((): DraggedCategoryInfo[] => {
     if (eligibility.dragKind !== "category") return [];
 
-    return eligibility.draggedEntities
+    const categoryInfos = eligibility.draggedEntities
       .filter((e) => e.parentKey !== null)
       .map((e) => ({
         categoryId: e.entityId,
         fromLabelId: extractParentId(e)!,
       }));
-  }, [eligibility.dragKind, eligibility.draggedEntities]);
+
+    // Sort by visual order (position in rows array)
+    // This ensures consistent ordering regardless of selection order
+    const rowIndexMap = new Map(rows.map((r, i) => [r.id, i]));
+    categoryInfos.sort((a, b) => {
+      const indexA = rowIndexMap.get(a.categoryId) ?? Infinity;
+      const indexB = rowIndexMap.get(b.categoryId) ?? Infinity;
+      return indexA - indexB;
+    });
+
+    return categoryInfos;
+  }, [eligibility.dragKind, eligibility.draggedEntities, rows]);
 
   /**
    * Determine if a drop is valid and what type of drop it would be.
@@ -310,18 +355,38 @@ export function useMenuTableDragReorder({
         autoExpandedLabelRef.current = null;
       }
 
-      // Auto-expand collapsed labels when dragging categories over them
-      const shouldExpand =
+      // Clear pending expansion timer if we've moved to a different label
+      if (pendingExpandLabelRef.current && pendingExpandLabelRef.current !== targetLabelOwner) {
+        clearExpandTimer();
+      }
+
+      // Check if this is a collapsed label that could be expanded
+      const isCollapsedExpandableLabel =
         targetRow.level === "label" &&
         targetRow.isExpandable &&
         !targetRow.isExpanded &&
-        onExpandItem &&
         dragState.dragLevel === "category";
 
-      if (shouldExpand) {
-        autoExpandedLabelRef.current = targetRow.id;
-        onExpandItem(targetRow.id);
-        setDragState((prev) => ({ ...prev, autoExpandedId: targetId }));
+      // Start delayed expansion timer if hovering over a collapsed label
+      if (isCollapsedExpandableLabel && onExpandItem) {
+        // Only start timer if not already pending for this label
+        if (pendingExpandLabelRef.current !== targetRow.id) {
+          clearExpandTimer();
+          pendingExpandLabelRef.current = targetRow.id;
+
+          autoExpandTimerRef.current = setTimeout(() => {
+            // Double-check the label is still collapsed (user might have expanded manually)
+            const currentRow = rowsById.get(targetRow.id);
+            if (currentRow && !currentRow.isExpanded) {
+              autoExpandedLabelRef.current = targetRow.id;
+              onExpandItem(targetRow.id);
+              // Flash animation only when actually expanding
+              setDragState((prev) => ({ ...prev, autoExpandedId: targetRow.id }));
+            }
+            pendingExpandLabelRef.current = null;
+            autoExpandTimerRef.current = null;
+          }, AUTO_EXPAND_DELAY_MS);
+        }
       }
 
       const dropInfo = getDropInfo(targetId);
@@ -344,7 +409,7 @@ export function useMenuTableDragReorder({
         dropType: dropInfo.dropType,
       }));
     },
-    [rowsById, getDropInfo, getLabelOwner, onExpandItem, onCollapseItem, dragState.dragLevel]
+    [rowsById, getDropInfo, getLabelOwner, onExpandItem, onCollapseItem, dragState.dragLevel, clearExpandTimer]
   );
 
   const throttledUpdateDragOver = useThrottledCallback(updateDragOver, DRAG_OVER_THROTTLE_MS);
@@ -422,7 +487,19 @@ export function useMenuTableDragReorder({
   );
 
   /**
-   * Execute a batch cross-boundary category move.
+   * Execute a batch cross-boundary category move (may also include same-label reorders).
+   *
+   * Handles mixed operations where some categories are from the target label (reorder)
+   * and some are from other labels (cross-boundary move).
+   *
+   * Strategy:
+   * 1. Separate categories into: already in target (reorder) vs from other labels (move)
+   * 2. Move cross-boundary categories to target label
+   * 3. Compute final order with ALL dragged categories at the target position
+   * 4. Apply single reorder
+   *
+   * After successful moves, updates selection with new keys (since category keys
+   * include parent label ID, they change when moving to a different label).
    */
   const executeBatchCrossBoundaryMove = useCallback(
     async (
@@ -431,74 +508,115 @@ export function useMenuTableDragReorder({
       targetCategoryId: string | null,
       dropPosition: "before" | "after"
     ) => {
-      const actualMoves = moves.filter((m) => m.fromLabelId !== toLabelId);
-      if (actualMoves.length === 0) return;
+      // Separate: categories to move (from other labels) vs categories to reorder (already in target)
+      const crossBoundaryMoves = moves.filter((m) => m.fromLabelId !== toLabelId);
+      const sameParentMoves = moves.filter((m) => m.fromLabelId === toLabelId);
 
-      const dragCount = actualMoves.length;
+      // All category IDs being dragged (in visual order from the sorted moves)
+      const allDraggedIds = moves.map((m) => m.categoryId);
 
-      if (reorderFunctions.batchMoveCategoriesToLabel && dragCount > 1) {
-        await reorderFunctions.batchMoveCategoriesToLabel(
-          actualMoves as DraggedCategoryInfo[],
+      if (crossBoundaryMoves.length === 0 && sameParentMoves.length === 0) return;
+
+      const totalCount = moves.length;
+      const crossBoundaryCount = crossBoundaryMoves.length;
+
+      // Get the target label's current categories BEFORE any moves
+      const targetLabel = labels.find((l) => l.id === toLabelId);
+      const existingCategoryIds = targetLabel
+        ? targetLabel.categories
+            .slice()
+            .sort((a, b) => a.order - b.order)
+            .map((c) => c.id)
+        : [];
+
+      // Step 1: Move cross-boundary categories to target label (no positioning yet)
+      for (const { categoryId, fromLabelId } of crossBoundaryMoves) {
+        await reorderFunctions.moveCategoryToLabel(
+          categoryId,
+          fromLabelId,
           toLabelId,
-          targetCategoryId,
-          dropPosition
+          null, // No positioning yet
+          "after"
         );
+      }
 
-        pushUndoAction({
-          action: `move:${dragCount}-categories-to-label`,
-          timestamp: new Date(),
-          data: {
-            undo: async () => {
-              for (const { categoryId, fromLabelId } of actualMoves) {
-                await reorderFunctions.moveCategoryToLabel(categoryId, toLabelId, fromLabelId, null, "after");
-              }
-            },
-            redo: async () => {
-              await reorderFunctions.batchMoveCategoriesToLabel!(
-                actualMoves as DraggedCategoryInfo[],
-                toLabelId,
-                targetCategoryId,
-                dropPosition
-              );
-            },
-          },
-        });
-      } else {
-        for (const { categoryId, fromLabelId } of actualMoves) {
-          await reorderFunctions.moveCategoryToLabel(
-            categoryId,
-            fromLabelId,
-            toLabelId,
-            targetCategoryId,
-            dropPosition
-          );
+      // Step 2: Compute the final order
+      // - Remove all dragged categories from their current positions
+      // - Insert all dragged categories (in visual order) at the target position
+      const remainingIds = existingCategoryIds.filter((id) => !allDraggedIds.includes(id));
+
+      let finalOrder: string[];
+      if (targetCategoryId && !allDraggedIds.includes(targetCategoryId)) {
+        // Target is not being dragged - insert relative to it
+        const targetIndex = remainingIds.indexOf(targetCategoryId);
+        if (targetIndex !== -1) {
+          const insertIndex = dropPosition === "before" ? targetIndex : targetIndex + 1;
+          finalOrder = [...remainingIds];
+          finalOrder.splice(insertIndex, 0, ...allDraggedIds);
+        } else {
+          // Target not found in remaining, append to end
+          finalOrder = [...remainingIds, ...allDraggedIds];
         }
+      } else if (targetCategoryId && allDraggedIds.includes(targetCategoryId)) {
+        // Target IS being dragged - use drop position relative to where target WAS
+        const originalTargetIndex = existingCategoryIds.indexOf(targetCategoryId);
+        if (originalTargetIndex !== -1) {
+          // Count how many dragged items were before the target in original order
+          const draggedBeforeTarget = allDraggedIds.filter((id) => {
+            const idx = existingCategoryIds.indexOf(id);
+            return idx !== -1 && idx < originalTargetIndex;
+          }).length;
+          // Adjust insert index based on how many dragged items were removed before target
+          const adjustedIndex = originalTargetIndex - draggedBeforeTarget;
+          const insertIndex = dropPosition === "before" ? adjustedIndex : adjustedIndex;
+          finalOrder = [...remainingIds];
+          finalOrder.splice(insertIndex, 0, ...allDraggedIds);
+        } else {
+          finalOrder = [...remainingIds, ...allDraggedIds];
+        }
+      } else {
+        // No target specified, append to end
+        finalOrder = [...remainingIds, ...allDraggedIds];
+      }
 
-        pushUndoAction({
-          action: dragCount > 1 ? `move:${dragCount}-categories-to-label` : "move:category-to-label",
-          timestamp: new Date(),
-          data: {
-            undo: async () => {
-              for (const { categoryId, fromLabelId } of actualMoves) {
-                await reorderFunctions.moveCategoryToLabel(categoryId, toLabelId, fromLabelId, null, "after");
-              }
-            },
-            redo: async () => {
-              for (const { categoryId, fromLabelId } of actualMoves) {
-                await reorderFunctions.moveCategoryToLabel(
-                  categoryId,
-                  fromLabelId,
-                  toLabelId,
-                  targetCategoryId,
-                  dropPosition
-                );
-              }
-            },
+      // Step 3: Apply the final order
+      await reorderFunctions.reorderCategoriesInLabel(toLabelId, finalOrder);
+
+      // Push undo action
+      const actionName = crossBoundaryCount > 0
+        ? (totalCount > 1 ? `move:${totalCount}-categories` : "move:category-to-label")
+        : (totalCount > 1 ? `reorder:${totalCount}-categories` : "reorder:category");
+
+      pushUndoAction({
+        action: actionName,
+        timestamp: new Date(),
+        data: {
+          undo: async () => {
+            // Move cross-boundary categories back to their original labels
+            for (const { categoryId, fromLabelId } of crossBoundaryMoves) {
+              await reorderFunctions.moveCategoryToLabel(categoryId, toLabelId, fromLabelId, null, "after");
+            }
+            // Restore original order in target label
+            await reorderFunctions.reorderCategoriesInLabel(toLabelId, existingCategoryIds);
           },
-        });
+          redo: async () => {
+            // Re-execute the batch move
+            for (const { categoryId, fromLabelId } of crossBoundaryMoves) {
+              await reorderFunctions.moveCategoryToLabel(categoryId, fromLabelId, toLabelId, null, "after");
+            }
+            await reorderFunctions.reorderCategoriesInLabel(toLabelId, finalOrder);
+          },
+        },
+      });
+
+      // Update selection with new keys for cross-boundary moves
+      // (same-label categories keep their keys, cross-boundary ones get new keys)
+      if (onSelectionUpdate && crossBoundaryMoves.length > 0) {
+        const newKeys = moves.map((m) => createKey("category", toLabelId, m.categoryId));
+        onSelectionUpdate(newKeys);
       }
     },
-    [reorderFunctions, pushUndoAction]
+    [labels, reorderFunctions, pushUndoAction, onSelectionUpdate]
   );
 
   const handleDrop = useCallback(
@@ -507,13 +625,13 @@ export function useMenuTableDragReorder({
 
       const dropInfo = getDropInfo(targetId);
       if (!dragId || !dragLevel || !dropInfo.valid) {
-        clearDragState();
+        clearDragState(false);
         return;
       }
 
       const targetRow = getRow(targetId);
       if (!targetRow) {
-        clearDragState();
+        clearDragState(false);
         return;
       }
 
@@ -532,13 +650,15 @@ export function useMenuTableDragReorder({
         console.error("[useMenuTableDragReorder] Drop operation failed:", error);
       }
 
-      clearDragState();
+      // Pass true to indicate successful drop - don't collapse auto-expanded label
+      clearDragState(true);
     },
     [dragState, getDropInfo, getRow, clearDragState, executeBatchCrossBoundaryMove, executeReorder]
   );
 
   const handleDragEnd = useCallback(() => {
-    clearDragState();
+    // Pass false to indicate drag ended without drop - collapse auto-expanded label
+    clearDragState(false);
   }, [clearDragState]);
 
   const getDragHandlers = useCallback(

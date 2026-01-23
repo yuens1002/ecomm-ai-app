@@ -23,7 +23,6 @@ import { useCallback, useRef } from "react";
  * );
  * ```
  */
-// eslint-disable-next-line react-hooks/incompatible-library
 export function useThrottledCallback<T extends (...args: Parameters<T>) => void>(
   callback: T,
   delay: number = 50

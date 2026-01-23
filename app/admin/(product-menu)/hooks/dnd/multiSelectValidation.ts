@@ -177,10 +177,11 @@ export function isInDragSet(key: string, draggedKeys: readonly string[]): boolea
  * Calculate new order after multi-item reorder.
  *
  * Removes all dragged items from their current positions,
- * then inserts them at the target position.
+ * then inserts them at the target position while preserving
+ * their relative visual order from the original list.
  *
- * @param items - Original array of items with id property
- * @param draggedIds - IDs of items being dragged
+ * @param items - Original array of items with id property (in visual order)
+ * @param draggedIds - IDs of items being dragged (may be in selection order)
  * @param targetId - ID of the drop target
  * @param dropPosition - Whether to insert before or after target
  * @returns New array of item IDs in the desired order
@@ -191,14 +192,21 @@ export function calculateMultiReorder<T extends { id: string }>(
   targetId: string,
   dropPosition: "before" | "after"
 ): string[] {
+  // Sort draggedIds by their visual order in the original items array
+  // This preserves relative order regardless of selection order
+  const draggedSet = new Set(draggedIds);
+  const sortedDraggedIds = items
+    .filter((item) => draggedSet.has(item.id))
+    .map((item) => item.id);
+
   // Remove dragged items from the list
-  const remaining = items.filter((item) => !draggedIds.includes(item.id));
+  const remaining = items.filter((item) => !draggedSet.has(item.id));
 
   // Find target index in remaining list
   let targetIndex = remaining.findIndex((item) => item.id === targetId);
   if (targetIndex === -1) {
     // Target was in dragged set - append to end
-    return [...remaining.map((i) => i.id), ...draggedIds];
+    return [...remaining.map((i) => i.id), ...sortedDraggedIds];
   }
 
   // Adjust for drop position
@@ -206,9 +214,9 @@ export function calculateMultiReorder<T extends { id: string }>(
     targetIndex += 1;
   }
 
-  // Insert dragged items at target position
+  // Insert dragged items at target position (in visual order)
   const result = remaining.map((i) => i.id);
-  result.splice(targetIndex, 0, ...draggedIds);
+  result.splice(targetIndex, 0, ...sortedDraggedIds);
 
   return result;
 }

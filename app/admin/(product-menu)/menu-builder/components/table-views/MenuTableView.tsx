@@ -292,6 +292,8 @@ export function MenuTableView() {
     onCollapseItem: builder.toggleExpand,
     eligibility,
     registry,
+    // Update selection after cross-boundary moves (category keys include parent label ID)
+    onSelectionUpdate: (newKeys) => builder.selectAll(newKeys),
   });
 
   // Multi-drag ghost for count badge

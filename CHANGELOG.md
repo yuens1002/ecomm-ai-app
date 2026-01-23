@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.66.15 - 2026-01-23
+
+- **Fixed multi-DnD selection order**: Dragged items now preserve visual order (not selection order) when dropped
+- **Fixed selection state after cross-boundary move**: Added `onSelectionUpdate` callback to update keys after move
+- **Fixed mixed DnD operations**: Handle reorder + cross-boundary move in same operation
+- **Added delayed auto-expand**: 500ms hover delay before expanding collapsed labels during drag
+- **Added auto-collapse on drag cancel**: Auto-expanded labels collapse when drag ends without drop
+
+**Known Issues (Auto-Expand UX):**
+- Target label collapses upon drop completion (should stay expanded)
+- Flash animation triggers on already-expanded labels (should only flash on actual expansion)
+
 ## 0.66.14 - 2026-01-23
 
 - **Refactored DnD eligibility system**: Extracted `useDnDEligibility` hook following action-bar pattern
@@ -8,10 +20,6 @@
 - **Added parent demotion logic**: Deselecting child removes parent from selection when it becomes indeterminate
 - **Fixed multi-drag ghost timing**: Ghost now pre-renders based on `actionableRoots` for synchronous `setDragImage`
 - **Added `DragHandleCell` component**: Centralized drag handle rendering with eligibility-based styling
-
-**Known Issues (Multi-DnD):**
-- Selection order not preserved when dropping to target
-- Selection state lost after first multi-DnD operation
 
 ## 0.66.13 - 2026-01-21
 
