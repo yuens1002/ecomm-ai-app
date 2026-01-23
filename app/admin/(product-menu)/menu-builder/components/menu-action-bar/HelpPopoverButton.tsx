@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -11,8 +12,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { ConciergeBell } from "lucide-react";
 import { HELP_CONTENT } from "../../../constants/help-content";
+import { modKey } from "../../../constants/action-bar/shared";
 import type { ViewType } from "../../../types/builder-state";
 
 type HelpPopoverButtonProps = {
@@ -20,10 +23,18 @@ type HelpPopoverButtonProps = {
 };
 
 export function HelpPopoverButton({ currentView }: HelpPopoverButtonProps) {
+  const [open, setOpen] = useState(false);
   const content = HELP_CONTENT[currentView];
 
+  // Listen for keyboard shortcut event
+  useEffect(() => {
+    const handleToggleHelp = () => setOpen((prev) => !prev);
+    window.addEventListener("menu-builder:toggle-help", handleToggleHelp);
+    return () => window.removeEventListener("menu-builder:toggle-help", handleToggleHelp);
+  }, []);
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
@@ -37,7 +48,14 @@ export function HelpPopoverButton({ currentView }: HelpPopoverButtonProps) {
           </PopoverTrigger>
         </TooltipTrigger>
         <TooltipContent>
-          <span>Help</span>
+          <div className="flex items-center gap-2">
+            Help
+            <KbdGroup>
+              <Kbd>{modKey}</Kbd>
+              <Kbd>Shift</Kbd>
+              <Kbd>?</Kbd>
+            </KbdGroup>
+          </div>
         </TooltipContent>
       </Tooltip>
       <PopoverContent align="end" className="w-80">

@@ -624,9 +624,12 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: ConciergeBell,
     label: "Help",
     tooltip: "View help",
-    kbd: [],
+    kbd: [modKey, "Shift", "?"],
     disabled: () => false,
-    onClick: () => {}, // Handled by HelpPopoverButton component
+    onClick: () => {
+      // Dispatch custom event for HelpPopoverButton to listen to
+      window.dispatchEvent(new CustomEvent("menu-builder:toggle-help"));
+    },
   },
 
   // ─────────────────────────────────────────────────────────────

@@ -23,6 +23,7 @@ const KEY_MAP: Record<string, string> = {
   "↓": "arrowdown",
   "<": "<",
   ">": ">",
+  "?": "?",
   Space: " ",
   Enter: "enter",
   Escape: "escape",
@@ -138,9 +139,6 @@ export function useKeyboardShortcuts({
       for (const action of actions) {
         // Skip actions without keyboard shortcuts
         if (!action.kbd || action.kbd.length === 0) continue;
-
-        // Skip help action (no shortcut)
-        if (action.id === "help") continue;
 
         // Parse the shortcut
         const shortcut = parseKbd(action.kbd);
