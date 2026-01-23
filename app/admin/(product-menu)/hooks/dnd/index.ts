@@ -1,21 +1,27 @@
 /**
  * Multi-Select Drag-and-Drop Module
  *
- * Shared utilities and components for multi-select DnD operations.
+ * Provides DnD hooks for both flat (single-entity) and hierarchical (multi-entity) tables.
+ *
+ * Hook Selection Guide:
+ * - useSingleEntityDnd: For flat tables (AllLabelsTableView, CategoryTableView)
+ * - useMultiEntityDnd: For hierarchical tables (MenuTableView)
+ *
+ * Both hooks use useGroupedReorder internally for shared reorder logic.
  */
 
-// Types
+// Types (from centralized types directory)
 export type {
   MultiDragState,
   MultiDragClasses,
-  MultiDragGhostProps,
+  GroupedEntitiesGhostProps,
   DraggableEntity,
   GetDraggableEntitiesResult,
   DnDSelectionApi,
   PreviousSelectionState,
   DnDOperationType,
-} from "./types";
-export { INITIAL_MULTI_DRAG_STATE, getDnDOperationType } from "./types";
+} from "../../types/dnd";
+export { INITIAL_MULTI_DRAG_STATE, getDnDOperationType } from "../../types/dnd";
 
 // Validation utilities
 export {
@@ -27,9 +33,39 @@ export {
   calculateMultiReorder,
 } from "./multiSelectValidation";
 
-// Components
-export { MultiDragGhost, GhostRowContent } from "./MultiDragGhost";
+// DnD Eligibility
+export { useDnDEligibility } from "./useDnDEligibility";
+export type { DnDEligibility } from "./useDnDEligibility";
 
-// Hooks
-export { useMultiDragGhost } from "./useMultiDragGhost";
+// Core reorder hook (internal, typically not used directly)
+export { useGroupedReorder } from "./useGroupedReorder";
+export type {
+  GroupedReorderState,
+  GroupedReorderHandlers,
+  GroupedReorderClasses,
+  UseGroupedReorderOptions,
+} from "./useGroupedReorder";
+
+// Single-entity DnD hook (for flat tables)
+export { useSingleEntityDnd } from "./useSingleEntityDnd";
+export type { UseSingleEntityDndOptions } from "./useSingleEntityDnd";
+
+// Multi-entity DnD hook (for hierarchical tables)
+export { useMultiEntityDnd } from "./useMultiEntityDnd";
+export type {
+  UseMultiEntityDndOptions,
+  UseMultiEntityDndReturn,
+  MultiEntityDragState,
+  MultiEntityDragClasses,
+  MultiEntityDragHandlers,
+  MultiEntityReorderFunctions,
+  DraggedChildInfo,
+  DropType,
+  EntityLevel,
+} from "./useMultiEntityDnd";
+
+// Ghost image hook
+export { useGroupedEntitiesGhost } from "./useGroupedEntitiesGhost";
+
+// Utility hooks
 export { useThrottledCallback } from "./useThrottledCallback";

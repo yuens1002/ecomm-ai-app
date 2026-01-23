@@ -32,6 +32,8 @@ export type DnDEligibility = {
   isMultiDrag: boolean;
   /** Number of items being dragged */
   dragCount: number;
+  /** Whether there are valid drop targets (false when all items of kind are selected) */
+  hasValidTargets: boolean;
 };
 
 /**
@@ -43,6 +45,7 @@ const INELIGIBLE: DnDEligibility = {
   draggedEntities: [],
   isMultiDrag: false,
   dragCount: 0,
+  hasValidTargets: false,
 };
 
 type UseDnDEligibilityOptions = {
@@ -119,12 +122,18 @@ export function useDnDEligibility({
       return INELIGIBLE;
     }
 
+    // Check if there are valid drop targets
+    // If all items of the selected kind are being dragged, there's nowhere to drop
+    const totalOfKind = registry.keysByKind[selectedKind]?.length ?? 0;
+    const hasValidTargets = draggedEntities.length < totalOfKind;
+
     return {
       canDrag: true,
       dragKind: selectedKind,
       draggedEntities,
       isMultiDrag: draggedEntities.length > 1,
       dragCount: draggedEntities.length,
+      hasValidTargets,
     };
   }, [actionableRoots, selectedKind, isSameKind, registry]);
 }
@@ -144,8 +153,8 @@ export function isDragHandleEnabled(
   eligibility: DnDEligibility,
   checkboxState: "checked" | "indeterminate" | "unchecked"
 ): boolean {
-  // Must have valid selection for DnD
-  if (!eligibility.canDrag) {
+  // Must have valid selection for DnD AND valid drop targets
+  if (!eligibility.canDrag || !eligibility.hasValidTargets) {
     return false;
   }
 

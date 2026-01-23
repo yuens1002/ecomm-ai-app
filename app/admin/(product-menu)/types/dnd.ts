@@ -1,10 +1,10 @@
 /**
- * Multi-Select Drag-and-Drop Types
+ * Drag-and-Drop Types
  *
- * Shared types for multi-select DnD operations across table views.
+ * Shared types for DnD operations across table views.
  */
 
-import type { IdentityRegistry } from "../../types/identity-registry";
+import type { IdentityRegistry } from "./identity-registry";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SELECTION API FOR DND
@@ -182,13 +182,13 @@ export const INITIAL_MULTI_DRAG_STATE: MultiDragState = {
 };
 
 /**
- * Props for the MultiDragGhost component.
+ * Props for the GroupedEntitiesGhost component.
  */
-export type MultiDragGhostProps = {
+export type GroupedEntitiesGhostProps = {
   /** Number of items being dragged */
   count: number;
   /** Content to render in the ghost (typically cloned row content) */
   children: React.ReactNode;
-  /** Optional custom ID for the ghost element (default: "multi-drag-ghost") */
+  /** Optional custom ID for the ghost element (default: "grouped-entities-ghost") */
   ghostId?: string;
 };

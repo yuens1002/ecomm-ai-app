@@ -37,10 +37,10 @@ import { useFlattenedMenuRows } from "../../../hooks/useFlattenedMenuRows";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { buildMenuRegistry } from "../../../hooks/useIdentityRegistry";
 import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
-import { useMenuTableDragReorder } from "../../../hooks/useMenuTableDragReorder";
+import { useMultiEntityDnd } from "../../../hooks/dnd/useMultiEntityDnd";
 import { useDnDEligibility } from "../../../hooks/dnd/useDnDEligibility";
-import { MultiDragGhost, GhostRowContent } from "../../../hooks/dnd/MultiDragGhost";
-import { useMultiDragGhost } from "../../../hooks/dnd/useMultiDragGhost";
+import { GroupedEntitiesGhost, GhostRowContent } from "./shared/table/GroupedEntitiesGhost";
+import { useGroupedEntitiesGhost } from "../../../hooks/dnd/useGroupedEntitiesGhost";
 import { DragHandleCell } from "./shared/cells/DragHandleCell";
 
 // Column order: name (with inline checkbox), categories, visibility, products, dragHandle
@@ -136,12 +136,6 @@ export function MenuTableView() {
     isSameKind,
     registry,
   });
-
-  // Build set of eligible entity IDs for row-specific drag handle state
-  const eligibleEntityIds = useMemo(
-    () => new Set(eligibility.draggedEntities.map((e) => e.entityId)),
-    [eligibility.draggedEntities]
-  );
 
   // Debounced expand/collapse to prevent rapid toggling
   const EXPAND_DEBOUNCE_MS = 500;
@@ -279,7 +273,7 @@ export function MenuTableView() {
 
   // Hierarchical drag-and-drop with expand on enter, collapse on leave
   // Uses eligibility computed from selection (action-bar pattern)
-  const { getDragHandlers: getBaseDragHandlers, getDragClasses, dragState } = useMenuTableDragReorder({
+  const { getDragHandlers: getBaseDragHandlers, getDragClasses, dragState, eligibleEntityIds } = useMultiEntityDnd({
     rows,
     labels: visibleLabels,
     reorderFunctions: {
@@ -298,7 +292,7 @@ export function MenuTableView() {
 
   // Multi-drag ghost for count badge
   const GHOST_ID = "menu-view-drag-ghost";
-  const { setGhostImage } = useMultiDragGhost(GHOST_ID);
+  const { setGhostImage } = useGroupedEntitiesGhost(GHOST_ID);
 
   // Get first selected item for ghost content
   // Uses actionableRoots (pre-computed from selection) so ghost is ready BEFORE drag starts
@@ -642,13 +636,13 @@ export function MenuTableView() {
       {/* Multi-drag ghost with count badge - pre-rendered based on actionableRoots
           so it exists BEFORE drag starts (setDragImage must be called synchronously) */}
       {actionableRoots.length > 1 && firstSelectedItem && (
-        <MultiDragGhost
+        <GroupedEntitiesGhost
           key={`ghost-${actionableRoots.length}-${firstSelectedItem.id}`}
           ghostId={GHOST_ID}
           count={actionableRoots.length}
         >
           <GhostRowContent name={firstSelectedItem.name} />
-        </MultiDragGhost>
+        </GroupedEntitiesGhost>
       )}
     </>
   );

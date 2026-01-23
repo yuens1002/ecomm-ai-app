@@ -15,14 +15,14 @@ import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
-import { useDragReorder } from "../../../hooks/useDragReorder";
+import { useSingleEntityDnd } from "../../../hooks/dnd/useSingleEntityDnd";
 import { useDnDEligibility } from "../../../hooks/dnd/useDnDEligibility";
 import { buildFlatRegistry } from "../../../hooks/useIdentityRegistry";
 import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
 import { createKey } from "../../../types/identity-registry";
 import { usePersistColumnSort } from "../../../hooks/usePersistColumnSort";
-import { MultiDragGhost, GhostRowContent } from "../../../hooks/dnd/MultiDragGhost";
-import { useMultiDragGhost } from "../../../hooks/dnd/useMultiDragGhost";
+import { GroupedEntitiesGhost, GhostRowContent } from "./shared/table/GroupedEntitiesGhost";
+import { useGroupedEntitiesGhost } from "../../../hooks/dnd/useGroupedEntitiesGhost";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuProduct } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
@@ -131,12 +131,6 @@ export function CategoryTableView() {
     registry,
   });
 
-  // Build set of eligible entity IDs for row-specific drag handle state
-  const eligibleEntityIds = useMemo(
-    () => new Set(eligibility.draggedEntities.map((e) => e.entityId)),
-    [eligibility.draggedEntities]
-  );
-
   // Unified click handler (no navigation for products in category view)
   const { handleClick } = useRowClickHandler(registry, {
     onToggle,
@@ -165,7 +159,7 @@ export function CategoryTableView() {
   );
 
   // Drag & Drop handlers with multi-select support - reset sorting when manual reorder occurs
-  const { getDragHandlers: getBaseDragHandlers, getDragClasses, dragState } = useDragReorder({
+  const { getDragHandlers: getBaseDragHandlers, getDragClasses, eligibleEntityIds } = useSingleEntityDnd({
     items: categoryProducts,
     onReorder: async (ids) => {
       if (currentCategoryId) {
@@ -180,23 +174,28 @@ export function CategoryTableView() {
       setSorting([]);
     },
     eligibility,
-    getIdFromKey: (key) => key.split(":")[1],
   });
 
   // Multi-drag ghost for count badge (unique ID for this view)
   const GHOST_ID = "category-view-drag-ghost";
-  const { setGhostImage } = useMultiDragGhost(GHOST_ID);
+  const { setGhostImage } = useGroupedEntitiesGhost(GHOST_ID);
 
-  // Get first dragged product for ghost content (use dragState.draggedIds for correct count)
-  const firstDraggedProduct = useMemo(() => {
-    if (dragState.draggedIds.length <= 1) return null;
+  // Pre-compute first selected product for ghost content using actionableRoots
+  // (must exist BEFORE drag starts for synchronous setDragImage call)
+  const firstSelectedProduct = useMemo(() => {
+    if (actionableRoots.length <= 1) return null;
+    // Extract entity IDs from actionable root keys (format: "product:id")
+    const actionableEntityIds = new Set(
+      actionableRoots.map((key) => key.split(":")[1])
+    );
+    // Find first product matching an actionable entity
     for (const product of categoryProducts) {
-      if (dragState.draggedIds.includes(product.id)) {
+      if (actionableEntityIds.has(product.id)) {
         return product;
       }
     }
     return null;
-  }, [dragState.draggedIds, categoryProducts]);
+  }, [actionableRoots, categoryProducts]);
 
   // Wrap drag handlers to set ghost image for multi-select
   const getDragHandlers = useCallback(
@@ -399,15 +398,15 @@ export function CategoryTableView() {
         </TableBody>
       </TableViewWrapper>
 
-      {/* Multi-drag ghost with count badge - render when multiple items dragged */}
-      {dragState.dragCount > 1 && firstDraggedProduct && (
-        <MultiDragGhost
-          key={`ghost-${dragState.dragCount}-${firstDraggedProduct.id}`}
+      {/* Multi-drag ghost with count badge - pre-rendered based on selection */}
+      {actionableRoots.length > 1 && firstSelectedProduct && (
+        <GroupedEntitiesGhost
+          key={`ghost-${actionableRoots.length}-${firstSelectedProduct.id}`}
           ghostId={GHOST_ID}
-          count={dragState.dragCount}
+          count={actionableRoots.length}
         >
-          <GhostRowContent name={firstDraggedProduct.name} />
-        </MultiDragGhost>
+          <GhostRowContent name={firstSelectedProduct.name} />
+        </GroupedEntitiesGhost>
       )}
     </>
   );

@@ -15,7 +15,7 @@ import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
-import { useDragReorder } from "../../../hooks/useDragReorder";
+import { useSingleEntityDnd } from "../../../hooks/dnd/useSingleEntityDnd";
 import { useDnDEligibility } from "../../../hooks/dnd/useDnDEligibility";
 import { buildFlatRegistry } from "../../../hooks/useIdentityRegistry";
 import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
@@ -136,12 +136,6 @@ export function LabelTableView() {
     registry,
   });
 
-  // Build set of eligible entity IDs for row-specific drag handle state
-  const eligibleEntityIds = useMemo(
-    () => new Set(eligibility.draggedEntities.map((e) => e.entityId)),
-    [eligibility.draggedEntities]
-  );
-
   // Unified click handler
   const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
     onToggle,
@@ -171,9 +165,9 @@ export function LabelTableView() {
   );
 
   // Drag & Drop handlers - reset sorting when manual reorder occurs
-  const { getDragHandlers, getDragClasses } = useDragReorder({
+  const { getDragHandlers, getDragClasses, eligibleEntityIds } = useSingleEntityDnd({
     items: labelCategories,
-    onReorder: async (ids) => {
+    onReorder: async (ids: string[]) => {
       if (currentLabelId) {
         // Capture old order before mutation (labelCategories still has old order)
         const previousIds = labelCategories.map((c) => c.id);
@@ -186,7 +180,6 @@ export function LabelTableView() {
       setSorting([]);
     },
     eligibility,
-    getIdFromKey: (key) => key.split(":")[1],
   });
 
   // Column definitions - name and addedOrder are sortable

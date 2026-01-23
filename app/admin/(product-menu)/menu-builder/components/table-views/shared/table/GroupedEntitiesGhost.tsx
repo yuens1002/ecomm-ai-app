@@ -3,10 +3,10 @@
 import { Badge } from "@/components/ui/badge";
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
-import type { MultiDragGhostProps } from "./types";
+import type { GroupedEntitiesGhostProps } from "../../../../../types/dnd";
 
 /**
- * Ghost element for multi-item drag operations.
+ * Ghost element for grouped entity drag operations.
  *
  * Renders the primary item's content with a badge showing the count
  * when dragging multiple items. Uses a portal to render off-screen
@@ -14,16 +14,16 @@ import type { MultiDragGhostProps } from "./types";
  *
  * @example
  * ```tsx
- * {dragState.isDragging && (
- *   <MultiDragGhost count={dragState.dragCount}>
- *     <RowContent item={primaryDragItem} />
- *   </MultiDragGhost>
+ * {actionableRoots.length > 1 && firstSelectedItem && (
+ *   <GroupedEntitiesGhost count={actionableRoots.length}>
+ *     <GhostRowContent name={firstSelectedItem.name} />
+ *   </GroupedEntitiesGhost>
  * )}
  * ```
  */
-const DEFAULT_GHOST_ID = "multi-drag-ghost";
+const DEFAULT_GHOST_ID = "grouped-entities-ghost";
 
-export function MultiDragGhost({ count, children, ghostId = DEFAULT_GHOST_ID }: MultiDragGhostProps) {
+export function GroupedEntitiesGhost({ count, children, ghostId = DEFAULT_GHOST_ID }: GroupedEntitiesGhostProps) {
   const [mounted, setMounted] = useState(false);
 
   // Only render portal after mount (SSR safety)

@@ -1,43 +1,28 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { calculateMultiReorder, isInDragSet as checkIsInDragSet } from "./dnd/multiSelectValidation";
-import { useThrottledCallback } from "./dnd/useThrottledCallback";
-import type { DnDEligibility } from "./dnd/useDnDEligibility";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { calculateMultiReorder, isInDragSet as checkIsInDragSet } from "./multiSelectValidation";
+import { useThrottledCallback } from "./useThrottledCallback";
+import type { DnDEligibility } from "./useDnDEligibility";
 
 /** Throttle delay for dragOver events (ms) */
 const DRAG_OVER_THROTTLE_MS = 50;
 
-export type UseDragReorderOptions<TItem extends { id: string }> = {
-  /** List of items that can be reordered */
-  items: TItem[];
-  /** Callback to persist the new order (receives array of ids) */
-  onReorder: (ids: string[]) => Promise<void>;
-  /** Optional callback fired after successful reorder (useful for resetting sort state) */
-  onReorderComplete?: () => void;
-  /** DnD eligibility state from useDnDEligibility hook */
-  eligibility: DnDEligibility;
-  /** Function to convert key to item id (for extracting entityId from key) */
-  getIdFromKey?: (key: string) => string;
-};
-
-export type DragHandlers = {
-  onDragStart: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDragLeave: () => void;
-  onDrop: () => void;
-  onDragEnd: () => void;
-};
-
-/** State tracked during drag operations */
-type DragState = {
+/**
+ * Drag state tracked during reorder operations.
+ */
+export type GroupedReorderState = {
+  /** ID of the primary drag item */
   dragId: string | null;
+  /** All IDs being dragged */
   draggedIds: readonly string[];
+  /** ID of the current drop target */
   dragOverId: string | null;
+  /** Drop position relative to target */
   dropPosition: "before" | "after";
 };
 
-const INITIAL_DRAG_STATE: DragState = {
+const INITIAL_STATE: GroupedReorderState = {
   dragId: null,
   draggedIds: [],
   dragOverId: null,
@@ -45,36 +30,76 @@ const INITIAL_DRAG_STATE: DragState = {
 };
 
 /**
- * Hook for managing drag-and-drop row reordering in flat tables.
+ * Drag handlers returned by the hook.
+ */
+export type GroupedReorderHandlers = {
+  onDragStart: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: () => void;
+  onDragEnd: () => void;
+};
+
+/**
+ * CSS class state for a row during drag operations.
+ */
+export type GroupedReorderClasses = {
+  /** This row is the primary drag item */
+  isDragging: boolean;
+  /** This row is part of the group being dragged */
+  isInDragSet: boolean;
+  /** Currently being hovered as a drop target */
+  isDragOver: boolean;
+  /** Drop position relative to this row */
+  dropPosition: "before" | "after" | null;
+};
+
+export type UseGroupedReorderOptions<TItem extends { id: string }> = {
+  /** List of items that can be reordered */
+  items: TItem[];
+  /** Callback to persist the new order (receives array of ids) */
+  onReorder: (ids: string[]) => Promise<void>;
+  /** Optional callback fired after successful reorder */
+  onReorderComplete?: () => void;
+  /** DnD eligibility state from useDnDEligibility hook */
+  eligibility: DnDEligibility;
+};
+
+/**
+ * Core hook for grouped entity reorder operations.
  *
- * Follows the action-bar pattern: eligibility is pre-computed from selection,
- * DnD reacts to this state rather than managing selection.
+ * Provides the shared reorder logic used by both single-entity and
+ * multi-entity DnD hooks. Handles:
+ * - Drag state management
+ * - Throttled drag-over for performance
+ * - Drop validation (can't drop on items in drag set)
+ * - Multi-item reorder positioning via calculateMultiReorder
+ * - Visual feedback classes
  *
- * Key behaviors:
- * - Drag only initiates when eligibility.canDrag is true
- * - Uses eligibility.draggedEntities to determine what to drag
- * - Selection state is never modified by DnD
+ * Does NOT handle:
+ * - Ghost rendering (use GroupedEntitiesGhost + useGroupedEntitiesGhost)
+ * - Cross-boundary moves (use useMultiEntityDnd)
+ * - Auto-expand/collapse (use useMultiEntityDnd)
  *
  * @example
  * ```tsx
- * const eligibility = useDnDEligibility({ actionableRoots, selectedKind, isSameKind, registry });
- *
- * const { dragState, getDragHandlers, getDragClasses } = useDragReorder({
+ * const { dragState, getDragHandlers, getDragClasses, clearDragState } = useGroupedReorder({
  *   items: labels,
- *   onReorder: async (ids) => await reorderLabels(ids),
+ *   onReorder: reorderLabels,
  *   eligibility,
- *   getIdFromKey: (key) => key.split(':')[1],
  * });
  * ```
  */
-export function useDragReorder<TItem extends { id: string }>({
+export function useGroupedReorder<TItem extends { id: string }>({
   items,
   onReorder,
   onReorderComplete,
   eligibility,
-  getIdFromKey: _getIdFromKey = (key) => key,
-}: UseDragReorderOptions<TItem>) {
-  const [dragState, setDragState] = useState<DragState>(INITIAL_DRAG_STATE);
+}: UseGroupedReorderOptions<TItem>) {
+  const [dragState, setDragState] = useState<GroupedReorderState>(INITIAL_STATE);
+
+  // Track if a drop is in progress (prevents dragEnd from interfering during async drop)
+  const dropInProgressRef = useRef<boolean>(false);
 
   // Extract entity IDs from eligibility for drag operations
   const eligibleEntityIds = useMemo(
@@ -82,15 +107,25 @@ export function useDragReorder<TItem extends { id: string }>({
     [eligibility.draggedEntities]
   );
 
+  // Memoize draggedIds set for O(1) lookup in throttled handler
+  const draggedIdsSet = useMemo(() => new Set(dragState.draggedIds), [dragState.draggedIds]);
+
+  /**
+   * Clear all drag state.
+   */
+  const clearDragState = useCallback(() => {
+    dropInProgressRef.current = false;
+    setDragState(INITIAL_STATE);
+  }, []);
+
   /**
    * Handle drag start.
-   * Only initiates if eligibility.canDrag is true.
-   * Uses eligibility.draggedEntities as the items to drag.
+   * Only initiates if eligibility.canDrag is true and there are valid targets.
    */
   const handleDragStart = useCallback(
     (itemId: string, e: React.DragEvent) => {
-      // Rule: No drag if not eligible
-      if (!eligibility.canDrag) {
+      // Rule: No drag if not eligible or no valid targets
+      if (!eligibility.canDrag || !eligibility.hasValidTargets) {
         e.preventDefault();
         e.dataTransfer.effectAllowed = "none";
         return;
@@ -111,11 +146,8 @@ export function useDragReorder<TItem extends { id: string }>({
         dropPosition: "before",
       });
     },
-    [eligibility.canDrag, eligibleEntityIds]
+    [eligibility.canDrag, eligibility.hasValidTargets, eligibleEntityIds]
   );
-
-  // Memoize draggedIds set for O(1) lookup in throttled handler
-  const draggedIdsSet = useMemo(() => new Set(dragState.draggedIds), [dragState.draggedIds]);
 
   // Core drag over logic (called by throttled handler)
   const updateDragOver = useCallback(
@@ -155,13 +187,7 @@ export function useDragReorder<TItem extends { id: string }>({
   );
 
   const handleDragLeave = useCallback(() => {
-    // Don't clear drag-over state on leave - this prevents border flicker
-    // when dragging to the bottom edge of the last row. The state will be
-    // updated by the next onDragOver event, or cleared on drop/end.
-  }, []);
-
-  const clearDragState = useCallback(() => {
-    setDragState(INITIAL_DRAG_STATE);
+    // Don't clear drag-over state on leave - prevents border flicker
   }, []);
 
   const handleDrop = useCallback(
@@ -179,20 +205,27 @@ export function useDragReorder<TItem extends { id: string }>({
         return;
       }
 
-      // Use multi-reorder utility for both single and multi-item drags
+      // Mark drop as in progress
+      dropInProgressRef.current = true;
+
+      // Calculate new order using multi-reorder utility
       const newOrder = calculateMultiReorder(items, draggedIds as string[], targetId, dropPosition);
 
       await onReorder(newOrder);
 
       clearDragState();
 
-      // Notify parent that reorder is complete (e.g., to reset column sorting)
+      // Notify parent that reorder is complete
       onReorderComplete?.();
     },
     [dragState, items, onReorder, onReorderComplete, clearDragState]
   );
 
   const handleDragEnd = useCallback(() => {
+    // Skip if drop is in progress (async operation still running)
+    if (dropInProgressRef.current) {
+      return;
+    }
     clearDragState();
   }, [clearDragState]);
 
@@ -200,7 +233,7 @@ export function useDragReorder<TItem extends { id: string }>({
    * Get drag event handlers for a specific item.
    */
   const getDragHandlers = useCallback(
-    (itemId: string): DragHandlers => ({
+    (itemId: string): GroupedReorderHandlers => ({
       onDragStart: (e: React.DragEvent) => handleDragStart(itemId, e),
       onDragOver: (e: React.DragEvent) => handleDragOver(e, itemId),
       onDragLeave: handleDragLeave,
@@ -214,35 +247,27 @@ export function useDragReorder<TItem extends { id: string }>({
    * Get CSS classes for drag state styling.
    */
   const getDragClasses = useCallback(
-    (itemId: string) => {
+    (itemId: string): GroupedReorderClasses => {
       const { dragId, draggedIds, dragOverId, dropPosition } = dragState;
 
       const isDragging = dragId === itemId;
       const isInDragSet = checkIsInDragSet(itemId, draggedIds);
       const isDragOver = dragOverId === itemId && !isInDragSet;
-      const borderClass =
-        isDragOver && dropPosition === "after"
-          ? "border-b-2 border-b-primary"
-          : "border-t-2 border-t-primary";
 
       return {
         isDragging,
         isInDragSet,
         isDragOver,
         dropPosition: isDragOver ? dropPosition : null,
-        className: [isInDragSet && "opacity-50", isDragOver && borderClass].filter(Boolean).join(" "),
       };
     },
     [dragState]
   );
 
   return {
-    /** Current drag state including multi-select info */
+    /** Current drag state */
     dragState: {
-      dragId: dragState.dragId,
-      draggedIds: dragState.draggedIds,
-      dragOverId: dragState.dragOverId,
-      dropPosition: dragState.dropPosition,
+      ...dragState,
       isMultiDrag: dragState.draggedIds.length > 1,
       dragCount: dragState.draggedIds.length,
     },
@@ -250,5 +275,9 @@ export function useDragReorder<TItem extends { id: string }>({
     getDragHandlers,
     /** Get drag-related CSS classes for a specific item id */
     getDragClasses,
+    /** Manually clear drag state (useful for external control) */
+    clearDragState,
+    /** Set of entity IDs eligible for dragging */
+    eligibleEntityIds: new Set(eligibleEntityIds),
   };
 }

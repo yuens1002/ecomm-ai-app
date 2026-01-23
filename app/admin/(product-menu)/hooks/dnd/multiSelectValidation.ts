@@ -7,7 +7,7 @@
 
 import type { IdentityRegistry } from "../../types/identity-registry";
 import { getEntityIdFromKey } from "../../types/identity-registry";
-import type { DraggableEntity, GetDraggableEntitiesResult } from "./types";
+import type { DraggableEntity, GetDraggableEntitiesResult } from "../../types/dnd";
 
 /**
  * Build draggable entities from pre-computed actionable roots using registry.

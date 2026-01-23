@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.66.16 - 2026-01-23
+
+- **Refactored DnD hooks architecture**: Unified hooks with shared `useGroupedReorder` core
+- **Added `useSingleEntityDnd`**: New hook for flat tables (AllLabels, Category, Label views)
+- **Added `useMultiEntityDnd`**: New hook for hierarchical tables with cross-boundary moves
+- **Renamed `MultiDragGhost` → `GroupedEntitiesGhost`**: Moved to table components directory
+- **Centralized DnD types**: Moved to `types/dnd.ts` for better organization
+- **Fixed theme-aware flash animations**: Auto-expand and drop-target flash now adapt to light/dark mode
+- **Deleted legacy hooks**: Removed `useDragReorder`, `useMenuTableDragReorder`, `useMultiDragGhost`
+
 ## 0.66.15 - 2026-01-23
 
 - **Fixed multi-DnD selection order**: Dragged items now preserve visual order (not selection order) when dropped

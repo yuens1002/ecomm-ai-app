@@ -10,14 +10,14 @@ import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
-import { useDragReorder } from "../../../hooks/useDragReorder";
+import { useSingleEntityDnd } from "../../../hooks/dnd/useSingleEntityDnd";
 import { useDnDEligibility } from "../../../hooks/dnd/useDnDEligibility";
 import { buildFlatRegistry } from "../../../hooks/useIdentityRegistry";
 import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
 import { createKey } from "../../../types/identity-registry";
 import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
-import { MultiDragGhost, GhostRowContent } from "../../../hooks/dnd/MultiDragGhost";
-import { useMultiDragGhost } from "../../../hooks/dnd/useMultiDragGhost";
+import { GroupedEntitiesGhost, GhostRowContent } from "./shared/table/GroupedEntitiesGhost";
+import { useGroupedEntitiesGhost } from "../../../hooks/dnd/useGroupedEntitiesGhost";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuLabel } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
@@ -76,12 +76,6 @@ export function AllLabelsTableView() {
     registry,
   });
 
-  // Build set of eligible entity IDs for row-specific drag handle state
-  const eligibleEntityIds = useMemo(
-    () => new Set(eligibility.draggedEntities.map((e) => e.entityId)),
-    [eligibility.draggedEntities]
-  );
-
   // Unified click handler
   const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
     onToggle,
@@ -96,29 +90,34 @@ export function AllLabelsTableView() {
   });
 
   // Drag & Drop handlers using eligibility (action-bar pattern)
-  const { getDragHandlers: getBaseDragHandlers, getDragClasses, dragState } = useDragReorder({
+  const { getDragHandlers: getBaseDragHandlers, getDragClasses, eligibleEntityIds } = useSingleEntityDnd({
     items: labels,
     onReorder: async (ids) => {
       await reorderLabels(ids);
     },
     eligibility,
-    getIdFromKey: (key) => key.split(":")[1],
   });
 
   // Multi-drag ghost for count badge (unique ID for this view)
   const GHOST_ID = "all-labels-drag-ghost";
-  const { setGhostImage } = useMultiDragGhost(GHOST_ID);
+  const { setGhostImage } = useGroupedEntitiesGhost(GHOST_ID);
 
-  // Get first dragged label for ghost content (use dragState.draggedIds for correct count)
-  const firstDraggedLabel = useMemo(() => {
-    if (dragState.draggedIds.length <= 1) return null;
+  // Pre-compute first selected label for ghost content using actionableRoots
+  // (must exist BEFORE drag starts for synchronous setDragImage call)
+  const firstSelectedLabel = useMemo(() => {
+    if (actionableRoots.length <= 1) return null;
+    // Extract entity IDs from actionable root keys (format: "label:id")
+    const actionableEntityIds = new Set(
+      actionableRoots.map((key) => key.split(":")[1])
+    );
+    // Find first label matching an actionable entity
     for (const label of labels) {
-      if (dragState.draggedIds.includes(label.id)) {
+      if (actionableEntityIds.has(label.id)) {
         return label;
       }
     }
     return null;
-  }, [dragState.draggedIds, labels]);
+  }, [actionableRoots, labels]);
 
   // Wrap drag handlers to set ghost image for multi-select
   const getDragHandlers = useCallback(
@@ -350,15 +349,15 @@ export function AllLabelsTableView() {
         </TableBody>
       </TableViewWrapper>
 
-      {/* Multi-drag ghost with count badge - render when multiple items dragged */}
-      {dragState.dragCount > 1 && firstDraggedLabel && (
-        <MultiDragGhost
-          key={`ghost-${dragState.dragCount}-${firstDraggedLabel.id}`}
+      {/* Multi-drag ghost with count badge - pre-rendered based on selection */}
+      {actionableRoots.length > 1 && firstSelectedLabel && (
+        <GroupedEntitiesGhost
+          key={`ghost-${actionableRoots.length}-${firstSelectedLabel.id}`}
           ghostId={GHOST_ID}
-          count={dragState.dragCount}
+          count={actionableRoots.length}
         >
-          <GhostRowContent name={firstDraggedLabel.name} />
-        </MultiDragGhost>
+          <GhostRowContent name={firstSelectedLabel.name} />
+        </GroupedEntitiesGhost>
       )}
     </>
   );

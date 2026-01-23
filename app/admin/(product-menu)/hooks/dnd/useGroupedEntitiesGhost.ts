@@ -2,19 +2,19 @@
 
 import { useCallback, useEffect, useRef } from "react";
 
-const DEFAULT_GHOST_ID = "multi-drag-ghost";
+const DEFAULT_GHOST_ID = "grouped-entities-ghost";
 
 /**
- * Hook for setting up custom drag ghost images.
+ * Hook for setting up custom drag ghost images for grouped entity operations.
  *
- * Works with the MultiDragGhost component to display a custom
+ * Works with the GroupedEntitiesGhost component to display a custom
  * drag image with a count badge for multi-select operations.
  *
- * @param ghostId - Optional custom ID for the ghost element (must match MultiDragGhost ghostId prop)
+ * @param ghostId - Optional custom ID for the ghost element (must match GroupedEntitiesGhost ghostId prop)
  *
  * @example
  * ```tsx
- * const { setGhostImage } = useMultiDragGhost("menu-view-ghost");
+ * const { setGhostImage } = useGroupedEntitiesGhost("menu-view-ghost");
  *
  * // In drag start handler:
  * onDragStart={(e) => {
@@ -23,12 +23,12 @@ const DEFAULT_GHOST_ID = "multi-drag-ghost";
  * }}
  *
  * // Render ghost (with matching ghostId):
- * <MultiDragGhost ghostId="menu-view-ghost" count={dragCount}>
+ * <GroupedEntitiesGhost ghostId="menu-view-ghost" count={dragCount}>
  *   <RowContent />
- * </MultiDragGhost>
+ * </GroupedEntitiesGhost>
  * ```
  */
-export function useMultiDragGhost(ghostId: string = DEFAULT_GHOST_ID) {
+export function useGroupedEntitiesGhost(ghostId: string = DEFAULT_GHOST_ID) {
   const ghostRef = useRef<HTMLElement | null>(null);
 
   // Update ref to ghost container after render

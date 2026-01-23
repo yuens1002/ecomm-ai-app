@@ -26,7 +26,7 @@ import {
   validateMultiDrop,
   calculateMultiReorder,
 } from "../multiSelectValidation";
-import { getDnDOperationType } from "../types";
+import { getDnDOperationType } from "../../../types/dnd";
 import { isDragHandleEnabled, isDragHandleAlwaysVisible } from "../useDnDEligibility";
 import type { DnDEligibility } from "../useDnDEligibility";
 import type { IdentityRegistry, RowIdentity } from "../../../types/identity-registry";
@@ -1077,6 +1077,7 @@ describe("useDnDEligibility helper functions", () => {
       draggedEntities: [{ key: "label:L1", entityId: "L1", parentKey: null }],
       isMultiDrag: false,
       dragCount: 1,
+      hasValidTargets: true,
     };
 
     const INELIGIBLE: DnDEligibility = {
@@ -1085,6 +1086,7 @@ describe("useDnDEligibility helper functions", () => {
       draggedEntities: [],
       isMultiDrag: false,
       dragCount: 0,
+      hasValidTargets: false,
     };
 
     it("should return true when eligible and checkbox is checked", () => {
@@ -1131,6 +1133,7 @@ describe("useDnDEligibility helper functions", () => {
       draggedEntities: [{ key: "label:L1", entityId: "L1", parentKey: null }],
       isMultiDrag: false,
       dragCount: 1,
+      hasValidTargets: true,
     };
 
     const INELIGIBLE: DnDEligibility = {
@@ -1139,6 +1142,7 @@ describe("useDnDEligibility helper functions", () => {
       draggedEntities: [],
       isMultiDrag: false,
       dragCount: 0,
+      hasValidTargets: false,
     };
 
     it("Scenario: checked row with eligible selection - visible and enabled", () => {
@@ -1200,6 +1204,7 @@ describe("DnDEligibility object shape", () => {
         draggedEntities: [],
         isMultiDrag: false,
         dragCount: 0,
+        hasValidTargets: false,
       };
     }
 
@@ -1211,6 +1216,7 @@ describe("DnDEligibility object shape", () => {
         draggedEntities: [],
         isMultiDrag: false,
         dragCount: 0,
+        hasValidTargets: false,
       };
     }
 
@@ -1234,8 +1240,13 @@ describe("DnDEligibility object shape", () => {
         draggedEntities: [],
         isMultiDrag: false,
         dragCount: 0,
+        hasValidTargets: false,
       };
     }
+
+    // Check if there are valid targets
+    const totalOfKind = reg.keysByKind[selectedKind]?.length ?? 0;
+    const hasValidTargets = draggedEntities.length < totalOfKind;
 
     return {
       canDrag: true,
@@ -1243,6 +1254,7 @@ describe("DnDEligibility object shape", () => {
       draggedEntities,
       isMultiDrag: draggedEntities.length > 1,
       dragCount: draggedEntities.length,
+      hasValidTargets,
     };
   }
 
