@@ -17,24 +17,26 @@ This document outlines the implementation plan for two concurrent features:
 
 ### Keyboard Shortcut Mappings
 
+All shortcuts use `Ctrl+Shift` (Win/Linux) or `Cmd+Shift` (Mac) to avoid browser conflicts.
+
 | Action | Shortcut (Win/Linux) | Shortcut (Mac) | Views |
 |--------|---------------------|----------------|-------|
-| Clone | Ctrl+D | Cmd+D | menu, all-labels, all-categories |
-| Remove | Ctrl+Backspace | Cmd+Backspace | menu, label, category, all-labels, all-categories |
-| Visibility | Ctrl+Space | Cmd+Space | all-labels, all-categories |
-| Expand All | Ctrl+Down | Cmd+Down | menu |
-| Collapse All | Ctrl+Up | Cmd+Up | menu |
-| Undo | Ctrl+Z | Cmd+Z | all views |
-| Redo | Ctrl+Shift+Z | Cmd+Shift+Z | all views |
-| New Label | Ctrl+N | Cmd+N | menu, all-labels |
-| New Category | Ctrl+N | Cmd+N | all-categories |
+| Clone | Ctrl+Shift+D | Cmd+Shift+D | menu, all-labels, all-categories |
+| Remove | Ctrl+Shift+Backspace | Cmd+Shift+Backspace | menu, label, category, all-labels, all-categories |
+| Visibility | Ctrl+Shift+Space | Cmd+Shift+Space | all-labels, all-categories |
+| Expand All | Ctrl+Shift+Down | Cmd+Shift+Down | menu |
+| Collapse All | Ctrl+Shift+Up | Cmd+Shift+Up | menu |
+| Undo | Ctrl+Shift+< | Cmd+Shift+< | all views |
+| Redo | Ctrl+Shift+> | Cmd+Shift+> | all views |
+| New Label | Ctrl+Shift+N | Cmd+Shift+N | menu, all-labels |
+| New Category | Ctrl+Shift+N | Cmd+Shift+N | all-categories |
 | Delete | Ctrl+Shift+Backspace | Cmd+Shift+Backspace | all-labels, all-categories |
 
 ### Implementation Steps
 
-#### Step 1: Update Visibility Shortcut
+#### Step 1: Update All Shortcuts to Use Shift
 **File:** `app/admin/(product-menu)/constants/action-bar/actions.ts`
-- Change `kbd: ["Space"]` to `kbd: [modKey, "Space"]` for visibility action
+- All shortcuts now use `[modKey, "Shift", "<key>"]` pattern to avoid browser conflicts
 
 #### Step 2: Create `useKeyboardShortcuts` Hook
 **File:** `app/admin/(product-menu)/hooks/useKeyboardShortcuts.ts`
@@ -291,7 +293,8 @@ delete: {
 | Delete undo behavior | Fully recreates item with all relationships |
 | Delete shortcut | `Ctrl+Shift+Backspace` / `Cmd+Shift+Backspace` |
 | Help content format | Bulleted text only (animated walkthroughs deferred) |
-| Visibility shortcut | Changed from `Space` to `Ctrl+Space` / `Cmd+Space` |
+| All shortcuts | Use `Ctrl+Shift` / `Cmd+Shift` prefix to avoid browser conflicts |
+| Undo/Redo shortcuts | `Ctrl+Shift+<` / `Ctrl+Shift+>` (avoids Ctrl+Z browser conflict) |
 
 ---
 
@@ -301,9 +304,10 @@ delete: {
 - [ ] All defined shortcuts execute their respective actions
 - [ ] Shortcuts don't fire when user is typing in inputs
 - [ ] Disabled actions don't respond to shortcuts
-- [ ] Mac uses Cmd, Windows/Linux uses Ctrl
-- [ ] Visibility uses Ctrl/Cmd+Space
-- [ ] Delete uses Ctrl/Cmd+Shift+Backspace
+- [ ] Mac uses Cmd+Shift, Windows/Linux uses Ctrl+Shift
+- [ ] Undo uses Ctrl/Cmd+Shift+<
+- [ ] Redo uses Ctrl/Cmd+Shift+>
+- [ ] No conflicts with browser shortcuts (all use Shift modifier)
 
 ### Help Button
 - [ ] Appears on all 5 views at end of right side

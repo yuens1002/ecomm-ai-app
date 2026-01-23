@@ -21,6 +21,8 @@ const KEY_MAP: Record<string, string> = {
   "⌫": "backspace",
   "↑": "arrowup",
   "↓": "arrowdown",
+  "<": "<",
+  ">": ">",
   Space: " ",
   Enter: "enter",
   Escape: "escape",
