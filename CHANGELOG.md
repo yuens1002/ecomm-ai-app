@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.66.19 - 2026-01-23
+
+- **Fixed DnD drop position accuracy**: Drop position now tracked synchronously via ref, bypassing throttle delay
+- **Fixed empty label expansion on drop**: Target label auto-expands after cross-boundary move to show moved category
+- **Intent-based cursor feedback**: Grab/not-allowed cursors only show on mousedown, not hover (drag handle icon indicates availability)
+- **Added flush to throttle hook**: `useThrottledCallback` now returns `{ throttled, flush }` for pending call execution
+
 ## 0.66.18 - 2026-01-23
 
 - **Fixed checkbox UI honesty**: Parent checkbox now shows "checked" only when explicitly selected, not when computed from all children being selected

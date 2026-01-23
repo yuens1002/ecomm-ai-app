@@ -425,7 +425,7 @@ export function useMultiEntityDnd({
     [rowsById, getDropInfo, getParentOwner, onExpandItem, onCollapseItem, clearExpandTimer]
   );
 
-  const throttledUpdateDragOver = useThrottledCallback(updateDragOver, DRAG_OVER_THROTTLE_MS);
+  const { throttled: throttledUpdateDragOver } = useThrottledCallback(updateDragOver, DRAG_OVER_THROTTLE_MS);
 
   const handleDragOver = useCallback(
     (e: React.DragEvent, targetId: string) => {
@@ -624,6 +624,13 @@ export function useMultiEntityDnd({
           if (targetLabelId) {
             const targetCategoryId = targetRow.level === "category" ? targetRow.id : null;
             await executeBatchCrossBoundaryMove(draggedChildren, targetLabelId, targetCategoryId, dropPosition);
+
+            // Expand target label after successful cross-boundary move
+            // This ensures the moved category is visible, especially for empty labels
+            const targetLabel = rowsById.get(targetLabelId);
+            if (targetLabel && !targetLabel.isExpanded && onExpandItem) {
+              onExpandItem(targetLabelId);
+            }
           }
         } else {
           await executeReorder(dragLevel, dragParentId, draggedIds, targetId, dropPosition);
@@ -635,7 +642,7 @@ export function useMultiEntityDnd({
       clearDragState(true);
       dropInProgressRef.current = false;
     },
-    [dragState, getDropInfo, getRow, clearDragState, executeBatchCrossBoundaryMove, executeReorder]
+    [dragState, getDropInfo, getRow, clearDragState, executeBatchCrossBoundaryMove, executeReorder, rowsById, onExpandItem]
   );
 
   const handleDragEnd = useCallback(() => {

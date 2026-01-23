@@ -90,6 +90,14 @@ type TableRowProps = Omit<
   /** Index for staggered cascade animation (0 = no delay, 1+ = incremental delay) */
   staggerIndex?: number;
   /**
+   * Whether this row can be dragged. Controls cursor on mousedown (intent):
+   * - true: cursor-grabbing on active (can drag)
+   * - false: cursor-not-allowed on active (can't drag)
+   * - undefined: no DnD context
+   * All states show cursor-pointer on hover; the drag handle icon indicates DnD availability.
+   */
+  isDraggable?: boolean;
+  /**
    * Called on single-click (delayed to distinguish from double-click).
    * Ignored if click target is an interactive element.
    */
@@ -124,6 +132,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       animated,
       layoutId,
       staggerIndex,
+      isDraggable,
       className,
       onRowClick,
       onRowDoubleClick,
@@ -196,8 +205,22 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       [onRowDoubleClick]
     );
 
+    // Cursor based on isDraggable prop:
+    // All states show pointer on hover - intent feedback only on mousedown (active)
+    // The drag handle icon already indicates DnD availability when lit up
+    // - undefined: default pointer (no DnD context)
+    // - true: pointer on hover, grabbing on active (can drag)
+    // - false: pointer on hover, not-allowed on active (can't drag)
+    const cursorClass =
+      isDraggable === undefined
+        ? "cursor-pointer"
+        : isDraggable
+          ? "cursor-pointer active:cursor-grabbing"
+          : "cursor-pointer active:cursor-not-allowed";
+
     const rowClassName = cn(
-      "group cursor-pointer h-10 hover:bg-muted/40",
+      "group h-10 hover:bg-muted/40",
+      cursorClass,
       // Left border: use !important to override TableBody's [&_tr:last-child]:border-0
       "!border-l-2",
       isSelected ? "border-l-primary bg-accent/50" : "border-l-transparent",

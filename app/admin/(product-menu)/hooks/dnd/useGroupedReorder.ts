@@ -101,6 +101,13 @@ export function useGroupedReorder<TItem extends { id: string }>({
   // Track if a drop is in progress (prevents dragEnd from interfering during async drop)
   const dropInProgressRef = useRef<boolean>(false);
 
+  // Track latest drop position synchronously (state updates are async)
+  // This ensures handleDrop always has the most recent position even if throttle is pending
+  const latestDropRef = useRef<{ targetId: string | null; position: "before" | "after" }>({
+    targetId: null,
+    position: "before",
+  });
+
   // Extract entity IDs from eligibility for drag operations
   const eligibleEntityIds = useMemo(
     () => eligibility.draggedEntities.map((e) => e.entityId),
@@ -115,6 +122,7 @@ export function useGroupedReorder<TItem extends { id: string }>({
    */
   const clearDragState = useCallback(() => {
     dropInProgressRef.current = false;
+    latestDropRef.current = { targetId: null, position: "before" };
     setDragState(INITIAL_STATE);
   }, []);
 
@@ -149,30 +157,23 @@ export function useGroupedReorder<TItem extends { id: string }>({
     [eligibility.canDrag, eligibility.hasValidTargets, eligibleEntityIds]
   );
 
-  // Core drag over logic (called by throttled handler)
-  const updateDragOver = useCallback(
-    (targetId: string, clientY: number, rect: DOMRect) => {
-      // Cannot drop on items that are being dragged
-      if (draggedIdsSet.has(targetId)) {
-        setDragState((prev) => ({ ...prev, dragOverId: null }));
-        return;
-      }
-
-      // Calculate if drop should be before or after target based on mouse position
-      const midPoint = rect.top + rect.height / 2;
-      const position = clientY < midPoint ? "before" : "after";
-
+  // Core drag over logic for state updates (called by throttled handler)
+  const updateDragOverState = useCallback(
+    (targetId: string, position: "before" | "after") => {
       setDragState((prev) => ({
         ...prev,
         dragOverId: targetId,
         dropPosition: position,
       }));
     },
-    [draggedIdsSet]
+    []
   );
 
-  // Throttled version to prevent 60fps state updates
-  const throttledUpdateDragOver = useThrottledCallback(updateDragOver, DRAG_OVER_THROTTLE_MS);
+  // Throttled version to prevent 60fps state updates (visual feedback only)
+  const { throttled: throttledUpdateState } = useThrottledCallback(
+    updateDragOverState,
+    DRAG_OVER_THROTTLE_MS
+  );
 
   const handleDragOver = useCallback(
     (e: React.DragEvent, targetId: string) => {
@@ -180,10 +181,26 @@ export function useGroupedReorder<TItem extends { id: string }>({
       if (!dragState.dragId) return;
 
       e.preventDefault();
+
+      // Cannot drop on items that are being dragged
+      if (draggedIdsSet.has(targetId)) {
+        latestDropRef.current = { targetId: null, position: "before" };
+        setDragState((prev) => ({ ...prev, dragOverId: null }));
+        return;
+      }
+
+      // Calculate drop position based on mouse position
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      throttledUpdateDragOver(targetId, e.clientY, rect);
+      const midPoint = rect.top + rect.height / 2;
+      const position = e.clientY < midPoint ? "before" : "after";
+
+      // Always update ref synchronously (for accurate drop handling)
+      latestDropRef.current = { targetId, position };
+
+      // Throttle state updates (for visual feedback only)
+      throttledUpdateState(targetId, position);
     },
-    [dragState.dragId, throttledUpdateDragOver]
+    [dragState.dragId, draggedIdsSet, throttledUpdateState]
   );
 
   const handleDragLeave = useCallback(() => {
@@ -192,7 +209,7 @@ export function useGroupedReorder<TItem extends { id: string }>({
 
   const handleDrop = useCallback(
     async (targetId: string) => {
-      const { dragId, draggedIds, dropPosition } = dragState;
+      const { dragId, draggedIds } = dragState;
 
       if (!dragId || draggedIds.length === 0) {
         clearDragState();
@@ -204,6 +221,9 @@ export function useGroupedReorder<TItem extends { id: string }>({
         clearDragState();
         return;
       }
+
+      // Read drop position from ref (always up-to-date, not affected by throttle)
+      const dropPosition = latestDropRef.current.position;
 
       // Mark drop as in progress
       dropInProgressRef.current = true;

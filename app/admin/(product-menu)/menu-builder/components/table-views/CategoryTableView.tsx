@@ -121,6 +121,7 @@ export function CategoryTableView() {
     actionableRoots,
     selectedKind,
     isSameKind,
+    hasSelection,
   } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
 
   // Derive DnD eligibility from selection state (action-bar pattern)
@@ -301,6 +302,10 @@ export function CategoryTableView() {
     const dragClasses = getDragClasses(product.id);
     const dragHandlers = getDragHandlers(product.id);
 
+    // Determine if this row can be dragged for cursor styling
+    const canDragThisRow = eligibility.canDrag && eligibility.hasValidTargets && eligibleEntityIds.has(product.id);
+    const isDraggable = hasSelection ? canDragThisRow : undefined;
+
     return (
       <TableRow
         key={product.id}
@@ -310,6 +315,7 @@ export function CategoryTableView() {
         isDragging={dragClasses.isDragging || dragClasses.isInDragSet}
         isDragOver={dragClasses.isDragOver}
         isLastRow={isLastRow}
+        isDraggable={isDraggable}
         draggable
         onDragStart={dragHandlers.onDragStart}
         onDragOver={dragHandlers.onDragOver}
