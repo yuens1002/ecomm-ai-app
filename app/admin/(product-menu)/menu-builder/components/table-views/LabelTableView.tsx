@@ -10,12 +10,13 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { Eye, EyeOff, GripVertical, Layers } from "lucide-react";
+import { Eye, EyeOff, Layers } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { useDragReorder } from "../../../hooks/useDragReorder";
+import { useDnDEligibility } from "../../../hooks/dnd/useDnDEligibility";
 import { buildFlatRegistry } from "../../../hooks/useIdentityRegistry";
 import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
 import { createKey } from "../../../types/identity-registry";
@@ -30,6 +31,7 @@ import { TableCell } from "./shared/table/TableCell";
 import { TableHeader, type TableHeaderColumn } from "./shared/table/TableHeader";
 import { TableRow } from "./shared/table/TableRow";
 import { TableViewWrapper } from "./shared/table/TableViewWrapper";
+import { DragHandleCell } from "./shared/cells/DragHandleCell";
 
 /** Category with order within current label, added order rank, and product names */
 type LabelCategory = MenuCategoryInLabel & {
@@ -120,7 +122,25 @@ export function LabelTableView() {
     onSelectAll,
     onToggle,
     isSelected,
+    getCheckboxState,
+    actionableRoots,
+    selectedKind,
+    isSameKind,
   } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
+
+  // Derive DnD eligibility from selection state (action-bar pattern)
+  const eligibility = useDnDEligibility({
+    actionableRoots,
+    selectedKind,
+    isSameKind,
+    registry,
+  });
+
+  // Build set of eligible entity IDs for row-specific drag handle state
+  const eligibleEntityIds = useMemo(
+    () => new Set(eligibility.draggedEntities.map((e) => e.entityId)),
+    [eligibility.draggedEntities]
+  );
 
   // Unified click handler
   const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
@@ -165,6 +185,8 @@ export function LabelTableView() {
       // Clear column sorting after manual DnD reorder
       setSorting([]);
     },
+    eligibility,
+    getIdFromKey: (key) => key.split(":")[1],
   });
 
   // Column definitions - name and addedOrder are sortable
@@ -299,17 +321,12 @@ export function LabelTableView() {
 
         {/* Drag Handle */}
         <TableCell config={labelViewWidthPreset.dragHandle} data-row-click-ignore>
-          <div
-            className={cn(
-              "flex items-center justify-center cursor-grab active:cursor-grabbing",
-              // xs-sm: always visible
-              "opacity-100",
-              // md+: show on hover only
-              isRowHovered ? "md:opacity-100" : "md:opacity-0"
-            )}
-          >
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
-          </div>
+          <DragHandleCell
+            isEligible={eligibility.canDrag}
+            isRowInEligibleSet={eligibleEntityIds.has(category.id)}
+            checkboxState={getCheckboxState(categoryKey)}
+            isRowHovered={isRowHovered}
+          />
         </TableCell>
       </TableRow>
     );

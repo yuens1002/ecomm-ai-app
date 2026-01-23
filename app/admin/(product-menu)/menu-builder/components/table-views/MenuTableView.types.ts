@@ -1,4 +1,5 @@
 import type { MenuLabel, MenuProduct } from "../../../types/menu";
+import { createKey } from "../../../types/identity-registry";
 
 /**
  * Row levels in the menu hierarchy.
@@ -102,4 +103,68 @@ export function isCategoryRow(row: FlatMenuRow): row is FlatCategoryRow {
  */
 export function isProductRow(row: FlatMenuRow): row is FlatProductRow {
   return row.level === "product";
+}
+
+/**
+ * Row metadata for identity, selection, and DnD operations.
+ * Centralizes all identity-related logic to avoid repeated type checking.
+ */
+export type RowMeta = {
+  /** Selection/identity key (e.g., "label:id" or "category:parentId:entityId") */
+  key: string;
+  /** Hierarchy depth (0 = label, 1 = category, 2 = product) */
+  depth: number;
+  /** Entity kind for selection model */
+  entityKind: "label" | "category" | "product";
+  /** Ghost ID for multi-drag operations */
+  ghostId: string;
+  /** React key for list rendering */
+  reactKey: string;
+};
+
+/** Ghost ID constants derived from depth */
+const GHOST_IDS_BY_DEPTH: Record<number, string> = {
+  0: "menu-ghost-depth-0",
+  1: "menu-ghost-depth-1",
+  2: "menu-ghost-depth-2",
+};
+
+/**
+ * Get all identity-related metadata for a row.
+ * Use this instead of repeated isLabelRow/isCategoryRow checks.
+ */
+export function getRowMeta(row: FlatMenuRow): RowMeta {
+  if (isLabelRow(row)) {
+    return {
+      key: createKey("label", row.id),
+      depth: 0,
+      entityKind: "label",
+      ghostId: GHOST_IDS_BY_DEPTH[0],
+      reactKey: row.id,
+    };
+  }
+  if (isCategoryRow(row)) {
+    return {
+      key: createKey("category", row.parentId, row.id),
+      depth: 1,
+      entityKind: "category",
+      ghostId: GHOST_IDS_BY_DEPTH[1],
+      reactKey: `${row.parentId}-${row.id}`,
+    };
+  }
+  // Product row
+  return {
+    key: createKey("product", row.id),
+    depth: 2,
+    entityKind: "product",
+    ghostId: GHOST_IDS_BY_DEPTH[2],
+    reactKey: `${row.grandParentId}-${row.parentId}-${row.id}`,
+  };
+}
+
+/**
+ * Get ghost ID for a given depth level.
+ */
+export function getGhostIdForDepth(depth: number): string {
+  return GHOST_IDS_BY_DEPTH[depth] ?? `menu-ghost-depth-${depth}`;
 }

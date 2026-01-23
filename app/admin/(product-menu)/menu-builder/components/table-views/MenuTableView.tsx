@@ -5,7 +5,7 @@ import { TableBody } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { AnimatePresence } from "motion/react";
-import { Eye, EyeOff, GripVertical, LayoutGrid } from "lucide-react";
+import { Eye, EyeOff, LayoutGrid } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
@@ -32,13 +32,16 @@ import type {
   FlatLabelRow,
   FlatMenuRow,
 } from "./MenuTableView.types";
-import { isCategoryRow, isLabelRow } from "./MenuTableView.types";
+import { isCategoryRow, isLabelRow, getRowMeta } from "./MenuTableView.types";
 import { useFlattenedMenuRows } from "../../../hooks/useFlattenedMenuRows";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { buildMenuRegistry } from "../../../hooks/useIdentityRegistry";
 import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
-import { createKey } from "../../../types/identity-registry";
 import { useMenuTableDragReorder } from "../../../hooks/useMenuTableDragReorder";
+import { useDnDEligibility } from "../../../hooks/dnd/useDnDEligibility";
+import { MultiDragGhost, GhostRowContent } from "../../../hooks/dnd/MultiDragGhost";
+import { useMultiDragGhost } from "../../../hooks/dnd/useMultiDragGhost";
+import { DragHandleCell } from "./shared/cells/DragHandleCell";
 
 // Column order: name (with inline checkbox), categories, visibility, products, dragHandle
 // Checkbox is inside name column, indenting with hierarchy depth
@@ -118,10 +121,27 @@ export function MenuTableView() {
     onToggleWithHierarchy,
     selectionState,
     onSelectAll,
+    actionableRoots,
+    selectedKind,
+    isSameKind,
   } = useContextSelectionModel(builder, {
     selectableKeys: registry.allKeys as string[],
     hierarchy: { getDescendants: (key) => registry.getChildKeys(key) as string[] },
   });
+
+  // Derive DnD eligibility from selection state (action-bar pattern)
+  const eligibility = useDnDEligibility({
+    actionableRoots,
+    selectedKind,
+    isSameKind,
+    registry,
+  });
+
+  // Build set of eligible entity IDs for row-specific drag handle state
+  const eligibleEntityIds = useMemo(
+    () => new Set(eligibility.draggedEntities.map((e) => e.entityId)),
+    [eligibility.draggedEntities]
+  );
 
   // Debounced expand/collapse to prevent rapid toggling
   const EXPAND_DEBOUNCE_MS = 500;
@@ -258,6 +278,7 @@ export function MenuTableView() {
   );
 
   // Hierarchical drag-and-drop with expand on enter, collapse on leave
+  // Uses eligibility computed from selection (action-bar pattern)
   const { getDragHandlers: getBaseDragHandlers, getDragClasses, dragState } = useMenuTableDragReorder({
     rows,
     labels: visibleLabels,
@@ -269,42 +290,72 @@ export function MenuTableView() {
     pushUndoAction: builder.pushUndoAction,
     onExpandItem: builder.toggleExpand,
     onCollapseItem: builder.toggleExpand,
+    eligibility,
+    registry,
   });
 
-  // Wrap drag handlers to auto-collapse on label drag start
+  // Multi-drag ghost for count badge
+  const GHOST_ID = "menu-view-drag-ghost";
+  const { setGhostImage } = useMultiDragGhost(GHOST_ID);
+
+  // Get first selected item for ghost content
+  // Uses actionableRoots (pre-computed from selection) so ghost is ready BEFORE drag starts
+  const firstSelectedItem = useMemo(() => {
+    if (actionableRoots.length <= 1) return null;
+
+    // Extract entity IDs from actionable root keys (format: "kind:id" or "kind:parentId~id")
+    const actionableEntityIds = new Set(
+      actionableRoots.map((key) => {
+        const colonIdx = key.indexOf(":");
+        if (colonIdx === -1) return key;
+        const idPart = key.slice(colonIdx + 1);
+        // For categories, the ID part is "labelId~categoryId", extract categoryId
+        const tildeIdx = idPart.indexOf("~");
+        return tildeIdx > -1 ? idPart.slice(tildeIdx + 1) : idPart;
+      })
+    );
+
+    // Find the first row that matches an actionable entity
+    for (const row of rows) {
+      if (actionableEntityIds.has(row.id)) {
+        return row;
+      }
+    }
+    return null;
+  }, [actionableRoots, rows]);
+
+  // Wrap drag handlers to auto-collapse on label drag and set ghost image
   const getDragHandlers = useCallback(
     (row: FlatMenuRow) => {
       const baseHandlers = getBaseDragHandlers(row);
+      const rowKey = getRowMeta(row).key;
+      // Use actionableRoots for multi-drag check (consistent with selection model)
+      const isInActionableRoots = actionableRoots.includes(rowKey);
+      const isMultiDrag = isInActionableRoots && actionableRoots.length > 1;
+
       return {
         ...baseHandlers,
-        onDragStart: () => {
+        onDragStart: (e: React.DragEvent) => {
           // Auto-collapse all when dragging a label
           if (row.level === "label") {
             builder.collapseAll();
           }
           baseHandlers.onDragStart();
+          // Set ghost image synchronously - must happen during dragstart event
+          // Ghost is pre-rendered based on actionableRoots so it exists before drag starts
+          if (isMultiDrag) {
+            setGhostImage(e);
+          }
         },
       };
     },
-    [getBaseDragHandlers, builder]
+    [getBaseDragHandlers, builder, actionableRoots, setGhostImage]
   );
-
-  // Helper: Get row key based on row type (2-level: labels and categories only)
-  const getRowKey = useCallback((row: FlatMenuRow): string => {
-    if (isLabelRow(row)) {
-      return createKey("label", row.id);
-    }
-    if (isCategoryRow(row)) {
-      return createKey("category", row.parentId, row.id);
-    }
-    // Should never reach here in 2-level view
-    return "";
-  }, []);
 
   // Render a label row
   const renderLabelRow = (row: FlatLabelRow, isLastRow: boolean) => {
     const label = row.data;
-    const labelKey = getRowKey(row);
+    const labelKey = getRowMeta(row).key;
     const checkboxState = getCheckboxState(labelKey);
     const isSelected = checkboxState === "checked";
     const isIndeterminate = checkboxState === "indeterminate";
@@ -318,7 +369,7 @@ export function MenuTableView() {
         key={row.id}
         data-state={isSelected ? "selected" : undefined}
         isSelected={isSelected || isIndeterminate}
-        isDragging={dragClasses.isDragging}
+        isDragging={dragClasses.isDragging || dragClasses.isInDragSet}
         isDragOver={dragClasses.isDragOver}
         isLastRow={isLastRow}
         draggable
@@ -420,15 +471,12 @@ export function MenuTableView() {
 
         {/* Drag Handle */}
         <TableCell config={menuViewWidthPreset.dragHandle} data-row-click-ignore>
-          <div
-            className={cn(
-              "flex items-center justify-center cursor-grab active:cursor-grabbing",
-              "opacity-100",
-              isRowHovered ? "md:opacity-100" : "md:opacity-0"
-            )}
-          >
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
-          </div>
+          <DragHandleCell
+            isEligible={eligibility.canDrag}
+            isRowInEligibleSet={eligibleEntityIds.has(row.id)}
+            checkboxState={checkboxState}
+            isRowHovered={isRowHovered}
+          />
         </TableCell>
       </TableRow>
     );
@@ -436,9 +484,10 @@ export function MenuTableView() {
 
   // Render a category row (leaf node in 2-level view - no chevron)
   const renderCategoryRow = (row: FlatCategoryRow, isLastRow: boolean, staggerIndex: number) => {
-    // Use composite key to handle same category under multiple labels
-    const compositeId = `${row.parentId}-${row.id}`;
-    const categoryKey = getRowKey(row);
+    const meta = getRowMeta(row);
+    // Use composite key (reactKey) to handle same category under multiple labels
+    const compositeId = meta.reactKey;
+    const categoryKey = meta.key;
     const checkboxState = getCheckboxState(categoryKey);
     const isSelected = checkboxState === "checked";
     // Categories are leaf nodes in 2-level view - no indeterminate state
@@ -455,7 +504,7 @@ export function MenuTableView() {
         data-state={isSelected ? "selected" : undefined}
         isSelected={isSelected}
         isHidden={!row.isVisible}
-        isDragging={dragClasses.isDragging}
+        isDragging={dragClasses.isDragging || dragClasses.isInDragSet}
         isDragOver={dragClasses.isDragOver}
         isLastRow={isLastRow}
         draggable
@@ -518,15 +567,12 @@ export function MenuTableView() {
 
         {/* Drag Handle */}
         <TableCell config={menuViewWidthPreset.dragHandle} data-row-click-ignore>
-          <div
-            className={cn(
-              "flex items-center justify-center cursor-grab active:cursor-grabbing",
-              "opacity-100",
-              isRowHovered ? "md:opacity-100" : "md:opacity-0"
-            )}
-          >
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
-          </div>
+          <DragHandleCell
+            isEligible={eligibility.canDrag}
+            isRowInEligibleSet={eligibleEntityIds.has(row.id)}
+            checkboxState={checkboxState}
+            isRowHovered={isRowHovered}
+          />
         </TableCell>
       </TableRow>
     );
@@ -573,21 +619,35 @@ export function MenuTableView() {
   }
 
   return (
-    <TableViewWrapper>
-      <TableHeader
-        columns={MENU_VIEW_HEADER_COLUMNS}
-        preset={menuViewWidthPreset}
-        hasSelectAll
-        allSelected={selectionState.allSelected}
-        someSelected={selectionState.someSelected}
-        onSelectAll={onSelectAll}
-      />
+    <>
+      <TableViewWrapper>
+        <TableHeader
+          columns={MENU_VIEW_HEADER_COLUMNS}
+          preset={menuViewWidthPreset}
+          hasSelectAll
+          allSelected={selectionState.allSelected}
+          someSelected={selectionState.someSelected}
+          onSelectAll={onSelectAll}
+        />
 
-      <TableBody>
-        <AnimatePresence initial={false}>
-          {rows.map((row, index) => renderRow(row, index, rows.length))}
-        </AnimatePresence>
-      </TableBody>
-    </TableViewWrapper>
+        <TableBody>
+          <AnimatePresence initial={false}>
+            {rows.map((row, index) => renderRow(row, index, rows.length))}
+          </AnimatePresence>
+        </TableBody>
+      </TableViewWrapper>
+
+      {/* Multi-drag ghost with count badge - pre-rendered based on actionableRoots
+          so it exists BEFORE drag starts (setDragImage must be called synchronously) */}
+      {actionableRoots.length > 1 && firstSelectedItem && (
+        <MultiDragGhost
+          key={`ghost-${actionableRoots.length}-${firstSelectedItem.id}`}
+          ghostId={GHOST_ID}
+          count={actionableRoots.length}
+        >
+          <GhostRowContent name={firstSelectedItem.name} />
+        </MultiDragGhost>
+      )}
+    </>
   );
 }

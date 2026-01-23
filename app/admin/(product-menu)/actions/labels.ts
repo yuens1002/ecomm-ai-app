@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import {
   attachCategoryToLabel,
   autoSortCategoriesInLabel as autoSortCategoriesInLabelData,
+  batchMoveCategoriesToLabel as batchMoveCategoriesToLabelData,
   createCategoryLabel,
   deleteCategoryLabel,
   detachCategoryFromLabel,
@@ -255,6 +256,42 @@ export async function cloneLabel(input: unknown) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to clone label";
+    return { ok: false as const, error: message };
+  }
+}
+
+const batchMoveSchema = z.object({
+  moves: z.array(
+    z.object({
+      categoryId: z.string().min(1),
+      fromLabelId: z.string().min(1),
+    })
+  ),
+  toLabelId: z.string().min(1),
+  targetCategoryId: z.string().nullable(),
+  dropPosition: z.enum(["before", "after"]),
+});
+
+/**
+ * Batch move multiple categories to a label in a single transaction.
+ *
+ * Used for multi-select cross-boundary drag operations.
+ */
+export async function batchMoveCategoriesToLabel(input: unknown) {
+  const parsed = batchMoveSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false as const,
+      error: "Validation failed",
+      details: parsed.error.issues,
+    };
+  }
+
+  try {
+    await batchMoveCategoriesToLabelData(parsed.data);
+    return { ok: true as const, data: {} };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to batch move categories";
     return { ok: false as const, error: message };
   }
 }

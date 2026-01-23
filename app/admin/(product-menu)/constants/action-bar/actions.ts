@@ -474,7 +474,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: Eye,
     label: "Visibility",
     tooltip: "Toggle visibility",
-    kbd: ["Space"],
+    kbd: [modKey, "Space"],
     disabled: (state) => !hasSelection(state),
     ariaLabel: (state) =>
       hasSelection(state)

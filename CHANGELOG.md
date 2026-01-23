@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.66.14 - 2026-01-23
+
+- **Refactored DnD eligibility system**: Extracted `useDnDEligibility` hook following action-bar pattern
+- **Fixed per-row drag handle state**: Added `isRowInEligibleSet` prop for accurate visual feedback
+- **Fixed actionable roots computation**: Only filters children when parent is explicitly selected AND checked
+- **Added parent demotion logic**: Deselecting child removes parent from selection when it becomes indeterminate
+- **Fixed multi-drag ghost timing**: Ghost now pre-renders based on `actionableRoots` for synchronous `setDragImage`
+- **Added `DragHandleCell` component**: Centralized drag handle rendering with eligibility-based styling
+
+**Known Issues (Multi-DnD):**
+- Selection order not preserved when dropping to target
+- Selection state lost after first multi-DnD operation
+
 ## 0.66.13 - 2026-01-21
 
 - **Standardized focus rings**: All custom components now use shadcn's focus ring style (`ring-ring/50 ring-[3px]`)

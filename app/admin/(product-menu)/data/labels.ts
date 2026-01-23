@@ -225,3 +225,88 @@ export async function autoSortCategoriesInLabel(labelId: string) {
 
   return { ok: true };
 }
+
+/**
+ * Batch move multiple categories to a label in a single transaction.
+ *
+ * All categories are moved atomically - if any fails, all are rolled back.
+ * Categories are inserted at the specified position relative to targetCategoryId.
+ */
+export async function batchMoveCategoriesToLabel(input: {
+  moves: Array<{ categoryId: string; fromLabelId: string }>;
+  toLabelId: string;
+  targetCategoryId: string | null;
+  dropPosition: "before" | "after";
+}) {
+  const { moves, toLabelId, targetCategoryId, dropPosition } = input;
+
+  if (moves.length === 0) return { ok: true };
+
+  await prisma.$transaction(async (tx) => {
+    // 1. Detach all categories from their source labels
+    for (const { categoryId, fromLabelId } of moves) {
+      await tx.categoryLabelCategory.delete({
+        where: {
+          labelId_categoryId: {
+            labelId: fromLabelId,
+            categoryId,
+          },
+        },
+      });
+    }
+
+    // 2. Get current categories in target label
+    const existingEntries = await tx.categoryLabelCategory.findMany({
+      where: { labelId: toLabelId },
+      orderBy: { order: "asc" },
+    });
+
+    const existingIds = existingEntries.map((e) => e.categoryId);
+    const moveIds = moves.map((m) => m.categoryId);
+
+    // 3. Calculate insertion position
+    let insertIndex: number;
+    if (targetCategoryId === null) {
+      // Append to end
+      insertIndex = existingIds.length;
+    } else {
+      const targetIndex = existingIds.indexOf(targetCategoryId);
+      if (targetIndex === -1) {
+        // Target not found, append to end
+        insertIndex = existingIds.length;
+      } else {
+        insertIndex = dropPosition === "before" ? targetIndex : targetIndex + 1;
+      }
+    }
+
+    // 4. Build new order: existing categories with moved ones inserted at position
+    const newOrder = [...existingIds];
+    newOrder.splice(insertIndex, 0, ...moveIds);
+
+    // 5. Create entries for moved categories and update all orders
+    for (const categoryId of moveIds) {
+      await tx.categoryLabelCategory.create({
+        data: {
+          labelId: toLabelId,
+          categoryId,
+          order: 0, // Will be updated below
+        },
+      });
+    }
+
+    // 6. Update all category orders in target label
+    for (let i = 0; i < newOrder.length; i++) {
+      await tx.categoryLabelCategory.update({
+        where: {
+          labelId_categoryId: {
+            labelId: toLabelId,
+            categoryId: newOrder[i],
+          },
+        },
+        data: { order: i },
+      });
+    }
+  });
+
+  return { ok: true };
+}

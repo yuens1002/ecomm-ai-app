@@ -13,7 +13,7 @@
  * - Actions (kind, entityId, parentKey)
  * - Expand/collapse (expandKey)
  * - Rendering (depth)
- * - DnD (parentKey, canReceiveDrop)
+ * - DnD (parentKey, containsKinds)
  */
 export type RowIdentity = {
   /** Unique key for this row (React key, selection tracking) */
@@ -43,8 +43,15 @@ export type RowIdentity = {
   /** Whether this row can be expanded (has children). */
   readonly isExpandable: boolean;
 
-  /** Whether this item can receive drops (e.g., labels can receive categories) */
-  readonly canReceiveDrop: boolean;
+  /**
+   * Kinds this entity can contain (for DnD drop validation).
+   * - Labels contain categories: ["category"]
+   * - Categories are leaf nodes: []
+   * - Flat list items: []
+   *
+   * Used by canReceiveDrop(targetKey, dragKind) to validate drops at runtime.
+   */
+  readonly containsKinds: readonly string[];
 };
 
 /**
@@ -83,8 +90,14 @@ export type IdentityRegistry = {
   /** Check if row is expandable */
   isExpandable(key: string): boolean;
 
-  /** Check if item can receive drops */
-  canReceiveDrop(key: string): boolean;
+  /** Get kinds this entity can contain */
+  getContainsKinds(key: string): readonly string[];
+
+  /**
+   * Check if target can receive a drop of the specified kind.
+   * Uses containsKinds to validate at runtime.
+   */
+  canReceiveDrop(targetKey: string, dragKind: string): boolean;
 };
 
 /**
@@ -128,8 +141,13 @@ export function createRegistry(
       return identities.get(key)?.isExpandable ?? false;
     },
 
-    canReceiveDrop(key: string): boolean {
-      return identities.get(key)?.canReceiveDrop ?? false;
+    getContainsKinds(key: string): readonly string[] {
+      return identities.get(key)?.containsKinds ?? [];
+    },
+
+    canReceiveDrop(targetKey: string, dragKind: string): boolean {
+      const containsKinds = identities.get(targetKey)?.containsKinds ?? [];
+      return containsKinds.includes(dragKind);
     },
   };
 }
@@ -140,8 +158,14 @@ export function createRegistry(
  * - Categories: `category:{labelId}-{categoryId}`
  * - Products: `product:{labelId}-{categoryId}-{productId}`
  */
+/**
+ * Separator used between ID segments in composite keys.
+ * Using `~` to avoid conflicts with hyphens in UUIDs.
+ */
+const KEY_SEGMENT_SEPARATOR = "~";
+
 export function createKey(kind: string, ...ids: string[]): string {
-  return `${kind}:${ids.join("-")}`;
+  return `${kind}:${ids.join(KEY_SEGMENT_SEPARATOR)}`;
 }
 
 /**
@@ -163,61 +187,61 @@ export function getCompositeFromKey(key: string): string {
 /**
  * Extract the entity ID from a key.
  *
- * Key format: `kind:id1-id2-id3`
+ * Key format: `kind:id1~id2~id3` (uses ~ separator to avoid UUID hyphen conflicts)
  * - For labels: `label:labelId` → `labelId`
- * - For categories: `category:labelId-categoryId` → `categoryId`
- * - For products: `product:labelId-categoryId-productId` → `productId`
+ * - For categories: `category:labelId~categoryId` → `categoryId`
+ * - For products: `product:labelId~categoryId~productId` → `productId`
  *
- * The entity ID is always the last segment after splitting by `-`.
+ * The entity ID is always the last segment after splitting by the separator.
  */
 export function getEntityIdFromKey(key: string): string {
   const composite = getCompositeFromKey(key);
-  // Split by `-` and return the last segment
-  const segments = composite.split("-");
+  // Split by separator and return the last segment
+  const segments = composite.split(KEY_SEGMENT_SEPARATOR);
   return segments[segments.length - 1];
 }
 
 /**
  * Extract the parent ID from a key.
  *
- * Key format: `kind:id1-id2-id3`
+ * Key format: `kind:id1~id2~id3` (uses ~ separator to avoid UUID hyphen conflicts)
  * - For labels: `label:labelId` → undefined (no parent)
- * - For categories: `category:labelId-categoryId` → `labelId`
- * - For products: `product:labelId-categoryId-productId` → `categoryId`
+ * - For categories: `category:labelId~categoryId` → `labelId`
+ * - For products: `product:labelId~categoryId~productId` → `categoryId`
  *
  * The parent ID is the second-to-last segment.
  */
 export function getParentIdFromKey(key: string): string | undefined {
   const composite = getCompositeFromKey(key);
-  const segments = composite.split("-");
+  const segments = composite.split(KEY_SEGMENT_SEPARATOR);
   return segments.length >= 2 ? segments[segments.length - 2] : undefined;
 }
 
 /**
  * Compute the parent key for a given key.
  *
- * Key hierarchy:
+ * Key hierarchy (uses ~ separator to avoid UUID hyphen conflicts):
  * - label:L1 → no parent
- * - category:L1-C1 → parent is label:L1
- * - product:L1-C1-P1 → parent is category:L1-C1
+ * - category:L1~C1 → parent is label:L1
+ * - product:L1~C1~P1 → parent is category:L1~C1
  */
 export function getParentKey(key: string): string | null {
   const kind = getKindFromKey(key);
   const composite = getCompositeFromKey(key);
-  const segments = composite.split("-");
+  const segments = composite.split(KEY_SEGMENT_SEPARATOR);
 
   if (kind === "label" || segments.length < 2) {
     return null; // Labels have no parent
   }
 
   if (kind === "category") {
-    // category:L1-C1 → parent is label:L1
+    // category:L1~C1 → parent is label:L1
     return `label:${segments[0]}`;
   }
 
   if (kind === "product") {
-    // product:L1-C1-P1 → parent is category:L1-C1
-    return `category:${segments[0]}-${segments[1]}`;
+    // product:L1~C1~P1 → parent is category:L1~C1
+    return `category:${segments[0]}${KEY_SEGMENT_SEPARATOR}${segments[1]}`;
   }
 
   return null;

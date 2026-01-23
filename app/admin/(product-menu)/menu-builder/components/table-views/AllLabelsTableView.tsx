@@ -5,16 +5,19 @@ import { TableBody } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
-import { GripVertical, Tag } from "lucide-react";
+import { Tag } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { useDragReorder } from "../../../hooks/useDragReorder";
+import { useDnDEligibility } from "../../../hooks/dnd/useDnDEligibility";
 import { buildFlatRegistry } from "../../../hooks/useIdentityRegistry";
 import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
 import { createKey } from "../../../types/identity-registry";
 import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
+import { MultiDragGhost, GhostRowContent } from "../../../hooks/dnd/MultiDragGhost";
+import { useMultiDragGhost } from "../../../hooks/dnd/useMultiDragGhost";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuLabel } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
@@ -28,6 +31,7 @@ import { TableCell } from "./shared/table/TableCell";
 import { TableHeader, type TableHeaderColumn } from "./shared/table/TableHeader";
 import { TableRow } from "./shared/table/TableRow";
 import { TableViewWrapper } from "./shared/table/TableViewWrapper";
+import { DragHandleCell } from "./shared/cells/DragHandleCell";
 
 const ALL_LABELS_HEADER_COLUMNS: TableHeaderColumn[] = [
   { id: "select", label: "", isCheckbox: true },
@@ -58,7 +62,25 @@ export function AllLabelsTableView() {
     onSelectAll,
     onToggle,
     isSelected,
+    getCheckboxState,
+    actionableRoots,
+    selectedKind,
+    isSameKind,
   } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
+
+  // Derive DnD eligibility from selection state (action-bar pattern)
+  const eligibility = useDnDEligibility({
+    actionableRoots,
+    selectedKind,
+    isSameKind,
+    registry,
+  });
+
+  // Build set of eligible entity IDs for row-specific drag handle state
+  const eligibleEntityIds = useMemo(
+    () => new Set(eligibility.draggedEntities.map((e) => e.entityId)),
+    [eligibility.draggedEntities]
+  );
 
   // Unified click handler
   const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
@@ -73,13 +95,52 @@ export function AllLabelsTableView() {
     // Uses built-in default sort by order field
   });
 
-  // Drag & Drop handlers
-  const { getDragHandlers, getDragClasses } = useDragReorder({
+  // Drag & Drop handlers using eligibility (action-bar pattern)
+  const { getDragHandlers: getBaseDragHandlers, getDragClasses, dragState } = useDragReorder({
     items: labels,
     onReorder: async (ids) => {
       await reorderLabels(ids);
     },
+    eligibility,
+    getIdFromKey: (key) => key.split(":")[1],
   });
+
+  // Multi-drag ghost for count badge (unique ID for this view)
+  const GHOST_ID = "all-labels-drag-ghost";
+  const { setGhostImage } = useMultiDragGhost(GHOST_ID);
+
+  // Get first dragged label for ghost content (use dragState.draggedIds for correct count)
+  const firstDraggedLabel = useMemo(() => {
+    if (dragState.draggedIds.length <= 1) return null;
+    for (const label of labels) {
+      if (dragState.draggedIds.includes(label.id)) {
+        return label;
+      }
+    }
+    return null;
+  }, [dragState.draggedIds, labels]);
+
+  // Wrap drag handlers to set ghost image for multi-select
+  const getDragHandlers = useCallback(
+    (itemId: string) => {
+      const baseHandlers = getBaseDragHandlers(itemId);
+      const labelKey = createKey("label", itemId);
+      // Use actionableRoots for multi-drag check (consistent with selection model)
+      const isInActionableRoots = actionableRoots.includes(labelKey);
+      const isMultiSelect = isInActionableRoots && actionableRoots.length > 1;
+
+      return {
+        ...baseHandlers,
+        onDragStart: (e: React.DragEvent) => {
+          baseHandlers.onDragStart(e);
+          if (isMultiSelect) {
+            setGhostImage(e);
+          }
+        },
+      };
+    },
+    [getBaseDragHandlers, actionableRoots, setGhostImage]
+  );
 
   const { toast } = useToast();
 
@@ -173,7 +234,7 @@ export function AllLabelsTableView() {
         data-state={isLabelSelected ? "selected" : undefined}
         isSelected={isLabelSelected}
         isHidden={!label.isVisible}
-        isDragging={dragClasses.isDragging}
+        isDragging={dragClasses.isDragging || dragClasses.isInDragSet}
         isDragOver={dragClasses.isDragOver}
         isLastRow={isLastRow}
         draggable
@@ -255,17 +316,12 @@ export function AllLabelsTableView() {
 
         {/* Drag Handle */}
         <TableCell config={allLabelsWidthPreset.dragHandle} data-row-click-ignore>
-          <div
-            className={cn(
-              "flex items-center justify-center cursor-grab active:cursor-grabbing",
-              // xs-sm: always visible
-              "opacity-100",
-              // md+: show on hover only
-              isRowHovered ? "md:opacity-100" : "md:opacity-0"
-            )}
-          >
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
-          </div>
+          <DragHandleCell
+            isEligible={eligibility.canDrag}
+            isRowInEligibleSet={eligibleEntityIds.has(label.id)}
+            checkboxState={getCheckboxState(labelKey)}
+            isRowHovered={isRowHovered}
+          />
         </TableCell>
       </TableRow>
     );
@@ -274,23 +330,36 @@ export function AllLabelsTableView() {
   const rows = table.getRowModel().rows;
 
   return (
-    <TableViewWrapper>
-      <TableHeader
-        columns={ALL_LABELS_HEADER_COLUMNS}
-        preset={allLabelsWidthPreset}
-        table={table}
-        hasSelectAll
-        allSelected={allSelected}
-        someSelected={someSelected}
-        onSelectAll={onSelectAll}
-      />
+    <>
+      <TableViewWrapper>
+        <TableHeader
+          columns={ALL_LABELS_HEADER_COLUMNS}
+          preset={allLabelsWidthPreset}
+          table={table}
+          hasSelectAll
+          allSelected={allSelected}
+          someSelected={someSelected}
+          onSelectAll={onSelectAll}
+        />
 
-      <TableBody>
-        {pinnedLabel ? renderLabelRow(pinnedLabel, { isPinned: true }) : null}
-        {rows.map((row, index) =>
-          renderLabelRow(row.original, { isLastRow: index === rows.length - 1 })
-        )}
-      </TableBody>
-    </TableViewWrapper>
+        <TableBody>
+          {pinnedLabel ? renderLabelRow(pinnedLabel, { isPinned: true }) : null}
+          {rows.map((row, index) =>
+            renderLabelRow(row.original, { isLastRow: index === rows.length - 1 })
+          )}
+        </TableBody>
+      </TableViewWrapper>
+
+      {/* Multi-drag ghost with count badge - render when multiple items dragged */}
+      {dragState.dragCount > 1 && firstDraggedLabel && (
+        <MultiDragGhost
+          key={`ghost-${dragState.dragCount}-${firstDraggedLabel.id}`}
+          ghostId={GHOST_ID}
+          count={dragState.dragCount}
+        >
+          <GhostRowContent name={firstDraggedLabel.name} />
+        </MultiDragGhost>
+      )}
+    </>
   );
 }

@@ -36,7 +36,7 @@ export function buildFlatRegistry<T extends { id: string }>(
       parentKey: null,
       childKeys: [],
       isExpandable: false,
-      canReceiveDrop: false,
+      containsKinds: [], // Flat list items don't contain other kinds
     };
 
     identities.set(key, identity);
@@ -88,7 +88,7 @@ export function buildMenuRegistry(labels: MenuLabel[]): IdentityRegistry {
         parentKey: labelKey,
         childKeys: [], // Leaf node
         isExpandable: false, // Leaf node
-        canReceiveDrop: false,
+        containsKinds: [], // Categories don't contain other kinds in menu view
       };
 
       identities.set(categoryKey, categoryIdentity);
@@ -107,7 +107,7 @@ export function buildMenuRegistry(labels: MenuLabel[]): IdentityRegistry {
       parentKey: null,
       childKeys: categoryKeys,
       isExpandable: hasCategories,
-      canReceiveDrop: true, // Labels can receive category drops
+      containsKinds: ["category"], // Labels can contain categories
     };
 
     identities.set(labelKey, labelIdentity);

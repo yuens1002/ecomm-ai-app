@@ -3,8 +3,8 @@
 import { useCallback, useMemo } from "react";
 import type { SelectedEntityKind } from "../types/builder-state";
 import {
-  getActionableRoots,
   getKindFromKey as getKindFromKeyBase,
+  getParentKey,
 } from "../types/identity-registry";
 
 type BuilderSelectionApi = {
@@ -83,51 +83,16 @@ export function useContextSelectionModel(
 
   const selectedIdSet = useMemo(() => new Set(builder.selectedIds), [builder.selectedIds]);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // DERIVED STATE
-  // ─────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Compute selected kind from actionable root keys.
-   * Returns the kind if all roots are same kind, null if mixed or empty.
-   *
-   * Actionable roots are selected keys whose parents are NOT selected.
-   * This filters out descendants and only considers the items to act on.
-   */
-  const selectedKind = useMemo((): SelectedEntityKind | null => {
-    if (builder.selectedIds.length === 0) return null;
-
-    const roots = getActionableRoots(builder.selectedIds);
-    if (roots.length === 0) return null;
-
-    const kinds = new Set(roots.map(getKindFromKey));
-    if (kinds.size === 1) {
-      return [...kinds][0];
-    }
-    return null; // Mixed kinds
-  }, [builder.selectedIds]);
-
-  const isSameKind = selectedKind !== null;
-
-  // Bulk selection state for header checkbox
-  const selectionState: BulkSelectionState = useMemo(() => {
-    if (selectableKeys.length === 0 || builder.selectedIds.length === 0) {
-      return { allSelected: false, someSelected: false, selectedCount: 0 };
-    }
-
-    let selectedCount = 0;
-    for (const key of selectableKeys) {
-      if (selectedIdSet.has(key)) selectedCount += 1;
-    }
-
-    const allSelected = selectedCount === selectableKeys.length;
-    const someSelected = selectedCount > 0 && !allSelected;
-
-    return { allSelected, someSelected, selectedCount };
-  }, [selectableKeys, builder.selectedIds.length, selectedIdSet]);
+  // Filter out stale selections that are no longer in selectableKeys
+  // This handles data changes (refetch, filter changes) that remove entities
+  const selectableKeySet = useMemo(() => new Set(selectableKeys), [selectableKeys]);
+  const validSelectedIds = useMemo(
+    () => builder.selectedIds.filter((id) => selectableKeySet.has(id)),
+    [builder.selectedIds, selectableKeySet]
+  );
 
   // ─────────────────────────────────────────────────────────────────────────
-  // CHECKBOX STATE
+  // CHECKBOX STATE (computed first, needed by actionableRoots)
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
@@ -161,26 +126,92 @@ export function useContextSelectionModel(
     [selectedIdSet, hierarchy]
   );
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // DERIVED STATE
+  // ─────────────────────────────────────────────────────────────────────────
+
   /**
-   * Get actionable root keys - items whose parents are not selected.
-   * Memoized for use in multiple checks.
+   * Get actionable root keys for DnD and action operations.
+   *
+   * A key is an actionable root if:
+   * 1. It is "checked" (not indeterminate or unchecked)
+   * 2. Its parent is NOT explicitly selected with "checked" state
+   *
+   * Key insight: We only filter out children if the parent is EXPLICITLY in selection.
+   * A parent's computed "checked" state (from all children being selected) doesn't count.
+   *
+   * This preserves user intent:
+   * - Click label → selects label + categories → label is root → drag label
+   * - Click all categories → only categories selected → categories are roots → drag categories
+   * - Click label, then deselect some → label indeterminate → categories are roots
    */
-  const actionableRoots = useMemo(
-    () => getActionableRoots(builder.selectedIds),
-    [builder.selectedIds]
-  );
+  const actionableRoots = useMemo(() => {
+    const roots: string[] = [];
+    const selectedKeySet = new Set(validSelectedIds);
+
+    for (const key of validSelectedIds) {
+      // Only "checked" items can be actionable roots
+      if (getCheckboxState(key) !== "checked") {
+        continue;
+      }
+
+      // Check if parent is EXPLICITLY selected AND "checked"
+      // Only then do we filter out this child (parent takes precedence)
+      const parentKey = getParentKey(key);
+      if (
+        parentKey !== null &&
+        selectedKeySet.has(parentKey) &&
+        getCheckboxState(parentKey) === "checked"
+      ) {
+        continue;
+      }
+
+      roots.push(key);
+    }
+
+    return roots;
+  }, [validSelectedIds, getCheckboxState]);
+
+  /**
+   * Compute selected kind from actionable root keys.
+   * Returns the kind if all roots are same kind, null if mixed or empty.
+   */
+  const selectedKind = useMemo((): SelectedEntityKind | null => {
+    if (actionableRoots.length === 0) return null;
+
+    const kinds = new Set(actionableRoots.map(getKindFromKey));
+    if (kinds.size === 1) {
+      return [...kinds][0];
+    }
+    return null; // Mixed kinds
+  }, [actionableRoots]);
+
+  const isSameKind = selectedKind !== null;
+
+  // Bulk selection state for header checkbox
+  const selectionState: BulkSelectionState = useMemo(() => {
+    if (selectableKeys.length === 0 || builder.selectedIds.length === 0) {
+      return { allSelected: false, someSelected: false, selectedCount: 0 };
+    }
+
+    let selectedCount = 0;
+    for (const key of selectableKeys) {
+      if (selectedIdSet.has(key)) selectedCount += 1;
+    }
+
+    const allSelected = selectedCount === selectableKeys.length;
+    const someSelected = selectedCount > 0 && !allSelected;
+
+    return { allSelected, someSelected, selectedCount };
+  }, [selectableKeys, builder.selectedIds.length, selectedIdSet]);
 
   /**
    * Check if all actionable roots have "checked" state (not indeterminate).
-   * Used for action validation - actions require complete selections.
    *
-   * A root is "complete" if all its descendants are selected (checked state).
+   * With the new actionableRoots logic, roots are already filtered to only
+   * include "checked" items, so this is always true when roots exist.
    */
-  const allRootsAreChecked = useMemo((): boolean => {
-    if (actionableRoots.length === 0) return false;
-
-    return actionableRoots.every((key) => getCheckboxState(key) === "checked");
-  }, [actionableRoots, getCheckboxState]);
+  const allRootsAreChecked = actionableRoots.length > 0;
 
   /**
    * Whether actions (clone, remove) can be performed.
@@ -219,8 +250,12 @@ export function useContextSelectionModel(
   /**
    * Toggle selection with hierarchy awareness (master switch behavior).
    *
-   * For leaves: toggles the single key.
+   * For leaves: toggles the single key, and removes parent if it becomes indeterminate.
    * For parents: toggles all descendants (checked → clear all, else → select all).
+   *
+   * Key behavior: When deselecting a child causes parent to become indeterminate,
+   * we also remove the parent from selection. This preserves user intent - they're
+   * now working with individual children, not the parent.
    */
   const onToggleWithHierarchy = useCallback(
     (key: string) => {
@@ -233,7 +268,30 @@ export function useContextSelectionModel(
       const descendants = hierarchy.getDescendants(key);
 
       if (descendants.length === 0) {
-        // Leaf - simple toggle
+        // Leaf node - toggle with parent demotion logic
+        const isCurrentlySelected = selectedIdSet.has(key);
+        const parentKey = getParentKey(key);
+
+        if (isCurrentlySelected && parentKey !== null) {
+          // Deselecting a child - check if parent should be demoted
+          const parentWasChecked = getCheckboxState(parentKey) === "checked";
+          const parentInSelection = selectedIdSet.has(parentKey);
+
+          if (parentWasChecked && parentInSelection) {
+            // Parent will become indeterminate - remove parent from selection
+            // This demotes the selection from parent-level to child-level
+            const keysToRemove = new Set([key, parentKey]);
+            const remainingIds = builder.selectedIds.filter((id) => !keysToRemove.has(id));
+            if (remainingIds.length === 0) {
+              builder.clearSelection();
+            } else {
+              builder.selectAll(remainingIds);
+            }
+            return;
+          }
+        }
+
+        // Normal toggle (selecting, or deselecting without parent demotion)
         builder.toggleSelection(key);
         return;
       }
@@ -258,7 +316,7 @@ export function useContextSelectionModel(
         builder.selectAll(newIds);
       }
     },
-    [builder, hierarchy, getCheckboxState]
+    [builder, hierarchy, getCheckboxState, selectedIdSet]
   );
 
   /**
@@ -289,8 +347,8 @@ export function useContextSelectionModel(
     allRootsAreChecked,
     actionableRoots,
 
-    // Selection info
-    hasSelection: builder.selectedIds.length > 0,
-    selectedCount: builder.selectedIds.length,
+    // Selection info (uses validSelectedIds to exclude stale selections)
+    hasSelection: validSelectedIds.length > 0,
+    selectedCount: validSelectedIds.length,
   };
 }

@@ -10,16 +10,19 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { Eye, EyeOff, GripVertical, Package } from "lucide-react";
+import { Eye, EyeOff, Package } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { useDragReorder } from "../../../hooks/useDragReorder";
+import { useDnDEligibility } from "../../../hooks/dnd/useDnDEligibility";
 import { buildFlatRegistry } from "../../../hooks/useIdentityRegistry";
 import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
 import { createKey } from "../../../types/identity-registry";
 import { usePersistColumnSort } from "../../../hooks/usePersistColumnSort";
+import { MultiDragGhost, GhostRowContent } from "../../../hooks/dnd/MultiDragGhost";
+import { useMultiDragGhost } from "../../../hooks/dnd/useMultiDragGhost";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuProduct } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
@@ -30,6 +33,7 @@ import { TableCell } from "./shared/table/TableCell";
 import { TableHeader, type TableHeaderColumn } from "./shared/table/TableHeader";
 import { TableRow } from "./shared/table/TableRow";
 import { TableViewWrapper } from "./shared/table/TableViewWrapper";
+import { DragHandleCell } from "./shared/cells/DragHandleCell";
 
 /** Product with order within current category and chronological added order */
 type CategoryProduct = MenuProduct & {
@@ -113,7 +117,25 @@ export function CategoryTableView() {
     onSelectAll,
     onToggle,
     isSelected,
+    getCheckboxState,
+    actionableRoots,
+    selectedKind,
+    isSameKind,
   } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
+
+  // Derive DnD eligibility from selection state (action-bar pattern)
+  const eligibility = useDnDEligibility({
+    actionableRoots,
+    selectedKind,
+    isSameKind,
+    registry,
+  });
+
+  // Build set of eligible entity IDs for row-specific drag handle state
+  const eligibleEntityIds = useMemo(
+    () => new Set(eligibility.draggedEntities.map((e) => e.entityId)),
+    [eligibility.draggedEntities]
+  );
 
   // Unified click handler (no navigation for products in category view)
   const { handleClick } = useRowClickHandler(registry, {
@@ -142,8 +164,8 @@ export function CategoryTableView() {
     [currentCategoryId, builder, reorderProductsInCategory]
   );
 
-  // Drag & Drop handlers - reset sorting when manual reorder occurs
-  const { getDragHandlers, getDragClasses } = useDragReorder({
+  // Drag & Drop handlers with multi-select support - reset sorting when manual reorder occurs
+  const { getDragHandlers: getBaseDragHandlers, getDragClasses, dragState } = useDragReorder({
     items: categoryProducts,
     onReorder: async (ids) => {
       if (currentCategoryId) {
@@ -157,7 +179,46 @@ export function CategoryTableView() {
       // Clear column sorting after manual DnD reorder
       setSorting([]);
     },
+    eligibility,
+    getIdFromKey: (key) => key.split(":")[1],
   });
+
+  // Multi-drag ghost for count badge (unique ID for this view)
+  const GHOST_ID = "category-view-drag-ghost";
+  const { setGhostImage } = useMultiDragGhost(GHOST_ID);
+
+  // Get first dragged product for ghost content (use dragState.draggedIds for correct count)
+  const firstDraggedProduct = useMemo(() => {
+    if (dragState.draggedIds.length <= 1) return null;
+    for (const product of categoryProducts) {
+      if (dragState.draggedIds.includes(product.id)) {
+        return product;
+      }
+    }
+    return null;
+  }, [dragState.draggedIds, categoryProducts]);
+
+  // Wrap drag handlers to set ghost image for multi-select
+  const getDragHandlers = useCallback(
+    (itemId: string) => {
+      const baseHandlers = getBaseDragHandlers(itemId);
+      const productKey = createKey("product", itemId);
+      // Use actionableRoots for multi-drag check (consistent with selection model)
+      const isInActionableRoots = actionableRoots.includes(productKey);
+      const isMultiSelect = isInActionableRoots && actionableRoots.length > 1;
+
+      return {
+        ...baseHandlers,
+        onDragStart: (e: React.DragEvent) => {
+          baseHandlers.onDragStart(e);
+          if (isMultiSelect) {
+            setGhostImage(e);
+          }
+        },
+      };
+    },
+    [getBaseDragHandlers, actionableRoots, setGhostImage]
+  );
 
   // Helper: Get category names for a product (excluding current category)
   const getProductCategories = useCallback(
@@ -247,7 +308,7 @@ export function CategoryTableView() {
         data-state={isProductSelected ? "selected" : undefined}
         isSelected={isProductSelected}
         isHidden={product.isDisabled}
-        isDragging={dragClasses.isDragging}
+        isDragging={dragClasses.isDragging || dragClasses.isInDragSet}
         isDragOver={dragClasses.isDragOver}
         isLastRow={isLastRow}
         draggable
@@ -304,17 +365,12 @@ export function CategoryTableView() {
 
         {/* Drag Handle */}
         <TableCell config={categoryViewWidthPreset.dragHandle} data-row-click-ignore>
-          <div
-            className={cn(
-              "flex items-center justify-center cursor-grab active:cursor-grabbing",
-              // xs-sm: always visible
-              "opacity-100",
-              // md+: show on hover only
-              isRowHovered ? "md:opacity-100" : "md:opacity-0"
-            )}
-          >
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
-          </div>
+          <DragHandleCell
+            isEligible={eligibility.canDrag}
+            isRowInEligibleSet={eligibleEntityIds.has(product.id)}
+            checkboxState={getCheckboxState(productKey)}
+            isRowHovered={isRowHovered}
+          />
         </TableCell>
       </TableRow>
     );
@@ -323,23 +379,36 @@ export function CategoryTableView() {
   const rows = table.getRowModel().rows;
 
   return (
-    <TableViewWrapper>
-      <TableHeader
-        columns={CATEGORY_VIEW_HEADER_COLUMNS}
-        preset={categoryViewWidthPreset}
-        table={table}
-        hasSelectAll
-        allSelected={allSelected}
-        someSelected={someSelected}
-        onSelectAll={onSelectAll}
-      />
+    <>
+      <TableViewWrapper>
+        <TableHeader
+          columns={CATEGORY_VIEW_HEADER_COLUMNS}
+          preset={categoryViewWidthPreset}
+          table={table}
+          hasSelectAll
+          allSelected={allSelected}
+          someSelected={someSelected}
+          onSelectAll={onSelectAll}
+        />
 
-      <TableBody>
-        {pinnedProduct ? renderProductRow(pinnedProduct, { isPinned: true }) : null}
-        {rows.map((row, index) =>
-          renderProductRow(row.original, { isLastRow: index === rows.length - 1 })
-        )}
-      </TableBody>
-    </TableViewWrapper>
+        <TableBody>
+          {pinnedProduct ? renderProductRow(pinnedProduct, { isPinned: true }) : null}
+          {rows.map((row, index) =>
+            renderProductRow(row.original, { isLastRow: index === rows.length - 1 })
+          )}
+        </TableBody>
+      </TableViewWrapper>
+
+      {/* Multi-drag ghost with count badge - render when multiple items dragged */}
+      {dragState.dragCount > 1 && firstDraggedProduct && (
+        <MultiDragGhost
+          key={`ghost-${dragState.dragCount}-${firstDraggedProduct.id}`}
+          ghostId={GHOST_ID}
+          count={dragState.dragCount}
+        >
+          <GhostRowContent name={firstDraggedProduct.name} />
+        </MultiDragGhost>
+      )}
+    </>
   );
 }

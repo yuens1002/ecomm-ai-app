@@ -104,8 +104,9 @@ export function useRowClickHandler(
       }
 
       // 2. Toggle selection
-      // Use hierarchy toggle for parent rows (has children), simple toggle for leaf rows
-      if (identity.childKeys.length > 0 && onToggleWithHierarchy) {
+      // Use hierarchy-aware toggle when available (handles both parents and leaves)
+      // This ensures proper parent demotion when children are toggled
+      if (onToggleWithHierarchy) {
         onToggleWithHierarchy(key);
       } else {
         onToggle(key);

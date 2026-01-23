@@ -1,9 +1,24 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MenuLabel } from "../types/menu";
 import type { FlatMenuRow } from "../menu-builder/components/table-views/MenuTableView.types";
+import type { IdentityRegistry } from "../types/identity-registry";
+import { createKey } from "../types/identity-registry";
+import { calculateMultiReorder, isInDragSet as checkIsInDragSet } from "./dnd/multiSelectValidation";
+import { useThrottledCallback } from "./dnd/useThrottledCallback";
+import type { DnDEligibility, DraggedEntity } from "./dnd/useDnDEligibility";
 
+/** Throttle delay for dragOver events (ms) */
+const DRAG_OVER_THROTTLE_MS = 50;
 
 type ReorderResult = { ok: boolean; error?: string };
+
+/** Info about a category being dragged (for batch moves) */
+type DraggedCategoryInfo = {
+  categoryId: string;
+  fromLabelId: string;
+};
 
 /**
  * Reorder functions for each level in the 2-level hierarchy.
@@ -16,9 +31,14 @@ type ReorderFunctions = {
     categoryId: string,
     fromLabelId: string,
     toLabelId: string,
-    /** Category to insert relative to (null = append to end) */
     targetCategoryId: string | null,
-    /** Insert before or after target */
+    dropPosition: "before" | "after"
+  ) => Promise<ReorderResult>;
+  /** Batch move multiple categories to a label (optional, for multi-select) */
+  batchMoveCategoriesToLabel?: (
+    moves: DraggedCategoryInfo[],
+    toLabelId: string,
+    targetCategoryId: string | null,
     dropPosition: "before" | "after"
   ) => Promise<ReorderResult>;
 };
@@ -36,10 +56,14 @@ type UseMenuTableDragReorderOptions = {
   onExpandItem?: (id: string) => void;
   /** Callback to collapse an item (on drag leave) */
   onCollapseItem?: (id: string) => void;
+  /** DnD eligibility state from useDnDEligibility hook */
+  eligibility: DnDEligibility;
+  /** Identity registry for entity lookups and drop validation */
+  registry: IdentityRegistry;
 };
 
 export type HierarchicalDragHandlers = {
-  onDragStart: () => void;
+  onDragStart: (e?: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: () => void;
   onDrop: () => void;
@@ -57,12 +81,11 @@ type DragState = {
   dragParentId: string | null;
   dragOverId: string | null;
   dropPosition: "before" | "after";
-  /** Type of drop operation: 'reorder' (same parent) or 'move-to-label' (cross-boundary) */
   dropType: DropType;
-  /** ID of item that was just auto-expanded (for animation) */
   autoExpandedId: string | null;
-  /** True when dragging a label - disables chevrons during drag */
   isDraggingLabel: boolean;
+  draggedIds: readonly string[];
+  draggedCategories: readonly DraggedCategoryInfo[];
 };
 
 const INITIAL_DRAG_STATE: DragState = {
@@ -74,25 +97,38 @@ const INITIAL_DRAG_STATE: DragState = {
   dropType: "reorder",
   autoExpandedId: null,
   isDraggingLabel: false,
+  draggedIds: [],
+  draggedCategories: [],
 };
+
+/**
+ * Extract parent ID from a dragged entity.
+ * For categories, parentKey is "label:labelId", so we extract the labelId.
+ */
+function extractParentId(entity: DraggedEntity): string | null {
+  if (!entity.parentKey) return null;
+  // parentKey format: "label:labelId"
+  const colonIndex = entity.parentKey.indexOf(":");
+  return colonIndex > -1 ? entity.parentKey.slice(colonIndex + 1) : entity.parentKey;
+}
 
 /**
  * Hook for managing hierarchical drag-and-drop reordering in the menu table.
  *
- * 2-level hierarchy: Labels → Categories
+ * Follows the action-bar pattern: eligibility is pre-computed from selection,
+ * DnD reacts to this state rather than managing selection.
+ *
+ * Key behaviors:
+ * - Drag only initiates when eligibility.canDrag is true
+ * - Uses eligibility.draggedEntities to determine what to drag
+ * - Selection state is never modified by DnD
  *
  * Features:
  * - Same-level reordering (labels among labels, categories within same label)
  * - Cross-boundary moves (categories between different labels)
- * - Auto-expand collapsed labels on drag enter (immediate)
- * - Auto-collapse on drag leave territory (label + its categories)
- * - Undo/redo support for all operations
- *
- * Drop rules:
- * - Labels: reorder among labels only
- * - Categories: reorder within same label, OR move to different label
- *
- * Note: Single-item drag only. Multi-select drag is not supported.
+ * - Multi-select drag support
+ * - Auto-expand collapsed labels on drag enter
+ * - Undo/redo support
  */
 export function useMenuTableDragReorder({
   rows,
@@ -101,10 +137,12 @@ export function useMenuTableDragReorder({
   pushUndoAction,
   onExpandItem,
   onCollapseItem,
+  eligibility,
+  registry,
 }: UseMenuTableDragReorderOptions) {
   const [dragState, setDragState] = useState<DragState>(INITIAL_DRAG_STATE);
 
-  // Track the currently auto-expanded label ID (singular - collapse when leaving its territory)
+  // Track the currently auto-expanded label ID
   const autoExpandedLabelRef = useRef<string | null>(null);
 
   // Clear auto-expanded animation state after a delay
@@ -112,7 +150,7 @@ export function useMenuTableDragReorder({
     if (dragState.autoExpandedId) {
       const timer = setTimeout(() => {
         setDragState((prev) => ({ ...prev, autoExpandedId: null }));
-      }, 600); // Animation duration
+      }, 600);
       return () => clearTimeout(timer);
     }
   }, [dragState.autoExpandedId]);
@@ -123,116 +161,156 @@ export function useMenuTableDragReorder({
     setDragState(INITIAL_DRAG_STATE);
   }, []);
 
-  // Get row by ID
-  const getRow = useCallback(
-    (id: string): FlatMenuRow | undefined => rows.find((r) => r.id === id),
-    [rows]
+  // Memoize rows lookup for O(1) access
+  const rowsById = useMemo(() => new Map(rows.map((r) => [r.id, r])), [rows]);
+
+  const getRow = useCallback((id: string): FlatMenuRow | undefined => rowsById.get(id), [rowsById]);
+
+  // Extract eligible entity IDs for drag validation
+  const eligibleEntityIds = useMemo(
+    () => new Set(eligibility.draggedEntities.map((e) => e.entityId)),
+    [eligibility.draggedEntities]
   );
+
+  // Build dragged categories info from eligibility
+  const draggedCategoriesFromEligibility = useMemo((): DraggedCategoryInfo[] => {
+    if (eligibility.dragKind !== "category") return [];
+
+    return eligibility.draggedEntities
+      .filter((e) => e.parentKey !== null)
+      .map((e) => ({
+        categoryId: e.entityId,
+        fromLabelId: extractParentId(e)!,
+      }));
+  }, [eligibility.dragKind, eligibility.draggedEntities]);
 
   /**
    * Determine if a drop is valid and what type of drop it would be.
-   *
-   * Label drops: only valid on other labels (reorder)
-   * Category drops: valid on categories (reorder/move) or labels (move)
    */
   const getDropInfo = useCallback(
     (targetId: string): { valid: false } | { valid: true; dropType: DropType } => {
-      const { dragId, dragLevel, dragParentId } = dragState;
+      const { dragId, dragLevel, draggedIds, draggedCategories } = dragState;
 
       if (!dragId || dragId === targetId) return { valid: false };
+      if (draggedIds.includes(targetId)) return { valid: false };
 
       const targetRow = getRow(targetId);
-      if (!targetRow) return { valid: false };
+      if (!targetRow || !dragLevel) return { valid: false };
 
-      // Label drag: only valid target is another label
-      if (dragLevel === "label") {
-        return targetRow.level === "label"
-          ? { valid: true, dropType: "reorder" }
-          : { valid: false };
-      }
+      const targetKey =
+        targetRow.level === "label"
+          ? createKey("label", targetRow.id)
+          : targetRow.level === "category" && targetRow.parentId
+            ? createKey("category", targetRow.parentId, targetRow.id)
+            : "";
 
-      // Category drag: valid targets are categories or labels (for cross-boundary)
-      if (dragLevel === "category") {
-        // Drop on a category
-        if (targetRow.level === "category") {
-          const isSameParent = targetRow.parentId === dragParentId;
+      if (!targetKey) return { valid: false };
+
+      const targetKind = targetRow.level;
+
+      // Same kind - reorder among siblings
+      if (targetKind === dragLevel) {
+        if (dragLevel === "label") {
+          return { valid: true, dropType: "reorder" };
+        }
+
+        if (dragLevel === "category") {
+          const allFromSameParent = draggedCategories.every(
+            (info) => info.fromLabelId === targetRow.parentId
+          );
           return {
             valid: true,
-            dropType: isSameParent ? "reorder" : "move-to-label",
+            dropType: allFromSameParent ? "reorder" : "move-to-label",
           };
         }
+      }
 
-        // Drop on a label (move to that label)
-        if (targetRow.level === "label") {
-          // Can't drop on own parent label
-          return targetRow.id === dragParentId
-            ? { valid: false }
-            : { valid: true, dropType: "move-to-label" };
+      // Different kind - check if target can receive this drag kind
+      if (registry.canReceiveDrop(targetKey, dragLevel)) {
+        if (targetKind === "label" && dragLevel === "category") {
+          const allFromTargetLabel = draggedCategories.every(
+            (info) => info.fromLabelId === targetRow.id
+          );
+          return allFromTargetLabel ? { valid: false } : { valid: true, dropType: "move-to-label" };
         }
+        return { valid: true, dropType: "move-to-label" };
       }
 
       return { valid: false };
     },
-    [dragState, getRow]
+    [dragState, getRow, registry]
   );
 
-  // Simplified isValidDrop for compatibility
-  const isValidDrop = useCallback(
-    (targetId: string): boolean => getDropInfo(targetId).valid,
-    [getDropInfo]
+  const isValidDrop = useCallback((targetId: string): boolean => getDropInfo(targetId).valid, [getDropInfo]);
+
+  /**
+   * Handle drag start.
+   * Only initiates if eligibility.canDrag is true.
+   */
+  const handleDragStart = useCallback(
+    (row: FlatMenuRow, e?: React.DragEvent) => {
+      // Only handle label and category levels
+      if (row.level !== "label" && row.level !== "category") return;
+
+      // Rule: No drag if not eligible
+      if (!eligibility.canDrag) {
+        if (e) {
+          e.preventDefault();
+          e.dataTransfer.effectAllowed = "none";
+        }
+        return;
+      }
+
+      // Rule: Can only drag items that are in the selection
+      if (!eligibleEntityIds.has(row.id)) {
+        if (e) {
+          e.preventDefault();
+          e.dataTransfer.effectAllowed = "none";
+        }
+        return;
+      }
+
+      // Build drag state from eligibility
+      const draggedIds = eligibility.draggedEntities.map((ent) => ent.entityId);
+
+      setDragState({
+        ...INITIAL_DRAG_STATE,
+        dragId: row.id,
+        dragLevel: eligibility.dragKind as MenuLevel,
+        dragParentId: row.parentId,
+        isDraggingLabel: eligibility.dragKind === "label",
+        draggedIds,
+        draggedCategories: draggedCategoriesFromEligibility,
+      });
+    },
+    [eligibility, eligibleEntityIds, draggedCategoriesFromEligibility]
   );
-
-  // Handle drag start
-  const handleDragStart = useCallback((row: FlatMenuRow) => {
-    // Only handle label and category levels
-    if (row.level !== "label" && row.level !== "category") return;
-
-    setDragState({
-      ...INITIAL_DRAG_STATE,
-      dragId: row.id,
-      dragLevel: row.level,
-      dragParentId: row.parentId,
-      isDraggingLabel: row.level === "label",
-    });
-  }, []);
 
   /**
    * Get the label ID that "owns" a row's territory.
-   * - Label rows own themselves
-   * - Category rows belong to their parent label
    */
-  const getLabelOwner = useCallback(
-    (row: FlatMenuRow): string | null => {
-      if (row.level === "label") return row.id;
-      if (row.level === "category") return row.parentId;
-      return null;
-    },
-    []
-  );
+  const getLabelOwner = useCallback((row: FlatMenuRow): string | null => {
+    if (row.level === "label") return row.id;
+    if (row.level === "category") return row.parentId;
+    return null;
+  }, []);
 
-  // Handle drag over - expand on enter territory, collapse when leaving territory
-  const handleDragOver = useCallback(
-    (e: React.DragEvent, targetId: string) => {
-      e.preventDefault();
-
-      const targetRow = getRow(targetId);
+  // Core drag over logic
+  const updateDragOver = useCallback(
+    (targetId: string, clientY: number, rect: DOMRect) => {
+      const targetRow = rowsById.get(targetId);
       if (!targetRow) return;
 
-      // Determine which label's territory we're now in
+      // Collapse previous auto-expanded label if we've moved to a different territory
       const targetLabelOwner = getLabelOwner(targetRow);
       const currentAutoExpanded = autoExpandedLabelRef.current;
 
-      // Collapse previous auto-expanded label if we've moved to a different label's territory
-      if (
-        currentAutoExpanded &&
-        currentAutoExpanded !== targetLabelOwner &&
-        onCollapseItem
-      ) {
+      if (currentAutoExpanded && currentAutoExpanded !== targetLabelOwner && onCollapseItem) {
         onCollapseItem(currentAutoExpanded);
         autoExpandedLabelRef.current = null;
       }
 
-      // Auto-expand collapsed labels immediately when dragging categories over them
+      // Auto-expand collapsed labels when dragging categories over them
       const shouldExpand =
         targetRow.level === "label" &&
         targetRow.isExpandable &&
@@ -256,9 +334,8 @@ export function useMenuTableDragReorder({
         return;
       }
 
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const midPoint = rect.top + rect.height / 2;
-      const position = e.clientY < midPoint ? "before" : "after";
+      const position = clientY < midPoint ? "before" : "after";
 
       setDragState((prev) => ({
         ...prev,
@@ -267,59 +344,22 @@ export function useMenuTableDragReorder({
         dropType: dropInfo.dropType,
       }));
     },
-    [getDropInfo, getRow, getLabelOwner, onExpandItem, onCollapseItem, dragState.dragLevel]
+    [rowsById, getDropInfo, getLabelOwner, onExpandItem, onCollapseItem, dragState.dragLevel]
   );
 
-  // Handle drag leave - no-op (collapse handled in dragOver when entering new territory)
-  const handleDragLeave = useCallback(() => {}, []);
+  const throttledUpdateDragOver = useThrottledCallback(updateDragOver, DRAG_OVER_THROTTLE_MS);
 
-  /**
-   * Execute a cross-boundary category move.
-   */
-  const executeCrossBoundaryMove = useCallback(
-    async (
-      categoryId: string,
-      fromLabelId: string,
-      toLabelId: string,
-      targetCategoryId: string | null,
-      dropPosition: "before" | "after"
-    ) => {
-      await reorderFunctions.moveCategoryToLabel(
-        categoryId,
-        fromLabelId,
-        toLabelId,
-        targetCategoryId,
-        dropPosition
-      );
-
-      pushUndoAction({
-        action: "move:category-to-label",
-        timestamp: new Date(),
-        data: {
-          undo: async () => {
-            // Undo: move back to original label (append to end for simplicity)
-            await reorderFunctions.moveCategoryToLabel(
-              categoryId,
-              toLabelId,
-              fromLabelId,
-              null,
-              "after"
-            );
-          },
-          redo: async () => {
-            await reorderFunctions.moveCategoryToLabel(
-              categoryId,
-              fromLabelId,
-              toLabelId,
-              targetCategoryId,
-              dropPosition
-            );
-          },
-        },
-      });
+  const handleDragOver = useCallback(
+    (e: React.DragEvent, targetId: string) => {
+      if (!dragState.dragId) return;
+      e.preventDefault();
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      throttledUpdateDragOver(targetId, e.clientY, rect);
     },
-    [reorderFunctions, pushUndoAction]
+    [dragState.dragId, throttledUpdateDragOver]
   );
+
+  const handleDragLeave = useCallback(() => {}, []);
 
   /**
    * Execute a same-parent reorder operation.
@@ -328,41 +368,19 @@ export function useMenuTableDragReorder({
     async (
       level: MenuLevel,
       parentId: string | null,
-      dragId: string,
+      draggedIds: readonly string[],
       targetId: string,
       dropPosition: "before" | "after"
     ) => {
-      // Get items to reorder based on level
-      const items =
-        level === "label"
-          ? labels
-          : labels.find((l) => l.id === parentId)?.categories.slice().sort((a, b) => a.order - b.order) ?? [];
+      const dragCount = draggedIds.length;
 
-      const previousIds = items.map((i) => i.id);
-
-      // Calculate new order
-      const reordered = [...items];
-      const fromIndex = reordered.findIndex((item) => item.id === dragId);
-      const toIndex = reordered.findIndex((item) => item.id === targetId);
-
-      if (fromIndex === -1 || toIndex === -1) return;
-
-      const [item] = reordered.splice(fromIndex, 1);
-      let newIndex = toIndex;
-      if (dropPosition === "after") {
-        newIndex = fromIndex < toIndex ? toIndex : toIndex + 1;
-      } else {
-        newIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
-      }
-      reordered.splice(newIndex, 0, item);
-
-      const newIds = reordered.map((i) => i.id);
-
-      // Execute reorder based on level
       if (level === "label") {
+        const previousIds = labels.map((l) => l.id);
+        const newIds = calculateMultiReorder(labels, draggedIds as string[], targetId, dropPosition);
+
         await reorderFunctions.reorderLabels(newIds);
         pushUndoAction({
-          action: "reorder:labels",
+          action: dragCount > 1 ? `reorder:${dragCount}-labels` : "reorder:labels",
           timestamp: new Date(),
           data: {
             undo: async () => {
@@ -373,10 +391,21 @@ export function useMenuTableDragReorder({
             },
           },
         });
-      } else if (parentId) {
+        return;
+      }
+
+      if (parentId) {
+        const categories =
+          labels
+            .find((l) => l.id === parentId)
+            ?.categories.slice()
+            .sort((a, b) => a.order - b.order) ?? [];
+        const previousIds = categories.map((c) => c.id);
+        const newIds = calculateMultiReorder(categories, draggedIds as string[], targetId, dropPosition);
+
         await reorderFunctions.reorderCategoriesInLabel(parentId, newIds);
         pushUndoAction({
-          action: "reorder:categories-in-label",
+          action: dragCount > 1 ? `reorder:${dragCount}-categories-in-label` : "reorder:categories-in-label",
           timestamp: new Date(),
           data: {
             undo: async () => {
@@ -392,10 +421,89 @@ export function useMenuTableDragReorder({
     [labels, reorderFunctions, pushUndoAction]
   );
 
-  // Handle drop
+  /**
+   * Execute a batch cross-boundary category move.
+   */
+  const executeBatchCrossBoundaryMove = useCallback(
+    async (
+      moves: readonly DraggedCategoryInfo[],
+      toLabelId: string,
+      targetCategoryId: string | null,
+      dropPosition: "before" | "after"
+    ) => {
+      const actualMoves = moves.filter((m) => m.fromLabelId !== toLabelId);
+      if (actualMoves.length === 0) return;
+
+      const dragCount = actualMoves.length;
+
+      if (reorderFunctions.batchMoveCategoriesToLabel && dragCount > 1) {
+        await reorderFunctions.batchMoveCategoriesToLabel(
+          actualMoves as DraggedCategoryInfo[],
+          toLabelId,
+          targetCategoryId,
+          dropPosition
+        );
+
+        pushUndoAction({
+          action: `move:${dragCount}-categories-to-label`,
+          timestamp: new Date(),
+          data: {
+            undo: async () => {
+              for (const { categoryId, fromLabelId } of actualMoves) {
+                await reorderFunctions.moveCategoryToLabel(categoryId, toLabelId, fromLabelId, null, "after");
+              }
+            },
+            redo: async () => {
+              await reorderFunctions.batchMoveCategoriesToLabel!(
+                actualMoves as DraggedCategoryInfo[],
+                toLabelId,
+                targetCategoryId,
+                dropPosition
+              );
+            },
+          },
+        });
+      } else {
+        for (const { categoryId, fromLabelId } of actualMoves) {
+          await reorderFunctions.moveCategoryToLabel(
+            categoryId,
+            fromLabelId,
+            toLabelId,
+            targetCategoryId,
+            dropPosition
+          );
+        }
+
+        pushUndoAction({
+          action: dragCount > 1 ? `move:${dragCount}-categories-to-label` : "move:category-to-label",
+          timestamp: new Date(),
+          data: {
+            undo: async () => {
+              for (const { categoryId, fromLabelId } of actualMoves) {
+                await reorderFunctions.moveCategoryToLabel(categoryId, toLabelId, fromLabelId, null, "after");
+              }
+            },
+            redo: async () => {
+              for (const { categoryId, fromLabelId } of actualMoves) {
+                await reorderFunctions.moveCategoryToLabel(
+                  categoryId,
+                  fromLabelId,
+                  toLabelId,
+                  targetCategoryId,
+                  dropPosition
+                );
+              }
+            },
+          },
+        });
+      }
+    },
+    [reorderFunctions, pushUndoAction]
+  );
+
   const handleDrop = useCallback(
     async (targetId: string) => {
-      const { dragId, dragLevel, dragParentId, dropPosition } = dragState;
+      const { dragId, dragLevel, dragParentId, dropPosition, draggedIds, draggedCategories } = dragState;
 
       const dropInfo = getDropInfo(targetId);
       if (!dragId || !dragLevel || !dropInfo.valid) {
@@ -410,26 +518,15 @@ export function useMenuTableDragReorder({
       }
 
       try {
-        // Cross-boundary move: category to different label
-        if (dropInfo.dropType === "move-to-label" && dragLevel === "category" && dragParentId) {
-          const targetLabelId =
-            targetRow.level === "label" ? targetRow.id : targetRow.parentId;
+        if (dropInfo.dropType === "move-to-label" && dragLevel === "category") {
+          const targetLabelId = targetRow.level === "label" ? targetRow.id : targetRow.parentId;
 
-          if (targetLabelId && targetLabelId !== dragParentId) {
-            // If dropping on a label row, append to end (targetCategoryId = null)
-            // If dropping on a category row, insert relative to that category
+          if (targetLabelId) {
             const targetCategoryId = targetRow.level === "category" ? targetRow.id : null;
-            await executeCrossBoundaryMove(
-              dragId,
-              dragParentId,
-              targetLabelId,
-              targetCategoryId,
-              dropPosition
-            );
+            await executeBatchCrossBoundaryMove(draggedCategories, targetLabelId, targetCategoryId, dropPosition);
           }
         } else {
-          // Same-parent reorder
-          await executeReorder(dragLevel, dragParentId, dragId, targetId, dropPosition);
+          await executeReorder(dragLevel, dragParentId, draggedIds, targetId, dropPosition);
         }
       } catch (error) {
         console.error("[useMenuTableDragReorder] Drop operation failed:", error);
@@ -437,20 +534,16 @@ export function useMenuTableDragReorder({
 
       clearDragState();
     },
-    [dragState, getDropInfo, getRow, clearDragState, executeCrossBoundaryMove, executeReorder]
+    [dragState, getDropInfo, getRow, clearDragState, executeBatchCrossBoundaryMove, executeReorder]
   );
 
-  // Handle drag end
   const handleDragEnd = useCallback(() => {
     clearDragState();
   }, [clearDragState]);
 
-  /**
-   * Get drag event handlers for a specific row
-   */
   const getDragHandlers = useCallback(
     (row: FlatMenuRow): HierarchicalDragHandlers => ({
-      onDragStart: () => handleDragStart(row),
+      onDragStart: (e?: React.DragEvent) => handleDragStart(row, e),
       onDragOver: (e: React.DragEvent) => handleDragOver(e, row.id),
       onDragLeave: handleDragLeave,
       onDrop: () => handleDrop(row.id),
@@ -459,30 +552,33 @@ export function useMenuTableDragReorder({
     [handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd]
   );
 
-  /**
-   * Get drag state classes for a specific row
-   */
   const getDragClasses = useCallback(
     (row: FlatMenuRow) => {
-      const isDragging = dragState.dragId === row.id;
-      const isDragOver = dragState.dragOverId === row.id && isValidDrop(row.id);
-      const isAutoExpanded = dragState.autoExpandedId === row.id;
+      const { dragId, draggedIds, dragOverId, dropPosition, dropType, autoExpandedId } = dragState;
+
+      const isDragging = dragId === row.id;
+      const isInDragSet = checkIsInDragSet(row.id, draggedIds);
+      const isDragOver = dragOverId === row.id && isValidDrop(row.id);
+      const isAutoExpanded = autoExpandedId === row.id;
 
       return {
         isDragging,
+        isInDragSet,
         isDragOver,
-        dropPosition: isDragOver ? dragState.dropPosition : null,
-        /** Type of drop: 'reorder' (same parent) or 'move-to-label' (cross-boundary) */
-        dropType: isDragOver ? dragState.dropType : null,
-        /** True when this row was just auto-expanded via hover (for animation) */
+        dropPosition: isDragOver ? dropPosition : null,
+        dropType: isDragOver ? dropType : null,
         isAutoExpanded,
       };
     },
-    [dragState.dragId, dragState.dragOverId, dragState.dropPosition, dragState.dropType, dragState.autoExpandedId, isValidDrop]
+    [dragState, isValidDrop]
   );
 
   return {
-    dragState,
+    dragState: {
+      ...dragState,
+      isMultiDrag: dragState.draggedIds.length > 1,
+      dragCount: dragState.draggedIds.length,
+    },
     getDragHandlers,
     getDragClasses,
   };
