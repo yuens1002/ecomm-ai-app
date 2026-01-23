@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.66.18 - 2026-01-23
+
+- **Fixed checkbox UI honesty**: Parent checkbox now shows "checked" only when explicitly selected, not when computed from all children being selected
+- Clicking all children individually now shows parent as "indeterminate" (not "checked")
+- This aligns UI state with actual DnD/action behavior
+
 ## 0.66.17 - 2026-01-23
 
 - **Fixed auto-expanded parent collapse on drop**: Target label now stays expanded after successful drop

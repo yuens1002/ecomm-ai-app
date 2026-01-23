@@ -99,7 +99,12 @@ export function useContextSelectionModel(
    * Get tri-state checkbox state for any key.
    *
    * For leaves: returns "checked" or "unchecked" based on direct selection.
-   * For parents (when hierarchy provided): computes from descendant selection.
+   * For parents: "checked" ONLY when explicitly selected (not computed from descendants).
+   *
+   * This ensures the UI is honest:
+   * - "checked" = user explicitly selected this entity (as a unit)
+   * - "indeterminate" = some/all descendants selected, but NOT this entity
+   * - "unchecked" = nothing selected
    */
   const getCheckboxState = useCallback(
     (key: string): CheckboxState => {
@@ -116,12 +121,15 @@ export function useContextSelectionModel(
         return selectedIdSet.has(key) ? "checked" : "unchecked";
       }
 
-      // Parent node - compute from descendants
-      const selectedCount = descendants.filter((d) => selectedIdSet.has(d)).length;
+      // Parent node - only "checked" if EXPLICITLY selected
+      // This prevents the UI from lying about user intent
+      if (selectedIdSet.has(key)) {
+        return "checked";
+      }
 
-      if (selectedCount === 0) return "unchecked";
-      if (selectedCount === descendants.length) return "checked";
-      return "indeterminate";
+      // Parent not explicitly selected - check descendants
+      const hasSelectedDescendants = descendants.some((d) => selectedIdSet.has(d));
+      return hasSelectedDescendants ? "indeterminate" : "unchecked";
     },
     [selectedIdSet, hierarchy]
   );
