@@ -296,8 +296,9 @@ export function MenuTableView() {
 
   // Get first selected item for ghost content
   // Uses actionableRoots (pre-computed from selection) so ghost is ready BEFORE drag starts
+  // Always compute when there's at least one selection so ghost is pre-rendered
   const firstSelectedItem = useMemo(() => {
-    if (actionableRoots.length <= 1) return null;
+    if (actionableRoots.length === 0) return null;
 
     // Extract entity IDs from actionable root keys (format: "kind:id" or "kind:parentId~id")
     const actionableEntityIds = new Set(
@@ -336,7 +337,7 @@ export function MenuTableView() {
           if (row.level === "label") {
             builder.collapseAll();
           }
-          baseHandlers.onDragStart();
+          baseHandlers.onDragStart(e);
           // Set ghost image synchronously - must happen during dragstart event
           // Ghost is pre-rendered based on actionableRoots so it exists before drag starts
           if (isMultiDrag) {
@@ -383,9 +384,12 @@ export function MenuTableView() {
             (dragClasses.dropPosition === "after"
               ? "!border-b-2 !border-b-primary"
               : "!border-t-2 !border-t-primary"),
-          // Flash animation for cross-boundary move target or auto-expanded
-          (dragClasses.isDragOver && dragClasses.dropType === "move-to-label") &&
+          // Flash animation for cross-boundary move target (only on collapsed labels)
+          dragClasses.isDragOver &&
+            dragClasses.dropType === "move-to-label" &&
+            !row.isExpanded &&
             "animate-drop-target-flash",
+          // Auto-expand flash (only when actually expanding a collapsed label)
           dragClasses.isAutoExpanded && "animate-auto-expand-flash"
         )}
         onRowClick={() => handleClick(labelKey)}
@@ -634,10 +638,17 @@ export function MenuTableView() {
       </TableViewWrapper>
 
       {/* Multi-drag ghost with count badge - pre-rendered based on actionableRoots
-          so it exists BEFORE drag starts (setDragImage must be called synchronously) */}
-      {actionableRoots.length > 1 && firstSelectedItem && (
+          so it exists BEFORE drag starts (setDragImage must be called synchronously).
+          Render when any selection exists so ghost is ready when user adds more items.
+          Use stable key (just ghostId) to avoid remount on count change.
+
+          TODO: Known bug - ghost may not show when items are selected via individual
+          clicks and drag starts immediately. This is a race condition where React
+          hasn't finished rendering the updated ghost before dragstart fires.
+          Will address in future DnD refactor. */}
+      {firstSelectedItem && (
         <GroupedEntitiesGhost
-          key={`ghost-${actionableRoots.length}-${firstSelectedItem.id}`}
+          key={GHOST_ID}
           ghostId={GHOST_ID}
           count={actionableRoots.length}
         >

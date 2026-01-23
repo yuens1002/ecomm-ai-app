@@ -196,6 +196,7 @@ export function useMultiEntityDnd({
   }, []);
 
   // Helper to clear drag state and collapse auto-expanded parents
+  // Note: Does NOT reset dropInProgressRef - that's managed by handleDrop/handleDragEnd
   const clearDragState = useCallback(
     (wasDropped: boolean = false) => {
       clearExpandTimer();
@@ -207,7 +208,6 @@ export function useMultiEntityDnd({
 
       autoExpandedParentRef.current = null;
       dragLevelRef.current = null;
-      dropInProgressRef.current = false;
       setDragState(INITIAL_DRAG_STATE);
     },
     [clearExpandTimer, onCollapseItem]

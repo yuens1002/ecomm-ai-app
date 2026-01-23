@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.66.17 - 2026-01-23
+
+- **Fixed auto-expanded parent collapse on drop**: Target label now stays expanded after successful drop
+- **Fixed race condition in clearDragState**: `dropInProgressRef` now managed only by drop/dragEnd handlers
+
+**Known Issues:**
+- Multi-drag ghost may not appear when items selected via individual clicks and drag starts immediately (race condition)
+
 ## 0.66.16 - 2026-01-23
 
 - **Refactored DnD hooks architecture**: Unified hooks with shared `useGroupedReorder` core
