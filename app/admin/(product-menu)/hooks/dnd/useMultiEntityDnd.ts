@@ -1,16 +1,14 @@
 "use client";
+"use no memo";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MenuLabel } from "../../types/menu";
 import type { FlatMenuRow } from "../../menu-builder/components/table-views/MenuTableView.types";
 import type { IdentityRegistry } from "../../types/identity-registry";
 import { createKey } from "../../types/identity-registry";
-import { calculateMultiReorder, isInDragSet as checkIsInDragSet } from "./multiSelectValidation";
-import { useThrottledCallback } from "./useThrottledCallback";
+import { calculateMultiReorder } from "./multiSelectValidation";
+import { useGroupedReorder } from "./useGroupedReorder";
 import type { DnDEligibility, DraggedEntity } from "./useDnDEligibility";
-
-/** Throttle delay for dragOver events (ms) */
-const DRAG_OVER_THROTTLE_MS = 50;
 
 /** Delay before auto-expanding a collapsed parent on drag hover (ms) */
 const AUTO_EXPAND_DELAY_MS = 500;
@@ -106,21 +104,9 @@ export type UseMultiEntityDndReturn = {
   };
   getDragHandlers: (row: FlatMenuRow) => MultiEntityDragHandlers;
   getDragClasses: (row: FlatMenuRow) => MultiEntityDragClasses;
+  /** Get isDraggable state for cursor styling (undefined=no context, true=can drag, false=can't drag) */
+  getIsDraggable: (entityId: string) => boolean | undefined;
   eligibleEntityIds: Set<string>;
-};
-
-const INITIAL_DRAG_STATE: MultiEntityDragState = {
-  dragId: null,
-  dragLevel: null,
-  dragParentId: null,
-  dragOverId: null,
-  dropPosition: "before",
-  dropType: "reorder",
-  autoExpandedId: null,
-  isDraggingLabel: false,
-  isDraggingCategory: false,
-  draggedIds: [],
-  draggedChildren: [],
 };
 
 /**
@@ -138,7 +124,7 @@ function extractParentId(entity: DraggedEntity): string | null {
  * Use this for tables that display hierarchical data with parent-child relationships:
  * - MenuTableView (labels → categories)
  *
- * Features:
+ * Built on useGroupedReorder for core drag state management, adding:
  * - Same-level reordering (parents among parents, children within same parent)
  * - Cross-boundary moves (children between different parents)
  * - Multi-select drag support
@@ -160,7 +146,20 @@ export function useMultiEntityDnd({
   registry,
   onSelectionUpdate,
 }: UseMultiEntityDndOptions): UseMultiEntityDndReturn {
-  const [dragState, setDragState] = useState<MultiEntityDragState>(INITIAL_DRAG_STATE);
+  // Extended state for hierarchical features (beyond core useGroupedReorder state)
+  const [hierarchyState, setHierarchyState] = useState<{
+    dragLevel: EntityLevel | null;
+    dragParentId: string | null;
+    dropType: DropType;
+    autoExpandedId: string | null;
+    draggedChildren: readonly DraggedChildInfo[];
+  }>({
+    dragLevel: null,
+    dragParentId: null,
+    dropType: "reorder",
+    autoExpandedId: null,
+    draggedChildren: [],
+  });
 
   // Track the currently auto-expanded parent ID
   const autoExpandedParentRef = useRef<string | null>(null);
@@ -170,21 +169,15 @@ export function useMultiEntityDnd({
   // Track which parent the expansion timer is for
   const pendingExpandParentRef = useRef<string | null>(null);
 
-  // Track drag level in a ref for stable access in callbacks (avoids stale closure)
-  const dragLevelRef = useRef<EntityLevel | null>(null);
-
-  // Track if a drop is in progress (prevents dragEnd from collapsing during async drop)
-  const dropInProgressRef = useRef<boolean>(false);
-
   // Clear auto-expanded animation state after a delay
   useEffect(() => {
-    if (dragState.autoExpandedId) {
+    if (hierarchyState.autoExpandedId) {
       const timer = setTimeout(() => {
-        setDragState((prev) => ({ ...prev, autoExpandedId: null }));
+        setHierarchyState((prev) => ({ ...prev, autoExpandedId: null }));
       }, 600);
       return () => clearTimeout(timer);
     }
-  }, [dragState.autoExpandedId]);
+  }, [hierarchyState.autoExpandedId]);
 
   // Helper to clear any pending expansion timer
   const clearExpandTimer = useCallback(() => {
@@ -195,34 +188,10 @@ export function useMultiEntityDnd({
     pendingExpandParentRef.current = null;
   }, []);
 
-  // Helper to clear drag state and collapse auto-expanded parents
-  // Note: Does NOT reset dropInProgressRef - that's managed by handleDrop/handleDragEnd
-  const clearDragState = useCallback(
-    (wasDropped: boolean = false) => {
-      clearExpandTimer();
-
-      // Collapse auto-expanded parent if drag ended without a drop
-      if (!wasDropped && autoExpandedParentRef.current && onCollapseItem) {
-        onCollapseItem(autoExpandedParentRef.current);
-      }
-
-      autoExpandedParentRef.current = null;
-      dragLevelRef.current = null;
-      setDragState(INITIAL_DRAG_STATE);
-    },
-    [clearExpandTimer, onCollapseItem]
-  );
-
   // Memoize rows lookup for O(1) access
   const rowsById = useMemo(() => new Map(rows.map((r) => [r.id, r])), [rows]);
 
   const getRow = useCallback((id: string): FlatMenuRow | undefined => rowsById.get(id), [rowsById]);
-
-  // Extract eligible entity IDs for drag validation
-  const eligibleEntityIds = useMemo(
-    () => new Set(eligibility.draggedEntities.map((e) => e.entityId)),
-    [eligibility.draggedEntities]
-  );
 
   // Build dragged children info from eligibility, sorted by visual order
   const draggedChildrenFromEligibility = useMemo((): DraggedChildInfo[] => {
@@ -247,17 +216,29 @@ export function useMultiEntityDnd({
   }, [eligibility.dragKind, eligibility.draggedEntities, rows]);
 
   /**
+   * Get the parent ID that "owns" a row's territory.
+   */
+  const getParentOwner = useCallback((row: FlatMenuRow): string | null => {
+    if (row.level === "label") return row.id;
+    if (row.level === "category") return row.parentId;
+    return null;
+  }, []);
+
+  /**
    * Determine if a drop is valid and what type of drop it would be.
    */
   const getDropInfo = useCallback(
-    (targetId: string): { valid: false } | { valid: true; dropType: DropType } => {
-      const { dragId, dragLevel, draggedIds, draggedChildren } = dragState;
-
-      if (!dragId || dragId === targetId) return { valid: false };
+    (
+      targetId: string,
+      dragLevel: EntityLevel | null,
+      draggedIds: readonly string[],
+      draggedChildren: readonly DraggedChildInfo[]
+    ): { valid: false } | { valid: true; dropType: DropType } => {
+      if (!dragLevel) return { valid: false };
       if (draggedIds.includes(targetId)) return { valid: false };
 
       const targetRow = getRow(targetId);
-      if (!targetRow || !dragLevel) return { valid: false };
+      if (!targetRow) return { valid: false };
 
       const targetKey =
         targetRow.level === "label"
@@ -300,144 +281,8 @@ export function useMultiEntityDnd({
 
       return { valid: false };
     },
-    [dragState, getRow, registry]
+    [getRow, registry]
   );
-
-  const isValidDrop = useCallback((targetId: string): boolean => getDropInfo(targetId).valid, [getDropInfo]);
-
-  /**
-   * Handle drag start.
-   */
-  const handleDragStart = useCallback(
-    (row: FlatMenuRow, e?: React.DragEvent) => {
-      if (row.level !== "label" && row.level !== "category") return;
-
-      if (!eligibility.canDrag || !eligibility.hasValidTargets) {
-        if (e) {
-          e.preventDefault();
-          e.dataTransfer.effectAllowed = "none";
-        }
-        return;
-      }
-
-      if (!eligibleEntityIds.has(row.id)) {
-        if (e) {
-          e.preventDefault();
-          e.dataTransfer.effectAllowed = "none";
-        }
-        return;
-      }
-
-      const draggedIds = eligibility.draggedEntities.map((ent) => ent.entityId);
-      const dragLevel = eligibility.dragKind as EntityLevel;
-
-      dragLevelRef.current = dragLevel;
-
-      setDragState({
-        ...INITIAL_DRAG_STATE,
-        dragId: row.id,
-        dragLevel,
-        dragParentId: row.parentId,
-        isDraggingLabel: eligibility.dragKind === "label",
-        isDraggingCategory: eligibility.dragKind === "category",
-        draggedIds,
-        draggedChildren: draggedChildrenFromEligibility,
-      });
-    },
-    [eligibility, eligibleEntityIds, draggedChildrenFromEligibility]
-  );
-
-  /**
-   * Get the parent ID that "owns" a row's territory.
-   */
-  const getParentOwner = useCallback((row: FlatMenuRow): string | null => {
-    if (row.level === "label") return row.id;
-    if (row.level === "category") return row.parentId;
-    return null;
-  }, []);
-
-  // Core drag over logic
-  const updateDragOver = useCallback(
-    (targetId: string, clientY: number, rect: DOMRect) => {
-      const targetRow = rowsById.get(targetId);
-      if (!targetRow) return;
-
-      const targetParentOwner = getParentOwner(targetRow);
-      const currentAutoExpanded = autoExpandedParentRef.current;
-
-      // Collapse previous auto-expanded parent if moved to different territory
-      if (currentAutoExpanded && currentAutoExpanded !== targetParentOwner && onCollapseItem) {
-        onCollapseItem(currentAutoExpanded);
-        autoExpandedParentRef.current = null;
-      }
-
-      // Clear pending expansion timer if moved to different parent
-      if (pendingExpandParentRef.current && pendingExpandParentRef.current !== targetParentOwner) {
-        clearExpandTimer();
-      }
-
-      // Check if this is a collapsed parent that could be expanded
-      const isCollapsedExpandableParent =
-        targetRow.level === "label" &&
-        targetRow.isExpandable &&
-        !targetRow.isExpanded &&
-        dragLevelRef.current === "category";
-
-      // Start delayed expansion timer if hovering over a collapsed parent
-      if (isCollapsedExpandableParent && onExpandItem) {
-        if (pendingExpandParentRef.current !== targetRow.id) {
-          clearExpandTimer();
-          pendingExpandParentRef.current = targetRow.id;
-
-          autoExpandTimerRef.current = setTimeout(() => {
-            const currentRow = rowsById.get(targetRow.id);
-            if (currentRow && !currentRow.isExpanded) {
-              autoExpandedParentRef.current = targetRow.id;
-              onExpandItem(targetRow.id);
-              setDragState((prev) => ({ ...prev, autoExpandedId: targetRow.id }));
-            }
-            pendingExpandParentRef.current = null;
-            autoExpandTimerRef.current = null;
-          }, AUTO_EXPAND_DELAY_MS);
-        }
-      }
-
-      const dropInfo = getDropInfo(targetId);
-      if (!dropInfo.valid) {
-        setDragState((prev) => ({
-          ...prev,
-          dragOverId: null,
-          dropType: "reorder",
-        }));
-        return;
-      }
-
-      const midPoint = rect.top + rect.height / 2;
-      const position = clientY < midPoint ? "before" : "after";
-
-      setDragState((prev) => ({
-        ...prev,
-        dragOverId: targetId,
-        dropPosition: position,
-        dropType: dropInfo.dropType,
-      }));
-    },
-    [rowsById, getDropInfo, getParentOwner, onExpandItem, onCollapseItem, clearExpandTimer]
-  );
-
-  const { throttled: throttledUpdateDragOver } = useThrottledCallback(updateDragOver, DRAG_OVER_THROTTLE_MS);
-
-  const handleDragOver = useCallback(
-    (e: React.DragEvent, targetId: string) => {
-      if (!dragState.dragId) return;
-      e.preventDefault();
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      throttledUpdateDragOver(targetId, e.clientY, rect);
-    },
-    [dragState.dragId, throttledUpdateDragOver]
-  );
-
-  const handleDragLeave = useCallback(() => {}, []);
 
   /**
    * Execute a same-parent reorder operation.
@@ -599,23 +444,88 @@ export function useMultiEntityDnd({
     [labels, reorderFunctions, pushUndoAction, onSelectionUpdate]
   );
 
-  const handleDrop = useCallback(
-    async (targetId: string) => {
-      const { dragId, dragLevel, dragParentId, dropPosition, draggedIds, draggedChildren } = dragState;
+  // Handle dragOver - auto-expand logic and drop type detection
+  const handleDragOverCallback = useCallback(
+    (targetId: string, _dropPosition: "before" | "after", _e: React.DragEvent): boolean | void => {
+      const targetRow = rowsById.get(targetId);
+      if (!targetRow) return false;
 
-      const dropInfo = getDropInfo(targetId);
-      if (!dragId || !dragLevel || !dropInfo.valid) {
-        clearDragState(false);
+      const targetParentOwner = getParentOwner(targetRow);
+      const currentAutoExpanded = autoExpandedParentRef.current;
+
+      // Collapse previous auto-expanded parent if moved to different territory
+      if (currentAutoExpanded && currentAutoExpanded !== targetParentOwner && onCollapseItem) {
+        onCollapseItem(currentAutoExpanded);
+        autoExpandedParentRef.current = null;
+      }
+
+      // Clear pending expansion timer if moved to different parent
+      if (pendingExpandParentRef.current && pendingExpandParentRef.current !== targetParentOwner) {
+        clearExpandTimer();
+      }
+
+      // Check if this is a collapsed parent that could be expanded
+      const isCollapsedExpandableParent =
+        targetRow.level === "label" &&
+        targetRow.isExpandable &&
+        !targetRow.isExpanded &&
+        hierarchyState.dragLevel === "category";
+
+      // Start delayed expansion timer if hovering over a collapsed parent
+      if (isCollapsedExpandableParent && onExpandItem) {
+        if (pendingExpandParentRef.current !== targetRow.id) {
+          clearExpandTimer();
+          pendingExpandParentRef.current = targetRow.id;
+
+          autoExpandTimerRef.current = setTimeout(() => {
+            const currentRow = rowsById.get(targetRow.id);
+            if (currentRow && !currentRow.isExpanded) {
+              autoExpandedParentRef.current = targetRow.id;
+              onExpandItem(targetRow.id);
+              setHierarchyState((prev) => ({ ...prev, autoExpandedId: targetRow.id }));
+            }
+            pendingExpandParentRef.current = null;
+            autoExpandTimerRef.current = null;
+          }, AUTO_EXPAND_DELAY_MS);
+        }
+      }
+
+      // Get dragged IDs from eligibility (source of truth)
+      const draggedIds = eligibility.draggedEntities.map((e) => e.entityId);
+
+      // Check drop validity and update drop type
+      const dropInfo = getDropInfo(
+        targetId,
+        hierarchyState.dragLevel,
+        draggedIds,
+        hierarchyState.draggedChildren
+      );
+
+      if (!dropInfo.valid) {
+        setHierarchyState((prev) => ({ ...prev, dropType: "reorder" }));
+        return false; // Tell useGroupedReorder to not show drop indicator
+      }
+
+      setHierarchyState((prev) => ({ ...prev, dropType: dropInfo.dropType }));
+      return true; // Allow drop indicator
+    },
+    [rowsById, getParentOwner, onCollapseItem, onExpandItem, clearExpandTimer, hierarchyState.dragLevel, hierarchyState.draggedChildren, getDropInfo, eligibility.draggedEntities]
+  );
+
+  // Handle drop - hierarchical logic
+  const handleDrop = useCallback(
+    async (targetId: string, dropPosition: "before" | "after", draggedIds: readonly string[]) => {
+      const { dragLevel, dragParentId, draggedChildren } = hierarchyState;
+
+      const dropInfo = getDropInfo(targetId, dragLevel, draggedIds, draggedChildren);
+      if (!dragLevel || !dropInfo.valid) {
         return;
       }
 
       const targetRow = getRow(targetId);
       if (!targetRow) {
-        clearDragState(false);
         return;
       }
-
-      dropInProgressRef.current = true;
 
       try {
         if (dropInfo.dropType === "move-to-label" && dragLevel === "category") {
@@ -638,60 +548,132 @@ export function useMultiEntityDnd({
       } catch (error) {
         console.error("[useMultiEntityDnd] Drop operation failed:", error);
       }
-
-      clearDragState(true);
-      dropInProgressRef.current = false;
     },
-    [dragState, getDropInfo, getRow, clearDragState, executeBatchCrossBoundaryMove, executeReorder, rowsById, onExpandItem]
+    [hierarchyState, getDropInfo, getRow, executeBatchCrossBoundaryMove, executeReorder, rowsById, onExpandItem]
   );
 
-  const handleDragEnd = useCallback(() => {
-    if (dropInProgressRef.current) {
-      return;
+  // Handle drop complete - clear hierarchy state and collapse auto-expanded
+  const handleDropComplete = useCallback(() => {
+    clearExpandTimer();
+    autoExpandedParentRef.current = null;
+    setHierarchyState({
+      dragLevel: null,
+      dragParentId: null,
+      dropType: "reorder",
+      autoExpandedId: null,
+      draggedChildren: [],
+    });
+  }, [clearExpandTimer]);
+
+  // Use core grouped reorder hook
+  const coreReorder = useGroupedReorder({
+    eligibility,
+    onDrop: handleDrop,
+    onDropComplete: handleDropComplete,
+    onDragOver: handleDragOverCallback,
+  });
+
+  // Set hierarchy state when drag starts (detected via core state change)
+  // This effect intentionally syncs derived state from coreReorder - cascading render is expected
+  useEffect(() => {
+    if (coreReorder.dragState.dragId && !hierarchyState.dragLevel) {
+      // Drag just started - set hierarchy state
+      const dragRow = rowsById.get(coreReorder.dragState.dragId);
+      if (dragRow && (dragRow.level === "label" || dragRow.level === "category")) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setHierarchyState({
+          dragLevel: dragRow.level,
+          dragParentId: dragRow.parentId,
+          dropType: "reorder",
+          autoExpandedId: null,
+          draggedChildren: draggedChildrenFromEligibility,
+        });
+      }
+    } else if (!coreReorder.dragState.dragId && hierarchyState.dragLevel) {
+      // Drag ended - check if we need to collapse auto-expanded parent
+      if (autoExpandedParentRef.current && onCollapseItem) {
+        onCollapseItem(autoExpandedParentRef.current);
+      }
+      clearExpandTimer();
+      autoExpandedParentRef.current = null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHierarchyState({
+        dragLevel: null,
+        dragParentId: null,
+        dropType: "reorder",
+        autoExpandedId: null,
+        draggedChildren: [],
+      });
     }
-    clearDragState(false);
-  }, [clearDragState]);
+  }, [coreReorder.dragState.dragId, hierarchyState.dragLevel, rowsById, draggedChildrenFromEligibility, onCollapseItem, clearExpandTimer]);
 
+  // Wrap getDragHandlers to use row-based API
   const getDragHandlers = useCallback(
-    (row: FlatMenuRow): MultiEntityDragHandlers => ({
-      onDragStart: (e?: React.DragEvent) => handleDragStart(row, e),
-      onDragOver: (e: React.DragEvent) => handleDragOver(e, row.id),
-      onDragLeave: handleDragLeave,
-      onDrop: () => handleDrop(row.id),
-      onDragEnd: handleDragEnd,
-    }),
-    [handleDragStart, handleDragOver, handleDragLeave, handleDrop, handleDragEnd]
-  );
-
-  const getDragClasses = useCallback(
-    (row: FlatMenuRow) => {
-      const { dragId, draggedIds, dragOverId, dropPosition, dropType, autoExpandedId } = dragState;
-
-      const isDragging = dragId === row.id;
-      const isInDragSet = checkIsInDragSet(row.id, draggedIds);
-      const isDragOver = dragOverId === row.id && isValidDrop(row.id);
-      const isAutoExpanded = autoExpandedId === row.id;
-
+    (row: FlatMenuRow): MultiEntityDragHandlers => {
+      const baseHandlers = coreReorder.getDragHandlers(row.id);
       return {
-        isDragging,
-        isInDragSet,
-        isDragOver,
-        dropPosition: isDragOver ? dropPosition : null,
-        dropType: isDragOver ? dropType : null,
-        isAutoExpanded,
+        // Wrap to handle optional event parameter
+        onDragStart: (e?: React.DragEvent) => {
+          if (e) baseHandlers.onDragStart(e);
+        },
+        onDragOver: baseHandlers.onDragOver,
+        onDragLeave: baseHandlers.onDragLeave,
+        onDrop: baseHandlers.onDrop,
+        onDragEnd: baseHandlers.onDragEnd,
       };
     },
-    [dragState, isValidDrop]
+    [coreReorder]
   );
+
+  // Wrap getDragClasses to add hierarchy-specific classes
+  const getDragClasses = useCallback(
+    (row: FlatMenuRow): MultiEntityDragClasses => {
+      const baseClasses = coreReorder.getDragClasses(row.id);
+
+      // Check if this is a valid drop target for drop type
+      const dropInfo = getDropInfo(
+        row.id,
+        hierarchyState.dragLevel,
+        coreReorder.dragState.draggedIds,
+        hierarchyState.draggedChildren
+      );
+
+      return {
+        isDragging: baseClasses.isDragging,
+        isInDragSet: baseClasses.isInDragSet,
+        isDragOver: baseClasses.isDragOver && dropInfo.valid,
+        dropPosition: baseClasses.isDragOver && dropInfo.valid ? baseClasses.dropPosition : null,
+        dropType: baseClasses.isDragOver && dropInfo.valid ? hierarchyState.dropType : null,
+        isAutoExpanded: hierarchyState.autoExpandedId === row.id,
+      };
+    },
+    [coreReorder, hierarchyState, getDropInfo]
+  );
+
+  // Combined drag state for consumers
+  const combinedDragState: MultiEntityDragState = {
+    dragId: coreReorder.dragState.dragId,
+    dragLevel: hierarchyState.dragLevel,
+    dragParentId: hierarchyState.dragParentId,
+    dragOverId: coreReorder.dragState.dragOverId,
+    dropPosition: coreReorder.dragState.dropPosition,
+    dropType: hierarchyState.dropType,
+    autoExpandedId: hierarchyState.autoExpandedId,
+    isDraggingLabel: hierarchyState.dragLevel === "label",
+    isDraggingCategory: hierarchyState.dragLevel === "category",
+    draggedIds: coreReorder.dragState.draggedIds,
+    draggedChildren: hierarchyState.draggedChildren,
+  };
 
   return {
     dragState: {
-      ...dragState,
-      isMultiDrag: dragState.draggedIds.length > 1,
-      dragCount: dragState.draggedIds.length,
+      ...combinedDragState,
+      isMultiDrag: coreReorder.dragState.draggedIds.length > 1,
+      dragCount: coreReorder.dragState.draggedIds.length,
     },
     getDragHandlers,
     getDragClasses,
-    eligibleEntityIds,
+    getIsDraggable: coreReorder.getIsDraggable,
+    eligibleEntityIds: coreReorder.eligibleEntityIds,
   };
 }

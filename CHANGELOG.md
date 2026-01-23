@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.66.20 - 2026-01-23
+
+- **Fixed AllLabelsTableView DnD reorder**: Added `defaultSort: null` to preserve server-provided order, fixing visual/calculation mismatch
+- **Consolidated DnD hooks**: `useGroupedReorder` now serves as shared core for both `useSingleEntityDnd` and `useMultiEntityDnd`
+- **Unified `getIsDraggable` API**: Cursor styling logic centralized in hooks instead of duplicated in views
+
 ## 0.66.19 - 2026-01-23
 
 - **Fixed DnD drop position accuracy**: Drop position now tracked synchronously via ref, bypassing throttle delay

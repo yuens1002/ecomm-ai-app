@@ -124,7 +124,6 @@ export function MenuTableView() {
     actionableRoots,
     selectedKind,
     isSameKind,
-    hasSelection,
   } = useContextSelectionModel(builder, {
     selectableKeys: registry.allKeys as string[],
     hierarchy: { getDescendants: (key) => registry.getChildKeys(key) as string[] },
@@ -274,7 +273,7 @@ export function MenuTableView() {
 
   // Hierarchical drag-and-drop with expand on enter, collapse on leave
   // Uses eligibility computed from selection (action-bar pattern)
-  const { getDragHandlers: getBaseDragHandlers, getDragClasses, dragState, eligibleEntityIds } = useMultiEntityDnd({
+  const { getDragHandlers: getBaseDragHandlers, getDragClasses, getIsDraggable, dragState, eligibleEntityIds } = useMultiEntityDnd({
     rows,
     labels: visibleLabels,
     reorderFunctions: {
@@ -362,9 +361,8 @@ export function MenuTableView() {
     const dragHandlers = getDragHandlers(row);
     const isPinned = pinnedLabelId === row.id;
 
-    // Determine if this row can be dragged for cursor styling
-    const canDragThisRow = eligibility.canDrag && eligibility.hasValidTargets && eligibleEntityIds.has(row.id);
-    const isDraggable = hasSelection ? canDragThisRow : undefined;
+    // Get cursor styling state for this row
+    const isDraggable = getIsDraggable(row.id);
 
     return (
       <TableRow
@@ -501,9 +499,8 @@ export function MenuTableView() {
     const dragClasses = getDragClasses(row);
     const dragHandlers = getDragHandlers(row);
 
-    // Determine if this row can be dragged for cursor styling
-    const canDragThisRow = eligibility.canDrag && eligibility.hasValidTargets && eligibleEntityIds.has(row.id);
-    const isDraggable = hasSelection ? canDragThisRow : undefined;
+    // Get cursor styling state for this row
+    const isDraggable = getIsDraggable(row.id);
 
     return (
       <TableRow

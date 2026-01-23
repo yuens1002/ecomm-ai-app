@@ -93,8 +93,8 @@ type TableRowProps = Omit<
    * Whether this row can be dragged. Controls cursor on mousedown (intent):
    * - true: cursor-grabbing on active (can drag)
    * - false: cursor-not-allowed on active (can't drag)
-   * - undefined: no DnD context
-   * All states show cursor-pointer on hover; the drag handle icon indicates DnD availability.
+   * - undefined: pointer cursor (clickable row)
+   * All states show pointer on hover; intent feedback on mousedown only.
    */
   isDraggable?: boolean;
   /**
@@ -206,9 +206,8 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
     );
 
     // Cursor based on isDraggable prop:
-    // All states show pointer on hover - intent feedback only on mousedown (active)
-    // The drag handle icon already indicates DnD availability when lit up
-    // - undefined: default pointer (no DnD context)
+    // Pointer on hover, intent feedback only on mousedown (active)
+    // - undefined: pointer cursor (clickable row)
     // - true: pointer on hover, grabbing on active (can drag)
     // - false: pointer on hover, not-allowed on active (can't drag)
     const cursorClass =

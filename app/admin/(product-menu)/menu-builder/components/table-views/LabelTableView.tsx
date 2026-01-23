@@ -126,7 +126,6 @@ export function LabelTableView() {
     actionableRoots,
     selectedKind,
     isSameKind,
-    hasSelection,
   } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
 
   // Derive DnD eligibility from selection state (action-bar pattern)
@@ -166,7 +165,7 @@ export function LabelTableView() {
   );
 
   // Drag & Drop handlers - reset sorting when manual reorder occurs
-  const { getDragHandlers, getDragClasses, eligibleEntityIds } = useSingleEntityDnd({
+  const { getDragHandlers, getDragClasses, getIsDraggable, eligibleEntityIds } = useSingleEntityDnd({
     items: labelCategories,
     onReorder: async (ids: string[]) => {
       if (currentLabelId) {
@@ -251,9 +250,8 @@ export function LabelTableView() {
     const dragClasses = getDragClasses(category.id);
     const dragHandlers = getDragHandlers(category.id);
 
-    // Determine if this row can be dragged for cursor styling
-    const canDragThisRow = eligibility.canDrag && eligibility.hasValidTargets && eligibleEntityIds.has(category.id);
-    const isDraggable = hasSelection ? canDragThisRow : undefined;
+    // Get cursor styling state for this row
+    const isDraggable = getIsDraggable(category.id);
 
     return (
       <TableRow

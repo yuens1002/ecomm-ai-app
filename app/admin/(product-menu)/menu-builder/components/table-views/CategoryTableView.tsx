@@ -121,7 +121,6 @@ export function CategoryTableView() {
     actionableRoots,
     selectedKind,
     isSameKind,
-    hasSelection,
   } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
 
   // Derive DnD eligibility from selection state (action-bar pattern)
@@ -160,7 +159,7 @@ export function CategoryTableView() {
   );
 
   // Drag & Drop handlers with multi-select support - reset sorting when manual reorder occurs
-  const { getDragHandlers: getBaseDragHandlers, getDragClasses, eligibleEntityIds } = useSingleEntityDnd({
+  const { getDragHandlers: getBaseDragHandlers, getDragClasses, getIsDraggable, eligibleEntityIds } = useSingleEntityDnd({
     items: categoryProducts,
     onReorder: async (ids) => {
       if (currentCategoryId) {
@@ -302,9 +301,8 @@ export function CategoryTableView() {
     const dragClasses = getDragClasses(product.id);
     const dragHandlers = getDragHandlers(product.id);
 
-    // Determine if this row can be dragged for cursor styling
-    const canDragThisRow = eligibility.canDrag && eligibility.hasValidTargets && eligibleEntityIds.has(product.id);
-    const isDraggable = hasSelection ? canDragThisRow : undefined;
+    // Get cursor styling state for this row
+    const isDraggable = getIsDraggable(product.id);
 
     return (
       <TableRow
