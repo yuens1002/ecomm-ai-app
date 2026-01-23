@@ -125,7 +125,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: Copy,
     label: "Clone",
     tooltip: "Duplicate selected items",
-    kbd: [modKey, "Shift", "D"],
+    kbd: ["D"],
     disabled: (state) => !hasSelection(state),
     ariaLabel: (state) =>
       hasSelection(state) ? "Clone selected items" : "Clone disabled - no items selected",
@@ -179,7 +179,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: CornerUpLeft,
     label: "Remove",
     tooltip: "Remove selected items",
-    kbd: [modKey, "Shift", "⌫"],
+    kbd: ["R"],
     disabled: (state) => !hasSelection(state),
     ariaLabel: (state) =>
       hasSelection(state) ? "Remove selected items" : "Remove disabled - no items selected",
@@ -341,7 +341,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: Eye,
     label: "Visibility",
     tooltip: "Toggle visibility",
-    kbd: [modKey, "Shift", "Space"],
+    kbd: ["V"],
     disabled: (state) => !hasSelection(state),
     ariaLabel: (state) =>
       hasSelection(state)
@@ -472,7 +472,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: ListChevronsDownUp,
     label: "Expand All",
     tooltip: "Expand all sections",
-    kbd: [modKey, "Shift", "↓"],
+    kbd: ["E"],
     disabled: () => false,
     onClick: (_state, actions) => {
       actions.expandAll([]);
@@ -487,7 +487,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: ListChevronsUpDown,
     label: "Collapse All",
     tooltip: "Collapse all sections",
-    kbd: [modKey, "Shift", "↑"],
+    kbd: ["C"],
     disabled: () => false,
     onClick: (_state, actions) => {
       actions.collapseAll();
@@ -502,7 +502,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: Undo,
     label: "Undo",
     tooltip: "Undo last change",
-    kbd: [modKey, "Shift", "<"],
+    kbd: ["U"],
     disabled: (state) => !hasUndoHistory(state),
     ariaLabel: (state) =>
       hasUndoHistory(state) ? "Undo last operation" : "Undo disabled - no changes to undo",
@@ -519,7 +519,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: Redo,
     label: "Redo",
     tooltip: "Redo last change",
-    kbd: [modKey, "Shift", ">"],
+    kbd: ["Shift", "U"],
     disabled: (state) => !hasRedoHistory(state),
     ariaLabel: (state) =>
       hasRedoHistory(state) ? "Redo last undone operation" : "Redo disabled - no changes to redo",
@@ -536,7 +536,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: Plus,
     label: "New Label",
     tooltip: "Add new label",
-    kbd: [modKey, "Shift", "N"],
+    kbd: ["N"],
     disabled: (state) => hasSelection(state),
     ariaLabel: (state) =>
       hasSelection(state) ? "New label disabled - clear selection first" : "Add new label",
@@ -607,7 +607,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: Plus,
     label: "New Category",
     tooltip: "Add new category",
-    kbd: [modKey, "Shift", "N"],
+    kbd: ["N"],
     disabled: (state) => hasSelection(state),
     ariaLabel: (state) =>
       hasSelection(state) ? "New category disabled - clear selection first" : "Add new category",
@@ -624,7 +624,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: ConciergeBell,
     label: "Help",
     tooltip: "View help",
-    kbd: [modKey, "Shift", "?"],
+    kbd: ["?"],
     disabled: () => false,
     onClick: () => {
       // Dispatch custom event for HelpPopoverButton to listen to
@@ -640,7 +640,7 @@ export const ACTIONS: Record<ActionId, ActionBase> = {
     icon: Trash2,
     label: "Delete",
     tooltip: "Permanently delete selected items",
-    kbd: [modKey, "Shift", "⌫"],
+    kbd: ["X"],
     disabled: (state) => !hasSelection(state),
     ariaLabel: (state) =>
       hasSelection(state)

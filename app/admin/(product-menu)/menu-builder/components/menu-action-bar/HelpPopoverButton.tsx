@@ -12,10 +12,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { Kbd } from "@/components/ui/kbd";
 import { ConciergeBell } from "lucide-react";
 import { HELP_CONTENT } from "../../../constants/help-content";
-import { modKey } from "../../../constants/action-bar/shared";
 import type { ViewType } from "../../../types/builder-state";
 
 type HelpPopoverButtonProps = {
@@ -50,11 +49,7 @@ export function HelpPopoverButton({ currentView }: HelpPopoverButtonProps) {
         <TooltipContent>
           <div className="flex items-center gap-2">
             Help
-            <KbdGroup>
-              <Kbd>{modKey}</Kbd>
-              <Kbd>Shift</Kbd>
-              <Kbd>?</Kbd>
-            </KbdGroup>
+            <Kbd>?</Kbd>
           </div>
         </TooltipContent>
       </Tooltip>

@@ -17,20 +17,20 @@ This document outlines the implementation plan for two concurrent features:
 
 ### Keyboard Shortcut Mappings
 
-All shortcuts use `Ctrl+Shift` (Win/Linux) or `Cmd+Shift` (Mac) to avoid browser conflicts.
+Single-key shortcuts (Gmail/Slack style) to avoid browser conflicts. Only active when not typing in inputs.
 
-| Action | Shortcut (Win/Linux) | Shortcut (Mac) | Views |
-|--------|---------------------|----------------|-------|
-| Clone | Ctrl+Shift+D | Cmd+Shift+D | menu, all-labels, all-categories |
-| Remove | Ctrl+Shift+Backspace | Cmd+Shift+Backspace | menu, label, category, all-labels, all-categories |
-| Visibility | Ctrl+Shift+Space | Cmd+Shift+Space | all-labels, all-categories |
-| Expand All | Ctrl+Shift+Down | Cmd+Shift+Down | menu |
-| Collapse All | Ctrl+Shift+Up | Cmd+Shift+Up | menu |
-| Undo | Ctrl+Shift+< | Cmd+Shift+< | all views |
-| Redo | Ctrl+Shift+> | Cmd+Shift+> | all views |
-| New Label | Ctrl+Shift+N | Cmd+Shift+N | menu, all-labels |
-| New Category | Ctrl+Shift+N | Cmd+Shift+N | all-categories |
-| Delete | Ctrl+Shift+Backspace | Cmd+Shift+Backspace | all-labels, all-categories |
+| Action | Key | Mnemonic | Views |
+|--------|-----|----------|-------|
+| New | N | **N**ew | menu, all-labels, all-categories |
+| Clone | D | **D**uplicate | menu, all-labels, all-categories |
+| Remove | R | **R**emove | menu, label, category, all-labels, all-categories |
+| Delete | X | e**X** (permanent) | all-labels, all-categories |
+| Visibility | V | **V**isibility | all-labels, all-categories |
+| Expand All | E | **E**xpand | menu |
+| Collapse All | C | **C**ollapse | menu |
+| Undo | U | **U**ndo | all views |
+| Redo | Shift+U | Shift+**U**ndo | all views |
+| Help | ? | universal | all views |
 
 ### Implementation Steps
 
@@ -291,10 +291,9 @@ delete: {
 |-------|----------|
 | Help icon | `ConciergeBell` (Lucide) |
 | Delete undo behavior | Fully recreates item with all relationships |
-| Delete shortcut | `Ctrl+Shift+Backspace` / `Cmd+Shift+Backspace` |
 | Help content format | Bulleted text only (animated walkthroughs deferred) |
-| All shortcuts | Use `Ctrl+Shift` / `Cmd+Shift` prefix to avoid browser conflicts |
-| Undo/Redo shortcuts | `Ctrl+Shift+<` / `Ctrl+Shift+>` (avoids Ctrl+Z browser conflict) |
+| Shortcut style | Single-key (Gmail/Slack style) to avoid all browser conflicts |
+| Undo/Redo shortcuts | `U` / `Shift+U` |
 
 ---
 
@@ -304,10 +303,9 @@ delete: {
 - [ ] All defined shortcuts execute their respective actions
 - [ ] Shortcuts don't fire when user is typing in inputs
 - [ ] Disabled actions don't respond to shortcuts
-- [ ] Mac uses Cmd+Shift, Windows/Linux uses Ctrl+Shift
-- [ ] Undo uses Ctrl/Cmd+Shift+<
-- [ ] Redo uses Ctrl/Cmd+Shift+>
-- [ ] No conflicts with browser shortcuts (all use Shift modifier)
+- [ ] Single-key shortcuts work (N, D, R, X, V, E, C, U, ?)
+- [ ] Shift+U works for redo
+- [ ] No conflicts with browser shortcuts
 
 ### Help Button
 - [ ] Appears on all 5 views at end of right side
