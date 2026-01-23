@@ -59,13 +59,14 @@ export function DeleteAlertButton({
           <Button
             variant="ghost"
             size="icon"
-            disabled={disabled}
-            onClick={() => setOpen(true)}
+            aria-disabled={disabled}
+            onClick={disabled ? undefined : () => setOpen(true)}
             aria-label={
               disabled
                 ? "Delete disabled - no items selected"
                 : `Permanently delete ${selectedCount} ${entityPlural}`
             }
+            className={disabled ? "opacity-50 cursor-not-allowed" : ""}
           >
             <Trash2 className="size-4" />
           </Button>
