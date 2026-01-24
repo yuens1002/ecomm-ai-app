@@ -739,12 +739,11 @@ Currently no way to select a contiguous range of items. Users must click each it
 - ~~@dnd-kit migration~~
 
 **Files to Create:**
-- `hooks/useLongPress.ts` - Scroll-safe long-press detection
-- `components/table-views/shared/ContextMenuWrapper.tsx` - Desktop right-click
-- `components/table-views/shared/MobileActionSheet.tsx` - Mobile bottom sheet
+- None (shadcn ContextMenu handles desktop + mobile)
 
 **Files to Modify:**
-- `components/table-views/shared/table/TableRow.tsx` - Context menu wrapper
+- `components/table-views/shared/table/TableRow.tsx` - Wrap with shadcn ContextMenu
+- Table view components - Pass row index and action handlers to context menu
 
 **See:** [mobile-interactions-plan.md](./mobile-interactions-plan.md) for detailed plan
 
@@ -771,8 +770,7 @@ app/admin/(product-menu)/
 │        └─ shared/
 │           ├─ table/               ✅ (TableRow, TableCell, TableHeader, SortableHeaderCell, columnWidthPresets)
 │           ├─ cells/               ✅ (CheckboxCell, InlineNameEditor, InlineIconCell, VisibilityCell, ChevronToggleCell, HierarchyNameCell, DragHandleCell)
-│           ├─ ContextMenuWrapper.tsx ⏸️ (3.10)
-│           └─ MobileActionSheet.tsx  ⏸️ (3.10)
+│           └─ (uses shadcn ContextMenu directly on TableRow)
 │
 ├─ hooks/
 │  ├─ useMenuBuilderState.ts        ✅

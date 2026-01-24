@@ -164,7 +164,7 @@ If long-press discoverability is a concern, add optional action bar button:
 
 ---
 
-## Feature 2: Context Menus (Long-Press) with Move Up/Down
+## Feature 2: Context Menus (Right-Click + Long-Press)
 
 ### Current State
 - No context menu implementation
@@ -174,141 +174,88 @@ If long-press discoverability is a concern, add optional action bar button:
 
 ### Implementation
 
-**Desktop:** Right-click on row → shows context menu
-**Mobile:** Long-press on row (500ms) → shows bottom sheet
+**shadcn ContextMenu handles both platforms automatically:**
+- **Desktop:** Right-click triggers menu
+- **Mobile:** Long-press triggers menu (built into Radix UI)
+
+No separate mobile implementation needed!
 
 **Menu Items (per view):**
 - Same actions as action bar, filtered by selection state
 - **Move Up / Move Down** - Mobile alternative to drag-and-drop
 - Example for all-labels: Move Up, Move Down, Clone, Toggle Visibility, Delete
 
-**Move Up/Down (Mobile DnD Alternative):**
-```typescript
-// Context menu actions for reordering
-const moveUpAction = {
-  label: "Move Up",
-  icon: ChevronUp,
-  disabled: isFirstItem,
-  onClick: () => reorderItem(index, index - 1),
-};
+**Implementation:**
 
-const moveDownAction = {
-  label: "Move Down",
-  icon: ChevronDown,
-  disabled: isLastItem,
-  onClick: () => reorderItem(index, index + 1),
-};
-```
+```tsx
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
-This provides mobile reordering without dedicated Reorder Mode UI.
-
-**Using shadcn/ui:**
-
-```typescript
-// Desktop: ContextMenu
+// Wrap TableRow with ContextMenu - works on desktop AND mobile
 <ContextMenu>
   <ContextMenuTrigger asChild>
     <TableRow ... />
   </ContextMenuTrigger>
   <ContextMenuContent>
+    <ContextMenuItem onClick={handleMoveUp} disabled={isFirstItem}>
+      <ChevronUp className="mr-2 h-4 w-4" />
+      Move Up
+    </ContextMenuItem>
+    <ContextMenuItem onClick={handleMoveDown} disabled={isLastItem}>
+      <ChevronDown className="mr-2 h-4 w-4" />
+      Move Down
+    </ContextMenuItem>
+    <ContextMenuSeparator />
     <ContextMenuItem onClick={handleClone}>
       <Copy className="mr-2 h-4 w-4" />
       Clone
       <ContextMenuShortcut>D</ContextMenuShortcut>
     </ContextMenuItem>
-    ...
+    <ContextMenuItem onClick={handleToggleVisibility}>
+      <Eye className="mr-2 h-4 w-4" />
+      Toggle Visibility
+      <ContextMenuShortcut>V</ContextMenuShortcut>
+    </ContextMenuItem>
+    <ContextMenuSeparator />
+    <ContextMenuItem onClick={handleDelete} className="text-destructive">
+      <Trash2 className="mr-2 h-4 w-4" />
+      Delete
+      <ContextMenuShortcut>X</ContextMenuShortcut>
+    </ContextMenuItem>
   </ContextMenuContent>
 </ContextMenu>
-
-// Mobile: Sheet (bottom sheet)
-<Sheet open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
-  <SheetContent side="bottom">
-    <SheetHeader>
-      <SheetTitle>{selectedCount} items selected</SheetTitle>
-    </SheetHeader>
-    <div className="grid gap-2 py-4">
-      <Button variant="ghost" onClick={handleClone}>
-        <Copy className="mr-2 h-4 w-4" /> Clone
-      </Button>
-      ...
-    </div>
-  </SheetContent>
-</Sheet>
 ```
 
-**Long-Press Detection (Scroll-Safe):**
-
-The key challenge: users scrolling might accidentally trigger long-press. Solution: **cancel if touch moves beyond threshold**.
-
+**Move Up/Down Handlers:**
 ```typescript
-const useLongPress = (callback: () => void, ms = 500, moveThreshold = 10) => {
-  const timerRef = useRef<NodeJS.Timeout>();
-  const startPos = useRef<{ x: number; y: number } | null>(null);
+const handleMoveUp = () => {
+  const currentIndex = getRowIndex(rowKey);
+  if (currentIndex > 0) {
+    reorderItems(currentIndex, currentIndex - 1);
+  }
+};
 
-  const start = useCallback((e: TouchEvent | PointerEvent) => {
-    // Record starting position
-    const touch = 'touches' in e ? e.touches[0] : e;
-    startPos.current = { x: touch.clientX, y: touch.clientY };
-
-    timerRef.current = setTimeout(callback, ms);
-  }, [callback, ms]);
-
-  const move = useCallback((e: TouchEvent | PointerEvent) => {
-    if (!startPos.current || !timerRef.current) return;
-
-    const touch = 'touches' in e ? e.touches[0] : e;
-    const dx = Math.abs(touch.clientX - startPos.current.x);
-    const dy = Math.abs(touch.clientY - startPos.current.y);
-
-    // Cancel if moved beyond threshold (user is scrolling)
-    if (dx > moveThreshold || dy > moveThreshold) {
-      clearTimeout(timerRef.current);
-      timerRef.current = undefined;
-      startPos.current = null;
-    }
-  }, [moveThreshold]);
-
-  const clear = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = undefined;
-    startPos.current = null;
-  }, []);
-
-  return {
-    onTouchStart: start,
-    onTouchMove: move,
-    onTouchEnd: clear,
-    onTouchCancel: clear,
-    onPointerDown: start,
-    onPointerMove: move,
-    onPointerUp: clear,
-    onPointerLeave: clear,
-  };
+const handleMoveDown = () => {
+  const currentIndex = getRowIndex(rowKey);
+  if (currentIndex < totalRows - 1) {
+    reorderItems(currentIndex, currentIndex + 1);
+  }
 };
 ```
 
-**Scroll-Safe Behavior:**
-- Timer starts on touch/pointer down
-- If touch moves > 10px in any direction → timer cancelled (user is scrolling)
-- If touch stays stationary for 500ms → callback fires
-- Touch end/cancel always clears timer
+### Scroll Safety
 
-**Additional Safeguards:**
-- Context menu only triggers on rows, not during active scroll momentum
-- Consider adding `touch-action: pan-y` to allow vertical scroll while preventing horizontal gestures
-```
-
-**Files to Create:**
-- `hooks/useLongPress.ts`
-- `menu-builder/components/table-views/shared/ContextMenuWrapper.tsx`
-- `menu-builder/components/table-views/shared/MobileActionSheet.tsx`
-
-**Files to Modify:**
-- `menu-builder/components/table-views/shared/table/TableRow.tsx` - Wrap with context menu
+shadcn/Radix ContextMenu handles scroll-vs-long-press detection automatically. The menu only triggers after the long-press threshold if the touch hasn't moved. No custom implementation needed.
 
 ---
 
-## Feature 4: Touch Target Compliance
+## Feature 3: Touch Target Compliance
 
 ### Current State
 - Some targets may be < 44x44px
@@ -377,13 +324,12 @@ const TouchTarget = ({ children, className }: { children: ReactNode; className?:
 7. Test across all 5 views on desktop and mobile
 
 ### Phase 2: Context Menus (includes Mobile Reorder)
-1. Create `useLongPress` hook (scroll-safe)
-2. Implement desktop right-click context menu (ContextMenuWrapper)
-3. Implement mobile long-press on row → bottom sheet (MobileActionSheet)
-4. Add Move Up / Move Down actions for mobile reordering
-5. Wire up action handlers from action bar config
-6. Add keyboard shortcut hints to desktop menu items
-7. Test on mobile devices
+1. Wrap TableRow with shadcn ContextMenu (handles desktop + mobile)
+2. Add Move Up / Move Down menu items for reordering
+3. Wire up action handlers from action bar config
+4. Add keyboard shortcut hints to menu items
+5. Implement undo/redo for Move Up/Down
+6. Test on desktop and mobile
 
 ### Phase 3: Touch Targets (If Needed)
 1. Audit interactive elements for 44x44px compliance
@@ -398,15 +344,14 @@ const TouchTarget = ({ children, className }: { children: ReactNode; className?:
 ## Files Summary
 
 ### New Files
-- `hooks/useLongPress.ts` - Scroll-safe long-press detection
-- `menu-builder/components/table-views/shared/ContextMenuWrapper.tsx` - Desktop right-click
-- `menu-builder/components/table-views/shared/MobileActionSheet.tsx` - Mobile bottom sheet
+- `hooks/useLongPress.ts` - Scroll-safe long-press detection (for checkbox range selection only)
 
 ### Modified Files
 - `hooks/useContextSelectionModel.ts` - Anchor tracking, range selection
 - `hooks/useRowClickHandler.ts` - Shift key handling
 - `menu-builder/components/table-views/shared/cells/CheckboxCell.tsx` - Long-press range selection
-- `menu-builder/components/table-views/shared/table/TableRow.tsx` - Context menu wrapper
+- `menu-builder/components/table-views/shared/table/TableRow.tsx` - Wrap with shadcn ContextMenu
+- Table view components - Pass context menu props (row index, handlers)
 
 ---
 
