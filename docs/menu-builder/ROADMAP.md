@@ -672,6 +672,88 @@ Current code conflates hierarchy depth with entity type:
 
 ---
 
+### 3.9 Range Selection ⏸️ NOT STARTED
+
+**Complexity:** Medium
+**Effort:** 2-3 days
+**Priority:** High (core UX feature)
+
+**Problem:**
+Currently no way to select a contiguous range of items. Users must click each item individually.
+
+**Desktop: Shift+Click**
+- Click row A (becomes "anchor")
+- Shift+click row B
+- All visible rows from A to B selected
+
+**Mobile: "Select Range" Button**
+- Tap row A (becomes anchor)
+- Tap "Select Range" button in action bar
+- Tap row B
+- All visible rows from A to B selected
+
+**Implementation:**
+- Add `anchorKey` to selection state
+- Modify `useRowClickHandler` to handle Shift+click
+- Add `getVisibleKeysBetween(anchorKey, targetKey)` helper
+- Add mobile "Select Range" action button
+
+**Files to Modify:**
+- `hooks/useContextSelectionModel.ts` - Anchor tracking, range logic
+- `hooks/useRowClickHandler.ts` - Shift key handling
+- `constants/action-bar/actions.ts` - Select Range action (mobile)
+- `constants/action-bar/views.ts` - Add to mobile actions
+
+**See:** [mobile-interactions-plan.md](./mobile-interactions-plan.md) for detailed plan
+
+---
+
+### 3.10 Mobile Interactions ⏸️ NOT STARTED
+
+**Complexity:** Medium-High
+**Effort:** 5-7 days
+**Priority:** Medium (UX enhancement)
+
+**Problem:**
+Several desktop interactions don't work on mobile:
+- HTML5 DnD doesn't work on touch devices
+- No context menu (right-click/long-press)
+- Touch targets may be < 44x44px
+
+**Features:**
+
+#### 3.10.1 Touch DnD (Reorder Mode)
+- "Reorder" button in action bar (mobile only)
+- Replaces drag handles with up/down arrow buttons
+- Tap arrows to move items up/down
+- "Done" button exits reorder mode
+
+#### 3.10.2 Context Menus
+- **Desktop:** Right-click shows context menu
+- **Mobile:** Long-press (500ms) shows bottom sheet
+- Menu items match action bar for current view
+
+#### 3.10.3 Touch Target Compliance
+- All interactive elements ≥ 44x44px on mobile
+- Row height ≥ 48px on mobile
+- `TouchTarget` wrapper component
+
+**Files to Create:**
+- `hooks/useLongPress.ts`
+- `components/table-views/shared/ContextMenuWrapper.tsx`
+- `components/table-views/shared/MobileActionSheet.tsx`
+- `components/table-views/shared/cells/ReorderArrowsCell.tsx`
+- `components/ui/touch-target.tsx`
+
+**Files to Modify:**
+- `constants/action-bar/actions.ts` - Reorder mode action
+- `constants/action-bar/views.ts` - Mobile-specific actions
+- `components/table-views/shared/table/TableRow.tsx` - Context menu, touch targets
+
+**See:** [mobile-interactions-plan.md](./mobile-interactions-plan.md) for detailed plan
+
+---
+
 ## File Structure
 
 ```text
@@ -692,9 +774,10 @@ app/admin/(product-menu)/
 │        ├─ MenuTableView.types.ts  ✅ (FlatMenuRow discriminated union)
 │        └─ shared/
 │           ├─ table/               ✅ (TableRow, TableCell, TableHeader, SortableHeaderCell, columnWidthPresets)
-│           ├─ cells/               ✅ (CheckboxCell, InlineNameEditor, InlineIconCell, VisibilityCell, ChevronToggleCell, HierarchyNameCell)
-│           ├─ ContextMenuCell.tsx  ⏸️ (future)
-│           └─ DraggableRow.tsx     ⏸️ (future)
+│           ├─ cells/               ✅ (CheckboxCell, InlineNameEditor, InlineIconCell, VisibilityCell, ChevronToggleCell, HierarchyNameCell, DragHandleCell)
+│           ├─ ContextMenuWrapper.tsx ⏸️ (3.10.2)
+│           ├─ MobileActionSheet.tsx  ⏸️ (3.10.2)
+│           └─ ReorderArrowsCell.tsx  ⏸️ (3.10.1)
 │
 ├─ hooks/
 │  ├─ useMenuBuilderState.ts        ✅
@@ -711,6 +794,8 @@ app/admin/(product-menu)/
 │  ├─ useUndoRedoStack.ts           ✅ (declarative undo/redo system)
 │  ├─ usePersistColumnSort.ts       ✅ (persist TanStack sort to DB)
 │  ├─ useKeyboardShortcuts.ts       ✅ (global keyboard shortcuts)
+│  ├─ useLongPress.ts               ⏸️ (3.10.2 - long-press detection)
+│  ├─ useRangeSelection.ts          ⏸️ (3.9 - or integrated into useContextSelectionModel)
 │  └─ dnd/                          ✅ (v0.66.20 consolidated architecture)
 │     ├─ useGroupedReorder.ts       ✅ (core shared DnD state management)
 │     ├─ useSingleEntityDnd.ts      ✅ (flat table DnD wrapper)
@@ -899,9 +984,10 @@ app/admin/(product-menu)/
 
 ### Immediate Next Steps
 
-1. **Context Menu Infrastructure** - Right-click menus
-2. **Search & Filter (3.5)** - Global search in action bar
-3. **Clone Operations (3.4)** - Deep clone with relationships
+1. **Range Selection (3.9)** - Shift+click on desktop, "Select Range" button on mobile
+2. **Context Menu Infrastructure (3.10.2)** - Right-click + long-press menus
+3. **Search & Filter (3.5)** - Global search in action bar
+4. **Mobile Reorder Mode (3.10.1)** - Touch-friendly DnD alternative
 
 ### Future Refactors
 
@@ -915,6 +1001,8 @@ app/admin/(product-menu)/
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - System diagrams, source of truth table, config patterns
 - [IMPLEMENTATION-GUIDE.md](./IMPLEMENTATION-GUIDE.md) - How to add views/actions
 - [FEATURE-SPEC.md](./FEATURE-SPEC.md) - Complete target vision (1,186 lines)
+- [keyboard-shortcuts-and-action-buttons-plan.md](./keyboard-shortcuts-and-action-buttons-plan.md) - Keyboard shortcuts implementation
+- [mobile-interactions-plan.md](./mobile-interactions-plan.md) - Range selection, touch DnD, context menus
 - [archive/](./archive/) - Historical planning docs
 
 ---
