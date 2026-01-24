@@ -1,8 +1,8 @@
 # Menu Builder - Development Roadmap
 
-**Last Updated:** 2026-01-21
-**Current Branch:** `feat/menu-table-view`
-**Current Version:** v0.66.10
+**Last Updated:** 2026-01-24
+**Current Branch:** `unify-menu-builder`
+**Current Version:** v0.66.20
 **Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ (5/5 views) | Phase 3 In Progress 🚧
 
 ---
@@ -31,6 +31,10 @@ Total       ███████████████████░░░�
 - ✅ Single-click expand+select behavior
 - ✅ Duplicate label name validation with toast
 - ✅ Updated naming convention ("New Label2", "Name copy2")
+- ✅ Multi-select DnD with grouped entities ghost (v0.66.11-0.66.15)
+- ✅ Cross-boundary DnD with motion animations (v0.66.11)
+- ✅ Explicit selection model refactor (v0.66.16-0.66.19)
+- ✅ Consolidated DnD hooks architecture (v0.66.20)
 
 ---
 
@@ -551,55 +555,80 @@ Note: Products are not shown in menu view (2-level hierarchy), so cross-boundary
 
 ---
 
-### 3.7 Multi-Select Drag-and-Drop 📋 FUTURE
+### 3.7 Multi-Select Drag-and-Drop ✅ COMPLETE
 
 **Complexity:** High
 **Effort:** 3-5 days
 **Dependencies:** Cross-boundary DnD (3.6) complete ✅
-**Priority:** Low (enhancement, not core functionality)
+**Completed:** Jan 21-24, 2026
 
 **Overview:**
-Enable dragging multiple selected items at once, moving them together to a new location or label.
+Dragging multiple selected items at once, moving them together to a new location or label.
 
-**Current Limitation:**
-- Selection model supports multi-select (checkboxes)
-- Drag only operates on the single item being dragged
-- Selected items are ignored during drag operations
-
-**Proposed Behavior:**
+**Implemented Features:**
 
 1. **Drag initiation:**
-   - If dragged item is part of selection → drag ALL selected items
-   - If dragged item is NOT selected → drag only that item (current behavior)
-   - Visual: Ghost showing count badge "Moving 3 categories"
+   - [x] If dragged item is part of selection → drag ALL selected items
+   - [x] If dragged item is NOT selected → drag only that item
+   - [x] Visual: `GroupedEntitiesGhost` showing count badge
 
 2. **Drop handling:**
-   - Same-parent reorder: Move all selected items to drop position (maintain relative order)
-   - Cross-boundary move: Move all selected categories to target label
+   - [x] Same-parent reorder: Move all selected items to drop position (maintain relative order)
+   - [x] Cross-boundary move: Move all selected categories to target label
+   - [x] Batch moves via `batchMoveCategoriesToLabel` server action
 
 3. **Constraints:**
-   - All selected items must be same level (can't mix labels and categories)
-   - For categories: can be from different parent labels
-   - Labels: multi-select reorder only (no cross-boundary concept)
+   - [x] All selected items must be same kind (can't mix labels and categories)
+   - [x] For categories: can be from different parent labels
+   - [x] Labels: multi-select reorder only (no cross-boundary concept)
+   - [x] DnD eligibility derived from selection model (`useDnDEligibility`)
 
 4. **Visual feedback:**
-   - Drag ghost shows item count
-   - All selected rows get "being-dragged" styling
-   - Drop indicator spans the group
+   - [x] `GroupedEntitiesGhost` with count badge
+   - [x] All selected rows get `isInDragSet` styling (opacity)
+   - [x] Drop indicator on valid targets
+   - [x] Intent-based cursor feedback (grab/not-allowed on mousedown only)
 
-**Tasks:**
+5. **Architecture (v0.66.20):**
+   - [x] Consolidated DnD hooks: `useGroupedReorder` → `useSingleEntityDnd` / `useMultiEntityDnd`
+   - [x] `useDnDEligibility` derives drag eligibility from selection state
+   - [x] `useGroupedEntitiesGhost` for multi-drag ghost rendering
 
-- [ ] Update `handleDragStart` to capture all selected IDs if dragged item is selected
-- [ ] Update `handleDrop` to process multiple items
-- [ ] Add drag ghost with count badge
-- [ ] Update undo/redo to handle batch operations
-- [ ] Handle mixed-parent category selections (move all to same target)
+**Files Created/Modified:**
 
-**UX Considerations:**
+- `hooks/dnd/useGroupedReorder.ts` - Core shared DnD state management
+- `hooks/dnd/useSingleEntityDnd.ts` - Flat table DnD (AllLabels, Category, Label views)
+- `hooks/dnd/useMultiEntityDnd.ts` - Hierarchical DnD with cross-boundary moves
+- `hooks/dnd/useDnDEligibility.ts` - Derives drag eligibility from selection
+- `hooks/dnd/useGroupedEntitiesGhost.ts` - Multi-drag ghost rendering
+- `hooks/dnd/multiSelectValidation.ts` - Validation utilities
+- `table-views/shared/table/GroupedEntitiesGhost.tsx` - Ghost component
 
-- **Atomic operation** - All items move together or none do
-- **Undo granularity** - Single undo reverses entire batch move
-- **Selection after move** - Keep items selected (with updated keys for cross-boundary)
+---
+
+### 3.8 Refactor: Separate Level from Kind 📋 FUTURE
+
+**Complexity:** Medium
+**Effort:** 2-3 days
+**Priority:** Technical debt (required before adding new hierarchy levels)
+
+**Problem:**
+Current code conflates hierarchy depth with entity type:
+- `FlatMenuRow` uses `level: "label" | "category"` where `level` means entity type
+- `useMultiEntityDnd` has `EntityLevel = "label" | "category"` hardcoded
+- This breaks if we need to add levels above labels or between existing levels
+
+**Already Have (identity-registry.ts):**
+- `kind: string` - Entity type ("label", "category", "product")
+- `depth: number` - Hierarchy position (0, 1, 2, ...)
+
+**What Needs to Change:**
+1. Rename `level` → `kind` in `FlatMenuRow` types
+2. Add numeric `depth` field for hierarchy position
+3. Update DnD hooks to use `kind` for entity type, `depth` for level logic
+4. Make parent-child rules configurable
+
+**See:** [refactor-level-vs-kind.md](./refactor-level-vs-kind.md) for detailed plan
 
 ---
 
@@ -634,8 +663,6 @@ app/admin/(product-menu)/
 │  ├─ useContextSelectionModel.ts   ✅ (enhanced: hierarchy support, tri-state checkboxes)
 │  ├─ useContextRowUiState.ts       ✅ (enhanced: autoClearPinned option)
 │  ├─ usePinnedRow.ts               ✅ (enhanced: built-in default sort)
-│  ├─ useDragReorder.ts             ✅ (flat table DnD)
-│  ├─ useMenuTableDragReorder.ts    ✅ (hierarchical DnD with auto-expand)
 │  ├─ useFlattenedMenuRows.ts       ✅ (hierarchy → flat row list)
 │  ├─ useIdentityRegistry.ts        ✅ (buildFlatRegistry, buildMenuRegistry)
 │  ├─ useRowClickHandler.ts         ✅ (unified click handling)
@@ -643,7 +670,15 @@ app/admin/(product-menu)/
 │  ├─ useInlineEditHandlers.ts      ✅ (name/icon/visibility with undo + duplicate validation)
 │  ├─ useUndoRedoStack.ts           ✅ (declarative undo/redo system)
 │  ├─ usePersistColumnSort.ts       ✅ (persist TanStack sort to DB)
-│  └─ useKeyboardShortcuts.ts       ⏸️ (3.2)
+│  ├─ useKeyboardShortcuts.ts       ⏸️ (3.2)
+│  └─ dnd/                          ✅ (v0.66.20 consolidated architecture)
+│     ├─ useGroupedReorder.ts       ✅ (core shared DnD state management)
+│     ├─ useSingleEntityDnd.ts      ✅ (flat table DnD wrapper)
+│     ├─ useMultiEntityDnd.ts       ✅ (hierarchical DnD with cross-boundary)
+│     ├─ useDnDEligibility.ts       ✅ (derives eligibility from selection)
+│     ├─ useGroupedEntitiesGhost.ts ✅ (multi-drag ghost rendering)
+│     ├─ useThrottledCallback.ts    ✅ (throttle with flush support)
+│     └─ multiSelectValidation.ts   ✅ (validation utilities)
 │
 ├─ constants/
 │  ├─ action-bar/                   ✅ (colocated config)
@@ -806,16 +841,16 @@ app/admin/(product-menu)/
 
 ## Next Action
 
-**Last Completed:** Cross-Boundary Drag-and-Drop (3.6) - Jan 21, 2026
+**Last Completed:** Consolidated DnD Hooks (v0.66.20) - Jan 24, 2026
 
-### Recently Completed (3.6)
+### Recently Completed (v0.66.16-0.66.20)
 
-- [x] Cross-boundary category moves between labels
-- [x] `getDropInfo()` with `dropType: 'reorder' | 'move-to-label'`
-- [x] Auto-expand on drag enter, collapse on leave territory
-- [x] White 2x blink animation for visual feedback
-- [x] Undo/redo support for cross-boundary moves
-- [x] Toast notification on successful move
+- [x] Explicit selection model refactor
+- [x] Multi-select DnD with grouped entities ghost
+- [x] Cross-boundary batch moves
+- [x] Consolidated DnD hooks: `useGroupedReorder` as shared core
+- [x] Fixed AllLabelsTableView reorder positioning (`defaultSort: null`)
+- [x] Intent-based cursor feedback (grab/not-allowed on mousedown)
 
 ### Immediate Next Steps
 
@@ -823,11 +858,10 @@ app/admin/(product-menu)/
 2. **Context Menu Infrastructure** - Right-click menus
 3. **Search & Filter (3.5)** - Global search in action bar
 
-### Future Enhancements
+### Future Refactors
 
-1. **Multi-Select Drag (3.7)** - Drag multiple selected items together
-   - Low priority, enhancement over current single-item drag
-   - See section 3.7 for full spec
+1. **Separate Level from Kind (3.8)** - Required before adding new hierarchy levels
+   - See section 3.8 and [refactor-level-vs-kind.md](./refactor-level-vs-kind.md)
 
 ---
 
@@ -857,8 +891,11 @@ app/admin/(product-menu)/
 
 | Hook | Purpose |
 |------|---------|
-| `useDragReorder` | Flat table row reordering (supports `onReorderComplete`) |
-| `useMenuTableDragReorder` | Hierarchical DnD with auto-expand and level constraints |
+| `useGroupedReorder` | Core shared DnD state management (throttled dragOver, drop handling) |
+| `useSingleEntityDnd` | Flat table DnD wrapper (AllLabels, Category, Label views) |
+| `useMultiEntityDnd` | Hierarchical DnD with cross-boundary moves and auto-expand |
+| `useDnDEligibility` | Derives drag eligibility from selection state |
+| `useGroupedEntitiesGhost` | Multi-drag ghost image with count badge |
 | `useInlineEditHandlers` | Name/icon/visibility editing with undo + duplicate validation |
 | `usePinnedRow` | Pinned newly-created rows with default sort |
 | `useContextRowUiState` | Editing state with `autoClearPinned` option |
@@ -886,5 +923,5 @@ app/admin/(product-menu)/
 
 ---
 
-**Last Updated:** 2026-01-21
+**Last Updated:** 2026-01-24
 **Project Owner:** yuens1002
