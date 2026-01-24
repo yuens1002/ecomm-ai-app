@@ -32,6 +32,7 @@ import { TableHeader, type TableHeaderColumn } from "./shared/table/TableHeader"
 import { TableRow } from "./shared/table/TableRow";
 import { TableViewWrapper } from "./shared/table/TableViewWrapper";
 import { DragHandleCell } from "./shared/cells/DragHandleCell";
+import { RowContextMenu } from "./shared/cells/RowContextMenu";
 
 const ALL_LABELS_HEADER_COLUMNS: TableHeaderColumn[] = [
   { id: "select", label: "", isCheckbox: true },
@@ -43,7 +44,7 @@ const ALL_LABELS_HEADER_COLUMNS: TableHeaderColumn[] = [
 ];
 
 export function AllLabelsTableView() {
-  const { builder, labels, updateLabel, reorderLabels, createNewLabel } = useMenuBuilder();
+  const { builder, labels, updateLabel, reorderLabels, createNewLabel, deleteLabel, cloneLabel } = useMenuBuilder();
 
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
@@ -173,6 +174,53 @@ export function AllLabelsTableView() {
     return cats.map((c) => c.name).join(", ");
   }, []);
 
+  // Context menu handlers
+  const handleMoveUp = useCallback(
+    async (labelId: string) => {
+      const index = labelsForTable.findIndex((l) => l.id === labelId);
+      if (index <= 0) return;
+      const newOrder = [...labelsForTable];
+      [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+      await reorderLabels(newOrder.map((l) => l.id));
+    },
+    [labelsForTable, reorderLabels]
+  );
+
+  const handleMoveDown = useCallback(
+    async (labelId: string) => {
+      const index = labelsForTable.findIndex((l) => l.id === labelId);
+      if (index < 0 || index >= labelsForTable.length - 1) return;
+      const newOrder = [...labelsForTable];
+      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+      await reorderLabels(newOrder.map((l) => l.id));
+    },
+    [labelsForTable, reorderLabels]
+  );
+
+  const handleDelete = useCallback(
+    async (labelId: string) => {
+      const result = await deleteLabel(labelId);
+      if (result.ok) {
+        toast({ title: "Label deleted" });
+      } else {
+        toast({ title: "Error", description: result.error, variant: "destructive" });
+      }
+    },
+    [deleteLabel, toast]
+  );
+
+  const handleClone = useCallback(
+    async (labelId: string) => {
+      const result = await cloneLabel({ id: labelId });
+      if (result.ok) {
+        toast({ title: "Label cloned" });
+      } else {
+        toast({ title: "Error", description: result.error, variant: "destructive" });
+      }
+    },
+    [cloneLabel, toast]
+  );
+
   // Column definitions - must match ALL_LABELS_HEADER_COLUMNS ids
   // Note: When adding a new column, add entry here AND in ALL_LABELS_HEADER_COLUMNS
   const columns = useMemo<ColumnDef<MenuLabel>[]>(
@@ -218,8 +266,9 @@ export function AllLabelsTableView() {
     );
   }
 
-  const renderLabelRow = (label: MenuLabel, options?: { isPinned?: boolean; isLastRow?: boolean }) => {
+  const renderLabelRow = (label: MenuLabel, options?: { isPinned?: boolean; isFirstRow?: boolean; isLastRow?: boolean }) => {
     const isPinned = options?.isPinned === true;
+    const isFirstRow = options?.isFirstRow === true;
     const isLastRow = options?.isLastRow === true;
     const labelKey = createKey("label", label.id);
     const isLabelSelected = isSelected(labelKey);
@@ -231,8 +280,21 @@ export function AllLabelsTableView() {
     const isDraggable = getIsDraggable(label.id);
 
     return (
-      <TableRow
+      <RowContextMenu
         key={label.id}
+        entityKind="label"
+        viewType="all-labels"
+        entityId={label.id}
+        isVisible={label.isVisible}
+        isFirst={isFirstRow}
+        isLast={isLastRow}
+        onClone={() => handleClone(label.id)}
+        onVisibilityToggle={(visible) => handleVisibilitySave(label.id, visible)}
+        onDelete={() => handleDelete(label.id)}
+        onMoveUp={() => handleMoveUp(label.id)}
+        onMoveDown={() => handleMoveDown(label.id)}
+      >
+      <TableRow
         data-state={isLabelSelected ? "selected" : undefined}
         isSelected={isLabelSelected}
         isHidden={!label.isVisible}
@@ -327,6 +389,7 @@ export function AllLabelsTableView() {
           />
         </TableCell>
       </TableRow>
+      </RowContextMenu>
     );
   };
 
@@ -346,9 +409,12 @@ export function AllLabelsTableView() {
         />
 
         <TableBody>
-          {pinnedLabel ? renderLabelRow(pinnedLabel, { isPinned: true }) : null}
+          {pinnedLabel ? renderLabelRow(pinnedLabel, { isPinned: true, isFirstRow: true }) : null}
           {rows.map((row, index) =>
-            renderLabelRow(row.original, { isLastRow: index === rows.length - 1 })
+            renderLabelRow(row.original, {
+              isFirstRow: !pinnedLabel && index === 0,
+              isLastRow: index === rows.length - 1,
+            })
           )}
         </TableBody>
       </TableViewWrapper>
