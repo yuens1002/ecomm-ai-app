@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.67.0 - 2026-01-24
+
+### Features
+- **Keyboard shortcuts**: Single-key Gmail/Slack style shortcuts to avoid browser conflicts
+  - `N` - New item (label or category)
+  - `D` - Duplicate selected
+  - `R` - Remove selected
+  - `X` - Delete permanently (all-labels, all-categories)
+  - `V` - Toggle visibility
+  - `E` - Expand all (menu view)
+  - `C` - Collapse all (menu view)
+  - `U` - Undo
+  - `Shift+U` - Redo
+  - `?` - Toggle help popover
+- **Help button**: ConciergeBell icon on all 5 views with view-specific tips popover
+- **Delete button**: Trash2 icon with AlertDialog confirmation on all-labels and all-categories views
+- **Full undo/redo for delete**: `restoreLabel` and `restoreCategory` server actions recreate entities with all relationships
+
+### Improvements
+- **Accessible disabled buttons**: Changed from `disabled` to `aria-disabled` to keep buttons in tab order
+- **Shifted character handling**: Keyboard shortcuts correctly handle characters that require Shift (like `?`)
+- **Modal awareness**: Shortcuts disabled when dialogs are open
+
+### New Files
+- `hooks/useKeyboardShortcuts.ts` - Global keyboard shortcut handler
+- `constants/help-content.ts` - View-specific help content
+- `menu-action-bar/HelpPopoverButton.tsx` - Help popover component
+- `menu-action-bar/DeleteAlertButton.tsx` - Delete confirmation dialog
+
 ## 0.66.20 - 2026-01-23
 
 - **Fixed AllLabelsTableView DnD reorder**: Added `defaultSort: null` to preserve server-provided order, fixing visual/calculation mismatch

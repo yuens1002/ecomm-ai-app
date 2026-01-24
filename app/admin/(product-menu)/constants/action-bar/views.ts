@@ -16,6 +16,7 @@ export const VIEW_CONFIG: ViewConfig = {
       { id: "collapse-all" },
       { id: "undo" },
       { id: "redo" },
+      { id: "help" },
     ],
   },
 
@@ -27,7 +28,7 @@ export const VIEW_CONFIG: ViewConfig = {
       { id: "add-categories", type: "dropdown", hasDropdown: true },
       { id: "remove", tooltip: "Remove from label" },
     ],
-    right: [{ id: "undo" }, { id: "redo" }],
+    right: [{ id: "undo" }, { id: "redo" }, { id: "help" }],
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -38,7 +39,7 @@ export const VIEW_CONFIG: ViewConfig = {
       { id: "add-products", type: "dropdown", hasDropdown: true },
       { id: "remove", tooltip: "Remove from categories" },
     ],
-    right: [{ id: "undo" }, { id: "redo" }],
+    right: [{ id: "undo" }, { id: "redo" }, { id: "help" }],
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -46,7 +47,13 @@ export const VIEW_CONFIG: ViewConfig = {
   // ─────────────────────────────────────────────────────────────
   "all-labels": {
     left: [{ id: "new-label" }, { id: "clone" }],
-    right: [{ id: "visibility" }, { id: "undo" }, { id: "redo" }],
+    right: [
+      { id: "visibility" },
+      { id: "undo" },
+      { id: "redo" },
+      { id: "delete" },
+      { id: "help" },
+    ],
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -58,6 +65,12 @@ export const VIEW_CONFIG: ViewConfig = {
       { id: "clone" },
       { id: "remove", tooltip: "Remove from labels" },
     ],
-    right: [{ id: "visibility" }, { id: "undo" }, { id: "redo" }],
+    right: [
+      { id: "visibility" },
+      { id: "undo" },
+      { id: "redo" },
+      { id: "delete" },
+      { id: "help" },
+    ],
   },
 };

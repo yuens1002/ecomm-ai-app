@@ -82,6 +82,11 @@ export function useProductMenuMutations() {
       if (res.ok) await refresh();
       return res;
     },
+    restoreLabel: async (payload: unknown) => {
+      const res = await labelActions.restoreLabel(payload);
+      if (res.ok) await refresh();
+      return res;
+    },
     batchMoveCategoriesToLabel: async (payload: unknown) => {
       const res = await labelActions.batchMoveCategoriesToLabel(payload);
       if (res.ok) await refresh();
@@ -121,6 +126,11 @@ export function useProductMenuMutations() {
     },
     deleteCategory: async (id: unknown) => {
       const res = await categoryActions.deleteCategory(id);
+      if (res.ok) await refresh();
+      return res;
+    },
+    restoreCategory: async (payload: unknown) => {
+      const res = await categoryActions.restoreCategory(payload);
       if (res.ok) await refresh();
       return res;
     },

@@ -241,3 +241,60 @@ export async function deleteCategory(id: unknown) {
     return { ok: false, error: message };
   }
 }
+
+/**
+ * Restore a deleted category with all its data and label relationships.
+ * Used for undo after delete.
+ */
+export async function restoreCategory(input: unknown) {
+  const schema = z.object({
+    name: z.string().min(1),
+    slug: z.string().min(1),
+    isVisible: z.boolean(),
+    order: z.number(),
+    labelIds: z.array(z.string()),
+  });
+
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false as const,
+      error: "Validation failed",
+      details: parsed.error.issues,
+    };
+  }
+
+  try {
+    const { name, slug, isVisible, order, labelIds } = parsed.data;
+
+    const newCategory = await prisma.$transaction(async (tx) => {
+      // Create the category with all original settings
+      const category = await tx.category.create({
+        data: {
+          name,
+          slug,
+          isVisible,
+          order,
+        },
+      });
+
+      // Reattach to labels
+      if (labelIds.length > 0) {
+        await tx.categoryLabelCategory.createMany({
+          data: labelIds.map((labelId, idx) => ({
+            labelId,
+            categoryId: category.id,
+            order: idx,
+          })),
+        });
+      }
+
+      return category;
+    });
+
+    return { ok: true as const, data: newCategory };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to restore category";
+    return { ok: false as const, error: message };
+  }
+}

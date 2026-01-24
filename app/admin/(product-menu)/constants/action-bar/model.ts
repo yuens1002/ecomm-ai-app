@@ -21,6 +21,8 @@ export const ALL_ACTION_IDS = [
   "add-products",
   "sort-order",
   "new-category",
+  "help",
+  "delete",
 ] as const;
 
 export type ActionId = (typeof ALL_ACTION_IDS)[number];
@@ -42,6 +44,23 @@ export type ToastSpec = {
 // MUTATIONS & CONTEXT
 // ─────────────────────────────────────────────────────────────
 
+export type RestoreLabelPayload = {
+  name: string;
+  icon: string | null;
+  isVisible: boolean;
+  autoOrder: boolean;
+  order: number;
+  categoryIds: string[];
+};
+
+export type RestoreCategoryPayload = {
+  name: string;
+  slug: string;
+  isVisible: boolean;
+  order: number;
+  labelIds: string[];
+};
+
 export type ProductMenuMutations = {
   updateLabel: (
     id: string,
@@ -49,6 +68,9 @@ export type ProductMenuMutations = {
   ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
   cloneLabel?: (payload: { id: string }) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
   deleteLabel?: (id: string) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  restoreLabel?: (
+    payload: RestoreLabelPayload
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
   updateCategory: (
     id: string,
     payload: { isVisible?: boolean }
@@ -62,6 +84,9 @@ export type ProductMenuMutations = {
     payload: CloneCategory
   ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
   deleteCategory?: (id: string) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
+  restoreCategory?: (
+    payload: RestoreCategoryPayload
+  ) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
   detachCategory: (
     labelId: string,
     categoryId: string
