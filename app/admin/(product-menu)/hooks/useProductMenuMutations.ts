@@ -82,6 +82,11 @@ export function useProductMenuMutations() {
       if (res.ok) await refresh();
       return res;
     },
+    batchMoveCategoriesToLabel: async (payload: unknown) => {
+      const res = await labelActions.batchMoveCategoriesToLabel(payload);
+      if (res.ok) await refresh();
+      return res;
+    },
 
     // Categories
     createCategory: async (payload: unknown) => {
@@ -142,6 +147,16 @@ export function useProductMenuMutations() {
       direction: productActions.SortProductsDirection
     ) => {
       const res = await productActions.sortProductsInCategory(categoryId, sortBy, direction);
+      if (res.ok) await refresh();
+      return res;
+    },
+    moveProductToCategory: async (payload: unknown) => {
+      const res = await productActions.moveProductToCategory(payload);
+      if (res.ok) await refresh();
+      return res;
+    },
+    batchMoveProductsToCategory: async (payload: unknown) => {
+      const res = await productActions.batchMoveProductsToCategory(payload);
       if (res.ok) await refresh();
       return res;
     },
