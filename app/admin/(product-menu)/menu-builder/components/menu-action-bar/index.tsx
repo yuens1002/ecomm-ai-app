@@ -11,10 +11,13 @@ import {
 import { getEntityIdFromKey, getActionableRoots } from "../../../types/identity-registry";
 import { getExpandableIds } from "../../../hooks/useFlattenedMenuRows";
 import { DROPDOWN_REGISTRY, type DropdownContext } from "../../../constants/dropdown-registry";
+import { useKeyboardShortcuts } from "../../../hooks/useKeyboardShortcuts";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { ActionButton } from "./ActionButton";
 import { ActionComboButton } from "./ActionComboButton";
 import { ActionDropdownButton } from "./ActionDropdownButton";
+import { DeleteAlertButton } from "./DeleteAlertButton";
+import { HelpPopoverButton } from "./HelpPopoverButton";
 
 /**
  * MenuActionBar - Action buttons for current view
@@ -38,6 +41,8 @@ export function MenuActionBar() {
     cloneCategory,
     deleteLabel,
     deleteCategory,
+    restoreLabel,
+    restoreCategory,
     updateLabel,
     updateCategory,
     attachCategory,
@@ -128,6 +133,9 @@ export function MenuActionBar() {
     toggleVisibility: async () => {
       await executeActionFromConfig("visibility");
     },
+    deleteSelected: async () => {
+      await executeActionFromConfig("delete");
+    },
 
     createNewLabel: async () => {
       const createdId = await createNewLabel();
@@ -211,9 +219,11 @@ export function MenuActionBar() {
         updateLabel,
         cloneLabel,
         deleteLabel,
+        restoreLabel,
         createCategory,
         cloneCategory,
         deleteCategory,
+        restoreCategory,
         updateCategory,
         detachCategory,
         detachProductFromCategory,
@@ -328,6 +338,13 @@ export function MenuActionBar() {
     ]
   );
 
+  // Enable keyboard shortcuts for current view's actions
+  useKeyboardShortcuts({
+    actions,
+    state,
+    builderActions,
+  });
+
   // Helper to build dropdown content from registry
   const buildDropdownContent = (actionId: ActionId): React.ReactNode => {
     const config = DROPDOWN_REGISTRY[actionId as keyof typeof DROPDOWN_REGISTRY];
@@ -412,6 +429,28 @@ export function MenuActionBar() {
   };
 
   const renderAction = (action: (typeof actions)[0], _index: number) => {
+    // Special rendering for help button
+    if (action.id === "help") {
+      return <HelpPopoverButton key={action.id} currentView={builder.currentView} />;
+    }
+
+    // Special rendering for delete button (with confirmation dialog)
+    if (action.id === "delete") {
+      const isDisabled = action.disabled(state);
+      return (
+        <DeleteAlertButton
+          key={action.id}
+          disabled={isDisabled}
+          selectedCount={builder.selectedIds.length}
+          currentView={builder.currentView}
+          kbd={action.kbd}
+          onConfirm={async () => {
+            await builderActions.deleteSelected();
+          }}
+        />
+      );
+    }
+
     const isDisabled =
       action.disabled(state) ||
       (action.id === "remove" &&

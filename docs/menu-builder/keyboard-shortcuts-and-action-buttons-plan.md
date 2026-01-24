@@ -17,24 +17,26 @@ This document outlines the implementation plan for two concurrent features:
 
 ### Keyboard Shortcut Mappings
 
-| Action | Shortcut (Win/Linux) | Shortcut (Mac) | Views |
-|--------|---------------------|----------------|-------|
-| Clone | Ctrl+D | Cmd+D | menu, all-labels, all-categories |
-| Remove | Ctrl+Backspace | Cmd+Backspace | menu, label, category, all-labels, all-categories |
-| Visibility | Ctrl+Space | Cmd+Space | all-labels, all-categories |
-| Expand All | Ctrl+Down | Cmd+Down | menu |
-| Collapse All | Ctrl+Up | Cmd+Up | menu |
-| Undo | Ctrl+Z | Cmd+Z | all views |
-| Redo | Ctrl+Shift+Z | Cmd+Shift+Z | all views |
-| New Label | Ctrl+N | Cmd+N | menu, all-labels |
-| New Category | Ctrl+N | Cmd+N | all-categories |
-| Delete | Ctrl+Shift+Backspace | Cmd+Shift+Backspace | all-labels, all-categories |
+Single-key shortcuts (Gmail/Slack style) to avoid browser conflicts. Only active when not typing in inputs.
+
+| Action | Key | Mnemonic | Views |
+|--------|-----|----------|-------|
+| New | N | **N**ew | menu, all-labels, all-categories |
+| Clone | D | **D**uplicate | menu, all-labels, all-categories |
+| Remove | R | **R**emove | menu, label, category, all-labels, all-categories |
+| Delete | X | e**X** (permanent) | all-labels, all-categories |
+| Visibility | V | **V**isibility | all-labels, all-categories |
+| Expand All | E | **E**xpand | menu |
+| Collapse All | C | **C**ollapse | menu |
+| Undo | U | **U**ndo | all views |
+| Redo | Shift+U | Shift+**U**ndo | all views |
+| Help | ? | universal | all views |
 
 ### Implementation Steps
 
-#### Step 1: Update Visibility Shortcut
+#### Step 1: Keyboard Shortcut Definitions
 **File:** `app/admin/(product-menu)/constants/action-bar/actions.ts`
-- Change `kbd: ["Space"]` to `kbd: [modKey, "Space"]` for visibility action
+- All shortcuts use single-key pattern to avoid browser conflicts
 
 #### Step 2: Create `useKeyboardShortcuts` Hook
 **File:** `app/admin/(product-menu)/hooks/useKeyboardShortcuts.ts`
@@ -72,7 +74,7 @@ Key considerations:
 
 #### Requirements
 - Icon: `ConciergeBell` (Lucide)
-- Position: End of right side on **every view**
+- Position: **Always last** on right side in **all 5 views**
 - Behavior: Opens shadcn Popover with view-specific help content
 - No keyboard shortcut
 
@@ -289,9 +291,9 @@ delete: {
 |-------|----------|
 | Help icon | `ConciergeBell` (Lucide) |
 | Delete undo behavior | Fully recreates item with all relationships |
-| Delete shortcut | `Ctrl+Shift+Backspace` / `Cmd+Shift+Backspace` |
 | Help content format | Bulleted text only (animated walkthroughs deferred) |
-| Visibility shortcut | Changed from `Space` to `Ctrl+Space` / `Cmd+Space` |
+| Shortcut style | Single-key (Gmail/Slack style) to avoid all browser conflicts |
+| Undo/Redo shortcuts | `U` / `Shift+U` |
 
 ---
 
@@ -301,9 +303,9 @@ delete: {
 - [ ] All defined shortcuts execute their respective actions
 - [ ] Shortcuts don't fire when user is typing in inputs
 - [ ] Disabled actions don't respond to shortcuts
-- [ ] Mac uses Cmd, Windows/Linux uses Ctrl
-- [ ] Visibility uses Ctrl/Cmd+Space
-- [ ] Delete uses Ctrl/Cmd+Shift+Backspace
+- [ ] Single-key shortcuts work (N, D, R, X, V, E, C, U, ?)
+- [ ] Shift+U works for redo
+- [ ] No conflicts with browser shortcuts
 
 ### Help Button
 - [ ] Appears on all 5 views at end of right side

@@ -295,3 +295,62 @@ export async function batchMoveCategoriesToLabel(input: unknown) {
     return { ok: false as const, error: message };
   }
 }
+
+/**
+ * Restore a deleted label with all its data and category relationships.
+ * Used for undo after delete.
+ */
+export async function restoreLabel(input: unknown) {
+  const schema = z.object({
+    name: z.string().min(1),
+    icon: z.string().nullable(),
+    isVisible: z.boolean(),
+    autoOrder: z.boolean(),
+    order: z.number(),
+    categoryIds: z.array(z.string()),
+  });
+
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false as const,
+      error: "Validation failed",
+      details: parsed.error.issues,
+    };
+  }
+
+  try {
+    const { name, icon, isVisible, autoOrder, order, categoryIds } = parsed.data;
+
+    const newLabel = await prisma.$transaction(async (tx) => {
+      // Create the label with all original settings
+      const label = await tx.categoryLabel.create({
+        data: {
+          name,
+          icon,
+          isVisible,
+          autoOrder,
+          order,
+        },
+      });
+
+      // Reattach categories in order
+      if (categoryIds.length > 0) {
+        await tx.categoryLabelCategory.createMany({
+          data: categoryIds.map((categoryId, idx) => ({
+            labelId: label.id,
+            categoryId,
+            order: idx,
+          })),
+        });
+      }
+
+      return label;
+    });
+
+    return { ok: true as const, data: newLabel };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to restore label";
+    return { ok: false as const, error: message };
+  }
+}
