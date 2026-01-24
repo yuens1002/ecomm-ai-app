@@ -3,7 +3,7 @@
 **Last Updated:** 2026-01-24
 **Current Branch:** `unify-menu-builder`
 **Current Version:** v0.66.20
-**Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ (5/5 views) | Phase 3 In Progress 🚧
+**Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ (5/5 views) | Phase 3 In Progress 🚧 (50%)
 
 ---
 
@@ -18,7 +18,7 @@ Build a sophisticated admin interface for managing a 2-level menu hierarchy (Lab
 ```(text)
 Foundation  ████████████████████████ 100% ✅
 Table Views ████████████████████████ 100% ✅
-Advanced    ██████████░░░░░░░░░░░░░  40% 🚧
+Advanced    ████████████░░░░░░░░░░░  50% 🚧
 ─────────────────────────────────────────
 Total       ███████████████████░░░░  80%
 ```
@@ -387,7 +387,7 @@ Total       ███████████████████░░░�
 
 **Target:** Polish and power-user features
 **Timeline:** 2-4 weeks
-**Status:** 40% (undo/redo complete, same-level DnD complete, identity registry complete)
+**Status:** 50% (undo/redo ✅, same-level DnD ✅, cross-boundary DnD ✅, multi-select DnD ✅, clone ops ✅)
 
 ### 3.1 Same-Level Drag-and-Drop ✅ COMPLETE
 
@@ -466,20 +466,20 @@ Total       ███████████████████░░░�
 
 ---
 
-### 3.4 Clone Operations ⏸️
+### 3.4 Clone Operations ✅ COMPLETE
 
-**Tasks:**
+**Implemented in:** `constants/action-bar/actions.ts:98-147`
 
-- [ ] Clone label with categories (deep clone)
-- [ ] Clone category with products (references only)
-- [ ] Name collision detection (auto-suffix with " (copy)")
-- [ ] Preserve order and visibility settings
-- [ ] Toast notifications on success
+**Features:**
 
-**Files to Modify:**
-
-- `app/admin/(product-menu)/constants/action-bar-config.ts` (complete TODOs)
-- `app/admin/(product-menu)/actions/product-menu-actions.ts` (add clone logic)
+- [x] Clone label with categories (deep clone via `cloneLabel` mutation)
+- [x] Clone category with products (references via `cloneCategory` mutation)
+- [x] Name collision detection (auto-suffix with " (Copy)")
+- [x] Preserve order and visibility settings
+- [x] Toast notifications on success
+- [x] Full undo/redo support via `captureCloneUndo`
+- [x] Multi-entity cloning via `cloneItems` helper
+- [x] All views supported: menu, all-labels, all-categories
 
 ---
 
