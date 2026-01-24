@@ -87,6 +87,11 @@ const handleRowClick = (key: string, event: MouseEvent) => {
 - After 500ms, haptic feedback (mobile) + visual confirmation
 - Range highlight previews which rows will be selected
 
+**Scroll-Safe Implementation:**
+- Cancel long-press if touch moves > 10px (user is scrolling)
+- Uses same `useLongPress` hook with movement threshold
+- See "Long-Press Detection (Scroll-Safe)" section below for implementation
+
 **Implementation:**
 
 ```typescript
@@ -271,26 +276,66 @@ If touch DnD with drag handles is required:
 </Sheet>
 ```
 
-**Long-Press Detection:**
+**Long-Press Detection (Scroll-Safe):**
+
+The key challenge: users scrolling might accidentally trigger long-press. Solution: **cancel if touch moves beyond threshold**.
 
 ```typescript
-const useLongPress = (callback: () => void, ms = 500) => {
+const useLongPress = (callback: () => void, ms = 500, moveThreshold = 10) => {
   const timerRef = useRef<NodeJS.Timeout>();
+  const startPos = useRef<{ x: number; y: number } | null>(null);
 
-  const start = useCallback(() => {
+  const start = useCallback((e: TouchEvent | PointerEvent) => {
+    // Record starting position
+    const touch = 'touches' in e ? e.touches[0] : e;
+    startPos.current = { x: touch.clientX, y: touch.clientY };
+
     timerRef.current = setTimeout(callback, ms);
   }, [callback, ms]);
 
+  const move = useCallback((e: TouchEvent | PointerEvent) => {
+    if (!startPos.current || !timerRef.current) return;
+
+    const touch = 'touches' in e ? e.touches[0] : e;
+    const dx = Math.abs(touch.clientX - startPos.current.x);
+    const dy = Math.abs(touch.clientY - startPos.current.y);
+
+    // Cancel if moved beyond threshold (user is scrolling)
+    if (dx > moveThreshold || dy > moveThreshold) {
+      clearTimeout(timerRef.current);
+      timerRef.current = undefined;
+      startPos.current = null;
+    }
+  }, [moveThreshold]);
+
   const clear = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = undefined;
+    startPos.current = null;
   }, []);
 
   return {
     onTouchStart: start,
+    onTouchMove: move,
     onTouchEnd: clear,
-    onTouchMove: clear,
+    onTouchCancel: clear,
+    onPointerDown: start,
+    onPointerMove: move,
+    onPointerUp: clear,
+    onPointerLeave: clear,
   };
 };
+```
+
+**Scroll-Safe Behavior:**
+- Timer starts on touch/pointer down
+- If touch moves > 10px in any direction → timer cancelled (user is scrolling)
+- If touch stays stationary for 500ms → callback fires
+- Touch end/cancel always clears timer
+
+**Additional Safeguards:**
+- Context menu only triggers on rows, not during active scroll momentum
+- Consider adding `touch-action: pan-y` to allow vertical scroll while preventing horizontal gestures
 ```
 
 **Files to Create:**
