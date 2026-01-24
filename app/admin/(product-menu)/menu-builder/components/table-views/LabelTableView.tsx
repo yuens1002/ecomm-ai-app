@@ -126,6 +126,8 @@ export function LabelTableView() {
     actionableRoots,
     selectedKind,
     isSameKind,
+    anchorKey,
+    rangeSelect,
   } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
 
   // Derive DnD eligibility from selection state (action-bar pattern)
@@ -136,10 +138,12 @@ export function LabelTableView() {
     registry,
   });
 
-  // Unified click handler
+  // Unified click handler with range selection support
   const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
     onToggle,
     navigate: (kind, entityId) => builder.navigateToCategory(entityId),
+    rangeSelect,
+    anchorKey,
   });
 
   // Push undo action for reorder
@@ -277,7 +281,7 @@ export function LabelTableView() {
               ? "!border-b-2 !border-b-primary"
               : "!border-t-2 !border-t-primary")
         )}
-        onRowClick={() => handleClick(categoryKey)}
+        onRowClick={(options) => handleClick(categoryKey, options)}
         onRowDoubleClick={() => handleDoubleClick(categoryKey)}
       >
         {/* Checkbox */}
@@ -288,6 +292,8 @@ export function LabelTableView() {
             onToggle={() => onToggle(categoryKey)}
             isSelectable
             alwaysVisible={isCategorySelected}
+            anchorKey={anchorKey}
+            onRangeSelect={anchorKey && anchorKey !== categoryKey ? () => rangeSelect(categoryKey) : undefined}
             ariaLabel={`Select ${category.name}`}
           />
         </TableCell>

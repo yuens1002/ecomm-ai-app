@@ -66,6 +66,8 @@ export function AllLabelsTableView() {
     actionableRoots,
     selectedKind,
     isSameKind,
+    anchorKey,
+    rangeSelect,
   } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
 
   // Derive DnD eligibility from selection state (action-bar pattern)
@@ -76,10 +78,12 @@ export function AllLabelsTableView() {
     registry,
   });
 
-  // Unified click handler
+  // Unified click handler with range selection support
   const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
     onToggle,
     navigate: (kind, entityId) => builder.navigateToLabel(entityId),
+    rangeSelect,
+    anchorKey,
   });
 
   const { pinnedRow: pinnedLabel, rowsForTable: labelsForTable } = usePinnedRow({
@@ -254,7 +258,7 @@ export function AllLabelsTableView() {
               ? "!border-b-2 !border-b-primary"
               : "!border-t-2 !border-t-primary")
         )}
-        onRowClick={() => handleClick(labelKey)}
+        onRowClick={(options) => handleClick(labelKey, options)}
         onRowDoubleClick={() => handleDoubleClick(labelKey)}
       >
         {/* Checkbox */}
@@ -266,6 +270,8 @@ export function AllLabelsTableView() {
             isSelectable
             alwaysVisible={isLabelSelected}
             ariaLabel={`Select ${label.name}`}
+            anchorKey={anchorKey}
+            onRangeSelect={anchorKey && anchorKey !== labelKey ? () => rangeSelect(labelKey) : undefined}
           />
         </TableCell>
 

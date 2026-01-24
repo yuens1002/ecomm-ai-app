@@ -121,6 +121,8 @@ export function CategoryTableView() {
     actionableRoots,
     selectedKind,
     isSameKind,
+    anchorKey,
+    rangeSelect,
   } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
 
   // Derive DnD eligibility from selection state (action-bar pattern)
@@ -131,9 +133,11 @@ export function CategoryTableView() {
     registry,
   });
 
-  // Unified click handler (no navigation for products in category view)
+  // Unified click handler with range selection (no navigation for products)
   const { handleClick } = useRowClickHandler(registry, {
     onToggle,
+    rangeSelect,
+    anchorKey,
   });
 
   // Push undo action for reorder
@@ -328,7 +332,7 @@ export function CategoryTableView() {
               ? "!border-b-2 !border-b-primary"
               : "!border-t-2 !border-t-primary")
         )}
-        onRowClick={() => handleClick(productKey)}
+        onRowClick={(options) => handleClick(productKey, options)}
       >
         {/* Checkbox */}
         <TableCell config={categoryViewWidthPreset.select} data-row-click-ignore>
@@ -339,6 +343,8 @@ export function CategoryTableView() {
             isSelectable
             alwaysVisible={isProductSelected}
             ariaLabel={`Select ${product.name}`}
+            anchorKey={anchorKey}
+            onRangeSelect={anchorKey && anchorKey !== productKey ? () => rangeSelect(productKey) : undefined}
           />
         </TableCell>
 

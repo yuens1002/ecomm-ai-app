@@ -59,12 +59,16 @@ export function AllCategoriesTableView() {
     onSelectAll,
     onToggle,
     isSelected,
+    anchorKey,
+    rangeSelect,
   } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
 
-  // Unified click handler
+  // Unified click handler with range selection support
   const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
     onToggle,
     navigate: (kind, entityId) => builder.navigateToCategory(entityId),
+    rangeSelect,
+    anchorKey,
   });
   // Default sort by addedDate desc (newest first) - no DnD in this view so always show sort indicator
   const [sorting, setSorting] = React.useState<SortingState>([{ id: "addedDate", desc: true }]);
@@ -206,7 +210,7 @@ export function AllCategoriesTableView() {
         data-state={isCategorySelected ? "selected" : undefined}
         isSelected={isCategorySelected}
         isHidden={!category.isVisible}
-        onRowClick={() => handleClick(categoryKey)}
+        onRowClick={(options) => handleClick(categoryKey, options)}
         onRowDoubleClick={() => handleDoubleClick(categoryKey)}
       >
         <TableCell config={allCategoriesWidthPreset.select} data-row-click-ignore>
@@ -217,6 +221,8 @@ export function AllCategoriesTableView() {
             isSelectable
             alwaysVisible={isCategorySelected}
             ariaLabel={`Select ${category.name}`}
+            anchorKey={anchorKey}
+            onRangeSelect={anchorKey && anchorKey !== categoryKey ? () => rangeSelect(categoryKey) : undefined}
           />
         </TableCell>
 

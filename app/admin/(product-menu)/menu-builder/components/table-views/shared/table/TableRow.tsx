@@ -100,13 +100,19 @@ type TableRowProps = Omit<
   /**
    * Called on single-click (delayed to distinguish from double-click).
    * Ignored if click target is an interactive element.
+   * Receives event info for modifier key detection (e.g., Shift+click for range select).
    */
-  onRowClick?: () => void;
+  onRowClick?: (options?: { shiftKey?: boolean }) => void;
   /**
    * Called on double-click (cancels pending single-click).
    * Ignored if click target is an interactive element.
    */
   onRowDoubleClick?: () => void;
+  /**
+   * Called on right-click / context menu (mobile long-press handled by ContextMenu wrapper).
+   * Use this with TableRowContextMenu for mobile support.
+   */
+  onContextMenu?: (e: React.MouseEvent<HTMLTableRowElement>) => void;
 };
 
 /** HTML drag event props that conflict with motion's drag system */
@@ -175,6 +181,9 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
         if (isInteractiveTarget(event.target)) return;
         if (!onRowClick) return;
 
+        // Capture modifier keys before the timeout (event may be reused)
+        const shiftKey = event.shiftKey;
+
         // Clear any pending click
         if (clickTimeoutRef.current !== null) {
           window.clearTimeout(clickTimeoutRef.current);
@@ -182,7 +191,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
 
         // Delay single-click to allow double-click to cancel
         clickTimeoutRef.current = window.setTimeout(() => {
-          onRowClick();
+          onRowClick({ shiftKey });
           clickTimeoutRef.current = null;
         }, CLICK_DELAY_MS);
       },

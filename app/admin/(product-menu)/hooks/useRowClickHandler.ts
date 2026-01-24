@@ -24,6 +24,12 @@ type RowClickHandlerOptions = {
 
   /** Navigate to entity detail view */
   navigate?: NavigateHandler;
+
+  /** Range select from anchor to target (for Shift+click) */
+  rangeSelect?: (targetKey: string) => number;
+
+  /** Current anchor key for range selection */
+  anchorKey?: string | null;
 };
 
 /**
@@ -66,21 +72,33 @@ export function useRowClickHandler(
     expandedIds,
     toggleExpand,
     navigate,
+    rangeSelect,
+    anchorKey,
   } = options;
 
   /**
    * Handle single click on a row.
    *
    * Behavior:
+   * - Shift+click: Range select from anchor to clicked row
    * - Parent rows (expandable): Sync expand state with resulting selection state
    *   - Selecting (→ checked) → Expand
    *   - Deselecting (→ unchecked) → Collapse
    * - Leaf rows: Toggle selection only
+   *
+   * @param key - The row key (kind:id format)
+   * @param options - Optional event info for modifier key detection
    */
   const handleClick = useCallback(
-    (key: string) => {
+    (key: string, options?: { shiftKey?: boolean }) => {
       const identity = registry.get(key);
       if (!identity) return;
+
+      // Shift+click: Range select from anchor to clicked row
+      if (options?.shiftKey && rangeSelect && anchorKey) {
+        rangeSelect(key);
+        return;
+      }
 
       // 1. Sync expand state with selection if this row is expandable
       if (identity.isExpandable && toggleExpand && expandedIds) {
@@ -112,7 +130,7 @@ export function useRowClickHandler(
         onToggle(key);
       }
     },
-    [registry, onToggle, onToggleWithHierarchy, getCheckboxState, expandedIds, toggleExpand]
+    [registry, onToggle, onToggleWithHierarchy, getCheckboxState, expandedIds, toggleExpand, rangeSelect, anchorKey]
   );
 
   /**

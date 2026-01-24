@@ -124,6 +124,8 @@ export function MenuTableView() {
     actionableRoots,
     selectedKind,
     isSameKind,
+    anchorKey,
+    rangeSelect,
   } = useContextSelectionModel(builder, {
     selectableKeys: registry.allKeys as string[],
     hierarchy: { getDescendants: (key) => registry.getChildKeys(key) as string[] },
@@ -153,7 +155,7 @@ export function MenuTableView() {
     [builder]
   );
 
-  // Unified click handler with expand/collapse sync
+  // Unified click handler with expand/collapse sync and range selection
   const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
     onToggle,
     onToggleWithHierarchy,
@@ -171,6 +173,8 @@ export function MenuTableView() {
         // Products don't have a dedicated view
       }
     },
+    rangeSelect,
+    anchorKey,
   });
 
   const { toast } = useToast();
@@ -396,7 +400,7 @@ export function MenuTableView() {
           // Auto-expand flash (only when actually expanding a collapsed label)
           dragClasses.isAutoExpanded && "animate-auto-expand-flash"
         )}
-        onRowClick={() => handleClick(labelKey)}
+        onRowClick={(options) => handleClick(labelKey, options)}
         onRowDoubleClick={() => handleDoubleClick(labelKey)}
       >
         {/* Name with checkbox, chevron, icon, and inline editing */}
@@ -411,6 +415,8 @@ export function MenuTableView() {
                 isSelectable
                 alwaysVisible={isSelected || isIndeterminate}
                 ariaLabel={`Select ${row.name}`}
+                anchorKey={anchorKey}
+                onRangeSelect={anchorKey && anchorKey !== labelKey ? () => rangeSelect(labelKey) : undefined}
               />
             </HierarchyCheckbox>
             <HierarchyChevron>
@@ -530,7 +536,7 @@ export function MenuTableView() {
               ? "!border-b-2 !border-b-primary"
               : "!border-t-2 !border-t-primary")
         )}
-        onRowClick={() => handleClick(categoryKey)}
+        onRowClick={(options) => handleClick(categoryKey, options)}
         onRowDoubleClick={() => handleDoubleClick(categoryKey)}
       >
         {/* Name with checkbox and indent (no chevron - leaf node) */}
@@ -544,6 +550,8 @@ export function MenuTableView() {
                 isSelectable
                 alwaysVisible={isSelected}
                 ariaLabel={`Select ${row.name}`}
+                anchorKey={anchorKey}
+                onRangeSelect={anchorKey && anchorKey !== categoryKey ? () => rangeSelect(categoryKey) : undefined}
               />
             </HierarchyCheckbox>
             <HierarchyName>

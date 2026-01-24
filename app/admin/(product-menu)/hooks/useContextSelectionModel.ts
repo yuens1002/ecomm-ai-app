@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { SelectedEntityKind } from "../types/builder-state";
 import {
   getKindFromKey as getKindFromKeyBase,
@@ -80,6 +80,9 @@ export function useContextSelectionModel(
   options: UseContextSelectionModelOptions
 ) {
   const { selectableKeys, hierarchy } = options;
+
+  // Track anchor key for range selection (Shift+click or long-press checkbox)
+  const [anchorKey, setAnchorKey] = useState<string | null>(null);
 
   const selectedIdSet = useMemo(() => new Set(builder.selectedIds), [builder.selectedIds]);
 
@@ -247,13 +250,77 @@ export function useContextSelectionModel(
 
   /**
    * Toggle selection for a single key.
+   * Sets the anchor for subsequent range selections.
    */
   const onToggle = useCallback(
     (key: string) => {
       builder.toggleSelection(key);
+      // Set anchor after toggle - if selecting, this becomes the new anchor
+      // Check the CURRENT state (before toggle) to determine if we're selecting
+      if (!selectedIdSet.has(key)) {
+        // Currently not selected, so toggle will select it → set anchor
+        setAnchorKey(key);
+      }
     },
-    [builder]
+    [builder, selectedIdSet]
   );
+
+  /**
+   * Get visible keys between two keys (inclusive, ordered by selectableKeys).
+   * Used for range selection.
+   */
+  const getKeysBetween = useCallback(
+    (fromKey: string, toKey: string): string[] => {
+      const fromIndex = selectableKeys.indexOf(fromKey);
+      const toIndex = selectableKeys.indexOf(toKey);
+
+      if (fromIndex === -1 || toIndex === -1) return [];
+
+      const startIndex = Math.min(fromIndex, toIndex);
+      const endIndex = Math.max(fromIndex, toIndex);
+
+      return selectableKeys.slice(startIndex, endIndex + 1);
+    },
+    [selectableKeys]
+  );
+
+  /**
+   * Select a range of keys from anchor to target.
+   * Used by Shift+click (desktop) and long-press checkbox (mobile).
+   *
+   * Returns the count of newly selected items for toast feedback.
+   */
+  const rangeSelect = useCallback(
+    (targetKey: string): number => {
+      if (!anchorKey) {
+        // No anchor - treat as single select and set anchor
+        if (!selectedIdSet.has(targetKey)) {
+          builder.toggleSelection(targetKey);
+          setAnchorKey(targetKey);
+          return 1;
+        }
+        return 0;
+      }
+
+      const range = getKeysBetween(anchorKey, targetKey);
+      if (range.length === 0) return 0;
+
+      // Add all range keys to selection (keeping anchor, don't change it)
+      const newSelection = new Set([...builder.selectedIds, ...range]);
+      const newCount = newSelection.size - builder.selectedIds.length;
+      builder.selectAll([...newSelection]);
+
+      return newCount;
+    },
+    [anchorKey, getKeysBetween, builder, selectedIdSet]
+  );
+
+  /**
+   * Clear anchor (call when selection is cleared).
+   */
+  const clearAnchor = useCallback(() => {
+    setAnchorKey(null);
+  }, []);
 
   /**
    * Toggle selection with hierarchy awareness (master switch behavior).
@@ -349,6 +416,12 @@ export function useContextSelectionModel(
     isSelected,
     onToggle,
     onToggleWithHierarchy,
+
+    // Range selection (Shift+click, long-press checkbox)
+    anchorKey,
+    rangeSelect,
+    clearAnchor,
+    getKeysBetween,
 
     // Action validation
     canPerformAction,
