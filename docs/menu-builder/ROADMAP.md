@@ -717,45 +717,34 @@ Currently no way to select a contiguous range of items. Users must click each it
 
 ### 3.10 Mobile Interactions ⏸️ NOT STARTED
 
-**Complexity:** Medium-High
-**Effort:** 5-7 days
-**Priority:** Medium (UX enhancement)
+**Complexity:** Low-Medium
+**Effort:** 2-3 days
+**Priority:** Low (mobile admin is edge case, AI features are priority)
+
+**Strategy:** Minimal viable mobile support via context menu. No dedicated mobile UI.
 
 **Problem:**
-Several desktop interactions don't work on mobile:
 - HTML5 DnD doesn't work on touch devices
 - No context menu (right-click/long-press)
-- Touch targets may be < 44x44px
 
-**Features:**
-
-#### 3.10.1 Touch DnD (Reorder Mode)
-- "Reorder" button in action bar (mobile only)
-- Replaces drag handles with up/down arrow buttons
-- Tap arrows to move items up/down
-- "Done" button exits reorder mode
-
-#### 3.10.2 Context Menus
+**Solution: Context Menu with Move Up/Down**
 - **Desktop:** Right-click shows context menu
 - **Mobile:** Long-press (500ms) shows bottom sheet
-- Menu items match action bar for current view
+- Menu includes **Move Up / Move Down** for reordering (mobile DnD alternative)
+- Same actions as action bar, no separate UI needed
 
-#### 3.10.3 Touch Target Compliance
-- All interactive elements ≥ 44x44px on mobile
-- Row height ≥ 48px on mobile
-- `TouchTarget` wrapper component
+**Explicitly Deferred:**
+- ~~Touch DnD with drag gesture~~
+- ~~Dedicated Reorder Mode with arrow buttons~~
+- ~~@dnd-kit migration~~
 
 **Files to Create:**
-- `hooks/useLongPress.ts`
-- `components/table-views/shared/ContextMenuWrapper.tsx`
-- `components/table-views/shared/MobileActionSheet.tsx`
-- `components/table-views/shared/cells/ReorderArrowsCell.tsx`
-- `components/ui/touch-target.tsx`
+- `hooks/useLongPress.ts` - Scroll-safe long-press detection
+- `components/table-views/shared/ContextMenuWrapper.tsx` - Desktop right-click
+- `components/table-views/shared/MobileActionSheet.tsx` - Mobile bottom sheet
 
 **Files to Modify:**
-- `constants/action-bar/actions.ts` - Reorder mode action
-- `constants/action-bar/views.ts` - Mobile-specific actions
-- `components/table-views/shared/table/TableRow.tsx` - Context menu, touch targets
+- `components/table-views/shared/table/TableRow.tsx` - Context menu wrapper
 
 **See:** [mobile-interactions-plan.md](./mobile-interactions-plan.md) for detailed plan
 
@@ -782,9 +771,8 @@ app/admin/(product-menu)/
 │        └─ shared/
 │           ├─ table/               ✅ (TableRow, TableCell, TableHeader, SortableHeaderCell, columnWidthPresets)
 │           ├─ cells/               ✅ (CheckboxCell, InlineNameEditor, InlineIconCell, VisibilityCell, ChevronToggleCell, HierarchyNameCell, DragHandleCell)
-│           ├─ ContextMenuWrapper.tsx ⏸️ (3.10.2)
-│           ├─ MobileActionSheet.tsx  ⏸️ (3.10.2)
-│           └─ ReorderArrowsCell.tsx  ⏸️ (3.10.1)
+│           ├─ ContextMenuWrapper.tsx ⏸️ (3.10)
+│           └─ MobileActionSheet.tsx  ⏸️ (3.10)
 │
 ├─ hooks/
 │  ├─ useMenuBuilderState.ts        ✅
@@ -991,10 +979,9 @@ app/admin/(product-menu)/
 
 ### Immediate Next Steps
 
-1. **Range Selection (3.9)** - Shift+click on desktop, "Select Range" button on mobile
-2. **Context Menu Infrastructure (3.10.2)** - Right-click + long-press menus
+1. **Range Selection (3.9)** - Shift+click on desktop, long-press checkbox on both
+2. **Context Menus (3.10)** - Right-click + long-press with Move Up/Down
 3. **Search & Filter (3.5)** - Global search in action bar
-4. **Mobile Reorder Mode (3.10.1)** - Touch-friendly DnD alternative
 
 ### Future Refactors
 

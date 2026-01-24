@@ -2,17 +2,25 @@
 
 **Created:** 2026-01-24
 **Status:** Planning
-**Priority:** Medium (UX enhancement)
+**Priority:** Low (mobile admin is edge case, AI features are priority)
 
 ---
 
 ## Overview
 
-This document outlines the implementation plan for:
+Mobile admin usage is not a common use case. This plan focuses on **minimal viable mobile support** - enough to "get by" without dedicated mobile UX.
+
+**Core principle:** Context menu handles all mobile interactions (no dedicated Reorder Mode).
+
+This document outlines:
 1. **Range Selection** - Shift+click on desktop, long-press checkbox on both platforms
-2. **Touch DnD** - Mobile-friendly drag-and-drop alternative (Reorder Mode)
-3. **Context Menus** - Right-click (desktop) + long-press row (mobile)
-4. **Touch Target Compliance** - 44x44px minimum targets
+2. **Context Menus** - Right-click (desktop) + long-press row (mobile) with Move Up/Down
+3. **Touch Target Compliance** - 44x44px minimum targets
+
+**Explicitly deferred:**
+- ~~Touch DnD with drag gesture~~
+- ~~Dedicated Reorder Mode UI~~
+- ~~@dnd-kit migration~~
 
 ---
 
@@ -156,82 +164,13 @@ If long-press discoverability is a concern, add optional action bar button:
 
 ---
 
-## Feature 2: Touch Drag-and-Drop
-
-### Current State
-- HTML5 native DnD works on desktop
-- HTML5 DnD does NOT work on touch devices
-- Drag handles always visible on mobile but non-functional
-
-### Options
-
-| Option | Pros | Cons |
-|--------|------|------|
-| **@dnd-kit library** | Full touch support, accessibility, animations | Bundle size (~15kb), migration effort |
-| **Reorder Mode** | Simple, no library | Different UX from desktop, more taps |
-| **Touch polyfill** | Minimal changes | Janky, poor UX, deprecated |
-
-### Recommended: Reorder Mode (MVP)
-
-**Behavior:**
-1. User taps "Reorder" button in action bar
-2. Table enters reorder mode:
-   - Drag handles become up/down arrow buttons
-   - Checkboxes hidden
-   - Row tap moves item up/down (or shows position picker)
-3. User taps "Done" to exit reorder mode
-
-**Visual Changes in Reorder Mode:**
-```
-Normal Mode:              Reorder Mode:
-[☐] Label Name [≡]       [↑] Label Name [↓]
-[☐] Category A [≡]       [↑] Category A [↓]
-```
-
-**Implementation:**
-
-```typescript
-// New state in MenuBuilderProvider or table view
-const [isReorderMode, setIsReorderMode] = useState(false);
-
-// Action bar shows "Reorder" button on mobile
-const reorderAction = {
-  id: "reorder-mode",
-  icon: isReorderMode ? Check : ArrowUpDown,
-  label: isReorderMode ? "Done" : "Reorder",
-  tooltip: isReorderMode ? "Exit reorder mode" : "Enter reorder mode",
-  kbd: [],
-  disabled: () => false,
-  onClick: () => setIsReorderMode(!isReorderMode),
-  showOnMobile: true,
-  hideOnDesktop: true,
-};
-```
-
-**Files to Create:**
-- `menu-builder/components/table-views/shared/cells/ReorderArrowsCell.tsx`
-
-**Files to Modify:**
-- `constants/action-bar/actions.ts` - Add reorder-mode action
-- `constants/action-bar/views.ts` - Add to mobile-only actions
-- `hooks/useContextSelectionModel.ts` - Disable selection in reorder mode
-- Table view components - Conditionally render arrows vs drag handle
-
-### Future: @dnd-kit Migration
-
-If touch DnD with drag handles is required:
-1. Install `@dnd-kit/core`, `@dnd-kit/sortable`
-2. Replace HTML5 DnD implementation
-3. Benefits: Touch support, keyboard DnD, better animations, accessibility
-
----
-
-## Feature 3: Context Menus (Long-Press)
+## Feature 2: Context Menus (Long-Press) with Move Up/Down
 
 ### Current State
 - No context menu implementation
 - Right-click does nothing
 - Long-press does nothing on mobile
+- No way to reorder on mobile (HTML5 DnD doesn't work on touch)
 
 ### Implementation
 
@@ -240,7 +179,28 @@ If touch DnD with drag handles is required:
 
 **Menu Items (per view):**
 - Same actions as action bar, filtered by selection state
-- Example for all-labels: Clone, Remove, Toggle Visibility, Delete
+- **Move Up / Move Down** - Mobile alternative to drag-and-drop
+- Example for all-labels: Move Up, Move Down, Clone, Toggle Visibility, Delete
+
+**Move Up/Down (Mobile DnD Alternative):**
+```typescript
+// Context menu actions for reordering
+const moveUpAction = {
+  label: "Move Up",
+  icon: ChevronUp,
+  disabled: isFirstItem,
+  onClick: () => reorderItem(index, index - 1),
+};
+
+const moveDownAction = {
+  label: "Move Down",
+  icon: ChevronDown,
+  disabled: isLastItem,
+  onClick: () => reorderItem(index, index + 1),
+};
+```
+
+This provides mobile reordering without dedicated Reorder Mode UI.
 
 **Using shadcn/ui:**
 
@@ -416,44 +376,37 @@ const TouchTarget = ({ children, className }: { children: ReactNode; className?:
 6. Add visual feedback for anchor row (subtle highlight)
 7. Test across all 5 views on desktop and mobile
 
-### Phase 2: Touch Targets
-1. Audit all interactive elements for 44x44px compliance
-2. Add `TouchTarget` wrapper component
-3. Increase mobile row height to 48px
-4. Ensure checkbox touch area is adequate for long-press
-5. Test on actual mobile devices
+### Phase 2: Context Menus (includes Mobile Reorder)
+1. Create `useLongPress` hook (scroll-safe)
+2. Implement desktop right-click context menu (ContextMenuWrapper)
+3. Implement mobile long-press on row → bottom sheet (MobileActionSheet)
+4. Add Move Up / Move Down actions for mobile reordering
+5. Wire up action handlers from action bar config
+6. Add keyboard shortcut hints to desktop menu items
+7. Test on mobile devices
 
-### Phase 3: Context Menus
-1. Implement desktop right-click context menu (ContextMenuWrapper)
-2. Implement mobile long-press on row → bottom sheet (MobileActionSheet)
-3. Wire up action handlers from action bar config
-4. Add keyboard shortcut hints to desktop menu items
+### Phase 3: Touch Targets (If Needed)
+1. Audit interactive elements for 44x44px compliance
+2. Add `TouchTarget` wrapper component if needed
+3. Increase mobile row height to 48px if needed
+4. Test on actual mobile devices
 
-### Phase 4: Reorder Mode (Mobile DnD Alternative)
-1. Add reorder-mode action (mobile-only action bar button)
-2. Create `ReorderArrowsCell` component (up/down arrows)
-3. Implement move up/down logic with undo/redo
-4. Test on mobile devices
+**Note:** Phase 3 may be skipped if existing touch targets are adequate.
 
 ---
 
 ## Files Summary
 
 ### New Files
-- `hooks/useLongPress.ts`
-- `hooks/useRangeSelection.ts` (or integrate into useContextSelectionModel)
-- `menu-builder/components/table-views/shared/ContextMenuWrapper.tsx`
-- `menu-builder/components/table-views/shared/MobileActionSheet.tsx`
-- `menu-builder/components/table-views/shared/cells/ReorderArrowsCell.tsx`
-- `components/ui/touch-target.tsx`
+- `hooks/useLongPress.ts` - Scroll-safe long-press detection
+- `menu-builder/components/table-views/shared/ContextMenuWrapper.tsx` - Desktop right-click
+- `menu-builder/components/table-views/shared/MobileActionSheet.tsx` - Mobile bottom sheet
 
 ### Modified Files
 - `hooks/useContextSelectionModel.ts` - Anchor tracking, range selection
-- `hooks/useRowClickHandler.ts` - Shift/meta key handling
-- `constants/action-bar/actions.ts` - Reorder mode action
-- `constants/action-bar/views.ts` - Mobile-specific actions
-- `menu-builder/components/table-views/shared/table/TableRow.tsx` - Context menu, touch targets
-- `app/globals.css` - Mobile-specific styles
+- `hooks/useRowClickHandler.ts` - Shift key handling
+- `menu-builder/components/table-views/shared/cells/CheckboxCell.tsx` - Long-press range selection
+- `menu-builder/components/table-views/shared/table/TableRow.tsx` - Context menu wrapper
 
 ---
 
@@ -467,21 +420,17 @@ const TouchTarget = ({ children, className }: { children: ReactNode; className?:
 - [ ] Range selection works across all 5 views
 - [ ] Toast confirms range selection count
 
-### Touch DnD (Reorder Mode)
-- [ ] "Reorder" button appears on mobile action bar
-- [ ] Up/down arrows replace drag handles in reorder mode
-- [ ] Reorder persists to database
-- [ ] "Done" exits reorder mode
-
-### Context Menus
+### Context Menus (includes Mobile Reorder)
 - [ ] Right-click shows context menu on desktop
-- [ ] Long-press shows bottom sheet on mobile
+- [ ] Long-press (500ms) shows bottom sheet on mobile
 - [ ] Menu items match action bar for current view
+- [ ] **Move Up / Move Down** actions work for reordering
+- [ ] Reorder persists to database with undo/redo
 - [ ] Actions execute correctly
 
-### Touch Targets
-- [ ] All interactive elements ≥ 44x44px on mobile
-- [ ] Row height ≥ 48px on mobile
+### Touch Targets (Nice to Have)
+- [ ] Interactive elements have adequate touch area
+- [ ] Row height comfortable for touch
 - [ ] No overlapping touch targets
 
 ---
