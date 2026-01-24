@@ -686,23 +686,30 @@ Currently no way to select a contiguous range of items. Users must click each it
 - Shift+click row B
 - All visible rows from A to B selected
 
-**Mobile: "Select Range" Button**
-- Tap row A (becomes anchor)
-- Tap "Select Range" button in action bar
-- Tap row B
-- All visible rows from A to B selected
+**Both Platforms: Long-Press Checkbox**
+- Tap/click checkbox A (selected, becomes anchor)
+- Long-press checkbox B (500ms)
+- All visible rows from A to B immediately selected
+- Visual feedback: pulse animation during long-press, toast on completion
+
+**Why Long-Press on Checkbox?**
+- Inline gesture - no extra buttons needed
+- Clear intent - long-press signals "special selection behavior"
+- Works on both desktop and mobile
+- Discoverable via tooltip
 
 **Implementation:**
 - Add `anchorKey` to selection state
-- Modify `useRowClickHandler` to handle Shift+click
+- Create `useLongPress` hook for long-press detection
+- Modify `CheckboxCell` with long-press support + visual feedback
+- Modify `useRowClickHandler` to handle Shift+click (desktop)
 - Add `getVisibleKeysBetween(anchorKey, targetKey)` helper
-- Add mobile "Select Range" action button
 
 **Files to Modify:**
 - `hooks/useContextSelectionModel.ts` - Anchor tracking, range logic
 - `hooks/useRowClickHandler.ts` - Shift key handling
-- `constants/action-bar/actions.ts` - Select Range action (mobile)
-- `constants/action-bar/views.ts` - Add to mobile actions
+- `hooks/useLongPress.ts` - New hook for long-press detection
+- `table-views/shared/cells/CheckboxCell.tsx` - Long-press support
 
 **See:** [mobile-interactions-plan.md](./mobile-interactions-plan.md) for detailed plan
 

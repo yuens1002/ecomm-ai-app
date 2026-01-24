@@ -9,9 +9,9 @@
 ## Overview
 
 This document outlines the implementation plan for:
-1. **Range Selection** - Shift+click on desktop, long-press on mobile
-2. **Touch DnD** - Mobile-friendly drag-and-drop alternative
-3. **Context Menus** - Long-press support for mobile
+1. **Range Selection** - Shift+click on desktop, long-press checkbox on both platforms
+2. **Touch DnD** - Mobile-friendly drag-and-drop alternative (Reorder Mode)
+3. **Context Menus** - Right-click (desktop) + long-press row (mobile)
 4. **Touch Target Compliance** - 44x44px minimum targets
 
 ---
@@ -68,43 +68,86 @@ const handleRowClick = (key: string, event: MouseEvent) => {
 - `hooks/useRowClickHandler.ts` - Pass shift/meta key state
 - `menu-builder/components/table-views/shared/table/TableRow.tsx` - Forward click event
 
-### Mobile: Long-Press Range Selection
+### Mobile & Desktop: Long-Press Checkbox for Range Selection
 
 **Behavior:**
-1. User taps row A (selected, becomes anchor)
-2. User long-presses row B (500ms)
-3. Range selection modal/toast appears: "Select 5 items from A to B?"
-4. User confirms → range selected
+1. User taps/clicks checkbox A (selected, becomes anchor)
+2. User **long-presses checkbox B** (500ms)
+3. All visible rows from A to B immediately selected (no confirmation needed)
+4. Toast feedback: "Selected 5 items"
 
-**Alternative UX (simpler):**
-1. User taps row A (selected)
-2. User taps "Select Range" button in action bar (appears when 1 item selected)
-3. User taps row B
-4. All rows A to B selected
+**Why Long-Press on Checkbox?**
+- **Inline gesture** - No extra buttons needed, action happens where user is already interacting
+- **Clear intent** - Long-press on checkbox clearly signals "special selection behavior"
+- **Works on both platforms** - Same gesture for desktop and mobile
+- **Discoverable** - Tooltip on desktop: "Long-press to select range"
+
+**Visual Feedback During Long-Press:**
+- Checkbox shows progress indicator (circular fill or pulse animation)
+- After 500ms, haptic feedback (mobile) + visual confirmation
+- Range highlight previews which rows will be selected
 
 **Implementation:**
 
 ```typescript
-// Mobile range selection mode
-const [rangeSelectMode, setRangeSelectMode] = useState(false);
+// CheckboxCell with long-press support
+const CheckboxCell = ({ rowKey, isSelected, onSelect, onRangeSelect, anchorKey }) => {
+  const longPressTimer = useRef<NodeJS.Timeout>();
+  const [isLongPressing, setIsLongPressing] = useState(false);
 
-const handleRowTap = (key: string) => {
-  if (rangeSelectMode && anchorKey) {
-    const range = getVisibleKeysBetween(anchorKey, key);
-    setSelectedKeys(new Set([...selectedKeys, ...range]));
-    setRangeSelectMode(false);
-  } else {
-    // Normal tap behavior
-    toggleSelection(key);
-    setAnchorKey(key);
-  }
+  const handlePointerDown = () => {
+    setIsLongPressing(true);
+    longPressTimer.current = setTimeout(() => {
+      if (anchorKey && anchorKey !== rowKey) {
+        onRangeSelect(anchorKey, rowKey);
+      }
+      setIsLongPressing(false);
+    }, 500);
+  };
+
+  const handlePointerUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      // Short press - normal toggle
+      if (isLongPressing) {
+        onSelect(rowKey);
+      }
+    }
+    setIsLongPressing(false);
+  };
+
+  return (
+    <div
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
+      className={cn(
+        "touch-target",
+        isLongPressing && "animate-pulse ring-2 ring-primary"
+      )}
+    >
+      <Checkbox checked={isSelected} />
+      {isLongPressing && <CircularProgress className="absolute" />}
+    </div>
+  );
 };
 ```
 
-**New UI Elements:**
-- "Select Range" action button (appears when 1+ items selected, mobile only)
-- Visual indicator showing range selection mode is active
-- Toast: "Tap another row to select range"
+**Tooltip (Desktop):**
+```
+[Checkbox hover tooltip]
+"Click to select, long-press to select range"
+-- or when anchor exists --
+"Long-press to select range from [Anchor Name]"
+```
+
+**Fallback: "Select Range" Button (Optional)**
+
+If long-press discoverability is a concern, add optional action bar button:
+- Appears when 1+ items selected
+- Shows on mobile only (desktop has Shift+click)
+- Entering range mode highlights anchor row
+- Toast: "Tap another checkbox to complete range"
 
 ---
 
@@ -319,33 +362,32 @@ const TouchTarget = ({ children, className }: { children: ReactNode; className?:
 
 ## Implementation Order
 
-### Phase 1: Range Selection (Desktop First)
+### Phase 1: Range Selection (Both Platforms)
 1. Add anchor tracking to `useContextSelectionModel`
-2. Implement Shift+click in `useRowClickHandler`
-3. Add visual feedback for anchor row
-4. Test across all 5 views
+2. Implement Shift+click in `useRowClickHandler` (desktop)
+3. Create `useLongPress` hook for checkbox long-press detection
+4. Update `CheckboxCell` with long-press support + visual feedback
+5. Add `getVisibleKeysBetween(anchorKey, targetKey)` helper
+6. Add visual feedback for anchor row (subtle highlight)
+7. Test across all 5 views on desktop and mobile
 
 ### Phase 2: Touch Targets
-1. Audit all interactive elements
+1. Audit all interactive elements for 44x44px compliance
 2. Add `TouchTarget` wrapper component
-3. Increase mobile row height
-4. Test on actual mobile devices
+3. Increase mobile row height to 48px
+4. Ensure checkbox touch area is adequate for long-press
+5. Test on actual mobile devices
 
 ### Phase 3: Context Menus
-1. Create `useLongPress` hook
-2. Implement desktop right-click context menu
-3. Implement mobile bottom sheet
-4. Wire up action handlers from action bar config
+1. Implement desktop right-click context menu (ContextMenuWrapper)
+2. Implement mobile long-press on row → bottom sheet (MobileActionSheet)
+3. Wire up action handlers from action bar config
+4. Add keyboard shortcut hints to desktop menu items
 
-### Phase 4: Mobile Range Selection
-1. Add "Select Range" action button (mobile only)
-2. Implement range selection mode
-3. Add visual indicators and toast feedback
-
-### Phase 5: Reorder Mode (Mobile DnD Alternative)
-1. Add reorder-mode action
-2. Create `ReorderArrowsCell` component
-3. Implement move up/down logic
+### Phase 4: Reorder Mode (Mobile DnD Alternative)
+1. Add reorder-mode action (mobile-only action bar button)
+2. Create `ReorderArrowsCell` component (up/down arrows)
+3. Implement move up/down logic with undo/redo
 4. Test on mobile devices
 
 ---
@@ -374,9 +416,11 @@ const TouchTarget = ({ children, className }: { children: ReactNode; className?:
 
 ### Range Selection
 - [ ] Shift+click selects range on desktop
-- [ ] Anchor row visually indicated
+- [ ] Long-press checkbox selects range (both platforms)
+- [ ] Anchor row visually indicated (subtle highlight)
+- [ ] Long-press shows progress feedback (pulse/ring animation)
 - [ ] Range selection works across all 5 views
-- [ ] Mobile "Select Range" button works
+- [ ] Toast confirms range selection count
 
 ### Touch DnD (Reorder Mode)
 - [ ] "Reorder" button appears on mobile action bar
