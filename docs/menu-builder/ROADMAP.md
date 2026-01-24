@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-24
 **Current Branch:** `unify-menu-builder`
-**Current Version:** v0.66.20
+**Current Version:** v0.67.0
 **Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ (5/5 views) | Phase 3 In Progress 🚧
 
 ---
@@ -18,12 +18,12 @@ Build a sophisticated admin interface for managing a 2-level menu hierarchy (Lab
 ```(text)
 Foundation  ████████████████████████ 100% ✅
 Table Views ████████████████████████ 100% ✅
-Advanced    ██████████░░░░░░░░░░░░░  40% 🚧
+Advanced    ██████████████░░░░░░░░░  60% 🚧
 ─────────────────────────────────────────
-Total       ███████████████████░░░░  80%
+Total       ████████████████████░░░  85%
 ```
 
-### Recent Completions (v0.66.x)
+### Recent Completions (v0.66.x - v0.67.x)
 - ✅ IdentityRegistry architecture (unified row identity management)
 - ✅ 2-level Menu View (Labels → Categories, products as count only)
 - ✅ Same-level DnD with auto-collapse/expand behaviors
@@ -35,6 +35,9 @@ Total       ███████████████████░░░�
 - ✅ Cross-boundary DnD with motion animations (v0.66.11)
 - ✅ Explicit selection model refactor (v0.66.16-0.66.19)
 - ✅ Consolidated DnD hooks architecture (v0.66.20)
+- ✅ Keyboard shortcuts with single-key Gmail/Slack style (v0.67.0)
+- ✅ Help button (ConciergeBell) on all views (v0.67.0)
+- ✅ Delete button with full undo/redo support (v0.67.0)
 
 ---
 
@@ -387,7 +390,7 @@ Total       ███████████████████░░░�
 
 **Target:** Polish and power-user features
 **Timeline:** 2-4 weeks
-**Status:** 40% (undo/redo complete, same-level DnD complete, identity registry complete)
+**Status:** 60% (undo/redo ✅, same-level DnD ✅, keyboard shortcuts ✅, help/delete buttons ✅)
 
 ### 3.1 Same-Level Drag-and-Drop ✅ COMPLETE
 
@@ -409,28 +412,65 @@ Total       ███████████████████░░░�
 
 ---
 
-### 3.2 Keyboard Shortcuts ⏸️
+### 3.2 Keyboard Shortcuts ✅ COMPLETE (Jan 24, 2026)
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] Key handler in MenuBuilder root
-- [ ] Platform detection (Mac Cmd vs Win Ctrl)
-- [ ] Shortcut map (from spec):
-  - `Ctrl+N` - New item
-  - `Ctrl+D` - Duplicate
-  - `Delete` - Remove selected
-  - `Ctrl+Z` - Undo
-  - `Ctrl+Shift+Z` - Redo
-  - `Ctrl+A` - Select all
-  - `↑/↓` - Navigate rows
-  - `Space` - Toggle selection
-- [ ] Tooltips showing shortcuts (shadcn Kbd component)
-- [ ] Disable when input focused
+- [x] `useKeyboardShortcuts` hook with global keydown listener
+- [x] Single-key shortcuts (Gmail/Slack style) to avoid browser conflicts
+- [x] Platform detection (Mac Cmd vs Win Ctrl) for future use
+- [x] Shortcut map:
+  - `N` - New item (label or category)
+  - `D` - Duplicate selected
+  - `R` - Remove selected
+  - `X` - Delete permanently (all-labels, all-categories)
+  - `V` - Toggle visibility
+  - `E` - Expand all (menu view)
+  - `C` - Collapse all (menu view)
+  - `U` - Undo
+  - `Shift+U` - Redo
+  - `?` - Toggle help popover
+- [x] Tooltips showing shortcuts (shadcn Kbd component)
+- [x] Disabled when input/textarea/contenteditable focused
+- [x] Disabled when modal/dialog is open
+- [x] Respects action disabled state
+- [x] Shifted character handling (? requires Shift but shortcut doesn't specify it)
 
-**Files to Create:**
+**Help Button:**
 
-- `app/admin/(product-menu)/menu-builder/hooks/useKeyboardShortcuts.ts`
-- `app/admin/(product-menu)/constants/keyboard-shortcuts.ts`
+- [x] ConciergeBell icon on all 5 views (always last on right)
+- [x] View-specific help content via `help-content.ts`
+- [x] Popover with bulleted tips
+- [x] Keyboard shortcut (`?`) toggles popover via custom event
+
+**Delete Button:**
+
+- [x] Trash2 icon on all-labels and all-categories (2nd to last)
+- [x] AlertDialog confirmation before permanent delete
+- [x] Full undo/redo with `restoreLabel` and `restoreCategory` server actions
+- [x] Recreates entities with all relationships on undo
+
+**Accessibility:**
+
+- [x] Disabled buttons use `aria-disabled` to remain tabbable
+
+**Files Created:**
+
+- `app/admin/(product-menu)/hooks/useKeyboardShortcuts.ts`
+- `app/admin/(product-menu)/constants/help-content.ts`
+- `app/admin/(product-menu)/menu-builder/components/menu-action-bar/HelpPopoverButton.tsx`
+- `app/admin/(product-menu)/menu-builder/components/menu-action-bar/DeleteAlertButton.tsx`
+
+**Files Modified:**
+
+- `app/admin/(product-menu)/constants/action-bar/model.ts` (added help, delete IDs)
+- `app/admin/(product-menu)/constants/action-bar/actions.ts` (single-key shortcuts, help/delete actions)
+- `app/admin/(product-menu)/constants/action-bar/views.ts` (added help to all views, delete to all-labels/all-categories)
+- `app/admin/(product-menu)/menu-builder/components/menu-action-bar/index.tsx` (render help/delete buttons)
+- `app/admin/(product-menu)/menu-builder/components/menu-action-bar/ActionButton.tsx` (aria-disabled)
+- `app/admin/(product-menu)/actions/labels.ts` (restoreLabel server action)
+- `app/admin/(product-menu)/actions/categories.ts` (restoreCategory server action)
+- `app/admin/(product-menu)/types/builder-state.ts` (deleteSelected action)
 
 ---
 
@@ -640,7 +680,7 @@ app/admin/(product-menu)/
 │  ├─ MenuBuilderProvider.tsx       ✅
 │  ├─ MenuBuilder.tsx               ✅
 │  └─ components/
-│     ├─ menu-action-bar/           ✅
+│     ├─ menu-action-bar/           ✅ (ActionButton, HelpPopoverButton, DeleteAlertButton)
 │     └─ table-views/
 │        ├─ TableViewRenderer.tsx   ✅
 │        ├─ PlaceholderTableView.tsx ✅
@@ -670,7 +710,7 @@ app/admin/(product-menu)/
 │  ├─ useInlineEditHandlers.ts      ✅ (name/icon/visibility with undo + duplicate validation)
 │  ├─ useUndoRedoStack.ts           ✅ (declarative undo/redo system)
 │  ├─ usePersistColumnSort.ts       ✅ (persist TanStack sort to DB)
-│  ├─ useKeyboardShortcuts.ts       ⏸️ (3.2)
+│  ├─ useKeyboardShortcuts.ts       ✅ (global keyboard shortcuts)
 │  └─ dnd/                          ✅ (v0.66.20 consolidated architecture)
 │     ├─ useGroupedReorder.ts       ✅ (core shared DnD state management)
 │     ├─ useSingleEntityDnd.ts      ✅ (flat table DnD wrapper)
@@ -687,6 +727,7 @@ app/admin/(product-menu)/
 │  │  ├─ actions.ts
 │  │  ├─ views.ts
 │  │  └─ index.ts
+│  ├─ help-content.ts               ✅ (view-specific help text)
 │  ├─ view-configs.ts               ✅
 │  └─ dropdown-registry.ts          ✅
 │
@@ -841,9 +882,9 @@ app/admin/(product-menu)/
 
 ## Next Action
 
-**Last Completed:** Consolidated DnD Hooks (v0.66.20) - Jan 24, 2026
+**Last Completed:** Keyboard Shortcuts & Action Buttons (v0.67.0) - Jan 24, 2026
 
-### Recently Completed (v0.66.16-0.66.20)
+### Recently Completed (v0.66.16-0.67.0)
 
 - [x] Explicit selection model refactor
 - [x] Multi-select DnD with grouped entities ghost
@@ -851,12 +892,16 @@ app/admin/(product-menu)/
 - [x] Consolidated DnD hooks: `useGroupedReorder` as shared core
 - [x] Fixed AllLabelsTableView reorder positioning (`defaultSort: null`)
 - [x] Intent-based cursor feedback (grab/not-allowed on mousedown)
+- [x] Keyboard shortcuts with single-key Gmail/Slack style (N, D, R, X, V, E, C, U, Shift+U, ?)
+- [x] Help button (ConciergeBell) on all 5 views
+- [x] Delete button with AlertDialog + full undo/redo (restoreLabel, restoreCategory)
+- [x] Accessible disabled buttons (aria-disabled for tabbability)
 
 ### Immediate Next Steps
 
-1. **Keyboard Shortcuts (3.2)** - Ctrl+Z, Ctrl+D, arrow navigation
-2. **Context Menu Infrastructure** - Right-click menus
-3. **Search & Filter (3.5)** - Global search in action bar
+1. **Context Menu Infrastructure** - Right-click menus
+2. **Search & Filter (3.5)** - Global search in action bar
+3. **Clone Operations (3.4)** - Deep clone with relationships
 
 ### Future Refactors
 
