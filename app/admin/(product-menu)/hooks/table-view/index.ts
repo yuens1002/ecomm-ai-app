@@ -61,5 +61,7 @@ export type {
 export { buildRowContext, NO_DND } from "./buildRowContext";
 export type { BuildRowContextOptions } from "./buildRowContext";
 
-// Main hook
+// Main hooks
 export { useTableView } from "./useTableView";
+export { useConfiguredRow } from "./useConfiguredRow";
+export type { UseConfiguredRowOptions } from "./useConfiguredRow";

@@ -1,6 +1,13 @@
 "use client";
 "use no memo";
 
+/**
+ * All Categories Table View
+ *
+ * Displays all categories in a flat list with sorting support.
+ * Uses config-driven rendering for columns via useConfiguredRow.
+ */
+
 import { TableBody } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -10,7 +17,6 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { FileSpreadsheet } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
@@ -22,36 +28,35 @@ import { createKey } from "../../../types/identity-registry";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuCategory } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
-import { CheckboxCell } from "./shared/cells/CheckboxCell";
-import { TouchTarget } from "./shared/cells/TouchTarget";
-import { InlineNameEditor } from "./shared/cells/InlineNameEditor";
-import { VisibilityCell } from "./shared/cells/VisibilityCell";
-import { RowContextMenu } from "./shared/cells/RowContextMenu";
-import { allCategoriesWidthPreset } from "./shared/table/columnWidthPresets";
+import {
+  allCategoriesConfig,
+  ALL_CATEGORIES_HEADER_COLUMNS,
+  type AllCategoriesExtra,
+} from "../../../constants/table-view-configs";
+import { useConfiguredRow } from "../../../hooks/table-view";
 import { EmptyState } from "./shared/table/EmptyState";
-import { TableCell } from "./shared/table/TableCell";
-import { TableHeader, type TableHeaderColumn } from "./shared/table/TableHeader";
-import { TableRow } from "./shared/table/TableRow";
+import { TableHeader } from "./shared/table/TableHeader";
 import { TableViewWrapper } from "./shared/table/TableViewWrapper";
 import { DeleteConfirmationDialog } from "./shared/table/DeleteConfirmationDialog";
-
-const ALL_CATEGORIES_HEADER_COLUMNS: TableHeaderColumn[] = [
-  { id: "select", label: "", isCheckbox: true },
-  { id: "name", label: "Category" },
-  { id: "products", label: "Products" },
-  { id: "addedDate", label: "Added Date" },
-  { id: "visibility", label: "Visibility" },
-  { id: "labels", label: "Added to Labels" },
-];
+import { ConfiguredTableRow } from "./shared/table/ConfiguredTableRow";
 
 export function AllCategoriesTableView() {
-  const { builder, categories, labels, products, updateCategory, createNewCategory, deleteCategory, cloneCategory, attachCategory, detachCategory } =
-    useMenuBuilder();
+  const {
+    builder,
+    categories,
+    labels,
+    products,
+    updateCategory,
+    createNewCategory,
+    deleteCategory,
+    cloneCategory,
+    attachCategory,
+    detachCategory,
+  } = useMenuBuilder();
 
-  // Context menu highlight state (separate from selection)
+  // UI state
   const [contextRowId, setContextRowId] = useState<string | null>(null);
-
-  // Delete confirmation state (single or bulk from context menu)
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     open: boolean;
     targetIds: string[];
@@ -60,6 +65,7 @@ export function AllCategoriesTableView() {
 
   const { toast } = useToast();
 
+  // Editing/pinned state
   const {
     editingId: editingCategoryId,
     pinnedId: pinnedCategoryId,
@@ -67,20 +73,26 @@ export function AllCategoriesTableView() {
     clearPinnedIfMatches,
   } = useContextRowUiState(builder, "category", { autoClearPinned: true });
 
-  // Build registry for this flat view
-  const registry = useMemo(() => buildFlatRegistry(categories, "category"), [categories]);
+  // Build registry for selection
+  const registry = useMemo(
+    () => buildFlatRegistry(categories, "category"),
+    [categories]
+  );
 
-  // Default sort by addedDate desc (newest first) - no DnD in this view so always show sort indicator
-  const [sorting, setSorting] = React.useState<SortingState>([{ id: "addedDate", desc: true }]);
+  // Sorting state (react-table)
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "addedDate", desc: true },
+  ]);
 
-  const { pinnedRow: pinnedCategory, rowsForTable: categoriesForTable } = usePinnedRow({
-    rows: categories,
-    pinnedId: pinnedCategoryId,
-    isSortingActive: sorting.length > 0,
-    // Uses built-in default sort by order field
-  });
+  // Pinned row handling
+  const { pinnedRow: pinnedCategory, rowsForTable: categoriesForTable } =
+    usePinnedRow({
+      rows: categories,
+      pinnedId: pinnedCategoryId,
+      isSortingActive: sorting.length > 0,
+    });
 
-  // Inline edit handlers with undo/redo
+  // Inline edit handlers
   const { handleNameSave, handleVisibilitySave } = useInlineEditHandlers({
     builder,
     entityKind: "category",
@@ -89,10 +101,12 @@ export function AllCategoriesTableView() {
     onSaveComplete: clearEditing,
   });
 
-  // Helper: Get label names for a category
+  // ─────────────────────────────────────────────────────────────────────────
+  // Derived Data (for extra context)
+  // ─────────────────────────────────────────────────────────────────────────
+
   const categoryLabelsById = useMemo(() => {
     const map = new Map<string, string[]>();
-
     for (const label of labels) {
       for (const category of label.categories ?? []) {
         const existing = map.get(category.id);
@@ -103,39 +117,21 @@ export function AllCategoriesTableView() {
         }
       }
     }
-
     return map;
   }, [labels]);
 
   const categoryProductCountById = useMemo(() => {
     const map = new Map<string, number>();
-
     for (const product of products) {
       for (const categoryId of product.categoryIds ?? []) {
         map.set(categoryId, (map.get(categoryId) ?? 0) + 1);
       }
     }
-
     return map;
   }, [products]);
 
-  const getCategoryLabels = useCallback(
-    (categoryId: string) => {
-      const names = categoryLabelsById.get(categoryId);
-      return names && names.length > 0 ? names.join(", ") : "—";
-    },
-    [categoryLabelsById]
-  );
-
-  const getCategoryProductCountNumber = useCallback(
-    (categoryId: string) => categoryProductCountById.get(categoryId) ?? 0,
-    [categoryProductCountById]
-  );
-
-  // Map category ID -> array of label IDs that contain this category
   const categoryLabelIdsById = useMemo(() => {
     const map = new Map<string, string[]>();
-
     for (const label of labels) {
       for (const category of label.categories ?? []) {
         const existing = map.get(category.id);
@@ -146,11 +142,9 @@ export function AllCategoriesTableView() {
         }
       }
     }
-
     return map;
   }, [labels]);
 
-  // Label targets for context menu (all visible labels)
   const labelTargets = useMemo(
     () =>
       labels
@@ -159,25 +153,23 @@ export function AllCategoriesTableView() {
     [labels]
   );
 
-  // Handler for toggling category attachment to a label
-  const handleLabelToggle = useCallback(
-    async (categoryId: string, labelId: string, shouldAttach: boolean) => {
-      if (shouldAttach) {
-        const result = await attachCategory(labelId, categoryId);
-        if (!result.ok) {
-          toast({ title: "Error", description: "Could not add to label", variant: "destructive" });
-        }
-      } else {
-        const result = await detachCategory(labelId, categoryId);
-        if (!result.ok) {
-          toast({ title: "Error", description: "Could not remove from label", variant: "destructive" });
-        }
-      }
+  // ─────────────────────────────────────────────────────────────────────────
+  // React Table (for sorting)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const getCategoryLabels = useCallback(
+    (categoryId: string) => {
+      const names = categoryLabelsById.get(categoryId);
+      return names && names.length > 0 ? names.join(", ") : "—";
     },
-    [attachCategory, detachCategory, toast]
+    [categoryLabelsById]
   );
 
-  // Column definitions
+  const getCategoryProductCount = useCallback(
+    (categoryId: string) => categoryProductCountById.get(categoryId) ?? 0,
+    [categoryProductCountById]
+  );
+
   const columns = useMemo<ColumnDef<MenuCategory>[]>(
     () => [
       {
@@ -192,7 +184,7 @@ export function AllCategoriesTableView() {
       },
       {
         id: "products",
-        accessorFn: (row) => getCategoryProductCountNumber(row.id),
+        accessorFn: (row) => getCategoryProductCount(row.id),
         sortingFn: "basic",
       },
       {
@@ -206,11 +198,9 @@ export function AllCategoriesTableView() {
         sortingFn: "basic",
       },
     ],
-    [getCategoryLabels, getCategoryProductCountNumber]
+    [getCategoryLabels, getCategoryProductCount]
   );
 
-  // Initialize table
-  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: categoriesForTable,
     columns,
@@ -222,11 +212,13 @@ export function AllCategoriesTableView() {
     enableSortingRemoval: true,
   });
 
-  // IMPORTANT: selectableKeys must match the VISUAL row order (after sorting)
-  // so that shift+click range selection selects the correct rows
+  // ─────────────────────────────────────────────────────────────────────────
+  // Selection
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // selectableKeys must match visual row order (pinned first, then sorted)
   const selectableKeys = useMemo(() => {
     const sortedRows = table.getRowModel().rows;
-    // Include pinned row at the top if present
     const keys: string[] = [];
     if (pinnedCategory) {
       keys.push(createKey("category", pinnedCategory.id));
@@ -235,6 +227,7 @@ export function AllCategoriesTableView() {
       keys.push(createKey("category", row.original.id));
     }
     return keys;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table, pinnedCategory, sorting]);
 
   const {
@@ -244,20 +237,23 @@ export function AllCategoriesTableView() {
     isSelected,
     anchorKey,
     rangeSelect,
+    getCheckboxState,
     actionableRoots,
     isSameKind,
   } = useContextSelectionModel(builder, { selectableKeys });
 
-  // Unified click handler with range selection support
+  // Click handlers
   const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
     onToggle,
-    navigate: (kind, entityId) => builder.navigateToCategory(entityId),
+    navigate: (_kind, entityId) => builder.navigateToCategory(entityId),
     rangeSelect,
     anchorKey,
   });
 
-  // Context menu handlers - support bulk when item is in selection
-  // Helper to get target IDs (bulk if in selection with multiple, single otherwise)
+  // ─────────────────────────────────────────────────────────────────────────
+  // Context Menu Handlers
+  // ─────────────────────────────────────────────────────────────────────────
+
   const getTargetIds = useCallback(
     (categoryId: string): string[] => {
       const categoryKey = createKey("category", categoryId);
@@ -271,7 +267,6 @@ export function AllCategoriesTableView() {
     [isSelected, actionableRoots, isSameKind]
   );
 
-  // Opens confirmation dialog for delete (single or bulk)
   const handleContextDelete = useCallback(
     (categoryId: string) => {
       const targetIds = getTargetIds(categoryId);
@@ -280,21 +275,29 @@ export function AllCategoriesTableView() {
     [getTargetIds]
   );
 
-  // Actually perform the delete after confirmation
   const handleConfirmDelete = useCallback(async () => {
     const { targetIds } = deleteConfirmation;
     if (!targetIds || targetIds.length === 0) return;
 
     setIsDeleting(true);
     try {
-      const results = await Promise.all(targetIds.map((id) => deleteCategory(id)));
+      const results = await Promise.all(
+        targetIds.map((id) => deleteCategory(id))
+      );
       const allOk = results.every((r) => r.ok);
       if (allOk) {
         toast({
-          title: targetIds.length > 1 ? `${targetIds.length} categories deleted` : "Category deleted",
+          title:
+            targetIds.length > 1
+              ? `${targetIds.length} categories deleted`
+              : "Category deleted",
         });
       } else {
-        toast({ title: "Error", description: "Some categories could not be deleted", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Some categories could not be deleted",
+          variant: "destructive",
+        });
       }
     } finally {
       setIsDeleting(false);
@@ -305,46 +308,180 @@ export function AllCategoriesTableView() {
   const handleContextClone = useCallback(
     async (categoryId: string) => {
       const targetIds = getTargetIds(categoryId);
-      const results = await Promise.all(targetIds.map((id) => cloneCategory({ id })));
+      const results = await Promise.all(
+        targetIds.map((id) => cloneCategory({ id }))
+      );
       const allOk = results.every((r) => r.ok);
       if (allOk) {
         toast({
-          title: targetIds.length > 1 ? `${targetIds.length} categories cloned` : "Category cloned",
+          title:
+            targetIds.length > 1
+              ? `${targetIds.length} categories cloned`
+              : "Category cloned",
         });
       } else {
-        toast({ title: "Error", description: "Some categories could not be cloned", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Some categories could not be cloned",
+          variant: "destructive",
+        });
       }
     },
     [cloneCategory, toast, getTargetIds]
   );
 
-  // Visibility toggle for context menu (single or bulk)
   const handleContextVisibilityToggle = useCallback(
     async (categoryId: string, visible: boolean) => {
       const targetIds = getTargetIds(categoryId);
       if (targetIds.length === 1) {
-        // Single item - use handler with undo support
         await handleVisibilitySave(categoryId, visible);
       } else {
-        // Bulk operation
-        await Promise.all(targetIds.map((id) => updateCategory(id, { isVisible: visible })));
-        toast({ title: `${targetIds.length} categories ${visible ? "shown" : "hidden"}` });
+        await Promise.all(
+          targetIds.map((id) => updateCategory(id, { isVisible: visible }))
+        );
+        toast({
+          title: `${targetIds.length} categories ${visible ? "shown" : "hidden"}`,
+        });
       }
     },
     [getTargetIds, handleVisibilitySave, updateCategory, toast]
   );
 
-  const allSelected = selectionState.allSelected;
-  const someSelected = selectionState.someSelected;
+  const handleLabelToggle = useCallback(
+    async (categoryId: string, labelId: string, shouldAttach: boolean) => {
+      if (shouldAttach) {
+        const result = await attachCategory(labelId, categoryId);
+        if (!result.ok) {
+          toast({
+            title: "Error",
+            description: "Could not add to label",
+            variant: "destructive",
+          });
+        }
+      } else {
+        const result = await detachCategory(labelId, categoryId);
+        if (!result.ok) {
+          toast({
+            title: "Error",
+            description: "Could not remove from label",
+            variant: "destructive",
+          });
+        }
+      }
+    },
+    [attachCategory, detachCategory, toast]
+  );
 
-  // Show empty state if no categories
+  // ─────────────────────────────────────────────────────────────────────────
+  // Config-Driven Row Rendering
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const extra: AllCategoriesExtra = useMemo(
+    () => ({
+      getProductCount: getCategoryProductCount,
+      getCategoryLabels,
+      getAttachedLabelIds: (id) => categoryLabelIdsById.get(id) ?? [],
+      labelTargets,
+      handleVisibilitySave,
+      pinnedCategoryId,
+      clearEditing,
+      clearPinnedIfMatches,
+    }),
+    [
+      getCategoryProductCount,
+      getCategoryLabels,
+      categoryLabelIdsById,
+      labelTargets,
+      handleVisibilitySave,
+      pinnedCategoryId,
+      clearEditing,
+      clearPinnedIfMatches,
+    ]
+  );
+
+  const { buildRow } = useConfiguredRow({
+    config: allCategoriesConfig,
+    contextMenuHandlers: {
+      clone: handleContextClone,
+      delete: handleContextDelete,
+      visibility: handleContextVisibilityToggle,
+      labelToggle: handleLabelToggle,
+    },
+    selectionInfo: { actionableRoots, isSameKind },
+    extra,
+    onContextMenuOpenChange: (id, open) => setContextRowId(open ? id : null),
+    onMouseEnter: setHoveredRowId,
+    onMouseLeave: () => setHoveredRowId(null),
+    onRowClick: handleClick,
+    onRowDoubleClick: handleDoubleClick,
+  });
+
+  // Build row state and handlers for a category
+  const getRowStateAndHandlers = useCallback(
+    (category: MenuCategory, isPinned: boolean) => {
+      const categoryKey = createKey("category", category.id);
+      return {
+        state: {
+          isSelected: isSelected(categoryKey),
+          checkboxState: getCheckboxState(categoryKey),
+          anchorKey,
+          isRowHovered: hoveredRowId === category.id,
+          isContextRow: contextRowId === category.id,
+          isEditing: editingCategoryId === category.id,
+          isPinned: isPinned || pinnedCategoryId === category.id,
+        },
+        handlers: {
+          onToggle: () => onToggle(categoryKey),
+          onRangeSelect:
+            anchorKey && anchorKey !== categoryKey
+              ? () => rangeSelect(categoryKey)
+              : undefined,
+          onStartEdit: () =>
+            builder.setEditing({ kind: "category", id: category.id }),
+          onCancelEdit: () => {
+            clearEditing();
+            if (isPinned || pinnedCategoryId === category.id) {
+              clearPinnedIfMatches(category.id);
+            }
+          },
+          onSave: async (id: string, name: string) => {
+            await handleNameSave(id, name);
+            if (isPinned || pinnedCategoryId === category.id) {
+              clearPinnedIfMatches(category.id);
+            }
+          },
+        },
+      };
+    },
+    [
+      isSelected,
+      getCheckboxState,
+      anchorKey,
+      hoveredRowId,
+      contextRowId,
+      editingCategoryId,
+      pinnedCategoryId,
+      onToggle,
+      rangeSelect,
+      builder,
+      clearEditing,
+      clearPinnedIfMatches,
+      handleNameSave,
+    ]
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Empty State
+  // ─────────────────────────────────────────────────────────────────────────
+
   if (categories.length === 0) {
+    const emptyConfig = allCategoriesConfig.emptyStates[0];
     return (
       <EmptyState
-        icon={FileSpreadsheet}
-        title="No Categories Yet"
-        description="Get started by creating your first category"
-        actionLabel="New Category"
+        icon={emptyConfig.icon}
+        title={emptyConfig.title}
+        description={emptyConfig.description}
+        actionLabel={emptyConfig.actionLabel}
         onAction={async () => {
           const createdId = await createNewCategory();
           if (createdId) {
@@ -356,125 +493,42 @@ export function AllCategoriesTableView() {
     );
   }
 
-  const renderCategoryRow = (category: MenuCategory, options?: { isPinned?: boolean }) => {
-    const isPinned = options?.isPinned === true;
-    const categoryKey = createKey("category", category.id);
-    const isCategorySelected = isSelected(categoryKey);
-    const isContextRow = contextRowId === category.id;
+  // ─────────────────────────────────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────────────────────────────────
 
-    return (
-      <RowContextMenu
-        key={category.id}
-        entityKind="category"
-        viewType="all-categories"
-        entityId={category.id}
-        isVisible={category.isVisible}
-        isFirst={false}
-        isLast={false}
-        selectedCount={actionableRoots.length}
-        isInSelection={isCategorySelected}
-        isMixedSelection={actionableRoots.length > 0 && !isSameKind}
-        labelTargets={labelTargets}
-        attachedLabelIds={categoryLabelIdsById.get(category.id) ?? []}
-        onOpenChange={(open) => setContextRowId(open ? category.id : null)}
-        onClone={() => handleContextClone(category.id)}
-        onVisibilityToggle={(visible) => handleContextVisibilityToggle(category.id, visible)}
-        onDelete={() => handleContextDelete(category.id)}
-        onLabelToggle={(labelId, shouldAttach) => handleLabelToggle(category.id, labelId, shouldAttach)}
-      >
-        <TableRow
-          data-state={isCategorySelected ? "selected" : undefined}
-          isSelected={isCategorySelected}
-          isContextRow={isContextRow}
-          isHidden={!category.isVisible}
-          onRowClick={(options) => handleClick(categoryKey, options)}
-          onRowDoubleClick={() => handleDoubleClick(categoryKey)}
-        >
-          <TableCell config={allCategoriesWidthPreset.select} data-row-click-ignore>
-            <TouchTarget>
-              <CheckboxCell
-                id={category.id}
-                checked={isCategorySelected}
-                onToggle={() => onToggle(categoryKey)}
-                isSelectable
-                alwaysVisible={isCategorySelected}
-                ariaLabel={`Select ${category.name}`}
-                anchorKey={anchorKey}
-                onRangeSelect={anchorKey && anchorKey !== categoryKey ? () => rangeSelect(categoryKey) : undefined}
-              />
-            </TouchTarget>
-          </TableCell>
-
-          <TableCell config={allCategoriesWidthPreset.name}>
-            <InlineNameEditor
-              id={category.id}
-              initialValue={category.name}
-              isEditing={editingCategoryId === category.id}
-              isHidden={!category.isVisible}
-              onStartEdit={() => builder.setEditing({ kind: "category", id: category.id })}
-              onCancelEdit={() => {
-                clearEditing();
-                if (isPinned || pinnedCategoryId === category.id) {
-                  clearPinnedIfMatches(category.id);
-                }
-              }}
-              onSave={async (id, name) => {
-                await handleNameSave(id, name);
-                if (isPinned || pinnedCategoryId === category.id) {
-                  clearPinnedIfMatches(category.id);
-                }
-              }}
-            />
-          </TableCell>
-
-          <TableCell config={allCategoriesWidthPreset.products} className="text-sm">
-            {(() => {
-              const count = getCategoryProductCountNumber(category.id);
-              return count > 0 ? count.toString() : "—";
-            })()}
-          </TableCell>
-
-          <TableCell config={allCategoriesWidthPreset.addedDate} className="text-sm">
-            {category.createdAt.toLocaleDateString()}
-          </TableCell>
-
-          <TableCell config={allCategoriesWidthPreset.visibility}>
-            <VisibilityCell
-              id={category.id}
-              isVisible={category.isVisible}
-              variant="switch"
-              onToggle={handleVisibilitySave}
-            />
-          </TableCell>
-
-          <TableCell config={allCategoriesWidthPreset.labels} className="text-sm">
-            {getCategoryLabels(category.id)}
-          </TableCell>
-        </TableRow>
-      </RowContextMenu>
-    );
-  };
+  const sortedRows = table.getRowModel().rows;
+  const totalRows = (pinnedCategory ? 1 : 0) + sortedRows.length;
 
   return (
     <>
       <TableViewWrapper>
         <TableHeader
           columns={ALL_CATEGORIES_HEADER_COLUMNS}
-          preset={allCategoriesWidthPreset}
+          preset={allCategoriesConfig.widthPreset}
           table={table}
           hasSelectAll
-          allSelected={allSelected}
-          someSelected={someSelected}
+          allSelected={selectionState.allSelected}
+          someSelected={selectionState.someSelected}
           onSelectAll={onSelectAll}
         />
 
         <TableBody>
-          {pinnedCategory ? renderCategoryRow(pinnedCategory, { isPinned: true }) : null}
-          {table.getRowModel().rows.map((row) => renderCategoryRow(row.original))}
+          {pinnedCategory && (() => {
+            const { state, handlers } = getRowStateAndHandlers(pinnedCategory, true);
+            const rowData = buildRow(pinnedCategory, 0, totalRows, state, handlers);
+            return <ConfiguredTableRow key={rowData.key} data={rowData} />;
+          })()}
+          {sortedRows.map((row, index) => {
+            const category = row.original;
+            const { state, handlers } = getRowStateAndHandlers(category, false);
+            const rowIndex = pinnedCategory ? index + 1 : index;
+            const rowData = buildRow(category, rowIndex, totalRows, state, handlers);
+            return <ConfiguredTableRow key={rowData.key} data={rowData} />;
+          })}
         </TableBody>
       </TableViewWrapper>
 
-      {/* Delete confirmation dialog */}
       <DeleteConfirmationDialog
         open={deleteConfirmation.open}
         targetCount={deleteConfirmation.targetIds.length}
