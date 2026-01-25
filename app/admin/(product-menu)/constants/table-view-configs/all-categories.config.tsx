@@ -6,7 +6,7 @@
  */
 
 import { FileSpreadsheet } from "lucide-react";
-import type { ViewConfig, ColumnConfig, EmptyStateConfig, EntityRowConfig, RowContext } from "../../hooks/table-view/types";
+import type { ViewConfig, ColumnConfig, EmptyStateConfig, EntityRowConfig } from "../../hooks/table-view/types";
 import { allCategoriesWidthPreset } from "../../menu-builder/components/table-views/shared/table/columnWidthPresets";
 import type { TableHeaderColumn } from "../../menu-builder/components/table-views/shared/table/TableHeader";
 import { CheckboxCell } from "../../menu-builder/components/table-views/shared/cells/CheckboxCell";
@@ -190,7 +190,7 @@ const rowConfig: EntityRowConfig<MenuCategory> = {
         : undefined,
     };
   },
-  getTableRowProps: (row, ctx) => ({
+  getTableRowProps: (row) => ({
     isHidden: !row.isVisible,
   }),
 };
