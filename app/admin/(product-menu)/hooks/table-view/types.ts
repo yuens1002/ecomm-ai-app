@@ -422,7 +422,7 @@ export type RowRenderResult<T> = {
     isHidden?: boolean;
     className?: string;
     depth?: number;
-    onRowClick: (opts: { shiftKey?: boolean }) => void;
+    onRowClick: (options?: { shiftKey?: boolean }) => void;
     onRowDoubleClick: () => void;
     onMouseEnter: () => void;
     onMouseLeave: () => void;

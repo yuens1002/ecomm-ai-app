@@ -274,7 +274,7 @@ export function useTableView<T extends { id: string }>(
           isContextRow: ctx.isContextRow,
           isHidden: tableRowProps.isHidden ?? !(row as unknown as { isVisible?: boolean }).isVisible,
           className: dragClassName,
-          onRowClick: (opts: { shiftKey?: boolean }) => clickHandlers.handleClick(rowKey, opts),
+          onRowClick: (opts?: { shiftKey?: boolean }) => clickHandlers.handleClick(rowKey, opts),
           onRowDoubleClick: () => clickHandlers.handleDoubleClick(rowKey),
           onMouseEnter: () => setHoveredRowId(rowId),
           onMouseLeave: () => setHoveredRowId(null),
