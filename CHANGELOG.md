@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.70.2 - 2026-01-25
+
+### Bug Fixes
+- **Range selection with sorting**: Fixed shift+click range selection not respecting visual row order when columns are sorted in AllCategoriesTableView, CategoryTableView, and LabelTableView
+
 ## 0.70.1 - 2026-01-25
 
 ### Features
