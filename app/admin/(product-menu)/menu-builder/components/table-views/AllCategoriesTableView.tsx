@@ -1,7 +1,18 @@
 "use client";
 "use no memo";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { TableBody } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 import {
   getCoreRowModel,
   getSortedRowModel,
@@ -11,7 +22,7 @@ import {
 } from "@tanstack/react-table";
 import { FileSpreadsheet } from "lucide-react";
 import * as React from "react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { buildFlatRegistry } from "../../../hooks/useIdentityRegistry";
@@ -24,6 +35,7 @@ import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { CheckboxCell } from "./shared/cells/CheckboxCell";
 import { InlineNameEditor } from "./shared/cells/InlineNameEditor";
 import { VisibilityCell } from "./shared/cells/VisibilityCell";
+import { RowContextMenu } from "./shared/cells/RowContextMenu";
 import { allCategoriesWidthPreset } from "./shared/table/columnWidthPresets";
 import { EmptyState } from "./shared/table/EmptyState";
 import { TableCell } from "./shared/table/TableCell";
@@ -41,8 +53,20 @@ const ALL_CATEGORIES_HEADER_COLUMNS: TableHeaderColumn[] = [
 ];
 
 export function AllCategoriesTableView() {
-  const { builder, categories, labels, products, updateCategory, createNewCategory } =
+  const { builder, categories, labels, products, updateCategory, createNewCategory, deleteCategory, cloneCategory } =
     useMenuBuilder();
+
+  // Context menu highlight state (separate from selection)
+  const [contextRowId, setContextRowId] = useState<string | null>(null);
+
+  // Delete confirmation state (single or bulk from context menu)
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    open: boolean;
+    targetIds: string[];
+  }>({ open: false, targetIds: [] });
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const { toast } = useToast();
 
   const {
     editingId: editingCategoryId,
@@ -59,6 +83,8 @@ export function AllCategoriesTableView() {
     onSelectAll,
     onToggle,
     isSelected,
+    actionableRoots,
+    isSameKind,
   } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
 
   // Unified click handler
@@ -84,6 +110,84 @@ export function AllCategoriesTableView() {
     updateItem: updateCategory,
     onSaveComplete: clearEditing,
   });
+
+  // Context menu handlers - support bulk when item is in selection
+  // Helper to get target IDs (bulk if in selection with multiple, single otherwise)
+  const getTargetIds = useCallback(
+    (categoryId: string): string[] => {
+      const categoryKey = createKey("category", categoryId);
+      const inSelection = isSelected(categoryKey);
+      const isBulk = inSelection && actionableRoots.length > 1 && isSameKind;
+      if (isBulk) {
+        return actionableRoots.map((key) => key.split(":")[1]);
+      }
+      return [categoryId];
+    },
+    [isSelected, actionableRoots, isSameKind]
+  );
+
+  // Opens confirmation dialog for delete (single or bulk)
+  const handleContextDelete = useCallback(
+    (categoryId: string) => {
+      const targetIds = getTargetIds(categoryId);
+      setDeleteConfirmation({ open: true, targetIds });
+    },
+    [getTargetIds]
+  );
+
+  // Actually perform the delete after confirmation
+  const handleConfirmDelete = useCallback(async () => {
+    const { targetIds } = deleteConfirmation;
+    if (!targetIds || targetIds.length === 0) return;
+
+    setIsDeleting(true);
+    try {
+      const results = await Promise.all(targetIds.map((id) => deleteCategory(id)));
+      const allOk = results.every((r) => r.ok);
+      if (allOk) {
+        toast({
+          title: targetIds.length > 1 ? `${targetIds.length} categories deleted` : "Category deleted",
+        });
+      } else {
+        toast({ title: "Error", description: "Some categories could not be deleted", variant: "destructive" });
+      }
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmation({ open: false, targetIds: [] });
+    }
+  }, [deleteConfirmation, deleteCategory, toast]);
+
+  const handleContextClone = useCallback(
+    async (categoryId: string) => {
+      const targetIds = getTargetIds(categoryId);
+      const results = await Promise.all(targetIds.map((id) => cloneCategory({ id })));
+      const allOk = results.every((r) => r.ok);
+      if (allOk) {
+        toast({
+          title: targetIds.length > 1 ? `${targetIds.length} categories cloned` : "Category cloned",
+        });
+      } else {
+        toast({ title: "Error", description: "Some categories could not be cloned", variant: "destructive" });
+      }
+    },
+    [cloneCategory, toast, getTargetIds]
+  );
+
+  // Visibility toggle for context menu (single or bulk)
+  const handleContextVisibilityToggle = useCallback(
+    async (categoryId: string, visible: boolean) => {
+      const targetIds = getTargetIds(categoryId);
+      if (targetIds.length === 1) {
+        // Single item - use handler with undo support
+        await handleVisibilitySave(categoryId, visible);
+      } else {
+        // Bulk operation
+        await Promise.all(targetIds.map((id) => updateCategory(id, { isVisible: visible })));
+        toast({ title: `${targetIds.length} categories ${visible ? "shown" : "hidden"}` });
+      }
+    },
+    [getTargetIds, handleVisibilitySave, updateCategory, toast]
+  );
 
   // Helper: Get label names for a category
   const categoryLabelsById = useMemo(() => {
@@ -199,92 +303,144 @@ export function AllCategoriesTableView() {
     const isPinned = options?.isPinned === true;
     const categoryKey = createKey("category", category.id);
     const isCategorySelected = isSelected(categoryKey);
+    const isContextRow = contextRowId === category.id;
 
     return (
-      <TableRow
+      <RowContextMenu
         key={category.id}
-        data-state={isCategorySelected ? "selected" : undefined}
-        isSelected={isCategorySelected}
-        isHidden={!category.isVisible}
-        onRowClick={() => handleClick(categoryKey)}
-        onRowDoubleClick={() => handleDoubleClick(categoryKey)}
+        entityKind="category"
+        viewType="all-categories"
+        entityId={category.id}
+        isVisible={category.isVisible}
+        isFirst={false}
+        isLast={false}
+        selectedCount={actionableRoots.length}
+        isInSelection={isCategorySelected}
+        isMixedSelection={actionableRoots.length > 0 && !isSameKind}
+        onOpenChange={(open) => setContextRowId(open ? category.id : null)}
+        onClone={() => handleContextClone(category.id)}
+        onVisibilityToggle={(visible) => handleContextVisibilityToggle(category.id, visible)}
+        onDelete={() => handleContextDelete(category.id)}
       >
-        <TableCell config={allCategoriesWidthPreset.select} data-row-click-ignore>
-          <CheckboxCell
-            id={category.id}
-            checked={isCategorySelected}
-            onToggle={() => onToggle(categoryKey)}
-            isSelectable
-            alwaysVisible={isCategorySelected}
-            ariaLabel={`Select ${category.name}`}
-          />
-        </TableCell>
+        <TableRow
+          data-state={isCategorySelected ? "selected" : undefined}
+          isSelected={isCategorySelected}
+          isContextRow={isContextRow}
+          isHidden={!category.isVisible}
+          onRowClick={() => handleClick(categoryKey)}
+          onRowDoubleClick={() => handleDoubleClick(categoryKey)}
+        >
+          <TableCell config={allCategoriesWidthPreset.select} data-row-click-ignore>
+            <CheckboxCell
+              id={category.id}
+              checked={isCategorySelected}
+              onToggle={() => onToggle(categoryKey)}
+              isSelectable
+              alwaysVisible={isCategorySelected}
+              ariaLabel={`Select ${category.name}`}
+            />
+          </TableCell>
 
-        <TableCell config={allCategoriesWidthPreset.name}>
-          <InlineNameEditor
-            id={category.id}
-            initialValue={category.name}
-            isEditing={editingCategoryId === category.id}
-            isHidden={!category.isVisible}
-            onStartEdit={() => builder.setEditing({ kind: "category", id: category.id })}
-            onCancelEdit={() => {
-              clearEditing();
-              if (isPinned || pinnedCategoryId === category.id) {
-                clearPinnedIfMatches(category.id);
-              }
-            }}
-            onSave={async (id, name) => {
-              await handleNameSave(id, name);
-              if (isPinned || pinnedCategoryId === category.id) {
-                clearPinnedIfMatches(category.id);
-              }
-            }}
-          />
-        </TableCell>
+          <TableCell config={allCategoriesWidthPreset.name}>
+            <InlineNameEditor
+              id={category.id}
+              initialValue={category.name}
+              isEditing={editingCategoryId === category.id}
+              isHidden={!category.isVisible}
+              onStartEdit={() => builder.setEditing({ kind: "category", id: category.id })}
+              onCancelEdit={() => {
+                clearEditing();
+                if (isPinned || pinnedCategoryId === category.id) {
+                  clearPinnedIfMatches(category.id);
+                }
+              }}
+              onSave={async (id, name) => {
+                await handleNameSave(id, name);
+                if (isPinned || pinnedCategoryId === category.id) {
+                  clearPinnedIfMatches(category.id);
+                }
+              }}
+            />
+          </TableCell>
 
-        <TableCell config={allCategoriesWidthPreset.products} className="text-sm">
-          {(() => {
-            const count = getCategoryProductCountNumber(category.id);
-            return count > 0 ? count.toString() : "—";
-          })()}
-        </TableCell>
+          <TableCell config={allCategoriesWidthPreset.products} className="text-sm">
+            {(() => {
+              const count = getCategoryProductCountNumber(category.id);
+              return count > 0 ? count.toString() : "—";
+            })()}
+          </TableCell>
 
-        <TableCell config={allCategoriesWidthPreset.addedDate} className="text-sm">
-          {category.createdAt.toLocaleDateString()}
-        </TableCell>
+          <TableCell config={allCategoriesWidthPreset.addedDate} className="text-sm">
+            {category.createdAt.toLocaleDateString()}
+          </TableCell>
 
-        <TableCell config={allCategoriesWidthPreset.visibility}>
-          <VisibilityCell
-            id={category.id}
-            isVisible={category.isVisible}
-            variant="switch"
-            onToggle={handleVisibilitySave}
-          />
-        </TableCell>
+          <TableCell config={allCategoriesWidthPreset.visibility}>
+            <VisibilityCell
+              id={category.id}
+              isVisible={category.isVisible}
+              variant="switch"
+              onToggle={handleVisibilitySave}
+            />
+          </TableCell>
 
-        <TableCell config={allCategoriesWidthPreset.labels} className="text-sm">
-          {getCategoryLabels(category.id)}
-        </TableCell>
-      </TableRow>
+          <TableCell config={allCategoriesWidthPreset.labels} className="text-sm">
+            {getCategoryLabels(category.id)}
+          </TableCell>
+        </TableRow>
+      </RowContextMenu>
     );
   };
 
   return (
-    <TableViewWrapper>
-      <TableHeader
-        columns={ALL_CATEGORIES_HEADER_COLUMNS}
-        preset={allCategoriesWidthPreset}
-        table={table}
-        hasSelectAll
-        allSelected={allSelected}
-        someSelected={someSelected}
-        onSelectAll={onSelectAll}
-      />
+    <>
+      <TableViewWrapper>
+        <TableHeader
+          columns={ALL_CATEGORIES_HEADER_COLUMNS}
+          preset={allCategoriesWidthPreset}
+          table={table}
+          hasSelectAll
+          allSelected={allSelected}
+          someSelected={someSelected}
+          onSelectAll={onSelectAll}
+        />
 
-      <TableBody>
-        {pinnedCategory ? renderCategoryRow(pinnedCategory, { isPinned: true }) : null}
-        {table.getRowModel().rows.map((row) => renderCategoryRow(row.original))}
-      </TableBody>
-    </TableViewWrapper>
+        <TableBody>
+          {pinnedCategory ? renderCategoryRow(pinnedCategory, { isPinned: true }) : null}
+          {table.getRowModel().rows.map((row) => renderCategoryRow(row.original))}
+        </TableBody>
+      </TableViewWrapper>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog
+        open={deleteConfirmation.open}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirmation({ open: false, targetIds: [] });
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              Delete {deleteConfirmation.targetIds.length}{" "}
+              {deleteConfirmation.targetIds.length === 1 ? "category" : "categories"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The{" "}
+              {deleteConfirmation.targetIds.length === 1 ? "category" : "categories"} will be
+              permanently deleted and all product associations will be removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -2,6 +2,7 @@
 "use no memo";
 
 import { TableBody } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
   getCoreRowModel,
@@ -27,6 +28,7 @@ import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuProduct } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { CheckboxCell } from "./shared/cells/CheckboxCell";
+import { RowContextMenu } from "./shared/cells/RowContextMenu";
 import { categoryViewWidthPreset } from "./shared/table/columnWidthPresets";
 import { EmptyState } from "./shared/table/EmptyState";
 import { TableCell } from "./shared/table/TableCell";
@@ -51,11 +53,23 @@ const CATEGORY_VIEW_HEADER_COLUMNS: TableHeaderColumn[] = [
 ];
 
 export function CategoryTableView() {
-  const { builder, products, categories, reorderProductsInCategory } = useMenuBuilder();
+  const {
+    builder,
+    products,
+    categories,
+    reorderProductsInCategory,
+    detachProductFromCategory,
+    moveProductToCategory,
+  } = useMenuBuilder();
 
   const currentCategoryId = builder.currentCategoryId;
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
   const [sorting, setSorting] = React.useState<SortingState>([]);
+
+  // Context menu highlight state
+  const [contextRowId, setContextRowId] = useState<string | null>(null);
+
+  const { toast } = useToast();
 
   // Pinning support for newly added products
   const { pinnedId: pinnedProductId, clearPinnedIfMatches: _clearPinnedIfMatches } = useContextRowUiState(
@@ -219,6 +233,91 @@ export function CategoryTableView() {
     [getBaseDragHandlers, actionableRoots, setGhostImage]
   );
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Context menu handlers
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // Note: Products use isDisabled for visibility (inverse of category/label isVisible)
+  const handleContextVisibility = useCallback(
+    async (_productId: string, _visible: boolean) => {
+      // Products don't have a direct visibility toggle in this context
+      // Visibility is controlled at the product level, not per-category
+      // For now, this is a no-op; could link to product settings in future
+      toast({ title: "Product visibility is managed in product settings" });
+    },
+    [toast]
+  );
+
+  const handleContextRemove = useCallback(
+    async (productId: string) => {
+      if (!currentCategoryId) return;
+      const result = await detachProductFromCategory(productId, currentCategoryId);
+      if (result.ok) {
+        toast({ title: "Product removed from category" });
+      } else {
+        toast({ title: "Error", description: "Could not remove product", variant: "destructive" });
+      }
+    },
+    [currentCategoryId, detachProductFromCategory, toast]
+  );
+
+  const handleMoveUp = useCallback(
+    async (productId: string) => {
+      const index = categoryProducts.findIndex((p) => p.id === productId);
+      if (index <= 0 || !currentCategoryId) return;
+      const newOrder = categoryProducts.map((p) => p.id);
+      [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+      await reorderProductsInCategory(currentCategoryId, newOrder);
+      setSorting([]); // Clear sorting when manually reordering
+    },
+    [categoryProducts, currentCategoryId, reorderProductsInCategory]
+  );
+
+  const handleMoveDown = useCallback(
+    async (productId: string) => {
+      const index = categoryProducts.findIndex((p) => p.id === productId);
+      if (index < 0 || index >= categoryProducts.length - 1 || !currentCategoryId) return;
+      const newOrder = categoryProducts.map((p) => p.id);
+      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+      await reorderProductsInCategory(currentCategoryId, newOrder);
+      setSorting([]); // Clear sorting when manually reordering
+    },
+    [categoryProducts, currentCategoryId, reorderProductsInCategory]
+  );
+
+  const handleMoveTo = useCallback(
+    async (productId: string, toCategoryId: string) => {
+      if (!currentCategoryId) return;
+      const product = products.find((p) => p.id === productId);
+      const toCategory = categories.find((c) => c.id === toCategoryId);
+
+      const result = await moveProductToCategory({
+        productId,
+        fromCategoryId: currentCategoryId,
+        toCategoryId,
+      });
+
+      if (result.ok) {
+        toast({
+          title: "Product moved",
+          description: `Moved "${product?.name ?? "Product"}" to "${toCategory?.name ?? "Category"}"`,
+        });
+      } else {
+        toast({ title: "Move failed", description: "Could not move product", variant: "destructive" });
+      }
+    },
+    [currentCategoryId, products, categories, moveProductToCategory, toast]
+  );
+
+  // Get move targets (other categories, excluding current)
+  const moveToTargets = useMemo(
+    () =>
+      categories
+        .filter((c) => c.id !== currentCategoryId)
+        .map((c) => ({ id: c.id, name: c.name })),
+    [categories, currentCategoryId]
+  );
+
   // Helper: Get category names for a product (excluding current category)
   const getProductCategories = useCallback(
     (product: MenuProduct): string => {
@@ -292,12 +391,14 @@ export function CategoryTableView() {
     );
   }
 
-  const renderProductRow = (product: CategoryProduct, options?: { isPinned?: boolean; isLastRow?: boolean }) => {
+  const renderProductRow = (product: CategoryProduct, options?: { isPinned?: boolean; isFirstRow?: boolean; isLastRow?: boolean }) => {
     const _isPinned = options?.isPinned === true;
+    const isFirstRow = options?.isFirstRow === true;
     const isLastRow = options?.isLastRow === true;
     const productKey = createKey("product", product.id);
     const isProductSelected = isSelected(productKey);
     const isRowHovered = hoveredRowId === product.id;
+    const isContextRow = contextRowId === product.id;
     const dragClasses = getDragClasses(product.id);
     const dragHandlers = getDragHandlers(product.id);
 
@@ -305,10 +406,30 @@ export function CategoryTableView() {
     const isDraggable = getIsDraggable(product.id);
 
     return (
-      <TableRow
+      <RowContextMenu
         key={product.id}
+        entityKind="product"
+        viewType="category"
+        entityId={product.id}
+        isVisible={!product.isDisabled}
+        isFirst={isFirstRow}
+        isLast={isLastRow}
+        selectedCount={actionableRoots.length}
+        isInSelection={isProductSelected}
+        isMixedSelection={actionableRoots.length > 0 && !isSameKind}
+        moveToTargets={moveToTargets}
+        currentParentId={currentCategoryId ?? undefined}
+        onOpenChange={(open) => setContextRowId(open ? product.id : null)}
+        onVisibilityToggle={(visible) => handleContextVisibility(product.id, visible)}
+        onRemove={() => handleContextRemove(product.id)}
+        onMoveUp={() => handleMoveUp(product.id)}
+        onMoveDown={() => handleMoveDown(product.id)}
+        onMoveTo={(toCategoryId) => handleMoveTo(product.id, toCategoryId)}
+      >
+      <TableRow
         data-state={isProductSelected ? "selected" : undefined}
         isSelected={isProductSelected}
+        isContextRow={isContextRow}
         isHidden={product.isDisabled}
         isDragging={dragClasses.isDragging || dragClasses.isInDragSet}
         isDragOver={dragClasses.isDragOver}
@@ -376,6 +497,7 @@ export function CategoryTableView() {
           />
         </TableCell>
       </TableRow>
+      </RowContextMenu>
     );
   };
 
@@ -395,9 +517,12 @@ export function CategoryTableView() {
         />
 
         <TableBody>
-          {pinnedProduct ? renderProductRow(pinnedProduct, { isPinned: true }) : null}
+          {pinnedProduct ? renderProductRow(pinnedProduct, { isPinned: true, isFirstRow: true }) : null}
           {rows.map((row, index) =>
-            renderProductRow(row.original, { isLastRow: index === rows.length - 1 })
+            renderProductRow(row.original, {
+              isFirstRow: !pinnedProduct && index === 0,
+              isLastRow: index === rows.length - 1,
+            })
           )}
         </TableBody>
       </TableViewWrapper>

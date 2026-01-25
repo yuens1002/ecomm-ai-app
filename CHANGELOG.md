@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.69.0 - 2026-01-25
+
+### Features
+- **Context menus for all table views**: Right-click menus for AllCategoriesTableView, MenuTableView, LabelTableView, and CategoryTableView
+- **Menu view context actions**: Clone, remove, delete, and reorder for labels; clone, visibility, delete, move-to, and reorder for categories
+- **Label view context actions**: Clone, visibility, remove, delete, move-to, and reorder for categories within a label
+- **Category view context actions**: Visibility, remove, move-to, and reorder for products within a category
+
+### Improvements
+- **Simplified all-categories config**: Removed non-applicable actions (move, remove) since view uses table sorting
+- **Position-aware move actions**: Move up/down disabled at boundaries for accurate UX feedback
+- **Delete confirmation dialogs**: AlertDialog prompts for all destructive delete operations
+
 ## 0.68.0 - 2026-01-25
 
 ### Features
