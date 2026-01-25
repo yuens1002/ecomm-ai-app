@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.68.0 - 2026-01-25
+
+### Features
+- **RowContextMenu enhancements**: Bulk mode support, mixed selection handling, category management submenu
+- **CheckboxListContent**: Shared component for dropdown and context menu checkbox lists with sectioned layout
+- **Context row highlighting**: Visual distinction between selected rows and right-clicked row via `isContextRow` prop
+- **AllLabelsTableView integration**: Full context menu with bulk actions, category management, and move operations
+
+### Improvements
+- **Entity+View pattern**: Context menus configured per `ViewType:EntityKind` for granular action control
+- **Platform-aware shortcuts**: Kbd component displays Mac/Windows appropriate modifier keys
+- **Action grouping**: Context menu actions organized into main, move, and delete groups with separators
+
+### Documentation
+- **Implementation details**: Comprehensive patterns documentation in context-menu-plan.md for future entity implementations
+
 ## 0.67.0 - 2026-01-24
 
 ### Features

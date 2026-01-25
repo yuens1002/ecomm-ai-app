@@ -78,6 +78,8 @@ type TableRowProps = Omit<
   "onClick" | "onDoubleClick"
 > & {
   isSelected?: boolean;
+  /** When true, highlights row as context menu target (distinct from selection) */
+  isContextRow?: boolean;
   isDragging?: boolean;
   isDragOver?: boolean;
   isLastRow?: boolean;
@@ -125,6 +127,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
   (
     {
       isSelected,
+      isContextRow,
       isDragging,
       isDragOver: _isDragOver,
       isLastRow,
@@ -222,7 +225,11 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       cursorClass,
       // Left border: use !important to override TableBody's [&_tr:last-child]:border-0
       "!border-l-2",
-      isSelected ? "border-l-primary bg-accent/50" : "border-l-transparent",
+      isSelected
+        ? "border-l-primary bg-accent/50"
+        : isContextRow
+          ? "border-l-muted-foreground bg-muted/60"
+          : "border-l-transparent",
       // Hide top border, show bottom border only on last row (drag indicator overrides with !important)
       "border-t-0",
       isLastRow ? "border-b border-b-border" : "border-b-0",
