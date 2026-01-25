@@ -5,6 +5,8 @@ import { useCallback, useRef, useState } from "react";
 type UseLongPressOptions = {
   /** Duration in ms before long-press triggers (default: 500) */
   duration?: number;
+  /** Delay in ms before showing visual feedback (default: 150). Distinguishes click from hold. */
+  visualDelay?: number;
   /** Movement threshold in px to cancel (for scroll safety, default: 10) */
   movementThreshold?: number;
   /** Callback when long-press completes */
@@ -56,41 +58,50 @@ type UseLongPressReturn = {
 export function useLongPress(options: UseLongPressOptions): UseLongPressReturn {
   const {
     duration = 500,
+    visualDelay = 150,
     movementThreshold = 10,
     onLongPress,
     onStart,
     onCancel,
   } = options;
 
+  // isPressed is for VISUAL feedback - only true after visualDelay
   const [isPressed, setIsPressed] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const visualDelayTimerRef = useRef<NodeJS.Timeout | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const startPosRef = useRef<{ x: number; y: number } | null>(null);
   const completedRef = useRef(false);
+  const isPressActiveRef = useRef(false); // Internal tracking, separate from visual
 
   const cleanup = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+    if (visualDelayTimerRef.current) {
+      clearTimeout(visualDelayTimerRef.current);
+      visualDelayTimerRef.current = null;
+    }
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
       progressIntervalRef.current = null;
     }
     startPosRef.current = null;
+    isPressActiveRef.current = false;
     setIsPressed(false);
     setProgress(0);
   }, []);
 
   const cancel = useCallback(() => {
-    if (isPressed && !completedRef.current) {
+    if (isPressActiveRef.current && !completedRef.current) {
       onCancel?.();
     }
     completedRef.current = false;
     cleanup();
-  }, [isPressed, cleanup, onCancel]);
+  }, [cleanup, onCancel]);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -98,25 +109,42 @@ export function useLongPress(options: UseLongPressOptions): UseLongPressReturn {
       if (e.button !== 0) return;
 
       completedRef.current = false;
+      isPressActiveRef.current = true;
       startPosRef.current = { x: e.clientX, y: e.clientY };
-      setIsPressed(true);
-      setProgress(0);
-      onStart?.();
 
-      // Start progress animation
-      const startTime = Date.now();
-      progressIntervalRef.current = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const newProgress = Math.min(elapsed / duration, 1);
-        setProgress(newProgress);
+      // Helper to start visual feedback and progress animation
+      const startVisualFeedback = () => {
+        // Only show visual if still pressing
+        if (!isPressActiveRef.current) return;
 
-        if (newProgress >= 1) {
-          if (progressIntervalRef.current) {
-            clearInterval(progressIntervalRef.current);
-            progressIntervalRef.current = null;
+        setIsPressed(true);
+        setProgress(0);
+        onStart?.();
+
+        // Start progress animation (duration minus the visual delay already elapsed)
+        const remainingDuration = duration - visualDelay;
+        const startTime = Date.now();
+        progressIntervalRef.current = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const newProgress = Math.min(elapsed / remainingDuration, 1);
+          setProgress(newProgress);
+
+          if (newProgress >= 1) {
+            if (progressIntervalRef.current) {
+              clearInterval(progressIntervalRef.current);
+              progressIntervalRef.current = null;
+            }
           }
-        }
-      }, 16); // ~60fps
+        }, 16); // ~60fps
+      };
+
+      // If visualDelay is 0 or negative, start immediately (synchronous)
+      // Otherwise, delay visual feedback to distinguish click from hold
+      if (visualDelay <= 0) {
+        startVisualFeedback();
+      } else {
+        visualDelayTimerRef.current = setTimeout(startVisualFeedback, visualDelay);
+      }
 
       // Set main timer for long-press completion
       timerRef.current = setTimeout(() => {
@@ -125,7 +153,7 @@ export function useLongPress(options: UseLongPressOptions): UseLongPressReturn {
         onLongPress();
       }, duration);
     },
-    [duration, cleanup, onLongPress, onStart]
+    [duration, visualDelay, cleanup, onLongPress, onStart]
   );
 
   const handlePointerUp = useCallback(

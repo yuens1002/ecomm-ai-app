@@ -465,6 +465,14 @@ describe("Action Bar Configuration", () => {
                 "id": "redo",
                 "type": "button",
               },
+              {
+                "id": "delete",
+                "type": "button",
+              },
+              {
+                "id": "help",
+                "type": "button",
+              },
             ],
           },
           "all-labels": {
@@ -491,6 +499,14 @@ describe("Action Bar Configuration", () => {
                 "id": "redo",
                 "type": "button",
               },
+              {
+                "id": "delete",
+                "type": "button",
+              },
+              {
+                "id": "help",
+                "type": "button",
+              },
             ],
           },
           "category": {
@@ -513,6 +529,10 @@ describe("Action Bar Configuration", () => {
                 "id": "redo",
                 "type": "button",
               },
+              {
+                "id": "help",
+                "type": "button",
+              },
             ],
           },
           "label": {
@@ -533,6 +553,10 @@ describe("Action Bar Configuration", () => {
               },
               {
                 "id": "redo",
+                "type": "button",
+              },
+              {
+                "id": "help",
                 "type": "button",
               },
             ],
@@ -571,6 +595,10 @@ describe("Action Bar Configuration", () => {
               },
               {
                 "id": "redo",
+                "type": "button",
+              },
+              {
+                "id": "help",
                 "type": "button",
               },
             ],

@@ -54,22 +54,6 @@ export function AllCategoriesTableView() {
   // Build registry for this flat view
   const registry = useMemo(() => buildFlatRegistry(categories, "category"), [categories]);
 
-  const {
-    selectionState,
-    onSelectAll,
-    onToggle,
-    isSelected,
-    anchorKey,
-    rangeSelect,
-  } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
-
-  // Unified click handler with range selection support
-  const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
-    onToggle,
-    navigate: (kind, entityId) => builder.navigateToCategory(entityId),
-    rangeSelect,
-    anchorKey,
-  });
   // Default sort by addedDate desc (newest first) - no DnD in this view so always show sort indicator
   const [sorting, setSorting] = React.useState<SortingState>([{ id: "addedDate", desc: true }]);
 
@@ -175,6 +159,38 @@ export function AllCategoriesTableView() {
     getSortedRowModel: getSortedRowModel(),
     getRowId: (row) => row.id,
     enableSortingRemoval: true,
+  });
+
+  // IMPORTANT: selectableKeys must match the VISUAL row order (after sorting)
+  // so that shift+click range selection selects the correct rows
+  const selectableKeys = useMemo(() => {
+    const sortedRows = table.getRowModel().rows;
+    // Include pinned row at the top if present
+    const keys: string[] = [];
+    if (pinnedCategory) {
+      keys.push(createKey("category", pinnedCategory.id));
+    }
+    for (const row of sortedRows) {
+      keys.push(createKey("category", row.original.id));
+    }
+    return keys;
+  }, [table, pinnedCategory]);
+
+  const {
+    selectionState,
+    onSelectAll,
+    onToggle,
+    isSelected,
+    anchorKey,
+    rangeSelect,
+  } = useContextSelectionModel(builder, { selectableKeys });
+
+  // Unified click handler with range selection support
+  const { handleClick, handleDoubleClick } = useRowClickHandler(registry, {
+    onToggle,
+    navigate: (kind, entityId) => builder.navigateToCategory(entityId),
+    rangeSelect,
+    anchorKey,
   });
 
   const allSelected = selectionState.allSelected;

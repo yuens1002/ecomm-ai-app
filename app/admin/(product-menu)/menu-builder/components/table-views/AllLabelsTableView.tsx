@@ -78,6 +78,27 @@ export function AllLabelsTableView() {
   // Build registry for this flat view
   const registry = useMemo(() => buildFlatRegistry(labels, "label"), [labels]);
 
+  const { pinnedRow: pinnedLabel, rowsForTable: labelsForTable } = usePinnedRow({
+    rows: labels,
+    pinnedId: pinnedLabelId,
+    isSortingActive: false, // No sorting in this view (manual drag order)
+    defaultSort: null, // Labels come pre-sorted from server (ascending by order)
+  });
+
+  // IMPORTANT: selectableKeys must match the VISUAL row order
+  // so that shift+click range selection selects the correct rows.
+  // Visual order: pinned row first (if any), then the rest.
+  const selectableKeys = useMemo(() => {
+    const keys: string[] = [];
+    if (pinnedLabel) {
+      keys.push(createKey("label", pinnedLabel.id));
+    }
+    for (const label of labelsForTable) {
+      keys.push(createKey("label", label.id));
+    }
+    return keys;
+  }, [pinnedLabel, labelsForTable]);
+
   const {
     selectionState,
     onSelectAll,
@@ -89,7 +110,7 @@ export function AllLabelsTableView() {
     isSameKind,
     anchorKey,
     rangeSelect,
-  } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
+  } = useContextSelectionModel(builder, { selectableKeys });
 
   // Derive DnD eligibility from selection state (action-bar pattern)
   const eligibility = useDnDEligibility({
@@ -105,13 +126,6 @@ export function AllLabelsTableView() {
     navigate: (kind, entityId) => builder.navigateToLabel(entityId),
     rangeSelect,
     anchorKey,
-  });
-
-  const { pinnedRow: pinnedLabel, rowsForTable: labelsForTable } = usePinnedRow({
-    rows: labels,
-    pinnedId: pinnedLabelId,
-    isSortingActive: false, // No sorting in this view (manual drag order)
-    defaultSort: null, // Labels come pre-sorted from server (ascending by order)
   });
 
   // Drag & Drop handlers using eligibility (action-bar pattern)

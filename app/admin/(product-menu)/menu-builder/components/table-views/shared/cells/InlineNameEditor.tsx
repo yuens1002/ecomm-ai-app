@@ -100,11 +100,10 @@ export function InlineNameEditor({
   };
 
   if (!isEditing) {
+    // Use a non-button wrapper so row clicks can propagate for selection
+    // Only the pencil icon is interactive to start edit mode
     return (
-      <button
-        onClick={onStartEdit}
-        className="group inline-flex items-center gap-2 text-sm text-left hover:bg-accent rounded-md pl-1 pr-2 py-1 outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-      >
+      <span className="group inline-flex items-center gap-2 text-sm text-left">
         <span
           className={
             isGenericName
@@ -114,8 +113,14 @@ export function InlineNameEditor({
         >
           {value}
         </span>
-        <Pencil className="w-3 h-3 shrink-0 text-muted-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-visible:opacity-100 transition-opacity" />
-      </button>
+        <button
+          onClick={onStartEdit}
+          className="shrink-0 p-1 rounded-sm hover:bg-accent opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-opacity outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+          aria-label={`Edit ${value}`}
+        >
+          <Pencil className="w-3 h-3 text-muted-foreground" />
+        </button>
+      </span>
     );
   }
 

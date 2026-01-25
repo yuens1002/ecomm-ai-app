@@ -288,7 +288,11 @@ export function useContextSelectionModel(
    * Select a range of keys from anchor to target.
    * Used by Shift+click (desktop) and long-press checkbox (mobile).
    *
-   * Returns the count of newly selected items for toast feedback.
+   * Behavior:
+   * - If range is not fully selected: select all items in range
+   * - If range is already fully selected: deselect all items in range (toggle)
+   *
+   * Returns the count of items affected (positive for select, negative for deselect).
    */
   const rangeSelect = useCallback(
     (targetKey: string): number => {
@@ -305,12 +309,28 @@ export function useContextSelectionModel(
       const range = getKeysBetween(anchorKey, targetKey);
       if (range.length === 0) return 0;
 
-      // Add all range keys to selection (keeping anchor, don't change it)
-      const newSelection = new Set([...builder.selectedIds, ...range]);
-      const newCount = newSelection.size - builder.selectedIds.length;
-      builder.selectAll([...newSelection]);
+      // Check if entire range is already selected (for toggle behavior)
+      const allSelected = range.every((key) => selectedIdSet.has(key));
 
-      return newCount;
+      if (allSelected) {
+        // Deselect the entire range
+        const keysToRemove = new Set(range);
+        const remainingIds = builder.selectedIds.filter((id) => !keysToRemove.has(id));
+        if (remainingIds.length === 0) {
+          builder.clearSelection();
+        } else {
+          builder.selectAll(remainingIds);
+        }
+        // Clear anchor since we deselected
+        setAnchorKey(null);
+        return -range.length;
+      } else {
+        // Select all items in range (add to existing selection)
+        const newSelection = new Set([...builder.selectedIds, ...range]);
+        const newCount = newSelection.size - builder.selectedIds.length;
+        builder.selectAll([...newSelection]);
+        return newCount;
+      }
     },
     [anchorKey, getKeysBetween, builder, selectedIdSet]
   );
@@ -335,8 +355,12 @@ export function useContextSelectionModel(
   const onToggleWithHierarchy = useCallback(
     (key: string) => {
       if (!hierarchy) {
-        // No hierarchy - simple toggle
+        // No hierarchy - simple toggle (same as onToggle)
         builder.toggleSelection(key);
+        // Set anchor if selecting
+        if (!selectedIdSet.has(key)) {
+          setAnchorKey(key);
+        }
         return;
       }
 
@@ -368,6 +392,10 @@ export function useContextSelectionModel(
 
         // Normal toggle (selecting, or deselecting without parent demotion)
         builder.toggleSelection(key);
+        // Set anchor if selecting
+        if (!isCurrentlySelected) {
+          setAnchorKey(key);
+        }
         return;
       }
 
@@ -389,6 +417,8 @@ export function useContextSelectionModel(
         const existingOther = builder.selectedIds.filter((id) => !keysToAdd.has(id));
         const newIds = [...existingOther, key, ...descendants];
         builder.selectAll(newIds);
+        // Set anchor to the parent (user clicked on parent)
+        setAnchorKey(key);
       }
     },
     [builder, hierarchy, getCheckboxState, selectedIdSet]

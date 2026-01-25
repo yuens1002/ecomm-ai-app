@@ -32,13 +32,18 @@ export function CheckboxCell({
   onRangeSelect,
 }: CheckboxCellProps) {
   const pointerToggleRef = React.useRef(false);
+  // Track if the current interaction was a completed long-press (to prevent toggle)
+  const longPressCompletedRef = React.useRef(false);
+  // Track if shift was held during click (for shift+click range selection)
+  const shiftKeyRef = React.useRef(false);
 
   // Long-press for range selection (only enabled when anchor exists and handler provided)
   const canRangeSelect = Boolean(anchorKey && onRangeSelect);
-  const { isPressed, progress, handlers: longPressHandlers } = useLongPress({
+  const { isPressed, handlers: longPressHandlers } = useLongPress({
     duration: 500,
     movementThreshold: 10,
     onLongPress: () => {
+      longPressCompletedRef.current = true;
       if (onRangeSelect) {
         onRangeSelect();
       }
@@ -49,7 +54,8 @@ export function CheckboxCell({
     return <div className="h-4 w-4" aria-hidden="true" />;
   }
 
-  // Long-press visual feedback: ring animation and progress indicator
+  // Long-press visual feedback: pulsing ring
+  // Only shows after visualDelay (150ms default) to distinguish click from hold
   const showLongPressUI = canRangeSelect && isPressed;
 
   return (
@@ -58,6 +64,8 @@ export function CheckboxCell({
       {...(canRangeSelect ? longPressHandlers : {})}
       onPointerDown={(e) => {
         pointerToggleRef.current = true;
+        longPressCompletedRef.current = false; // Reset on new interaction
+        shiftKeyRef.current = e.shiftKey; // Capture shift key state
         if (canRangeSelect) {
           longPressHandlers.onPointerDown(e);
         }
@@ -66,18 +74,27 @@ export function CheckboxCell({
         "relative flex items-center opacity-100 transition-opacity",
         alwaysVisible
           ? "md:opacity-100"
-          : "md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100",
-        // Long-press visual feedback
-        showLongPressUI && "ring-2 ring-primary ring-offset-1 rounded-sm"
+          : "md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100"
       )}
     >
       <Checkbox
         checked={indeterminate ? "indeterminate" : checked}
         onCheckedChange={() => {
-          // Only fire toggle if not in long-press mode or long-press wasn't completed
-          if (!isPressed) {
-            onToggle(id);
+          // Skip toggle if this was a completed long-press (range select already handled it)
+          if (longPressCompletedRef.current) {
+            longPressCompletedRef.current = false;
+            return;
           }
+
+          // Shift+click: trigger range selection if available
+          if (shiftKeyRef.current && onRangeSelect) {
+            shiftKeyRef.current = false;
+            onRangeSelect();
+            return;
+          }
+          shiftKeyRef.current = false;
+
+          onToggle(id);
 
           // If this was a pointer interaction, drop focus so the checkbox can
           // return to its "hidden unless hovered" state when unchecked.
@@ -92,26 +109,11 @@ export function CheckboxCell({
         }}
         disabled={disabled}
         aria-label={ariaLabel ?? `Select ${id}`}
-        className="data-[state=checked]:bg-accent-foreground"
+        className={cn(
+          "data-[state=checked]:bg-accent-foreground",
+          showLongPressUI && "ring-2 ring-primary ring-offset-2 animate-pulse"
+        )}
       />
-
-      {/* Circular progress indicator during long-press */}
-      {showLongPressUI && (
-        <div className="absolute -inset-1 pointer-events-none">
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 24 24">
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeDasharray={`${progress * 62.83} 62.83`}
-              className="text-primary opacity-50"
-            />
-          </svg>
-        </div>
-      )}
     </div>
   );
 }

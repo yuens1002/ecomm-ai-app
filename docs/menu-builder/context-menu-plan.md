@@ -1,8 +1,8 @@
 # Context Menu Infrastructure - Implementation Plan
 
-**Branch:** `feat/context-menu`
-**Target Version:** v0.67.0
-**Status:** Planning Complete
+**Branch:** `unify-menu-builder`
+**Target Version:** v0.68.0 (achieved)
+**Status:** Phase 2 Complete, Phase 3 In Progress
 
 ---
 
@@ -120,36 +120,35 @@ When multiple items selected:
 
 ## Implementation Phases
 
-### Phase 1: Setup & Server Actions
-- [ ] Verify shadcn context-menu installed
-- [ ] Create `reorderLabel` action (move up/down by adjusting order field)
-- [ ] Create `reorderCategory` action
-- [ ] Create `reorderProduct` action
-- [ ] Create `moveProductToCategory` action
-- [ ] Add to `useProductMenuMutations`
+### Phase 1: Setup & Server Actions ✅ COMPLETE
+- [x] Verify shadcn context-menu installed
+- [x] Create `reorderLabel` action (uses existing reorderLabels)
+- [x] Create `reorderCategory` action (uses existing)
+- [x] Create `reorderProduct` action (uses existing)
+- [x] Create `moveProductToCategory` action
+- [x] Add to `useProductMenuMutations`
 
 **Validation:**
-- [ ] Server actions work via direct calls
-- [ ] Order field updates correctly
-- [ ] SWR revalidates after mutation
+- [x] Server actions work via direct calls
+- [x] Order field updates correctly
+- [x] SWR revalidates after mutation
 
-### Phase 2: RowContextMenu Component
-- [ ] Create `RowContextMenu.tsx` in `shared/cells/`
-- [ ] Props: `entityKind`, `viewType`, `entityId`, `isVisible`, `position`
-- [ ] Map view+entity to available actions
-- [ ] Render with shadcn ContextMenu primitives
-- [ ] Add Switch for visibility action
-- [ ] Add ContextMenuSub for "Move to" with picker
+### Phase 2: RowContextMenu Component ✅ COMPLETE
+- [x] Create `RowContextMenu.tsx` in `shared/cells/`
+- [x] Props: `entityKind`, `viewType`, `entityId`, `isVisible`, `position`
+- [x] Map view+entity to available actions
+- [x] Render with shadcn ContextMenu primitives
+- [x] Add Switch for visibility action
+- [x] Add ContextMenuSub for "Categories" (label entity)
 
 **Validation:**
-- [ ] Menu renders on right-click
-- [ ] Correct actions shown per view/entity
-- [ ] Shortcuts displayed correctly
-- [ ] Disabled states work
-- [ ] Switch toggles visibility
+- [x] Menu renders on right-click
+- [x] Correct actions shown per view/entity
+- [x] Disabled states work
+- [x] Switch toggles visibility
 
-### Phase 3: Table View Integration
-- [ ] Add to `AllLabelsTableView`
+### Phase 3: Table View Integration 🚧 IN PROGRESS
+- [x] Add to `AllLabelsTableView`
 - [ ] Add to `AllCategoriesTableView`
 - [ ] Add to `MenuTableView`
 - [ ] Add to `LabelTableView`
@@ -161,9 +160,9 @@ When multiple items selected:
 - [ ] Undo/redo integration works
 - [ ] Toast notifications show
 
-### Phase 4: Polish
-- [ ] Mobile long-press support
-- [ ] Keyboard navigation in menu
+### Phase 4: Polish ⏳ PENDING
+- [x] Mobile long-press support (shadcn handles this)
+- [ ] Keyboard shortcut hints in menu items
 - [ ] Focus management
 - [ ] Accessibility (ARIA)
 - [ ] Update ROADMAP.md section 2.2

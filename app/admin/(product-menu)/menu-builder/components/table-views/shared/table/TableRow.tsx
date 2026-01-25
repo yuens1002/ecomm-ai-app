@@ -184,17 +184,23 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
         if (isInteractiveTarget(event.target)) return;
         if (!onRowClick) return;
 
-        // Capture modifier keys before the timeout (event may be reused)
         const shiftKey = event.shiftKey;
+
+        // Shift+click: Call immediately (no delay needed for range selection)
+        // This avoids stale closure issues since we use the current onRowClick directly
+        if (shiftKey) {
+          onRowClick({ shiftKey: true });
+          return;
+        }
 
         // Clear any pending click
         if (clickTimeoutRef.current !== null) {
           window.clearTimeout(clickTimeoutRef.current);
         }
 
-        // Delay single-click to allow double-click to cancel
+        // Regular click: Delay to allow double-click to cancel
         clickTimeoutRef.current = window.setTimeout(() => {
-          onRowClick({ shiftKey });
+          onRowClick({ shiftKey: false });
           clickTimeoutRef.current = null;
         }, CLICK_DELAY_MS);
       },
