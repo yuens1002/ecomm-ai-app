@@ -161,7 +161,7 @@ const CONTEXT_MENU_CONFIG: Record<ViewEntityKey, ContextMenuActionId[]> = {
   "all-labels:category": [], // Categories don't appear in all-labels view
   "label:category": ["clone", "remove", "visibility", "delete", "move-up", "move-down", "move-to"],
   "category:category": [], // Categories don't appear in category view
-  "all-categories:category": ["clone", "remove", "visibility", "delete", "move-up", "move-down", "move-to"],
+  "all-categories:category": ["clone", "visibility", "delete"], // No move/remove - uses table sorting, many-to-many labels
 
   // Product in different views
   "menu:product": [], // Products don't appear in menu view
