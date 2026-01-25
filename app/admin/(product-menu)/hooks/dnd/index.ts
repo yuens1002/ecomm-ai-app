@@ -61,7 +61,7 @@ export type {
   MultiEntityReorderFunctions,
   DraggedChildInfo,
   DropType,
-  EntityLevel,
+  EntityKind,
 } from "./useMultiEntityDnd";
 
 // Ghost image hook

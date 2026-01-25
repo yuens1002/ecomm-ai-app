@@ -80,7 +80,7 @@ export function useFlattenedMenuRows({
       const labelRow: FlatLabelRow = {
         id: label.id,
         name: label.name,
-        level: "label",
+        kind: "label",
         isVisible: label.isVisible,
         isExpandable: hasCategories,
         isExpanded: isLabelExpanded,
@@ -106,7 +106,7 @@ export function useFlattenedMenuRows({
           const categoryRow: FlatCategoryRow = {
             id: catInLabel.id,
             name: catInLabel.name,
-            level: "category",
+            kind: "category",
             isVisible: fullCategory?.isVisible ?? true,
             isExpandable: false, // Categories are leaf nodes in 2-level view
             isExpanded: false,

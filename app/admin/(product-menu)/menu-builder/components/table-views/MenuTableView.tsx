@@ -545,7 +545,7 @@ export function MenuTableView() {
         ...baseHandlers,
         onDragStart: (e: React.DragEvent) => {
           // Auto-collapse all when dragging a label
-          if (row.level === "label") {
+          if (row.kind === "label") {
             builder.collapseAll();
           }
           baseHandlers.onDragStart(e);

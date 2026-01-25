@@ -71,12 +71,12 @@ export type MultiEntityDragHandlers = {
 
 export type DropType = "reorder" | "move-to-label";
 
-/** The two levels in the hierarchy */
-export type EntityLevel = "label" | "category";
+/** Entity kinds that support DnD in the hierarchy */
+export type EntityKind = "label" | "category";
 
 export type MultiEntityDragState = {
   dragId: string | null;
-  dragLevel: EntityLevel | null;
+  dragKind: EntityKind | null;
   dragParentId: string | null;
   dragOverId: string | null;
   dropPosition: "before" | "after";
@@ -148,13 +148,13 @@ export function useMultiEntityDnd({
 }: UseMultiEntityDndOptions): UseMultiEntityDndReturn {
   // Extended state for hierarchical features (beyond core useGroupedReorder state)
   const [hierarchyState, setHierarchyState] = useState<{
-    dragLevel: EntityLevel | null;
+    dragKind: EntityKind | null;
     dragParentId: string | null;
     dropType: DropType;
     autoExpandedId: string | null;
     draggedChildren: readonly DraggedChildInfo[];
   }>({
-    dragLevel: null,
+    dragKind: null,
     dragParentId: null,
     dropType: "reorder",
     autoExpandedId: null,
@@ -219,8 +219,8 @@ export function useMultiEntityDnd({
    * Get the parent ID that "owns" a row's territory.
    */
   const getParentOwner = useCallback((row: FlatMenuRow): string | null => {
-    if (row.level === "label") return row.id;
-    if (row.level === "category") return row.parentId;
+    if (row.kind === "label") return row.id;
+    if (row.kind === "category") return row.parentId;
     return null;
   }, []);
 
@@ -230,34 +230,34 @@ export function useMultiEntityDnd({
   const getDropInfo = useCallback(
     (
       targetId: string,
-      dragLevel: EntityLevel | null,
+      dragKind: EntityKind | null,
       draggedIds: readonly string[],
       draggedChildren: readonly DraggedChildInfo[]
     ): { valid: false } | { valid: true; dropType: DropType } => {
-      if (!dragLevel) return { valid: false };
+      if (!dragKind) return { valid: false };
       if (draggedIds.includes(targetId)) return { valid: false };
 
       const targetRow = getRow(targetId);
       if (!targetRow) return { valid: false };
 
       const targetKey =
-        targetRow.level === "label"
+        targetRow.kind === "label"
           ? createKey("label", targetRow.id)
-          : targetRow.level === "category" && targetRow.parentId
+          : targetRow.kind === "category" && targetRow.parentId
             ? createKey("category", targetRow.parentId, targetRow.id)
             : "";
 
       if (!targetKey) return { valid: false };
 
-      const targetKind = targetRow.level;
+      const targetKind = targetRow.kind;
 
       // Same kind - reorder among siblings
-      if (targetKind === dragLevel) {
-        if (dragLevel === "label") {
+      if (targetKind === dragKind) {
+        if (dragKind === "label") {
           return { valid: true, dropType: "reorder" };
         }
 
-        if (dragLevel === "category") {
+        if (dragKind === "category") {
           const allFromSameParent = draggedChildren.every(
             (info) => info.fromParentId === targetRow.parentId
           );
@@ -269,8 +269,8 @@ export function useMultiEntityDnd({
       }
 
       // Different kind - check if target can receive this drag kind
-      if (registry.canReceiveDrop(targetKey, dragLevel)) {
-        if (targetKind === "label" && dragLevel === "category") {
+      if (registry.canReceiveDrop(targetKey, dragKind)) {
+        if (targetKind === "label" && dragKind === "category") {
           const allFromTargetParent = draggedChildren.every(
             (info) => info.fromParentId === targetRow.id
           );
@@ -291,7 +291,7 @@ export function useMultiEntityDnd({
    */
   const executeReorder = useCallback(
     async (
-      level: EntityLevel,
+      kind: EntityKind,
       parentId: string | null,
       draggedIds: readonly string[],
       targetId: string,
@@ -299,7 +299,7 @@ export function useMultiEntityDnd({
     ) => {
       const dragCount = draggedIds.length;
 
-      if (level === "label") {
+      if (kind === "label") {
         const previousIds = labels.map((p) => p.id);
         const newIds = calculateMultiReorder(
           labels,
@@ -492,10 +492,10 @@ export function useMultiEntityDnd({
 
       // Check if this is a collapsed parent that could be expanded
       const isCollapsedExpandableParent =
-        targetRow.level === "label" &&
+        targetRow.kind === "label" &&
         targetRow.isExpandable &&
         !targetRow.isExpanded &&
-        hierarchyState.dragLevel === "category";
+        hierarchyState.dragKind === "category";
 
       // Start delayed expansion timer if hovering over a collapsed parent
       if (isCollapsedExpandableParent && onExpandItem) {
@@ -522,7 +522,7 @@ export function useMultiEntityDnd({
       // Check drop validity and update drop type
       const dropInfo = getDropInfo(
         targetId,
-        hierarchyState.dragLevel,
+        hierarchyState.dragKind,
         draggedIds,
         hierarchyState.draggedChildren
       );
@@ -541,7 +541,7 @@ export function useMultiEntityDnd({
       onCollapseItem,
       onExpandItem,
       clearExpandTimer,
-      hierarchyState.dragLevel,
+      hierarchyState.dragKind,
       hierarchyState.draggedChildren,
       getDropInfo,
       eligibility.draggedEntities,
@@ -551,10 +551,10 @@ export function useMultiEntityDnd({
   // Handle drop - hierarchical logic
   const handleDrop = useCallback(
     async (targetId: string, dropPosition: "before" | "after", draggedIds: readonly string[]) => {
-      const { dragLevel, dragParentId, draggedChildren } = hierarchyState;
+      const { dragKind, dragParentId, draggedChildren } = hierarchyState;
 
-      const dropInfo = getDropInfo(targetId, dragLevel, draggedIds, draggedChildren);
-      if (!dragLevel || !dropInfo.valid) {
+      const dropInfo = getDropInfo(targetId, dragKind, draggedIds, draggedChildren);
+      if (!dragKind || !dropInfo.valid) {
         return;
       }
 
@@ -564,11 +564,11 @@ export function useMultiEntityDnd({
       }
 
       try {
-        if (dropInfo.dropType === "move-to-label" && dragLevel === "category") {
-          const targetLabelId = targetRow.level === "label" ? targetRow.id : targetRow.parentId;
+        if (dropInfo.dropType === "move-to-label" && dragKind === "category") {
+          const targetLabelId = targetRow.kind === "label" ? targetRow.id : targetRow.parentId;
 
           if (targetLabelId) {
-            const targetCategoryId = targetRow.level === "category" ? targetRow.id : null;
+            const targetCategoryId = targetRow.kind === "category" ? targetRow.id : null;
             await executeBatchCrossBoundaryMove(
               draggedChildren,
               targetLabelId,
@@ -584,7 +584,7 @@ export function useMultiEntityDnd({
             }
           }
         } else {
-          await executeReorder(dragLevel, dragParentId, draggedIds, targetId, dropPosition);
+          await executeReorder(dragKind, dragParentId, draggedIds, targetId, dropPosition);
         }
       } catch (error) {
         console.error("[useMultiEntityDnd] Drop operation failed:", error);
@@ -606,7 +606,7 @@ export function useMultiEntityDnd({
     clearExpandTimer();
     autoExpandedParentRef.current = null;
     setHierarchyState({
-      dragLevel: null,
+      dragKind: null,
       dragParentId: null,
       dropType: "reorder",
       autoExpandedId: null,
@@ -624,23 +624,22 @@ export function useMultiEntityDnd({
 
   // Set hierarchy state when drag starts (detected via core state change)
   // This effect intentionally syncs derived state from coreReorder - cascading render is expected
-
-  // look to refactor this useEffect, it's very brittle with these many dependencies
+  // TODO: Refactor to derive state from eligibility instead of syncing (Refactor 3)
   useEffect(() => {
-    if (coreReorder.dragState.dragId && !hierarchyState.dragLevel) {
+    if (coreReorder.dragState.dragId && !hierarchyState.dragKind) {
       // Drag just started - set hierarchy state
       const dragRow = rowsById.get(coreReorder.dragState.dragId);
-      if (dragRow && (dragRow.level === "label" || dragRow.level === "category")) {
+      if (dragRow && (dragRow.kind === "label" || dragRow.kind === "category")) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setHierarchyState({
-          dragLevel: dragRow.level,
+          dragKind: dragRow.kind,
           dragParentId: dragRow.parentId,
           dropType: "reorder",
           autoExpandedId: null,
           draggedChildren: draggedChildrenFromEligibility,
         });
       }
-    } else if (!coreReorder.dragState.dragId && hierarchyState.dragLevel) {
+    } else if (!coreReorder.dragState.dragId && hierarchyState.dragKind) {
       // Drag ended - check if we need to collapse auto-expanded parent
       if (autoExpandedParentRef.current && onCollapseItem) {
         onCollapseItem(autoExpandedParentRef.current);
@@ -649,7 +648,7 @@ export function useMultiEntityDnd({
       autoExpandedParentRef.current = null;
 
       setHierarchyState({
-        dragLevel: null,
+        dragKind: null,
         dragParentId: null,
         dropType: "reorder",
         autoExpandedId: null,
@@ -658,7 +657,7 @@ export function useMultiEntityDnd({
     }
   }, [
     coreReorder.dragState.dragId,
-    hierarchyState.dragLevel,
+    hierarchyState.dragKind,
     rowsById,
     draggedChildrenFromEligibility,
     onCollapseItem,
@@ -691,7 +690,7 @@ export function useMultiEntityDnd({
       // Check if this is a valid drop target for drop type
       const dropInfo = getDropInfo(
         row.id,
-        hierarchyState.dragLevel,
+        hierarchyState.dragKind,
         coreReorder.dragState.draggedIds,
         hierarchyState.draggedChildren
       );
@@ -711,15 +710,14 @@ export function useMultiEntityDnd({
   // Combined drag state for consumers
   const combinedDragState: MultiEntityDragState = {
     dragId: coreReorder.dragState.dragId,
-    dragLevel: hierarchyState.dragLevel,
+    dragKind: hierarchyState.dragKind,
     dragParentId: hierarchyState.dragParentId,
     dragOverId: coreReorder.dragState.dragOverId,
     dropPosition: coreReorder.dragState.dropPosition,
     dropType: hierarchyState.dropType,
     autoExpandedId: hierarchyState.autoExpandedId,
-    // this is dangerous, a level can be anything, should use level 0, 1, etc instead of entity
-    isDraggingLabel: hierarchyState.dragLevel === "label",
-    isDraggingCategory: hierarchyState.dragLevel === "category",
+    isDraggingLabel: hierarchyState.dragKind === "label",
+    isDraggingCategory: hierarchyState.dragKind === "category",
     draggedIds: coreReorder.dragState.draggedIds,
     draggedChildren: hierarchyState.draggedChildren,
   };

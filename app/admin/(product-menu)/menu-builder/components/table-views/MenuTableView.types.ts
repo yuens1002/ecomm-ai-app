@@ -2,10 +2,10 @@ import type { MenuLabel, MenuProduct } from "../../../types/menu";
 import { createKey } from "../../../types/identity-registry";
 
 /**
- * Row levels in the menu hierarchy.
- * Each level uses a different indentation depth.
+ * Entity kinds in the menu hierarchy.
+ * Discriminates the type of entity a row represents.
  */
-export type MenuRowLevel = "label" | "category" | "product";
+export type MenuRowKind = "label" | "category" | "product";
 
 /**
  * Base properties for all flattened menu rows.
@@ -15,8 +15,8 @@ type FlatMenuRowBase = {
   id: string;
   /** Display name for the row */
   name: string;
-  /** Hierarchy level determines indentation */
-  level: MenuRowLevel;
+  /** Entity kind discriminator (label, category, or product) */
+  kind: MenuRowKind;
   /** Whether the row is visible in the menu */
   isVisible: boolean;
   /** Whether this row can be expanded (has children) */
@@ -31,7 +31,7 @@ type FlatMenuRowBase = {
  * Flattened label row with label-specific properties.
  */
 export type FlatLabelRow = FlatMenuRowBase & {
-  level: "label";
+  kind: "label";
   parentId: null;
   /** Original label data */
   data: MenuLabel;
@@ -45,7 +45,7 @@ export type FlatLabelRow = FlatMenuRowBase & {
  * Flattened category row with category-specific properties.
  */
 export type FlatCategoryRow = FlatMenuRowBase & {
-  level: "category";
+  kind: "category";
   /** Parent label ID */
   parentId: string;
   /** Order within parent label */
@@ -67,7 +67,7 @@ export type FlatCategoryRow = FlatMenuRowBase & {
  * Flattened product row with product-specific properties.
  */
 export type FlatProductRow = FlatMenuRowBase & {
-  level: "product";
+  kind: "product";
   /** Parent category ID */
   parentId: string;
   /** Grandparent label ID (for ancestry tracking) */
@@ -80,7 +80,7 @@ export type FlatProductRow = FlatMenuRowBase & {
 
 /**
  * Discriminated union for all row types in the menu table.
- * Use `row.level` to narrow the type.
+ * Use `row.kind` to narrow the type.
  */
 export type FlatMenuRow = FlatLabelRow | FlatCategoryRow | FlatProductRow;
 
@@ -88,21 +88,21 @@ export type FlatMenuRow = FlatLabelRow | FlatCategoryRow | FlatProductRow;
  * Type guard for label rows.
  */
 export function isLabelRow(row: FlatMenuRow): row is FlatLabelRow {
-  return row.level === "label";
+  return row.kind === "label";
 }
 
 /**
  * Type guard for category rows.
  */
 export function isCategoryRow(row: FlatMenuRow): row is FlatCategoryRow {
-  return row.level === "category";
+  return row.kind === "category";
 }
 
 /**
  * Type guard for product rows.
  */
 export function isProductRow(row: FlatMenuRow): row is FlatProductRow {
-  return row.level === "product";
+  return row.kind === "product";
 }
 
 /**
