@@ -3,20 +3,44 @@
 import {
   reorderProductsInCategory,
   sortProductsInCategory,
+  moveProductToCategory,
+  batchMoveProductsToCategory,
 } from "../products";
 
 // Mock Prisma
 const mockUpdate = jest.fn();
 const mockFindMany = jest.fn();
 const mockTransaction = jest.fn();
+const mockFindUnique = jest.fn();
+const mockDelete = jest.fn();
+const mockCreate = jest.fn();
+const mockUpdateMany = jest.fn();
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     categoriesOnProducts: {
       update: (...args: unknown[]) => mockUpdate(...args),
       findMany: (...args: unknown[]) => mockFindMany(...args),
+      findUnique: (...args: unknown[]) => mockFindUnique(...args),
+      delete: (...args: unknown[]) => mockDelete(...args),
+      create: (...args: unknown[]) => mockCreate(...args),
+      updateMany: (...args: unknown[]) => mockUpdateMany(...args),
     },
-    $transaction: (updates: unknown[]) => mockTransaction(updates),
+    $transaction: (fn: unknown) => {
+      if (typeof fn === "function") {
+        // For transaction with callback, execute the callback with mock tx
+        return fn({
+          categoriesOnProducts: {
+            findUnique: mockFindUnique,
+            delete: mockDelete,
+            create: mockCreate,
+            updateMany: mockUpdateMany,
+          },
+        });
+      }
+      // For transaction with array of operations
+      return mockTransaction(fn);
+    },
   },
 }));
 
@@ -166,6 +190,165 @@ describe("actions/products", () => {
       const result = await sortProductsInCategory("cat1", "name", "asc");
 
       expect(result).toEqual({ ok: false, error: "DB error" });
+    });
+  });
+
+  describe("moveProductToCategory", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("should return error for invalid input", async () => {
+      const result = await moveProductToCategory({ productId: "" });
+      expect(result.ok).toBe(false);
+      expect(result.error).toBe("Validation failed");
+    });
+
+    it("should return ok if moving to same category", async () => {
+      const result = await moveProductToCategory({
+        productId: "p1",
+        fromCategoryId: "cat1",
+        toCategoryId: "cat1",
+      });
+      expect(result).toEqual({ ok: true, data: {} });
+    });
+
+    it("should return error if product not in source category", async () => {
+      mockFindUnique.mockResolvedValueOnce(null);
+
+      const result = await moveProductToCategory({
+        productId: "p1",
+        fromCategoryId: "cat1",
+        toCategoryId: "cat2",
+      });
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toBe("Product is not in source category");
+    });
+
+    it("should move product from source to target category", async () => {
+      mockFindUnique
+        .mockResolvedValueOnce({ productId: "p1", categoryId: "cat1", isPrimary: false }) // source exists
+        .mockResolvedValueOnce(null); // not in target
+      mockUpdateMany.mockResolvedValueOnce({ count: 5 });
+      mockDelete.mockResolvedValueOnce({});
+      mockCreate.mockResolvedValueOnce({});
+
+      const result = await moveProductToCategory({
+        productId: "p1",
+        fromCategoryId: "cat1",
+        toCategoryId: "cat2",
+      });
+
+      expect(result).toEqual({ ok: true, data: {} });
+      expect(mockDelete).toHaveBeenCalled();
+      expect(mockCreate).toHaveBeenCalled();
+    });
+
+    it("should preserve isPrimary status when moving", async () => {
+      mockFindUnique
+        .mockResolvedValueOnce({ productId: "p1", categoryId: "cat1", isPrimary: true })
+        .mockResolvedValueOnce(null);
+      mockUpdateMany.mockResolvedValueOnce({ count: 0 });
+      mockDelete.mockResolvedValueOnce({});
+      mockCreate.mockResolvedValueOnce({});
+
+      await moveProductToCategory({
+        productId: "p1",
+        fromCategoryId: "cat1",
+        toCategoryId: "cat2",
+      });
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ isPrimary: true }),
+        })
+      );
+    });
+
+    it("should only delete from source if already in target", async () => {
+      mockFindUnique
+        .mockResolvedValueOnce({ productId: "p1", categoryId: "cat1", isPrimary: false })
+        .mockResolvedValueOnce({ productId: "p1", categoryId: "cat2" }); // already in target
+      mockDelete.mockResolvedValueOnce({});
+
+      const result = await moveProductToCategory({
+        productId: "p1",
+        fromCategoryId: "cat1",
+        toCategoryId: "cat2",
+      });
+
+      expect(result).toEqual({ ok: true, data: {} });
+      expect(mockDelete).toHaveBeenCalled();
+      expect(mockCreate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("batchMoveProductsToCategory", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("should return error for invalid input", async () => {
+      const result = await batchMoveProductsToCategory({ toCategoryId: "cat2" });
+      expect(result.ok).toBe(false);
+      expect(result.error).toBe("Validation failed");
+    });
+
+    it("should return ok for empty moves array", async () => {
+      const result = await batchMoveProductsToCategory({
+        moves: [],
+        toCategoryId: "cat2",
+      });
+      expect(result).toEqual({ ok: true, data: {} });
+    });
+
+    it("should skip moves where from equals to category", async () => {
+      mockUpdateMany.mockResolvedValueOnce({ count: 0 });
+
+      const result = await batchMoveProductsToCategory({
+        moves: [{ productId: "p1", fromCategoryId: "cat2" }],
+        toCategoryId: "cat2",
+      });
+
+      expect(result).toEqual({ ok: true, data: {} });
+      // Should not try to move since from === to
+      expect(mockDelete).not.toHaveBeenCalled();
+    });
+
+    it("should move multiple products to target category", async () => {
+      mockUpdateMany.mockResolvedValueOnce({ count: 5 });
+      mockFindUnique
+        .mockResolvedValueOnce({ productId: "p1", categoryId: "cat1", isPrimary: false })
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ productId: "p2", categoryId: "cat1", isPrimary: true })
+        .mockResolvedValueOnce(null);
+      mockDelete.mockResolvedValue({});
+      mockCreate.mockResolvedValue({});
+
+      const result = await batchMoveProductsToCategory({
+        moves: [
+          { productId: "p1", fromCategoryId: "cat1" },
+          { productId: "p2", fromCategoryId: "cat1" },
+        ],
+        toCategoryId: "cat2",
+      });
+
+      expect(result).toEqual({ ok: true, data: {} });
+      expect(mockDelete).toHaveBeenCalledTimes(2);
+      expect(mockCreate).toHaveBeenCalledTimes(2);
+    });
+
+    it("should return error on database failure", async () => {
+      mockUpdateMany.mockRejectedValueOnce(new Error("DB connection failed"));
+
+      const result = await batchMoveProductsToCategory({
+        moves: [{ productId: "p1", fromCategoryId: "cat1" }],
+        toCategoryId: "cat2",
+      });
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toBe("DB connection failed");
     });
   });
 });

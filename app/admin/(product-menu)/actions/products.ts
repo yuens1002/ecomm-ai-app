@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { z } from "zod";
 
 export type SortProductsDirection = "asc" | "desc";
 export type SortProductsBy = "name" | "createdAt";
@@ -248,5 +249,181 @@ export async function sortProductsInCategory(
     const message =
       err instanceof Error ? err.message : "Failed to sort products";
     return { ok: false, error: message };
+  }
+}
+
+const moveProductToCategorySchema = z.object({
+  productId: z.string().min(1),
+  fromCategoryId: z.string().min(1),
+  toCategoryId: z.string().min(1),
+});
+
+/**
+ * Move a product from one category to another.
+ * Detaches from source category and attaches to target category.
+ */
+export async function moveProductToCategory(input: unknown) {
+  const parsed = moveProductToCategorySchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false as const,
+      error: "Validation failed",
+      details: parsed.error.issues,
+    };
+  }
+
+  const { productId, fromCategoryId, toCategoryId } = parsed.data;
+
+  if (fromCategoryId === toCategoryId) {
+    return { ok: true as const, data: {} };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Get current relationship to preserve isPrimary status
+      const existing = await tx.categoriesOnProducts.findUnique({
+        where: {
+          productId_categoryId: { productId, categoryId: fromCategoryId },
+        },
+      });
+
+      if (!existing) {
+        throw new Error("Product is not in source category");
+      }
+
+      // Check if already in target category
+      const alreadyInTarget = await tx.categoriesOnProducts.findUnique({
+        where: {
+          productId_categoryId: { productId, categoryId: toCategoryId },
+        },
+      });
+
+      if (alreadyInTarget) {
+        // Just remove from source if already in target
+        await tx.categoriesOnProducts.delete({
+          where: {
+            productId_categoryId: { productId, categoryId: fromCategoryId },
+          },
+        });
+        return;
+      }
+
+      // Shift products in target category to make room at top
+      await tx.categoriesOnProducts.updateMany({
+        where: { categoryId: toCategoryId },
+        data: { order: { increment: 1 } },
+      });
+
+      // Delete from source category
+      await tx.categoriesOnProducts.delete({
+        where: {
+          productId_categoryId: { productId, categoryId: fromCategoryId },
+        },
+      });
+
+      // Create in target category at top (order 0)
+      await tx.categoriesOnProducts.create({
+        data: {
+          productId,
+          categoryId: toCategoryId,
+          isPrimary: existing.isPrimary,
+          order: 0,
+        },
+      });
+    });
+
+    return { ok: true as const, data: {} };
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Failed to move product to category";
+    return { ok: false as const, error: message };
+  }
+}
+
+const batchMoveProductsToCategorySchema = z.object({
+  moves: z.array(
+    z.object({
+      productId: z.string().min(1),
+      fromCategoryId: z.string().min(1),
+    })
+  ),
+  toCategoryId: z.string().min(1),
+});
+
+/**
+ * Batch move multiple products to a category in a single transaction.
+ * Used for multi-select context menu operations.
+ */
+export async function batchMoveProductsToCategory(input: unknown) {
+  const parsed = batchMoveProductsToCategorySchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false as const,
+      error: "Validation failed",
+      details: parsed.error.issues,
+    };
+  }
+
+  const { moves, toCategoryId } = parsed.data;
+
+  if (moves.length === 0) {
+    return { ok: true as const, data: {} };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Shift products in target category to make room
+      await tx.categoriesOnProducts.updateMany({
+        where: { categoryId: toCategoryId },
+        data: { order: { increment: moves.length } },
+      });
+
+      for (let i = 0; i < moves.length; i++) {
+        const { productId, fromCategoryId } = moves[i];
+
+        if (fromCategoryId === toCategoryId) continue;
+
+        // Get current relationship
+        const existing = await tx.categoriesOnProducts.findUnique({
+          where: {
+            productId_categoryId: { productId, categoryId: fromCategoryId },
+          },
+        });
+
+        if (!existing) continue;
+
+        // Check if already in target
+        const alreadyInTarget = await tx.categoriesOnProducts.findUnique({
+          where: {
+            productId_categoryId: { productId, categoryId: toCategoryId },
+          },
+        });
+
+        // Delete from source
+        await tx.categoriesOnProducts.delete({
+          where: {
+            productId_categoryId: { productId, categoryId: fromCategoryId },
+          },
+        });
+
+        if (!alreadyInTarget) {
+          // Create in target at position i (maintains selection order)
+          await tx.categoriesOnProducts.create({
+            data: {
+              productId,
+              categoryId: toCategoryId,
+              isPrimary: existing.isPrimary,
+              order: i,
+            },
+          });
+        }
+      }
+    });
+
+    return { ok: true as const, data: {} };
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Failed to batch move products";
+    return { ok: false as const, error: message };
   }
 }
