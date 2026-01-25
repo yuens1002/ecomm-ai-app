@@ -235,7 +235,7 @@ export function AllCategoriesTableView() {
       keys.push(createKey("category", row.original.id));
     }
     return keys;
-  }, [table, pinnedCategory]);
+  }, [table, pinnedCategory, sorting]);
 
   const {
     selectionState,

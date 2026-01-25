@@ -127,6 +127,64 @@ export function CategoryTableView() {
   // Build registry for this flat view
   const registry = useMemo(() => buildFlatRegistry(categoryProducts, "product"), [categoryProducts]);
 
+  // Helper: Get category names for a product (excluding current category)
+  // Moved up to be used by columns definition
+  const getProductCategories = useCallback(
+    (product: MenuProduct): string => {
+      const productCategoryIds = product.categoryIds.filter((id) => id !== currentCategoryId);
+      if (productCategoryIds.length === 0) return "—";
+
+      const categoryNames = productCategoryIds
+        .map((catId) => categories.find((c) => c.id === catId)?.name)
+        .filter(Boolean) as string[];
+
+      if (categoryNames.length === 0) return "—";
+      if (categoryNames.length === 1) return categoryNames[0];
+      return categoryNames.join(", ");
+    },
+    [categories, currentCategoryId]
+  );
+
+  // Column definitions - name and addedOrder are sortable
+  const columns = useMemo<ColumnDef<CategoryProduct>[]>(
+    () => [
+      { id: "select", accessorFn: () => null, enableSorting: false },
+      { id: "name", accessorFn: (row) => row.name, sortingFn: "alphanumeric" },
+      { id: "addedOrder", accessorFn: (row) => row.addedOrderRank, sortingFn: "basic" },
+      { id: "visibility", accessorFn: (row) => (row.isDisabled ? 0 : 1), enableSorting: false },
+      { id: "categories", accessorFn: (row) => getProductCategories(row), enableSorting: false },
+      { id: "dragHandle", accessorFn: () => null, enableSorting: false },
+    ],
+    [getProductCategories]
+  );
+
+  // Initialize table - BEFORE selection model so we can get sorted row order
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const table = useReactTable({
+    data: productsForTable,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    state: { sorting },
+    getRowId: (row) => row.id,
+  });
+
+  // IMPORTANT: selectableKeys must match the VISUAL row order (after sorting)
+  // so that shift+click range selection selects the correct rows
+  const selectableKeys = useMemo(() => {
+    const sortedRows = table.getRowModel().rows;
+    // Include pinned row at the top if present
+    const keys: string[] = [];
+    if (pinnedProduct) {
+      keys.push(createKey("product", pinnedProduct.id));
+    }
+    for (const row of sortedRows) {
+      keys.push(createKey("product", row.original.id));
+    }
+    return keys;
+  }, [table, pinnedProduct, sorting]);
+
   // Selection model for remove action
   const {
     selectionState,
@@ -139,7 +197,7 @@ export function CategoryTableView() {
     isSameKind,
     anchorKey,
     rangeSelect,
-  } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
+  } = useContextSelectionModel(builder, { selectableKeys });
 
   // Derive DnD eligibility from selection state (action-bar pattern)
   const eligibility = useDnDEligibility({
@@ -358,47 +416,6 @@ export function CategoryTableView() {
         .map((c) => ({ id: c.id, name: c.name })),
     [categories]
   );
-
-  // Helper: Get category names for a product (excluding current category)
-  const getProductCategories = useCallback(
-    (product: MenuProduct): string => {
-      const productCategoryIds = product.categoryIds.filter((id) => id !== currentCategoryId);
-      if (productCategoryIds.length === 0) return "—";
-
-      const categoryNames = productCategoryIds
-        .map((catId) => categories.find((c) => c.id === catId)?.name)
-        .filter(Boolean) as string[];
-
-      if (categoryNames.length === 0) return "—";
-      if (categoryNames.length === 1) return categoryNames[0];
-      return categoryNames.join(", ");
-    },
-    [categories, currentCategoryId]
-  );
-
-  // Column definitions - name and addedOrder are sortable
-  const columns = useMemo<ColumnDef<CategoryProduct>[]>(
-    () => [
-      { id: "select", accessorFn: () => null, enableSorting: false },
-      { id: "name", accessorFn: (row) => row.name, sortingFn: "alphanumeric" },
-      { id: "addedOrder", accessorFn: (row) => row.addedOrderRank, sortingFn: "basic" },
-      { id: "visibility", accessorFn: (row) => (row.isDisabled ? 0 : 1), enableSorting: false },
-      { id: "categories", accessorFn: (row) => getProductCategories(row), enableSorting: false },
-      { id: "dragHandle", accessorFn: () => null, enableSorting: false },
-    ],
-    [getProductCategories]
-  );
-
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
-    data: productsForTable,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    state: { sorting },
-    getRowId: (row) => row.id,
-  });
 
   // Persist sort order to database when column sorting is applied
   usePersistColumnSort({

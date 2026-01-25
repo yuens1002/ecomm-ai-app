@@ -152,6 +152,46 @@ export function LabelTableView() {
   // Build registry for this flat view
   const registry = useMemo(() => buildFlatRegistry(labelCategories, "category"), [labelCategories]);
 
+  // Column definitions - name and addedOrder are sortable
+  const columns = useMemo<ColumnDef<LabelCategory>[]>(
+    () => [
+      { id: "select", accessorFn: () => null, enableSorting: false },
+      { id: "name", accessorFn: (row) => row.name, sortingFn: "alphanumeric" },
+      { id: "addedOrder", accessorFn: (row) => row.addedOrderRank, sortingFn: "basic" },
+      { id: "products", accessorFn: (row) => row.productNames, enableSorting: false },
+      { id: "visibility", accessorFn: (row) => (row.isVisible ? 1 : 0), enableSorting: false },
+      { id: "dragHandle", accessorFn: () => null, enableSorting: false },
+    ],
+    []
+  );
+
+  // Initialize table - BEFORE selection model so we can get sorted row order
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const table = useReactTable({
+    data: categoriesForTable,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    state: { sorting },
+    getRowId: (row) => row.id,
+  });
+
+  // IMPORTANT: selectableKeys must match the VISUAL row order (after sorting)
+  // so that shift+click range selection selects the correct rows
+  const selectableKeys = useMemo(() => {
+    const sortedRows = table.getRowModel().rows;
+    // Include pinned row at the top if present
+    const keys: string[] = [];
+    if (pinnedCategory) {
+      keys.push(createKey("category", pinnedCategory.id));
+    }
+    for (const row of sortedRows) {
+      keys.push(createKey("category", row.original.id));
+    }
+    return keys;
+  }, [table, pinnedCategory, sorting]);
+
   // Selection model for remove action
   const {
     selectionState,
@@ -164,7 +204,7 @@ export function LabelTableView() {
     isSameKind,
     anchorKey,
     rangeSelect,
-  } = useContextSelectionModel(builder, { selectableKeys: registry.allKeys as string[] });
+  } = useContextSelectionModel(builder, { selectableKeys });
 
   // Derive DnD eligibility from selection state (action-bar pattern)
   const eligibility = useDnDEligibility({
@@ -351,30 +391,6 @@ export function LabelTableView() {
         .map((l) => ({ id: l.id, name: l.name })),
     [labels, currentLabelId]
   );
-
-  // Column definitions - name and addedOrder are sortable
-  const columns = useMemo<ColumnDef<LabelCategory>[]>(
-    () => [
-      { id: "select", accessorFn: () => null, enableSorting: false },
-      { id: "name", accessorFn: (row) => row.name, sortingFn: "alphanumeric" },
-      { id: "addedOrder", accessorFn: (row) => row.addedOrderRank, sortingFn: "basic" },
-      { id: "products", accessorFn: (row) => row.productNames, enableSorting: false },
-      { id: "visibility", accessorFn: (row) => (row.isVisible ? 1 : 0), enableSorting: false },
-      { id: "dragHandle", accessorFn: () => null, enableSorting: false },
-    ],
-    []
-  );
-
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
-    data: categoriesForTable,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    state: { sorting },
-    getRowId: (row) => row.id,
-  });
 
   // Persist sort order to database when column sorting is applied
   usePersistColumnSort({
