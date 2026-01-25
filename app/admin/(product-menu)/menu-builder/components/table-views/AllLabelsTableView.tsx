@@ -1,16 +1,6 @@
 "use client";
 "use no memo";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { TableBody } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -44,6 +34,7 @@ import { TableRow } from "./shared/table/TableRow";
 import { TableViewWrapper } from "./shared/table/TableViewWrapper";
 import { DragHandleCell } from "./shared/cells/DragHandleCell";
 import { RowContextMenu } from "./shared/cells/RowContextMenu";
+import { DeleteConfirmationDialog } from "./shared/table/DeleteConfirmationDialog";
 
 const ALL_LABELS_HEADER_COLUMNS: TableHeaderColumn[] = [
   { id: "select", label: "", isCheckbox: true },
@@ -561,36 +552,15 @@ export function AllLabelsTableView() {
       )}
 
       {/* Delete confirmation dialog */}
-      <AlertDialog
+      <DeleteConfirmationDialog
         open={deleteConfirmation.open}
-        onOpenChange={(open) => {
-          if (!open) setDeleteConfirmation({ open: false, targetIds: [] });
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              Delete {deleteConfirmation.targetIds.length}{" "}
-              {deleteConfirmation.targetIds.length === 1 ? "label" : "labels"}?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. The{" "}
-              {deleteConfirmation.targetIds.length === 1 ? "label" : "labels"} will be
-              permanently deleted and all category associations will be removed.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive hover:bg-destructive/90"
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        targetCount={deleteConfirmation.targetIds.length}
+        entityName="label"
+        associationMessage="all category associations"
+        isDeleting={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteConfirmation({ open: false, targetIds: [] })}
+      />
     </>
   );
 }
