@@ -115,7 +115,7 @@ export function InlineNameEditor({
         </span>
         <button
           onClick={onStartEdit}
-          className="shrink-0 p-1 rounded-sm hover:bg-accent opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-opacity outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+          className="relative shrink-0 p-1 rounded-sm hover:bg-accent opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-opacity outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px] before:absolute before:-inset-3 before:md:hidden"
           aria-label={`Edit ${value}`}
         >
           <Pencil className="w-3 h-3 text-muted-foreground" />
@@ -141,7 +141,7 @@ export function InlineNameEditor({
         size="sm"
         onClick={handleSave}
         disabled={isLoading}
-        className="h-6 w-6 p-0 shrink-0"
+        className="relative h-6 w-6 p-0 shrink-0 before:absolute before:-inset-2 before:md:hidden"
         variant="ghost"
       >
         <Check className="w-3 h-3" />
@@ -152,7 +152,7 @@ export function InlineNameEditor({
         variant="ghost"
         onClick={handleCancel}
         disabled={isLoading}
-        className="h-6 w-6 p-0 shrink-0"
+        className="relative h-6 w-6 p-0 shrink-0 before:absolute before:-inset-2 before:md:hidden"
       >
         <X className="w-3 h-3" />
       </Button>

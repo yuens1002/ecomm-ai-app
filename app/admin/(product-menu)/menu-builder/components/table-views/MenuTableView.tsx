@@ -12,6 +12,7 @@ import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { CheckboxCell } from "./shared/cells/CheckboxCell";
 import { ChevronToggleCell } from "./shared/cells/ChevronToggleCell";
+import { TouchTarget } from "./shared/cells/TouchTarget";
 import { InlineIconCell } from "./shared/cells/InlineIconCell";
 import { InlineNameEditor } from "./shared/cells/InlineNameEditor";
 import { menuViewWidthPreset } from "./shared/table/columnWidthPresets";
@@ -407,26 +408,30 @@ export function MenuTableView() {
         <TableCell config={menuViewWidthPreset.name}>
           <HierarchyNameCell depth={0}>
             <HierarchyCheckbox>
-              <CheckboxCell
-                id={row.id}
-                checked={isSelected}
-                indeterminate={isIndeterminate}
-                onToggle={() => handleClick(labelKey)}
-                isSelectable
-                alwaysVisible={isSelected || isIndeterminate}
-                ariaLabel={`Select ${row.name}`}
-                anchorKey={anchorKey}
-                onRangeSelect={anchorKey && anchorKey !== labelKey ? () => rangeSelect(labelKey) : undefined}
-              />
+              <TouchTarget>
+                <CheckboxCell
+                  id={row.id}
+                  checked={isSelected}
+                  indeterminate={isIndeterminate}
+                  onToggle={() => handleClick(labelKey)}
+                  isSelectable
+                  alwaysVisible={isSelected || isIndeterminate}
+                  ariaLabel={`Select ${row.name}`}
+                  anchorKey={anchorKey}
+                  onRangeSelect={anchorKey && anchorKey !== labelKey ? () => rangeSelect(labelKey) : undefined}
+                />
+              </TouchTarget>
             </HierarchyCheckbox>
             <HierarchyChevron>
-              <ChevronToggleCell
-                isExpanded={row.isExpanded}
-                isExpandable={row.isExpandable}
-                onToggle={() => debouncedToggleExpand(row.id)}
-                ariaLabel={`${row.isExpanded ? "Collapse" : "Expand"} ${row.name}`}
-                disabled={dragState.isDraggingLabel}
-              />
+              <TouchTarget>
+                <ChevronToggleCell
+                  isExpanded={row.isExpanded}
+                  isExpandable={row.isExpandable}
+                  onToggle={() => debouncedToggleExpand(row.id)}
+                  ariaLabel={`${row.isExpanded ? "Collapse" : "Expand"} ${row.name}`}
+                  disabled={dragState.isDraggingLabel}
+                />
+              </TouchTarget>
             </HierarchyChevron>
             {/* Icon + Name as visual unit with tighter spacing */}
             <div className="flex items-center gap-1">
@@ -543,16 +548,18 @@ export function MenuTableView() {
         <TableCell config={menuViewWidthPreset.name}>
           <HierarchyNameCell depth={1}>
             <HierarchyCheckbox>
-              <CheckboxCell
-                id={compositeId}
-                checked={isSelected}
-                onToggle={() => handleClick(categoryKey)}
-                isSelectable
-                alwaysVisible={isSelected}
-                ariaLabel={`Select ${row.name}`}
-                anchorKey={anchorKey}
-                onRangeSelect={anchorKey && anchorKey !== categoryKey ? () => rangeSelect(categoryKey) : undefined}
-              />
+              <TouchTarget>
+                <CheckboxCell
+                  id={compositeId}
+                  checked={isSelected}
+                  onToggle={() => handleClick(categoryKey)}
+                  isSelectable
+                  alwaysVisible={isSelected}
+                  ariaLabel={`Select ${row.name}`}
+                  anchorKey={anchorKey}
+                  onRangeSelect={anchorKey && anchorKey !== categoryKey ? () => rangeSelect(categoryKey) : undefined}
+                />
+              </TouchTarget>
             </HierarchyCheckbox>
             <HierarchyName>
               <span className="truncate font-medium">{row.name}</span>

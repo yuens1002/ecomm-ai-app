@@ -25,6 +25,7 @@ import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuCategoryInLabel } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { CheckboxCell } from "./shared/cells/CheckboxCell";
+import { TouchTarget } from "./shared/cells/TouchTarget";
 import { labelViewWidthPreset } from "./shared/table/columnWidthPresets";
 import { EmptyState } from "./shared/table/EmptyState";
 import { TableCell } from "./shared/table/TableCell";
@@ -286,16 +287,18 @@ export function LabelTableView() {
       >
         {/* Checkbox */}
         <TableCell config={labelViewWidthPreset.select} data-row-click-ignore>
-          <CheckboxCell
-            id={category.id}
-            checked={isCategorySelected}
-            onToggle={() => onToggle(categoryKey)}
-            isSelectable
-            alwaysVisible={isCategorySelected}
-            anchorKey={anchorKey}
-            onRangeSelect={anchorKey && anchorKey !== categoryKey ? () => rangeSelect(categoryKey) : undefined}
-            ariaLabel={`Select ${category.name}`}
-          />
+          <TouchTarget>
+            <CheckboxCell
+              id={category.id}
+              checked={isCategorySelected}
+              onToggle={() => onToggle(categoryKey)}
+              isSelectable
+              alwaysVisible={isCategorySelected}
+              anchorKey={anchorKey}
+              onRangeSelect={anchorKey && anchorKey !== categoryKey ? () => rangeSelect(categoryKey) : undefined}
+              ariaLabel={`Select ${category.name}`}
+            />
+          </TouchTarget>
         </TableCell>
 
         {/* Category Name */}

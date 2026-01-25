@@ -27,6 +27,7 @@ import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuProduct } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { CheckboxCell } from "./shared/cells/CheckboxCell";
+import { TouchTarget } from "./shared/cells/TouchTarget";
 import { categoryViewWidthPreset } from "./shared/table/columnWidthPresets";
 import { EmptyState } from "./shared/table/EmptyState";
 import { TableCell } from "./shared/table/TableCell";
@@ -336,16 +337,18 @@ export function CategoryTableView() {
       >
         {/* Checkbox */}
         <TableCell config={categoryViewWidthPreset.select} data-row-click-ignore>
-          <CheckboxCell
-            id={product.id}
-            checked={isProductSelected}
-            onToggle={() => onToggle(productKey)}
-            isSelectable
-            alwaysVisible={isProductSelected}
-            ariaLabel={`Select ${product.name}`}
-            anchorKey={anchorKey}
-            onRangeSelect={anchorKey && anchorKey !== productKey ? () => rangeSelect(productKey) : undefined}
-          />
+          <TouchTarget>
+            <CheckboxCell
+              id={product.id}
+              checked={isProductSelected}
+              onToggle={() => onToggle(productKey)}
+              isSelectable
+              alwaysVisible={isProductSelected}
+              ariaLabel={`Select ${product.name}`}
+              anchorKey={anchorKey}
+              onRangeSelect={anchorKey && anchorKey !== productKey ? () => rangeSelect(productKey) : undefined}
+            />
+          </TouchTarget>
         </TableCell>
 
         {/* Product Name */}

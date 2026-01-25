@@ -22,6 +22,7 @@ import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuCategory } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { CheckboxCell } from "./shared/cells/CheckboxCell";
+import { TouchTarget } from "./shared/cells/TouchTarget";
 import { InlineNameEditor } from "./shared/cells/InlineNameEditor";
 import { VisibilityCell } from "./shared/cells/VisibilityCell";
 import { allCategoriesWidthPreset } from "./shared/table/columnWidthPresets";
@@ -230,16 +231,18 @@ export function AllCategoriesTableView() {
         onRowDoubleClick={() => handleDoubleClick(categoryKey)}
       >
         <TableCell config={allCategoriesWidthPreset.select} data-row-click-ignore>
-          <CheckboxCell
-            id={category.id}
-            checked={isCategorySelected}
-            onToggle={() => onToggle(categoryKey)}
-            isSelectable
-            alwaysVisible={isCategorySelected}
-            ariaLabel={`Select ${category.name}`}
-            anchorKey={anchorKey}
-            onRangeSelect={anchorKey && anchorKey !== categoryKey ? () => rangeSelect(categoryKey) : undefined}
-          />
+          <TouchTarget>
+            <CheckboxCell
+              id={category.id}
+              checked={isCategorySelected}
+              onToggle={() => onToggle(categoryKey)}
+              isSelectable
+              alwaysVisible={isCategorySelected}
+              ariaLabel={`Select ${category.name}`}
+              anchorKey={anchorKey}
+              onRangeSelect={anchorKey && anchorKey !== categoryKey ? () => rangeSelect(categoryKey) : undefined}
+            />
+          </TouchTarget>
         </TableCell>
 
         <TableCell config={allCategoriesWidthPreset.name}>

@@ -32,6 +32,7 @@ import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuLabel } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { CheckboxCell } from "./shared/cells/CheckboxCell";
+import { TouchTarget } from "./shared/cells/TouchTarget";
 import { InlineIconCell } from "./shared/cells/InlineIconCell";
 import { InlineNameEditor } from "./shared/cells/InlineNameEditor";
 import { VisibilityCell } from "./shared/cells/VisibilityCell";
@@ -446,16 +447,18 @@ export function AllLabelsTableView() {
       >
         {/* Checkbox */}
         <TableCell config={allLabelsWidthPreset.select} data-row-click-ignore>
-          <CheckboxCell
-            id={label.id}
-            checked={isLabelSelected}
-            onToggle={() => onToggle(labelKey)}
-            isSelectable
-            alwaysVisible={isLabelSelected}
-            ariaLabel={`Select ${label.name}`}
-            anchorKey={anchorKey}
-            onRangeSelect={anchorKey && anchorKey !== labelKey ? () => rangeSelect(labelKey) : undefined}
-          />
+          <TouchTarget>
+            <CheckboxCell
+              id={label.id}
+              checked={isLabelSelected}
+              onToggle={() => onToggle(labelKey)}
+              isSelectable
+              alwaysVisible={isLabelSelected}
+              ariaLabel={`Select ${label.name}`}
+              anchorKey={anchorKey}
+              onRangeSelect={anchorKey && anchorKey !== labelKey ? () => rangeSelect(labelKey) : undefined}
+            />
+          </TouchTarget>
         </TableCell>
 
         {/* Icon */}

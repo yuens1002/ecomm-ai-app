@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.69.1 - 2026-01-25
+
+### Features
+- **TouchTarget component**: Wrapper that expands touch targets to 44x44px on mobile (WCAG 2.5.5 compliance), no change on desktop
+- **Mobile touch targets**: Applied TouchTarget to CheckboxCell and ChevronToggleCell across all 5 table views
+
+### Improvements
+- **Inline button touch targets**: Added pseudo-element technique (`before:-inset-*`) to expand hit areas for:
+  - Pencil edit trigger in InlineNameEditor
+  - Check/X confirm/cancel buttons in InlineNameEditor
+  - Icon picker triggers in InlineIconCell
+- **Mobile-only expansion**: All touch target enhancements use `md:` breakpoint to preserve desktop sizing
+
+### Documentation
+- Updated mobile-interactions-plan.md with touch target implementation status
+
 ## 0.68.0 - 2026-01-25
 
 ### Features

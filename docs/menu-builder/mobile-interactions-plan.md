@@ -340,14 +340,16 @@ const TouchTarget = ({ children, className }: { children: ReactNode; className?:
 6. ⏳ Add keyboard shortcut hints to menu items
 7. ⏳ Implement undo/redo for Move Up/Down
 
-### Phase 3: Touch Targets (If Needed) ⏳ PENDING
+### Phase 3: Touch Targets ✅ COMPLETE
 
-1. Audit interactive elements for 44x44px compliance
-2. Add `TouchTarget` wrapper component if needed
-3. Increase mobile row height to 48px if needed
-4. Test on actual mobile devices
+1. ✅ Created `TouchTarget` wrapper component (44x44px on mobile, natural on desktop)
+2. ✅ Applied to CheckboxCell and ChevronToggleCell in all 5 table views
+3. ✅ Added pseudo-element technique for inline buttons (pencil, check, X, icon picker)
+4. ⏭️ Row height increase - deferred (test on devices first)
 
-**Note:** Phase 3 may be skipped if existing touch targets are adequate.
+**Implementation approach:**
+- Block elements (checkbox, chevron): Use `TouchTarget` wrapper with `min-h/w-[44px] md:min-h/w-0`
+- Inline elements (pencil icon): Use `before:absolute before:-inset-3 before:md:hidden` pseudo-element
 
 ---
 
@@ -383,10 +385,10 @@ const TouchTarget = ({ children, className }: { children: ReactNode; className?:
 - [ ] Reorder persists to database with undo/redo - undo not yet
 - [x] Actions execute correctly
 
-### Touch Targets (Nice to Have)
-- [ ] Interactive elements have adequate touch area
-- [ ] Row height comfortable for touch
-- [ ] No overlapping touch targets
+### Touch Targets
+- [x] Interactive elements have adequate touch area (44x44px on mobile)
+- [ ] Row height comfortable for touch - test on devices
+- [x] No overlapping touch targets
 
 ---
 

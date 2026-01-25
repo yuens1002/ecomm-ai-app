@@ -85,7 +85,9 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
               type="button"
               disabled={isLoading}
               className={cn(
-                "flex items-center justify-center rounded-md p-1 transition-opacity hover:bg-accent outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                "relative flex items-center justify-center rounded-md p-1 transition-opacity hover:bg-accent outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                // Mobile touch target (44px via -inset-3 = 24px + 20px)
+                "before:absolute before:-inset-2.5 before:md:hidden",
                 // xs-sm: always show as interactive
                 "opacity-100",
                 // md+: show as static icon unless hovered/open
@@ -109,7 +111,9 @@ export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCel
               type="button"
               disabled={isLoading}
               className={cn(
-                "flex items-center justify-center rounded-md p-1 hover:bg-accent outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                "relative flex items-center justify-center rounded-md p-1 hover:bg-accent outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                // Mobile touch target (44px via -inset-2.5 = 24px + 20px)
+                "before:absolute before:-inset-2.5 before:md:hidden",
                 // xs-sm: always visible
                 "opacity-100",
                 // md+: visually hidden unless hovered/open/focused (but still tabbable)
