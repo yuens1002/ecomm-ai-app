@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.70.1 - 2026-01-25
+
+### Features
+- **Product category management**: Products in CategoryTableView can now manage which categories they belong to via context menu
+- **Search in relationship submenus**: manage-categories and manage-labels submenus now have search bars for filtering
+- **Consistent icons**: manage-categories uses FileSpreadsheet icon (matches navigation)
+
+### Improvements
+- **Action order alignment**: Context menu actions now follow action bar order (manage-* → clone → remove → visibility → move-* → delete)
+- **Simplified category context menus**: Removed delete from menu/label view category context menus to prevent accidental deletion
+- **Simplified product context menu**: Removed move-to action from products (use drag-and-drop instead)
+- **Removed all-categories action bar remove**: Remove action removed from all-categories view (many-to-many with labels)
+
+### Tests
+- Updated RowContextMenu tests for new action configurations
+
+### Documentation
+- Updated context-menu-plan.md with Phase 3 completion and new patterns
+
 ## 0.70.0 - 2026-01-25
 
 ### Features

@@ -64,6 +64,7 @@ describe("RowContextMenu", () => {
       it("shows correct actions in all-labels view", async () => {
         await renderAndOpen("all-labels", "label");
 
+        expect(screen.getByText("Categories")).toBeInTheDocument(); // manage-categories submenu
         expect(screen.getByText("Clone")).toBeInTheDocument();
         expect(screen.getByText("Visibility")).toBeInTheDocument();
         expect(screen.getByText("Delete")).toBeInTheDocument();
@@ -87,38 +88,39 @@ describe("RowContextMenu", () => {
     });
 
     describe("Category entity", () => {
-      it("shows correct actions in menu view", async () => {
+      it("shows correct actions in menu view (no delete)", async () => {
         await renderAndOpen("menu", "category");
 
         expect(screen.getByText("Clone")).toBeInTheDocument();
         expect(screen.getByText("Visibility")).toBeInTheDocument();
-        expect(screen.getByText("Delete")).toBeInTheDocument();
         expect(screen.getByText("Move Up")).toBeInTheDocument();
         expect(screen.getByText("Move Down")).toBeInTheDocument();
-        expect(screen.getByText("Move to")).toBeInTheDocument();
+        expect(screen.getByText("Move To")).toBeInTheDocument();
+        expect(screen.queryByText("Delete")).not.toBeInTheDocument();
         expect(screen.queryByText("Remove")).not.toBeInTheDocument();
       });
 
-      it("shows correct actions in label view", async () => {
+      it("shows correct actions in label view (no delete)", async () => {
         await renderAndOpen("label", "category");
 
         expect(screen.getByText("Clone")).toBeInTheDocument();
         expect(screen.getByText("Remove")).toBeInTheDocument();
         expect(screen.getByText("Visibility")).toBeInTheDocument();
-        expect(screen.getByText("Delete")).toBeInTheDocument();
         expect(screen.getByText("Move Up")).toBeInTheDocument();
         expect(screen.getByText("Move Down")).toBeInTheDocument();
-        expect(screen.getByText("Move to")).toBeInTheDocument();
+        expect(screen.getByText("Move To")).toBeInTheDocument();
+        expect(screen.queryByText("Delete")).not.toBeInTheDocument();
       });
 
       it("shows correct actions in all-categories view", async () => {
         await renderAndOpen("all-categories", "category");
 
+        expect(screen.getByText("Labels")).toBeInTheDocument(); // manage-labels submenu
         expect(screen.getByText("Clone")).toBeInTheDocument();
-        expect(screen.getByText("Remove")).toBeInTheDocument();
         expect(screen.getByText("Visibility")).toBeInTheDocument();
         expect(screen.getByText("Delete")).toBeInTheDocument();
-        expect(screen.getByText("Move to")).toBeInTheDocument();
+        expect(screen.queryByText("Remove")).not.toBeInTheDocument();
+        expect(screen.queryByText("Move To")).not.toBeInTheDocument();
       });
     });
 
@@ -126,11 +128,12 @@ describe("RowContextMenu", () => {
       it("shows correct actions in category view", async () => {
         await renderAndOpen("category", "product");
 
-        expect(screen.getByText("Visibility")).toBeInTheDocument();
+        expect(screen.getByText("Categories")).toBeInTheDocument(); // manage-categories submenu
         expect(screen.getByText("Remove")).toBeInTheDocument();
         expect(screen.getByText("Move Up")).toBeInTheDocument();
         expect(screen.getByText("Move Down")).toBeInTheDocument();
-        expect(screen.getByText("Move to")).toBeInTheDocument();
+        expect(screen.queryByText("Move To")).not.toBeInTheDocument();
+        expect(screen.queryByText("Visibility")).not.toBeInTheDocument();
         expect(screen.queryByText("Clone")).not.toBeInTheDocument();
         expect(screen.queryByText("Delete")).not.toBeInTheDocument();
       });
@@ -228,16 +231,16 @@ describe("RowContextMenu", () => {
     });
   });
 
-  describe("Move to submenu", () => {
-    it("renders Move to as a submenu trigger when targets provided", async () => {
+  describe("Move To submenu", () => {
+    it("renders Move To as a submenu trigger when targets provided", async () => {
       const moveToTargets = [
         { id: "label-1", name: "Label One" },
         { id: "label-2", name: "Label Two" },
       ];
       await renderAndOpen("menu", "category", { moveToTargets });
 
-      // Move to should be rendered as a submenu trigger
-      const moveToTrigger = screen.getByText("Move to");
+      // Move To should be rendered as a submenu trigger
+      const moveToTrigger = screen.getByText("Move To");
       expect(moveToTrigger).toBeInTheDocument();
 
       // Should have the submenu trigger slot
@@ -245,21 +248,21 @@ describe("RowContextMenu", () => {
       expect(triggerElement).toBeInTheDocument();
     });
 
-    it("disables Move to when no targets available", async () => {
+    it("disables Move To when no targets available", async () => {
       await renderAndOpen("menu", "category", { moveToTargets: [] });
 
-      const moveToItem = screen.getByText("Move to").closest("[data-slot='context-menu-item']");
+      const moveToItem = screen.getByText("Move To").closest("[data-slot='context-menu-item']");
       expect(moveToItem).toHaveAttribute("data-disabled");
     });
 
-    it("disables Move to when all targets filtered by currentParentId", async () => {
+    it("disables Move To when all targets filtered by currentParentId", async () => {
       const moveToTargets = [{ id: "label-1", name: "Label One" }];
       await renderAndOpen("menu", "category", {
         moveToTargets,
         currentParentId: "label-1",
       });
 
-      const moveToItem = screen.getByText("Move to").closest("[data-slot='context-menu-item']");
+      const moveToItem = screen.getByText("Move To").closest("[data-slot='context-menu-item']");
       expect(moveToItem).toHaveAttribute("data-disabled");
     });
   });

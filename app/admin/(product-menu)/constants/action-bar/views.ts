@@ -63,7 +63,6 @@ export const VIEW_CONFIG: ViewConfig = {
     left: [
       { id: "new-category" },
       { id: "clone" },
-      { id: "remove", tooltip: "Remove from labels" },
     ],
     right: [
       { id: "visibility" },

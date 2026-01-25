@@ -60,6 +60,7 @@ export function CategoryTableView() {
     categories,
     reorderProductsInCategory,
     detachProductFromCategory,
+    attachProductToCategory,
     moveProductToCategory,
   } = useMenuBuilder();
 
@@ -314,6 +315,32 @@ export function CategoryTableView() {
     [currentCategoryId, products, categories, moveProductToCategory, toast]
   );
 
+  // Handler for toggling product attachment to a category (via context menu)
+  const handleCategoryToggle = useCallback(
+    async (productId: string, categoryId: string, shouldAttach: boolean) => {
+      if (shouldAttach) {
+        const result = await attachProductToCategory(productId, categoryId);
+        if (!result.ok) {
+          toast({
+            title: "Error",
+            description: "Could not add to category",
+            variant: "destructive",
+          });
+        }
+      } else {
+        const result = await detachProductFromCategory(productId, categoryId);
+        if (!result.ok) {
+          toast({
+            title: "Error",
+            description: "Could not remove from category",
+            variant: "destructive",
+          });
+        }
+      }
+    },
+    [attachProductToCategory, detachProductFromCategory, toast]
+  );
+
   // Get move targets (other categories, excluding current)
   const moveToTargets = useMemo(
     () =>
@@ -321,6 +348,15 @@ export function CategoryTableView() {
         .filter((c) => c.id !== currentCategoryId)
         .map((c) => ({ id: c.id, name: c.name })),
     [categories, currentCategoryId]
+  );
+
+  // Category targets for manage-categories context menu (all visible categories)
+  const categoryTargets = useMemo(
+    () =>
+      categories
+        .filter((c) => c.isVisible)
+        .map((c) => ({ id: c.id, name: c.name })),
+    [categories]
   );
 
   // Helper: Get category names for a product (excluding current category)
@@ -424,12 +460,15 @@ export function CategoryTableView() {
         isMixedSelection={actionableRoots.length > 0 && !isSameKind}
         moveToTargets={moveToTargets}
         currentParentId={currentCategoryId ?? undefined}
+        categoryTargets={categoryTargets}
+        attachedCategoryIds={product.categoryIds}
         onOpenChange={(open) => setContextRowId(open ? product.id : null)}
         onVisibilityToggle={(visible) => handleContextVisibility(product.id, visible)}
         onRemove={() => handleContextRemove(product.id)}
         onMoveUp={() => handleMoveUp(product.id)}
         onMoveDown={() => handleMoveDown(product.id)}
         onMoveTo={(toCategoryId) => handleMoveTo(product.id, toCategoryId)}
+        onCategoryToggle={(categoryId, shouldAttach) => handleCategoryToggle(product.id, categoryId, shouldAttach)}
       >
       <TableRow
         data-state={isProductSelected ? "selected" : undefined}

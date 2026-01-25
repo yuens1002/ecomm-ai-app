@@ -1,8 +1,8 @@
 # Context Menu Infrastructure - Implementation Plan
 
-**Branch:** `unify-menu-builder`
-**Target Version:** v0.68.0 (achieved)
-**Status:** Phase 2 Complete, Phase 3 In Progress
+**Branch:** `feat/context-menu` → merged to `unify-menu-builder`
+**Target Version:** v0.71.0
+**Status:** Phase 3 Complete, Phase 4 Pending
 
 ---
 
@@ -24,12 +24,14 @@ Add right-click context menus to table views for mobile DnD operations and quick
 
 ## Actions by View & Entity
 
+**Action Order:** manage-* → clone → remove → visibility → move-* → delete
+
 ### Label
 
 | View | Actions |
 |------|---------|
-| **Menu view** | Clone, Remove*, Delete, Move Up, Move Down |
-| **All-Labels view** | Clone, Visibility (switch), Delete, Move Up, Move Down |
+| **Menu view** | Clone, Remove*, Move Up, Move Down, Delete |
+| **All-Labels view** | Categories →, Clone, Visibility, Move Up, Move Down, Delete |
 
 *Remove in menu view = `isVisible: false` (removes from menu)
 
@@ -37,15 +39,20 @@ Add right-click context menus to table views for mobile DnD operations and quick
 
 | View | Actions |
 |------|---------|
-| **Menu view** | Clone, Visibility, Delete, Move Up, Move Down, Move to → |
-| **Label view** | Clone, Remove, Visibility, Delete, Move Up, Move Down, Move to → |
-| **All-Categories view** | Clone, Remove, Visibility, Delete, Move Up, Move Down, Move to → |
+| **Menu view** | Clone, Visibility, Move Up, Move Down, Move To → |
+| **Label view** | Clone, Remove, Visibility, Move Up, Move Down, Move To → |
+| **All-Categories view** | Labels →, Clone, Visibility, Delete |
+
+*Note: Category in Menu/Label views has no Delete (prevents accidental deletion)*
+*Note: All-Categories has no Remove/Move (many-to-many with labels, table sorting)*
 
 ### Product
 
 | View | Actions |
 |------|---------|
-| **Category view** | Visibility, Remove, Move Up, Move Down, Move to → |
+| **Category view** | Categories →, Remove, Move Up, Move Down |
+
+*Note: Products have no Move To, Visibility, Clone, or Delete in context menu*
 
 ---
 
@@ -147,18 +154,18 @@ When multiple items selected:
 - [x] Disabled states work
 - [x] Switch toggles visibility
 
-### Phase 3: Table View Integration 🚧 IN PROGRESS
+### Phase 3: Table View Integration ✅ COMPLETE
 - [x] Add to `AllLabelsTableView`
-- [ ] Add to `AllCategoriesTableView`
-- [ ] Add to `MenuTableView`
-- [ ] Add to `LabelTableView`
-- [ ] Add to `CategoryTableView`
+- [x] Add to `AllCategoriesTableView`
+- [x] Add to `MenuTableView`
+- [x] Add to `LabelTableView`
+- [x] Add to `CategoryTableView`
 
 **Validation:**
-- [ ] Context menu works in all views
-- [ ] Actions execute correctly
-- [ ] Undo/redo integration works
-- [ ] Toast notifications show
+- [x] Context menu works in all views
+- [x] Actions execute correctly
+- [x] Undo/redo integration works
+- [x] Toast notifications show
 
 ### Phase 4: Polish ⏳ PENDING
 - [x] Mobile long-press support (shadcn handles this)
@@ -206,10 +213,13 @@ The `ViewEntityKey` pattern (`${ViewType}:${SelectedEntityKind}`) is **correct a
 
 ```typescript
 const CONTEXT_MENU_CONFIG: Record<ViewEntityKey, ContextMenuActionId[]> = {
-  "menu:label": ["clone", "remove", "delete", "move-up", "move-down"],
-  "all-labels:label": ["clone", "visibility", "manage-categories", "delete", "move-up", "move-down"],
-  "label:category": ["clone", "remove", "visibility", "delete", "move-up", "move-down", "move-to"],
-  // ...
+  // Action order: manage-* → clone → remove → visibility → move-* → delete
+  "menu:label": ["clone", "remove", "move-up", "move-down", "delete"],
+  "all-labels:label": ["manage-categories", "clone", "visibility", "move-up", "move-down", "delete"],
+  "menu:category": ["clone", "visibility", "move-up", "move-down", "move-to"],
+  "label:category": ["clone", "remove", "visibility", "move-up", "move-down", "move-to"],
+  "all-categories:category": ["manage-labels", "clone", "visibility", "delete"],
+  "category:product": ["manage-categories", "remove", "move-up", "move-down"],
 };
 ```
 
@@ -306,7 +316,8 @@ Actions define whether they support bulk operations. Non-bulk actions are **hidd
 const CONTEXT_MENU_ACTIONS: Record<ContextMenuActionId, ContextMenuAction> = {
   clone: { id: "clone", label: "Clone", icon: Copy, supportsBulk: true },
   "move-up": { id: "move-up", label: "Move Up", icon: ArrowUp, supportsBulk: false },
-  "manage-categories": { id: "manage-categories", label: "Categories", icon: ListChecks, supportsBulk: false },
+  "manage-categories": { id: "manage-categories", label: "Categories", icon: FileSpreadsheet, supportsBulk: false },
+  "manage-labels": { id: "manage-labels", label: "Labels", icon: Tags, supportsBulk: false },
   // ...
 };
 ```
@@ -340,18 +351,36 @@ const renderLabel = (label: string) => {
 
 ---
 
-### Categories Submenu (for Labels)
+### Relationship Management Submenus
 
-Two sections: "Added" and "Available", using shared CheckboxListContent component.
+Both `manage-categories` and `manage-labels` actions show submenus with:
+- **Search bar** at top (sticky, filters results)
+- **Added** section: items currently attached (checked)
+- **Available** section: items not yet attached (unchecked)
 
-**Sectioning logic:**
+**Icons:**
+- `manage-categories`: `FileSpreadsheet` (matches nav icon)
+- `manage-labels`: `Tags`
+
+**Search state management:**
 ```typescript
-const addedCategories = categoryTargets
-  .filter((c) => attachedCategoryIds.includes(c.id))
-  .sort((a, b) => a.name.localeCompare(b.name));
+// Search state resets when menu closes
+const [categorySearch, setCategorySearch] = React.useState("");
+const handleOpenChange = React.useCallback((open: boolean) => {
+  if (!open) setCategorySearch("");
+  onOpenChange?.(open);
+}, [onOpenChange]);
+```
 
-const availableCategories = categoryTargets
-  .filter((c) => !attachedCategoryIds.includes(c.id))
+**Sectioning with search filter:**
+```typescript
+const searchLower = categorySearch.toLowerCase();
+const filteredCategories = categorySearch
+  ? categoryTargets.filter((c) => c.name.toLowerCase().includes(searchLower))
+  : categoryTargets;
+
+const addedCategories = filteredCategories
+  .filter((c) => attachedCategoryIds.includes(c.id))
   .sort((a, b) => a.name.localeCompare(b.name));
 ```
 
@@ -359,17 +388,22 @@ const availableCategories = categoryTargets
 ```tsx
 <ContextMenuSub>
   <ContextMenuSubTrigger className="gap-2">
-    <ListChecks className="size-4" />
+    <FileSpreadsheet className="size-4" />
     Categories
   </ContextMenuSubTrigger>
   <ContextMenuSubContent className="w-56 p-0">
     <CheckboxListContent
       variant="context-menu"
+      searchable
+      searchPlaceholder="Search categories..."
+      searchValue={categorySearch}
+      onSearchChange={setCategorySearch}
       sections={[
         { label: "Added", items: addedCategories.map(...) },
         { label: "Available", items: availableCategories.map(...) },
       ]}
       onItemToggle={(categoryId, checked) => onCategoryToggle?.(categoryId, checked)}
+      emptyMessage="No categories found"
     />
   </ContextMenuSubContent>
 </ContextMenuSub>
@@ -503,8 +537,10 @@ Each table view must provide these props to RowContextMenu:
 | `isMixedSelection` | `boolean` | Whether selection has mixed types |
 | `moveToTargets?` | `MoveTarget[]` | Targets for Move To submenu |
 | `currentParentId?` | `string` | Exclude from move targets |
-| `categoryTargets?` | `CategoryTarget[]` | For manage-categories (labels) |
-| `attachedCategoryIds?` | `string[]` | Current categories (labels) |
+| `categoryTargets?` | `CategoryTarget[]` | For manage-categories (labels, products) |
+| `attachedCategoryIds?` | `string[]` | Current categories (labels, products) |
+| `labelTargets?` | `LabelTarget[]` | For manage-labels (categories) |
+| `attachedLabelIds?` | `string[]` | Current labels (categories) |
 | `onOpenChange` | `(open: boolean) => void` | For context row highlight |
 | `onClone?` | `() => void` | Callback |
 | `onVisibilityToggle?` | `(visible: boolean) => void` | Callback |
@@ -514,6 +550,7 @@ Each table view must provide these props to RowContextMenu:
 | `onMoveDown?` | `() => void` | Callback |
 | `onMoveTo?` | `(targetId: string) => void` | Callback |
 | `onCategoryToggle?` | `(catId: string, attached: boolean) => void` | Callback |
+| `onLabelToggle?` | `(labelId: string, attached: boolean) => void` | Callback |
 
 ---
 
@@ -521,11 +558,16 @@ Each table view must provide these props to RowContextMenu:
 
 | File | Changes |
 |------|---------|
-| `RowContextMenu.tsx` | Core component with all above patterns |
+| `RowContextMenu.tsx` | Core component with all patterns, search in submenus |
 | `TableRow.tsx` | Added `isContextRow` prop |
-| `AllLabelsTableView.tsx` | First integration with bulk mode |
-| `CheckboxListContent.tsx` | New shared component |
-| `DropdownContent.tsx` | Now wraps CheckboxListContent |
+| `AllLabelsTableView.tsx` | Integration with manage-categories submenu |
+| `AllCategoriesTableView.tsx` | Integration with manage-labels submenu |
+| `CategoryTableView.tsx` | Integration with manage-categories for products |
+| `MenuTableView.tsx` | Integration for labels and categories |
+| `LabelTableView.tsx` | Integration for categories |
+| `CheckboxListContent.tsx` | Shared component with search support |
+| `DropdownContent.tsx` | Wrapper for CheckboxListContent |
+| `action-bar/views.ts` | Removed "remove" from all-categories view |
 
 ---
 

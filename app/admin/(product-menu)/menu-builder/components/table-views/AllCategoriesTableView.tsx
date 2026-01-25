@@ -54,7 +54,7 @@ const ALL_CATEGORIES_HEADER_COLUMNS: TableHeaderColumn[] = [
 ];
 
 export function AllCategoriesTableView() {
-  const { builder, categories, labels, products, updateCategory, createNewCategory, deleteCategory, cloneCategory } =
+  const { builder, categories, labels, products, updateCategory, createNewCategory, deleteCategory, cloneCategory, attachCategory, detachCategory } =
     useMenuBuilder();
 
   // Context menu highlight state (separate from selection)
@@ -139,6 +139,51 @@ export function AllCategoriesTableView() {
   const getCategoryProductCountNumber = useCallback(
     (categoryId: string) => categoryProductCountById.get(categoryId) ?? 0,
     [categoryProductCountById]
+  );
+
+  // Map category ID -> array of label IDs that contain this category
+  const categoryLabelIdsById = useMemo(() => {
+    const map = new Map<string, string[]>();
+
+    for (const label of labels) {
+      for (const category of label.categories ?? []) {
+        const existing = map.get(category.id);
+        if (existing) {
+          existing.push(label.id);
+        } else {
+          map.set(category.id, [label.id]);
+        }
+      }
+    }
+
+    return map;
+  }, [labels]);
+
+  // Label targets for context menu (all visible labels)
+  const labelTargets = useMemo(
+    () =>
+      labels
+        .filter((l) => l.isVisible)
+        .map((l) => ({ id: l.id, name: l.name })),
+    [labels]
+  );
+
+  // Handler for toggling category attachment to a label
+  const handleLabelToggle = useCallback(
+    async (categoryId: string, labelId: string, shouldAttach: boolean) => {
+      if (shouldAttach) {
+        const result = await attachCategory(labelId, categoryId);
+        if (!result.ok) {
+          toast({ title: "Error", description: "Could not add to label", variant: "destructive" });
+        }
+      } else {
+        const result = await detachCategory(labelId, categoryId);
+        if (!result.ok) {
+          toast({ title: "Error", description: "Could not remove from label", variant: "destructive" });
+        }
+      }
+    },
+    [attachCategory, detachCategory, toast]
   );
 
   // Column definitions
@@ -338,10 +383,13 @@ export function AllCategoriesTableView() {
         selectedCount={actionableRoots.length}
         isInSelection={isCategorySelected}
         isMixedSelection={actionableRoots.length > 0 && !isSameKind}
+        labelTargets={labelTargets}
+        attachedLabelIds={categoryLabelIdsById.get(category.id) ?? []}
         onOpenChange={(open) => setContextRowId(open ? category.id : null)}
         onClone={() => handleContextClone(category.id)}
         onVisibilityToggle={(visible) => handleContextVisibilityToggle(category.id, visible)}
         onDelete={() => handleContextDelete(category.id)}
+        onLabelToggle={(labelId, shouldAttach) => handleLabelToggle(category.id, labelId, shouldAttach)}
       >
         <TableRow
           data-state={isCategorySelected ? "selected" : undefined}

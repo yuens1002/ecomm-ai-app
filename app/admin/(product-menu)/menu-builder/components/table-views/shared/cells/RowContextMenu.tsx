@@ -20,16 +20,19 @@ import { CheckboxListContent } from "@/app/admin/(product-menu)/menu-builder/com
 type MoveTarget = { id: string; name: string };
 // Type for category targets (for add/remove categories action)
 type CategoryTarget = { id: string; name: string };
+// Type for label targets (for add/remove labels action)
+type LabelTarget = { id: string; name: string };
 import {
   AlertTriangle,
   ArrowDown,
   ArrowUp,
   Copy,
+  CornerUpLeft,
   Eye,
+  FileSpreadsheet,
   FolderInput,
-  ListChecks,
+  Tags,
   Trash2,
-  X,
 } from "lucide-react";
 import * as React from "react";
 
@@ -45,7 +48,8 @@ type ContextMenuActionId =
   | "move-up"
   | "move-down"
   | "move-to"
-  | "manage-categories";
+  | "manage-categories"
+  | "manage-labels";
 
 type ContextMenuAction = {
   id: ContextMenuActionId;
@@ -79,7 +83,7 @@ const CONTEXT_MENU_ACTIONS: Record<ContextMenuActionId, ContextMenuAction> = {
   remove: {
     id: "remove",
     label: "Remove",
-    icon: X,
+    icon: CornerUpLeft,
     kbd: ACTION_BAR_ACTIONS.remove.kbd,
     supportsBulk: true,
   },
@@ -107,14 +111,20 @@ const CONTEXT_MENU_ACTIONS: Record<ContextMenuActionId, ContextMenuAction> = {
   },
   "move-to": {
     id: "move-to",
-    label: "Move to",
+    label: "Move To",
     icon: FolderInput,
     supportsBulk: false, // Single item only
   },
   "manage-categories": {
     id: "manage-categories",
     label: "Categories",
-    icon: ListChecks,
+    icon: FileSpreadsheet,
+    supportsBulk: false, // Single item only - submenu with multi-select
+  },
+  "manage-labels": {
+    id: "manage-labels",
+    label: "Labels",
+    icon: Tags,
     supportsBulk: false, // Single item only - submenu with multi-select
   },
 };
@@ -149,25 +159,27 @@ function formatKbd(kbd: string[] | undefined, isMac: boolean): string | undefine
 type ViewEntityKey = `${ViewType}:${SelectedEntityKind}`;
 
 const CONTEXT_MENU_CONFIG: Record<ViewEntityKey, ContextMenuActionId[]> = {
+  // Action bar order: manage-* → clone → remove → visibility → move-* → delete
+
   // Label in different views
-  "menu:label": ["clone", "remove", "delete", "move-up", "move-down"],
-  "all-labels:label": ["clone", "visibility", "manage-categories", "delete", "move-up", "move-down"],
+  "menu:label": ["clone", "remove", "move-up", "move-down", "delete"],
+  "all-labels:label": ["manage-categories", "clone", "visibility", "move-up", "move-down", "delete"],
   "label:label": [], // Labels don't appear in label view
   "category:label": [], // Labels don't appear in category view
   "all-categories:label": [], // Labels don't appear in all-categories view
 
-  // Category in different views
-  "menu:category": ["clone", "visibility", "delete", "move-up", "move-down", "move-to"],
+  // Category in different views (no delete in menu/label views)
+  "menu:category": ["clone", "visibility", "move-up", "move-down", "move-to"],
   "all-labels:category": [], // Categories don't appear in all-labels view
-  "label:category": ["clone", "remove", "visibility", "delete", "move-up", "move-down", "move-to"],
+  "label:category": ["clone", "remove", "visibility", "move-up", "move-down", "move-to"],
   "category:category": [], // Categories don't appear in category view
-  "all-categories:category": ["clone", "visibility", "delete"], // No move/remove - uses table sorting, many-to-many labels
+  "all-categories:category": ["manage-labels", "clone", "visibility", "delete"],
 
-  // Product in different views
+  // Product in different views (no move-to, no delete)
   "menu:product": [], // Products don't appear in menu view
   "all-labels:product": [], // Products don't appear in all-labels view
   "label:product": [], // Products don't appear in label view
-  "category:product": ["visibility", "remove", "move-up", "move-down", "move-to"],
+  "category:product": ["manage-categories", "remove", "move-up", "move-down"],
   "all-categories:product": [], // Products don't appear in all-categories view
 };
 
@@ -209,6 +221,9 @@ export type RowContextMenuProps = {
   // Category management (for labels)
   categoryTargets?: CategoryTarget[];
   attachedCategoryIds?: string[];
+  // Label management (for categories)
+  labelTargets?: LabelTarget[];
+  attachedLabelIds?: string[];
   // Context menu state callback (for highlighting the row)
   onOpenChange?: (open: boolean) => void;
   // Callbacks
@@ -220,6 +235,7 @@ export type RowContextMenuProps = {
   onMoveDown?: () => void;
   onMoveTo?: (targetId: string) => void;
   onCategoryToggle?: (categoryId: string, isAttached: boolean) => void;
+  onLabelToggle?: (labelId: string, isAttached: boolean) => void;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -242,6 +258,8 @@ export function RowContextMenu({
   currentParentId,
   categoryTargets = [],
   attachedCategoryIds = [],
+  labelTargets = [],
+  attachedLabelIds = [],
   onOpenChange,
   onClone,
   onVisibilityToggle,
@@ -251,8 +269,25 @@ export function RowContextMenu({
   onMoveDown,
   onMoveTo,
   onCategoryToggle,
+  onLabelToggle,
 }: RowContextMenuProps) {
   const isMac = useIsMac();
+
+  // Search state for manage-categories and manage-labels submenus
+  const [categorySearch, setCategorySearch] = React.useState("");
+  const [labelSearch, setLabelSearch] = React.useState("");
+
+  // Reset search when menu closes
+  const handleOpenChange = React.useCallback(
+    (open: boolean) => {
+      if (!open) {
+        setCategorySearch("");
+        setLabelSearch("");
+      }
+      onOpenChange?.(open);
+    },
+    [onOpenChange]
+  );
 
   // Get actions for this view + entity combination
   const key: ViewEntityKey = `${viewType}:${entityKind}`;
@@ -281,7 +316,7 @@ export function RowContextMenu({
 
   // Entity label for header
   const entityLabel = entityKind === "label" ? "label" : entityKind === "category" ? "category" : "product";
-  const entityLabelPlural = entityLabel + "s";
+  const entityLabelPlural = entityKind === "category" ? "categories" : entityLabel + "s";
 
   // Helper to render label with optional count
   const renderLabel = (label: string) => {
@@ -377,7 +412,7 @@ export function RowContextMenu({
           </ContextMenuItem>
         );
 
-      case "move-to":
+      case "move-to": {
         if (filteredMoveTargets.length === 0) {
           return (
             <ContextMenuItem key={actionId} disabled>
@@ -387,13 +422,20 @@ export function RowContextMenu({
           );
         }
 
+        // Header based on entity type: categories move to Labels, products move to Categories
+        const moveToHeader = entityKind === "category" ? "Labels" : "Categories";
+
         return (
           <ContextMenuSub key={actionId}>
             <ContextMenuSubTrigger className="gap-2">
               <Icon className="size-4" />
               {action.label}
             </ContextMenuSubTrigger>
-            <ContextMenuSubContent>
+            <ContextMenuSubContent className="max-h-64 overflow-y-auto">
+              <ContextMenuLabel className="text-xs font-normal text-muted-foreground">
+                {moveToHeader}
+              </ContextMenuLabel>
+              <ContextMenuSeparator />
               {filteredMoveTargets.map((target) => (
                 <ContextMenuItem
                   key={target.id}
@@ -405,6 +447,7 @@ export function RowContextMenu({
             </ContextMenuSubContent>
           </ContextMenuSub>
         );
+      }
 
       case "manage-categories": {
         if (categoryTargets.length === 0) {
@@ -416,11 +459,16 @@ export function RowContextMenu({
           );
         }
 
-        // Section categories into Added and Available
-        const addedCategories = categoryTargets
+        // Filter by search, then section into Added and Available
+        const searchLower = categorySearch.toLowerCase();
+        const filteredCategories = categorySearch
+          ? categoryTargets.filter((c) => c.name.toLowerCase().includes(searchLower))
+          : categoryTargets;
+
+        const addedCategories = filteredCategories
           .filter((c) => attachedCategoryIds.includes(c.id))
           .sort((a, b) => a.name.localeCompare(b.name));
-        const availableCategories = categoryTargets
+        const availableCategories = filteredCategories
           .filter((c) => !attachedCategoryIds.includes(c.id))
           .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -433,6 +481,10 @@ export function RowContextMenu({
             <ContextMenuSubContent className="w-56 p-0">
               <CheckboxListContent
                 variant="context-menu"
+                searchable
+                searchPlaceholder="Search categories..."
+                searchValue={categorySearch}
+                onSearchChange={setCategorySearch}
                 sections={[
                   {
                     label: "Added",
@@ -454,7 +506,71 @@ export function RowContextMenu({
                 onItemToggle={(categoryId, checked) => {
                   onCategoryToggle?.(categoryId, checked);
                 }}
-                emptyMessage="No categories"
+                emptyMessage="No categories found"
+              />
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        );
+      }
+
+      case "manage-labels": {
+        if (labelTargets.length === 0) {
+          return (
+            <ContextMenuItem key={actionId} disabled>
+              <Icon className="size-4" />
+              {action.label}
+            </ContextMenuItem>
+          );
+        }
+
+        // Filter by search, then section into Added and Available
+        const labelSearchLower = labelSearch.toLowerCase();
+        const filteredLabels = labelSearch
+          ? labelTargets.filter((l) => l.name.toLowerCase().includes(labelSearchLower))
+          : labelTargets;
+
+        const addedLabels = filteredLabels
+          .filter((l) => attachedLabelIds.includes(l.id))
+          .sort((a, b) => a.name.localeCompare(b.name));
+        const availableLabels = filteredLabels
+          .filter((l) => !attachedLabelIds.includes(l.id))
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        return (
+          <ContextMenuSub key={actionId}>
+            <ContextMenuSubTrigger className="gap-2">
+              <Icon className="size-4" />
+              {action.label}
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-56 p-0">
+              <CheckboxListContent
+                variant="context-menu"
+                searchable
+                searchPlaceholder="Search labels..."
+                searchValue={labelSearch}
+                onSearchChange={setLabelSearch}
+                sections={[
+                  {
+                    label: "Added",
+                    items: addedLabels.map((l) => ({
+                      id: l.id,
+                      name: l.name,
+                      checked: true,
+                    })),
+                  },
+                  {
+                    label: "Available",
+                    items: availableLabels.map((l) => ({
+                      id: l.id,
+                      name: l.name,
+                      checked: false,
+                    })),
+                  },
+                ]}
+                onItemToggle={(labelId, checked) => {
+                  onLabelToggle?.(labelId, checked);
+                }}
+                emptyMessage="No labels found"
               />
             </ContextMenuSubContent>
           </ContextMenuSub>
@@ -478,7 +594,7 @@ export function RowContextMenu({
   // Mixed selection: show disabled menu
   if (isMixedSelection && isInSelection) {
     return (
-      <ContextMenu onOpenChange={onOpenChange}>
+      <ContextMenu onOpenChange={handleOpenChange}>
         <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
         <ContextMenuContent className="w-56">
           <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
@@ -506,7 +622,7 @@ export function RowContextMenu({
   }
 
   return (
-    <ContextMenu onOpenChange={onOpenChange}>
+    <ContextMenu onOpenChange={handleOpenChange}>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent className="w-56">
         {/* Bulk mode header */}
