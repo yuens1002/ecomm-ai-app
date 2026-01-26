@@ -1,0 +1,192 @@
+"use client";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Check, CircleHelp } from "lucide-react";
+import {
+  DynamicIcon,
+  getAvailableIcons,
+  COMMON_PAGE_ICONS,
+} from "@/components/app-components/DynamicIcon";
+import { cn } from "@/lib/utils";
+import * as React from "react";
+import { useMemo, useState } from "react";
+
+type InlineIconCellProps = {
+  id: string;
+  icon: string | null;
+  onSave: (id: string, icon: string | null) => Promise<void>;
+  isRowHovered?: boolean;
+};
+
+/**
+ * InlineIconCell - Hover-to-edit icon cell for table views
+ *
+ * Responsive behavior:
+ * - xs-sm: Trigger always visible (touch-friendly)
+ * - md+: Trigger visible on row hover only
+ *
+ * When no icon: shows placeholder, trigger is [?] button
+ * When has icon: shows icon, icon becomes trigger button on hover
+ */
+export function InlineIconCell({ id, icon, onSave, isRowHovered }: InlineIconCellProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [iconSearch, setIconSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const formatIconName = (name: string) => {
+    return name.replace(/([A-Z])/g, " $1").trim();
+  };
+
+  const allIcons = useMemo(() => getAvailableIcons(), []);
+  const filteredIcons = useMemo(() => {
+    if (!iconSearch) return COMMON_PAGE_ICONS;
+    const search = iconSearch.toLowerCase();
+    return allIcons.filter(
+      (iconName) =>
+        iconName.toLowerCase().includes(search) ||
+        formatIconName(iconName).toLowerCase().includes(search)
+    );
+  }, [iconSearch, allIcons]);
+
+  const handleSelect = async (selectedIcon: string | null) => {
+    setIsLoading(true);
+    try {
+      await onSave(id, selectedIcon);
+    } finally {
+      setIsLoading(false);
+      setIconSearch("");
+      setIsOpen(false);
+    }
+  };
+
+  // Determine visibility of trigger based on breakpoint and hover state
+  // xs-sm: always visible; md+: visible on hover or when popover is open
+  const showTrigger = isRowHovered || isOpen;
+
+  return (
+    <div className="inline-flex items-center justify-center" data-row-click-ignore>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          {icon ? (
+            // Has icon: show icon, becomes button on hover (md+) or always (xs-sm)
+            <button
+              type="button"
+              disabled={isLoading}
+              className={cn(
+                "relative flex items-center justify-center rounded-md p-1 transition-opacity hover:bg-accent outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                // Mobile touch target (44px via -inset-3 = 24px + 20px)
+                "before:absolute before:-inset-2.5 before:md:hidden",
+                // xs-sm: always show as interactive
+                "opacity-100",
+                // md+: show as static icon unless hovered/open
+                showTrigger
+                  ? "md:opacity-100 md:cursor-pointer"
+                  : "md:cursor-default"
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (showTrigger || window.innerWidth < 768) {
+                  setIsOpen(true);
+                }
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <DynamicIcon name={icon} size={16} />
+            </button>
+          ) : (
+            // No icon: show [?] trigger (always tabbable, visually hidden on md+ unless hovered/focused)
+            <button
+              type="button"
+              disabled={isLoading}
+              className={cn(
+                "relative flex items-center justify-center rounded-md p-1 hover:bg-accent outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                // Mobile touch target (44px via -inset-2.5 = 24px + 20px)
+                "before:absolute before:-inset-2.5 before:md:hidden",
+                // xs-sm: always visible
+                "opacity-100",
+                // md+: visually hidden unless hovered/open/focused (but still tabbable)
+                showTrigger
+                  ? "md:opacity-100"
+                  : "md:opacity-0 md:focus-visible:opacity-100"
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen(true);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              aria-label="Select icon"
+            >
+              <CircleHelp className="w-4 h-4 text-muted-foreground" />
+            </button>
+          )}
+        </PopoverTrigger>
+        <PopoverContent
+          className="p-0 w-64"
+          align="start"
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => {
+            // Stop the click from propagating to underlying elements (like table rows)
+            e.detail.originalEvent.stopPropagation();
+          }}
+        >
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Search icons..."
+              value={iconSearch}
+              onValueChange={setIconSearch}
+            />
+            <CommandEmpty>No icon found.</CommandEmpty>
+            <CommandList>
+              <CommandGroup>
+                <CommandItem
+                  value="none"
+                  onSelect={() => handleSelect(null)}
+                  disabled={isLoading}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      !icon ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  None
+                </CommandItem>
+                {filteredIcons.slice(0, 50).map((iconName: string) => (
+                  <CommandItem
+                    key={iconName}
+                    value={iconName}
+                    onSelect={() => handleSelect(iconName)}
+                    disabled={isLoading}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        icon === iconName ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <DynamicIcon name={iconName} size={16} className="mr-2" />
+                    {formatIconName(iconName)}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}

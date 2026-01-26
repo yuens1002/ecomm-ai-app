@@ -1,0 +1,170 @@
+import type { MenuLabel, MenuProduct } from "../../../types/menu";
+import { createKey } from "../../../types/identity-registry";
+
+/**
+ * Entity kinds in the menu hierarchy.
+ * Discriminates the type of entity a row represents.
+ */
+export type MenuRowKind = "label" | "category" | "product";
+
+/**
+ * Base properties for all flattened menu rows.
+ */
+type FlatMenuRowBase = {
+  /** Unique row ID (same as entity ID) */
+  id: string;
+  /** Display name for the row */
+  name: string;
+  /** Entity kind discriminator (label, category, or product) */
+  kind: MenuRowKind;
+  /** Whether the row is visible in the menu */
+  isVisible: boolean;
+  /** Whether this row can be expanded (has children) */
+  isExpandable: boolean;
+  /** Whether this row is currently expanded */
+  isExpanded: boolean;
+  /** Parent ID for DnD constraints (null for labels) */
+  parentId: string | null;
+};
+
+/**
+ * Flattened label row with label-specific properties.
+ */
+export type FlatLabelRow = FlatMenuRowBase & {
+  kind: "label";
+  parentId: null;
+  /** Original label data */
+  data: MenuLabel;
+  /** Count of categories in this label */
+  categoryCount: number;
+  /** Total count of products across all categories in this label */
+  productCount: number;
+};
+
+/**
+ * Flattened category row with category-specific properties.
+ */
+export type FlatCategoryRow = FlatMenuRowBase & {
+  kind: "category";
+  /** Parent label ID */
+  parentId: string;
+  /** Order within parent label */
+  orderInLabel: number;
+  /** Original category data (subset) */
+  data: {
+    id: string;
+    name: string;
+    slug: string;
+    order: number;
+    attachedAt: Date;
+    isVisible: boolean;
+  };
+  /** Count of products in this category */
+  productCount: number;
+};
+
+/**
+ * Flattened product row with product-specific properties.
+ */
+export type FlatProductRow = FlatMenuRowBase & {
+  kind: "product";
+  /** Parent category ID */
+  parentId: string;
+  /** Grandparent label ID (for ancestry tracking) */
+  grandParentId: string;
+  /** Order within parent category */
+  orderInCategory: number;
+  /** Original product data */
+  data: MenuProduct;
+};
+
+/**
+ * Discriminated union for all row types in the menu table.
+ * Use `row.kind` to narrow the type.
+ */
+export type FlatMenuRow = FlatLabelRow | FlatCategoryRow | FlatProductRow;
+
+/**
+ * Type guard for label rows.
+ */
+export function isLabelRow(row: FlatMenuRow): row is FlatLabelRow {
+  return row.kind === "label";
+}
+
+/**
+ * Type guard for category rows.
+ */
+export function isCategoryRow(row: FlatMenuRow): row is FlatCategoryRow {
+  return row.kind === "category";
+}
+
+/**
+ * Type guard for product rows.
+ */
+export function isProductRow(row: FlatMenuRow): row is FlatProductRow {
+  return row.kind === "product";
+}
+
+/**
+ * Row metadata for identity, selection, and DnD operations.
+ * Centralizes all identity-related logic to avoid repeated type checking.
+ */
+export type RowMeta = {
+  /** Selection/identity key (e.g., "label:id" or "category:parentId:entityId") */
+  key: string;
+  /** Hierarchy depth (0 = label, 1 = category, 2 = product) */
+  depth: number;
+  /** Entity kind for selection model */
+  entityKind: "label" | "category" | "product";
+  /** Ghost ID for multi-drag operations */
+  ghostId: string;
+  /** React key for list rendering */
+  reactKey: string;
+};
+
+/** Ghost ID constants derived from depth */
+const GHOST_IDS_BY_DEPTH: Record<number, string> = {
+  0: "menu-ghost-depth-0",
+  1: "menu-ghost-depth-1",
+  2: "menu-ghost-depth-2",
+};
+
+/**
+ * Get all identity-related metadata for a row.
+ * Use this instead of repeated isLabelRow/isCategoryRow checks.
+ */
+export function getRowMeta(row: FlatMenuRow): RowMeta {
+  if (isLabelRow(row)) {
+    return {
+      key: createKey("label", row.id),
+      depth: 0,
+      entityKind: "label",
+      ghostId: GHOST_IDS_BY_DEPTH[0],
+      reactKey: row.id,
+    };
+  }
+  if (isCategoryRow(row)) {
+    return {
+      key: createKey("category", row.parentId, row.id),
+      depth: 1,
+      entityKind: "category",
+      ghostId: GHOST_IDS_BY_DEPTH[1],
+      reactKey: `${row.parentId}-${row.id}`,
+    };
+  }
+  // Product row
+  return {
+    key: createKey("product", row.id),
+    depth: 2,
+    entityKind: "product",
+    ghostId: GHOST_IDS_BY_DEPTH[2],
+    reactKey: `${row.grandParentId}-${row.parentId}-${row.id}`,
+  };
+}
+
+/**
+ * Get ghost ID for a given depth level.
+ */
+export function getGhostIdForDepth(depth: number): string {
+  return GHOST_IDS_BY_DEPTH[depth] ?? `menu-ghost-depth-${depth}`;
+}

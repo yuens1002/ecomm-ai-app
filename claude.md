@@ -8,7 +8,7 @@
 
 **Name:** Artisan Roast
 **Type:** Full-stack E-commerce Coffee Store with AI Integration
-**Version:** 0.59.0
+**Version:** 0.71.4
 **Live Demo:** https://ecomm-ai-app.vercel.app/
 
 ### Tech Stack
@@ -145,26 +145,107 @@ npm run precheck    # TypeScript + ESLint
 ### 5. Git/Commit Agent
 **When to use:** Creating commits, PRs, managing git workflow
 
-**Commit conventions:**
+**Full procedure:** See [.github/COMMIT_PROCEDURE.md](.github/COMMIT_PROCEDURE.md)
+
+**Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`
+
+#### Feature Branch Commits (no versioning)
+
+**Commit format:**
 ```
-<type>(<scope>): <brief description>
+<type>: <brief description>
 ```
 
-Single-line commit messages only. No multi-line bodies or co-authoring mentions.
+**Rules:**
+- Single-line commit messages only (under 72 characters)
+- **No multi-line bodies or co-authoring mentions**
+- Use imperative mood ("add feature" not "added feature")
+- **NO version numbers** - versioning happens on merge to integration branch
 
-**Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+**Example:** `feat: add config-driven table views`
+
+#### Integration Branch Commits (with versioning)
+
+Use these trigger phrases **only on integration branches** (`unify-menu-builder`, `main`):
+
+**Trigger phrases:**
+- `"commit - minor bump"` - For new features (0.x.0)
+- `"commit - patch bump"` - For fixes/small changes (0.0.x)
+
+**Commit format (integration branch only):**
+```
+<type>: <brief description> (v0.x.y)
+```
+
+**Commit procedure (auto-executed on trigger):**
+1. Stage changes: `git add -A`
+2. Check highest version: `git tag -l "v0.*" | sort -V | tail -1`
+3. Update CHANGELOG.md with version, date, and changes
+4. Update package.json version to match
+5. Commit with format above
+6. Create annotated tag: `git tag -a v0.x.y -m "<summary>"`
+7. Push commit and tag: `git push && git push origin v0.x.y`
+
+#### Pre-commit & Other
 
 **Pre-commit checks:**
 - Husky runs automatically
 - Must pass: TypeScript compilation, ESLint
 
+**Skip TypeScript check for docs-only changes:**
+When committing only documentation files (`.md`, `.txt`), skip `npm run precheck` and use `git commit --no-verify` to avoid unnecessary TypeScript compilation. The CI will still run full checks on PR.
+
+```bash
+# Docs-only commit (skip precheck)
+git add docs/
+git commit --no-verify -m "docs: update roadmap"
+```
+
 **PR process:**
 1. Create feature branch from `main`
 2. Make changes + tests
 3. Run `npm run precheck` locally
-4. Commit with conventional format
+4. Commit with conventional format (no version)
 5. Push and create PR
 6. Wait for CI checks (GitHub Actions)
+7. On merge: version, changelog, tag on integration branch
+
+### Parallel Work & Version Management
+
+When multiple teammates work on separate branches concurrently, version conflicts can occur on merge. Follow these guidelines:
+
+**During feature branch development:**
+- **DO NOT** include version numbers in commit messages (e.g., avoid `feat: add feature (v0.72.0)`)
+- **DO NOT** update `package.json` version or `CHANGELOG.md`
+- **DO NOT** create git tags
+- Use descriptive commit messages without versions: `feat: add config-driven table views`
+
+**On merge to integration branch (`unify-menu-builder` or `main`):**
+1. Merge the feature branch (resolve conflicts if any)
+2. Check current highest version: `git tag -l "v0.*" | sort -V | tail -1`
+3. Determine next version (patch/minor) based on changes
+4. Update `package.json` to next version
+5. Add `CHANGELOG.md` entry for the merged work
+6. Commit: `git commit -m "feat: <summary> (v0.x.y)"`
+7. Create tag: `git tag -a v0.x.y -m "<summary>"`
+8. Push both: `git push && git push origin v0.x.y`
+
+**Post-merge checklist:**
+```bash
+# Verify version alignment
+grep '"version"' package.json          # Check package.json version
+git tag -l "v0.*" | sort -V | tail -5  # Check recent tags
+git log --oneline -5                   # Verify commit has version
+```
+
+**If versions get out of sync:**
+1. Identify the highest tagged version
+2. Update `package.json` to next logical version
+3. Ensure `CHANGELOG.md` has entries for all tagged versions
+4. Create missing tags for untagged commits if needed:
+   ```bash
+   git tag -a v0.x.y <commit-hash> -m "description"
+   ```
 
 ---
 
@@ -491,9 +572,12 @@ When evaluating implementations:
 6. **Ask when unclear:** Better to clarify than assume
 7. **Commit conventions:** Follow conventional commits format
 8. **Safety first:** Use backup/restore scripts for database work
+9. **Identify refactor opportunities:** When implementing features, check for patterns that can be reused or deduplicated across the codebase; inform and suggest consolidation when applicable
+10. **Keep docs in sync:** Update documentation (especially `docs/menu-builder/`) to match architecture and actual implementation when changes are made
+11. **Skip precheck for docs-only:** When committing only `.md` or `.txt` files, use `git commit --no-verify` to skip unnecessary TypeScript compilation
 
 ---
 
-**Last Updated:** 2026-01-10
+**Last Updated:** 2026-01-26
 **Maintained By:** yuens1002
 **Claude Code Version:** 2.1.4

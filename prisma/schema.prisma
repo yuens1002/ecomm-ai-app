@@ -40,6 +40,7 @@ model CategoriesOnProducts {
   categoryId String
   isPrimary  Boolean  @default(false)
   order      Int      @default(0)
+  createdAt  DateTime @default(now())
   category   Category @relation(fields: [categoryId], references: [id])
   product    Product  @relation(fields: [productId], references: [id])
 
@@ -56,6 +57,7 @@ model Category {
   order               Int                     @default(0)
   showPurchaseOptions Boolean                 @default(true)
   isVisible           Boolean                 @default(true)
+  createdAt           DateTime                @default(now())
   products            CategoriesOnProducts[]
   labels              CategoryLabelCategory[]
 }
@@ -76,6 +78,7 @@ model CategoryLabelCategory {
   labelId    String
   categoryId String
   order      Int           @default(0)
+  createdAt  DateTime      @default(now())
   label      CategoryLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
   category   Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 

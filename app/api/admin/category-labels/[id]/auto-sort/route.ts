@@ -3,7 +3,7 @@ import { requireAdminApi } from "@/lib/admin";
 import {
   autoSortCategoriesInLabel,
   updateCategoryLabel,
-} from "@/app/admin/(product-menu)/data/labels";
+} from "@/app/admin/product-menu/data/labels";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {

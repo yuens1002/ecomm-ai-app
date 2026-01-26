@@ -22,7 +22,6 @@ import {
   Megaphone,
   Share2,
   Phone,
-  Tag,
 } from "lucide-react";
 import { useState } from "react";
 import { PageType } from "@prisma/client";
@@ -169,26 +168,10 @@ const staticNavSections: NavSection[] = [
         icon: ToyBrick,
         isChild: true,
       },
-    ],
-  },
-  {
-    title: "Product Menu",
-    items: [
       {
         title: "Menu Builder",
-        href: "/admin/menu-builder",
+        href: "/admin/product-menu",
         icon: SquareMenu,
-        hidden: true, // TODO: reveal on feature launch
-      },
-      {
-        title: "Product Categories",
-        href: "/admin/categories",
-        icon: Package,
-      },
-      {
-        title: "Category Labels",
-        href: "/admin/labels",
-        icon: Tag,
       },
     ],
   },

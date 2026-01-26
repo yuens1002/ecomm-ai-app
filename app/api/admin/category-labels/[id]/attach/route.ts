@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
-import { attachCategoryToLabel } from "@/app/admin/(product-menu)/data/labels";
+import { attachCategoryToLabel } from "@/app/admin/product-menu/data/labels";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {

@@ -1,14 +1,15 @@
-# Menu Builder - Implementation
+# Menu Builder - Implementation Guide
 
-**Scope:** Current “Option 1” foundation
+**Last Updated:** 2026-01-14
+**Scope:** Current foundation with 2/5 table views shipped
 
 - The action bar UI/behavior is driven by `ACTION_BAR_CONFIG`.
 - Per-view surface metadata is driven by `VIEW_CONFIGS`.
 - Table view components are chosen by `TableViewRenderer` via `tableViewId`.
 
-If you need the “forest view” (diagrams + view matrix), start with:
+If you need the "forest view" (diagrams + view matrix), start with:
 
-- `docs/menu-builder/menu-builder-architecture-map.md`
+- [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ---
 
@@ -97,6 +98,77 @@ Implementation: `app/admin/(product-menu)/hooks/useMenuBuilderState.ts`
 3. Create the table component under `app/admin/(product-menu)/menu-builder/components/table-views/`.
 4. Register the new `tableViewId` in `TableViewRenderer.tsx`.
 
+### Reusable Hooks for Table Views
+
+When creating a new table view, use these hooks to avoid boilerplate:
+
+#### `useDragReorder` - Row drag-and-drop reordering
+```tsx
+const { getDragHandlers, getDragClasses } = useDragReorder({
+  items: labels,
+  onReorder: async (ids) => { await reorderLabels(ids); },
+});
+
+// In row render:
+const { isDragging, isDragOver } = getDragClasses(item.id);
+const dragHandlers = getDragHandlers(item.id);
+
+<TableRow
+  draggable
+  isDragging={isDragging}
+  onDragStart={dragHandlers.onDragStart}
+  onDragOver={dragHandlers.onDragOver}
+  onDragLeave={dragHandlers.onDragLeave}
+  onDrop={dragHandlers.onDrop}
+  onDragEnd={dragHandlers.onDragEnd}
+  className={cn(isDragOver && "border-t-2 border-t-primary")}
+>
+```
+
+#### `useInlineEditHandlers` - Name/icon/visibility with undo
+```tsx
+const { handleNameSave, handleIconSave, handleVisibilitySave } = useInlineEditHandlers({
+  builder,
+  entityKind: "label",
+  getItem: (id) => labels.find((l) => l.id === id),
+  updateItem: updateLabel,
+  onSaveComplete: clearEditing,
+});
+
+// Use in cell components:
+<InlineNameEditor onSave={handleNameSave} ... />
+<InlineIconCell onSave={handleIconSave} ... />
+<VisibilityCell onToggle={handleVisibilitySave} ... />
+```
+
+#### `useContextRowUiState` - Editing and pinned state
+```tsx
+const { editingId, pinnedId, clearEditing, clearPinnedIfMatches } = useContextRowUiState(
+  builder,
+  "label",
+  { autoClearPinned: true }  // Auto-clear pinned when editing ends
+);
+```
+
+#### `usePinnedRow` - Pinned row + default sorting
+```tsx
+const { pinnedRow, rowsForTable } = usePinnedRow({
+  rows: labels,
+  pinnedId,
+  isSortingActive: false,  // Set true if using column sorting
+  // Omit defaultSort to use built-in order-based sort
+  // Or pass null to disable sorting entirely
+});
+```
+
+#### `TableRow` - Built-in click/double-click handling
+```tsx
+<TableRow
+  onRowClick={() => onToggleSelection(item.id)}     // 200ms delay
+  onRowDoubleClick={() => navigateToDetail(item.id)} // Cancels pending click
+>
+```
+
 ---
 
 ## How To Add An Action
@@ -121,13 +193,22 @@ app/admin/(product-menu)/
       table-views/
         TableViewRenderer.tsx
         PlaceholderTableView.tsx
-        AllCategoriesTableView.tsx
+        AllCategoriesTableView.tsx   # Column sorting example
+        AllLabelsTableView.tsx       # Drag-and-drop example
+        shared/
+          cells/                     # CheckboxCell, InlineNameEditor, InlineIconCell, VisibilityCell
+          table/                     # TableRow, TableCell, TableHeader, columnWidthPresets
   hooks/
-    useMenuBuilderState.ts
-    useProductMenuData.ts
-    useProductMenuMutations.ts
+    useMenuBuilderState.ts           # URL + selection state
+    useProductMenuData.ts            # SWR data fetching
+    useProductMenuMutations.ts       # CRUD wrappers
+    useContextSelectionModel.ts      # Multi-select state
+    useContextRowUiState.ts          # Editing/pinned row state
+    usePinnedRow.ts                  # Pinned row + default sorting
+    useDragReorder.ts                # Row drag-and-drop reordering
+    useInlineEditHandlers.ts         # Name/icon/visibility handlers with undo
   constants/
-    action-bar-config.ts
+    action-bar/                      # Colocated action config
     view-configs.ts
     __tests__/action-bar-config.test.ts
   types/

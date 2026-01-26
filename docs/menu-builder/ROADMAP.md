@@ -1,26 +1,47 @@
 # Menu Builder - Development Roadmap
 
-**Last Updated:** 2026-01-13
-**Current Branch:** `main` (merged from `unify-menu-builder`)
-**Status:** Phase 1 Complete ✅ | Phase 2 In Progress 🚧
+**Last Updated:** 2026-01-26
+**Current Branch:** `unify-menu-builder`
+**Current Version:** v0.70.3
+**Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ | Phase 3 Complete ✅
 
 ---
 
 ## Project Vision
 
-Build a sophisticated admin interface for managing a 3-level product catalog hierarchy (Labels → Categories → Products) with a config-driven, zero-conditional architecture.
+Build a sophisticated admin interface for managing a 2-level menu hierarchy (Labels → Categories) with a config-driven, zero-conditional architecture. Products are managed at the Category level.
 
 ---
 
 ## Overall Progress
 
-```
+```(text)
 Foundation  ████████████████████████ 100% ✅
-Table Views ████░░░░░░░░░░░░░░░░░░░  20% 🚧
-Advanced    ░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️
+Table Views ████████████████████████ 100% ✅
+Advanced    ████████████████████████ 100% ✅
 ─────────────────────────────────────────
-Total       ████████░░░░░░░░░░░░░░░  40%
+Total       ████████████████████████ 100%
 ```
+
+### Recent Completions (v0.66.x - v0.70.x)
+- ✅ IdentityRegistry architecture (unified row identity management)
+- ✅ 2-level Menu View (Labels → Categories, products as count only)
+- ✅ Same-level DnD with auto-collapse/expand behaviors
+- ✅ Unified selection model with tri-state checkboxes
+- ✅ Single-click expand+select behavior
+- ✅ Duplicate label name validation with toast
+- ✅ Updated naming convention ("New Label2", "Name copy2")
+- ✅ Multi-select DnD with grouped entities ghost (v0.66.11-0.66.15)
+- ✅ Cross-boundary DnD with motion animations (v0.66.11)
+- ✅ Explicit selection model refactor (v0.66.16-0.66.19)
+- ✅ Consolidated DnD hooks architecture (v0.66.20)
+- ✅ Keyboard shortcuts with single-key Gmail/Slack style (v0.67.0)
+- ✅ Help button (ConciergeBell) on all views (v0.67.0)
+- ✅ Delete button with full undo/redo support (v0.67.0)
+- ✅ Context menus for all table views (v0.70.0)
+- ✅ Range selection with shift+click and long-press (v0.69.0)
+- ✅ 44x44px touch targets for WCAG compliance (v0.69.1)
+- ✅ Context menu handler hooks refactoring (v0.70.3)
 
 ---
 
@@ -29,6 +50,7 @@ Total       ████████░░░░░░░░░░░░░░�
 ### Phase 1: Foundation ✅ (Jan 3-13, 2026)
 
 #### 1.1 Architecture (Jan 3-8)
+
 - [x] Provider composition pattern (MenuBuilderProvider)
 - [x] URL-backed navigation (useMenuBuilderState)
 - [x] Config-driven action bar
@@ -36,31 +58,37 @@ Total       ████████░░░░░░░░░░░░░░�
 - [x] 67% reduction in action handler complexity
 
 **Key Commits:**
+
 - `0b2cc70` - Unified product-menu data access
 - `83e3ef6` - Shipped All Categories table view (v0.59.0)
 
 #### 1.2 Data Layer (Jan 8)
+
 - [x] Centralized Prisma repositories (`data/categories.ts`, `data/labels.ts`)
 - [x] DTO mapping with tests (ordering invariants guaranteed)
 - [x] Shared helpers for admin API routes
 - [x] 100% type safety (zero `any` types)
 
 #### 1.3 First Table View (Jan 7-10)
+
 - [x] AllCategoriesTableView (fully functional)
 - [x] Shared table primitives (CheckboxCell, InlineNameEditor, VisibilityCell)
 - [x] Inline editing with validation
 - [x] Bulk selection and actions
 
 #### 1.4 Action Bar Refactor (Jan 13)
+
 - [x] Colocated action definitions (10 files → 5 files)
 - [x] Explicit left/right layout in views.ts
 - [x] Structural snapshot tests for regression detection
 - [x] Inline overrides visible where used
 
 **Key Commit:**
+
 - `2a4745c` - Colocate action-bar config with explicit view layout (v0.61.0)
 
 #### 1.5 Testing & Documentation
+
 - [x] Jest tests (29 passing) for hooks, config, DTOs
 - [x] Structural snapshot for action bar layout
 - [x] Architecture documentation consolidated
@@ -68,277 +96,424 @@ Total       ████████░░░░░░░░░░░░░░�
 
 ---
 
-## Phase 2: Table Views 🚧 IN PROGRESS
+## Phase 2: Table Views ✅ COMPLETE
 
 **Target:** Complete all 5 table views
 **Timeline:** 4-6 weeks
-**Current:** 1/5 views shipped (20%)
+**Current:** 5/5 views shipped (100%)
 
-### 2.1 All Labels Table View ⏸️ NOT STARTED
+### 2.1 All Labels Table View ✅ COMPLETE (Jan 14, 2026)
 
-**Complexity:** Low (reuse AllCategories pattern)
+**Complexity:** Low (reused AllCategories pattern)
 **Effort:** 1-2 days
 **Dependencies:** None
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] Create `AllLabelsTableView.tsx` component
-- [ ] Columns: Checkbox, Icon, Name, Categories (count), Visibility
-- [ ] Inline icon editing (IconPicker dialog)
-- [ ] Inline name editing (InlineNameEditor)
-- [ ] Bulk actions (delete, toggle visibility)
-- [ ] Selection state management
-- [ ] Register in TableViewRenderer
+- [x] Created `AllLabelsTableView.tsx` component
+- [x] Columns: Checkbox, Icon (center 48px), Label Name, Categories, Visibility, Drag Handle
+- [x] Inline icon editing via `InlineIconCell` (IconPicker dialog)
+- [x] Inline name editing via `InlineNameEditor`
+- [x] Visibility toggle via `VisibilityCell` (switch variant)
+- [x] Drag-and-drop row reordering (persists to DB)
+- [x] Selection state management
+- [x] Registered in TableViewRenderer
 
-**Files to Create:**
+**Table Behavior:**
+
+- **No column sorting** - Row order dictates DB label order via drag-drop
+- **Single-click** - Toggles row selection (200ms delay to distinguish from double-click)
+- **Double-click** - Navigates to label detail view
+- **Drag handle** - Always visible on mobile, hover-only on desktop
+
+**New Reusable Hooks Created:**
+
+| Hook                    | Purpose                                                                      |
+|-------------------------|------------------------------------------------------------------------------|
+| `useDragReorder`        | Drag-and-drop row reordering with `getDragHandlers()` and `getDragClasses()` |
+| `useInlineEditHandlers` | Name/icon/visibility save handlers with undo/redo                            |
+
+**Enhanced Existing Hooks:**
+
+| Hook                   | Enhancement                                                    |
+|------------------------|----------------------------------------------------------------|
+| `usePinnedRow`         | Built-in default sort by `order` field (descending)            |
+| `useContextRowUiState` | `autoClearPinned` option for automatic cleanup                 |
+
+**Enhanced Components:**
+
+| Component          | Enhancement                                                                    |
+|--------------------|--------------------------------------------------------------------------------|
+| `TableRow`         | Built-in click/double-click handling via `onRowClick`/`onRowDoubleClick` props |
+| `TableRow`         | `isHidden` prop for muted text styling on hidden/not visible rows              |
+| `InlineNameEditor` | `isHidden` prop for muted text styling inheritance                             |
+
+**Files Created:**
 
 - `app/admin/(product-menu)/menu-builder/components/table-views/AllLabelsTableView.tsx`
+- `app/admin/(product-menu)/hooks/useDragReorder.ts`
+- `app/admin/(product-menu)/hooks/useInlineEditHandlers.ts`
 
-**Files to Modify:**
+**Files Modified:**
 
 - `app/admin/(product-menu)/menu-builder/components/table-views/TableViewRenderer.tsx`
-
-**Acceptance Criteria:**
-
-- Matches AllCategories functionality
-- Inline editing works
-- Bulk selection and actions work
-- Tests added for new components
+- `app/admin/(product-menu)/menu-builder/components/table-views/AllCategoriesTableView.tsx` (refactored to use new hooks)
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/TableRow.tsx`
+- `app/admin/(product-menu)/hooks/usePinnedRow.ts`
+- `app/admin/(product-menu)/hooks/useContextRowUiState.ts`
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/columnWidthPresets.ts`
 
 ---
 
-### 2.2 Context Menu Infrastructure ⏸️ NOT STARTED
-
-**Complexity:** Medium (new pattern)
-**Effort:** 1-2 days
-**Dependencies:** None (can be done in parallel with 2.1)
-
-**Tasks:**
-
-- [ ] Create `ContextMenuCell.tsx` component
-- [ ] Wire VIEW_CONFIGS action IDs to ACTION_BAR_CONFIG
-- [ ] Add to AllCategoriesTableView
-- [ ] Add to AllLabelsTableView
-- [ ] Right-click and three-dot menu triggers
-- [ ] Keyboard shortcut hints in menu items
-
-**Files to Create:**
-
-- `app/admin/(product-menu)/menu-builder/components/table-views/shared/ContextMenuCell.tsx`
-
-**Files to Modify:**
-
-- `app/admin/(product-menu)/menu-builder/components/table-views/AllCategoriesTableView.tsx`
-- `app/admin/(product-menu)/menu-builder/components/table-views/AllLabelsTableView.tsx`
-
-**Acceptance Criteria:**
-
-- Context menus show correct actions per view
-- Actions execute using existing ACTION_BAR_CONFIG logic
-- Keyboard shortcuts shown in menu
-- Works on both touch and mouse
-
----
-
-### 2.3 Label View (2-Level Hierarchy) ⏸️ NOT STARTED
+### 2.2 Context Menu Infrastructure ✅ COMPLETE (Jan 24-26, 2026)
 
 **Complexity:** Medium
-**Effort:** 3-4 days
+**Effort:** 3 days
+
+**Implemented Features:**
+
+- [x] Created `RowContextMenu.tsx` component with config-driven actions
+- [x] `CONTEXT_MENU_CONFIG` maps `ViewType:EntityKind` to available actions
+- [x] Added to all 5 table views (AllCategories, AllLabels, Menu, Label, Category)
+- [x] Right-click (desktop) and long-press (mobile) triggers
+- [x] Keyboard shortcut hints via `<Kbd>` component
+- [x] Bulk mode support with count labels ("Clone (3)")
+- [x] Mixed selection handling (disabled menu with explanation)
+- [x] Relationship submenus (manage-categories, manage-labels) with search
+- [x] Extracted handler logic to reusable hooks in `hooks/context-menu/`
+
+**Files Created:**
+
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/cells/RowContextMenu.tsx`
+- `app/admin/(product-menu)/hooks/context-menu/` (9 hooks + barrel export)
+
+**See:** [context-menu-plan.md](./context-menu-plan.md) for implementation details
+
+---
+
+### 2.3 Label View ✅ COMPLETE (Jan 17, 2026)
+
+**Complexity:** Medium
+**Effort:** 2-3 days
 **Dependencies:** 2.1 (All Labels view should exist first)
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] Create `LabelTableView.tsx` component
-- [ ] Show categories within selected label
-- [ ] Expandable/collapsible category rows
-- [ ] Product count per category
-- [ ] Drag-and-drop category reordering (native HTML5)
-- [ ] "Add Categories" dropdown
-- [ ] "Remove from Label" action
-- [ ] Handle `autoOrder` mode (disable DnD when true)
+- [x] Created `LabelTableView.tsx` component
+- [x] Single-level table showing categories within selected label
+- [x] Columns: Checkbox, Name, Added Order, Products, Visibility, Drag Handle
+- [x] TanStack sortable columns (Name, Added Order)
+- [x] Drag-and-drop category reordering (reuses `useDragReorder`)
+- [x] Products column: comma-separated product names (read-only)
+- [x] Single-click selects, double-click navigates to category view
+- [x] Selection model for bulk remove with undo/redo
+- [x] Column sort persists to database via `usePersistColumnSort` hook
+- [x] Added `attachedAt` field to junction table for chronological tracking
+- [x] Removed `sort-mode` action from action bar (replaced by column sorting)
 
-**Files to Create:**
+**Table Behavior:**
+
+- **Column sorting** - Name and Added Order are sortable (TanStack Table)
+- **Sort indicators** - ↑/↓ prepended to label when sorted
+- **DnD + Sort interaction** - Manual reorder clears column sort state
+- **Single-click** - Toggles row selection (200ms delay)
+- **Double-click** - Navigates to category view (for product management)
+- **Drag handle** - Always visible on mobile, hover-only on desktop
+
+**Schema Changes:**
+
+- Added `createdAt` column to `CategoryLabelCategory` junction table
+- Used as `attachedAt` for chronological Added Order ranking
+
+**New Reusable Hooks Created:**
+
+| Hook | Purpose |
+|------|---------|
+| `usePersistColumnSort` | Persist TanStack column sort order to database |
+
+**Files Created:**
 
 - `app/admin/(product-menu)/menu-builder/components/table-views/LabelTableView.tsx`
-- `app/admin/(product-menu)/menu-builder/components/table-views/shared/DraggableRow.tsx`
+- `app/admin/(product-menu)/hooks/usePersistColumnSort.ts`
+- `prisma/migrations/20260117114116_add_createdat_to_category_label_category/migration.sql`
 
-**Files to Modify:**
+**Files Modified:**
 
-- `app/admin/(product-menu)/menu-builder/components/table-views/TableViewRenderer.tsx`
-- `app/admin/(product-menu)/constants/action-bar-config.ts` (add "Add Categories" logic)
-
-**Acceptance Criteria:**
-
-- Shows categories in correct order (respects junction table)
-- Drag-and-drop updates order in database
-- Auto-order mode disables manual reordering
-- Can add categories from dropdown
-- Can remove categories from label
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/columnWidthPresets.ts`
+- `app/admin/(product-menu)/constants/action-bar/actions.ts` (added `captureUndo.label`)
+- `app/admin/(product-menu)/constants/action-bar/views.ts` (removed `sort-mode`)
+- `app/admin/(product-menu)/constants/action-bar/model.ts` (removed `sort-mode` ActionId)
+- `app/admin/(product-menu)/constants/__tests__/action-bar-config.test.ts` (updated snapshot)
+- `app/admin/(product-menu)/data/labels.ts` (include `attachedAt` in DTO)
+- `app/admin/(product-menu)/types/menu.ts` (added `attachedAt` to schema)
+- `app/admin/(product-menu)/menu-builder/components/table-views/CategoryTableView.tsx` (uses `usePersistColumnSort`)
 
 ---
 
-### 2.4 Category View (Product Assignment) ⏸️ NOT STARTED
+### 2.4 Category View (Product Assignment) ✅ COMPLETE (Jan 15-16, 2026)
 
-**Complexity:** High (product assignment UX)
-**Effort:** 4-5 days
-**Dependencies:** 2.3 (Label view pattern established)
+**Complexity:** Medium (simplified from original spec)
+**Effort:** 2 days
+**Dependencies:** 2.1 (reused AllLabels patterns)
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] Create `CategoryTableView.tsx` component
-- [ ] Show ALL products (not just assigned)
-- [ ] Checkbox column for bulk selection
-- [ ] "Assigned" column (checkmark if in category)
-- [ ] "Primary" indicator for isPrimary products
-- [ ] "Add to Category" / "Remove from Category" actions
-- [ ] "Set as Primary" action
-- [ ] "Added in Categories" column showing cross-references
-- [ ] Search/filter products
+- [x] Created `CategoryTableView.tsx` component
+- [x] Shows products assigned to selected category
+- [x] Columns: Checkbox, Product Name, Added Order, Visibility, Categories, Drag Handle
+- [x] Sortable columns: Name (alphabetical), Added Order (chronological rank)
+- [x] Single-click selects (200ms delay), double-click navigates to product detail
+- [x] Drag-and-drop row reordering (resets column sort on manual reorder)
+- [x] "Added to Categories" column showing cross-references (excludes current category)
+- [x] Selection state management for bulk remove action
 
-**Files to Create:**
+**Table Behavior:**
+
+- **Column sorting** - Name and Added Order are sortable (TanStack Table)
+- **Sort indicators** - ↑/↓ prepended to label, ↕ toggle icon on hover
+- **DnD + Sort interaction** - Manual reorder clears column sort state
+- **Single-click** - Toggles row selection (200ms delay)
+- **Double-click** - Navigates to product detail view
+- **Drag handle** - Always visible on mobile, hover-only on desktop
+
+**Shared Infrastructure Created (v0.64.0-0.64.3):**
+
+| Feature                   | Description                                                         |
+|---------------------------|---------------------------------------------------------------------|
+| `SortableHeaderCell`      | Reusable sortable column header with TanStack Table integration     |
+| `columnWidthPresets`      | Single source of truth for column width, cell, and alignment config |
+| `TableHeader` preset prop | Reads width/align from preset by column id                          |
+| `TableCell` config prop   | Accepts preset entry for cell styling                               |
+
+**Files Created:**
 
 - `app/admin/(product-menu)/menu-builder/components/table-views/CategoryTableView.tsx`
-- `app/admin/(product-menu)/menu-builder/components/table-views/shared/ProductCheckboxCell.tsx`
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/SortableHeaderCell.tsx`
 
-**Files to Modify:**
+**Files Modified:**
 
-- `app/admin/(product-menu)/menu-builder/components/table-views/TableViewRenderer.tsx`
-- `app/admin/(product-menu)/actions/product-menu-actions.ts` (add product assignment actions)
-- `app/admin/(product-menu)/data/categories.ts` (add product assignment helpers)
+- `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableRenderer.tsx`
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/columnWidthPresets.ts`
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/TableHeader.tsx`
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/table/TableCell.tsx`
+- `app/admin/(product-menu)/hooks/useDragReorder.ts` (added `onReorderComplete` callback)
 
-**Acceptance Criteria:**
+**Key Commits:**
 
-- Shows all products with assignment status
-- Can add/remove products in bulk
-- Can set primary product
-- Shows which other categories contain each product
-- Product search/filter works
+- `6ab7444` - feat: add Category Table View with sortable columns (v0.64.0)
+- `96cab74` - refactor: consolidate column alignment into presets (v0.64.1)
+- `a2743ff` - fix: icon vertical alignment and table view tweaks (v0.64.2)
+- `94de810` - fix: standardize disabled button styling (v0.64.3)
+
+**Deferred to Future:**
+
+- [ ] Search/filter products (Phase 3.5)
+- [ ] "Set as Primary" action (future enhancement)
 
 ---
 
-### 2.5 Menu View (3-Level Hierarchy) ⏸️ NOT STARTED
+### 2.5 Menu View (2-Level Hierarchy) ✅ COMPLETE (Jan 17-21, 2026)
 
-**Complexity:** Very High (most complex view)
+**Complexity:** High
 **Effort:** 5-7 days
 **Dependencies:** 2.3, 2.4 (all patterns established)
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] Create `MenuTableView.tsx` component
-- [ ] 3-level expand/collapse (Labels → Categories → Products)
-- [ ] Drag-and-drop across all levels
-- [ ] Drop zone visual feedback
-- [ ] Handle drag constraints (can't drag label into category)
-- [ ] Lazy loading for performance (expand loads categories)
-- [ ] Icons and indentation for hierarchy
-- [ ] Collapse/expand all controls
-- [ ] Keyboard navigation (arrow keys expand/collapse)
+- [x] Created `MenuTableView.tsx` component (simplified from folder structure)
+- [x] 2-level expand/collapse (Labels → Categories only)
+- [x] Products shown as count only (managed in Category Detail view)
+- [x] Columns: Checkbox, Name (with chevron + indent), Categories count, Visibility, Products count, Drag Handle
+- [x] Hierarchical indentation via `HierarchyNameCell` component (depth 0 = 0px, depth 1 = 24px)
+- [x] ChevronToggleCell for expand/collapse interaction
+- [x] Inline icon editing for labels via InlineIconCell
+- [x] Inline name editing for labels via InlineNameEditor
+- [x] Same-level drag-and-drop reordering with undo/redo
+- [x] Expand All / Collapse All action bar buttons
+- [x] Action bar state-aware disabling (expand-all disabled when all expanded, etc.)
+- [x] Drag-hover auto-expand for category drag (500ms delay, flash animation)
+- [x] Auto-collapse all labels when starting label drag
+- [x] Chevron disabled during label drag
+- [x] Single-click toggles both expand/collapse AND selection (with hierarchy cascade)
+- [x] Indeterminate state doesn't collapse on click (keeps parent expanded to show selected children)
 
-**Files to Create:**
+**Table Behavior:**
+
+- **No column sorting** - Row order dictates hierarchy, controlled via DnD
+- **Single-click on label** - Toggles expand/collapse AND selection (with hierarchy cascade)
+- **Single-click on category** - Toggles selection
+- **Double-click** - Navigates into label or category view
+- **Expand/collapse** - Chevron click, row click, or action bar buttons
+- **Drag handle** - Always visible on mobile, hover-only on desktop
+- **Same-level DnD only** - Labels reorder among labels, categories within same label
+
+**Architecture Decisions:**
+
+1. **Manual rendering instead of TanStack Table** - Variable row types with different columns
+2. **2-level hierarchy** - Products excluded from menu view (managed in Category Detail)
+3. **IdentityRegistry pattern** - Unified row identity for selection, actions, and navigation
+4. **Kind-prefixed keys** - `"label:id"`, `"category:labelId-catId"` for unique selection
+
+**Key Hooks:**
+
+| Hook | Purpose |
+|------|---------|
+| `useIdentityRegistry` / `buildMenuRegistry` | Build registry mapping keys to row identities |
+| `useRowClickHandler` | Unified click handling (expand + selection) |
+| `useContextSelectionModel` | Hierarchical selection with tri-state checkboxes |
+| `useFlattenedMenuRows` | Transform hierarchy to flat row list |
+| `useMenuTableDragReorder` | Hierarchical DnD with auto-expand |
+
+**Files Created/Modified:**
 
 - `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableView.tsx`
-- `app/admin/(product-menu)/menu-builder/components/table-views/shared/HierarchyRow.tsx`
-- `app/admin/(product-menu)/menu-builder/components/table-views/shared/DropZone.tsx`
+- `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableView.types.ts`
+- `app/admin/(product-menu)/hooks/useFlattenedMenuRows.ts`
+- `app/admin/(product-menu)/hooks/useMenuTableDragReorder.ts`
+- `app/admin/(product-menu)/hooks/useIdentityRegistry.ts`
+- `app/admin/(product-menu)/hooks/useRowClickHandler.ts`
+- `app/admin/(product-menu)/hooks/useContextSelectionModel.ts` (enhanced)
+- `app/admin/(product-menu)/types/identity-registry.ts`
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/cells/ChevronToggleCell.tsx`
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/cells/HierarchyNameCell.tsx`
 
-**Files to Modify:**
+**Deferred to Phase 3:**
 
-- `app/admin/(product-menu)/menu-builder/components/table-views/TableViewRenderer.tsx`
-- `app/admin/(product-menu)/hooks/useMenuBuilderState.ts` (add expand/collapse state)
-
-**Acceptance Criteria:**
-
-- All 3 levels show correctly with proper indentation
-- Expand/collapse works smoothly
-- Drag-and-drop updates order in correct junction table
-- Visual feedback for valid/invalid drop zones
-- Performance is smooth with 100+ items
-- Keyboard navigation works
+- [ ] Cross-boundary drag-and-drop (move categories between labels) - See section 3.6
 
 ---
 
-## Phase 3: Advanced Features ⏸️ NOT STARTED
+## Phase 3: Advanced Features ✅ COMPLETE
 
 **Target:** Polish and power-user features
 **Timeline:** 2-4 weeks
-**Status:** 0% (waiting for Phase 2 completion)
+**Status:** 100% Complete
 
-### 3.1 Drag-and-Drop System ⏸️
+### 3.1 Same-Level Drag-and-Drop ✅ COMPLETE
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] Native HTML5 DnD implementation
-- [ ] Visual feedback (ghost preview, drop zones)
-- [ ] Constraint validation (prevent invalid drops)
-- [ ] Optimistic updates (instant UI, then sync)
-- [ ] Error handling and rollback
-- [ ] Touch device support
+- [x] Native HTML5 DnD implementation (`useDragReorder`, `useMenuTableDragReorder`)
+- [x] Visual feedback (drag state classes, drop position indicators)
+- [x] Same-level constraint validation (prevent cross-level drops)
+- [x] Optimistic updates with undo/redo support
+- [x] Auto-collapse all labels when starting label drag
+- [x] Chevron disabled during label drag
+- [x] Hover-to-expand for category drag (500ms delay)
+- [x] Flash animation on auto-expanded rows
 
-**Files to Create:**
+**Files:**
 
-- `app/admin/(product-menu)/menu-builder/hooks/useDragAndDrop.ts`
-
----
-
-### 3.2 Keyboard Shortcuts ⏸️
-
-**Tasks:**
-
-- [ ] Key handler in MenuBuilder root
-- [ ] Platform detection (Mac Cmd vs Win Ctrl)
-- [ ] Shortcut map (from spec):
-  - `Ctrl+N` - New item
-  - `Ctrl+D` - Duplicate
-  - `Delete` - Remove selected
-  - `Ctrl+Z` - Undo
-  - `Ctrl+Shift+Z` - Redo
-  - `Ctrl+A` - Select all
-  - `↑/↓` - Navigate rows
-  - `Space` - Toggle selection
-- [ ] Tooltips showing shortcuts (shadcn Kbd component)
-- [ ] Disable when input focused
-
-**Files to Create:**
-
-- `app/admin/(product-menu)/menu-builder/hooks/useKeyboardShortcuts.ts`
-- `app/admin/(product-menu)/constants/keyboard-shortcuts.ts`
+- `app/admin/(product-menu)/hooks/useDragReorder.ts` (flat tables)
+- `app/admin/(product-menu)/hooks/useMenuTableDragReorder.ts` (hierarchical menu table)
 
 ---
 
-### 3.3 Undo/Redo System ⏸️
+### 3.2 Keyboard Shortcuts ✅ COMPLETE (Jan 24, 2026)
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] 10-operation stack per view (session storage)
-- [ ] Serializable state snapshots
-- [ ] Toast notifications on undo/redo
-- [ ] Action types (create, update, delete, reorder, clone)
-- [ ] Batch operations (undo bulk delete as one action)
-- [ ] Clear stack on view change
+- [x] `useKeyboardShortcuts` hook with global keydown listener
+- [x] Single-key shortcuts (Gmail/Slack style) to avoid browser conflicts
+- [x] Platform detection (Mac Cmd vs Win Ctrl) for future use
+- [x] Shortcut map:
+  - `N` - New item (label or category)
+  - `D` - Duplicate selected
+  - `R` - Remove selected
+  - `X` - Delete permanently (all-labels, all-categories)
+  - `V` - Toggle visibility
+  - `E` - Expand all (menu view)
+  - `C` - Collapse all (menu view)
+  - `U` - Undo
+  - `Shift+U` - Redo
+  - `?` - Toggle help popover
+- [x] Tooltips showing shortcuts (shadcn Kbd component)
+- [x] Disabled when input/textarea/contenteditable focused
+- [x] Disabled when modal/dialog is open
+- [x] Respects action disabled state
+- [x] Shifted character handling (? requires Shift but shortcut doesn't specify it)
 
-**Files to Create:**
+**Help Button:**
 
-- `app/admin/(product-menu)/menu-builder/hooks/useUndoRedo.ts`
+- [x] ConciergeBell icon on all 5 views (always last on right)
+- [x] View-specific help content via `help-content.ts`
+- [x] Popover with bulleted tips
+- [x] Keyboard shortcut (`?`) toggles popover via custom event
 
-**Files to Modify:**
+**Delete Button:**
 
-- `app/admin/(product-menu)/hooks/useMenuBuilderState.ts` (wire undo/redo)
+- [x] Trash2 icon on all-labels and all-categories (2nd to last)
+- [x] AlertDialog confirmation before permanent delete
+- [x] Full undo/redo with `restoreLabel` and `restoreCategory` server actions
+- [x] Recreates entities with all relationships on undo
+
+**Accessibility:**
+
+- [x] Disabled buttons use `aria-disabled` to remain tabbable
+
+**Files Created:**
+
+- `app/admin/(product-menu)/hooks/useKeyboardShortcuts.ts`
+- `app/admin/(product-menu)/constants/help-content.ts`
+- `app/admin/(product-menu)/menu-builder/components/menu-action-bar/HelpPopoverButton.tsx`
+- `app/admin/(product-menu)/menu-builder/components/menu-action-bar/DeleteAlertButton.tsx`
+
+**Files Modified:**
+
+- `app/admin/(product-menu)/constants/action-bar/model.ts` (added help, delete IDs)
+- `app/admin/(product-menu)/constants/action-bar/actions.ts` (single-key shortcuts, help/delete actions)
+- `app/admin/(product-menu)/constants/action-bar/views.ts` (added help to all views, delete to all-labels/all-categories)
+- `app/admin/(product-menu)/menu-builder/components/menu-action-bar/index.tsx` (render help/delete buttons)
+- `app/admin/(product-menu)/menu-builder/components/menu-action-bar/ActionButton.tsx` (aria-disabled)
+- `app/admin/(product-menu)/actions/labels.ts` (restoreLabel server action)
+- `app/admin/(product-menu)/actions/categories.ts` (restoreCategory server action)
+- `app/admin/(product-menu)/types/builder-state.ts` (deleteSelected action)
 
 ---
 
-### 3.4 Clone Operations ⏸️
+### 3.3 Undo/Redo System ✅ COMPLETE (Jan 15, 2026)
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] Clone label with categories (deep clone)
-- [ ] Clone category with products (references only)
-- [ ] Name collision detection (auto-suffix with " (copy)")
-- [ ] Preserve order and visibility settings
-- [ ] Toast notifications on success
+- [x] 10-operation stack per view (in-memory)
+- [x] Declarative `captureUndo` field in action config
+- [x] Toast notifications on undo/redo
+- [x] Action types: create, update, delete, reorder, clone
+- [x] View-scoped history (cleared on navigation)
+- [x] Colocated undo logic with action definitions
 
-**Files to Modify:**
+**Key Commit:**
 
-- `app/admin/(product-menu)/constants/action-bar-config.ts` (complete TODOs)
-- `app/admin/(product-menu)/actions/product-menu-actions.ts` (add clone logic)
+- `26546fb` - feat: declarative undo/redo system and menu builder fixes (v0.63.0)
+
+**Architecture:**
+
+- Undo capture logic defined in `ACTION_BAR_CONFIG` via `captureUndo` field
+- Eliminated 100+ lines of conditional undo/redo logic
+- History stack managed by `useUndoRedoStack` hook
+- Actions automatically capture undo state based on config
+
+**Files Created:**
+
+- `app/admin/(product-menu)/hooks/useUndoRedoStack.ts`
+
+**Files Modified:**
+
+- `app/admin/(product-menu)/constants/action-bar/actions.ts` (added `captureUndo` to actions)
+
+---
+
+### 3.4 Clone Operations ✅ COMPLETE
+
+**Implemented Features:**
+
+- [x] Clone label (deep clone with categories)
+- [x] Clone category (with product references)
+- [x] Name collision detection (auto-suffix with "copy", "copy2", etc.)
+- [x] Preserve order and visibility settings
+- [x] Toast notifications on success
+- [x] Bulk clone support via `useContextClone` hook
+- [x] Available via action bar and context menu
 
 ---
 
@@ -354,39 +529,249 @@ Total       ████████░░░░░░░░░░░░░░�
 
 ---
 
+### 3.6 Cross-Boundary Drag-and-Drop ✅ COMPLETE
+
+**Complexity:** Medium (simplified from 3-level to 2-level)
+**Effort:** 2-3 days
+**Dependencies:** Menu View (2.5) complete ✅
+**Completed:** Jan 21, 2026
+
+**Overview:**
+Dragging categories across label boundaries in Menu Table View:
+- Move a **category** from one label to another
+
+Note: Products are not shown in menu view (2-level hierarchy), so cross-boundary product moves are not applicable here.
+
+**Implemented Features:**
+
+1. **Drop validation (`getDropInfo` in useMenuTableDragReorder.ts):**
+   - [x] Allow category drops on different labels (returns `dropType: 'move-to-label'`)
+   - [x] Allow category drops ON label rows (move into that label)
+   - [x] Label-to-label reordering unchanged (`dropType: 'reorder'`)
+
+2. **Drop handling:**
+   - [x] Detect cross-boundary vs same-parent drop via `dropType`
+   - [x] Cross-boundary move: `detachCategory` + `attachCategory`
+   - [x] Toast notification: "Moved [Category] to [Label]"
+
+3. **Visual feedback:**
+   - [x] White flash (2x blink) on valid cross-boundary drop targets
+   - [x] Drop position indicator (border top/bottom) for all valid drops
+   - [x] `dropType` exposed via `getDragClasses()` for styling differentiation
+
+4. **Undo/redo support:**
+   - [x] Cross-boundary moves are undoable (reverse detach/attach)
+   - [x] Pushed to undo stack with `action: 'move:category-to-label'`
+
+5. **Auto-expand on drag:**
+   - [x] Collapsed labels expand immediately when dragging category over them
+   - [x] Labels collapse when drag leaves their territory (label + descendants)
+   - [x] Tracks `autoExpandedLabelRef` to know which label to collapse
+
+**Files Modified:**
+
+- `app/admin/(product-menu)/hooks/useMenuTableDragReorder.ts`
+  - Added `getDropInfo()` returning `{ valid, dropType }`
+  - Added `dropType: 'reorder' | 'move-to-label'` to DragState
+  - Added `getLabelOwner()` for territory-based collapse logic
+  - Added `onCollapseItem` callback option
+- `app/admin/(product-menu)/menu-builder/components/table-views/MenuTableView.tsx`
+  - Added `moveCategoryToLabel` function using detach/attach mutations
+  - Added `animate-drop-target-flash` class for cross-boundary visual feedback
+- `app/globals.css`
+  - Added `animate-drop-target-flash` keyframes (white 2x blink)
+  - Updated `animate-auto-expand-flash` to match (white 2x blink)
+
+**Limitations (single-item only):**
+
+- Only supports dragging ONE category at a time
+- Multi-select drag is NOT supported (see section 3.7)
+
+---
+
+### 3.7 Multi-Select Drag-and-Drop ✅ COMPLETE
+
+**Complexity:** High
+**Effort:** 3-5 days
+**Dependencies:** Cross-boundary DnD (3.6) complete ✅
+**Completed:** Jan 21-24, 2026
+
+**Overview:**
+Dragging multiple selected items at once, moving them together to a new location or label.
+
+**Implemented Features:**
+
+1. **Drag initiation:**
+   - [x] If dragged item is part of selection → drag ALL selected items
+   - [x] If dragged item is NOT selected → drag only that item
+   - [x] Visual: `GroupedEntitiesGhost` showing count badge
+
+2. **Drop handling:**
+   - [x] Same-parent reorder: Move all selected items to drop position (maintain relative order)
+   - [x] Cross-boundary move: Move all selected categories to target label
+   - [x] Batch moves via `batchMoveCategoriesToLabel` server action
+
+3. **Constraints:**
+   - [x] All selected items must be same kind (can't mix labels and categories)
+   - [x] For categories: can be from different parent labels
+   - [x] Labels: multi-select reorder only (no cross-boundary concept)
+   - [x] DnD eligibility derived from selection model (`useDnDEligibility`)
+
+4. **Visual feedback:**
+   - [x] `GroupedEntitiesGhost` with count badge
+   - [x] All selected rows get `isInDragSet` styling (opacity)
+   - [x] Drop indicator on valid targets
+   - [x] Intent-based cursor feedback (grab/not-allowed on mousedown only)
+
+5. **Architecture (v0.66.20):**
+   - [x] Consolidated DnD hooks: `useGroupedReorder` → `useSingleEntityDnd` / `useMultiEntityDnd`
+   - [x] `useDnDEligibility` derives drag eligibility from selection state
+   - [x] `useGroupedEntitiesGhost` for multi-drag ghost rendering
+
+**Files Created/Modified:**
+
+- `hooks/dnd/useGroupedReorder.ts` - Core shared DnD state management
+- `hooks/dnd/useSingleEntityDnd.ts` - Flat table DnD (AllLabels, Category, Label views)
+- `hooks/dnd/useMultiEntityDnd.ts` - Hierarchical DnD with cross-boundary moves
+- `hooks/dnd/useDnDEligibility.ts` - Derives drag eligibility from selection
+- `hooks/dnd/useGroupedEntitiesGhost.ts` - Multi-drag ghost rendering
+- `hooks/dnd/multiSelectValidation.ts` - Validation utilities
+- `table-views/shared/table/GroupedEntitiesGhost.tsx` - Ghost component
+
+---
+
+### 3.8 Refactor: Separate Level from Kind 📋 FUTURE
+
+**Complexity:** Medium
+**Effort:** 2-3 days
+**Priority:** Technical debt (required before adding new hierarchy levels)
+
+**Problem:**
+Current code conflates hierarchy depth with entity type:
+- `FlatMenuRow` uses `level: "label" | "category"` where `level` means entity type
+- `useMultiEntityDnd` has `EntityLevel = "label" | "category"` hardcoded
+- This breaks if we need to add levels above labels or between existing levels
+
+**Already Have (identity-registry.ts):**
+- `kind: string` - Entity type ("label", "category", "product")
+- `depth: number` - Hierarchy position (0, 1, 2, ...)
+
+**What Needs to Change:**
+1. Rename `level` → `kind` in `FlatMenuRow` types
+2. Add numeric `depth` field for hierarchy position
+3. Update DnD hooks to use `kind` for entity type, `depth` for level logic
+4. Make parent-child rules configurable
+
+**See:** [refactor-level-vs-kind.md](./refactor-level-vs-kind.md) for detailed plan
+
+---
+
+### 3.9 Range Selection ✅ COMPLETE (Jan 25-26, 2026)
+
+**Complexity:** Medium
+**Effort:** 2 days
+
+**Implemented Features:**
+
+- [x] **Desktop: Shift+Click** - Click row A (anchor), shift+click row B selects range
+- [x] **Mobile: Long-Press Checkbox** - Long-press (500ms) on checkbox B selects range from anchor
+- [x] `anchorKey` tracking in selection model
+- [x] `rangeSelect(targetKey)` function for range selection
+- [x] Visual feedback: pulsing ring animation during long-press
+- [x] Range respects visual order when columns are sorted
+- [x] Works in all 5 table views
+
+**Files Modified:**
+- `hooks/useContextSelectionModel.ts` - Added `anchorKey`, `rangeSelect`
+- `hooks/useRowClickHandler.ts` - Shift key handling
+- `table-views/shared/cells/CheckboxCell.tsx` - Long-press support with visual feedback
+
+---
+
+### 3.10 Mobile Interactions ✅ COMPLETE (Jan 24-26, 2026)
+
+**Complexity:** Low-Medium
+**Effort:** 2 days
+
+**Strategy:** Context menus provide mobile DnD alternative. No dedicated mobile UI needed.
+
+**Implemented Features:**
+
+- [x] **Desktop:** Right-click shows context menu
+- [x] **Mobile:** Long-press shows context menu (shadcn handles this natively)
+- [x] **Move Up / Move Down** actions for reordering without DnD
+- [x] **44x44px touch targets** (WCAG compliance) via `TouchTarget` wrapper
+- [x] Position-aware disabling (Move Up disabled at top, Move Down at bottom)
+- [x] Works in all 5 table views
+
+**Explicitly Deferred:**
+- ~~Touch DnD with drag gesture~~
+- ~~Dedicated Reorder Mode with arrow buttons~~
+- ~~@dnd-kit migration~~
+
+**Files Created:**
+- `table-views/shared/cells/RowContextMenu.tsx`
+- `table-views/shared/cells/TouchTarget.tsx`
+
+---
+
 ## File Structure
 
-```
+```text
 app/admin/(product-menu)/
 ├─ menu-builder/
 │  ├─ MenuBuilderProvider.tsx       ✅
 │  ├─ MenuBuilder.tsx               ✅
 │  └─ components/
-│     ├─ menu-action-bar/           ✅
+│     ├─ menu-action-bar/           ✅ (ActionButton, HelpPopoverButton, DeleteAlertButton)
 │     └─ table-views/
 │        ├─ TableViewRenderer.tsx   ✅
 │        ├─ PlaceholderTableView.tsx ✅
 │        ├─ AllCategoriesTableView.tsx ✅
-│        ├─ AllLabelsTableView.tsx  ⏸️ (2.1)
-│        ├─ LabelTableView.tsx      ⏸️ (2.3)
-│        ├─ CategoryTableView.tsx   ⏸️ (2.4)
-│        ├─ MenuTableView.tsx       ⏸️ (2.5)
+│        ├─ AllLabelsTableView.tsx  ✅ (2.1)
+│        ├─ LabelTableView.tsx      ✅ (2.3)
+│        ├─ CategoryTableView.tsx   ✅ (2.4)
+│        ├─ MenuTableView.tsx       ✅ (2.5 - 2-level hierarchy)
+│        ├─ MenuTableView.types.ts  ✅ (FlatMenuRow discriminated union)
 │        └─ shared/
-│           ├─ table/               ✅
-│           ├─ cells/               ✅
-│           ├─ ContextMenuCell.tsx  ⏸️ (2.2)
-│           └─ DraggableRow.tsx     ⏸️ (2.3)
+│           ├─ table/               ✅ (TableRow, TableCell, TableHeader, SortableHeaderCell, columnWidthPresets)
+│           ├─ cells/               ✅ (CheckboxCell, InlineNameEditor, InlineIconCell, VisibilityCell, ChevronToggleCell, HierarchyNameCell, DragHandleCell)
+│           └─ (uses shadcn ContextMenu directly on TableRow)
 │
 ├─ hooks/
 │  ├─ useMenuBuilderState.ts        ✅
 │  ├─ useProductMenuData.ts         ✅
 │  ├─ useProductMenuMutations.ts    ✅
-│  ├─ useContextSelectionModel.ts   ✅
-│  ├─ useContextRowUiState.ts       ✅
-│  ├─ usePinnedRow.ts               ✅
-│  ├─ useDragAndDrop.ts             ⏸️ (3.1)
-│  ├─ useKeyboardShortcuts.ts       ⏸️ (3.2)
-│  └─ useUndoRedo.ts                ⏸️ (3.3)
+│  ├─ useContextSelectionModel.ts   ✅ (enhanced: hierarchy support, tri-state checkboxes)
+│  ├─ useContextRowUiState.ts       ✅ (enhanced: autoClearPinned option)
+│  ├─ usePinnedRow.ts               ✅ (enhanced: built-in default sort)
+│  ├─ useFlattenedMenuRows.ts       ✅ (hierarchy → flat row list)
+│  ├─ useIdentityRegistry.ts        ✅ (buildFlatRegistry, buildMenuRegistry)
+│  ├─ useRowClickHandler.ts         ✅ (unified click handling)
+│  ├─ useActionHandler.ts           ✅ (clone/remove with visual order)
+│  ├─ useInlineEditHandlers.ts      ✅ (name/icon/visibility with undo + duplicate validation)
+│  ├─ useUndoRedoStack.ts           ✅ (declarative undo/redo system)
+│  ├─ usePersistColumnSort.ts       ✅ (persist TanStack sort to DB)
+│  ├─ useKeyboardShortcuts.ts       ✅ (global keyboard shortcuts)
+│  ├─ context-menu/                 ✅ (v0.70.3 - shared handler hooks)
+│  │  ├─ useContextRowHighlight.ts
+│  │  ├─ useMoveHandlers.ts
+│  │  ├─ useBulkAction.ts
+│  │  ├─ useDeleteConfirmation.ts
+│  │  ├─ useContextClone.ts
+│  │  ├─ useContextVisibility.ts
+│  │  ├─ useContextRemove.ts
+│  │  ├─ useContextMoveTo.ts
+│  │  ├─ useRelationshipToggle.ts
+│  │  └─ index.ts
+│  └─ dnd/                          ✅ (v0.66.20 consolidated architecture)
+│     ├─ useGroupedReorder.ts       ✅ (core shared DnD state management)
+│     ├─ useSingleEntityDnd.ts      ✅ (flat table DnD wrapper)
+│     ├─ useMultiEntityDnd.ts       ✅ (hierarchical DnD with cross-boundary)
+│     ├─ useDnDEligibility.ts       ✅ (derives eligibility from selection)
+│     ├─ useGroupedEntitiesGhost.ts ✅ (multi-drag ghost rendering)
+│     ├─ useThrottledCallback.ts    ✅ (throttle with flush support)
+│     └─ multiSelectValidation.ts   ✅ (validation utilities)
 │
 ├─ constants/
 │  ├─ action-bar/                   ✅ (colocated config)
@@ -395,8 +780,15 @@ app/admin/(product-menu)/
 │  │  ├─ actions.ts
 │  │  ├─ views.ts
 │  │  └─ index.ts
+│  ├─ help-content.ts               ✅ (view-specific help text)
 │  ├─ view-configs.ts               ✅
 │  └─ dropdown-registry.ts          ✅
+│
+├─ actions/
+│  ├─ utils.ts                      ✅ (naming conventions: "New Label2", "Name copy2")
+│  ├─ labels.ts                     ✅
+│  ├─ categories.ts                 ✅
+│  └─ __tests__/                    ✅
 │
 ├─ data/                            ✅
 │  ├─ categories.ts
@@ -406,7 +798,8 @@ app/admin/(product-menu)/
 └─ types/                           ✅
    ├─ builder-state.ts
    ├─ menu.ts
-   └─ category.ts
+   ├─ category.ts
+   └─ identity-registry.ts          ✅ (RowIdentity, IdentityRegistry, key utilities)
 ```
 
 ---
@@ -460,35 +853,104 @@ app/admin/(product-menu)/
 **Rationale:** Builds complexity incrementally, reuses patterns, validates early
 **Impact:** Faster time to first additional view, lower risk
 
+### Jan 14, 2026: Reusable Table View Hooks
+
+**Decision:** Extract common table view patterns into reusable hooks
+**Rationale:** AllLabels and AllCategories shared significant boilerplate (click handling, drag-drop, inline edits with undo)
+**Impact:**
+
+- `useDragReorder` - Centralized drag-and-drop row reordering
+- `useInlineEditHandlers` - Name/icon/visibility handlers with automatic undo/redo
+- `usePinnedRow` enhanced with built-in default order sort
+- `useContextRowUiState` enhanced with `autoClearPinned` option
+- `TableRow` component now handles click/double-click timeout internally
+- ~80 lines of boilerplate removed from each table view
+
+### Jan 15, 2026: Declarative Undo/Redo System
+
+**Decision:** Colocate undo capture logic with action definitions via `captureUndo` field
+**Rationale:** Scattered conditional undo logic was hard to maintain and extend
+**Impact:**
+
+- Eliminated 100+ lines of conditional undo/redo logic in MenuActionBar
+- Undo actions now defined alongside action handlers
+- New actions automatically get undo support by adding `captureUndo` field
+- History stack view-scoped (10 operations, cleared on navigation)
+
+### Jan 15-16, 2026: Category Table View with Sortable Columns
+
+**Decision:** Implement sortable columns using TanStack Table with DnD integration
+**Rationale:** Category view needed both column sorting AND drag-drop reordering
+**Impact:**
+
+- Created `SortableHeaderCell` component for reusable sortable headers
+- Added `onReorderComplete` callback to `useDragReorder` for sort reset
+- Sort indicators (↑/↓) prepend to column label when sorted
+- Toggle icon (↕) appears on hover for sortable columns
+
+### Jan 16, 2026: Column Preset Consolidation
+
+**Decision:** Single source of truth for column width, cell, and alignment config
+**Rationale:** Alignment could be set in 3 places (header, preset, cell) causing confusion
+**Impact:**
+
+- Added `align` property to `ColumnWidthEntry` type
+- `TableHeader` reads width/align from preset by column id
+- `TableCell` accepts `config` prop for cell styling
+- Simplified header column definitions to just `id` and `label`
+- Eliminated redundant alignment props across all table views
+
+### Jan 17, 2026: Label View Simplification
+
+**Decision:** Single-level table with TanStack sorting instead of 2-level hierarchy with autoOrder mode
+**Rationale:**
+- 2-level hierarchy (categories → products) added complexity for little value
+- autoOrder toggle is redundant when TanStack provides 5 sorting options
+- Double-click to drill into category keeps product management in Category View
+- Matches existing CategoryTableView pattern (reuse code)
+
+**Impact:**
+
+- Removed: 2-level expand/collapse, autoOrder mode, sort-mode action
+- Added: TanStack sortable columns (Name, Added Order)
+- Products shown as comma-separated list (read-only preview)
+- Simpler implementation, consistent UX across views
+
+### Jan 17, 2026: Reusable Column Sort Persist Hook
+
+**Decision:** Extract column sort persistence into `usePersistColumnSort` hook
+**Rationale:**
+- Both LabelTableView and CategoryTableView needed identical logic
+- Pattern: watch TanStack sorting state → persist to DB via mutation
+- Guards against concurrent persists with a ref
+
+**Impact:**
+
+- Created `usePersistColumnSort.ts` hook
+- Reduced duplication across table views
+- Reusable for any table that needs sort-to-DB persistence
+- Clear API: `{ sorting, contextId, table, onPersist }`
+
 ---
 
 ## Next Action
 
-**Immediate Next Step:** Implement All Labels Table View (2.1)
+**Last Completed:** Context Menu Hooks Refactoring (v0.70.3) - Jan 26, 2026
 
-- Lowest complexity
-- Reuses AllCategories pattern
-- Deliverable in 1-2 days
-- Validates table view primitives work for labels too
+### Recently Completed (v0.69.0-0.70.3)
 
-**Command to Start:**
+- [x] Range selection with shift+click and long-press checkbox (v0.69.0)
+- [x] 44x44px touch targets for WCAG compliance (v0.69.1)
+- [x] Context menus for all table views (v0.70.0)
+- [x] Context menu refinements with search and action order (v0.70.1)
+- [x] Range selection respects visual order when sorted (v0.70.2)
+- [x] Context menu handler hooks refactoring (v0.70.3)
 
-```bash
-# Ensure clean state
-git status
+### Future Enhancements
 
-# Create new branch (optional)
-git checkout -b feature/all-labels-table-view
-
-# Start development
-npm run dev
-```
-
-**Files to Read First:**
-
-- `app/admin/(product-menu)/menu-builder/components/table-views/AllCategoriesTableView.tsx`
-- `app/admin/(product-menu)/data/labels.ts`
-- `docs/menu-builder/FEATURE-SPEC.md` (All Labels section)
+1. **Search & Filter (3.5)** - Global search in action bar
+2. **Separate Level from Kind (3.8)** - Required before adding new hierarchy levels
+   - See section 3.8 and [refactor-level-vs-kind.md](./refactor-level-vs-kind.md)
 
 ---
 
@@ -497,21 +959,70 @@ npm run dev
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - System diagrams, source of truth table, config patterns
 - [IMPLEMENTATION-GUIDE.md](./IMPLEMENTATION-GUIDE.md) - How to add views/actions
 - [FEATURE-SPEC.md](./FEATURE-SPEC.md) - Complete target vision (1,186 lines)
+- [context-menu-plan.md](./context-menu-plan.md) - Context menu implementation details
+- [keyboard-shortcuts-and-action-buttons-plan.md](./keyboard-shortcuts-and-action-buttons-plan.md) - Keyboard shortcuts implementation
+- [mobile-interactions-plan.md](./mobile-interactions-plan.md) - Range selection, touch DnD, context menus
 - [archive/](./archive/) - Historical planning docs
 
 ---
 
 ## Getting Help
 
-**Reference Implementation:**
-- `AllCategoriesTableView.tsx` is the **golden example** - copy its patterns for new table views
+**Reference Implementations:**
+
+- `CategoryTableView.tsx` is the **golden example** for table views with sortable columns + drag-and-drop
+- `AllLabelsTableView.tsx` is the **golden example** for table views with drag-and-drop only
+- `AllCategoriesTableView.tsx` is the **golden example** for table views with inline editing
+
+**Reusable Components:**
+
+- `SortableHeaderCell` - For sortable column headers with TanStack Table
+- `columnWidthPresets` - Single source of truth for column config (width, cell, align)
+
+**Reusable Hooks:**
+
+| Hook | Purpose |
+|------|---------|
+| `useGroupedReorder` | Core shared DnD state management (throttled dragOver, drop handling) |
+| `useSingleEntityDnd` | Flat table DnD wrapper (AllLabels, Category, Label views) |
+| `useMultiEntityDnd` | Hierarchical DnD with cross-boundary moves and auto-expand |
+| `useDnDEligibility` | Derives drag eligibility from selection state |
+| `useGroupedEntitiesGhost` | Multi-drag ghost image with count badge |
+| `useInlineEditHandlers` | Name/icon/visibility editing with undo + duplicate validation |
+| `usePinnedRow` | Pinned newly-created rows with default sort |
+| `useContextRowUiState` | Editing state with `autoClearPinned` option |
+| `useUndoRedoStack` | View-scoped undo/redo with declarative capture |
+| `usePersistColumnSort` | Persist TanStack column sort to database |
+| `useIdentityRegistry` | Build row identity registries (flat or hierarchical) |
+| `useRowClickHandler` | Unified click handling (selection + expand toggle) |
+| `useContextSelectionModel` | Hierarchical selection with tri-state checkboxes |
+| `useFlattenedMenuRows` | Transform hierarchy to flat row list for rendering |
+| `useActionHandler` | Clone/remove operations with visual order preservation |
+| `useContextRowHighlight` | Context menu row highlighting state |
+| `useMoveHandlers` | Move up/down (flat and nested lists) |
+| `useBulkAction` | Bulk operation executor with `getTargetIds` |
+| `useDeleteConfirmation` | Delete dialog state management |
+| `useContextClone` | Clone with bulk support |
+| `useContextVisibility` | Visibility toggle with bulk support |
+| `useContextRemove` | Remove from parent with bulk support |
+| `useContextMoveTo` | Move to another parent |
+| `useRelationshipToggle` | Attach/detach relationship management |
+
+**Key Types:**
+
+| Type | Purpose |
+|------|---------|
+| `RowIdentity` | Complete identity for any row (key, kind, entityId, depth, parent/child) |
+| `IdentityRegistry` | Container with O(1) lookups for row identities |
+| `FlatMenuRow` | Discriminated union for menu table rows (label \| category) |
 
 **Ask Claude Code:**
-- "Show me the AllCategories implementation"
-- "Explain how the action-bar config works"
-- "Help me implement the All Labels view"
+
+- "Show me the MenuTableView implementation"
+- "Explain how useMenuTableDragReorder works"
+- "Help me implement cross-boundary DnD"
 
 ---
 
-**Last Updated:** 2026-01-13
+**Last Updated:** 2026-01-26
 **Project Owner:** yuens1002

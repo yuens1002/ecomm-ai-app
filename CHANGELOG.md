@@ -1,5 +1,548 @@
 # Changelog
 
+## 0.72.0 - 2026-01-26 🚀 Menu Builder Launch
+
+### Major Feature
+- **Menu Builder**: Complete admin tool for managing product menu hierarchy
+  - Multi-select with Shift+click range selection
+  - Drag-and-drop reordering with undo/redo
+  - Context menus with bulk operations
+  - Keyboard shortcuts (Delete, C, V, H)
+  - Mobile-friendly touch targets (44x44px)
+  - 5 table views: Menu, All Labels, All Categories, Label Detail, Category Detail
+
+### Bug Fixes
+- **Chevron toggle**: Fixed expand/collapse chevron being disabled when labels were selected (only disable during active drag)
+
+### UI/UX
+- **AdminSidebar**: Moved Menu Builder under E-commerce section (consolidated navigation)
+
+### Known Issues
+- **Drag cursor feedback**: Disabled drag cursor (`cursor-not-allowed`) not showing when attempting to drag ineligible rows (deferred post-launch)
+
+## 0.71.5 - 2026-01-26
+
+### Refactoring
+- **Route restructure**: Renamed `(product-menu)` route group to `product-menu` route segment
+  - Menu Builder now accessible at `/admin/product-menu` (was hidden at `/admin/menu-builder`)
+  - Deleted legacy `categories/` and `labels/` table views (replaced by Menu Builder)
+  - Updated AdminSidebar with single "Menu Builder" link
+  - Updated all import paths across 19 files
+
+### Database
+- **Seed improvements**: Added icons to category labels, cleanup logic for obsolete labels
+
+## 0.71.4 - 2026-01-26
+
+### Documentation
+- **CLAUDE.md**: Added parallel work & version management guidelines
+- **Git workflow**: Separated feature branch commits (no version) from integration branch commits (with version)
+- **Trigger phrases**: Clarified `commit - patch/minor bump` only for integration branches
+
+## 0.71.3 - 2026-01-26
+
+### Refactoring
+- **Config-driven table views**: Implemented ViewConfig pattern for declarative table rendering
+  - Phase 1: Core infrastructure (`ViewConfig<T>`, `useConfiguredRow`, `ConfiguredTableRow`)
+  - Phase 2: AllCategoriesTableView migration with sort/filter support
+  - Phase 3: AllLabelsTableView migration with DnD support
+  - Phase 4: Parent-context views (LabelView, CategoryView) with scoped data
+  - Phase 5: MenuView with hierarchy support (labels → categories)
+
+### Bug Fixes
+- **useMoveHandlers stability**: Fixed handler reference stability by memoizing `getItems` and `reorder` functions
+- **RowContextMenu**: Added missing visibility action for label:category view
+- **Test expectations**: Updated non-existent item test to expect `{ isFirst: true, isLast: true }` (disables both move buttons)
+
+### Chores
+- Removed dead code: `useTableViewSetup.ts` (197 lines), `PlaceholderTableView.tsx` (32 lines)
+- Merged remote context-menu handler extraction with config-driven views
+
+## 0.70.4 - 2026-01-26
+
+### Improvements
+- **Label view context menu**: Removed visibility toggle from category context menu in label view (visibility managed in All Categories)
+
+### Documentation
+- **ROADMAP.md**: Updated Phase 3 to complete (context menus, range selection, mobile interactions, clone operations)
+- **ARCHITECTURE.md**: Added Context Menu Architecture section with shared hooks documentation
+- **context-menu-plan.md**: Updated to reflect complete implementation status
+
+## 0.70.3 - 2026-01-26
+
+### Refactoring
+- **Context menu hooks**: Extracted shared context menu handlers into reusable hooks in `hooks/context-menu/`
+- **New hooks**: useContextRowHighlight, useMoveHandlers, useBulkAction, useDeleteConfirmation, useContextClone, useContextVisibility, useContextRemove, useContextMoveTo, useRelationshipToggle
+- **Unified useMoveHandlers**: Consolidated flat list and nested list move handlers into single hook with `getItems(parentId?)` pattern
+- **Config alignment**: Aligned table view consumers with CONTEXT_MENU_CONFIG spec (removed non-spec handlers)
+
+## 0.70.2 - 2026-01-25
+
+### Bug Fixes
+- **Range selection with sorting**: Fixed shift+click range selection not respecting visual row order when columns are sorted in AllCategoriesTableView, CategoryTableView, and LabelTableView
+
+## 0.71.2 - 2026-01-25
+
+### Refactoring
+- **DnD state derivation**: Derive DnD hierarchy state from eligibility instead of syncing via useEffect
+- Removed brittle 6-dependency useEffect that synchronized drag state
+- Hierarchy info (`dragKind`, `dragParentId`, `draggedChildren`) now computed on-demand from eligibility
+
+## 0.71.1 - 2026-01-25
+
+### Refactoring
+- **Shared DeleteConfirmationDialog**: Extracted reusable delete confirmation dialog component
+- **useTableViewSetup hook**: Extracted common table view setup logic (later removed in v0.70.5)
+
+## 0.71.0 - 2026-01-25
+
+### Refactoring
+- **level → kind rename**: Renamed `level` property to `kind` for semantic clarity
+  - `MenuRowLevel` → `MenuRowKind` (entity type: "label" | "category" | "product")
+  - `dragLevel` → `dragKind` in useMultiEntityDnd
+  - Separates entity type concept from hierarchy depth (0, 1, 2)
+
+## 0.70.1 - 2026-01-25
+
+### Features
+- **Product category management**: Products in CategoryTableView can now manage which categories they belong to via context menu
+- **Search in relationship submenus**: manage-categories and manage-labels submenus now have search bars for filtering
+- **Consistent icons**: manage-categories uses FileSpreadsheet icon (matches navigation)
+
+### Improvements
+- **Action order alignment**: Context menu actions now follow action bar order (manage-* → clone → remove → visibility → move-* → delete)
+- **Simplified category context menus**: Removed delete from menu/label view category context menus to prevent accidental deletion
+- **Simplified product context menu**: Removed move-to action from products (use drag-and-drop instead)
+- **Removed all-categories action bar remove**: Remove action removed from all-categories view (many-to-many with labels)
+
+### Tests
+- Updated RowContextMenu tests for new action configurations
+
+### Documentation
+- Updated context-menu-plan.md with Phase 3 completion and new patterns
+
+## 0.70.0 - 2026-01-25
+
+### Features
+- **Context menus for all table views**: Right-click menus for AllCategoriesTableView, MenuTableView, LabelTableView, and CategoryTableView
+- **Menu view context actions**: Clone, remove, delete, and reorder for labels; clone, visibility, delete, move-to, and reorder for categories
+- **Label view context actions**: Clone, visibility, remove, delete, move-to, and reorder for categories within a label
+- **Category view context actions**: Visibility, remove, move-to, and reorder for products within a category
+
+### Improvements
+- **Simplified all-categories config**: Removed non-applicable actions (move, remove) since view uses table sorting
+- **Position-aware move actions**: Move up/down disabled at boundaries for accurate UX feedback
+- **Delete confirmation dialogs**: AlertDialog prompts for all destructive delete operations
+- **Merged context menus with WCAG touch targets**: Context menu integration now includes 44x44px touch targets
+
+## 0.69.1 - 2026-01-25
+
+### Features
+- **TouchTarget component**: Wrapper that expands touch targets to 44x44px on mobile (WCAG 2.5.5 compliance), no change on desktop
+- **Mobile touch targets**: Applied TouchTarget to CheckboxCell and ChevronToggleCell across all 5 table views
+
+### Improvements
+- **Inline button touch targets**: Added pseudo-element technique (`before:-inset-*`) to expand hit areas for:
+  - Pencil edit trigger in InlineNameEditor
+  - Check/X confirm/cancel buttons in InlineNameEditor
+  - Icon picker triggers in InlineIconCell
+- **Mobile-only expansion**: All touch target enhancements use `md:` breakpoint to preserve desktop sizing
+
+### Documentation
+- Updated mobile-interactions-plan.md with touch target implementation status
+
+## 0.68.0 - 2026-01-25
+
+### Features
+- **RowContextMenu enhancements**: Bulk mode support, mixed selection handling, category management submenu
+- **CheckboxListContent**: Shared component for dropdown and context menu checkbox lists with sectioned layout
+- **Context row highlighting**: Visual distinction between selected rows and right-clicked row via `isContextRow` prop
+- **AllLabelsTableView integration**: Full context menu with bulk actions, category management, and move operations
+
+### Improvements
+- **Entity+View pattern**: Context menus configured per `ViewType:EntityKind` for granular action control
+- **Platform-aware shortcuts**: Kbd component displays Mac/Windows appropriate modifier keys
+- **Action grouping**: Context menu actions organized into main, move, and delete groups with separators
+
+### Documentation
+- **Implementation details**: Comprehensive patterns documentation in context-menu-plan.md for future entity implementations
+
+## 0.67.0 - 2026-01-24
+
+### Features
+- **Keyboard shortcuts**: Single-key Gmail/Slack style shortcuts to avoid browser conflicts
+  - `N` - New item (label or category)
+  - `D` - Duplicate selected
+  - `R` - Remove selected
+  - `X` - Delete permanently (all-labels, all-categories)
+  - `V` - Toggle visibility
+  - `E` - Expand all (menu view)
+  - `C` - Collapse all (menu view)
+  - `U` - Undo
+  - `Shift+U` - Redo
+  - `?` - Toggle help popover
+- **Help button**: ConciergeBell icon on all 5 views with view-specific tips popover
+- **Delete button**: Trash2 icon with AlertDialog confirmation on all-labels and all-categories views
+- **Full undo/redo for delete**: `restoreLabel` and `restoreCategory` server actions recreate entities with all relationships
+
+### Improvements
+- **Accessible disabled buttons**: Changed from `disabled` to `aria-disabled` to keep buttons in tab order
+- **Shifted character handling**: Keyboard shortcuts correctly handle characters that require Shift (like `?`)
+- **Modal awareness**: Shortcuts disabled when dialogs are open
+
+### New Files
+- `hooks/useKeyboardShortcuts.ts` - Global keyboard shortcut handler
+- `constants/help-content.ts` - View-specific help content
+- `menu-action-bar/HelpPopoverButton.tsx` - Help popover component
+- `menu-action-bar/DeleteAlertButton.tsx` - Delete confirmation dialog
+
+## 0.66.20 - 2026-01-23
+
+- **Fixed AllLabelsTableView DnD reorder**: Added `defaultSort: null` to preserve server-provided order, fixing visual/calculation mismatch
+- **Consolidated DnD hooks**: `useGroupedReorder` now serves as shared core for both `useSingleEntityDnd` and `useMultiEntityDnd`
+- **Unified `getIsDraggable` API**: Cursor styling logic centralized in hooks instead of duplicated in views
+
+## 0.66.19 - 2026-01-23
+
+- **Fixed DnD drop position accuracy**: Drop position now tracked synchronously via ref, bypassing throttle delay
+- **Fixed empty label expansion on drop**: Target label auto-expands after cross-boundary move to show moved category
+- **Intent-based cursor feedback**: Grab/not-allowed cursors only show on mousedown, not hover (drag handle icon indicates availability)
+- **Added flush to throttle hook**: `useThrottledCallback` now returns `{ throttled, flush }` for pending call execution
+
+## 0.66.18 - 2026-01-23
+
+- **Fixed checkbox UI honesty**: Parent checkbox now shows "checked" only when explicitly selected, not when computed from all children being selected
+- Clicking all children individually now shows parent as "indeterminate" (not "checked")
+- This aligns UI state with actual DnD/action behavior
+
+## 0.66.17 - 2026-01-23
+
+- **Fixed auto-expanded parent collapse on drop**: Target label now stays expanded after successful drop
+- **Fixed race condition in clearDragState**: `dropInProgressRef` now managed only by drop/dragEnd handlers
+
+**Known Issues:**
+- Multi-drag ghost may not appear when items selected via individual clicks and drag starts immediately (race condition)
+
+## 0.66.16 - 2026-01-23
+
+- **Refactored DnD hooks architecture**: Unified hooks with shared `useGroupedReorder` core
+- **Added `useSingleEntityDnd`**: New hook for flat tables (AllLabels, Category, Label views)
+- **Added `useMultiEntityDnd`**: New hook for hierarchical tables with cross-boundary moves
+- **Renamed `MultiDragGhost` → `GroupedEntitiesGhost`**: Moved to table components directory
+- **Centralized DnD types**: Moved to `types/dnd.ts` for better organization
+- **Fixed theme-aware flash animations**: Auto-expand and drop-target flash now adapt to light/dark mode
+- **Deleted legacy hooks**: Removed `useDragReorder`, `useMenuTableDragReorder`, `useMultiDragGhost`
+
+## 0.66.15 - 2026-01-23
+
+- **Fixed multi-DnD selection order**: Dragged items now preserve visual order (not selection order) when dropped
+- **Fixed selection state after cross-boundary move**: Added `onSelectionUpdate` callback to update keys after move
+- **Fixed mixed DnD operations**: Handle reorder + cross-boundary move in same operation
+- **Added delayed auto-expand**: 500ms hover delay before expanding collapsed labels during drag
+- **Added auto-collapse on drag cancel**: Auto-expanded labels collapse when drag ends without drop
+
+**Known Issues (Auto-Expand UX):**
+- Target label collapses upon drop completion (should stay expanded)
+- Flash animation triggers on already-expanded labels (should only flash on actual expansion)
+
+## 0.66.14 - 2026-01-23
+
+- **Refactored DnD eligibility system**: Extracted `useDnDEligibility` hook following action-bar pattern
+- **Fixed per-row drag handle state**: Added `isRowInEligibleSet` prop for accurate visual feedback
+- **Fixed actionable roots computation**: Only filters children when parent is explicitly selected AND checked
+- **Added parent demotion logic**: Deselecting child removes parent from selection when it becomes indeterminate
+- **Fixed multi-drag ghost timing**: Ghost now pre-renders based on `actionableRoots` for synchronous `setDragImage`
+- **Added `DragHandleCell` component**: Centralized drag handle rendering with eligibility-based styling
+
+## 0.66.13 - 2026-01-21
+
+- **Standardized focus rings**: All custom components now use shadcn's focus ring style (`ring-ring/50 ring-[3px]`)
+- **Fixed dropdown click propagation**: Clicking outside dropdowns/popovers no longer triggers underlying elements
+- **Fixed tooltip flash on dropdown close**: Tooltips stay hidden when their associated dropdown closes
+- **Fixed focus ring clipping**: HierarchyName now uses `overflow-visible` to prevent focus ring cutoff
+
+## 0.66.12 - 2026-01-21
+
+- **Fixed cross-boundary DnD positioning**: Categories now land at correct drop position (not always at top)
+- **Fixed scrollbar flash**: Added `scrollbar-gutter: stable` to admin layout to prevent scrollbar appearing/disappearing during animations
+- **Fixed icon picker row toggle**: Added stopPropagation to prevent icon selection from toggling row expand state
+- **Improved collapse animation**: Separate exit transition (0.15s easeIn) for snappier collapse
+
+## 0.66.11 - 2026-01-21
+
+- **Cross-boundary drag-and-drop**: Move categories between labels with undo/redo support
+- **Motion animations for expand/collapse**: Cascade animation with staggered delays using motion library
+- **Auto-expand/collapse on drag**: Labels expand on drag enter, collapse when leaving territory
+- **Selection-synced expand state**: Check → expand, uncheck → collapse (not toggle)
+- **AddLabelsDropdown improvements**: Search, "Added"/"Available" sections, alphabetical sort
+- **White flash animation**: 2x blink for cross-boundary drop targets and auto-expanded rows
+
+## 0.66.10 - 2026-01-21
+
+- **Updated naming convention**: "New Label", "New Label2" and "Name copy", "Name copy2" (number directly attached)
+- **Restored font styling for default names**: Italic muted text for generic names
+- **Added duplicate label name validation**: Toast error shown when trying to save duplicate name
+- **Refactored `expandKey` to `isExpandable: boolean`**: Simplified identity registry field
+- **Fixed registry ordering**: Labels and categories now sorted by `order` to match visual table order
+- **Fixed clone item ordering**: Items processed in visual order for consistent results
+- **Fixed indeterminate state behavior**: Parent doesn't collapse when selecting all children from indeterminate state
+
+## 0.66.9 - 2026-01-21
+
+- **Fixed expand/collapse action icons**: Swapped icons (ListChevronsUpDown for expand, ListChevronsDownUp for collapse)
+- **Improved label drag behavior**:
+  - All labels collapse when starting label drag
+  - Expand disabled on all labels until drag completes
+  - Added `isDraggingLabel` state to drag hook
+  - Added `disabled` prop to ChevronToggleCell
+- **Auto-expand on category drag**: Labels expand on hover when dragging categories (visual feedback)
+- **Single-click expand toggle**: Clicking on expandable rows now toggles expand/collapse independently
+
+## 0.66.8 - 2026-01-21
+
+- **Simplified MenuTableView to 2-level hierarchy**: Labels → Categories only (no products)
+  - Products removed from row rendering (only product count shown)
+  - Categories are leaf nodes (no chevron, no expand/collapse)
+  - Updated `useFlattenedMenuRows` to not produce product rows
+  - Updated `getExpandableIds` to only return label IDs
+  - Product management moved to Category Detail view
+
+## 0.66.7 - 2026-01-21
+
+- **Removed dead code from useFlattenedMenuRows**: Deleted unused `MenuHierarchy` type and `buildMenuHierarchy` function (replaced by IdentityRegistry)
+
+## 0.66.6 - 2026-01-21
+
+- **Updated MenuTableView to use buildMenuRegistry**: Uses 2-level registry (labels + categories)
+- **Removed deprecated buildMenuHierarchyRegistry**: No longer needed after consumer update
+- **Updated MenuTableView docstring**: Reflects 2-level hierarchy with product count info column
+
+## 0.66.5 - 2026-01-21
+
+- **Simplified buildMenuRegistry to 2-level hierarchy**: Labels + Categories only
+  - Products removed from menu registry (product count shown as info column)
+  - Categories are leaf nodes with `expandKey: null`
+  - Labels can receive category drops (`canReceiveDrop: true`)
+
+## 0.66.4 - 2026-01-21
+
+- **Updated RowIdentity type**: Replaced `ancestry: string[]` with `parentKey: string | null`
+- **Added canReceiveDrop field**: For DnD drop target validation
+- **Updated IdentityRegistry interface**: `getParentId` → `getParentKey`, added `canReceiveDrop()`
+- **Updated useActionHandler**: Uses `parentKey` instead of `ancestry.at(-1)`
+
+## 0.66.3 - 2026-01-19
+
+- **HierarchyNameCell component**: CVA-based slot component for depth-based indentation
+  - Depth variants (0/1/2) with Tailwind classes for consistent hierarchy indentation
+  - Slots: HierarchyCheckbox, HierarchyChevron, HierarchyIcon, HierarchyName
+  - Negative margin on chevron slot to compensate for button hover padding
+- **Expand/collapse sync with selection**: Clicking or checking expands, unchecking collapses
+- **Flatten MenuTableView structure**: Moved types to sibling file, deleted subdirectory
+- **Spacing refinements**: Tighter icon-name gap, reduced checkbox margins for alignment
+
+## 0.66.2 - 2026-01-18
+
+- **Unified selection model with kind-prefixed keys**:
+  - Refactored `useContextSelectionModel` to use kind-prefixed keys (`label:id`, `category:labelId-catId`, `product:...`)
+  - Kind is now derived from keys, not stored separately - enables mixed selections in Menu Table View
+  - Added `hasSameKindSelection` helper for action validation (clone/remove disabled when mixed)
+  - Removed kind guards from `toggleSelection`/`selectAll` to allow selecting across entity types
+  - Consolidated duplicate hooks - deleted `useMenuSelectionState` in favor of unified model
+- **Auto-expand on check**: Checking a label/category checkbox auto-expands to show children
+- **Action bar improvements**: Clone/remove show "select items of same type" message when mixed kinds selected
+
+## 0.66.1 - 2026-01-18
+
+- **Hierarchical selection state hook**: New `useMenuSelectionState` for Menu Table View
+  - Tri-state checkbox support (checked/indeterminate/unchecked) for parent rows
+  - Pre-built hierarchy maps for O(1) ancestry lookups
+  - Composite keys for all entities to avoid ID collisions across parents
+  - Labels: `labelId`, Categories: `labelId-categoryId`, Products: `labelId-categoryId-productId`
+  - Simple visibility rule: same-kind checkboxes only when selection active
+  - Master switch behavior for label toggle in category/product mode
+
+## 0.66.0 - 2026-01-17
+
+- **Menu Table View enhancements**: UI polish and action bar improvements
+  - Fixed row click selection for label rows (removed errant `data-row-click-ignore`)
+  - Product selection now uses composite keys (`parentId-id`) for unique selection per category
+  - Icon cell hover styling with background color for better UX
+  - Adjusted spacing between chevron, icon, and name elements
+- **Action bar state-aware disabling**:
+  - "Add Labels" disabled when row selection is active
+  - "Expand All" disabled when all expandable items are already expanded
+  - "Collapse All" disabled when all items are already collapsed
+  - Added `expandedIds` and `expandableIds` to `BuilderState` type
+  - New helpers: `allExpanded()` and `allCollapsed()` in action bar shared utilities
+- **Drag-hover auto-expand** (foundation for cross-boundary DnD):
+  - Hovering over collapsed label/category for 500ms during drag auto-expands it
+  - Flash animation (`animate-auto-expand-flash`) on auto-expanded rows
+  - Timer management with proper cleanup on drag end/leave
+
+## 0.65.2 - 2026-01-17
+
+- **Table view column reordering**: Standardized Visibility column placement across all views
+  - Visibility column now positioned as second-to-last data column in all table views
+  - AllCategoriesTableView: Moved "Added to Labels" to last column (takes remaining space)
+  - AllCategoriesTableView: Center-aligned Added Date and Visibility columns
+  - AllCategoriesTableView: Fixed header casing to "Added to Labels"
+
+## 0.65.1 - 2026-01-17
+
+- **Row visibility styling**: Added `isHidden` prop to TableRow and InlineNameEditor for muted text on hidden rows
+  - All table views now show muted text when entity visibility is toggled off
+  - TableRow applies `text-muted-foreground` when `isHidden` is true
+  - InlineNameEditor respects `isHidden` prop for consistent styling
+  - Removed hardcoded `text-muted-foreground` from Added Date column in AllCategoriesTableView
+
+## 0.65.0 - 2026-01-17
+
+- **Label Table View (2.3)**: Complete implementation of Label View for category management
+  - Single-level table showing categories within selected label
+  - TanStack sortable columns (Name, Added Order)
+  - Drag-and-drop category reordering with undo/redo support
+  - Products column showing comma-separated product names
+  - Double-click navigates to category view
+  - Column sort persists to database automatically
+- **Schema change**: Added `createdAt` column to `CategoryLabelCategory` junction table
+  - Used as `attachedAt` for chronological Added Order ranking
+  - Migration: `20260117114116_add_createdat_to_category_label_category`
+- **New hook**: `usePersistColumnSort` for persisting TanStack column sort to database
+  - Reusable across any table view with sort-to-DB needs
+  - Guards against concurrent persists
+- **Cleanup**: Removed `sort-mode` action from action bar (replaced by column sorting)
+
+## 0.64.6 - 2026-01-17
+
+- **Product pinning**: Newly added products are pinned to top of CategoryTableView
+  - Integrated `useContextRowUiState` and `usePinnedRow` hooks
+  - Pinned row appears at top when no column sorting is active
+- **Undo/redo for add products**: Add/remove products via dropdown now supports undo/redo
+  - Added `pushUndoAction` to DropdownContext
+  - Both attach and detach actions are undoable
+- **Toast notifications**: Added feedback for category view actions
+  - Add/remove product success/failure toasts with product name
+  - Undo/redo success/failure toasts
+  - Added `toast` to DropdownContext for reusable notifications
+
+## 0.64.5 - 2026-01-16
+
+- **Category view undo/redo**: Added undo/redo support for remove action in CategoryTableView
+  - Undo re-attaches products via `attachProductToCategory`
+  - Redo detaches them again via `detachProductFromCategory`
+  - Added `captureUndo` to hydration (was missing from action definitions)
+- **Tests**: Added 5 tests for category view undo/redo functionality
+
+## 0.64.4 - 2026-01-16
+
+- **Checkbox contrast improvement**: Improved unchecked checkbox border visibility in light mode
+  - Changed from `border-input` to `border-muted-foreground/50` for better contrast
+  - Dark mode retains original `border-input` for accessibility
+- **Added Order text styling**: Removed `text-muted-foreground` from Added Order column in CategoryTableView
+  - Numeric data now uses standard text color, consistent with product count columns
+- **Roadmap update**: Updated docs/menu-builder/roadmap.md with Phase 2 progress (3/5 views complete)
+
+## 0.64.3 - 2026-01-16
+
+- **Standardize disabled button styling**: Unified action bar button disabled states
+  - All buttons now use native `disabled` prop with consistent `opacity-50` effect
+  - Removed inconsistent `aria-disabled` + `text-muted-foreground` pattern
+  - Removed redundant `text-muted-foreground` classes from already-disabled buttons
+
+## 0.64.2 - 2026-01-16
+
+- **Icon vertical alignment fix**: Added `align-middle` to InlineIconCell for proper vertical centering
+- **Category table view tweaks**: Adjusted column widths and icon inline display
+- **Header truncation**: Added `truncate` class to non-sortable headers
+
+## 0.64.1 - 2026-01-16
+
+- **Column preset consolidation**: Single source of truth for table column config
+  - Added `align` property to `ColumnWidthEntry` type in presets
+  - `TableHeader` now reads width/align from preset via column id
+  - `TableCell` now accepts `config` prop for cell class and alignment
+  - Simplified header column definitions to just `id` and `label`
+- **Sort button alignment fix**: Positioned toggle icon absolutely to not affect text centering
+- **Skeleton loading state**: Replaced spinner with layout-matching skeleton in MenuBuilder
+- **Cell alignment cleanup**: Removed redundant `flex justify-center` wrappers
+  - VisibilityCell and InlineIconCell now centered via `text-center` from preset
+  - InlineIconCell changed to `inline-flex` for proper centering
+- Metrics: TypeScript + ESLint clean
+
+## 0.64.0 - 2026-01-15
+
+- **Category Table View**: Implemented CategoryTableView with sortable columns and inline editing
+  - Columns: Checkbox, Product Name, Added Order, Visibility, Categories, Drag Handle
+  - Sortable columns: Name (alphabetical), Added Order (by order in category)
+  - Default sort: Added Order descending (newest first)
+  - Single-click selects (200ms delay), double-click navigates to product detail
+- **All Categories Added Date column**: Added "Added Date" column with default descending sort
+  - Shows category creation date with date-only formatting
+  - Default sort ensures newest categories appear first
+- **Sortable header UX improvements**: Enhanced column sorting experience
+  - Sort state indicator (↑/↓) prepended to column label when sorted
+  - Toggle icon (↕) appears on row hover (md+), always visible on mobile
+  - Click toggles between asc ↔ desc only (no unsorted in cycle)
+  - Sort resets to unsorted via: DnD reorder, different column sort, or undo
+- **useDragReorder callback**: Added `onReorderComplete` option for post-reorder actions
+- **Bug fixes**:
+  - Add-products action now disabled when row selection is active
+  - Fixed last row left border not showing on selection (override shadcn TableBody reset)
+- **Schema**: Added `createdAt` field to Category model for tracking creation dates
+- Metrics: TypeScript + ESLint clean; all existing tests passing
+
+## 0.63.1 - 2026-01-15
+
+- **DnD border fix**: Fixed drag-and-drop border indicator not showing when dragging to the last row
+  - Removed premature state clearing on `onDragLeave` that caused border flicker
+  - Border now persists correctly when hovering over bottom edge of last row
+- **Test coverage**: Added comprehensive unit tests for naming convention utilities
+  - 20 tests covering `stripCopySuffix`, `makeCloneName`, `makeNewItemName`, `isUniqueConstraintError`, and `retryWithUniqueConstraint`
+  - Tests verify naming patterns, error handling, retry logic, and edge cases
+- Metrics: Jest (20 new tests passing); TypeScript + ESLint clean
+
+## 0.63.0 - 2026-01-15
+
+- **Declarative undo/redo system**: Refactored scattered conditional logic into config-driven architecture
+  - Added `captureUndo` field to action config for view-specific undo capture logic
+  - Eliminated 100+ lines of conditional undo/redo logic in MenuActionBar component
+  - Undo actions now colocated with action definitions for better maintainability
+  - History stack remains view-scoped (10 operations per view, cleared on navigation)
+- **Menu Builder bug fixes**: Resolved multiple UX and accessibility issues
+  - Visibility toggle: Now works with undo/redo in all views (menu, all-labels, all-categories)
+  - Icon picker accessibility: Made trigger button tabbable with `opacity` pattern and proper `aria-label`
+  - DnD border indicator: Fixed missing border on 2nd-to-last and last rows during drag operations
+  - Clone action: Implemented for labels with full undo/redo support
+  - Add new action: Implemented for labels with automatic name editing and undo support
+  - Add new button: Now properly disabled when row selection is active
+- **Code quality improvements**: Extracted and standardized common patterns
+  - Created `actions/utils.ts` with centralized naming conventions and retry logic
+  - Standardized naming: "copy", "copy (2)", "copy (3)" for clones; "New Label", "New Label (2)" for new items
+  - Extracted `cloneItems()` and `captureCloneUndo()` helpers to eliminate duplication
+  - Removed ~200 lines of duplicated code across labels and categories
+  - Generic `retryWithUniqueConstraint()` for Prisma P2002 error handling
+- Metrics: TypeScript + ESLint clean; all existing tests passing
+
+## 0.62.0 - 2026-01-14
+
+- **All Labels table view**: Implemented AllLabelsTableView with drag-drop reordering and inline editing
+  - Columns: Checkbox, Icon (center 48px), Label Name, Categories, Visibility, Drag Handle
+  - No column sorting - row order dictates DB label order via drag-drop
+  - Single-click selects (200ms delay), double-click navigates to label detail
+  - Drag handle always visible on mobile, hover-only on desktop
+- **Reusable table view hooks**: Extracted common patterns to reduce boilerplate (~80 lines per view)
+  - `useDragReorder`: Row drag-and-drop with `getDragHandlers()` and `getDragClasses()`
+  - `useInlineEditHandlers`: Name/icon/visibility handlers with automatic undo/redo
+  - `usePinnedRow` enhanced: Built-in default sort by order field (descending)
+  - `useContextRowUiState` enhanced: `autoClearPinned` option for automatic cleanup
+  - `TableRow` enhanced: Built-in click/double-click handling via `onRowClick`/`onRowDoubleClick`
+- **New components**: `InlineIconCell` for inline icon editing with IconPicker dialog
+- **Refactored AllCategoriesTableView**: Updated to use new hooks for consistency
+- **Documentation updates**: Updated ROADMAP, ARCHITECTURE, IMPLEMENTATION-GUIDE with new hooks and patterns
+- **CLAUDE.md updates**: Added instructions for refactor opportunities and docs sync; referenced COMMIT_PROCEDURE.md
+- Metrics: Jest `npm run test:ci` (36 suites, 300 tests passing); lint + typecheck clean
+
 ## 0.61.1 - 2026-01-13
 
 - **Prisma 7 compatibility fix**: Removed deprecated `url` from datasource block in schema.prisma

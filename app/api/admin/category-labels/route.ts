@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
-import { createCategoryLabelSchema } from "@/app/admin/(product-menu)/types/category";
+import { createCategoryLabelSchema } from "@/app/admin/product-menu/types/category";
 import {
   createCategoryLabel,
   listCategoryLabelsWithCategories,
-} from "@/app/admin/(product-menu)/data/labels";
+} from "@/app/admin/product-menu/data/labels";
 
 export async function GET() {
   try {
@@ -53,10 +53,13 @@ export async function POST(req: Request) {
 
       return NextResponse.json({ label }, { status: 201 });
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Failed";
-      if (message === "Label name must be unique") {
+      // Handle Prisma unique constraint violation (P2002)
+      const errorCode = e && typeof e === "object" && "code" in e ? (e as { code: unknown }).code : null;
+      if (errorCode === "P2002") {
         return NextResponse.json({ error: "Label name must be unique" }, { status: 400 });
       }
+
+      const message = e instanceof Error ? e.message : "Failed";
       if (message === "Name is required") {
         return NextResponse.json({ error: "Name is required" }, { status: 400 });
       }

@@ -217,6 +217,9 @@ We define CSS variables for each theme.
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  .scrollbar-gutter-stable {
+    scrollbar-gutter: stable;
+  }
 }
 
 /* Highlight animation for newly added items */
@@ -235,3 +238,38 @@ We define CSS variables for each theme.
 .animate-highlight-pulse {
   animation: highlight-pulse 0.6s ease-out 2;
 }
+
+/* Flash animation for auto-expanded rows during drag - blinks 2x using theme color */
+@keyframes auto-expand-flash {
+  0%,
+  50%,
+  100% {
+    background-color: transparent;
+  }
+  25%,
+  75% {
+    background-color: oklch(from var(--foreground) l c h / 0.15);
+  }
+}
+
+.animate-auto-expand-flash {
+  animation: auto-expand-flash 0.6s ease-out;
+}
+
+/* Flash animation for cross-boundary drop target - blinks 2x using theme color */
+@keyframes drop-target-flash {
+  0%,
+  50%,
+  100% {
+    background-color: transparent;
+  }
+  25%,
+  75% {
+    background-color: oklch(from var(--foreground) l c h / 0.15);
+  }
+}
+
+.animate-drop-target-flash {
+  animation: drop-target-flash 0.6s ease-in-out;
+}
+

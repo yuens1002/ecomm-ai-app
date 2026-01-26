@@ -165,17 +165,29 @@ CategoryLabel (Label)
 
 ### Category View (specific category)
 
+**Table Columns:** `checkbox | Products (sortable) | Added Order (sortable) | Visibility | Categories | dragHandle`
+
+- **Products**: Product name, sortable via header click
+- **Added Order**: Chronological order of when product was attached to this category, sortable via header click
+- **Visibility**: Eye icon indicating `isDisabled` state (read-only)
+- **Categories**: Other categories this product belongs to
+
 **Left:**
 
-- `[Plus] Products 🔽` - Link existing products to this category via dropdown
-- `[ArrowUpDown] Sort Order 🔽` - Product ordering: Manual (inherit), Alpha (A-Z, Z-A), Added (First, Last) - affects category page display (not shown on product menu)
+- `[Plus] Products 🔽` - Link existing products to this category via dropdown (disabled when items selected)
 - `[CornerUpLeft] Remove` - Remove selected products from category (detaches junction)
 
 **Right:**
 
-- `[ListChevronsDownUp] Expand All` - Expands all product rows
-- `[ListChevronsUpDown] Collapse All` - Collapses all product rows
 - `[Undo] Undo` / `[Redo] Redo` - Bidirectional undo/redo
+
+**Column Sorting UX:**
+
+- Sort state indicator (↑/↓) prepended to column label when sorted
+- ArrowUpDown toggle icon appears on header row hover (md+: hidden until hover)
+- Click toggles between asc ↔ desc only (first click = asc)
+- Reset to unsorted happens via: DnD reorder, different column sort, or undo
+- Newly attached products appear at top of list (order 0)
 
 ### All-Labels View
 
@@ -203,7 +215,7 @@ CategoryLabel (Label)
 - `[Eye] Visibility` - Toggle visibility of selected items
 - `[Undo] Undo` / `[Redo] Redo` - Bidirectional undo/redo
 
-**Table Columns:** `checkbox | name | labels | products | visibility`
+**Table Columns:** `checkbox | name | labels | products | added date | visibility`
 
 ### Button State Logic
 
@@ -217,7 +229,7 @@ CategoryLabel (Label)
   - Example: "New Product" never shown (products not created here)
   - Example: Expand/Collapse hidden in flat all-views
 
-### Tooltips (https://ui.shadcn.com/docs/components/kbd)
+### Tooltips (<https://ui.shadcn.com/docs/components/kbd>)
 
 - **Desktop enabled buttons**: Show on hover with keyboard shortcut (use shadcn `Kbd` component)
   - Example: "Clone" with `<Kbd>Ctrl</Kbd>+<Kbd>D</Kbd>`
@@ -253,7 +265,7 @@ CategoryLabel (Label)
 - Row Selection (checkboxes)
 - Sorting (column headers)
 - Reusable column definitions
-- See: https://ui.shadcn.com/docs/components/data-table
+- See: <https://ui.shadcn.com/docs/components/data-table>
 
 ### Menu View
 

@@ -5,13 +5,13 @@ import {
   RoastLevel,
 } from "@prisma/client";
 
-const LABEL_ORDER = [
-  "By Roast Level",
-  "By Taste Profile",
-  "Origins",
-  "Blends",
-  "Collections",
-  "Merch",
+const LABEL_DEFS = [
+  { name: "By Roast Level", icon: "Rainbow" },
+  { name: "By Taste Profile", icon: "Grape" },
+  { name: "Origins", icon: "Earth" },
+  { name: "Blends", icon: "Blend" },
+  { name: "Collections", icon: "Combine" },
+  { name: "Merch", icon: "Star" },
 ];
 
 const CATEGORY_DEFS = [
@@ -267,14 +267,30 @@ export async function seedMenu(prisma: PrismaClient) {
 
   // Upsert labels
   const labels = new Map<string, string>();
-  for (let i = 0; i < LABEL_ORDER.length; i += 1) {
-    const name = LABEL_ORDER[i];
+  const allowedLabelNames = new Set(LABEL_DEFS.map((l) => l.name));
+  for (let i = 0; i < LABEL_DEFS.length; i += 1) {
+    const { name, icon } = LABEL_DEFS[i];
     const label = await prisma.categoryLabel.upsert({
       where: { name },
-      update: { order: i + 1 },
-      create: { name, order: i + 1 },
+      update: { order: i + 1, icon },
+      create: { name, order: i + 1, icon },
     });
     labels.set(name, label.id);
+  }
+
+  // Remove old labels not in allowed set
+  const obsoleteLabels = await prisma.categoryLabel.findMany({
+    where: { name: { notIn: Array.from(allowedLabelNames) } },
+    select: { id: true, name: true },
+  });
+  if (obsoleteLabels.length) {
+    const obsoleteLabelIds = obsoleteLabels.map((l) => l.id);
+    await prisma.categoryLabelCategory.deleteMany({
+      where: { labelId: { in: obsoleteLabelIds } },
+    });
+    await prisma.categoryLabel.deleteMany({
+      where: { id: { in: obsoleteLabelIds } },
+    });
   }
 
   // Upsert categories and label links

@@ -212,8 +212,18 @@ describe("Category label routes", () => {
     expect(json.label.id).toBe("lbl_1");
   });
 
-  it("rejects duplicate label names", async () => {
-    findUniqueMock.mockResolvedValue({ id: "existing" });
+  it("rejects duplicate label names (via Prisma unique constraint)", async () => {
+    // Simulate Prisma P2002 unique constraint violation
+    const prismaError = new Error("Unique constraint failed") as Error & {
+      code: string;
+    };
+    prismaError.code = "P2002";
+    // Make it look like a PrismaClientKnownRequestError
+    Object.setPrototypeOf(prismaError, {
+      constructor: { name: "PrismaClientKnownRequestError" },
+    });
+
+    createMock.mockRejectedValue(prismaError);
 
     const res = await createLabel(
       jsonRequest("http://localhost/api/admin/category-labels", "POST", {
@@ -222,7 +232,6 @@ describe("Category label routes", () => {
     );
 
     expect(res.status).toBe(400);
-    expect(createMock).not.toHaveBeenCalled();
   });
 
   it("returns labels with categories via GET", async () => {
