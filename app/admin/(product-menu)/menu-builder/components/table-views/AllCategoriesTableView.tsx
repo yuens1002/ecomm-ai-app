@@ -19,6 +19,14 @@ import {
 } from "@tanstack/react-table";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
+import {
+  useContextRowHighlight,
+  useBulkAction,
+  useDeleteConfirmation,
+  useContextClone,
+  useContextVisibility,
+  useRelationshipToggle,
+} from "../../../hooks/context-menu";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { buildFlatRegistry } from "../../../hooks/useIdentityRegistry";
@@ -54,16 +62,24 @@ export function AllCategoriesTableView() {
     detachCategory,
   } = useMenuBuilder();
 
-  // UI state
-  const [contextRowId, setContextRowId] = useState<string | null>(null);
-  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{
-    open: boolean;
-    targetIds: string[];
-  }>({ open: false, targetIds: [] });
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast: _toast } = useToast();
 
-  const { toast } = useToast();
+  // UI state for row hover
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+
+  // Context menu row highlighting (shared hook)
+  const { isContextRow, handleContextOpenChange } = useContextRowHighlight();
+
+  // Delete confirmation dialog (shared hook)
+  const {
+    deleteConfirmation,
+    isDeleting,
+    requestDelete,
+    confirmDelete,
+    cancelDelete,
+  } = useDeleteConfirmation({
+    deleteEntity: (_kind, id) => deleteCategory(id),
+  });
 
   // Editing/pinned state
   const {
@@ -145,6 +161,7 @@ export function AllCategoriesTableView() {
     return map;
   }, [labels]);
 
+  // Label targets for manage-labels submenu (all visible labels)
   const labelTargets = useMemo(
     () =>
       labels
@@ -251,126 +268,59 @@ export function AllCategoriesTableView() {
   });
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Context Menu Handlers
+  // Context Menu Handlers (using shared hooks)
   // ─────────────────────────────────────────────────────────────────────────
 
-  const getTargetIds = useCallback(
-    (categoryId: string): string[] => {
-      const categoryKey = createKey("category", categoryId);
-      const inSelection = isSelected(categoryKey);
-      const isBulk = inSelection && actionableRoots.length > 1 && isSameKind;
-      if (isBulk) {
-        return actionableRoots.map((key) => key.split(":")[1]);
-      }
-      return [categoryId];
-    },
-    [isSelected, actionableRoots, isSameKind]
-  );
+  // Bulk action support for context menu operations
+  const { getTargetIds } = useBulkAction({
+    isSelected,
+    actionableRoots,
+    isSameKind,
+    entityKind: "category",
+  });
 
+  // Clone (with bulk support)
+  const { handleClone: handleContextClone } = useContextClone({
+    cloneEntity: (id) => cloneCategory({ id }),
+    getTargetIds,
+    entityLabel: { singular: "Category", plural: "categories" },
+  });
+
+  // Delete handler
   const handleContextDelete = useCallback(
     (categoryId: string) => {
-      const targetIds = getTargetIds(categoryId);
-      setDeleteConfirmation({ open: true, targetIds });
+      requestDelete(categoryId, "category", getTargetIds);
     },
-    [getTargetIds]
+    [requestDelete, getTargetIds]
   );
 
-  const handleConfirmDelete = useCallback(async () => {
-    const { targetIds } = deleteConfirmation;
-    if (!targetIds || targetIds.length === 0) return;
+  // Visibility toggle (with bulk support + undo for single items)
+  const { handleVisibilityToggle: handleBulkVisibility } = useContextVisibility({
+    updateEntity: (id, visible) => updateCategory(id, { isVisible: visible }),
+    getTargetIds,
+    entityLabel: { singular: "Category", plural: "categories" },
+  });
 
-    setIsDeleting(true);
-    try {
-      const results = await Promise.all(
-        targetIds.map((id) => deleteCategory(id))
-      );
-      const allOk = results.every((r) => r.ok);
-      if (allOk) {
-        toast({
-          title:
-            targetIds.length > 1
-              ? `${targetIds.length} categories deleted`
-              : "Category deleted",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Some categories could not be deleted",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setIsDeleting(false);
-      setDeleteConfirmation({ open: false, targetIds: [] });
-    }
-  }, [deleteConfirmation, deleteCategory, toast]);
-
-  const handleContextClone = useCallback(
-    async (categoryId: string) => {
-      const targetIds = getTargetIds(categoryId);
-      const results = await Promise.all(
-        targetIds.map((id) => cloneCategory({ id }))
-      );
-      const allOk = results.every((r) => r.ok);
-      if (allOk) {
-        toast({
-          title:
-            targetIds.length > 1
-              ? `${targetIds.length} categories cloned`
-              : "Category cloned",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Some categories could not be cloned",
-          variant: "destructive",
-        });
-      }
-    },
-    [cloneCategory, toast, getTargetIds]
-  );
-
+  // Wrap to use undo-enabled handler for single items
   const handleContextVisibilityToggle = useCallback(
     async (categoryId: string, visible: boolean) => {
       const targetIds = getTargetIds(categoryId);
       if (targetIds.length === 1) {
         await handleVisibilitySave(categoryId, visible);
       } else {
-        await Promise.all(
-          targetIds.map((id) => updateCategory(id, { isVisible: visible }))
-        );
-        toast({
-          title: `${targetIds.length} categories ${visible ? "shown" : "hidden"}`,
-        });
+        // Bulk operation - use hook handler
+        await handleBulkVisibility(categoryId, visible);
       }
     },
-    [getTargetIds, handleVisibilitySave, updateCategory, toast]
+    [getTargetIds, handleVisibilitySave, handleBulkVisibility]
   );
 
-  const handleLabelToggle = useCallback(
-    async (categoryId: string, labelId: string, shouldAttach: boolean) => {
-      if (shouldAttach) {
-        const result = await attachCategory(labelId, categoryId);
-        if (!result.ok) {
-          toast({
-            title: "Error",
-            description: "Could not add to label",
-            variant: "destructive",
-          });
-        }
-      } else {
-        const result = await detachCategory(labelId, categoryId);
-        if (!result.ok) {
-          toast({
-            title: "Error",
-            description: "Could not remove from label",
-            variant: "destructive",
-          });
-        }
-      }
-    },
-    [attachCategory, detachCategory, toast]
-  );
+  // Label toggle for manage-labels submenu (swap args to match attachCategory signature)
+  const { handleToggle: handleLabelToggle } = useRelationshipToggle({
+    attach: (categoryId, labelId) => attachCategory(labelId, categoryId),
+    detach: (categoryId, labelId) => detachCategory(labelId, categoryId),
+    relationshipLabel: "label",
+  });
 
   // ─────────────────────────────────────────────────────────────────────────
   // Config-Driven Row Rendering
@@ -409,7 +359,7 @@ export function AllCategoriesTableView() {
     },
     selectionInfo: { actionableRoots, isSameKind },
     extra,
-    onContextMenuOpenChange: (id, open) => setContextRowId(open ? id : null),
+    onContextMenuOpenChange: handleContextOpenChange,
     onMouseEnter: setHoveredRowId,
     onMouseLeave: () => setHoveredRowId(null),
     onRowClick: handleClick,
@@ -426,7 +376,7 @@ export function AllCategoriesTableView() {
           checkboxState: getCheckboxState(categoryKey),
           anchorKey,
           isRowHovered: hoveredRowId === category.id,
-          isContextRow: contextRowId === category.id,
+          isContextRow: isContextRow(category.id),
           isEditing: editingCategoryId === category.id,
           isPinned: isPinned || pinnedCategoryId === category.id,
         },
@@ -458,7 +408,7 @@ export function AllCategoriesTableView() {
       getCheckboxState,
       anchorKey,
       hoveredRowId,
-      contextRowId,
+      isContextRow,
       editingCategoryId,
       pinnedCategoryId,
       onToggle,
@@ -536,8 +486,8 @@ export function AllCategoriesTableView() {
         entityNamePlural="categories"
         associationMessage="all product associations"
         isDeleting={isDeleting}
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setDeleteConfirmation({ open: false, targetIds: [] })}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
       />
     </>
   );

@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.70.4 - 2026-01-26
+
+### Improvements
+- **Label view context menu**: Removed visibility toggle from category context menu in label view (visibility managed in All Categories)
+
+### Documentation
+- **ROADMAP.md**: Updated Phase 3 to complete (context menus, range selection, mobile interactions, clone operations)
+- **ARCHITECTURE.md**: Added Context Menu Architecture section with shared hooks documentation
+- **context-menu-plan.md**: Updated to reflect complete implementation status
+
+## 0.70.3 - 2026-01-26
+
+### Refactoring
+- **Context menu hooks**: Extracted shared context menu handlers into reusable hooks in `hooks/context-menu/`
+- **New hooks**: useContextRowHighlight, useMoveHandlers, useBulkAction, useDeleteConfirmation, useContextClone, useContextVisibility, useContextRemove, useContextMoveTo, useRelationshipToggle
+- **Unified useMoveHandlers**: Consolidated flat list and nested list move handlers into single hook with `getItems(parentId?)` pattern
+- **Config alignment**: Aligned table view consumers with CONTEXT_MENU_CONFIG spec (removed non-spec handlers)
+
 ## 0.70.2 - 2026-01-25
 
 ### Bug Fixes

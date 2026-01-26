@@ -13,6 +13,14 @@ import {
 } from "@tanstack/react-table";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
+import {
+  useContextRowHighlight,
+  useMoveHandlers,
+  useBulkAction,
+  useContextRemove,
+  useContextMoveTo,
+  useRelationshipToggle,
+} from "../../../hooks/context-menu";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { useSingleEntityDnd } from "../../../hooks/dnd/useSingleEntityDnd";
@@ -47,17 +55,16 @@ export function CategoryTableView() {
     reorderProductsInCategory,
     detachProductFromCategory,
     attachProductToCategory,
-    moveProductToCategory,
   } = useMenuBuilder();
 
   const currentCategoryId = builder.currentCategoryId;
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  // Context menu highlight state
-  const [contextRowId, setContextRowId] = useState<string | null>(null);
-
   const { toast } = useToast();
+
+  // Context menu row highlighting (shared hook)
+  const { isContextRow, handleContextOpenChange } = useContextRowHighlight();
 
   // Pinning support for newly added products
   const { pinnedId: pinnedProductId } = useContextRowUiState(
@@ -168,6 +175,7 @@ export function CategoryTableView() {
       keys.push(createKey("product", row.original.id));
     }
     return keys;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table, pinnedProduct, sorting]);
 
   // Selection model for remove action
@@ -283,108 +291,19 @@ export function CategoryTableView() {
   );
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Context menu handlers
+  // Context menu data (targets for submenus)
   // ─────────────────────────────────────────────────────────────────────────────
 
-  // Note: Products use isDisabled for visibility (inverse of category/label isVisible)
-  const handleContextVisibility = useCallback(
-    async (_productId: string, _visible: boolean) => {
-      // Products don't have a direct visibility toggle in this context
-      // Visibility is controlled at the product level, not per-category
-      // For now, this is a no-op; could link to product settings in future
-      toast({ title: "Product visibility is managed in product settings" });
-    },
-    [toast]
+  // Category targets for manage-categories submenu (all visible categories)
+  const categoryTargets = useMemo(
+    () =>
+      categories
+        .filter((c) => c.isVisible)
+        .map((c) => ({ id: c.id, name: c.name })),
+    [categories]
   );
 
-  const handleContextRemove = useCallback(
-    async (productId: string) => {
-      if (!currentCategoryId) return;
-      const result = await detachProductFromCategory(productId, currentCategoryId);
-      if (result.ok) {
-        toast({ title: "Product removed from category" });
-      } else {
-        toast({ title: "Error", description: "Could not remove product", variant: "destructive" });
-      }
-    },
-    [currentCategoryId, detachProductFromCategory, toast]
-  );
-
-  const handleMoveUp = useCallback(
-    async (productId: string) => {
-      const index = categoryProducts.findIndex((p) => p.id === productId);
-      if (index <= 0 || !currentCategoryId) return;
-      const newOrder = categoryProducts.map((p) => p.id);
-      [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
-      await reorderProductsInCategory(currentCategoryId, newOrder);
-      setSorting([]); // Clear sorting when manually reordering
-    },
-    [categoryProducts, currentCategoryId, reorderProductsInCategory]
-  );
-
-  const handleMoveDown = useCallback(
-    async (productId: string) => {
-      const index = categoryProducts.findIndex((p) => p.id === productId);
-      if (index < 0 || index >= categoryProducts.length - 1 || !currentCategoryId) return;
-      const newOrder = categoryProducts.map((p) => p.id);
-      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
-      await reorderProductsInCategory(currentCategoryId, newOrder);
-      setSorting([]); // Clear sorting when manually reordering
-    },
-    [categoryProducts, currentCategoryId, reorderProductsInCategory]
-  );
-
-  const handleMoveTo = useCallback(
-    async (productId: string, toCategoryId: string) => {
-      if (!currentCategoryId) return;
-      const product = products.find((p) => p.id === productId);
-      const toCategory = categories.find((c) => c.id === toCategoryId);
-
-      const result = await moveProductToCategory({
-        productId,
-        fromCategoryId: currentCategoryId,
-        toCategoryId,
-      });
-
-      if (result.ok) {
-        toast({
-          title: "Product moved",
-          description: `Moved "${product?.name ?? "Product"}" to "${toCategory?.name ?? "Category"}"`,
-        });
-      } else {
-        toast({ title: "Move failed", description: "Could not move product", variant: "destructive" });
-      }
-    },
-    [currentCategoryId, products, categories, moveProductToCategory, toast]
-  );
-
-  // Handler for toggling product attachment to a category (via context menu)
-  const handleCategoryToggle = useCallback(
-    async (productId: string, categoryId: string, shouldAttach: boolean) => {
-      if (shouldAttach) {
-        const result = await attachProductToCategory(productId, categoryId);
-        if (!result.ok) {
-          toast({
-            title: "Error",
-            description: "Could not add to category",
-            variant: "destructive",
-          });
-        }
-      } else {
-        const result = await detachProductFromCategory(productId, categoryId);
-        if (!result.ok) {
-          toast({
-            title: "Error",
-            description: "Could not remove from category",
-            variant: "destructive",
-          });
-        }
-      }
-    },
-    [attachProductToCategory, detachProductFromCategory, toast]
-  );
-
-  // Get move targets (other categories, excluding current)
+  // Move-to targets (other categories, excluding current)
   const moveToTargets = useMemo(
     () =>
       categories
@@ -393,14 +312,62 @@ export function CategoryTableView() {
     [categories, currentCategoryId]
   );
 
-  // Category targets for manage-categories context menu (all visible categories)
-  const categoryTargets = useMemo(
-    () =>
-      categories
-        .filter((c) => c.isVisible)
-        .map((c) => ({ id: c.id, name: c.name })),
-    [categories]
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Context menu handlers (using shared hooks)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // Bulk action support for context menu operations
+  const { getTargetIds } = useBulkAction({
+    isSelected,
+    actionableRoots,
+    isSameKind,
+    entityKind: "product",
+  });
+
+  // Move up/down handlers for context menu reordering
+  const { handleMoveUp, handleMoveDown } = useMoveHandlers({
+    items: categoryProducts,
+    reorder: async (ids: string[]) => {
+      if (currentCategoryId) {
+        await reorderProductsInCategory(currentCategoryId, ids);
+      }
+    },
+    onReorderComplete: () => setSorting([]),
+  });
+
+  // Note: Products use isDisabled for visibility (inverse of category/label isVisible)
+  // Visibility is controlled at the product level, not per-category - show info toast
+  const handleContextVisibility = useCallback(
+    async (_productId: string, _visible: boolean) => {
+      toast({ title: "Product visibility is managed in product settings" });
+    },
+    [toast]
   );
+
+  // Remove from category handler (with bulk support)
+  const { handleRemove: handleContextRemove } = useContextRemove({
+    parentId: currentCategoryId,
+    detachEntity: (parentId, productId) => detachProductFromCategory(productId, parentId),
+    getTargetIds,
+    entityLabel: { singular: "Product", plural: "products" },
+  });
+
+  // Move to another category handler
+  const { handleMoveTo } = useContextMoveTo({
+    sourceParentId: currentCategoryId,
+    detach: (parentId, productId) => detachProductFromCategory(productId, parentId),
+    attach: attachProductToCategory,
+    getEntityName: (id) => products.find((p) => p.id === id)?.name,
+    getTargetName: (id) => categories.find((c) => c.id === id)?.name,
+    entityLabel: "Product",
+  });
+
+  // Category toggle for manage-categories submenu
+  const { handleToggle: handleCategoryToggle } = useRelationshipToggle({
+    attach: attachProductToCategory,
+    detach: detachProductFromCategory,
+    relationshipLabel: "category",
+  });
 
   // Persist sort order to database when column sorting is applied
   usePersistColumnSort({
@@ -473,8 +440,7 @@ export function CategoryTableView() {
       contextMenuHandlers,
       selectionInfo,
       extra,
-      onContextMenuOpenChange: (rowId, open) =>
-        setContextRowId(open ? rowId : null),
+      onContextMenuOpenChange: handleContextOpenChange,
       onMouseEnter: setHoveredRowId,
       onMouseLeave: () => setHoveredRowId(null),
       onRowClick: handleClick,
@@ -484,6 +450,7 @@ export function CategoryTableView() {
       contextMenuHandlers,
       selectionInfo,
       extra,
+      handleContextOpenChange,
       handleClick,
     ]
   );
@@ -517,7 +484,7 @@ export function CategoryTableView() {
     checkboxState: getCheckboxState(createKey("product", product.id)),
     anchorKey,
     isRowHovered: hoveredRowId === product.id,
-    isContextRow: contextRowId === product.id,
+    isContextRow: isContextRow(product.id),
     isEditing: false, // No inline editing in CategoryTableView
     isPinned: options?.isPinned || pinnedProductId === product.id,
   });

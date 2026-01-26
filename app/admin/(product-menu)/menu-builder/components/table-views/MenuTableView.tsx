@@ -17,6 +17,15 @@ import { cn } from "@/lib/utils";
 import { AnimatePresence } from "motion/react";
 import { Eye, EyeOff, LayoutGrid } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  useContextRowHighlight,
+  useMoveHandlers,
+  useBulkAction,
+  useDeleteConfirmation,
+  useContextClone,
+  useContextVisibility,
+  useContextMoveTo,
+} from "../../../hooks/context-menu";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
@@ -102,16 +111,20 @@ export function MenuTableView() {
 
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
-  // Context menu highlight state (separate from selection)
-  const [contextRowId, setContextRowId] = useState<string | null>(null);
+  // Context menu row highlighting
+  const { isContextRow, handleContextOpenChange } = useContextRowHighlight();
 
-  // Delete confirmation state (single item, entity kind tracked)
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{
-    open: boolean;
-    entityKind: "label" | "category";
-    targetIds: string[];
-  }>({ open: false, entityKind: "label", targetIds: [] });
-  const [isDeleting, setIsDeleting] = useState(false);
+  // Delete confirmation dialog (works for both labels and categories)
+  const {
+    deleteConfirmation,
+    isDeleting,
+    requestDelete,
+    confirmDelete,
+    cancelDelete,
+  } = useDeleteConfirmation({
+    deleteEntity: (kind, id) =>
+      kind === "label" ? deleteLabel(id) : deleteCategory(id),
+  });
 
   // Filter to only show visible labels in the menu table
   const visibleLabels = useMemo(
@@ -230,175 +243,10 @@ export function MenuTableView() {
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Context menu handlers
+  // Context menu data (targets for submenus)
   // ─────────────────────────────────────────────────────────────────────────────
 
-  // Delete confirmation
-  const handleConfirmDelete = useCallback(async () => {
-    const { targetIds, entityKind } = deleteConfirmation;
-    if (!targetIds || targetIds.length === 0) return;
-
-    setIsDeleting(true);
-    try {
-      const deleteFunc = entityKind === "label" ? deleteLabel : deleteCategory;
-      const results = await Promise.all(targetIds.map((id) => deleteFunc(id)));
-      const allOk = results.every((r) => r.ok);
-      if (allOk) {
-        const entityName = entityKind === "label" ? "label" : "category";
-        toast({
-          title: targetIds.length > 1 ? `${targetIds.length} ${entityName}s deleted` : `${entityName.charAt(0).toUpperCase() + entityName.slice(1)} deleted`,
-        });
-      } else {
-        toast({ title: "Error", description: `Some items could not be deleted`, variant: "destructive" });
-      }
-    } finally {
-      setIsDeleting(false);
-      setDeleteConfirmation({ open: false, entityKind: "label", targetIds: [] });
-    }
-  }, [deleteConfirmation, deleteLabel, deleteCategory, toast]);
-
-  // Label context menu handlers
-  const handleLabelContextDelete = useCallback(
-    (labelId: string) => {
-      setDeleteConfirmation({ open: true, entityKind: "label", targetIds: [labelId] });
-    },
-    []
-  );
-
-  const handleLabelContextClone = useCallback(
-    async (labelId: string) => {
-      const result = await cloneLabel({ id: labelId });
-      if (result.ok) {
-        toast({ title: "Label cloned" });
-      } else {
-        toast({ title: "Error", description: "Could not clone label", variant: "destructive" });
-      }
-    },
-    [cloneLabel, toast]
-  );
-
-  const handleLabelContextRemove = useCallback(
-    async (labelId: string) => {
-      // Remove = set isVisible to false (remove from menu)
-      const result = await updateLabel(labelId, { isVisible: false });
-      if (result.ok) {
-        toast({ title: "Label removed from menu" });
-      } else {
-        toast({ title: "Error", description: "Could not remove label", variant: "destructive" });
-      }
-    },
-    [updateLabel, toast]
-  );
-
-  const handleLabelMoveUp = useCallback(
-    async (labelId: string) => {
-      const index = visibleLabels.findIndex((l) => l.id === labelId);
-      if (index <= 0) return;
-      const newOrder = [...visibleLabels];
-      [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
-      await reorderLabels(newOrder.map((l) => l.id));
-    },
-    [visibleLabels, reorderLabels]
-  );
-
-  const handleLabelMoveDown = useCallback(
-    async (labelId: string) => {
-      const index = visibleLabels.findIndex((l) => l.id === labelId);
-      if (index < 0 || index >= visibleLabels.length - 1) return;
-      const newOrder = [...visibleLabels];
-      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
-      await reorderLabels(newOrder.map((l) => l.id));
-    },
-    [visibleLabels, reorderLabels]
-  );
-
-  // Category context menu handlers
-  const handleCategoryContextDelete = useCallback(
-    (categoryId: string) => {
-      setDeleteConfirmation({ open: true, entityKind: "category", targetIds: [categoryId] });
-    },
-    []
-  );
-
-  const handleCategoryContextClone = useCallback(
-    async (categoryId: string) => {
-      const result = await cloneCategory({ id: categoryId });
-      if (result.ok) {
-        toast({ title: "Category cloned" });
-      } else {
-        toast({ title: "Error", description: "Could not clone category", variant: "destructive" });
-      }
-    },
-    [cloneCategory, toast]
-  );
-
-  const handleCategoryContextVisibility = useCallback(
-    async (categoryId: string, visible: boolean) => {
-      const result = await updateCategory(categoryId, { isVisible: visible });
-      if (!result.ok) {
-        toast({ title: "Error", description: "Could not update visibility", variant: "destructive" });
-      }
-    },
-    [updateCategory, toast]
-  );
-
-  const handleCategoryMoveUp = useCallback(
-    async (categoryId: string, parentLabelId: string) => {
-      const parentLabel = visibleLabels.find((l) => l.id === parentLabelId);
-      if (!parentLabel) return;
-      const categoryIds = parentLabel.categories.slice().sort((a, b) => a.order - b.order).map((c) => c.id);
-      const index = categoryIds.indexOf(categoryId);
-      if (index <= 0) return;
-      [categoryIds[index - 1], categoryIds[index]] = [categoryIds[index], categoryIds[index - 1]];
-      await reorderCategoriesInLabel(parentLabelId, categoryIds);
-    },
-    [visibleLabels, reorderCategoriesInLabel]
-  );
-
-  const handleCategoryMoveDown = useCallback(
-    async (categoryId: string, parentLabelId: string) => {
-      const parentLabel = visibleLabels.find((l) => l.id === parentLabelId);
-      if (!parentLabel) return;
-      const categoryIds = parentLabel.categories.slice().sort((a, b) => a.order - b.order).map((c) => c.id);
-      const index = categoryIds.indexOf(categoryId);
-      if (index < 0 || index >= categoryIds.length - 1) return;
-      [categoryIds[index], categoryIds[index + 1]] = [categoryIds[index + 1], categoryIds[index]];
-      await reorderCategoriesInLabel(parentLabelId, categoryIds);
-    },
-    [visibleLabels, reorderCategoriesInLabel]
-  );
-
-  const handleCategoryMoveTo = useCallback(
-    async (categoryId: string, fromLabelId: string, toLabelId: string) => {
-      // Use existing moveCategoryToLabel with null target (append to end)
-      const category = categories.find((c) => c.id === categoryId);
-      const toLabel = visibleLabels.find((l) => l.id === toLabelId);
-
-      // Detach from source label
-      const detachResult = await detachCategory(fromLabelId, categoryId);
-      if (!detachResult.ok) {
-        toast({ title: "Move failed", description: "Failed to remove from source label", variant: "destructive" });
-        return;
-      }
-
-      // Attach to target label
-      const attachResult = await attachCategory(toLabelId, categoryId);
-      if (!attachResult.ok) {
-        // Try to revert
-        await attachCategory(fromLabelId, categoryId);
-        toast({ title: "Move failed", description: "Failed to add to target label", variant: "destructive" });
-        return;
-      }
-
-      toast({
-        title: "Category moved",
-        description: `Moved "${category?.name ?? "Category"}" to "${toLabel?.name ?? "Label"}"`,
-      });
-    },
-    [categories, visibleLabels, attachCategory, detachCategory, toast]
-  );
-
-  // Get move targets for categories (other visible labels)
+  // Get move targets for categories (other visible labels, excluding current parent)
   const getMoveTargetsForCategory = useCallback(
     (currentLabelId: string) => {
       return visibleLabels
@@ -408,7 +256,98 @@ export function MenuTableView() {
     [visibleLabels]
   );
 
-  // Move category from one label to another (detach + attach + reorder)
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Context menu handlers (using shared hooks)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // Label move up/down handlers
+  const {
+    handleMoveUp: handleLabelMoveUp,
+    handleMoveDown: handleLabelMoveDown,
+    getPositionFlags: getLabelPositionFlags,
+  } = useMoveHandlers({
+    items: visibleLabels,
+    reorder: reorderLabels,
+  });
+
+  // Bulk action support for label context menu operations
+  const { getTargetIds: getLabelTargetIds } = useBulkAction({
+    isSelected: (key) => getCheckboxState(key) === "checked",
+    actionableRoots,
+    isSameKind,
+    entityKind: "label",
+  });
+
+  // Bulk action support for category context menu operations
+  const { getTargetIds: getCategoryTargetIds } = useBulkAction({
+    isSelected: (key) => getCheckboxState(key) === "checked",
+    actionableRoots,
+    isSameKind,
+    entityKind: "category",
+  });
+
+  // Label clone (with bulk support)
+  const { handleClone: handleLabelContextClone } = useContextClone({
+    cloneEntity: (id) => cloneLabel({ id }),
+    getTargetIds: getLabelTargetIds,
+    entityLabel: { singular: "Label", plural: "labels" },
+  });
+
+  // Label delete handler
+  const handleLabelContextDelete = useCallback(
+    (labelId: string) => {
+      requestDelete(labelId, "label", getLabelTargetIds);
+    },
+    [requestDelete, getLabelTargetIds]
+  );
+
+  // Label visibility toggle (Remove from menu = set isVisible to false)
+  const { handleVisibilityToggle: handleLabelContextVisibility } = useContextVisibility({
+    updateEntity: (id, visible) => updateLabel(id, { isVisible: visible }),
+    getTargetIds: getLabelTargetIds,
+    entityLabel: { singular: "Label", plural: "labels" },
+  });
+
+  // Category clone (with bulk support)
+  const { handleClone: handleCategoryContextClone } = useContextClone({
+    cloneEntity: (id) => cloneCategory({ id }),
+    getTargetIds: getCategoryTargetIds,
+    entityLabel: { singular: "Category", plural: "categories" },
+  });
+
+  // Category visibility toggle (with bulk support)
+  const { handleVisibilityToggle: handleCategoryContextVisibility } = useContextVisibility({
+    updateEntity: (id, visible) => updateCategory(id, { isVisible: visible }),
+    getTargetIds: getCategoryTargetIds,
+    entityLabel: { singular: "Category", plural: "categories" },
+  });
+
+  // Category move up/down within parent label (using unified hook with nested pattern)
+  const {
+    handleMoveUp: handleCategoryMoveUp,
+    handleMoveDown: handleCategoryMoveDown,
+  } = useMoveHandlers({
+    getItems: (parentId) => {
+      const label = visibleLabels.find((l) => l.id === parentId);
+      return label?.categories ?? [];
+    },
+    reorder: (ids, parentId) => reorderCategoriesInLabel(parentId!, ids),
+  });
+
+  // Category move to another label (uses handleMoveToFrom for dynamic parent)
+  const { handleMoveToFrom: handleCategoryMoveTo } = useContextMoveTo({
+    detach: detachCategory,
+    attach: attachCategory,
+    getEntityName: (id) => categories.find((c) => c.id === id)?.name,
+    getTargetName: (id) => visibleLabels.find((l) => l.id === id)?.name,
+    entityLabel: "Category",
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Drag & Drop handlers
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // Move category from one label to another via DnD (detach + attach + reorder)
   const moveCategoryToLabel = useCallback(
     async (
       categoryId: string,
@@ -561,14 +500,15 @@ export function MenuTableView() {
   );
 
   // Render a label row
-  const renderLabelRow = (row: FlatLabelRow, isFirstRow: boolean, isLastRow: boolean) => {
+  const renderLabelRow = (row: FlatLabelRow, isLastRow: boolean) => {
     const label = row.data;
     const labelKey = getRowMeta(row).key;
     const checkboxState = getCheckboxState(labelKey);
     const isSelected = checkboxState === "checked";
     const isIndeterminate = checkboxState === "indeterminate";
     const isRowHovered = hoveredRowId === row.id;
-    const isContextRow = contextRowId === row.id;
+    const isRowContextMenu = isContextRow(row.id);
+    const labelPositionFlags = getLabelPositionFlags(row.id);
     const dragClasses = getDragClasses(row);
     const dragHandlers = getDragHandlers(row);
     const isPinned = pinnedLabelId === row.id;
@@ -583,14 +523,14 @@ export function MenuTableView() {
         viewType="menu"
         entityId={row.id}
         isVisible={true}
-        isFirst={isFirstRow}
-        isLast={isLastRow}
+        isFirst={labelPositionFlags.isFirst}
+        isLast={labelPositionFlags.isLast}
         selectedCount={actionableRoots.length}
         isInSelection={isSelected || isIndeterminate}
         isMixedSelection={actionableRoots.length > 0 && !isSameKind}
-        onOpenChange={(open) => setContextRowId(open ? row.id : null)}
+        onOpenChange={handleContextOpenChange(row.id)}
         onClone={() => handleLabelContextClone(row.id)}
-        onRemove={() => handleLabelContextRemove(row.id)}
+        onRemove={() => handleLabelContextVisibility(row.id, false)}
         onDelete={() => handleLabelContextDelete(row.id)}
         onMoveUp={() => handleLabelMoveUp(row.id)}
         onMoveDown={() => handleLabelMoveDown(row.id)}
@@ -598,7 +538,7 @@ export function MenuTableView() {
       <TableRow
         data-state={isSelected ? "selected" : undefined}
         isSelected={isSelected || isIndeterminate}
-        isContextRow={isContextRow}
+        isContextRow={isRowContextMenu}
         isDragging={dragClasses.isDragging || dragClasses.isInDragSet}
         isDragOver={dragClasses.isDragOver}
         isLastRow={isLastRow}
@@ -739,7 +679,7 @@ export function MenuTableView() {
     const isSelected = checkboxState === "checked";
     // Categories are leaf nodes in 2-level view - no indeterminate state
     const isRowHovered = hoveredRowId === compositeId;
-    const isContextRow = contextRowId === compositeId;
+    const isRowContextMenu = isContextRow(compositeId);
     const dragClasses = getDragClasses(row);
     const dragHandlers = getDragHandlers(row);
 
@@ -763,10 +703,9 @@ export function MenuTableView() {
         isMixedSelection={actionableRoots.length > 0 && !isSameKind}
         moveToTargets={moveTargets}
         currentParentId={row.parentId}
-        onOpenChange={(open) => setContextRowId(open ? compositeId : null)}
+        onOpenChange={handleContextOpenChange(compositeId)}
         onClone={() => handleCategoryContextClone(row.id)}
         onVisibilityToggle={(visible) => handleCategoryContextVisibility(row.id, visible)}
-        onDelete={() => handleCategoryContextDelete(row.id)}
         onMoveUp={() => handleCategoryMoveUp(row.id, row.parentId)}
         onMoveDown={() => handleCategoryMoveDown(row.id, row.parentId)}
         onMoveTo={(targetLabelId) => handleCategoryMoveTo(row.id, row.parentId, targetLabelId)}
@@ -777,7 +716,7 @@ export function MenuTableView() {
         staggerIndex={staggerIndex}
         data-state={isSelected ? "selected" : undefined}
         isSelected={isSelected}
-        isContextRow={isContextRow}
+        isContextRow={isRowContextMenu}
         isHidden={!row.isVisible}
         isDragging={dragClasses.isDragging || dragClasses.isInDragSet}
         isDragOver={dragClasses.isDragOver}
@@ -861,11 +800,10 @@ export function MenuTableView() {
 
   // Pre-calculate stagger indices and position info for cascade animation
   // Each category gets its index among siblings (categories with same parentId)
-  const { staggerIndices, categoryPositions, labelPositions } = useMemo(() => {
+  const { staggerIndices, categoryPositions } = useMemo(() => {
     const indices = new Map<string, number>();
     const counters = new Map<string, number>();
     const categoryPos = new Map<string, { isFirst: boolean; isLast: boolean }>();
-    const labelPos = new Map<string, { isFirst: boolean; isLast: boolean }>();
 
     // Count categories per parent for position tracking
     const categoryCounts = new Map<string, number>();
@@ -889,24 +827,14 @@ export function MenuTableView() {
       }
     }
 
-    // Build label positions (among visible labels)
-    const labelRows = rows.filter(isLabelRow);
-    labelRows.forEach((row, idx) => {
-      labelPos.set(row.id, {
-        isFirst: idx === 0,
-        isLast: idx === labelRows.length - 1,
-      });
-    });
-
-    return { staggerIndices: indices, categoryPositions: categoryPos, labelPositions: labelPos };
+    return { staggerIndices: indices, categoryPositions: categoryPos };
   }, [rows]);
 
   const renderRow = (row: FlatMenuRow, index: number, totalRows: number) => {
     const isLastRow = index === totalRows - 1;
 
     if (isLabelRow(row)) {
-      const pos = labelPositions.get(row.id) ?? { isFirst: false, isLast: false };
-      return renderLabelRow(row, pos.isFirst, isLastRow);
+      return renderLabelRow(row, isLastRow);
     }
     if (isCategoryRow(row)) {
       const staggerIndex = staggerIndices.get(`${row.parentId}-${row.id}`) ?? 0;
@@ -969,7 +897,7 @@ export function MenuTableView() {
       <AlertDialog
         open={deleteConfirmation.open}
         onOpenChange={(open) => {
-          if (!open) setDeleteConfirmation({ open: false, entityKind: "label", targetIds: [] });
+          if (!open) cancelDelete();
         }}
       >
         <AlertDialogContent>
@@ -990,7 +918,7 @@ export function MenuTableView() {
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
-              onClick={handleConfirmDelete}
+              onClick={confirmDelete}
               disabled={isDeleting}
             >
               {isDeleting ? "Deleting..." : "Delete"}

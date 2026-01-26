@@ -1,9 +1,9 @@
 # Menu Builder - Development Roadmap
 
-**Last Updated:** 2026-01-24
+**Last Updated:** 2026-01-26
 **Current Branch:** `unify-menu-builder`
-**Current Version:** v0.67.0
-**Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ (5/5 views) | Phase 3 In Progress 🚧
+**Current Version:** v0.70.3
+**Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ | Phase 3 Complete ✅
 
 ---
 
@@ -18,12 +18,12 @@ Build a sophisticated admin interface for managing a 2-level menu hierarchy (Lab
 ```(text)
 Foundation  ████████████████████████ 100% ✅
 Table Views ████████████████████████ 100% ✅
-Advanced    ██████████████░░░░░░░░░  60% 🚧
+Advanced    ████████████████████████ 100% ✅
 ─────────────────────────────────────────
-Total       ████████████████████░░░  85%
+Total       ████████████████████████ 100%
 ```
 
-### Recent Completions (v0.66.x - v0.67.x)
+### Recent Completions (v0.66.x - v0.70.x)
 - ✅ IdentityRegistry architecture (unified row identity management)
 - ✅ 2-level Menu View (Labels → Categories, products as count only)
 - ✅ Same-level DnD with auto-collapse/expand behaviors
@@ -38,6 +38,10 @@ Total       ████████████████████░░�
 - ✅ Keyboard shortcuts with single-key Gmail/Slack style (v0.67.0)
 - ✅ Help button (ConciergeBell) on all views (v0.67.0)
 - ✅ Delete button with full undo/redo support (v0.67.0)
+- ✅ Context menus for all table views (v0.70.0)
+- ✅ Range selection with shift+click and long-press (v0.69.0)
+- ✅ 44x44px touch targets for WCAG compliance (v0.69.1)
+- ✅ Context menu handler hooks refactoring (v0.70.3)
 
 ---
 
@@ -161,36 +165,29 @@ Total       ████████████████████░░�
 
 ---
 
-### 2.2 Context Menu Infrastructure ⏸️ NOT STARTED
+### 2.2 Context Menu Infrastructure ✅ COMPLETE (Jan 24-26, 2026)
 
-**Complexity:** Medium (new pattern)
-**Effort:** 1-2 days
-**Dependencies:** None (can be done in parallel with 2.1)
+**Complexity:** Medium
+**Effort:** 3 days
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] Create `ContextMenuCell.tsx` component
-- [ ] Wire VIEW_CONFIGS action IDs to ACTION_BAR_CONFIG
-- [ ] Add to AllCategoriesTableView
-- [ ] Add to AllLabelsTableView
-- [ ] Right-click and three-dot menu triggers
-- [ ] Keyboard shortcut hints in menu items
+- [x] Created `RowContextMenu.tsx` component with config-driven actions
+- [x] `CONTEXT_MENU_CONFIG` maps `ViewType:EntityKind` to available actions
+- [x] Added to all 5 table views (AllCategories, AllLabels, Menu, Label, Category)
+- [x] Right-click (desktop) and long-press (mobile) triggers
+- [x] Keyboard shortcut hints via `<Kbd>` component
+- [x] Bulk mode support with count labels ("Clone (3)")
+- [x] Mixed selection handling (disabled menu with explanation)
+- [x] Relationship submenus (manage-categories, manage-labels) with search
+- [x] Extracted handler logic to reusable hooks in `hooks/context-menu/`
 
-**Files to Create:**
+**Files Created:**
 
-- `app/admin/(product-menu)/menu-builder/components/table-views/shared/ContextMenuCell.tsx`
+- `app/admin/(product-menu)/menu-builder/components/table-views/shared/cells/RowContextMenu.tsx`
+- `app/admin/(product-menu)/hooks/context-menu/` (9 hooks + barrel export)
 
-**Files to Modify:**
-
-- `app/admin/(product-menu)/menu-builder/components/table-views/AllCategoriesTableView.tsx`
-- `app/admin/(product-menu)/menu-builder/components/table-views/AllLabelsTableView.tsx`
-
-**Acceptance Criteria:**
-
-- Context menus show correct actions per view
-- Actions execute using existing ACTION_BAR_CONFIG logic
-- Keyboard shortcuts shown in menu
-- Works on both touch and mouse
+**See:** [context-menu-plan.md](./context-menu-plan.md) for implementation details
 
 ---
 
@@ -386,11 +383,11 @@ Total       ████████████████████░░�
 
 ---
 
-## Phase 3: Advanced Features 🚧 IN PROGRESS
+## Phase 3: Advanced Features ✅ COMPLETE
 
 **Target:** Polish and power-user features
 **Timeline:** 2-4 weeks
-**Status:** 60% (undo/redo ✅, same-level DnD ✅, keyboard shortcuts ✅, help/delete buttons ✅)
+**Status:** 100% Complete
 
 ### 3.1 Same-Level Drag-and-Drop ✅ COMPLETE
 
@@ -506,20 +503,17 @@ Total       ████████████████████░░�
 
 ---
 
-### 3.4 Clone Operations ⏸️
+### 3.4 Clone Operations ✅ COMPLETE
 
-**Tasks:**
+**Implemented Features:**
 
-- [ ] Clone label with categories (deep clone)
-- [ ] Clone category with products (references only)
-- [ ] Name collision detection (auto-suffix with " (copy)")
-- [ ] Preserve order and visibility settings
-- [ ] Toast notifications on success
-
-**Files to Modify:**
-
-- `app/admin/(product-menu)/constants/action-bar-config.ts` (complete TODOs)
-- `app/admin/(product-menu)/actions/product-menu-actions.ts` (add clone logic)
+- [x] Clone label (deep clone with categories)
+- [x] Clone category (with product references)
+- [x] Name collision detection (auto-suffix with "copy", "copy2", etc.)
+- [x] Preserve order and visibility settings
+- [x] Toast notifications on success
+- [x] Bulk clone support via `useContextClone` hook
+- [x] Available via action bar and context menu
 
 ---
 
@@ -672,80 +666,52 @@ Current code conflates hierarchy depth with entity type:
 
 ---
 
-### 3.9 Range Selection ⏸️ NOT STARTED
+### 3.9 Range Selection ✅ COMPLETE (Jan 25-26, 2026)
 
 **Complexity:** Medium
-**Effort:** 2-3 days
-**Priority:** High (core UX feature)
+**Effort:** 2 days
 
-**Problem:**
-Currently no way to select a contiguous range of items. Users must click each item individually.
+**Implemented Features:**
 
-**Desktop: Shift+Click**
-- Click row A (becomes "anchor")
-- Shift+click row B
-- All visible rows from A to B selected
+- [x] **Desktop: Shift+Click** - Click row A (anchor), shift+click row B selects range
+- [x] **Mobile: Long-Press Checkbox** - Long-press (500ms) on checkbox B selects range from anchor
+- [x] `anchorKey` tracking in selection model
+- [x] `rangeSelect(targetKey)` function for range selection
+- [x] Visual feedback: pulsing ring animation during long-press
+- [x] Range respects visual order when columns are sorted
+- [x] Works in all 5 table views
 
-**Both Platforms: Long-Press Checkbox**
-- Tap/click checkbox A (selected, becomes anchor)
-- Long-press checkbox B (500ms)
-- All visible rows from A to B immediately selected
-- Visual feedback: pulse animation during long-press, toast on completion
-
-**Why Long-Press on Checkbox?**
-- Inline gesture - no extra buttons needed
-- Clear intent - long-press signals "special selection behavior"
-- Works on both desktop and mobile
-- Discoverable via tooltip
-
-**Implementation:**
-- Add `anchorKey` to selection state
-- Create `useLongPress` hook for long-press detection
-- Modify `CheckboxCell` with long-press support + visual feedback
-- Modify `useRowClickHandler` to handle Shift+click (desktop)
-- Add `getVisibleKeysBetween(anchorKey, targetKey)` helper
-
-**Files to Modify:**
-- `hooks/useContextSelectionModel.ts` - Anchor tracking, range logic
+**Files Modified:**
+- `hooks/useContextSelectionModel.ts` - Added `anchorKey`, `rangeSelect`
 - `hooks/useRowClickHandler.ts` - Shift key handling
-- `hooks/useLongPress.ts` - New hook for long-press detection
-- `table-views/shared/cells/CheckboxCell.tsx` - Long-press support
-
-**See:** [mobile-interactions-plan.md](./mobile-interactions-plan.md) for detailed plan
+- `table-views/shared/cells/CheckboxCell.tsx` - Long-press support with visual feedback
 
 ---
 
-### 3.10 Mobile Interactions ⏸️ NOT STARTED
+### 3.10 Mobile Interactions ✅ COMPLETE (Jan 24-26, 2026)
 
 **Complexity:** Low-Medium
-**Effort:** 2-3 days
-**Priority:** Low (mobile admin is edge case, AI features are priority)
+**Effort:** 2 days
 
-**Strategy:** Minimal viable mobile support via context menu. No dedicated mobile UI.
+**Strategy:** Context menus provide mobile DnD alternative. No dedicated mobile UI needed.
 
-**Problem:**
-- HTML5 DnD doesn't work on touch devices
-- No context menu (right-click/long-press)
+**Implemented Features:**
 
-**Solution: Context Menu with Move Up/Down**
-- **Desktop:** Right-click shows context menu
-- **Mobile:** Long-press (500ms) shows bottom sheet
-- Menu includes **Move Up / Move Down** for reordering (mobile DnD alternative)
-- Same actions as action bar, no separate UI needed
+- [x] **Desktop:** Right-click shows context menu
+- [x] **Mobile:** Long-press shows context menu (shadcn handles this natively)
+- [x] **Move Up / Move Down** actions for reordering without DnD
+- [x] **44x44px touch targets** (WCAG compliance) via `TouchTarget` wrapper
+- [x] Position-aware disabling (Move Up disabled at top, Move Down at bottom)
+- [x] Works in all 5 table views
 
 **Explicitly Deferred:**
 - ~~Touch DnD with drag gesture~~
 - ~~Dedicated Reorder Mode with arrow buttons~~
 - ~~@dnd-kit migration~~
 
-**Files to Create:**
-- None (shadcn ContextMenu handles desktop + mobile)
-
-**Files to Modify:**
-- `components/table-views/shared/table/TableRow.tsx` - Wrap with shadcn ContextMenu
-- Table view components - Pass row index and action handlers to context menu
-
-**See:** [mobile-interactions-plan.md](./mobile-interactions-plan.md) for detailed plan
+**Files Created:**
+- `table-views/shared/cells/RowContextMenu.tsx`
+- `table-views/shared/cells/TouchTarget.tsx`
 
 ---
 
@@ -787,8 +753,17 @@ app/admin/(product-menu)/
 │  ├─ useUndoRedoStack.ts           ✅ (declarative undo/redo system)
 │  ├─ usePersistColumnSort.ts       ✅ (persist TanStack sort to DB)
 │  ├─ useKeyboardShortcuts.ts       ✅ (global keyboard shortcuts)
-│  ├─ useLongPress.ts               ⏸️ (3.10.2 - long-press detection)
-│  ├─ useRangeSelection.ts          ⏸️ (3.9 - or integrated into useContextSelectionModel)
+│  ├─ context-menu/                 ✅ (v0.70.3 - shared handler hooks)
+│  │  ├─ useContextRowHighlight.ts
+│  │  ├─ useMoveHandlers.ts
+│  │  ├─ useBulkAction.ts
+│  │  ├─ useDeleteConfirmation.ts
+│  │  ├─ useContextClone.ts
+│  │  ├─ useContextVisibility.ts
+│  │  ├─ useContextRemove.ts
+│  │  ├─ useContextMoveTo.ts
+│  │  ├─ useRelationshipToggle.ts
+│  │  └─ index.ts
 │  └─ dnd/                          ✅ (v0.66.20 consolidated architecture)
 │     ├─ useGroupedReorder.ts       ✅ (core shared DnD state management)
 │     ├─ useSingleEntityDnd.ts      ✅ (flat table DnD wrapper)
@@ -960,30 +935,21 @@ app/admin/(product-menu)/
 
 ## Next Action
 
-**Last Completed:** Keyboard Shortcuts & Action Buttons (v0.67.0) - Jan 24, 2026
+**Last Completed:** Context Menu Hooks Refactoring (v0.70.3) - Jan 26, 2026
 
-### Recently Completed (v0.66.16-0.67.0)
+### Recently Completed (v0.69.0-0.70.3)
 
-- [x] Explicit selection model refactor
-- [x] Multi-select DnD with grouped entities ghost
-- [x] Cross-boundary batch moves
-- [x] Consolidated DnD hooks: `useGroupedReorder` as shared core
-- [x] Fixed AllLabelsTableView reorder positioning (`defaultSort: null`)
-- [x] Intent-based cursor feedback (grab/not-allowed on mousedown)
-- [x] Keyboard shortcuts with single-key Gmail/Slack style (N, D, R, X, V, E, C, U, Shift+U, ?)
-- [x] Help button (ConciergeBell) on all 5 views
-- [x] Delete button with AlertDialog + full undo/redo (restoreLabel, restoreCategory)
-- [x] Accessible disabled buttons (aria-disabled for tabbability)
+- [x] Range selection with shift+click and long-press checkbox (v0.69.0)
+- [x] 44x44px touch targets for WCAG compliance (v0.69.1)
+- [x] Context menus for all table views (v0.70.0)
+- [x] Context menu refinements with search and action order (v0.70.1)
+- [x] Range selection respects visual order when sorted (v0.70.2)
+- [x] Context menu handler hooks refactoring (v0.70.3)
 
-### Immediate Next Steps
+### Future Enhancements
 
-1. **Range Selection (3.9)** - Shift+click on desktop, long-press checkbox on both
-2. **Context Menus (3.10)** - Right-click + long-press with Move Up/Down
-3. **Search & Filter (3.5)** - Global search in action bar
-
-### Future Refactors
-
-1. **Separate Level from Kind (3.8)** - Required before adding new hierarchy levels
+1. **Search & Filter (3.5)** - Global search in action bar
+2. **Separate Level from Kind (3.8)** - Required before adding new hierarchy levels
    - See section 3.8 and [refactor-level-vs-kind.md](./refactor-level-vs-kind.md)
 
 ---
@@ -993,6 +959,7 @@ app/admin/(product-menu)/
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - System diagrams, source of truth table, config patterns
 - [IMPLEMENTATION-GUIDE.md](./IMPLEMENTATION-GUIDE.md) - How to add views/actions
 - [FEATURE-SPEC.md](./FEATURE-SPEC.md) - Complete target vision (1,186 lines)
+- [context-menu-plan.md](./context-menu-plan.md) - Context menu implementation details
 - [keyboard-shortcuts-and-action-buttons-plan.md](./keyboard-shortcuts-and-action-buttons-plan.md) - Keyboard shortcuts implementation
 - [mobile-interactions-plan.md](./mobile-interactions-plan.md) - Range selection, touch DnD, context menus
 - [archive/](./archive/) - Historical planning docs
@@ -1031,6 +998,15 @@ app/admin/(product-menu)/
 | `useContextSelectionModel` | Hierarchical selection with tri-state checkboxes |
 | `useFlattenedMenuRows` | Transform hierarchy to flat row list for rendering |
 | `useActionHandler` | Clone/remove operations with visual order preservation |
+| `useContextRowHighlight` | Context menu row highlighting state |
+| `useMoveHandlers` | Move up/down (flat and nested lists) |
+| `useBulkAction` | Bulk operation executor with `getTargetIds` |
+| `useDeleteConfirmation` | Delete dialog state management |
+| `useContextClone` | Clone with bulk support |
+| `useContextVisibility` | Visibility toggle with bulk support |
+| `useContextRemove` | Remove from parent with bulk support |
+| `useContextMoveTo` | Move to another parent |
+| `useRelationshipToggle` | Attach/detach relationship management |
 
 **Key Types:**
 
@@ -1048,5 +1024,5 @@ app/admin/(product-menu)/
 
 ---
 
-**Last Updated:** 2026-01-24
+**Last Updated:** 2026-01-26
 **Project Owner:** yuens1002
