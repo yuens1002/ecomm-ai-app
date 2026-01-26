@@ -1,18 +1,7 @@
 "use client";
 "use no memo";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { TableBody } from "@/components/ui/table";
-import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
   getCoreRowModel,
@@ -24,6 +13,15 @@ import {
 import { Eye, EyeOff, Layers } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
+import {
+  useContextRowHighlight,
+  useMoveHandlers,
+  useBulkAction,
+  useContextClone,
+  useContextVisibility,
+  useContextRemove,
+  useContextMoveTo,
+} from "../../../hooks/context-menu";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { useSingleEntityDnd } from "../../../hooks/dnd/useSingleEntityDnd";
@@ -70,7 +68,6 @@ export function LabelTableView() {
     categories,
     products,
     reorderCategoriesInLabel,
-    deleteCategory,
     cloneCategory,
     updateCategory,
     detachCategory,
@@ -81,17 +78,8 @@ export function LabelTableView() {
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  // Context menu highlight state
-  const [contextRowId, setContextRowId] = useState<string | null>(null);
-
-  // Delete confirmation state
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{
-    open: boolean;
-    targetIds: string[];
-  }>({ open: false, targetIds: [] });
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const { toast } = useToast();
+  // Context menu row highlighting
+  const { isContextRow, handleContextOpenChange } = useContextRowHighlight();
 
   // Pinning support for newly added categories
   const { pinnedId: pinnedCategoryId } = useContextRowUiState(builder, "category", {
@@ -263,127 +251,10 @@ export function LabelTableView() {
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Context menu handlers
+  // Context menu data (targets for submenus)
   // ─────────────────────────────────────────────────────────────────────────────
 
-  const handleConfirmDelete = useCallback(async () => {
-    const { targetIds } = deleteConfirmation;
-    if (!targetIds || targetIds.length === 0) return;
-
-    setIsDeleting(true);
-    try {
-      const results = await Promise.all(targetIds.map((id) => deleteCategory(id)));
-      const allOk = results.every((r) => r.ok);
-      if (allOk) {
-        toast({
-          title: targetIds.length > 1 ? `${targetIds.length} categories deleted` : "Category deleted",
-        });
-      } else {
-        toast({ title: "Error", description: "Some categories could not be deleted", variant: "destructive" });
-      }
-    } finally {
-      setIsDeleting(false);
-      setDeleteConfirmation({ open: false, targetIds: [] });
-    }
-  }, [deleteConfirmation, deleteCategory, toast]);
-
-  const handleContextDelete = useCallback(
-    (categoryId: string) => {
-      setDeleteConfirmation({ open: true, targetIds: [categoryId] });
-    },
-    []
-  );
-
-  const handleContextClone = useCallback(
-    async (categoryId: string) => {
-      const result = await cloneCategory({ id: categoryId });
-      if (result.ok) {
-        toast({ title: "Category cloned" });
-      } else {
-        toast({ title: "Error", description: "Could not clone category", variant: "destructive" });
-      }
-    },
-    [cloneCategory, toast]
-  );
-
-  const handleContextVisibility = useCallback(
-    async (categoryId: string, visible: boolean) => {
-      const result = await updateCategory(categoryId, { isVisible: visible });
-      if (!result.ok) {
-        toast({ title: "Error", description: "Could not update visibility", variant: "destructive" });
-      }
-    },
-    [updateCategory, toast]
-  );
-
-  const handleContextRemove = useCallback(
-    async (categoryId: string) => {
-      if (!currentLabelId) return;
-      const result = await detachCategory(currentLabelId, categoryId);
-      if (result.ok) {
-        toast({ title: "Category removed from label" });
-      } else {
-        toast({ title: "Error", description: "Could not remove category", variant: "destructive" });
-      }
-    },
-    [currentLabelId, detachCategory, toast]
-  );
-
-  const handleMoveUp = useCallback(
-    async (categoryId: string) => {
-      const index = labelCategories.findIndex((c) => c.id === categoryId);
-      if (index <= 0 || !currentLabelId) return;
-      const newOrder = labelCategories.map((c) => c.id);
-      [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
-      await reorderCategoriesInLabel(currentLabelId, newOrder);
-      setSorting([]); // Clear sorting when manually reordering
-    },
-    [labelCategories, currentLabelId, reorderCategoriesInLabel]
-  );
-
-  const handleMoveDown = useCallback(
-    async (categoryId: string) => {
-      const index = labelCategories.findIndex((c) => c.id === categoryId);
-      if (index < 0 || index >= labelCategories.length - 1 || !currentLabelId) return;
-      const newOrder = labelCategories.map((c) => c.id);
-      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
-      await reorderCategoriesInLabel(currentLabelId, newOrder);
-      setSorting([]); // Clear sorting when manually reordering
-    },
-    [labelCategories, currentLabelId, reorderCategoriesInLabel]
-  );
-
-  const handleMoveTo = useCallback(
-    async (categoryId: string, toLabelId: string) => {
-      if (!currentLabelId) return;
-      const category = categories.find((c) => c.id === categoryId);
-      const toLabel = labels.find((l) => l.id === toLabelId);
-
-      // Detach from current label
-      const detachResult = await detachCategory(currentLabelId, categoryId);
-      if (!detachResult.ok) {
-        toast({ title: "Move failed", description: "Failed to remove from current label", variant: "destructive" });
-        return;
-      }
-
-      // Attach to target label
-      const attachResult = await attachCategory(toLabelId, categoryId);
-      if (!attachResult.ok) {
-        // Try to revert
-        await attachCategory(currentLabelId, categoryId);
-        toast({ title: "Move failed", description: "Failed to add to target label", variant: "destructive" });
-        return;
-      }
-
-      toast({
-        title: "Category moved",
-        description: `Moved "${category?.name ?? "Category"}" to "${toLabel?.name ?? "Label"}"`,
-      });
-    },
-    [currentLabelId, categories, labels, attachCategory, detachCategory, toast]
-  );
-
-  // Get move targets (other visible labels)
+  // Move-to targets (other visible labels)
   const moveToTargets = useMemo(
     () =>
       labels
@@ -391,6 +262,61 @@ export function LabelTableView() {
         .map((l) => ({ id: l.id, name: l.name })),
     [labels, currentLabelId]
   );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Context menu handlers (using shared hooks)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // Bulk action support for context menu operations
+  const { getTargetIds } = useBulkAction({
+    isSelected,
+    actionableRoots,
+    isSameKind,
+    entityKind: "category",
+  });
+
+  // Move up/down handlers for context menu reordering
+  const { handleMoveUp, handleMoveDown, getPositionFlags } = useMoveHandlers({
+    items: labelCategories,
+    reorder: async (ids: string[]) => {
+      if (currentLabelId) {
+        await reorderCategoriesInLabel(currentLabelId, ids);
+      }
+    },
+    onReorderComplete: () => setSorting([]),
+  });
+
+  // Clone handler (with bulk support)
+  const { handleClone: handleContextClone } = useContextClone({
+    cloneEntity: (id) => cloneCategory({ id }),
+    getTargetIds,
+    entityLabel: { singular: "Category", plural: "categories" },
+  });
+
+  // Visibility handler (with bulk support)
+  const { handleVisibilityToggle: handleContextVisibility } = useContextVisibility({
+    updateEntity: (id, visible) => updateCategory(id, { isVisible: visible }),
+    getTargetIds,
+    entityLabel: { singular: "Category", plural: "categories" },
+  });
+
+  // Remove from label handler (with bulk support)
+  const { handleRemove: handleContextRemove } = useContextRemove({
+    parentId: currentLabelId,
+    detachEntity: detachCategory,
+    getTargetIds,
+    entityLabel: { singular: "Category", plural: "categories" },
+  });
+
+  // Move to another label handler
+  const { handleMoveTo } = useContextMoveTo({
+    sourceParentId: currentLabelId,
+    detach: detachCategory,
+    attach: attachCategory,
+    getEntityName: (id) => categories.find((c) => c.id === id)?.name,
+    getTargetName: (id) => labels.find((l) => l.id === id)?.name,
+    entityLabel: "Category",
+  });
 
   // Persist sort order to database when column sorting is applied
   usePersistColumnSort({
@@ -426,15 +352,15 @@ export function LabelTableView() {
 
   const renderCategoryRow = (
     category: LabelCategory,
-    options?: { isPinned?: boolean; isFirstRow?: boolean; isLastRow?: boolean }
+    options?: { isPinned?: boolean; isLastRow?: boolean }
   ) => {
     const _isPinned = options?.isPinned === true;
-    const isFirstRow = options?.isFirstRow === true;
     const isLastRow = options?.isLastRow === true;
     const categoryKey = createKey("category", category.id);
     const isCategorySelected = isSelected(categoryKey);
     const isRowHovered = hoveredRowId === category.id;
-    const isContextRow = contextRowId === category.id;
+    const isRowContextMenu = isContextRow(category.id);
+    const positionFlags = getPositionFlags(category.id);
     const dragClasses = getDragClasses(category.id);
     const dragHandlers = getDragHandlers(category.id);
 
@@ -448,18 +374,17 @@ export function LabelTableView() {
         viewType="label"
         entityId={category.id}
         isVisible={category.isVisible}
-        isFirst={isFirstRow}
-        isLast={isLastRow}
+        isFirst={positionFlags.isFirst}
+        isLast={positionFlags.isLast}
         selectedCount={actionableRoots.length}
         isInSelection={isCategorySelected}
         isMixedSelection={actionableRoots.length > 0 && !isSameKind}
         moveToTargets={moveToTargets}
         currentParentId={currentLabelId ?? undefined}
-        onOpenChange={(open) => setContextRowId(open ? category.id : null)}
+        onOpenChange={handleContextOpenChange(category.id)}
         onClone={() => handleContextClone(category.id)}
         onVisibilityToggle={(visible) => handleContextVisibility(category.id, visible)}
         onRemove={() => handleContextRemove(category.id)}
-        onDelete={() => handleContextDelete(category.id)}
         onMoveUp={() => handleMoveUp(category.id)}
         onMoveDown={() => handleMoveDown(category.id)}
         onMoveTo={(toLabelId) => handleMoveTo(category.id, toLabelId)}
@@ -467,7 +392,7 @@ export function LabelTableView() {
       <TableRow
         data-state={isCategorySelected ? "selected" : undefined}
         isSelected={isCategorySelected}
-        isContextRow={isContextRow}
+        isContextRow={isRowContextMenu}
         isHidden={!category.isVisible}
         isDragging={dragClasses.isDragging}
         isDragOver={dragClasses.isDragOver}
@@ -560,47 +485,14 @@ export function LabelTableView() {
         />
 
         <TableBody>
-          {pinnedCategory ? renderCategoryRow(pinnedCategory, { isPinned: true, isFirstRow: true }) : null}
+          {pinnedCategory ? renderCategoryRow(pinnedCategory, { isPinned: true }) : null}
           {rows.map((row, index) =>
             renderCategoryRow(row.original, {
-              isFirstRow: !pinnedCategory && index === 0,
               isLastRow: index === rows.length - 1,
             })
           )}
         </TableBody>
       </TableViewWrapper>
-
-      {/* Delete confirmation dialog */}
-      <AlertDialog
-        open={deleteConfirmation.open}
-        onOpenChange={(open) => {
-          if (!open) setDeleteConfirmation({ open: false, targetIds: [] });
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              Delete {deleteConfirmation.targetIds.length}{" "}
-              {deleteConfirmation.targetIds.length === 1 ? "category" : "categories"}?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. The{" "}
-              {deleteConfirmation.targetIds.length === 1 ? "category" : "categories"} will be
-              permanently deleted and all product associations will be removed.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive hover:bg-destructive/90"
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

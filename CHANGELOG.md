@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.70.3 - 2026-01-26
+
+### Refactoring
+- **Context menu hooks**: Extracted shared context menu handlers into reusable hooks in `hooks/context-menu/`
+- **New hooks**: useContextRowHighlight, useMoveHandlers, useBulkAction, useDeleteConfirmation, useContextClone, useContextVisibility, useContextRemove, useContextMoveTo, useRelationshipToggle
+- **Unified useMoveHandlers**: Consolidated flat list and nested list move handlers into single hook with `getItems(parentId?)` pattern
+- **Config alignment**: Aligned table view consumers with CONTEXT_MENU_CONFIG spec (removed non-spec handlers)
+
 ## 0.70.2 - 2026-01-25
 
 ### Bug Fixes

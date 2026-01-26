@@ -18,6 +18,15 @@ import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-
 import { Tag } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
+import {
+  useContextRowHighlight,
+  useMoveHandlers,
+  useBulkAction,
+  useDeleteConfirmation,
+  useContextClone,
+  useContextVisibility,
+  useRelationshipToggle,
+} from "../../../hooks/context-menu";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
 import { useContextSelectionModel } from "../../../hooks/useContextSelectionModel";
 import { useSingleEntityDnd } from "../../../hooks/dnd/useSingleEntityDnd";
@@ -59,15 +68,19 @@ export function AllLabelsTableView() {
 
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
-  // Context menu highlight state (separate from selection)
-  const [contextRowId, setContextRowId] = useState<string | null>(null);
+  // Context menu row highlighting
+  const { isContextRow, handleContextOpenChange } = useContextRowHighlight();
 
-  // Delete confirmation state (single or bulk from context menu)
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{
-    open: boolean;
-    targetIds: string[];
-  }>({ open: false, targetIds: [] });
-  const [isDeleting, setIsDeleting] = useState(false);
+  // Delete confirmation dialog
+  const {
+    deleteConfirmation,
+    isDeleting,
+    requestDelete,
+    confirmDelete,
+    cancelDelete,
+  } = useDeleteConfirmation({
+    deleteEntity: (_kind, id) => deleteLabel(id),
+  });
 
   const {
     editingId: editingLabelId,
@@ -213,92 +226,57 @@ export function AllLabelsTableView() {
     return cats.map((c) => c.name).join(", ");
   }, []);
 
-  // Context menu handlers (always single-item, not bulk)
-  const handleMoveUp = useCallback(
-    async (labelId: string) => {
-      const index = labelsForTable.findIndex((l) => l.id === labelId);
-      if (index <= 0) return;
-      const newOrder = [...labelsForTable];
-      [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
-      await reorderLabels(newOrder.map((l) => l.id));
-    },
-    [labelsForTable, reorderLabels]
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Context menu data (targets for submenus)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // Category targets for manage-categories submenu (all available categories)
+  const categoryTargets = useMemo(
+    () => categories.map((c) => ({ id: c.id, name: c.name })),
+    [categories]
   );
 
-  const handleMoveDown = useCallback(
-    async (labelId: string) => {
-      const index = labelsForTable.findIndex((l) => l.id === labelId);
-      if (index < 0 || index >= labelsForTable.length - 1) return;
-      const newOrder = [...labelsForTable];
-      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
-      await reorderLabels(newOrder.map((l) => l.id));
-    },
-    [labelsForTable, reorderLabels]
-  );
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Context menu handlers (using shared hooks)
+  // ─────────────────────────────────────────────────────────────────────────────
 
-  // Context menu handlers - support bulk when item is in selection
-  // Helper to get target IDs (bulk if in selection with multiple, single otherwise)
-  const getTargetIds = useCallback(
-    (labelId: string): string[] => {
-      const labelKey = createKey("label", labelId);
-      const inSelection = isSelected(labelKey);
-      const isBulk = inSelection && actionableRoots.length > 1 && isSameKind;
-      if (isBulk) {
-        return actionableRoots.map((key) => key.split(":")[1]);
-      }
-      return [labelId];
-    },
-    [isSelected, actionableRoots, isSameKind]
-  );
+  // Bulk action support for context menu operations
+  const { getTargetIds } = useBulkAction({
+    isSelected,
+    actionableRoots,
+    isSameKind,
+    entityKind: "label",
+  });
 
-  // Opens confirmation dialog for delete (single or bulk)
+  // Move up/down handlers for context menu reordering
+  const { handleMoveUp, handleMoveDown, getPositionFlags } = useMoveHandlers({
+    items: labelsForTable,
+    reorder: reorderLabels,
+  });
+
+  // Clone (with bulk support)
+  const { handleClone: handleContextClone } = useContextClone({
+    cloneEntity: (id) => cloneLabel({ id }),
+    getTargetIds,
+    entityLabel: { singular: "Label", plural: "labels" },
+  });
+
+  // Delete handler
   const handleContextDelete = useCallback(
     (labelId: string) => {
-      const targetIds = getTargetIds(labelId);
-      setDeleteConfirmation({ open: true, targetIds });
+      requestDelete(labelId, "label", getTargetIds);
     },
-    [getTargetIds]
+    [requestDelete, getTargetIds]
   );
 
-  // Actually perform the delete after confirmation
-  const handleConfirmDelete = useCallback(async () => {
-    const { targetIds } = deleteConfirmation;
-    if (!targetIds || targetIds.length === 0) return;
+  // Visibility toggle (with bulk support + undo for single items)
+  const { handleVisibilityToggle: handleBulkVisibility } = useContextVisibility({
+    updateEntity: (id, visible) => updateLabel(id, { isVisible: visible }),
+    getTargetIds,
+    entityLabel: { singular: "Label", plural: "labels" },
+  });
 
-    setIsDeleting(true);
-    try {
-      const results = await Promise.all(targetIds.map((id) => deleteLabel(id)));
-      const allOk = results.every((r) => r.ok);
-      if (allOk) {
-        toast({
-          title: targetIds.length > 1 ? `${targetIds.length} labels deleted` : "Label deleted",
-        });
-      } else {
-        toast({ title: "Error", description: "Some labels could not be deleted", variant: "destructive" });
-      }
-    } finally {
-      setIsDeleting(false);
-      setDeleteConfirmation({ open: false, targetIds: [] });
-    }
-  }, [deleteConfirmation, deleteLabel, toast]);
-
-  const handleContextClone = useCallback(
-    async (labelId: string) => {
-      const targetIds = getTargetIds(labelId);
-      const results = await Promise.all(targetIds.map((id) => cloneLabel({ id })));
-      const allOk = results.every((r) => r.ok);
-      if (allOk) {
-        toast({
-          title: targetIds.length > 1 ? `${targetIds.length} labels cloned` : "Label cloned",
-        });
-      } else {
-        toast({ title: "Error", description: "Some labels could not be cloned", variant: "destructive" });
-      }
-    },
-    [cloneLabel, toast, getTargetIds]
-  );
-
-  // Visibility toggle for context menu (single or bulk)
+  // Wrap to use undo-enabled handler for single items
   const handleContextVisibilityToggle = useCallback(
     async (labelId: string, visible: boolean) => {
       const targetIds = getTargetIds(labelId);
@@ -306,37 +284,19 @@ export function AllLabelsTableView() {
         // Single item - use handler with undo support
         await handleVisibilitySave(labelId, visible);
       } else {
-        // Bulk operation
-        await Promise.all(targetIds.map((id) => updateLabel(id, { isVisible: visible })));
-        toast({ title: `${targetIds.length} labels ${visible ? "shown" : "hidden"}` });
+        // Bulk operation - use hook handler
+        await handleBulkVisibility(labelId, visible);
       }
     },
-    [getTargetIds, handleVisibilitySave, updateLabel, toast]
+    [getTargetIds, handleVisibilitySave, handleBulkVisibility]
   );
 
-  // Category toggle for context menu (attach/detach)
-  const handleCategoryToggle = useCallback(
-    async (labelId: string, categoryId: string, shouldAttach: boolean) => {
-      if (shouldAttach) {
-        const result = await attachCategory(labelId, categoryId);
-        if (!result.ok) {
-          toast({ title: "Error", description: "Could not add category", variant: "destructive" });
-        }
-      } else {
-        const result = await detachCategory(labelId, categoryId);
-        if (!result.ok) {
-          toast({ title: "Error", description: "Could not remove category", variant: "destructive" });
-        }
-      }
-    },
-    [attachCategory, detachCategory, toast]
-  );
-
-  // Category targets for context menu (all available categories)
-  const categoryTargets = useMemo(
-    () => categories.map((c) => ({ id: c.id, name: c.name })),
-    [categories]
-  );
+  // Category toggle for manage-categories submenu
+  const { handleToggle: handleCategoryToggle } = useRelationshipToggle({
+    attach: attachCategory,
+    detach: detachCategory,
+    relationshipLabel: "category",
+  });
 
   // Column definitions - must match ALL_LABELS_HEADER_COLUMNS ids
   // Note: When adding a new column, add entry here AND in ALL_LABELS_HEADER_COLUMNS
@@ -383,14 +343,14 @@ export function AllLabelsTableView() {
     );
   }
 
-  const renderLabelRow = (label: MenuLabel, options?: { isPinned?: boolean; isFirstRow?: boolean; isLastRow?: boolean }) => {
+  const renderLabelRow = (label: MenuLabel, options?: { isPinned?: boolean; isLastRow?: boolean }) => {
     const isPinned = options?.isPinned === true;
-    const isFirstRow = options?.isFirstRow === true;
     const isLastRow = options?.isLastRow === true;
     const labelKey = createKey("label", label.id);
     const isLabelSelected = isSelected(labelKey);
     const isRowHovered = hoveredRowId === label.id;
-    const isContextRow = contextRowId === label.id;
+    const isRowContextMenu = isContextRow(label.id);
+    const positionFlags = getPositionFlags(label.id);
     const dragClasses = getDragClasses(label.id);
     const dragHandlers = getDragHandlers(label.id);
 
@@ -404,14 +364,14 @@ export function AllLabelsTableView() {
         viewType="all-labels"
         entityId={label.id}
         isVisible={label.isVisible}
-        isFirst={isFirstRow}
-        isLast={isLastRow}
+        isFirst={positionFlags.isFirst}
+        isLast={positionFlags.isLast}
         selectedCount={actionableRoots.length}
         isInSelection={isLabelSelected}
         isMixedSelection={actionableRoots.length > 0 && !isSameKind}
         categoryTargets={categoryTargets}
         attachedCategoryIds={label.categories?.map((c) => c.id) ?? []}
-        onOpenChange={(open) => setContextRowId(open ? label.id : null)}
+        onOpenChange={handleContextOpenChange(label.id)}
         onClone={() => handleContextClone(label.id)}
         onVisibilityToggle={(visible) => handleContextVisibilityToggle(label.id, visible)}
         onDelete={() => handleContextDelete(label.id)}
@@ -422,7 +382,7 @@ export function AllLabelsTableView() {
       <TableRow
         data-state={isLabelSelected ? "selected" : undefined}
         isSelected={isLabelSelected}
-        isContextRow={isContextRow}
+        isContextRow={isRowContextMenu}
         isHidden={!label.isVisible}
         isDragging={dragClasses.isDragging || dragClasses.isInDragSet}
         isDragOver={dragClasses.isDragOver}
@@ -539,10 +499,9 @@ export function AllLabelsTableView() {
         />
 
         <TableBody>
-          {pinnedLabel ? renderLabelRow(pinnedLabel, { isPinned: true, isFirstRow: true }) : null}
+          {pinnedLabel ? renderLabelRow(pinnedLabel, { isPinned: true }) : null}
           {rows.map((row, index) =>
             renderLabelRow(row.original, {
-              isFirstRow: !pinnedLabel && index === 0,
               isLastRow: index === rows.length - 1,
             })
           )}
@@ -564,26 +523,30 @@ export function AllLabelsTableView() {
       <AlertDialog
         open={deleteConfirmation.open}
         onOpenChange={(open) => {
-          if (!open) setDeleteConfirmation({ open: false, targetIds: [] });
+          if (!open) cancelDelete();
         }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               Delete {deleteConfirmation.targetIds.length}{" "}
-              {deleteConfirmation.targetIds.length === 1 ? "label" : "labels"}?
+              {deleteConfirmation.targetIds.length === 1
+                ? deleteConfirmation.entityKind
+                : deleteConfirmation.entityKind === "label" ? "labels" : "categories"}?
             </AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. The{" "}
-              {deleteConfirmation.targetIds.length === 1 ? "label" : "labels"} will be
-              permanently deleted and all category associations will be removed.
+              {deleteConfirmation.targetIds.length === 1
+                ? deleteConfirmation.entityKind
+                : deleteConfirmation.entityKind === "label" ? "labels" : "categories"}{" "}
+              will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
-              onClick={handleConfirmDelete}
+              onClick={confirmDelete}
               disabled={isDeleting}
             >
               {isDeleting ? "Deleting..." : "Delete"}
