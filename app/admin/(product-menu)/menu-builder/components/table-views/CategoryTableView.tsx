@@ -11,7 +11,6 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { Eye, EyeOff, Package } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
@@ -27,31 +26,18 @@ import { useGroupedEntitiesGhost } from "../../../hooks/dnd/useGroupedEntitiesGh
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuProduct } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
-import { CheckboxCell } from "./shared/cells/CheckboxCell";
-import { TouchTarget } from "./shared/cells/TouchTarget";
-import { RowContextMenu } from "./shared/cells/RowContextMenu";
 import { categoryViewWidthPreset } from "./shared/table/columnWidthPresets";
 import { EmptyState } from "./shared/table/EmptyState";
-import { TableCell } from "./shared/table/TableCell";
-import { TableHeader, type TableHeaderColumn } from "./shared/table/TableHeader";
-import { TableRow } from "./shared/table/TableRow";
+import { TableHeader } from "./shared/table/TableHeader";
 import { TableViewWrapper } from "./shared/table/TableViewWrapper";
-import { DragHandleCell } from "./shared/cells/DragHandleCell";
-
-/** Product with order within current category and chronological added order */
-type CategoryProduct = MenuProduct & {
-  orderInCategory: number;
-  addedOrderRank: number; // Chronological rank based on createdAt (1 = first added)
-};
-
-const CATEGORY_VIEW_HEADER_COLUMNS: TableHeaderColumn[] = [
-  { id: "select", label: "", isCheckbox: true },
-  { id: "name", label: "Products" },
-  { id: "addedOrder", label: "Added Order" },
-  { id: "visibility", label: "Visibility" },
-  { id: "categories", label: "Added to Categories" },
-  { id: "dragHandle", label: "" },
-];
+import { ConfiguredTableRow } from "./shared/table/ConfiguredTableRow";
+import { useConfiguredRow, type UseConfiguredRowOptions } from "../../../hooks/table-view";
+import {
+  categoryViewConfig,
+  CATEGORY_VIEW_HEADER_COLUMNS,
+  type CategoryViewExtra,
+  type CategoryProduct,
+} from "../../../constants/table-view-configs";
 
 export function CategoryTableView() {
   const {
@@ -74,7 +60,7 @@ export function CategoryTableView() {
   const { toast } = useToast();
 
   // Pinning support for newly added products
-  const { pinnedId: pinnedProductId, clearPinnedIfMatches: _clearPinnedIfMatches } = useContextRowUiState(
+  const { pinnedId: pinnedProductId } = useContextRowUiState(
     builder,
     "product",
     { autoClearPinned: true }
@@ -128,7 +114,6 @@ export function CategoryTableView() {
   const registry = useMemo(() => buildFlatRegistry(categoryProducts, "product"), [categoryProducts]);
 
   // Helper: Get category names for a product (excluding current category)
-  // Moved up to be used by columns definition
   const getProductCategories = useCallback(
     (product: MenuProduct): string => {
       const productCategoryIds = product.categoryIds.filter((id) => id !== currentCategoryId);
@@ -428,13 +413,90 @@ export function CategoryTableView() {
   const allSelected = selectionState.allSelected;
   const someSelected = selectionState.someSelected;
 
+  // Extra context for config-driven rendering
+  const extra: CategoryViewExtra = useMemo(
+    () => ({
+      currentCategoryId,
+      moveToTargets,
+      categoryTargets,
+      getProductCategories,
+      canDrag: eligibility.canDrag,
+      eligibleEntityIds,
+      getCheckboxState,
+    }),
+    [
+      currentCategoryId,
+      moveToTargets,
+      categoryTargets,
+      getProductCategories,
+      eligibility.canDrag,
+      eligibleEntityIds,
+      getCheckboxState,
+    ]
+  );
+
+  // Context menu handlers for config
+  const contextMenuHandlers = useMemo(
+    () => ({
+      clone: async () => {}, // No clone for products in this view
+      delete: () => {}, // No delete for products in this view
+      visibility: handleContextVisibility,
+      remove: handleContextRemove,
+      moveUp: handleMoveUp,
+      moveDown: handleMoveDown,
+      moveTo: handleMoveTo,
+      categoryToggle: handleCategoryToggle,
+    }),
+    [
+      handleContextVisibility,
+      handleContextRemove,
+      handleMoveUp,
+      handleMoveDown,
+      handleMoveTo,
+      handleCategoryToggle,
+    ]
+  );
+
+  // Selection info for context menu
+  const selectionInfo = useMemo(
+    () => ({
+      actionableRoots,
+      isSameKind,
+    }),
+    [actionableRoots, isSameKind]
+  );
+
+  // Config-driven row builder
+  const configuredRowOptions: UseConfiguredRowOptions<CategoryProduct> = useMemo(
+    () => ({
+      config: categoryViewConfig,
+      contextMenuHandlers,
+      selectionInfo,
+      extra,
+      onContextMenuOpenChange: (rowId, open) =>
+        setContextRowId(open ? rowId : null),
+      onMouseEnter: setHoveredRowId,
+      onMouseLeave: () => setHoveredRowId(null),
+      onRowClick: handleClick,
+      onRowDoubleClick: () => {}, // No navigation for products
+    }),
+    [
+      contextMenuHandlers,
+      selectionInfo,
+      extra,
+      handleClick,
+    ]
+  );
+
+  const { buildRow } = useConfiguredRow(configuredRowOptions);
+
   // Empty state
   if (!currentCategoryId) {
     return (
       <EmptyState
-        icon={Package}
-        title="No Category Selected"
-        description="Select a category to view its products"
+        icon={categoryViewConfig.emptyStates[0].icon}
+        title={categoryViewConfig.emptyStates[0].title}
+        description={categoryViewConfig.emptyStates[0].description}
       />
     );
   }
@@ -442,131 +504,87 @@ export function CategoryTableView() {
   if (categoryProducts.length === 0) {
     return (
       <EmptyState
-        icon={Package}
-        title="No Products"
-        description="Add products to this category using the action bar"
+        icon={categoryViewConfig.emptyStates[1].icon}
+        title={categoryViewConfig.emptyStates[1].title}
+        description={categoryViewConfig.emptyStates[1].description}
       />
     );
   }
 
-  const renderProductRow = (product: CategoryProduct, options?: { isPinned?: boolean; isFirstRow?: boolean; isLastRow?: boolean }) => {
-    const _isPinned = options?.isPinned === true;
-    const isFirstRow = options?.isFirstRow === true;
-    const isLastRow = options?.isLastRow === true;
-    const productKey = createKey("product", product.id);
-    const isProductSelected = isSelected(productKey);
-    const isRowHovered = hoveredRowId === product.id;
-    const isContextRow = contextRowId === product.id;
+  // Build row state and handlers for each row
+  const buildRowState = (product: CategoryProduct, options?: { isPinned?: boolean }) => ({
+    isSelected: isSelected(createKey("product", product.id)),
+    checkboxState: getCheckboxState(createKey("product", product.id)),
+    anchorKey,
+    isRowHovered: hoveredRowId === product.id,
+    isContextRow: contextRowId === product.id,
+    isEditing: false, // No inline editing in CategoryTableView
+    isPinned: options?.isPinned || pinnedProductId === product.id,
+  });
+
+  const buildRowHandlers = (product: CategoryProduct) => ({
+    onToggle: () => onToggle(createKey("product", product.id)),
+    onRangeSelect:
+      anchorKey && anchorKey !== createKey("product", product.id)
+        ? () => rangeSelect(createKey("product", product.id))
+        : undefined,
+    onStartEdit: () => {}, // No inline editing
+    onCancelEdit: () => {},
+    onSave: async () => {},
+  });
+
+  // Render a product row with DnD support
+  const renderProductRow = (
+    product: CategoryProduct,
+    index: number,
+    total: number,
+    options?: { isPinned?: boolean }
+  ) => {
+    const rowData = buildRow(
+      product,
+      index,
+      total,
+      buildRowState(product, options),
+      buildRowHandlers(product)
+    );
+
+    // Get DnD classes and handlers
     const dragClasses = getDragClasses(product.id);
     const dragHandlers = getDragHandlers(product.id);
-
-    // Get cursor styling state for this row
     const isDraggable = getIsDraggable(product.id);
 
     return (
-      <RowContextMenu
-        key={product.id}
-        entityKind="product"
-        viewType="category"
-        entityId={product.id}
-        isVisible={!product.isDisabled}
-        isFirst={isFirstRow}
-        isLast={isLastRow}
-        selectedCount={actionableRoots.length}
-        isInSelection={isProductSelected}
-        isMixedSelection={actionableRoots.length > 0 && !isSameKind}
-        moveToTargets={moveToTargets}
-        currentParentId={currentCategoryId ?? undefined}
-        categoryTargets={categoryTargets}
-        attachedCategoryIds={product.categoryIds}
-        onOpenChange={(open) => setContextRowId(open ? product.id : null)}
-        onVisibilityToggle={(visible) => handleContextVisibility(product.id, visible)}
-        onRemove={() => handleContextRemove(product.id)}
-        onMoveUp={() => handleMoveUp(product.id)}
-        onMoveDown={() => handleMoveDown(product.id)}
-        onMoveTo={(toCategoryId) => handleMoveTo(product.id, toCategoryId)}
-        onCategoryToggle={(categoryId, shouldAttach) => handleCategoryToggle(product.id, categoryId, shouldAttach)}
-      >
-      <TableRow
-        data-state={isProductSelected ? "selected" : undefined}
-        isSelected={isProductSelected}
-        isContextRow={isContextRow}
-        isHidden={product.isDisabled}
-        isDragging={dragClasses.isDragging || dragClasses.isInDragSet}
-        isDragOver={dragClasses.isDragOver}
-        isLastRow={isLastRow}
-        isDraggable={isDraggable}
-        draggable
-        onDragStart={dragHandlers.onDragStart}
-        onDragOver={dragHandlers.onDragOver}
-        onDragLeave={dragHandlers.onDragLeave}
-        onDrop={dragHandlers.onDrop}
-        onDragEnd={dragHandlers.onDragEnd}
-        onMouseEnter={() => setHoveredRowId(product.id)}
-        onMouseLeave={() => setHoveredRowId(null)}
-        className={cn(
-          dragClasses.isDragOver &&
-            (dragClasses.dropPosition === "after"
-              ? "!border-b-2 !border-b-primary"
-              : "!border-t-2 !border-t-primary")
-        )}
-        onRowClick={(options) => handleClick(productKey, options)}
-      >
-        {/* Checkbox */}
-        <TableCell config={categoryViewWidthPreset.select} data-row-click-ignore>
-          <TouchTarget>
-            <CheckboxCell
-              id={product.id}
-              checked={isProductSelected}
-              onToggle={() => onToggle(productKey)}
-              isSelectable
-              alwaysVisible={isProductSelected}
-              ariaLabel={`Select ${product.name}`}
-              anchorKey={anchorKey}
-              onRangeSelect={anchorKey && anchorKey !== productKey ? () => rangeSelect(productKey) : undefined}
-            />
-          </TouchTarget>
-        </TableCell>
-
-        {/* Product Name */}
-        <TableCell config={categoryViewWidthPreset.name}>
-          <span className="truncate font-medium">{product.name}</span>
-        </TableCell>
-
-        {/* Added Order (chronological rank based on createdAt) */}
-        <TableCell config={categoryViewWidthPreset.addedOrder}>
-          <span className="text-sm">{product.addedOrderRank}</span>
-        </TableCell>
-
-        {/* Visibility (read-only icon) */}
-        <TableCell config={categoryViewWidthPreset.visibility}>
-          {product.isDisabled ? (
-            <EyeOff className="text-muted-foreground inline" />
-          ) : (
-            <Eye className="h-4 w-4 text-foreground inline" />
-          )}
-        </TableCell>
-
-        {/* Categories */}
-        <TableCell config={categoryViewWidthPreset.categories} className="text-sm">
-          {getProductCategories(product)}
-        </TableCell>
-
-        {/* Drag Handle */}
-        <TableCell config={categoryViewWidthPreset.dragHandle} data-row-click-ignore>
-          <DragHandleCell
-            isEligible={eligibility.canDrag}
-            isRowInEligibleSet={eligibleEntityIds.has(product.id)}
-            checkboxState={getCheckboxState(productKey)}
-            isRowHovered={isRowHovered}
-          />
-        </TableCell>
-      </TableRow>
-      </RowContextMenu>
+      <ConfiguredTableRow
+        key={rowData.key}
+        data={{
+          ...rowData,
+          tableRowProps: {
+            ...rowData.tableRowProps,
+            isDragging: dragClasses.isDragging || dragClasses.isInDragSet,
+            isDragOver: dragClasses.isDragOver,
+            isLastRow: index === total - 1,
+            isDraggable,
+            draggable: true,
+            onDragStart: dragHandlers.onDragStart,
+            onDragOver: dragHandlers.onDragOver,
+            onDragLeave: dragHandlers.onDragLeave,
+            onDrop: dragHandlers.onDrop,
+            onDragEnd: dragHandlers.onDragEnd,
+            className: cn(
+              rowData.tableRowProps.className,
+              dragClasses.isDragOver &&
+                (dragClasses.dropPosition === "after"
+                  ? "!border-b-2 !border-b-primary"
+                  : "!border-t-2 !border-t-primary")
+            ),
+          },
+        }}
+      />
     );
   };
 
   const rows = table.getRowModel().rows;
+  const totalRows = (pinnedProduct ? 1 : 0) + rows.length;
 
   return (
     <>
@@ -582,12 +600,15 @@ export function CategoryTableView() {
         />
 
         <TableBody>
-          {pinnedProduct ? renderProductRow(pinnedProduct, { isPinned: true, isFirstRow: true }) : null}
+          {pinnedProduct
+            ? renderProductRow(pinnedProduct, 0, totalRows, { isPinned: true })
+            : null}
           {rows.map((row, index) =>
-            renderProductRow(row.original, {
-              isFirstRow: !pinnedProduct && index === 0,
-              isLastRow: index === rows.length - 1,
-            })
+            renderProductRow(
+              row.original,
+              pinnedProduct ? index + 1 : index,
+              totalRows
+            )
           )}
         </TableBody>
       </TableViewWrapper>

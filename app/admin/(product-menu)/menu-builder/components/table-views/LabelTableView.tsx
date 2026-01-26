@@ -1,16 +1,6 @@
 "use client";
 "use no memo";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { TableBody } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -21,7 +11,6 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { Eye, EyeOff, Layers } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
@@ -33,35 +22,20 @@ import { useRowClickHandler } from "../../../hooks/useRowClickHandler";
 import { createKey } from "../../../types/identity-registry";
 import { usePersistColumnSort } from "../../../hooks/usePersistColumnSort";
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
-import type { MenuCategoryInLabel } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
-import { CheckboxCell } from "./shared/cells/CheckboxCell";
-import { TouchTarget } from "./shared/cells/TouchTarget";
-import { RowContextMenu } from "./shared/cells/RowContextMenu";
 import { labelViewWidthPreset } from "./shared/table/columnWidthPresets";
 import { EmptyState } from "./shared/table/EmptyState";
-import { TableCell } from "./shared/table/TableCell";
-import { TableHeader, type TableHeaderColumn } from "./shared/table/TableHeader";
-import { TableRow } from "./shared/table/TableRow";
+import { TableHeader } from "./shared/table/TableHeader";
 import { TableViewWrapper } from "./shared/table/TableViewWrapper";
-import { DragHandleCell } from "./shared/cells/DragHandleCell";
-
-/** Category with order within current label, added order rank, and product names */
-type LabelCategory = MenuCategoryInLabel & {
-  orderInLabel: number;
-  addedOrderRank: number; // Chronological rank based on attachedAt (1 = first added)
-  productNames: string;
-  isVisible: boolean;
-};
-
-const LABEL_VIEW_HEADER_COLUMNS: TableHeaderColumn[] = [
-  { id: "select", label: "", isCheckbox: true },
-  { id: "name", label: "Categories" },
-  { id: "addedOrder", label: "Added Order" },
-  { id: "visibility", label: "Visibility" },
-  { id: "products", label: "Products" },
-  { id: "dragHandle", label: "" },
-];
+import { DeleteConfirmationDialog } from "./shared/table/DeleteConfirmationDialog";
+import { ConfiguredTableRow } from "./shared/table/ConfiguredTableRow";
+import { useConfiguredRow, type UseConfiguredRowOptions } from "../../../hooks/table-view";
+import {
+  labelViewConfig,
+  LABEL_VIEW_HEADER_COLUMNS,
+  type LabelViewExtra,
+  type LabelCategory,
+} from "../../../constants/table-view-configs";
 
 export function LabelTableView() {
   const {
@@ -403,13 +377,81 @@ export function LabelTableView() {
   const allSelected = selectionState.allSelected;
   const someSelected = selectionState.someSelected;
 
+  // Extra context for config-driven rendering
+  const extra: LabelViewExtra = useMemo(
+    () => ({
+      currentLabelId,
+      moveToTargets,
+      canDrag: eligibility.canDrag,
+      eligibleEntityIds,
+      getCheckboxState,
+    }),
+    [currentLabelId, moveToTargets, eligibility.canDrag, eligibleEntityIds, getCheckboxState]
+  );
+
+  // Context menu handlers for config
+  const contextMenuHandlers = useMemo(
+    () => ({
+      clone: handleContextClone,
+      delete: handleContextDelete,
+      visibility: handleContextVisibility,
+      remove: handleContextRemove,
+      moveUp: handleMoveUp,
+      moveDown: handleMoveDown,
+      moveTo: handleMoveTo,
+    }),
+    [
+      handleContextClone,
+      handleContextDelete,
+      handleContextVisibility,
+      handleContextRemove,
+      handleMoveUp,
+      handleMoveDown,
+      handleMoveTo,
+    ]
+  );
+
+  // Selection info for context menu
+  const selectionInfo = useMemo(
+    () => ({
+      actionableRoots,
+      isSameKind,
+    }),
+    [actionableRoots, isSameKind]
+  );
+
+  // Config-driven row builder
+  const configuredRowOptions: UseConfiguredRowOptions<LabelCategory> = useMemo(
+    () => ({
+      config: labelViewConfig,
+      contextMenuHandlers,
+      selectionInfo,
+      extra,
+      onContextMenuOpenChange: (rowId, open) =>
+        setContextRowId(open ? rowId : null),
+      onMouseEnter: setHoveredRowId,
+      onMouseLeave: () => setHoveredRowId(null),
+      onRowClick: handleClick,
+      onRowDoubleClick: handleDoubleClick,
+    }),
+    [
+      contextMenuHandlers,
+      selectionInfo,
+      extra,
+      handleClick,
+      handleDoubleClick,
+    ]
+  );
+
+  const { buildRow } = useConfiguredRow(configuredRowOptions);
+
   // Empty state
   if (!currentLabelId || !currentLabel) {
     return (
       <EmptyState
-        icon={Layers}
-        title="No Label Selected"
-        description="Select a label to view its categories"
+        icon={labelViewConfig.emptyStates[0].icon}
+        title={labelViewConfig.emptyStates[0].title}
+        description={labelViewConfig.emptyStates[0].description}
       />
     );
   }
@@ -417,134 +459,87 @@ export function LabelTableView() {
   if (labelCategories.length === 0) {
     return (
       <EmptyState
-        icon={Layers}
-        title="No Categories"
-        description="Add categories to this label using the action bar"
+        icon={labelViewConfig.emptyStates[1].icon}
+        title={labelViewConfig.emptyStates[1].title}
+        description={labelViewConfig.emptyStates[1].description}
       />
     );
   }
 
+  // Build row state and handlers for each row
+  const buildRowState = (category: LabelCategory, options?: { isPinned?: boolean }) => ({
+    isSelected: isSelected(createKey("category", category.id)),
+    checkboxState: getCheckboxState(createKey("category", category.id)),
+    anchorKey,
+    isRowHovered: hoveredRowId === category.id,
+    isContextRow: contextRowId === category.id,
+    isEditing: false, // No inline editing in LabelTableView
+    isPinned: options?.isPinned || pinnedCategoryId === category.id,
+  });
+
+  const buildRowHandlers = (category: LabelCategory) => ({
+    onToggle: () => onToggle(createKey("category", category.id)),
+    onRangeSelect:
+      anchorKey && anchorKey !== createKey("category", category.id)
+        ? () => rangeSelect(createKey("category", category.id))
+        : undefined,
+    onStartEdit: () => {}, // No inline editing
+    onCancelEdit: () => {},
+    onSave: async () => {},
+  });
+
+  // Render a category row with DnD support
   const renderCategoryRow = (
     category: LabelCategory,
-    options?: { isPinned?: boolean; isFirstRow?: boolean; isLastRow?: boolean }
+    index: number,
+    total: number,
+    options?: { isPinned?: boolean }
   ) => {
-    const _isPinned = options?.isPinned === true;
-    const isFirstRow = options?.isFirstRow === true;
-    const isLastRow = options?.isLastRow === true;
-    const categoryKey = createKey("category", category.id);
-    const isCategorySelected = isSelected(categoryKey);
-    const isRowHovered = hoveredRowId === category.id;
-    const isContextRow = contextRowId === category.id;
+    const rowData = buildRow(
+      category,
+      index,
+      total,
+      buildRowState(category, options),
+      buildRowHandlers(category)
+    );
+
+    // Get DnD classes and handlers
     const dragClasses = getDragClasses(category.id);
     const dragHandlers = getDragHandlers(category.id);
-
-    // Get cursor styling state for this row
     const isDraggable = getIsDraggable(category.id);
 
     return (
-      <RowContextMenu
-        key={category.id}
-        entityKind="category"
-        viewType="label"
-        entityId={category.id}
-        isVisible={category.isVisible}
-        isFirst={isFirstRow}
-        isLast={isLastRow}
-        selectedCount={actionableRoots.length}
-        isInSelection={isCategorySelected}
-        isMixedSelection={actionableRoots.length > 0 && !isSameKind}
-        moveToTargets={moveToTargets}
-        currentParentId={currentLabelId ?? undefined}
-        onOpenChange={(open) => setContextRowId(open ? category.id : null)}
-        onClone={() => handleContextClone(category.id)}
-        onVisibilityToggle={(visible) => handleContextVisibility(category.id, visible)}
-        onRemove={() => handleContextRemove(category.id)}
-        onDelete={() => handleContextDelete(category.id)}
-        onMoveUp={() => handleMoveUp(category.id)}
-        onMoveDown={() => handleMoveDown(category.id)}
-        onMoveTo={(toLabelId) => handleMoveTo(category.id, toLabelId)}
-      >
-      <TableRow
-        data-state={isCategorySelected ? "selected" : undefined}
-        isSelected={isCategorySelected}
-        isContextRow={isContextRow}
-        isHidden={!category.isVisible}
-        isDragging={dragClasses.isDragging}
-        isDragOver={dragClasses.isDragOver}
-        isLastRow={isLastRow}
-        isDraggable={isDraggable}
-        draggable
-        onDragStart={dragHandlers.onDragStart}
-        onDragOver={dragHandlers.onDragOver}
-        onDragLeave={dragHandlers.onDragLeave}
-        onDrop={dragHandlers.onDrop}
-        onDragEnd={dragHandlers.onDragEnd}
-        onMouseEnter={() => setHoveredRowId(category.id)}
-        onMouseLeave={() => setHoveredRowId(null)}
-        className={cn(
-          dragClasses.isDragOver &&
-            (dragClasses.dropPosition === "after"
-              ? "!border-b-2 !border-b-primary"
-              : "!border-t-2 !border-t-primary")
-        )}
-        onRowClick={(options) => handleClick(categoryKey, options)}
-        onRowDoubleClick={() => handleDoubleClick(categoryKey)}
-      >
-        {/* Checkbox */}
-        <TableCell config={labelViewWidthPreset.select} data-row-click-ignore>
-          <TouchTarget>
-            <CheckboxCell
-              id={category.id}
-              checked={isCategorySelected}
-              onToggle={() => onToggle(categoryKey)}
-              isSelectable
-              alwaysVisible={isCategorySelected}
-              anchorKey={anchorKey}
-              onRangeSelect={anchorKey && anchorKey !== categoryKey ? () => rangeSelect(categoryKey) : undefined}
-              ariaLabel={`Select ${category.name}`}
-            />
-          </TouchTarget>
-        </TableCell>
-
-        {/* Category Name */}
-        <TableCell config={labelViewWidthPreset.name}>
-          <span className="truncate font-medium">{category.name}</span>
-        </TableCell>
-
-        {/* Added Order (chronological rank based on attachedAt) */}
-        <TableCell config={labelViewWidthPreset.addedOrder}>
-          <span className="text-sm">{category.addedOrderRank}</span>
-        </TableCell>
-
-        {/* Visibility (read-only icon) */}
-        <TableCell config={labelViewWidthPreset.visibility}>
-          {category.isVisible ? (
-            <Eye className="h-4 w-4 inline" />
-          ) : (
-            <EyeOff className="h-4 w-4 text-muted-foreground inline" />
-          )}
-        </TableCell>
-
-        {/* Products (comma-separated) */}
-        <TableCell config={labelViewWidthPreset.products} className="text-sm">
-          <span className="truncate">{category.productNames}</span>
-        </TableCell>
-
-        {/* Drag Handle */}
-        <TableCell config={labelViewWidthPreset.dragHandle} data-row-click-ignore>
-          <DragHandleCell
-            isEligible={eligibility.canDrag}
-            isRowInEligibleSet={eligibleEntityIds.has(category.id)}
-            checkboxState={getCheckboxState(categoryKey)}
-            isRowHovered={isRowHovered}
-          />
-        </TableCell>
-      </TableRow>
-      </RowContextMenu>
+      <ConfiguredTableRow
+        key={rowData.key}
+        data={{
+          ...rowData,
+          tableRowProps: {
+            ...rowData.tableRowProps,
+            isDragging: dragClasses.isDragging,
+            isDragOver: dragClasses.isDragOver,
+            isLastRow: index === total - 1,
+            isDraggable,
+            draggable: true,
+            onDragStart: dragHandlers.onDragStart,
+            onDragOver: dragHandlers.onDragOver,
+            onDragLeave: dragHandlers.onDragLeave,
+            onDrop: dragHandlers.onDrop,
+            onDragEnd: dragHandlers.onDragEnd,
+            className: cn(
+              rowData.tableRowProps.className,
+              dragClasses.isDragOver &&
+                (dragClasses.dropPosition === "after"
+                  ? "!border-b-2 !border-b-primary"
+                  : "!border-t-2 !border-t-primary")
+            ),
+          },
+        }}
+      />
     );
   };
 
   const rows = table.getRowModel().rows;
+  const totalRows = (pinnedCategory ? 1 : 0) + rows.length;
 
   return (
     <>
@@ -560,47 +555,29 @@ export function LabelTableView() {
         />
 
         <TableBody>
-          {pinnedCategory ? renderCategoryRow(pinnedCategory, { isPinned: true, isFirstRow: true }) : null}
+          {pinnedCategory
+            ? renderCategoryRow(pinnedCategory, 0, totalRows, { isPinned: true })
+            : null}
           {rows.map((row, index) =>
-            renderCategoryRow(row.original, {
-              isFirstRow: !pinnedCategory && index === 0,
-              isLastRow: index === rows.length - 1,
-            })
+            renderCategoryRow(
+              row.original,
+              pinnedCategory ? index + 1 : index,
+              totalRows
+            )
           )}
         </TableBody>
       </TableViewWrapper>
 
       {/* Delete confirmation dialog */}
-      <AlertDialog
+      <DeleteConfirmationDialog
         open={deleteConfirmation.open}
-        onOpenChange={(open) => {
-          if (!open) setDeleteConfirmation({ open: false, targetIds: [] });
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              Delete {deleteConfirmation.targetIds.length}{" "}
-              {deleteConfirmation.targetIds.length === 1 ? "category" : "categories"}?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. The{" "}
-              {deleteConfirmation.targetIds.length === 1 ? "category" : "categories"} will be
-              permanently deleted and all product associations will be removed.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive hover:bg-destructive/90"
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        targetCount={deleteConfirmation.targetIds.length}
+        entityName="category"
+        associationMessage="all product associations"
+        isDeleting={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteConfirmation({ open: false, targetIds: [] })}
+      />
     </>
   );
 }
