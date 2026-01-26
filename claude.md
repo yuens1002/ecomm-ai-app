@@ -8,7 +8,7 @@
 
 **Name:** Artisan Roast
 **Type:** Full-stack E-commerce Coffee Store with AI Integration
-**Version:** 0.67.0
+**Version:** 0.71.4
 **Live Demo:** https://ecomm-ai-app.vercel.app/
 
 ### Tech Stack
@@ -147,30 +147,46 @@ npm run precheck    # TypeScript + ESLint
 
 **Full procedure:** See [.github/COMMIT_PROCEDURE.md](.github/COMMIT_PROCEDURE.md)
 
+**Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`
+
+#### Feature Branch Commits (no versioning)
+
 **Commit format:**
 ```
-<type>: <brief description> (v0.x.y)
+<type>: <brief description>
 ```
 
 **Rules:**
 - Single-line commit messages only (under 72 characters)
 - **No multi-line bodies or co-authoring mentions**
 - Use imperative mood ("add feature" not "added feature")
-- Include version number in parentheses
+- **NO version numbers** - versioning happens on merge to integration branch
 
-**Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`
+**Example:** `feat: add config-driven table views`
+
+#### Integration Branch Commits (with versioning)
+
+Use these trigger phrases **only on integration branches** (`unify-menu-builder`, `main`):
 
 **Trigger phrases:**
 - `"commit - minor bump"` - For new features (0.x.0)
 - `"commit - patch bump"` - For fixes/small changes (0.0.x)
 
+**Commit format (integration branch only):**
+```
+<type>: <brief description> (v0.x.y)
+```
+
 **Commit procedure (auto-executed on trigger):**
 1. Stage changes: `git add -A`
-2. Update CHANGELOG.md with version, date, and changes
-3. Update package.json version to match
-4. Commit with format above
-5. Create annotated tag: `git tag -a v0.x.y -m "<summary>"`
-6. Push commit and tag: `git push && git push origin v0.x.y`
+2. Check highest version: `git tag -l "v0.*" | sort -V | tail -1`
+3. Update CHANGELOG.md with version, date, and changes
+4. Update package.json version to match
+5. Commit with format above
+6. Create annotated tag: `git tag -a v0.x.y -m "<summary>"`
+7. Push commit and tag: `git push && git push origin v0.x.y`
+
+#### Pre-commit & Other
 
 **Pre-commit checks:**
 - Husky runs automatically
@@ -189,9 +205,47 @@ git commit --no-verify -m "docs: update roadmap"
 1. Create feature branch from `main`
 2. Make changes + tests
 3. Run `npm run precheck` locally
-4. Commit with conventional format
+4. Commit with conventional format (no version)
 5. Push and create PR
 6. Wait for CI checks (GitHub Actions)
+7. On merge: version, changelog, tag on integration branch
+
+### Parallel Work & Version Management
+
+When multiple teammates work on separate branches concurrently, version conflicts can occur on merge. Follow these guidelines:
+
+**During feature branch development:**
+- **DO NOT** include version numbers in commit messages (e.g., avoid `feat: add feature (v0.72.0)`)
+- **DO NOT** update `package.json` version or `CHANGELOG.md`
+- **DO NOT** create git tags
+- Use descriptive commit messages without versions: `feat: add config-driven table views`
+
+**On merge to integration branch (`unify-menu-builder` or `main`):**
+1. Merge the feature branch (resolve conflicts if any)
+2. Check current highest version: `git tag -l "v0.*" | sort -V | tail -1`
+3. Determine next version (patch/minor) based on changes
+4. Update `package.json` to next version
+5. Add `CHANGELOG.md` entry for the merged work
+6. Commit: `git commit -m "feat: <summary> (v0.x.y)"`
+7. Create tag: `git tag -a v0.x.y -m "<summary>"`
+8. Push both: `git push && git push origin v0.x.y`
+
+**Post-merge checklist:**
+```bash
+# Verify version alignment
+grep '"version"' package.json          # Check package.json version
+git tag -l "v0.*" | sort -V | tail -5  # Check recent tags
+git log --oneline -5                   # Verify commit has version
+```
+
+**If versions get out of sync:**
+1. Identify the highest tagged version
+2. Update `package.json` to next logical version
+3. Ensure `CHANGELOG.md` has entries for all tagged versions
+4. Create missing tags for untagged commits if needed:
+   ```bash
+   git tag -a v0.x.y <commit-hash> -m "description"
+   ```
 
 ---
 
@@ -524,6 +578,6 @@ When evaluating implementations:
 
 ---
 
-**Last Updated:** 2026-01-24
+**Last Updated:** 2026-01-26
 **Maintained By:** yuens1002
 **Claude Code Version:** 2.1.4

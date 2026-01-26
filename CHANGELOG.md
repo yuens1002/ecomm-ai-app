@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.71.4 - 2026-01-26
+
+### Documentation
+- **CLAUDE.md**: Added parallel work & version management guidelines
+- **Git workflow**: Separated feature branch commits (no version) from integration branch commits (with version)
+- **Trigger phrases**: Clarified `commit - patch/minor bump` only for integration branches
+
 ## 0.71.3 - 2026-01-26
 
 ### Refactoring
