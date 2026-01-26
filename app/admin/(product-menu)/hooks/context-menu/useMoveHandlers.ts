@@ -81,12 +81,33 @@ function isLegacyOptions<T extends { id: string; order?: number }>(
 export function useMoveHandlers<T extends { id: string; order?: number }>(
   options: UseMoveHandlersOptions<T> | UseMoveHandlersLegacyOptions<T>
 ): UseMoveHandlersReturn {
-  // Normalize to unified options
-  const getItems = isLegacyOptions(options) ? () => options.items : options.getItems;
-  const reorder = isLegacyOptions(options)
-    ? (ids: string[], _parentId?: string) => options.reorder(ids)
-    : options.reorder;
+  // Normalize to unified options with stable references
+  const legacyItems = isLegacyOptions(options) ? options.items : null;
+  const providedGetItems = isLegacyOptions(options) ? null : options.getItems;
+  const providedReorder = options.reorder;
   const { onReorderComplete } = options;
+
+  // Memoize getItems to maintain handler stability
+  const getItems = useCallback(
+    (parentId?: string) => {
+      if (legacyItems !== null) {
+        return legacyItems;
+      }
+      return providedGetItems!(parentId);
+    },
+    [legacyItems, providedGetItems]
+  );
+
+  // Memoize reorder wrapper for legacy pattern
+  const reorder = useCallback(
+    (ids: string[], parentId?: string) => {
+      if (legacyItems !== null) {
+        return (providedReorder as (ids: string[]) => Promise<unknown>)(ids);
+      }
+      return (providedReorder as (ids: string[], parentId?: string) => Promise<unknown>)(ids, parentId);
+    },
+    [legacyItems, providedReorder]
+  );
 
   /**
    * Get sorted items, handling both pre-sorted arrays and order-based sorting.

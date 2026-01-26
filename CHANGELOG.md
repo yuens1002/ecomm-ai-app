@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.71.3 - 2026-01-26
+
+### Refactoring
+- **Config-driven table views**: Implemented ViewConfig pattern for declarative table rendering
+  - Phase 1: Core infrastructure (`ViewConfig<T>`, `useConfiguredRow`, `ConfiguredTableRow`)
+  - Phase 2: AllCategoriesTableView migration with sort/filter support
+  - Phase 3: AllLabelsTableView migration with DnD support
+  - Phase 4: Parent-context views (LabelView, CategoryView) with scoped data
+  - Phase 5: MenuView with hierarchy support (labels → categories)
+
+### Bug Fixes
+- **useMoveHandlers stability**: Fixed handler reference stability by memoizing `getItems` and `reorder` functions
+- **RowContextMenu**: Added missing visibility action for label:category view
+- **Test expectations**: Updated non-existent item test to expect `{ isFirst: true, isLast: true }` (disables both move buttons)
+
+### Chores
+- Removed dead code: `useTableViewSetup.ts` (197 lines), `PlaceholderTableView.tsx` (32 lines)
+- Merged remote context-menu handler extraction with config-driven views
+
 ## 0.70.4 - 2026-01-26
 
 ### Improvements
@@ -22,6 +41,27 @@
 
 ### Bug Fixes
 - **Range selection with sorting**: Fixed shift+click range selection not respecting visual row order when columns are sorted in AllCategoriesTableView, CategoryTableView, and LabelTableView
+
+## 0.71.2 - 2026-01-25
+
+### Refactoring
+- **DnD state derivation**: Derive DnD hierarchy state from eligibility instead of syncing via useEffect
+- Removed brittle 6-dependency useEffect that synchronized drag state
+- Hierarchy info (`dragKind`, `dragParentId`, `draggedChildren`) now computed on-demand from eligibility
+
+## 0.71.1 - 2026-01-25
+
+### Refactoring
+- **Shared DeleteConfirmationDialog**: Extracted reusable delete confirmation dialog component
+- **useTableViewSetup hook**: Extracted common table view setup logic (later removed in v0.70.5)
+
+## 0.71.0 - 2026-01-25
+
+### Refactoring
+- **level → kind rename**: Renamed `level` property to `kind` for semantic clarity
+  - `MenuRowLevel` → `MenuRowKind` (entity type: "label" | "category" | "product")
+  - `dragLevel` → `dragKind` in useMultiEntityDnd
+  - Separates entity type concept from hierarchy depth (0, 1, 2)
 
 ## 0.70.1 - 2026-01-25
 

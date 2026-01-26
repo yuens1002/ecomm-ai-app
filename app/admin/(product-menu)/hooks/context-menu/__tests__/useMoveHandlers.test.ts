@@ -201,12 +201,10 @@ describe("useMoveHandlers", () => {
         useMoveHandlers({ items, reorder })
       );
 
-      // When not found, index is -1
-      // isFirst: -1 === 0 = false
-      // isLast: -1 === 2 = false
+      // When not found, return both true to disable both move buttons
       const flags = result.current.getPositionFlags("non-existent");
-      expect(flags.isFirst).toBe(false);
-      expect(flags.isLast).toBe(false);
+      expect(flags.isFirst).toBe(true);
+      expect(flags.isLast).toBe(true);
     });
   });
 
