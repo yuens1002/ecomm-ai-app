@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
-import { createCategorySchema } from "@/app/admin/(product-menu)/types/category";
+import { createCategorySchema } from "@/app/admin/product-menu/types/category";
 import {
   listCategoriesAndLabels,
   createCategoryWithLabels,
-} from "@/app/admin/(product-menu)/data/categories";
+} from "@/app/admin/product-menu/data/categories";
 
 // GET /api/admin/categories - List all categories and labels
 export async function GET() {

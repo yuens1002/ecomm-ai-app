@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/admin";
-import MenuBuilder from "./MenuBuilder";
+import MenuBuilder from "./menu-builder/MenuBuilder";
 
 export const metadata = {
   title: "Product Menu Builder | Admin",

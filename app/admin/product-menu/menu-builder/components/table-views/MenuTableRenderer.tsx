@@ -1,7 +1,7 @@
 "use client";
 
-import { VIEW_CONFIGS, type TableViewId } from "@/app/admin/(product-menu)/constants/view-configs";
-import { useMenuBuilder } from "@/app/admin/(product-menu)/menu-builder/MenuBuilderProvider";
+import { VIEW_CONFIGS, type TableViewId } from "@/app/admin/product-menu/constants/view-configs";
+import { useMenuBuilder } from "@/app/admin/product-menu/menu-builder/MenuBuilderProvider";
 import { AllCategoriesTableView } from "./AllCategoriesTableView";
 import { AllLabelsTableView } from "./AllLabelsTableView";
 import { CategoryTableView } from "./CategoryTableView";

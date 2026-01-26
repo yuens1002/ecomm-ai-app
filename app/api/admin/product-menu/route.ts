@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
-import { listMenuData } from "@/app/admin/(product-menu)/actions/menu";
+import { listMenuData } from "@/app/admin/product-menu/actions/menu";
 
 export async function GET() {
   const auth = await requireAdminApi();

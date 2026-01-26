@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
-import { updateCategorySchema } from "@/app/admin/(product-menu)/types/category";
+import { updateCategorySchema } from "@/app/admin/product-menu/types/category";
 import {
   updateCategoryWithLabels,
   deleteCategoryWithRelations,
-} from "@/app/admin/(product-menu)/data/categories";
+} from "@/app/admin/product-menu/data/categories";
 
 // PUT /api/admin/categories/[id] - Update a category
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {

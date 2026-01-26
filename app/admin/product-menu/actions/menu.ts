@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getProductMenuSettings } from "@/lib/product-menu-settings";
 import { productMenuDataSchema } from "../types/menu";
-import { listCategoryLabelsWithCategories } from "@/app/admin/(product-menu)/data/labels";
+import { listCategoryLabelsWithCategories } from "@/app/admin/product-menu/data/labels";
 
 export async function listMenuData() {
   try {

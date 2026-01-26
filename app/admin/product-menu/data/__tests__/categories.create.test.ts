@@ -55,7 +55,7 @@ describe("product-menu createCategoryWithLabels", () => {
       labels: [],
     });
 
-    const { createCategoryWithLabels } = await import("@/app/admin/(product-menu)/data/categories");
+    const { createCategoryWithLabels } = await import("@/app/admin/product-menu/data/categories");
 
     await createCategoryWithLabels({
       name: "Espresso",

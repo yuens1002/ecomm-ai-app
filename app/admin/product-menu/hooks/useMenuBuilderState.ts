@@ -70,7 +70,7 @@ export function useMenuBuilderState() {
   // ==================== NAVIGATION ACTIONS ====================
   const navigateToView = useCallback(
     (view: ViewType) => {
-      router.push(`/admin/menu-builder?view=${view}`);
+      router.push(`/admin/product-menu?view=${view}`);
       setSelection({ ids: [], kind: null }); // Clear selections on navigation
       setEditingRow(null);
       setPinnedNewRow(null);
@@ -83,7 +83,7 @@ export function useMenuBuilderState() {
       const params = new URLSearchParams();
       params.set("view", "label");
       params.set("labelId", labelId);
-      router.push(`/admin/menu-builder?${params}`);
+      router.push(`/admin/product-menu?${params}`);
       setSelection({ ids: [], kind: null });
       setEditingRow(null);
       setPinnedNewRow(null);
@@ -96,7 +96,7 @@ export function useMenuBuilderState() {
       const params = new URLSearchParams();
       params.set("view", "category");
       params.set("categoryId", categoryId);
-      router.push(`/admin/menu-builder?${params}`);
+      router.push(`/admin/product-menu?${params}`);
       setSelection({ ids: [], kind: null });
       setEditingRow(null);
       setPinnedNewRow(null);

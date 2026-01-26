@@ -58,7 +58,7 @@ describe("product-menu labels DTO", () => {
     ]);
 
     const { listCategoryLabelsWithCategories } = await import(
-      "@/app/admin/(product-menu)/data/labels"
+      "@/app/admin/product-menu/data/labels"
     );
 
     const labels = await listCategoryLabelsWithCategories();
@@ -116,7 +116,7 @@ describe("product-menu labels DTO", () => {
     ]);
 
     const { listCategoryLabelsWithCategories } = await import(
-      "@/app/admin/(product-menu)/data/labels"
+      "@/app/admin/product-menu/data/labels"
     );
 
     const labels = await listCategoryLabelsWithCategories();

@@ -12,9 +12,9 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Kbd } from "@/components/ui/kbd";
-import type { SelectedEntityKind, ViewType } from "@/app/admin/(product-menu)/types/builder-state";
-import { ACTIONS as ACTION_BAR_ACTIONS } from "@/app/admin/(product-menu)/constants/action-bar/actions";
-import { CheckboxListContent } from "@/app/admin/(product-menu)/menu-builder/components/shared/CheckboxListContent";
+import type { SelectedEntityKind, ViewType } from "@/app/admin/product-menu/types/builder-state";
+import { ACTIONS as ACTION_BAR_ACTIONS } from "@/app/admin/product-menu/constants/action-bar/actions";
+import { CheckboxListContent } from "@/app/admin/product-menu/menu-builder/components/shared/CheckboxListContent";
 
 // Simple type for move targets (labels or categories)
 type MoveTarget = { id: string; name: string };

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
-import { reorderCategoryLabels } from "@/app/admin/(product-menu)/data/labels";
+import { reorderCategoryLabels } from "@/app/admin/product-menu/data/labels";
 
 export async function POST(req: Request) {
   try {

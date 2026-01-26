@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.71.5 - 2026-01-26
+
+### Refactoring
+- **Route restructure**: Renamed `(product-menu)` route group to `product-menu` route segment
+  - Menu Builder now accessible at `/admin/product-menu` (was hidden at `/admin/menu-builder`)
+  - Deleted legacy `categories/` and `labels/` table views (replaced by Menu Builder)
+  - Updated AdminSidebar with single "Menu Builder" link
+  - Updated all import paths across 19 files
+
+### Database
+- **Seed improvements**: Added icons to category labels, cleanup logic for obsolete labels
+
 ## 0.71.4 - 2026-01-26
 
 ### Documentation

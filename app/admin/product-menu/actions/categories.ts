@@ -5,13 +5,13 @@ import {
   deleteCategoryWithRelations,
   listCategoriesAndLabels,
   updateCategoryWithLabels,
-} from "@/app/admin/(product-menu)/data/categories";
+} from "@/app/admin/product-menu/data/categories";
 import {
   cloneCategorySchema,
   createCategorySchema,
   createNewCategorySchema,
   updateCategorySchema,
-} from "@/app/admin/(product-menu)/types/category";
+} from "@/app/admin/product-menu/types/category";
 import { generateSlug } from "@/hooks/useSlugGenerator";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";

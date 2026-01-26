@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin";
-import { updateCategoryLabelSchema } from "@/app/admin/(product-menu)/types/category";
-import { deleteCategoryLabel, updateCategoryLabel } from "@/app/admin/(product-menu)/data/labels";
+import { updateCategoryLabelSchema } from "@/app/admin/product-menu/types/category";
+import { deleteCategoryLabel, updateCategoryLabel } from "@/app/admin/product-menu/data/labels";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {

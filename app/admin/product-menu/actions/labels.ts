@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   createCategoryLabelSchema,
   updateCategoryLabelSchema,
-} from "@/app/admin/(product-menu)/types/category";
+} from "@/app/admin/product-menu/types/category";
 import { prisma } from "@/lib/prisma";
 import {
   attachCategoryToLabel,
@@ -17,7 +17,7 @@ import {
   reorderCategoriesInLabel as reorderCategoriesInLabelData,
   reorderCategoryLabels,
   updateCategoryLabel,
-} from "@/app/admin/(product-menu)/data/labels";
+} from "@/app/admin/product-menu/data/labels";
 import {
   makeCloneName,
   makeNewItemName,

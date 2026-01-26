@@ -66,7 +66,7 @@ describe("product-menu categories DTO", () => {
       { id: "lbl_1", name: "Collections", icon: "Beans", order: 0 },
     ]);
 
-    const { listCategoriesAndLabels } = await import("@/app/admin/(product-menu)/data/categories");
+    const { listCategoriesAndLabels } = await import("@/app/admin/product-menu/data/categories");
 
     const result = await listCategoriesAndLabels("name-asc");
 
@@ -108,7 +108,7 @@ describe("product-menu categories DTO", () => {
     prismaMock.category.findMany.mockResolvedValueOnce([]);
     prismaMock.categoryLabel.findMany.mockResolvedValueOnce([]);
 
-    const { listCategoriesAndLabels } = await import("@/app/admin/(product-menu)/data/categories");
+    const { listCategoriesAndLabels } = await import("@/app/admin/product-menu/data/categories");
 
     await listCategoriesAndLabels("menu-builder-newest-first");
 

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { RowContextMenu } from "../RowContextMenu";
-import type { SelectedEntityKind, ViewType } from "@/app/admin/(product-menu)/types/builder-state";
+import type { SelectedEntityKind, ViewType } from "@/app/admin/product-menu/types/builder-state";
 
 // Mock the Switch component
 jest.mock("@/components/ui/switch", () => ({
