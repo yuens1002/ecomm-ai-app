@@ -6,7 +6,7 @@
  * these types instead of writing boilerplate code.
  */
 
-import type { ReactNode } from "react";
+import type { ReactNode, DragEvent } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { SelectedEntityKind, ViewType } from "../../types/builder-state";
 import type { CheckboxState } from "../useContextSelectionModel";
@@ -179,12 +179,12 @@ export type ContextMenuHandlers = {
   visibility: (id: string, visible: boolean) => Promise<void>;
   /** Remove handler (for parent-context views) */
   remove?: (id: string) => Promise<void>;
-  /** Move up handler */
-  moveUp?: (id: string) => Promise<void>;
-  /** Move down handler */
-  moveDown?: (id: string) => Promise<void>;
-  /** Move to handler (category → label, product → category) */
-  moveTo?: (id: string, targetId: string) => Promise<void>;
+  /** Move up handler (parentId for hierarchical views) */
+  moveUp?: (id: string, parentId?: string) => Promise<void>;
+  /** Move down handler (parentId for hierarchical views) */
+  moveDown?: (id: string, parentId?: string) => Promise<void>;
+  /** Move to handler (parentId for source context in hierarchical views, targetId for destination) */
+  moveTo?: (id: string, parentIdOrTargetId: string, targetId?: string) => Promise<void>;
   /** Label toggle handler (for categories) */
   labelToggle?: (entityId: string, labelId: string, attach: boolean) => Promise<void>;
   /** Category toggle handler (for labels and products) */
@@ -426,6 +426,17 @@ export type RowRenderResult<T> = {
     onRowDoubleClick: () => void;
     onMouseEnter: () => void;
     onMouseLeave: () => void;
+    // DnD props (optional, for views with DnD support)
+    isDragging?: boolean;
+    isDragOver?: boolean;
+    isLastRow?: boolean;
+    isDraggable?: boolean;
+    draggable?: boolean;
+    onDragStart?: (e: DragEvent) => void;
+    onDragOver?: (e: DragEvent) => void;
+    onDragLeave?: (e: DragEvent) => void;
+    onDrop?: (e: DragEvent) => void;
+    onDragEnd?: (e: DragEvent) => void;
   };
   /** Column render results */
   columns: ColumnRenderResult[];

@@ -43,6 +43,17 @@ export function ConfiguredTableRow<T>({ data }: ConfiguredTableRowProps<T>) {
         onRowDoubleClick={tableRowProps.onRowDoubleClick}
         onMouseEnter={tableRowProps.onMouseEnter}
         onMouseLeave={tableRowProps.onMouseLeave}
+        // DnD props (optional)
+        isDragging={tableRowProps.isDragging}
+        isDragOver={tableRowProps.isDragOver}
+        isLastRow={tableRowProps.isLastRow}
+        isDraggable={tableRowProps.isDraggable}
+        draggable={tableRowProps.draggable}
+        onDragStart={tableRowProps.onDragStart}
+        onDragOver={tableRowProps.onDragOver}
+        onDragLeave={tableRowProps.onDragLeave}
+        onDrop={tableRowProps.onDrop}
+        onDragEnd={tableRowProps.onDragEnd}
       >
         {columns.map((col) => (
           <TableCell

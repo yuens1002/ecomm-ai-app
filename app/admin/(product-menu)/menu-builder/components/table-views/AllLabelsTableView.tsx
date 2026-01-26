@@ -5,7 +5,6 @@ import { TableBody } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
-import { Tag } from "lucide-react";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useContextRowUiState } from "../../../hooks/useContextRowUiState";
@@ -21,29 +20,18 @@ import { useGroupedEntitiesGhost } from "../../../hooks/dnd/useGroupedEntitiesGh
 import { usePinnedRow } from "../../../hooks/usePinnedRow";
 import type { MenuLabel } from "../../../types/menu";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
-import { CheckboxCell } from "./shared/cells/CheckboxCell";
-import { TouchTarget } from "./shared/cells/TouchTarget";
-import { InlineIconCell } from "./shared/cells/InlineIconCell";
-import { InlineNameEditor } from "./shared/cells/InlineNameEditor";
-import { VisibilityCell } from "./shared/cells/VisibilityCell";
 import { allLabelsWidthPreset } from "./shared/table/columnWidthPresets";
 import { EmptyState } from "./shared/table/EmptyState";
-import { TableCell } from "./shared/table/TableCell";
-import { TableHeader, type TableHeaderColumn } from "./shared/table/TableHeader";
-import { TableRow } from "./shared/table/TableRow";
+import { TableHeader } from "./shared/table/TableHeader";
 import { TableViewWrapper } from "./shared/table/TableViewWrapper";
-import { DragHandleCell } from "./shared/cells/DragHandleCell";
-import { RowContextMenu } from "./shared/cells/RowContextMenu";
 import { DeleteConfirmationDialog } from "./shared/table/DeleteConfirmationDialog";
-
-const ALL_LABELS_HEADER_COLUMNS: TableHeaderColumn[] = [
-  { id: "select", label: "", isCheckbox: true },
-  { id: "icon", label: "Icon" },
-  { id: "name", label: "Label" },
-  { id: "visibility", label: "Visibility" },
-  { id: "categories", label: "Categories" },
-  { id: "dragHandle", label: "" },
-];
+import { ConfiguredTableRow } from "./shared/table/ConfiguredTableRow";
+import { useConfiguredRow, type UseConfiguredRowOptions } from "../../../hooks/table-view";
+import {
+  allLabelsConfig,
+  ALL_LABELS_HEADER_COLUMNS,
+  type AllLabelsExtra,
+} from "../../../constants/table-view-configs";
 
 export function AllLabelsTableView() {
   const { builder, labels, categories, updateLabel, reorderLabels, createNewLabel, deleteLabel, cloneLabel, attachCategory, detachCategory } = useMenuBuilder();
@@ -355,14 +343,96 @@ export function AllLabelsTableView() {
   const allSelected = selectionState.allSelected;
   const someSelected = selectionState.someSelected;
 
+  // Extra context for config-driven rendering
+  const extra: AllLabelsExtra = useMemo(
+    () => ({
+      getLabelCategories,
+      categoryTargets,
+      handleIconSave,
+      handleVisibilitySave,
+      pinnedLabelId,
+      clearEditing,
+      clearPinnedIfMatches,
+      canDrag: eligibility.canDrag,
+      eligibleEntityIds,
+      getCheckboxState,
+    }),
+    [
+      getLabelCategories,
+      categoryTargets,
+      handleIconSave,
+      handleVisibilitySave,
+      pinnedLabelId,
+      clearEditing,
+      clearPinnedIfMatches,
+      eligibility.canDrag,
+      eligibleEntityIds,
+      getCheckboxState,
+    ]
+  );
+
+  // Context menu handlers for config
+  const contextMenuHandlers = useMemo(
+    () => ({
+      clone: handleContextClone,
+      delete: handleContextDelete,
+      visibility: handleContextVisibilityToggle,
+      moveUp: handleMoveUp,
+      moveDown: handleMoveDown,
+      categoryToggle: handleCategoryToggle,
+    }),
+    [
+      handleContextClone,
+      handleContextDelete,
+      handleContextVisibilityToggle,
+      handleMoveUp,
+      handleMoveDown,
+      handleCategoryToggle,
+    ]
+  );
+
+  // Selection info for context menu
+  const selectionInfo = useMemo(
+    () => ({
+      actionableRoots,
+      isSameKind,
+    }),
+    [actionableRoots, isSameKind]
+  );
+
+  // Config-driven row builder
+  const configuredRowOptions: UseConfiguredRowOptions<MenuLabel> = useMemo(
+    () => ({
+      config: allLabelsConfig,
+      contextMenuHandlers,
+      selectionInfo,
+      extra,
+      onContextMenuOpenChange: (rowId, open) =>
+        setContextRowId(open ? rowId : null),
+      onMouseEnter: setHoveredRowId,
+      onMouseLeave: () => setHoveredRowId(null),
+      onRowClick: handleClick,
+      onRowDoubleClick: handleDoubleClick,
+    }),
+    [
+      contextMenuHandlers,
+      selectionInfo,
+      extra,
+      handleClick,
+      handleDoubleClick,
+    ]
+  );
+
+  const { buildRow } = useConfiguredRow(configuredRowOptions);
+
   // Empty state
   if (labels.length === 0) {
     return (
       <EmptyState
-        icon={Tag}
-        title="No Labels Yet"
-        description="Get started by creating your first label"
-        actionLabel="New Label"
+        icon={allLabelsConfig.emptyStates[0].icon}
+        title={allLabelsConfig.emptyStates[0].title}
+        description={allLabelsConfig.emptyStates[0].description}
+        actionLabel={allLabelsConfig.emptyStates[0].actionLabel}
         onAction={async () => {
           const createdId = await createNewLabel();
           if (createdId) {
@@ -374,147 +444,80 @@ export function AllLabelsTableView() {
     );
   }
 
-  const renderLabelRow = (label: MenuLabel, options?: { isPinned?: boolean; isFirstRow?: boolean; isLastRow?: boolean }) => {
-    const isPinned = options?.isPinned === true;
-    const isFirstRow = options?.isFirstRow === true;
-    const isLastRow = options?.isLastRow === true;
-    const labelKey = createKey("label", label.id);
-    const isLabelSelected = isSelected(labelKey);
-    const isRowHovered = hoveredRowId === label.id;
-    const isContextRow = contextRowId === label.id;
+  // Build row state and handlers for each row
+  const buildRowState = (label: MenuLabel, options?: { isPinned?: boolean }) => ({
+    isSelected: isSelected(createKey("label", label.id)),
+    checkboxState: getCheckboxState(createKey("label", label.id)),
+    anchorKey,
+    isRowHovered: hoveredRowId === label.id,
+    isContextRow: contextRowId === label.id,
+    isEditing: editingLabelId === label.id,
+    isPinned: options?.isPinned || pinnedLabelId === label.id,
+  });
+
+  const buildRowHandlers = (label: MenuLabel) => ({
+    onToggle: () => onToggle(createKey("label", label.id)),
+    onRangeSelect:
+      anchorKey && anchorKey !== createKey("label", label.id)
+        ? () => rangeSelect(createKey("label", label.id))
+        : undefined,
+    onStartEdit: () => builder.setEditing({ kind: "label", id: label.id }),
+    onCancelEdit: clearEditing,
+    onSave: handleNameSave,
+  });
+
+  // Render a label row with DnD support
+  const renderLabelRow = (
+    label: MenuLabel,
+    index: number,
+    total: number,
+    options?: { isPinned?: boolean }
+  ) => {
+    const rowData = buildRow(
+      label,
+      index,
+      total,
+      buildRowState(label, options),
+      buildRowHandlers(label)
+    );
+
+    // Get DnD classes and handlers
     const dragClasses = getDragClasses(label.id);
     const dragHandlers = getDragHandlers(label.id);
-
-    // Get cursor styling state for this row
     const isDraggable = getIsDraggable(label.id);
 
     return (
-      <RowContextMenu
-        key={label.id}
-        entityKind="label"
-        viewType="all-labels"
-        entityId={label.id}
-        isVisible={label.isVisible}
-        isFirst={isFirstRow}
-        isLast={isLastRow}
-        selectedCount={actionableRoots.length}
-        isInSelection={isLabelSelected}
-        isMixedSelection={actionableRoots.length > 0 && !isSameKind}
-        categoryTargets={categoryTargets}
-        attachedCategoryIds={label.categories?.map((c) => c.id) ?? []}
-        onOpenChange={(open) => setContextRowId(open ? label.id : null)}
-        onClone={() => handleContextClone(label.id)}
-        onVisibilityToggle={(visible) => handleContextVisibilityToggle(label.id, visible)}
-        onDelete={() => handleContextDelete(label.id)}
-        onMoveUp={() => handleMoveUp(label.id)}
-        onMoveDown={() => handleMoveDown(label.id)}
-        onCategoryToggle={(categoryId, shouldAttach) => handleCategoryToggle(label.id, categoryId, shouldAttach)}
-      >
-      <TableRow
-        data-state={isLabelSelected ? "selected" : undefined}
-        isSelected={isLabelSelected}
-        isContextRow={isContextRow}
-        isHidden={!label.isVisible}
-        isDragging={dragClasses.isDragging || dragClasses.isInDragSet}
-        isDragOver={dragClasses.isDragOver}
-        isLastRow={isLastRow}
-        isDraggable={isDraggable}
-        draggable
-        onDragStart={dragHandlers.onDragStart}
-        onDragOver={dragHandlers.onDragOver}
-        onDragLeave={dragHandlers.onDragLeave}
-        onDrop={dragHandlers.onDrop}
-        onDragEnd={dragHandlers.onDragEnd}
-        onMouseEnter={() => setHoveredRowId(label.id)}
-        onMouseLeave={() => setHoveredRowId(null)}
-        className={cn(
-          dragClasses.isDragOver &&
-            (dragClasses.dropPosition === "after"
-              ? "!border-b-2 !border-b-primary"
-              : "!border-t-2 !border-t-primary")
-        )}
-        onRowClick={(options) => handleClick(labelKey, options)}
-        onRowDoubleClick={() => handleDoubleClick(labelKey)}
-      >
-        {/* Checkbox */}
-        <TableCell config={allLabelsWidthPreset.select} data-row-click-ignore>
-          <TouchTarget>
-            <CheckboxCell
-              id={label.id}
-              checked={isLabelSelected}
-              onToggle={() => onToggle(labelKey)}
-              isSelectable
-              alwaysVisible={isLabelSelected}
-              ariaLabel={`Select ${label.name}`}
-              anchorKey={anchorKey}
-              onRangeSelect={anchorKey && anchorKey !== labelKey ? () => rangeSelect(labelKey) : undefined}
-            />
-          </TouchTarget>
-        </TableCell>
-
-        {/* Icon */}
-        <TableCell config={allLabelsWidthPreset.icon} data-row-click-ignore>
-          <InlineIconCell
-            id={label.id}
-            icon={label.icon}
-            onSave={handleIconSave}
-            isRowHovered={isRowHovered}
-          />
-        </TableCell>
-
-        {/* Name */}
-        <TableCell config={allLabelsWidthPreset.name}>
-          <InlineNameEditor
-            id={label.id}
-            initialValue={label.name}
-            isEditing={editingLabelId === label.id}
-            isHidden={!label.isVisible}
-            onStartEdit={() => builder.setEditing({ kind: "label", id: label.id })}
-            onCancelEdit={() => {
-              clearEditing();
-              if (isPinned || pinnedLabelId === label.id) {
-                clearPinnedIfMatches(label.id);
-              }
-            }}
-            onSave={async (id, name) => {
-              await handleNameSave(id, name);
-              if (isPinned || pinnedLabelId === label.id) {
-                clearPinnedIfMatches(label.id);
-              }
-            }}
-          />
-        </TableCell>
-
-        {/* Visibility */}
-        <TableCell config={allLabelsWidthPreset.visibility}>
-          <VisibilityCell
-            id={label.id}
-            isVisible={label.isVisible}
-            variant="switch"
-            onToggle={handleVisibilitySave}
-          />
-        </TableCell>
-
-        {/* Categories */}
-        <TableCell config={allLabelsWidthPreset.categories} className="text-sm">
-          {getLabelCategories(label)}
-        </TableCell>
-
-        {/* Drag Handle */}
-        <TableCell config={allLabelsWidthPreset.dragHandle} data-row-click-ignore>
-          <DragHandleCell
-            isEligible={eligibility.canDrag}
-            isRowInEligibleSet={eligibleEntityIds.has(label.id)}
-            checkboxState={getCheckboxState(labelKey)}
-            isRowHovered={isRowHovered}
-          />
-        </TableCell>
-      </TableRow>
-      </RowContextMenu>
+      <ConfiguredTableRow
+        key={rowData.key}
+        data={{
+          ...rowData,
+          tableRowProps: {
+            ...rowData.tableRowProps,
+            isDragging: dragClasses.isDragging || dragClasses.isInDragSet,
+            isDragOver: dragClasses.isDragOver,
+            isLastRow: index === total - 1,
+            isDraggable,
+            draggable: true,
+            onDragStart: dragHandlers.onDragStart,
+            onDragOver: dragHandlers.onDragOver,
+            onDragLeave: dragHandlers.onDragLeave,
+            onDrop: dragHandlers.onDrop,
+            onDragEnd: dragHandlers.onDragEnd,
+            className: cn(
+              rowData.tableRowProps.className,
+              dragClasses.isDragOver &&
+                (dragClasses.dropPosition === "after"
+                  ? "!border-b-2 !border-b-primary"
+                  : "!border-t-2 !border-t-primary")
+            ),
+          },
+        }}
+      />
     );
   };
 
   const rows = table.getRowModel().rows;
+  const totalRows = (pinnedLabel ? 1 : 0) + rows.length;
 
   return (
     <>
@@ -530,12 +533,15 @@ export function AllLabelsTableView() {
         />
 
         <TableBody>
-          {pinnedLabel ? renderLabelRow(pinnedLabel, { isPinned: true, isFirstRow: true }) : null}
+          {pinnedLabel
+            ? renderLabelRow(pinnedLabel, 0, totalRows, { isPinned: true })
+            : null}
           {rows.map((row, index) =>
-            renderLabelRow(row.original, {
-              isFirstRow: !pinnedLabel && index === 0,
-              isLastRow: index === rows.length - 1,
-            })
+            renderLabelRow(
+              row.original,
+              pinnedLabel ? index + 1 : index,
+              totalRows
+            )
           )}
         </TableBody>
       </TableViewWrapper>
