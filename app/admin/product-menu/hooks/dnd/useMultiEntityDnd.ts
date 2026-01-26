@@ -700,8 +700,8 @@ export function useMultiEntityDnd({
     dropPosition: coreReorder.dragState.dropPosition,
     dropType: uiState.dropType,
     autoExpandedId: uiState.autoExpandedId,
-    isDraggingLabel: dragKind === "label",
-    isDraggingCategory: dragKind === "category",
+    isDraggingLabel: coreReorder.dragState.dragId !== null && dragKind === "label",
+    isDraggingCategory: coreReorder.dragState.dragId !== null && dragKind === "category",
     draggedIds: coreReorder.dragState.draggedIds,
     draggedChildren,
   };

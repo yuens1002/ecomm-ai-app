@@ -168,11 +168,6 @@ const staticNavSections: NavSection[] = [
         icon: ToyBrick,
         isChild: true,
       },
-    ],
-  },
-  {
-    title: "Product Menu",
-    items: [
       {
         title: "Menu Builder",
         href: "/admin/product-menu",

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.71.6 - 2026-01-26
+
+### Bug Fixes
+- **Chevron toggle**: Fixed expand/collapse chevron being disabled when labels were selected (only disable during active drag)
+
+### UI/UX
+- **AdminSidebar**: Moved Menu Builder under E-commerce section (consolidated navigation)
+
 ## 0.71.5 - 2026-01-26
 
 ### Refactoring
