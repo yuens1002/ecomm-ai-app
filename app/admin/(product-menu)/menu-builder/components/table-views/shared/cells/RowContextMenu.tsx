@@ -171,7 +171,7 @@ const CONTEXT_MENU_CONFIG: Record<ViewEntityKey, ContextMenuActionId[]> = {
   // Category in different views (no delete in menu/label views)
   "menu:category": ["clone", "visibility", "move-up", "move-down", "move-to"],
   "all-labels:category": [], // Categories don't appear in all-labels view
-  "label:category": ["clone", "remove", "visibility", "move-up", "move-down", "move-to"],
+  "label:category": ["clone", "remove", "move-up", "move-down", "move-to"],
   "category:category": [], // Categories don't appear in category view
   "all-categories:category": ["manage-labels", "clone", "visibility", "delete"],
 

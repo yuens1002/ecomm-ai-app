@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.70.4 - 2026-01-26
+
+### Improvements
+- **Label view context menu**: Removed visibility toggle from category context menu in label view (visibility managed in All Categories)
+
+### Documentation
+- **ROADMAP.md**: Updated Phase 3 to complete (context menus, range selection, mobile interactions, clone operations)
+- **ARCHITECTURE.md**: Added Context Menu Architecture section with shared hooks documentation
+- **context-menu-plan.md**: Updated to reflect complete implementation status
+
 ## 0.70.3 - 2026-01-26
 
 ### Refactoring

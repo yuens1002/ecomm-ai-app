@@ -18,7 +18,6 @@ import {
   useMoveHandlers,
   useBulkAction,
   useContextClone,
-  useContextVisibility,
   useContextRemove,
   useContextMoveTo,
 } from "../../../hooks/context-menu";
@@ -69,7 +68,6 @@ export function LabelTableView() {
     products,
     reorderCategoriesInLabel,
     cloneCategory,
-    updateCategory,
     detachCategory,
     attachCategory,
   } = useMenuBuilder();
@@ -293,13 +291,6 @@ export function LabelTableView() {
     entityLabel: { singular: "Category", plural: "categories" },
   });
 
-  // Visibility handler (with bulk support)
-  const { handleVisibilityToggle: handleContextVisibility } = useContextVisibility({
-    updateEntity: (id, visible) => updateCategory(id, { isVisible: visible }),
-    getTargetIds,
-    entityLabel: { singular: "Category", plural: "categories" },
-  });
-
   // Remove from label handler (with bulk support)
   const { handleRemove: handleContextRemove } = useContextRemove({
     parentId: currentLabelId,
@@ -383,7 +374,6 @@ export function LabelTableView() {
         currentParentId={currentLabelId ?? undefined}
         onOpenChange={handleContextOpenChange(category.id)}
         onClone={() => handleContextClone(category.id)}
-        onVisibilityToggle={(visible) => handleContextVisibility(category.id, visible)}
         onRemove={() => handleContextRemove(category.id)}
         onMoveUp={() => handleMoveUp(category.id)}
         onMoveDown={() => handleMoveDown(category.id)}

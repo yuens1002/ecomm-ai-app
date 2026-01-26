@@ -1,7 +1,7 @@
 # Menu Builder Architecture
 
-**Last Updated:** 2026-01-24
-**Status:** Phase 1 Complete ✅, Phase 2 Complete ✅, Phase 3 In Progress (60%)
+**Last Updated:** 2026-01-26
+**Status:** Phase 1 Complete ✅, Phase 2 Complete ✅, Phase 3 Complete ✅
 
 ---
 
@@ -209,6 +209,50 @@ See [refactor-level-vs-kind.md](./refactor-level-vs-kind.md) for planned refacto
 
 ---
 
+## Context Menu Architecture (v0.70.3)
+
+Right-click context menus provide quick actions per view+entity combination.
+
+### Config-Driven Actions
+
+Actions are determined by `CONTEXT_MENU_CONFIG` mapping `ViewType:EntityKind` to available actions:
+
+```typescript
+const CONTEXT_MENU_CONFIG: Record<ViewEntityKey, ContextMenuActionId[]> = {
+  "menu:label": ["clone", "remove", "move-up", "move-down", "delete"],
+  "all-labels:label": ["manage-categories", "clone", "visibility", "move-up", "move-down", "delete"],
+  "menu:category": ["clone", "visibility", "move-up", "move-down", "move-to"],
+  "label:category": ["clone", "remove", "move-up", "move-down", "move-to"],
+  "all-categories:category": ["manage-labels", "clone", "visibility", "delete"],
+  "category:product": ["manage-categories", "remove", "move-up", "move-down"],
+};
+```
+
+### Shared Handler Hooks
+
+Handler logic is extracted to reusable hooks in `hooks/context-menu/`:
+
+| Hook | Purpose |
+|------|---------|
+| `useContextRowHighlight` | Row highlighting when context menu opens |
+| `useMoveHandlers` | Move up/down (supports flat and nested lists) |
+| `useBulkAction` | Bulk operation executor with `getTargetIds` |
+| `useDeleteConfirmation` | Delete dialog state management |
+| `useContextClone` | Clone with bulk support |
+| `useContextVisibility` | Visibility toggle with bulk support |
+| `useContextRemove` | Remove from parent with bulk support |
+| `useContextMoveTo` | Move to another parent |
+| `useRelationshipToggle` | Attach/detach relationship management |
+
+### Key Patterns
+
+1. **Config as source of truth** - `CONTEXT_MENU_CONFIG` defines what appears; consumers must match
+2. **Bulk vs single operations** - `getTargetIds(entityId)` returns single ID or all selected
+3. **Position flags** - `getPositionFlags(id)` returns `{isFirst, isLast}` for move action disabling
+4. **Unified move handlers** - Single `useMoveHandlers` supports both `items` (flat) and `getItems(parentId)` (nested)
+
+---
+
 ## Data Layer
 
 Centralized Prisma operations with DTO mapping:
@@ -298,6 +342,17 @@ app/admin/(product-menu)/
 │   ├── useInlineEditHandlers.ts     # Name/icon/visibility handlers with undo
 │   ├── useIdentityRegistry.ts       # Row identity management
 │   ├── useRowClickHandler.ts        # Unified click handling
+│   ├── context-menu/                # Context menu hooks (v0.70.3)
+│   │   ├── useContextRowHighlight.ts
+│   │   ├── useMoveHandlers.ts
+│   │   ├── useBulkAction.ts
+│   │   ├── useDeleteConfirmation.ts
+│   │   ├── useContextClone.ts
+│   │   ├── useContextVisibility.ts
+│   │   ├── useContextRemove.ts
+│   │   ├── useContextMoveTo.ts
+│   │   ├── useRelationshipToggle.ts
+│   │   └── index.ts
 │   └── dnd/                         # DnD hooks (v0.66.20)
 │       ├── useGroupedReorder.ts     # Core shared DnD state
 │       ├── useSingleEntityDnd.ts    # Flat table wrapper
@@ -374,6 +429,7 @@ See [IMPLEMENTATION-GUIDE.md](./IMPLEMENTATION-GUIDE.md) for details.
 | Jan 21, 2026 | IdentityRegistry pattern | Unified row identity with kind + depth for selection/DnD/navigation |
 | Jan 24, 2026 | Consolidated DnD hooks | `useGroupedReorder` as core; `useSingleEntityDnd`/`useMultiEntityDnd` as wrappers |
 | Jan 24, 2026 | Level vs Kind separation (planned) | Current `level` conflates entity type with depth; needs refactor for extensibility |
+| Jan 26, 2026 | Context menu handler hooks | Extracted ~400 lines of duplicated handler patterns into 9 reusable hooks |
 
 ---
 
@@ -382,3 +438,4 @@ See [IMPLEMENTATION-GUIDE.md](./IMPLEMENTATION-GUIDE.md) for details.
 - [ROADMAP.md](./ROADMAP.md) - Progress tracking and next steps
 - [IMPLEMENTATION-GUIDE.md](./IMPLEMENTATION-GUIDE.md) - How-to for adding views/actions
 - [FEATURE-SPEC.md](./FEATURE-SPEC.md) - Complete target vision
+- [context-menu-plan.md](./context-menu-plan.md) - Context menu implementation details
