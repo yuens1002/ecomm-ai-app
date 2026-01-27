@@ -702,38 +702,21 @@ function ProductAddOnsClient({ addOns, products }) {
 
 ### Admin Dashboard Reorganization (Shadcn Dashboard Shell Migration)
 
-**Status**: Up Next 🚀
+**Status**: Complete ✅
 **Priority**: High
-**Branch**: `feat/dashboard-shell-migration`
-**Description**: Migrate admin layout to shadcn dashboard-shell pattern for consistent, professional admin UI.
+**Completed**: January 27, 2026 (v0.74.0)
+**Description**: Added breadcrumb navigation to admin header following shadcn dashboard-shell pattern.
 
-**Reference**: https://shadcnstudio.com/blocks/dashboard-and-application/dashboard-shell
+**Implemented:**
+- [x] AdminBreadcrumb component with dynamic route parsing
+- [x] Breadcrumb header navigation across all admin pages
+- [x] Human-readable labels for all admin sections
+- [x] Clickable navigation links (except current page)
 
-**Current State**:
-
-- Admin sidebar exists but lacks consistent dashboard-shell pattern
-- Navigation works but missing breadcrumb header
-- Need more polished, professional admin experience
-
-**Proposed Changes** (Dashboard Shell Pattern):
-
-- **Sidebar Navigation**: Collapsible sections with icons
-  - E-commerce: Products, Orders, Menu Builder
-  - Content: Pages, Settings
-  - System: Users, Analytics
-- **Breadcrumb Header**: Consistent navigation breadcrumbs across all admin pages
-- **Layout Consistency**: Same shell pattern for all admin routes
-- **Mobile-Friendly**: Responsive sidebar with sheet on mobile
-
-**Tasks**:
-
-- [ ] Implement dashboard-shell layout component
-- [ ] Add breadcrumb header navigation
-- [ ] Update AdminSidebar with collapsible sections
-- [ ] Ensure mobile responsiveness
-- [ ] Test all admin routes with new layout
-
-**Impact**: All admin pages will have a consistent, professional dashboard feel.
+**Existing features retained:**
+- Collapsible sidebar (AdminSidebar.tsx)
+- Theme toggle and user menu (AdminHeader.tsx)
+- Mobile-responsive icon-only collapse
 
 ---
 

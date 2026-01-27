@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.74.0 - 2026-01-27
+
+### Features
+- **Admin breadcrumb navigation**: Added breadcrumb header to all admin pages following shadcn dashboard-shell pattern
+  - Dynamic breadcrumb generation from current route
+  - Human-readable labels for all admin sections
+  - Clickable navigation links (except current page)
+
 ## 0.73.1 - 2026-01-27
 
 ### Bug Fixes

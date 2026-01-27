@@ -13,6 +13,7 @@ import {
 import { LogOut, User, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
+import AdminBreadcrumb from "./AdminBreadcrumb";
 
 interface AdminHeaderProps {
   user: {
@@ -37,7 +38,7 @@ export default function AdminHeader({ user }: AdminHeaderProps) {
   return (
     <header className="h-16 border-b border-border bg-card px-6 flex items-center justify-between">
       <div className="flex-1">
-        {/* Could add breadcrumbs or page title here */}
+        <AdminBreadcrumb />
       </div>
 
       <div className="flex items-center gap-2">
