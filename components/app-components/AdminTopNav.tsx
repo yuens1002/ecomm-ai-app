@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { adminNavConfig } from "@/lib/admin-nav-config";
 import AdminNavDropdown from "./AdminNavDropdown";
+import AdminMobileDrawer from "./AdminMobileDrawer";
 
 interface AdminTopNavProps {
   user: {
@@ -47,14 +48,17 @@ export default function AdminTopNav({
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Left: Back arrow + Logo/Brand */}
-          <div className="flex items-center gap-3">
+          {/* Left: Mobile drawer + Back arrow + Logo/Brand */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Mobile menu drawer (shown on mobile/tablet) */}
+            <AdminMobileDrawer storeName={storeName} />
+
             {/* Back to public site */}
             <Button
               variant="ghost"
               size="icon"
               asChild
-              className="h-9 w-9"
+              className="h-11 w-11"
               title="Open public site"
             >
               <Link href="/" target="_blank" rel="noopener noreferrer">
@@ -94,7 +98,7 @@ export default function AdminTopNav({
               variant="ghost"
               size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="h-9 w-9"
+              className="h-11 w-11"
             >
               <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -106,7 +110,7 @@ export default function AdminTopNav({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="relative h-10 w-10 rounded-full"
+                  className="relative h-11 w-11 rounded-full"
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
                     {initials}
