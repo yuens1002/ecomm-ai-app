@@ -19,21 +19,40 @@ It features a minimal, high-quality product list and an AI-powered assistant to 
 
 ### 🤖 AI-Powered Personalization
 
-- **Chat AI Assistant (In Progress):** Text-based conversational interface with full order history context and brewing expertise
-- **Voice AI Barista (In Progress):** Multilingual voice assistant for hands-free coffee recommendations and ordering
 - **AI Recommendations:** Behavioral product recommendations based on user activity (purchases, views, searches)
 - **Personalized Context Injection:** Gemini-powered assistant with user context (order history, favorites, behavioral data)
 - **Smart Scoring Algorithm:** +10 roast match, +5 per tasting note match, +3 viewed, -20 recent purchase
 - **Homepage Recommendations:** Session-aware "Recommended For You" section with 6 personalized products
 - **Trending Products:** Fallback recommendations for anonymous users based on view counts
+- **Chat AI Assistant:** Text-based conversational interface with full order history context and brewing expertise *(In Progress)*
+- **Voice AI Barista:** Multilingual voice assistant for hands-free coffee recommendations *(In Progress)*
 
-### 📊 Analytics & Insights
+### 📊 Admin Dashboard
 
-- **Admin Dashboard:** Comprehensive analytics with trending products, top searches, conversion metrics
-- **Inventory Management (In Progress):** Real-time stock tracking, low stock alerts, and automated reordering
+- **Analytics & Insights:** Comprehensive analytics with trending products, top searches, conversion metrics
 - **Behavioral Tracking:** 5 activity types (PAGE_VIEW, PRODUCT_VIEW, SEARCH, ADD_TO_CART, REMOVE_FROM_CART)
 - **Session Tracking:** Supports both anonymous and authenticated users
 - **Daily Activity Trends:** Visual bar charts showing activity patterns over 7/30 days
+
+### 🍽️ Menu Builder (v0.72.0)
+
+Complete admin tool for managing product menu hierarchy with labels and categories:
+
+- **Multi-Select:** Shift+click range selection, checkbox bulk selection
+- **Drag-and-Drop:** Reorder items with undo/redo support
+- **Context Menus:** Bulk operations (clone, delete, move, visibility toggle)
+- **Keyboard Shortcuts:** Delete, C (clone), V (toggle visibility), H (hide)
+- **5 Table Views:** Menu overview, All Labels, All Categories, Label Detail, Category Detail
+- **Mobile-Friendly:** 44x44px touch targets (WCAG 2.5.5 compliance)
+
+### 📝 Pages CMS
+
+AI-powered content management system for informational pages:
+
+- **Rich Content Pages:** Create and manage pages with rich text content and hero images
+- **AI-Powered Generation:** 10-question wizard that generates compelling About pages in your brand's voice
+- **Hierarchical Structure:** Organize pages in parent-child relationships
+- **Publishing Workflow:** Draft and publish with footer navigation integration
 
 ### 🎨 User Experience
 
@@ -50,11 +69,11 @@ This project was built to demonstrate proficiency across the entire stack, as de
 
 ### 1. Core Technical Skills
 
-- **Framework:** **Next.js 14+** (App Router, Server-Side Rendering, and Serverless API Routes)
+- **Framework:** **Next.js 16** (App Router, React 19, Server Components, Server Actions)
 
 - **Language:** **TypeScript** (Strict mode, with end-to-end type safety from database to UI)
 
-- **Styling:** **Tailwind CSS** (with a custom, theme-able design system built on CSS Variables)
+- **Styling:** **Tailwind CSS 4** (with a custom, theme-able design system built on CSS Variables)
 
 - **Component Library:** **shadcn/ui** (for accessible, theme-able, and unstyled components)
 
@@ -62,27 +81,29 @@ This project was built to demonstrate proficiency across the entire stack, as de
 
 ### 2. Fullstack & Data Layer
 
-- **Backend:** **Next.js API Routes** (as a serverless backend)
+- **Backend:** **Next.js API Routes** & **Server Actions** (serverless backend)
 
-- **Database:** **PostgreSQL**
+- **Database:** **PostgreSQL** (Neon)
 
 - **ORM:** **Prisma** (for type-safe database queries and migrations)
 
 ### 3. DevOps & Modern Practices
 
-- **Containerization (Planned):** **Docker** & `docker-compose.yml` for a reproducible local development environment.
+- **CI/CD:** **GitHub Actions** (configured to run tests and builds on every push)
 
-- **CI/CD:** **GitHub Actions** (configured to run tests and builds on every push).
+- **Deployment:** **Vercel** (automatic deployments from main branch)
 
 ### 4. Emerging Trends & AI
 
-- **AI Integration:** Real-time, dynamic recommendations from the **Google Gemini API** (`gemini-2.5-flash:generateContent`).
+- **AI Integration:** Real-time, dynamic recommendations from the **Google Gemini API** (`gemini-2.5-flash:generateContent`)
+
+- **AI Content Generation:** Pages CMS with AI-powered About page wizard
 
 ### 5. Testing & Quality
 
-- **Unit/Integration:** **Jest/Vitest** for testing critical business logic.
+- **Unit/Integration:** **Jest** with Testing Library for testing critical business logic (500+ tests)
 
-- **Accessibility:** Adherence to **WCAG** standards (supported by shadcn/ui).
+- **Accessibility:** Adherence to **WCAG** standards (supported by shadcn/ui, 44px touch targets)
 
 ## Quick Start
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.72.2 - 2026-01-27
+
+### Documentation
+- **README.md**: Updated framework versions (Next.js 16, React 19, Tailwind CSS 4), added Menu Builder and Pages CMS features
+- **About page**: Added Menu Builder and Pages CMS to Admin Dashboard section, marked AI assistants as "In Progress"
+
 ## 0.72.1 - 2026-01-27
 
 ### Bug Fixes

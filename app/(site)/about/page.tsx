@@ -19,6 +19,8 @@ import {
   Settings,
   Boxes,
   Truck,
+  SquareMenu,
+  FileText,
 } from "lucide-react";
 import { getSiteMetadata } from "@/lib/site-metadata";
 
@@ -125,7 +127,7 @@ export default async function AboutPage() {
                 <div className="flex gap-3">
                   <MessageSquare className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="font-semibold">Chat AI Assistant</h3>
+                    <h3 className="font-semibold">Chat AI Assistant <span className="text-xs text-muted-foreground font-normal">(In Progress)</span></h3>
                     <p className="text-sm text-muted-foreground">
                       Text-based conversational interface with full order
                       history context and brewing expertise.
@@ -135,7 +137,7 @@ export default async function AboutPage() {
                 <div className="flex gap-3">
                   <Mic className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="font-semibold">Voice AI Barista</h3>
+                    <h3 className="font-semibold">Voice AI Barista <span className="text-xs text-muted-foreground font-normal">(In Progress)</span></h3>
                     <p className="text-sm text-muted-foreground">
                       Multilingual voice assistant for hands-free coffee
                       recommendations and ordering.
@@ -212,6 +214,26 @@ export default async function AboutPage() {
                     <p className="text-sm text-muted-foreground">
                       Process orders, update shipping status, and manage
                       customer fulfillment workflows.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <SquareMenu className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold">Menu Builder</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Manage product hierarchy with drag-and-drop, multi-select,
+                      bulk operations, and keyboard shortcuts.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <FileText className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold">Pages CMS</h3>
+                    <p className="text-sm text-muted-foreground">
+                      AI-powered content management with a 10-question wizard
+                      that generates pages in your brand&apos;s voice.
                     </p>
                   </div>
                 </div>
