@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.72.4 - 2026-01-27
+
+### Documentation
+- **BACKLOG.md**: Updated Menu Builder status to Complete (v0.72.0), updated Admin Dashboard Reorganization to "Up Next" with dashboard-shell migration plan
+
 ## 0.72.3 - 2026-01-27
 
 ### Documentation

@@ -98,10 +98,10 @@ Add two new settings to `SiteSettings` table:
 
 ### Unified Product Menu Admin Page
 
-**Status**: Phase 1 Complete ✅ (Phase 2 In Progress)
+**Status**: Complete ✅ (v0.72.0 - Launched January 26, 2026)
 **Priority**: High
-**Completed**: January 3, 2026
-**Description**: Create a dedicated admin page for building and managing the product catalog menu. Phase 1 (foundation & integration) complete with centralized state management, URL persistence, and strategy pattern. Phase 2 (table views) in progress.
+**Completed**: January 26, 2026
+**Description**: Complete admin tool for managing product menu hierarchy with labels and categories. All phases complete.
 
 **Phase 1 Complete ✅** (January 3, 2026):
 
@@ -130,18 +130,22 @@ Add two new settings to `SiteSettings` table:
 - Maintainability: Add new view = 5 minutes of config
 - Test coverage: 100% for hooks and strategies
 
-**Phase 2 In Progress** (Table Views):
+**Phase 2 Complete ✅** (Table Views - January 14-21, 2026):
 
-**To Build:**
-
-- [ ] Shared table components (CheckboxCell, ExpandToggle, VisibilityCell, InlineNameEditor)
-- [ ] AllLabelsTableView (flat list with selection + inline editing)
-- [ ] AllCategoriesTableView (flat list with selection + inline editing)
-- [ ] LabelTableView (2-level hierarchy: label → categories)
-- [ ] CategoryTableView (products view with linking)
-- [ ] MenuTableView (3-level hierarchy: label → category → product)
-- [ ] Drag & drop support for reordering
-- [ ] Integration tests
+- [x] Shared table components (CheckboxCell, ExpandToggle, VisibilityCell, InlineNameEditor)
+- [x] AllLabelsTableView (flat list with selection + inline editing)
+- [x] AllCategoriesTableView (flat list with selection + inline editing)
+- [x] LabelTableView (categories within selected label)
+- [x] CategoryTableView (products view with linking)
+- [x] MenuTableView (2-level hierarchy: label → category, products as count)
+- [x] Drag & drop support for reordering with undo/redo
+- [x] Multi-select DnD with grouped entities ghost
+- [x] Cross-boundary DnD (move categories between labels)
+- [x] Context menus for all table views
+- [x] Keyboard shortcuts (Delete, C, V, H, etc.)
+- [x] Range selection with shift+click and long-press
+- [x] 44x44px touch targets (WCAG compliance)
+- [x] 521+ tests passing
 
 **Follow-up (Jan 8, 2026): Pathway to a data-config-driven Menu Builder**
 
@@ -659,43 +663,40 @@ function ProductAddOnsClient({ addOns, products }) {
 - Public users continue to sign in via the existing public flow.
 - No redirect loops between admin layout and auth pages.
 
-### Admin Dashboard Reorganization
+### Admin Dashboard Reorganization (Shadcn Dashboard Shell Migration)
 
-**Status**: Backlog
+**Status**: Up Next 🚀
 **Priority**: High
-**Description**: The admin dashboard has too many tabs (8+) making navigation cluttered. Need to reorganize into a proper navigation structure with dedicated routes for major features.
+**Branch**: `feat/dashboard-shell-migration`
+**Description**: Migrate admin layout to shadcn dashboard-shell pattern for consistent, professional admin UI.
+
+**Reference**: https://shadcnstudio.com/blocks/dashboard-and-application/dashboard-shell
 
 **Current State**:
 
-- Single dashboard with 8 tabs: Overview, Users, Orders, Products, Categories, Newsletter, Settings, Profile
-- All features crammed into tabs within one route (/admin)
-- Adding new features (like Pages CMS) makes the tabs overflow
-- Poor UX for features requiring rich interactions (TipTap editor, complex forms)
+- Admin sidebar exists but lacks consistent dashboard-shell pattern
+- Navigation works but missing breadcrumb header
+- Need more polished, professional admin experience
 
-**Proposed Changes**:
+**Proposed Changes** (Dashboard Shell Pattern):
 
-- Convert to sidebar navigation with dedicated routes:
-  - /admin (Dashboard overview with stats cards)
-  - /admin/orders (Full order management)
-  - /admin/products (Product catalog)
-  - /admin/categories (Category management)
-  - /admin/pages (Pages CMS)
-  - /admin/newsletter (Newsletter management)
-  - /admin/settings (Site settings)
-  - /admin/users (User management)
-- Keep Profile as dropdown in header
-- Use consistent layout with sidebar across all admin routes
+- **Sidebar Navigation**: Collapsible sections with icons
+  - E-commerce: Products, Orders, Menu Builder
+  - Content: Pages, Settings
+  - System: Users, Analytics
+- **Breadcrumb Header**: Consistent navigation breadcrumbs across all admin pages
+- **Layout Consistency**: Same shell pattern for all admin routes
+- **Mobile-Friendly**: Responsive sidebar with sheet on mobile
 
 **Tasks**:
 
-- [ ] Design new admin layout with sidebar navigation
-- [ ] Create AdminSidebarNav component
-- [ ] Migrate each tab to dedicated route
-- [ ] Update AdminLayout to include sidebar
-- [ ] Add breadcrumbs for deep navigation
-- [ ] Test all admin routes and transitions
+- [ ] Implement dashboard-shell layout component
+- [ ] Add breadcrumb header navigation
+- [ ] Update AdminSidebar with collapsible sections
+- [ ] Ensure mobile responsiveness
+- [ ] Test all admin routes with new layout
 
-**Impact**: Pages CMS feature is currently complete but not integrated into admin nav due to this limitation.
+**Impact**: All admin pages will have a consistent, professional dashboard feel.
 
 ---
 
@@ -1723,4 +1724,4 @@ Requires separate feature branch for proper design, implementation, and testing.
 
 ---
 
-_Last Updated: November 25, 2025_
+_Last Updated: January 27, 2026_
