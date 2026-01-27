@@ -35,11 +35,13 @@ export function VisibilityCell({
   }
 
   return (
-    <Switch
-      checked={isVisible}
-      onCheckedChange={(checked) => onToggle?.(id, checked)}
-      disabled={disabled}
-      aria-label={`Toggle visibility for ${id}`}
-    />
+    <div className="flex items-center justify-center">
+      <Switch
+        checked={isVisible}
+        onCheckedChange={(checked) => onToggle?.(id, checked)}
+        disabled={disabled}
+        aria-label={`Toggle visibility for ${id}`}
+      />
+    </div>
   );
 }

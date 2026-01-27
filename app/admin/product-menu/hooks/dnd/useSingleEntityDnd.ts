@@ -80,7 +80,7 @@ export function useSingleEntityDnd<TItem extends { id: string }>({
     getDragHandlers,
     /** Get drag-related CSS classes for a specific item id */
     getDragClasses,
-    /** Get isDraggable state for cursor styling (undefined=no context, true=can drag, false=can't drag) */
+    /** Get isDraggable state for cursor styling (true=can drag, false=can't drag) */
     getIsDraggable,
     /** Manually clear drag state */
     clearDragState,

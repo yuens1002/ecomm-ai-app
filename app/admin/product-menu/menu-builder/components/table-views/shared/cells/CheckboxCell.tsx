@@ -71,7 +71,7 @@ export function CheckboxCell({
         }
       }}
       className={cn(
-        "relative flex items-center opacity-100 transition-opacity",
+        "relative flex items-center opacity-100",
         alwaysVisible
           ? "md:opacity-100"
           : "md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100"

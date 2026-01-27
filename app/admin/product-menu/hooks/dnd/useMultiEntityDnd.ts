@@ -104,8 +104,8 @@ export type UseMultiEntityDndReturn = {
   };
   getDragHandlers: (row: FlatMenuRow) => MultiEntityDragHandlers;
   getDragClasses: (row: FlatMenuRow) => MultiEntityDragClasses;
-  /** Get isDraggable state for cursor styling (undefined=no context, true=can drag, false=can't drag) */
-  getIsDraggable: (entityId: string) => boolean | undefined;
+  /** Get isDraggable state for cursor styling (true=can drag, false=can't drag) */
+  getIsDraggable: (entityId: string) => boolean;
   eligibleEntityIds: Set<string>;
 };
 

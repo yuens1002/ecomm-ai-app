@@ -595,6 +595,7 @@ export function MenuTableView() {
                   onToggle={() => debouncedToggleExpand(row.id)}
                   ariaLabel={`${row.isExpanded ? "Collapse" : "Expand"} ${row.name}`}
                   disabled={dragState.isDraggingLabel}
+                  showDisabledWhenEmpty
                 />
               </TouchTarget>
             </HierarchyChevron>
@@ -758,7 +759,7 @@ export function MenuTableView() {
               </TouchTarget>
             </HierarchyCheckbox>
             <HierarchyName>
-              <span className="truncate font-medium">{row.name}</span>
+              <span className="truncate">{row.name}</span>
             </HierarchyName>
           </HierarchyNameCell>
         </TableCell>

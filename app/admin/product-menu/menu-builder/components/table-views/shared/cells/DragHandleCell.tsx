@@ -55,8 +55,6 @@ export function DragHandleCell({
         // Visibility: always visible on mobile, conditional on md+
         "opacity-100",
         isVisible ? "md:opacity-100" : "md:opacity-0",
-        // Transition for smooth hover effect
-        "transition-opacity duration-150",
         className
       )}
     >

@@ -67,7 +67,11 @@ export function SortableHeaderCell<TData>({
   };
 
   return (
-    <TableHead className={cn("font-medium text-foreground", headClassName)}>
+    <TableHead className={cn(
+      "font-medium text-foreground border-b-2 transition-colors duration-200",
+      sortState ? "border-b-primary" : "border-b-border hover:border-b-primary",
+      headClassName
+    )}>
       <div className={containerClassName}>
         <button
           type="button"

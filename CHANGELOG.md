@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.72.1 - 2026-01-27
+
+### Bug Fixes
+- **Drag cursor**: Fixed disabled cursor not showing on ineligible row drag attempts (centralized in DnD hook)
+- **Ghost checkbox**: Fixed checkbox artifact during category cascade animation (removed conflicting opacity transitions)
+- **Inline editor**: Fixed focus ring layout shift with `ring-inset`
+- **Icon alignment**: Fixed vertical centering with `align-middle` on TableCell and flex wrapper on Switch
+- **Checkbox alignment**: Fixed row checkboxes not aligned with header (removed `justify-center` from TouchTarget)
+
+### UI/UX
+- **Row font defaults**: Added consistent `text-sm font-normal text-foreground` base styles to all table rows
+- **Empty label chevron**: Show disabled chevron on labels with no categories (visual consistency)
+- **Nav reorder**: Changed menu-builder nav order to Categories → Labels → Menu
+- **Sortable header**: Border highlight only on sortable columns; sorted column shows primary border
+
 ## 0.72.0 - 2026-01-26 🚀 Menu Builder Launch
 
 ### Major Feature
@@ -16,9 +31,6 @@
 
 ### UI/UX
 - **AdminSidebar**: Moved Menu Builder under E-commerce section (consolidated navigation)
-
-### Known Issues
-- **Drag cursor feedback**: Disabled drag cursor (`cursor-not-allowed`) not showing when attempting to drag ineligible rows (deferred post-launch)
 
 ## 0.71.5 - 2026-01-26
 

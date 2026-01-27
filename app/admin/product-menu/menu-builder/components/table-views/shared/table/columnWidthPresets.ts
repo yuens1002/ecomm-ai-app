@@ -40,7 +40,7 @@ export const allCategoriesWidthPreset: ColumnWidthPreset = extendWidthPreset(
   baseMenuBuilderWidthPreset,
   {
     name: {
-      head: "w-90 min-w-36 px-6",
+      head: "w-90 min-w-36 pr-6",
       cell: "w-90 min-w-36 pr-6",
     },
     products: {
@@ -54,8 +54,8 @@ export const allCategoriesWidthPreset: ColumnWidthPreset = extendWidthPreset(
       align: "center",
     },
     visibility: {
-      head: "w-24 min-w-24 px-4",
-      cell: "w-24 min-w-24 px-4",
+      head: "w-28 min-w-24 px-4",
+      cell: "w-28 min-w-24 px-4",
       align: "center",
     },
     // Labels column: last column, takes remaining space
@@ -77,8 +77,8 @@ export const allLabelsWidthPreset: ColumnWidthPreset = extendWidthPreset(
     },
     // Name column: fixed width
     name: {
-      head: "w-48 min-w-48 md:w-56 md:min-w-56 px-6",
-      cell: "w-48 min-w-48 md:w-56 md:min-w-56",
+      head: "w-48 min-w-48 md:w-56 md:min-w-56 pr-6",
+      cell: "w-48 min-w-48 md:w-56 md:min-w-56 pr-6",
     },
     // Categories column: no width set, takes remaining space in table-fixed
     categories: {
@@ -88,7 +88,7 @@ export const allLabelsWidthPreset: ColumnWidthPreset = extendWidthPreset(
     // Visibility column: width to fit "Visibility" text + padding
     visibility: {
       head: "w-28 min-w-28 max-w-28 px-6",
-      cell: "px-6",
+      cell: "w-28 min-w-28 max-w-28 px-6",
       align: "center",
     },
     // Drag handle: 48px

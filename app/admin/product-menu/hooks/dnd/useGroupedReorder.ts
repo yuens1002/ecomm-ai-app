@@ -303,18 +303,20 @@ export function useGroupedReorder({
   /**
    * Get isDraggable state for cursor styling on a row.
    * Returns:
-   * - undefined: no selection (no DnD context, show default pointer)
    * - true: row can be dragged (show grab cursor on intent)
    * - false: row cannot be dragged (show not-allowed cursor on intent)
+   *
+   * Business rule: A row can only be dragged if it's selected (checked).
+   * Unchecked rows always show disabled cursor on drag attempt.
    */
   const getIsDraggable = useCallback(
-    (itemId: string): boolean | undefined => {
-      // No selection = no DnD context
-      if (eligibleEntityIds.length === 0) {
-        return undefined;
+    (itemId: string): boolean => {
+      // Row must be selected (in eligible set) to be draggable
+      if (!eligibleEntityIds.includes(itemId)) {
+        return false;
       }
-      // Has selection - check if this row can be dragged
-      return eligibility.canDrag && eligibility.hasValidTargets && eligibleEntityIds.includes(itemId);
+      // Row is selected - check if DnD is actually possible
+      return eligibility.canDrag && eligibility.hasValidTargets;
     },
     [eligibility.canDrag, eligibility.hasValidTargets, eligibleEntityIds]
   );
@@ -330,7 +332,7 @@ export function useGroupedReorder({
     getDragHandlers,
     /** Get drag-related CSS classes for a specific item id */
     getDragClasses,
-    /** Get isDraggable state for cursor styling (undefined=no context, true=can drag, false=can't drag) */
+    /** Get isDraggable state for cursor styling (true=can drag, false=can't drag) */
     getIsDraggable,
     /** Manually clear drag state (useful for external control) */
     clearDragState,

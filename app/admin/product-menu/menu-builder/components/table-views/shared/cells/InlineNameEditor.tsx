@@ -132,7 +132,7 @@ export function InlineNameEditor({
         onKeyDown={handleKeyDown}
         suppressContentEditableWarning
         tabIndex={0}
-        className="outline-none rounded-md pl-1 pr-2 py-1 text-sm focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+        className="outline-none rounded-md pl-1 pr-2 py-1 text-sm focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:ring-inset"
       >
         {value}
       </p>

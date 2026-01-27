@@ -9,7 +9,7 @@ import {
 import { useMenuBuilder } from "../MenuBuilderProvider";
 
 /**
- * MenuNavBar - Navigation breadcrumb with 3 segments (Menu | Labels | Categories)
+ * MenuNavBar - Navigation breadcrumb with 3 segments (Categories | Labels | Menu)
  *
  * Gets all data from ProductMenuProvider - no props needed.
  * State is persisted in URL params via builder.currentView, etc.
@@ -65,36 +65,6 @@ export function MenuNavBar() {
 
   return (
     <div className="flex items-center gap-4 mb-4 pb-3 border-b">
-      {/* Menu segment */}
-      <NavItem
-        icon={menuIcon}
-        text={menuText}
-        isSelected={currentView === "menu"}
-        hasDropdown={false}
-        onClick={() => navigateToView("menu")}
-      />
-
-      {/* Labels segment */}
-      <NavItem
-        icon="Tags"
-        text={labelsText}
-        isSelected={currentView === "label" || currentView === "all-labels"}
-        hasDropdown
-      >
-        <DropdownMenuItem onClick={() => navigateToView("all-labels")}>
-          All labels
-        </DropdownMenuItem>
-        {labels.length > 0 && <DropdownMenuSeparator />}
-        {labels.map((label) => (
-          <DropdownMenuItem
-            key={label.id}
-            onClick={() => navigateToLabel(label.id)}
-          >
-            {label.name}
-          </DropdownMenuItem>
-        ))}
-      </NavItem>
-
       {/* Categories segment */}
       <NavItem
         icon="FileSpreadsheet"
@@ -117,6 +87,36 @@ export function MenuNavBar() {
           </DropdownMenuItem>
         ))}
       </NavItem>
+
+      {/* Labels segment */}
+      <NavItem
+        icon="Tags"
+        text={labelsText}
+        isSelected={currentView === "label" || currentView === "all-labels"}
+        hasDropdown
+      >
+        <DropdownMenuItem onClick={() => navigateToView("all-labels")}>
+          All labels
+        </DropdownMenuItem>
+        {labels.length > 0 && <DropdownMenuSeparator />}
+        {labels.map((label) => (
+          <DropdownMenuItem
+            key={label.id}
+            onClick={() => navigateToLabel(label.id)}
+          >
+            {label.name}
+          </DropdownMenuItem>
+        ))}
+      </NavItem>
+
+      {/* Menu segment */}
+      <NavItem
+        icon={menuIcon}
+        text={menuText}
+        isSelected={currentView === "menu"}
+        hasDropdown={false}
+        onClick={() => navigateToView("menu")}
+      />
     </div>
   );
 }

@@ -28,7 +28,7 @@ export function TouchTarget({ children, className }: TouchTargetProps) {
   return (
     <div
       className={cn(
-        "relative flex items-center justify-center",
+        "relative flex items-center",
         // 44x44px minimum on mobile, natural size on desktop
         "min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0",
         className

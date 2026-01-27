@@ -16,7 +16,7 @@ export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
     return (
       <ShadcnTableCell
         ref={ref}
-        className={cn("truncate", alignClass, config?.cell, className)}
+        className={cn("truncate align-middle", alignClass, config?.cell, className)}
         {...props}
       />
     );

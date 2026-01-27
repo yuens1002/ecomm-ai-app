@@ -158,8 +158,21 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
     },
     ref
   ) => {
+    // Only set draggable when row can actually initiate drag.
+    // When isDraggable is false (ineligible), don't set draggable - this allows
+    // CSS :active cursor to show properly (browser drag doesn't take over).
+    // Drop target events (onDragOver, onDrop) still work without draggable attr.
+    const effectiveDraggable =
+      isDraggable === true
+        ? true
+        : isDraggable === false
+          ? undefined // Ineligible - don't set draggable, let CSS :active work
+          : draggable === true || draggable === "true"
+            ? true
+            : undefined;
+
     const htmlDragProps: HtmlDragProps = {
-      draggable: draggable === true || draggable === "true" ? true : undefined,
+      draggable: effectiveDraggable,
       onDrag,
       onDragEnd,
       onDragEnter,
@@ -236,7 +249,8 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
           : "cursor-pointer active:cursor-not-allowed";
 
     const rowClassName = cn(
-      "group h-10 hover:bg-muted/40",
+      // Base styles: height, font defaults, hover background
+      "group h-10 text-sm font-normal text-foreground hover:bg-muted/40",
       cursorClass,
       // Left border: use !important to override TableBody's [&_tr:last-child]:border-0
       "!border-l-2",
