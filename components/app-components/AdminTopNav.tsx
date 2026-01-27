@@ -1,12 +1,13 @@
 "use client";
 
+import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
 import { ArrowLeft, Moon, Sun, LogOut, User, KeyRound, ChevronDown } from "lucide-react";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -31,88 +32,91 @@ interface AdminTopNavProps {
 }
 
 function NavDropdown({ item, pathname }: { item: NavItem; pathname: string }) {
-  const [open, setOpen] = useState(false);
   const isActive = isNavItemActive(item, pathname);
   const Icon = item.icon;
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger
-        asChild
-        onPointerEnter={() => setOpen(true)}
-        onPointerLeave={() => setOpen(false)}
+    <NavigationMenuPrimitive.Item className="relative">
+      <NavigationMenuPrimitive.Trigger
+        className={cn(
+          "group inline-flex h-auto items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none",
+          "data-[state=open]:bg-accent",
+          isActive && "text-primary"
+        )}
       >
-        <Button
-          variant="ghost"
-          className={cn(
-            "h-auto px-3 py-2 gap-1.5",
-            isActive && "text-primary"
-          )}
-        >
-          <Icon className="h-4 w-4" />
-          <span className="text-sm font-medium">{item.label}</span>
-          <ChevronDown
-            className={cn(
-              "h-3 w-3 transition-transform duration-200",
-              open && "rotate-180"
-            )}
-          />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        className="w-48"
-        onPointerEnter={() => setOpen(true)}
-        onPointerLeave={() => setOpen(false)}
+        <Icon className="h-4 w-4" />
+        <span>{item.label}</span>
+        <ChevronDown
+          className="h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180"
+          aria-hidden="true"
+        />
+      </NavigationMenuPrimitive.Trigger>
+      <NavigationMenuPrimitive.Content
+        className={cn(
+          "absolute left-0 top-full mt-1.5 w-48 rounded-md border bg-popover p-2 text-popover-foreground shadow-lg",
+          "data-[state=open]:animate-in data-[state=closed]:animate-out",
+          "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+          "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+        )}
       >
-        {item.children?.map((child, index) => {
-          const isChildActive =
-            child.href === "/admin"
-              ? pathname === "/admin"
-              : pathname.startsWith(child.href.split("?")[0]);
+        <ul>
+          {item.children?.map((child, index) => {
+            const isChildActive =
+              child.href === "/admin"
+                ? pathname === "/admin"
+                : pathname.startsWith(child.href.split("?")[0]);
 
-          // Render section header if present
-          const sectionHeader = child.section ? (
-            <DropdownMenuLabel
-              key={`section-${child.section}`}
-              className={cn("text-xs text-muted-foreground", index > 0 && "mt-2")}
-            >
-              {child.section}
-            </DropdownMenuLabel>
-          ) : null;
+            // Render section header if present
+            const sectionHeader = child.section ? (
+              <li
+                key={`section-${child.section}`}
+                className={cn(
+                  "px-2 py-1.5 text-xs font-medium text-muted-foreground",
+                  index > 0 && "mt-2 border-t pt-2"
+                )}
+              >
+                {child.section}
+              </li>
+            ) : null;
 
-          if (child.disabled) {
+            if (child.disabled) {
+              return (
+                <React.Fragment key={child.href}>
+                  {sectionHeader}
+                  <li className="flex items-center justify-between px-2 py-1.5 text-sm text-muted-foreground opacity-50">
+                    {child.label}
+                    {child.disabledLabel && (
+                      <span className="text-xs">({child.disabledLabel})</span>
+                    )}
+                  </li>
+                </React.Fragment>
+              );
+            }
+
             return (
-              <div key={child.href}>
+              <React.Fragment key={child.href}>
                 {sectionHeader}
-                <DropdownMenuItem disabled className="opacity-50 justify-between">
-                  {child.label}
-                  {child.disabledLabel && (
-                    <span className="text-xs">({child.disabledLabel})</span>
-                  )}
-                </DropdownMenuItem>
-              </div>
+                <li>
+                  <NavigationMenuPrimitive.Link asChild>
+                    <Link
+                      href={child.href}
+                      className={cn(
+                        "block rounded-sm px-2 py-1.5 text-sm transition-colors",
+                        "hover:bg-accent hover:text-accent-foreground",
+                        isChildActive && "bg-accent font-medium"
+                      )}
+                    >
+                      {child.label}
+                    </Link>
+                  </NavigationMenuPrimitive.Link>
+                </li>
+              </React.Fragment>
             );
-          }
-
-          return (
-            <div key={child.href}>
-              {sectionHeader}
-              <DropdownMenuItem asChild>
-                <Link
-                  href={child.href}
-                  className={cn(
-                    isChildActive && "bg-accent font-medium"
-                  )}
-                >
-                  {child.label}
-                </Link>
-              </DropdownMenuItem>
-            </div>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          })}
+        </ul>
+      </NavigationMenuPrimitive.Content>
+    </NavigationMenuPrimitive.Item>
   );
 }
 
@@ -142,7 +146,7 @@ export default function AdminTopNav({
             {/* Mobile menu drawer (shown on mobile/tablet) */}
             <AdminMobileDrawer storeName={storeName} />
 
-            {/* Back to public site - no left margin so arrow aligns with content edge */}
+            {/* Back to public site - negative margin so arrow aligns with content edge */}
             <Button
               variant="ghost"
               size="icon"
@@ -174,12 +178,14 @@ export default function AdminTopNav({
             </div>
           </div>
 
-          {/* Center: Navigation dropdowns (hidden on mobile) */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {adminNavConfig.map((item) => (
-              <NavDropdown key={item.label} item={item} pathname={pathname} />
-            ))}
-          </nav>
+          {/* Center: Navigation menu (hidden on mobile) */}
+          <NavigationMenuPrimitive.Root className="hidden lg:flex">
+            <NavigationMenuPrimitive.List className="flex items-center gap-1">
+              {adminNavConfig.map((item) => (
+                <NavDropdown key={item.label} item={item} pathname={pathname} />
+              ))}
+            </NavigationMenuPrimitive.List>
+          </NavigationMenuPrimitive.Root>
 
           {/* Right: Theme toggle + Avatar */}
           <div className="flex items-center gap-2">
