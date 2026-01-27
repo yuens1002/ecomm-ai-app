@@ -8,13 +8,17 @@ export const revalidate = 3600; // Re-fetch this page in the background, at most
 
 interface ProductPageProps {
   params: { slug: string } | Promise<{ slug: string }>;
+  searchParams: Promise<{ from?: string }>;
 }
 
 /**
  * Canonical product page at /products/{slug}
- * Uses primary category for breadcrumbs and related products
+ * Supports ?from= parameter to preserve user's navigation journey in breadcrumb
  */
-export default async function ProductPage({ params }: ProductPageProps) {
+export default async function ProductPage({
+  params,
+  searchParams,
+}: ProductPageProps) {
   const { slug } = (await params) as { slug?: string };
 
   if (!slug) {
@@ -27,17 +31,39 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  // Get primary category for breadcrumb and related products
-  const primaryCategoryRelation = product.categories.find((c) => c.isPrimary);
-  const displayCategory =
-    primaryCategoryRelation?.category || product.categories[0]?.category;
+  // Get the "from" category if user navigated from a category page
+  const resolvedSearchParams = await searchParams;
+  let fromCategorySlug = resolvedSearchParams?.from;
+  if (Array.isArray(fromCategorySlug)) {
+    fromCategorySlug = fromCategorySlug[0];
+  }
+  const decodedFromSlug = fromCategorySlug
+    ? decodeURIComponent(String(fromCategorySlug))
+    : undefined;
+
+  // Determine display category for breadcrumb:
+  // 1. Use "from" category if provided and product belongs to it
+  // 2. Otherwise use primary category
+  // 3. Fallback to first category
+  let displayCategory;
+
+  if (decodedFromSlug) {
+    displayCategory = product.categories.find(
+      (c) => c.category.slug === decodedFromSlug
+    )?.category;
+  }
 
   if (!displayCategory) {
-    // Product has no categories - this shouldn't happen but handle gracefully
+    const primaryCategoryRelation = product.categories.find((c) => c.isPrimary);
+    displayCategory =
+      primaryCategoryRelation?.category || product.categories[0]?.category;
+  }
+
+  if (!displayCategory) {
     notFound();
   }
 
-  // Fetch related products from the primary category
+  // Fetch related products from the display category (follows user's journey)
   const relatedProducts = await getRelatedProducts(
     product.id,
     displayCategory.slug

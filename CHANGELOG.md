@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.73.1 - 2026-01-27
+
+### Bug Fixes
+- **Breadcrumb navigation context**: Restored `?from=` parameter support so breadcrumbs reflect user's navigation journey (e.g., Asia > Sumatra instead of always showing primary category)
+
 ## 0.73.0 - 2026-01-27
 
 ### Features

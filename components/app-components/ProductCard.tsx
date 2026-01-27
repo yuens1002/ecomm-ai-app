@@ -48,8 +48,10 @@ export default function ProductCard({
   const altText =
     product.images[0]?.altText || `A bag of ${product.name} coffee`;
 
-  // Canonical product URL - always use /products/{slug}
-  const productUrl = `/products/${product.slug}`;
+  // Canonical product URL with optional ?from= to preserve navigation context
+  const productUrl = categorySlug
+    ? `/products/${product.slug}?from=${encodeURIComponent(categorySlug)}`
+    : `/products/${product.slug}`;
 
   return (
     <Link
