@@ -138,16 +138,16 @@ export default function AdminTopNav({
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Left: Mobile drawer + Back arrow + Logo/Brand */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center">
             {/* Mobile menu drawer (shown on mobile/tablet) */}
             <AdminMobileDrawer storeName={storeName} />
 
-            {/* Back to public site */}
+            {/* Back to public site - no left margin so arrow aligns with content edge */}
             <Button
               variant="ghost"
               size="icon"
               asChild
-              className="h-11 w-11"
+              className="h-11 w-11 -ml-2.5"
               title="Open public site"
             >
               <Link href="/" target="_blank" rel="noopener noreferrer">
@@ -157,7 +157,7 @@ export default function AdminTopNav({
             </Button>
 
             {/* Logo OR Store Name (not both) */}
-            <div className="flex items-center">
+            <div className="flex items-center ml-1">
               {storeLogoUrl ? (
                 <Image
                   src={storeLogoUrl}
@@ -201,11 +201,9 @@ export default function AdminTopNav({
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-11 w-11 rounded-full"
+                  className="h-11 w-11 rounded-full text-sm font-semibold"
                 >
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold text-sm">
-                    {initials}
-                  </span>
+                  {initials}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
