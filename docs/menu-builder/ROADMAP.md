@@ -1,9 +1,9 @@
 # Menu Builder - Development Roadmap
 
-**Last Updated:** 2026-01-26
+**Last Updated:** 2026-01-27
 **Current Branch:** `unify-menu-builder`
-**Current Version:** v0.70.3
-**Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ | Phase 3 Complete ✅
+**Current Version:** v0.72.2
+**Status:** Phase 1 Complete ✅ | Phase 2 Complete ✅ | Phase 3 Complete ✅ | Launch Complete ✅
 
 ---
 
@@ -23,7 +23,7 @@ Advanced    ██████████████████████�
 Total       ████████████████████████ 100%
 ```
 
-### Recent Completions (v0.66.x - v0.70.x)
+### Recent Completions (v0.66.x - v0.72.x)
 - ✅ IdentityRegistry architecture (unified row identity management)
 - ✅ 2-level Menu View (Labels → Categories, products as count only)
 - ✅ Same-level DnD with auto-collapse/expand behaviors
@@ -42,6 +42,11 @@ Total       ██████████████████████�
 - ✅ Range selection with shift+click and long-press (v0.69.0)
 - ✅ 44x44px touch targets for WCAG compliance (v0.69.1)
 - ✅ Context menu handler hooks refactoring (v0.70.3)
+- ✅ Bulk mode context menu with CheckboxListContent (v0.68.0)
+- ✅ Motion animations for selection and context menus (v0.71.0)
+- ✅ Menu Builder v1.0 launch (v0.72.0)
+- ✅ Post-launch UI/UX polish fixes (v0.72.1)
+- ✅ README and About page updates for Menu Builder (v0.72.2)
 
 ---
 
@@ -935,9 +940,9 @@ app/admin/(product-menu)/
 
 ## Next Action
 
-**Last Completed:** Context Menu Hooks Refactoring (v0.70.3) - Jan 26, 2026
+**Last Completed:** README and About Page Updates (v0.72.2) - Jan 27, 2026
 
-### Recently Completed (v0.69.0-0.70.3)
+### Recently Completed (v0.69.0-0.72.2)
 
 - [x] Range selection with shift+click and long-press checkbox (v0.69.0)
 - [x] 44x44px touch targets for WCAG compliance (v0.69.1)
@@ -945,6 +950,19 @@ app/admin/(product-menu)/
 - [x] Context menu refinements with search and action order (v0.70.1)
 - [x] Range selection respects visual order when sorted (v0.70.2)
 - [x] Context menu handler hooks refactoring (v0.70.3)
+- [x] Bulk mode context menu with CheckboxListContent (v0.68.0)
+- [x] Motion animations for selection and context menus (v0.71.0)
+- [x] Menu Builder v1.0 launch (v0.72.0)
+- [x] Post-launch UI/UX polish (drag cursor, font defaults, switch centering, header borders) (v0.72.1)
+- [x] README and About page updates reflecting Menu Builder and Pages CMS features (v0.72.2)
+
+### Up Next
+
+1. **Shadcn Dashboard Shell Migration** - Migrate admin layout to shadcn dashboard-shell pattern
+   - Sidebar navigation with collapsible sections
+   - Breadcrumb header navigation
+   - Consistent admin UI pattern
+   - See: https://shadcnstudio.com/blocks/dashboard-and-application/dashboard-shell
 
 ### Future Enhancements
 
@@ -1024,5 +1042,5 @@ app/admin/(product-menu)/
 
 ---
 
-**Last Updated:** 2026-01-26
+**Last Updated:** 2026-01-27
 **Project Owner:** yuens1002

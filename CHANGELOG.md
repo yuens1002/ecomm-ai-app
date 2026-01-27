@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.72.3 - 2026-01-27
+
+### Documentation
+- **ROADMAP.md**: Updated to v0.72.2, added recent completions (v0.68.0-v0.72.2), added shadcn dashboard-shell migration as next task
+
 ## 0.72.2 - 2026-01-27
 
 ### Documentation
