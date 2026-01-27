@@ -224,8 +224,8 @@ export default function AnalyticsView({
                     </span>
                     <div className="flex-1 min-w-0">
                       <Link
-                        href={`/${(product.roastLevel || "medium").toLowerCase()}-roast/${product.slug}`}
-                        className="text-sm font-medium hover:text-accent truncate block"
+                        href={`/products/${product.slug}`}
+                        className="text-sm font-medium hover:underline truncate block"
                       >
                         {product.name}
                       </Link>

@@ -48,21 +48,8 @@ export default function ProductCard({
   const altText =
     product.images[0]?.altText || `A bag of ${product.name} coffee`;
 
-  // Define the destination URL using the product's primary category slug (fallback-safe)
-  const primaryCategorySlug =
-    categorySlug || product.categories?.[0]?.category?.slug;
-
-  // Build URL with optional "from" parameter if user came from a different category
-  let productUrl = primaryCategorySlug
-    ? `/${primaryCategorySlug}/${product.slug}`
-    : `/products/${product.slug}`;
-  if (
-    categorySlug &&
-    primaryCategorySlug &&
-    categorySlug !== primaryCategorySlug
-  ) {
-    productUrl += `?from=${encodeURIComponent(categorySlug)}`;
-  }
+  // Canonical product URL - always use /products/{slug}
+  const productUrl = `/products/${product.slug}`;
 
   return (
     <Link

@@ -2,10 +2,47 @@
 
 ## High Priority
 
+### Canonical Product URLs (SEO Fix)
+
+**Status**: Complete ✅
+**Priority**: High
+**Completed**: January 27, 2026 (v0.73.0)
+**Description**: Migrate from dynamic category-based URLs (`/{category}/{slug}`) to stable product-only URLs (`/products/{slug}`) for better SEO and build performance.
+
+**Problem:**
+- Products accessible at multiple URLs (one per category they belong to)
+- No canonical URL - search engines see duplicate content
+- Build generates 3× more static pages than needed (125 paths for 42 products)
+- URL changes when admin recategorizes products (bad for SEO/bookmarks)
+
+**Solution:**
+- Single canonical URL per product: `/products/{slug}`
+- 301 redirects from old `/{category}/{slug}` URLs
+- Reduces static paths from O(products × categories) to O(products)
+
+**Impact Analysis:**
+| Products | Old (all paths) | New (product-only) |
+|----------|-----------------|-------------------|
+| 42 (current) | 125 paths | 42 paths |
+| 100 | ~300 paths | 100 paths |
+| 500 | ~1,500 paths | 500 paths |
+
+**Tasks:**
+- [x] Create `/products/[slug]` route with ProductClientPage and actions
+- [x] Update `generateStaticParams` to only generate `/products/*` paths
+- [x] Update ProductCard to use `/products/{slug}` URLs
+- [x] Fix analytics page trending product links
+- [x] Update ShoppingCart, AiHelperModal product links
+- [x] Remove old `[category]/[productSlug]` route
+- [x] All 595 tests passing
+
+---
+
 ### Customizable Product Menu (Coffee Dropdown)
 
-**Status**: Backlog
+**Status**: Complete ✅
 **Priority**: High
+**Completed**: January 2026
 **Description**: Allow admins to customize the product menu icon and text in header/footer navigation. Currently hardcoded to show coffee beans icon (`/beans.svg`) with "Coffee" text. Should support dynamic configuration for stores that sell multiple product types or want different branding.
 
 **Current Hardcoded Implementation** (SiteHeader.tsx lines 197-211):
@@ -1003,9 +1040,9 @@ When user clicks "Migrate to Blocks":
 
 ### Carousel Infinite Scroll with Manual Dot Controls
 
-**Status**: Backlog
+**Status**: Backlog (Consider removing infinite scroll)
 **Priority**: Medium
-**Description**: Fix the location carousel infinite scroll to work seamlessly with manual dot navigation controls without visible jumping or stopping at edges.
+**Description**: Fix the location carousel infinite scroll to work seamlessly with manual dot navigation controls without visible jumping or stopping at edges. **Alternative**: Remove infinite scroll entirely and use standard carousel with edge limits.
 
 **Current State**:
 
@@ -1266,48 +1303,10 @@ When user clicks "Migrate to Blocks":
 
 ### Consolidate Admin Pages into Dashboard Tabs
 
-**Status**: Backlog
+**Status**: Complete ✅
 **Priority**: Medium
-**Description**: Move existing admin management pages into the tabbed admin dashboard for better navigation and consistency.
-
-**Current State**:
-
-- Admin dashboard exists with tabs (Overview, Users, Orders, Products, Profile)
-- Users tab links to `/admin/users` (separate page)
-- Orders tab links to `/admin/orders` (separate page)
-- Products tab is placeholder
-
-**Proposed Changes**:
-
-- Move user management content directly into Users tab (remove separate page)
-- Move order management content directly into Orders tab (remove separate page)
-- Implement products management in Products tab
-- Keep all admin functionality in single dashboard with tab navigation
-- Improve UX by eliminating page transitions
-
-**Tasks**:
-
-- [ ] Refactor `/app/admin/users/page.tsx` content into `AdminDashboardClient.tsx` Users tab
-- [ ] Refactor `/app/admin/orders/page.tsx` content into `AdminDashboardClient.tsx` Orders tab
-- [ ] Update tab navigation to use tab switching instead of links
-- [ ] Remove separate admin pages (`/app/admin/users/`, `/app/admin/orders/`)
-- [ ] Test user management functionality within tab
-- [ ] Test order management functionality within tab
-- [ ] Ensure API routes remain unchanged
-
-**Benefits**:
-
-- Single page experience for all admin functions
-- Consistent with account settings UX pattern
-- Faster navigation (no page reloads)
-- Easier to maintain single dashboard component
-
-**Acceptance Criteria**:
-
-- All admin management functions accessible via dashboard tabs
-- No separate page navigation required
-- Tab switching is instant without page reload
-- All existing functionality preserved
+**Completed**: January 2026
+**Description**: Admin panel now uses sidebar navigation with dedicated routes for all major features. Users, Orders, Products, Settings, Pages, Analytics all accessible via consistent sidebar nav.
 
 ---
 
@@ -1383,9 +1382,9 @@ When user clicks "Migrate to Blocks":
 
 ### Replace Hardcoded Frontend Values with Admin Settings
 
-**Status**: Backlog
+**Status**: Audited (Re-audit before launch)
 **Priority**: Medium
-**Description**: Centralize all customer-facing copy (store name, taglines, contact info, footer CTAs) into the Site Settings model so non-technical staff can update branding without deployments.
+**Description**: Centralize all customer-facing copy (store name, taglines, contact info, footer CTAs) into the Site Settings model so non-technical staff can update branding without deployments. Initial audit completed - will need re-audit before production launch.
 
 **Current State**:
 
@@ -1497,81 +1496,19 @@ When user clicks "Migrate to Blocks":
 
 ### About Page Not Restored After Seed
 
-**Status**: To Fix
+**Status**: Fixed ✅
 **Priority**: Low
-**Description**: The About page is not properly restored after running the database seed command, requiring investigation before merging CMS features into main.
-
-**Current Behavior**:
-
-- Running seed command does not recreate About page
-- Other pages (Cafe, etc.) may be affected as well
-- Issue discovered during CMS block feature development
-
-**Impact**:
-
-- Developers need functional About page after seeding
-- QA/testing workflows interrupted
-- Demo environments may be incomplete
-
-**Investigation Needed**:
-
-- [ ] Check if About page blocks are included in seed.ts
-- [ ] Verify page creation logic in seed file
-- [ ] Test seed command and verify all pages exist after
-- [ ] Check if issue affects other CMS pages
-- [ ] Ensure page metadata (title, slug, published status) properly set
-
-**Tasks**:
-
-- [ ] Debug seed.ts to identify why About page not created
-- [ ] Fix seed logic to properly create About page with blocks
-- [ ] Test full seed → verify About page exists and is accessible
-- [ ] Document any special seeding requirements for CMS pages
-
-**Notes**:
-
-- This should be resolved before merging fix/cms-blocks branch into main
-- May be related to recent CMS block system changes
-- Low priority as it only affects development/demo environments
+**Completed**: January 2026
+**Description**: About page and CMS pages now properly restored after running database seed command.
 
 ---
 
 ### Add Store Name to Settings Model
 
-**Status**: Backlog
+**Status**: Complete ✅
 **Priority**: Low
-**Description**: Add a configurable store name field to the Settings model to allow branding customization throughout the application.
-
-**Current State**:
-
-- Store name is hardcoded as "Artisan Roast" throughout the application
-- Email templates, navigation, and branding use hardcoded values
-- SiteSettings model exists with key-value structure for configuration
-
-**Proposed Changes**:
-
-- Add `storeName` key to SiteSettings model
-- Default value: "Artisan Roast"
-- Admin UI in Settings tab to configure store name
-- Update email templates to use dynamic store name
-- Update site header/footer to use configured name
-
-**Tasks**:
-
-- [ ] Add storeName to seed.ts with default "Artisan Roast"
-- [ ] Add store name field to admin settings UI
-- [ ] Update email templates to fetch and use store name from settings
-- [ ] Update navigation components to use dynamic store name
-- [ ] Update metadata/SEO tags to use configured store name
-- [ ] Test store name changes reflect across all touchpoints
-
-**Acceptance Criteria**:
-
-- Admins can configure store name from settings panel
-- Store name updates across all email templates
-- Store name updates in navigation and branding
-- Changes persist and apply immediately
-- Default "Artisan Roast" used if not configured
+**Completed**: January 2026
+**Description**: Store name is now configurable via admin settings and used throughout the application including email templates, navigation, and SEO metadata.
 
 ---
 

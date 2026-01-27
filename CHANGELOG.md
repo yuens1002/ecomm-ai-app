@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.73.0 - 2026-01-27
+
+### Features
+- **Canonical Product URLs**: Migrated from `/{category}/{slug}` to `/products/{slug}` for SEO stability
+  - Product URLs no longer change when admin recategorizes products
+  - Reduced static build paths from 125 to 42 (3× improvement)
+  - Updated ProductCard, ShoppingCart, AnalyticsView, AiHelperModal to use canonical URLs
+  - Removed old `[category]/[productSlug]` route
+
 ## 0.72.4 - 2026-01-27
 
 ### Documentation

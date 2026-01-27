@@ -314,9 +314,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
                   variant="link"
                   className="h-auto p-0 text-lg font-semibold"
                 >
-                  <Link
-                    href={`/${(productData.roastLevel || "medium").toLowerCase()}-roast/${productSlug}`}
-                  >
+                  <Link href={`/products/${productSlug}`}>
                     {productData.name}
                   </Link>
                 </Button>
