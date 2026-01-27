@@ -1,0 +1,352 @@
+# Admin Dashboard Redesign - Implementation Plan
+
+**Created:** 2026-01-27
+**Branch:** `feat/shadcn-dashboard`
+**Status:** Planning
+
+---
+
+## Overview
+
+Replace the current sidebar-based admin layout with a top navbar layout inspired by shadcn dashboard-shell-04. This is a complete redesign of the admin shell.
+
+## Current vs New
+
+| Aspect | Current | New |
+|--------|---------|-----|
+| Navigation | Left sidebar (collapsible) | Top sticky navbar with dropdowns |
+| Layout | Full-width, fixed position | Fixed max-width container |
+| Mobile | Sidebar collapses to icons | Left drawer sheet |
+| Footer | None | Branding + legal + social |
+| Breadcrumb | In header (all pages) | Below navbar (hidden on Overview) |
+
+---
+
+## Navigation Structure
+
+### Top Navbar (Left to Right)
+
+```
+[<] Logo │ Dashboard ▼ │ Products ▼ │ Orders ▼ │ Pages ▼ │ Management ▼ │ Settings ▼ │ ☀️ 👤
+```
+
+### Dropdown Contents
+
+| Nav Item | Sub-items | Route |
+|----------|-----------|-------|
+| **Dashboard** | Overview | `/admin` |
+| | Analytics | `/admin/analytics` |
+| **Products** | Coffees | `/admin/products` |
+| | Merch | `/admin/merch` |
+| | Categories | `/admin/product-menu?view=categories` |
+| | Labels | `/admin/product-menu?view=labels` |
+| | Menu | `/admin/product-menu?view=menu` |
+| **Orders** | All Orders | `/admin/orders` |
+| | Subscriptions | *(coming soon)* |
+| **Pages** | About | `/admin/pages/about` |
+| | Cafe | `/admin/pages/cafe` |
+| | FAQ | `/admin/pages/faq` |
+| **Management** | All Users | `/admin/users` |
+| | Newsletter | `/admin/newsletter` |
+| **Settings** | General | `/admin/settings` |
+| | Store Front | `/admin/settings/storefront` |
+| | Location | `/admin/settings/location` |
+| | Commerce | `/admin/settings/commerce` |
+| | Marketing | `/admin/settings/marketing` |
+| | Contact | `/admin/settings/contact` |
+| | Social Links | `/admin/social-links` |
+
+### Right Side Elements
+
+| Element | Behavior |
+|---------|----------|
+| `[<]` Back icon | Opens public site in new browser window (icon only, not logo) |
+| Logo/Brand | Site logo from settings if available, fallback to store name text - decorative, not clickable |
+| Theme toggle | Sun/Moon icon, toggles light/dark |
+| Avatar | Dropdown with: Profile *(coming soon)*, Password *(coming soon)*, Logout |
+
+---
+
+## Footer Structure
+
+### Desktop Layout
+```
+┌────────────────────────────────────────────────────────────────────┐
+│  Artisan Roast    │    Disclaimer • License • Support    │  🐦 📘 📷  │
+│     (left)        │            (center)                  │  (right)  │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+### Mobile Layout (Stacked)
+```
+┌────────────────────────────────────────┐
+│           Artisan Roast                │
+│  Disclaimer • License • Support  🐦📘📷  │
+└────────────────────────────────────────┘
+```
+
+### Footer Links
+- **Disclaimer**: Placeholder link
+- **License**: Placeholder link
+- **Support**: `https://github.com/yuens1002/ecomm-ai-app/issues`
+- **Social Icons**: From site settings (dynamic)
+
+---
+
+## Responsive Behavior
+
+### Desktop (≥1024px)
+- Full top navbar with all dropdowns visible
+- Fixed max-width container (e.g., `max-w-7xl`)
+- Footer in 3-column layout
+
+### Tablet (768px - 1023px)
+- Top navbar may compress
+- Consider hamburger menu trigger
+- Left drawer for navigation
+
+### Mobile (<768px)
+- Hamburger menu icon in navbar
+- Left drawer sheet with full navigation
+- Stacked footer (2 rows)
+
+---
+
+## Components to Create
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `AdminTopNav.tsx` | `components/app-components/` | Main top navbar |
+| `AdminNavDropdown.tsx` | `components/app-components/` | Reusable dropdown for nav items |
+| `AdminMobileDrawer.tsx` | `components/app-components/` | Mobile navigation drawer |
+| `AdminFooter.tsx` | `components/app-components/` | Footer with branding/legal/social |
+| `AdminShell.tsx` | `components/app-components/` | Layout wrapper combining all pieces |
+
+### Components to Modify
+
+| Component | Changes |
+|-----------|---------|
+| `app/admin/layout.tsx` | Replace sidebar layout with new shell |
+| `AdminBreadcrumb.tsx` | Hide on Overview page (`/admin`) |
+
+### Components to Remove/Deprecate
+
+| Component | Action |
+|-----------|--------|
+| `AdminSidebar.tsx` | Remove (replaced by top nav) |
+| `AdminHeader.tsx` | Remove (merged into AdminTopNav) |
+
+---
+
+## Implementation Steps
+
+### Phase 1: Core Shell Components
+1. [ ] Create `lib/admin-nav-config.ts` with centralized nav structure
+2. [ ] Create `AdminNavDropdown.tsx` for reusable dropdown pattern
+3. [ ] Create `AdminTopNav.tsx` with logo, nav items, theme toggle, avatar
+4. [ ] Create `AdminFooter.tsx` with responsive layout
+5. [ ] Create `AdminShell.tsx` to compose navbar + content + footer
+
+**Commit:** `feat(admin): add core shell components for dashboard redesign`
+
+### Phase 2: Integration & Navigation Logic
+6. [ ] Update `app/admin/layout.tsx` to use new AdminShell
+7. [ ] Implement dropdown active states (highlight current section)
+8. [ ] Update `AdminBreadcrumb.tsx` to hide on `/admin`
+9. [ ] Remove old AdminSidebar and AdminHeader
+
+**Commit:** `feat(admin): integrate new shell layout and remove sidebar`
+
+### Phase 3: Mobile/Responsive
+10. [ ] Create `AdminMobileDrawer.tsx` using Sheet component
+11. [ ] Add responsive breakpoints to AdminTopNav (hamburger trigger)
+12. [ ] Implement stacked footer for mobile
+
+**Commit:** `feat(admin): add mobile drawer and responsive layout`
+
+### Phase 4: Validation & Polish
+13. [ ] Run full test suite (`npm run test:ci`)
+14. [ ] Run typecheck (`npm run typecheck`)
+15. [ ] Manual testing checklist (see below)
+16. [ ] Fix any issues found
+
+**Commit:** `fix(admin): polish and bug fixes for dashboard shell`
+
+---
+
+## Validation Plan
+
+### Automated Checks (must pass before each commit)
+```bash
+npm run typecheck   # No TypeScript errors
+npm run test:ci     # All 595+ tests pass
+npm run lint        # No ESLint errors (warnings OK)
+```
+
+### Manual Testing Checklist (Phase 4)
+
+#### Desktop (≥1024px)
+- [ ] Top navbar displays with all 6 dropdowns
+- [ ] Each dropdown opens and shows correct items
+- [ ] Clicking dropdown items navigates to correct route
+- [ ] Active nav item highlighted based on current route
+- [ ] `[<]` icon opens public site in new tab
+- [ ] Logo/store name displays correctly
+- [ ] Theme toggle works (light ↔ dark)
+- [ ] Avatar dropdown shows: Profile (disabled), Password (disabled), Logout
+- [ ] Logout works and redirects to admin sign-in
+- [ ] Breadcrumb hidden on `/admin`, visible on other pages
+- [ ] Footer displays: branding | disclaimer/license/support | social icons
+- [ ] Support link goes to GitHub issues
+- [ ] Social icons load from site settings
+- [ ] Content area has max-w-7xl constraint
+
+#### Mobile (<768px)
+- [ ] Hamburger menu icon visible
+- [ ] Clicking hamburger opens left drawer
+- [ ] Drawer shows full navigation tree
+- [ ] Clicking nav item closes drawer and navigates
+- [ ] Footer stacks: branding on line 1, rest on line 2
+- [ ] All touch targets are ≥44px
+
+#### Route Testing (verify no broken pages)
+- [ ] `/admin` - Overview
+- [ ] `/admin/analytics` - Analytics
+- [ ] `/admin/products` - Coffees
+- [ ] `/admin/merch` - Merchandise
+- [ ] `/admin/product-menu` - Menu Builder (all views)
+- [ ] `/admin/orders` - Orders
+- [ ] `/admin/pages/about` - About page
+- [ ] `/admin/pages/cafe` - Cafe page
+- [ ] `/admin/pages/faq` - FAQ page
+- [ ] `/admin/users` - All Users
+- [ ] `/admin/newsletter` - Newsletter
+- [ ] `/admin/settings` - General Settings
+- [ ] `/admin/settings/storefront` - Store Front
+- [ ] `/admin/settings/location` - Location
+- [ ] `/admin/settings/commerce` - Commerce
+- [ ] `/admin/settings/marketing` - Marketing
+- [ ] `/admin/settings/contact` - Contact
+- [ ] `/admin/social-links` - Social Links
+
+---
+
+## Commit Plan Summary
+
+| Phase | Commit Message | Validation |
+|-------|----------------|------------|
+| 1 | `feat(admin): add core shell components for dashboard redesign` | typecheck + lint |
+| 2 | `feat(admin): integrate new shell layout and remove sidebar` | typecheck + lint + test:ci |
+| 3 | `feat(admin): add mobile drawer and responsive layout` | typecheck + lint + test:ci |
+| 4 | `fix(admin): polish and bug fixes for dashboard shell` | full manual testing |
+| Final | `chore: bump version to 0.75.0` | CHANGELOG + package.json |
+
+### Final Review Checkpoint
+After Phase 4 commit, notify user for final review with:
+- Summary of changes
+- Screenshot of desktop layout
+- Screenshot of mobile layout
+- Any issues or deviations from plan
+
+**Do NOT merge to main until user approves.**
+
+---
+
+## Technical Decisions
+
+### Navigation Config Structure
+```typescript
+type NavItem = {
+  label: string;
+  icon?: LucideIcon;
+  href?: string;           // Direct link (no dropdown)
+  children?: {             // Dropdown items
+    label: string;
+    href: string;
+    disabled?: boolean;    // For "coming soon" items
+  }[];
+};
+
+const adminNavConfig: NavItem[] = [
+  {
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    children: [
+      { label: "Overview", href: "/admin" },
+      { label: "Analytics", href: "/admin/analytics" },
+    ],
+  },
+  // ... etc
+];
+```
+
+### Active State Detection
+- Parent nav item highlighted if any child route is active
+- Use `usePathname()` and check if path starts with section prefix
+- Example: `/admin/settings/commerce` highlights "Settings" nav item
+
+### Sheet Component for Mobile
+- Use shadcn `Sheet` with `side="left"`
+- Trigger via hamburger icon in navbar (mobile only)
+- Full navigation tree in accordion or list format
+
+---
+
+## Files Changed Summary
+
+### New Files
+```
+components/app-components/AdminTopNav.tsx
+components/app-components/AdminNavDropdown.tsx
+components/app-components/AdminMobileDrawer.tsx
+components/app-components/AdminFooter.tsx
+components/app-components/AdminShell.tsx
+lib/admin-nav-config.ts
+```
+
+### Modified Files
+```
+app/admin/layout.tsx
+components/app-components/AdminBreadcrumb.tsx
+```
+
+### Removed Files
+```
+components/app-components/AdminSidebar.tsx
+components/app-components/AdminHeader.tsx
+```
+
+---
+
+## Success Criteria
+
+- [ ] Top navbar displays correctly on desktop
+- [ ] All 6 dropdowns work with correct links
+- [ ] Avatar dropdown shows Profile, Password, Logout
+- [ ] Theme toggle works
+- [ ] `[<]` opens public site in new window
+- [ ] Breadcrumb hidden on Overview, visible elsewhere
+- [ ] Footer displays with correct links
+- [ ] Social icons load from site settings
+- [ ] Mobile drawer works on small screens
+- [ ] All existing admin functionality preserved
+- [ ] No regressions in admin pages
+
+---
+
+## Decisions Made
+
+1. **Pages dropdown**: Static list for now (About, Cafe, FAQ) - no "+ New Page" until CMS is fully baked
+2. **Avatar menu**: Show Profile and Password with "(coming soon)" label, disabled/no link
+3. **Max-width**: `max-w-7xl` (1280px)
+4. **Back arrow**: Icon only (`ArrowLeft` or `ExternalLink`) as trigger - logo is separate branding, not clickable
+
+---
+
+## References
+
+- [Shadcn Dashboard Shell 04](https://shadcnstudio.com/preview/dashboard-and-application/dashboard-shell/dashboard-shell-04)
+- Current admin layout: `app/admin/layout.tsx`
+- Current sidebar: `components/app-components/AdminSidebar.tsx`
