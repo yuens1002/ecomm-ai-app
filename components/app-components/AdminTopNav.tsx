@@ -3,10 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, Moon, Sun, LogOut, User, KeyRound } from "lucide-react";
+import { ArrowLeft, Moon, Sun, LogOut, User, KeyRound, ChevronDown } from "lucide-react";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,16 +16,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { adminNavConfig, isNavItemActive } from "@/lib/admin-nav-config";
+import { adminNavConfig, isNavItemActive, NavItem } from "@/lib/admin-nav-config";
 import AdminMobileDrawer from "./AdminMobileDrawer";
 
 interface AdminTopNavProps {
@@ -38,6 +30,92 @@ interface AdminTopNavProps {
   storeLogoUrl: string;
 }
 
+function NavDropdown({ item, pathname }: { item: NavItem; pathname: string }) {
+  const [open, setOpen] = useState(false);
+  const isActive = isNavItemActive(item, pathname);
+  const Icon = item.icon;
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger
+        asChild
+        onPointerEnter={() => setOpen(true)}
+        onPointerLeave={() => setOpen(false)}
+      >
+        <Button
+          variant="ghost"
+          className={cn(
+            "h-auto px-3 py-2 gap-1.5",
+            isActive && "text-primary"
+          )}
+        >
+          <Icon className="h-4 w-4" />
+          <span className="text-sm font-medium">{item.label}</span>
+          <ChevronDown
+            className={cn(
+              "h-3 w-3 transition-transform duration-200",
+              open && "rotate-180"
+            )}
+          />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        className="w-48"
+        onPointerEnter={() => setOpen(true)}
+        onPointerLeave={() => setOpen(false)}
+      >
+        {item.children?.map((child, index) => {
+          const isChildActive =
+            child.href === "/admin"
+              ? pathname === "/admin"
+              : pathname.startsWith(child.href.split("?")[0]);
+
+          // Render section header if present
+          const sectionHeader = child.section ? (
+            <DropdownMenuLabel
+              key={`section-${child.section}`}
+              className={cn("text-xs text-muted-foreground", index > 0 && "mt-2")}
+            >
+              {child.section}
+            </DropdownMenuLabel>
+          ) : null;
+
+          if (child.disabled) {
+            return (
+              <div key={child.href}>
+                {sectionHeader}
+                <DropdownMenuItem disabled className="opacity-50 justify-between">
+                  {child.label}
+                  {child.disabledLabel && (
+                    <span className="text-xs">({child.disabledLabel})</span>
+                  )}
+                </DropdownMenuItem>
+              </div>
+            );
+          }
+
+          return (
+            <div key={child.href}>
+              {sectionHeader}
+              <DropdownMenuItem asChild>
+                <Link
+                  href={child.href}
+                  className={cn(
+                    isChildActive && "bg-accent font-medium"
+                  )}
+                >
+                  {child.label}
+                </Link>
+              </DropdownMenuItem>
+            </div>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export default function AdminTopNav({
   user,
   storeName,
@@ -45,12 +123,6 @@ export default function AdminTopNav({
 }: AdminTopNavProps) {
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsClient(true);
-  }, []);
 
   const initials =
     user.name
@@ -102,74 +174,12 @@ export default function AdminTopNav({
             </div>
           </div>
 
-          {/* Center: Navigation menu (hidden on mobile) */}
-          {isClient && (
-            <NavigationMenu className="hidden lg:flex">
-              <NavigationMenuList>
-                {adminNavConfig.map((item) => {
-                  const isActive = isNavItemActive(item, pathname);
-                  const Icon = item.icon;
-
-                  return (
-                    <NavigationMenuItem key={item.label}>
-                      <NavigationMenuTrigger
-                        className={cn(
-                          "h-auto px-3 py-2 bg-transparent hover:bg-accent focus:bg-accent data-[state=open]:bg-accent",
-                          "[&>svg:last-child]:ml-1 [&>svg:last-child]:transition-transform [&>svg:last-child]:duration-200 [&[data-state=open]>svg:last-child]:rotate-180",
-                          isActive && "text-primary"
-                        )}
-                      >
-                        <Icon className="h-4 w-4 mr-1.5" />
-                        <span className="text-sm font-medium">{item.label}</span>
-                      </NavigationMenuTrigger>
-                      <NavigationMenuContent>
-                        <ul className="w-48 p-2">
-                          {item.children?.map((child) => {
-                            const isChildActive =
-                              child.href === "/admin"
-                                ? pathname === "/admin"
-                                : pathname.startsWith(child.href.split("?")[0]);
-
-                            if (child.disabled) {
-                              return (
-                                <li key={child.href}>
-                                  <span className="flex items-center justify-between px-3 py-2 text-sm text-muted-foreground opacity-50 cursor-not-allowed">
-                                    {child.label}
-                                    {child.disabledLabel && (
-                                      <span className="text-xs">
-                                        ({child.disabledLabel})
-                                      </span>
-                                    )}
-                                  </span>
-                                </li>
-                              );
-                            }
-
-                            return (
-                              <li key={child.href}>
-                                <NavigationMenuLink asChild>
-                                  <Link
-                                    href={child.href}
-                                    className={cn(
-                                      "block px-3 py-2 text-sm rounded-md transition-colors",
-                                      "hover:bg-accent hover:text-accent-foreground",
-                                      isChildActive && "bg-accent text-accent-foreground font-medium"
-                                    )}
-                                  >
-                                    {child.label}
-                                  </Link>
-                                </NavigationMenuLink>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </NavigationMenuContent>
-                    </NavigationMenuItem>
-                  );
-                })}
-              </NavigationMenuList>
-            </NavigationMenu>
-          )}
+          {/* Center: Navigation dropdowns (hidden on mobile) */}
+          <nav className="hidden lg:flex items-center gap-1">
+            {adminNavConfig.map((item) => (
+              <NavDropdown key={item.label} item={item} pathname={pathname} />
+            ))}
+          </nav>
 
           {/* Right: Theme toggle + Avatar */}
           <div className="flex items-center gap-2">
@@ -193,9 +203,9 @@ export default function AdminTopNav({
                   size="icon"
                   className="h-11 w-11 rounded-full"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold text-sm">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold text-sm">
                     {initials}
-                  </div>
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

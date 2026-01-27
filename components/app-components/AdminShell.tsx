@@ -3,6 +3,7 @@
 import { ReactNode } from "react";
 import AdminTopNav from "./AdminTopNav";
 import AdminFooter from "./AdminFooter";
+import AdminBreadcrumb from "./AdminBreadcrumb";
 
 interface SocialLink {
   platform: string;
@@ -42,6 +43,7 @@ export default function AdminShell({
       {/* Main content area */}
       <main className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+          <AdminBreadcrumb />
           {children}
         </div>
       </main>

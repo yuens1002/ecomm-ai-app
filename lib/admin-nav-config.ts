@@ -13,6 +13,7 @@ export type NavChild = {
   icon?: LucideIcon;
   disabled?: boolean;
   disabledLabel?: string; // e.g., "coming soon"
+  section?: string; // Section header for grouping
 };
 
 export type NavItem = {
@@ -68,9 +69,9 @@ export const adminNavConfig: NavItem[] = [
     label: "More",
     icon: MoreHorizontal,
     children: [
-      { label: "All Users", href: "/admin/users" },
+      { label: "All Users", href: "/admin/users", section: "Management" },
       { label: "Newsletter", href: "/admin/newsletter" },
-      { label: "General Settings", href: "/admin/settings" },
+      { label: "General", href: "/admin/settings", section: "Settings" },
       { label: "Store Front", href: "/admin/settings/storefront" },
       { label: "Location", href: "/admin/settings/location" },
       { label: "Commerce", href: "/admin/settings/commerce" },
