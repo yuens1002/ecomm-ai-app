@@ -67,17 +67,9 @@ export default function AdminBreadcrumb() {
   // Split pathname into segments, filtering out empty strings
   const segments = pathname.split("/").filter(Boolean);
 
-  // Don't show breadcrumb if we're at the root admin page
+  // Hide breadcrumb on overview page (/admin)
   if (segments.length <= 1) {
-    return (
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbPage>Dashboard</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-    );
+    return null;
   }
 
   // Build breadcrumb items
