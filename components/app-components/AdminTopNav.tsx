@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowLeft, Moon, Sun, LogOut, User, KeyRound } from "lucide-react";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,8 +16,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { adminNavConfig } from "@/lib/admin-nav-config";
-import AdminNavDropdown from "./AdminNavDropdown";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
+import { adminNavConfig, isNavItemActive } from "@/lib/admin-nav-config";
 import AdminMobileDrawer from "./AdminMobileDrawer";
 
 interface AdminTopNavProps {
@@ -34,6 +44,13 @@ export default function AdminTopNav({
   storeLogoUrl,
 }: AdminTopNavProps) {
   const { theme, setTheme } = useTheme();
+  const pathname = usePathname();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsClient(true);
+  }, []);
 
   const initials =
     user.name
@@ -67,8 +84,8 @@ export default function AdminTopNav({
               </Link>
             </Button>
 
-            {/* Logo or Store Name */}
-            <div className="flex items-center gap-2">
+            {/* Logo OR Store Name (not both) */}
+            <div className="flex items-center">
               {storeLogoUrl ? (
                 <Image
                   src={storeLogoUrl}
@@ -77,19 +94,82 @@ export default function AdminTopNav({
                   height={32}
                   className="h-8 w-8 object-contain"
                 />
-              ) : null}
-              <span className="font-semibold text-lg hidden sm:inline">
-                {storeName}
-              </span>
+              ) : (
+                <span className="font-semibold text-lg hidden sm:inline">
+                  {storeName}
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Center: Navigation dropdowns (hidden on mobile) */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {adminNavConfig.map((item) => (
-              <AdminNavDropdown key={item.label} item={item} />
-            ))}
-          </nav>
+          {/* Center: Navigation menu (hidden on mobile) */}
+          {isClient && (
+            <NavigationMenu className="hidden lg:flex">
+              <NavigationMenuList>
+                {adminNavConfig.map((item) => {
+                  const isActive = isNavItemActive(item, pathname);
+                  const Icon = item.icon;
+
+                  return (
+                    <NavigationMenuItem key={item.label}>
+                      <NavigationMenuTrigger
+                        className={cn(
+                          "h-auto px-3 py-2 bg-transparent hover:bg-accent focus:bg-accent data-[state=open]:bg-accent",
+                          "[&>svg:last-child]:ml-1 [&>svg:last-child]:transition-transform [&>svg:last-child]:duration-200 [&[data-state=open]>svg:last-child]:rotate-180",
+                          isActive && "text-primary"
+                        )}
+                      >
+                        <Icon className="h-4 w-4 mr-1.5" />
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <ul className="w-48 p-2">
+                          {item.children?.map((child) => {
+                            const isChildActive =
+                              child.href === "/admin"
+                                ? pathname === "/admin"
+                                : pathname.startsWith(child.href.split("?")[0]);
+
+                            if (child.disabled) {
+                              return (
+                                <li key={child.href}>
+                                  <span className="flex items-center justify-between px-3 py-2 text-sm text-muted-foreground opacity-50 cursor-not-allowed">
+                                    {child.label}
+                                    {child.disabledLabel && (
+                                      <span className="text-xs">
+                                        ({child.disabledLabel})
+                                      </span>
+                                    )}
+                                  </span>
+                                </li>
+                              );
+                            }
+
+                            return (
+                              <li key={child.href}>
+                                <NavigationMenuLink asChild>
+                                  <Link
+                                    href={child.href}
+                                    className={cn(
+                                      "block px-3 py-2 text-sm rounded-md transition-colors",
+                                      "hover:bg-accent hover:text-accent-foreground",
+                                      isChildActive && "bg-accent text-accent-foreground font-medium"
+                                    )}
+                                  >
+                                    {child.label}
+                                  </Link>
+                                </NavigationMenuLink>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </NavigationMenuContent>
+                    </NavigationMenuItem>
+                  );
+                })}
+              </NavigationMenuList>
+            </NavigationMenu>
+          )}
 
           {/* Right: Theme toggle + Avatar */}
           <div className="flex items-center gap-2">
@@ -109,10 +189,11 @@ export default function AdminTopNav({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="ghost"
-                  className="relative h-11 w-11 rounded-full"
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11 rounded-full"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold text-sm">
                     {initials}
                   </div>
                 </Button>

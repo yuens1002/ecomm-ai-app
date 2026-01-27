@@ -27,9 +27,9 @@ export default function AdminFooter({
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Desktop Layout: 3 columns */}
         <div className="hidden sm:flex h-16 items-center justify-between">
-          {/* Left: Branding */}
-          <div className="text-sm font-medium text-muted-foreground">
-            {storeName}
+          {/* Left: Branding with copyright */}
+          <div className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} {storeName}
           </div>
 
           {/* Center: Links */}
@@ -66,9 +66,9 @@ export default function AdminFooter({
 
         {/* Mobile Layout: Stacked */}
         <div className="sm:hidden py-4 space-y-3">
-          {/* Row 1: Branding */}
-          <div className="text-sm font-medium text-muted-foreground text-center">
-            {storeName}
+          {/* Row 1: Branding with copyright */}
+          <div className="text-sm text-muted-foreground text-center">
+            © {new Date().getFullYear()} {storeName}
           </div>
 
           {/* Row 2: Links + Social */}

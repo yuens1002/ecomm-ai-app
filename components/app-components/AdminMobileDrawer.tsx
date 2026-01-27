@@ -40,24 +40,21 @@ export default function AdminMobileDrawer({
         <nav className="flex-1 overflow-y-auto py-4">
           {adminNavConfig.map((item) => {
             const isActive = isNavItemActive(item, pathname);
-            const Icon = item.icon;
 
             return (
               <div key={item.label} className="px-2">
                 {/* Section header */}
                 <div
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground",
+                    "px-3 py-2 text-sm font-medium text-muted-foreground",
                     isActive && "text-foreground"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
                   {item.label}
                 </div>
 
                 {/* Navigation items */}
                 {item.children?.map((child) => {
-                  const ChildIcon = child.icon;
                   const isChildActive =
                     child.href === "/admin"
                       ? pathname === "/admin"
@@ -67,12 +64,11 @@ export default function AdminMobileDrawer({
                     return (
                       <div
                         key={child.href}
-                        className="flex items-center gap-2 px-3 py-3 pl-9 text-sm text-muted-foreground opacity-50 min-h-[44px]"
+                        className="flex items-center justify-between px-3 py-3 pl-6 text-sm text-muted-foreground opacity-50 min-h-[44px]"
                       >
-                        {ChildIcon && <ChildIcon className="h-4 w-4" />}
                         <span>{child.label}</span>
                         {child.disabledLabel && (
-                          <span className="ml-auto text-xs">
+                          <span className="text-xs">
                             ({child.disabledLabel})
                           </span>
                         )}
@@ -86,13 +82,12 @@ export default function AdminMobileDrawer({
                       href={child.href}
                       onClick={() => setOpen(false)}
                       className={cn(
-                        "flex items-center gap-2 px-3 py-3 pl-9 text-sm rounded-md min-h-[44px] transition-colors",
+                        "flex items-center px-3 py-3 pl-6 text-sm rounded-md min-h-[44px] transition-colors",
                         "hover:bg-accent hover:text-accent-foreground",
                         isChildActive &&
                           "bg-accent text-accent-foreground font-medium"
                       )}
                     >
-                      {ChildIcon && <ChildIcon className="h-4 w-4" />}
                       {child.label}
                     </Link>
                   );
@@ -104,7 +99,7 @@ export default function AdminMobileDrawer({
                     href={item.href}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-3 pl-9 text-sm rounded-md min-h-[44px] transition-colors",
+                      "flex items-center px-3 py-3 pl-6 text-sm rounded-md min-h-[44px] transition-colors",
                       "hover:bg-accent hover:text-accent-foreground",
                       isActive && "bg-accent text-accent-foreground font-medium"
                     )}

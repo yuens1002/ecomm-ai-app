@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Home } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,7 +19,7 @@ const routeLabels: Record<string, string> = {
   admin: "Dashboard",
   analytics: "Analytics",
   orders: "Orders",
-  products: "Products",
+  products: "Coffees",
   merch: "Merchandise",
   "product-menu": "Menu Builder",
   pages: "Pages",
@@ -72,21 +73,31 @@ export default function AdminBreadcrumb() {
     return null;
   }
 
-  // Build breadcrumb items
-  const items = segments.map((segment, index) => {
-    const href = "/" + segments.slice(0, index + 1).join("/");
+  // Build breadcrumb items (skip the first "admin" segment since we use home icon)
+  const items = segments.slice(1).map((segment, index) => {
+    const href = "/" + segments.slice(0, index + 2).join("/");
     const label = getLabel(segment);
-    const isLast = index === segments.length - 1;
+    const isLast = index === segments.length - 2;
 
     return { href, label, isLast };
   });
 
   return (
-    <Breadcrumb>
+    <Breadcrumb className="mb-4">
       <BreadcrumbList>
-        {items.map((item, index) => (
+        {/* Home icon linking to /admin */}
+        <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+            <Link href="/admin" className="flex items-center">
+              <Home className="h-4 w-4" />
+              <span className="sr-only">Dashboard</span>
+            </Link>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+
+        {items.map((item) => (
           <BreadcrumbItem key={item.href}>
-            {index > 0 && <BreadcrumbSeparator />}
+            <BreadcrumbSeparator />
             {item.isLast ? (
               <BreadcrumbPage>{item.label}</BreadcrumbPage>
             ) : (
