@@ -1,7 +1,6 @@
 import { hasAnyAdmin } from "@/lib/admin";
 import { redirect } from "next/navigation";
-import AdminSidebar from "@/components/app-components/AdminSidebar";
-import AdminHeader from "@/components/app-components/AdminHeader";
+import { AdminShell } from "@/components/admin/dashboard";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -40,35 +39,55 @@ export default async function AdminLayout({
     redirect("/unauthorized");
   }
 
-  // Fetch all published pages for sidebar navigation
-  const pages = await prisma.page.findMany({
-    where: { isPublished: true },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      type: true,
-      showInHeader: true,
-      showInFooter: true,
-      headerOrder: true,
-      footerOrder: true,
+  // Fetch site settings for branding
+  const siteSettingsData = await prisma.siteSettings.findMany({
+    where: {
+      key: {
+        in: ["store_name", "store_logo_url"],
+      },
     },
-    orderBy: { title: "asc" },
+    select: {
+      key: true,
+      value: true,
+    },
+  });
+
+  const siteSettings = siteSettingsData.reduce(
+    (acc, { key, value }) => {
+      acc[key] = value;
+      return acc;
+    },
+    {} as Record<string, string>
+  );
+
+  const storeName = siteSettings["store_name"] || "Admin Dashboard";
+  const storeLogoUrl = siteSettings["store_logo_url"] || "";
+
+  // Fetch active social links
+  const socialLinks = await prisma.socialLink.findMany({
+    where: { isActive: true },
+    select: {
+      platform: true,
+      url: true,
+      icon: true,
+      customIconUrl: true,
+      useCustomIcon: true,
+    },
+    orderBy: { order: "asc" },
   });
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background fixed inset-0">
-      {/* Sidebar */}
-      <AdminSidebar pages={pages} />
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Admin Header */}
-        <AdminHeader user={user} />
-
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6 scrollbar-gutter-stable">{children}</main>
-      </div>
-    </div>
+    <AdminShell
+      user={{
+        name: user.name,
+        email: user.email,
+        image: user.image,
+      }}
+      storeName={storeName}
+      storeLogoUrl={storeLogoUrl}
+      socialLinks={socialLinks}
+    >
+      {children}
+    </AdminShell>
   );
 }

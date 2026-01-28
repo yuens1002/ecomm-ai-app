@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import { PageTitle } from "@/components/admin/PageTitle";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useBreadcrumb } from "@/components/admin/dashboard";
 import { MenuBuilderProvider, useMenuBuilder } from "./MenuBuilderProvider";
 import { MenuNavBar } from "./components/MenuNavBar";
 import { MenuSettingsDialog } from "./components/MenuSettingsDialog";
@@ -16,7 +18,22 @@ import { MenuTableRenderer as MenuTable } from "./components/table-views/MenuTab
  * Sub-components use useMenuBuilder() to get what they need.
  */
 function MenuBuilderContent() {
-  const { isLoading, error } = useMenuBuilder();
+  const { isLoading, error, builder, labels, categories } = useMenuBuilder();
+
+  // Compute breadcrumb items based on current view
+  const breadcrumbItems = useMemo(() => {
+    if (builder.currentView === "label" && builder.currentLabelId) {
+      const label = labels.find((l) => l.id === builder.currentLabelId);
+      if (label) return [{ label: label.name }];
+    }
+    if (builder.currentView === "category" && builder.currentCategoryId) {
+      const category = categories.find((c) => c.id === builder.currentCategoryId);
+      if (category) return [{ label: category.name }];
+    }
+    return [];
+  }, [builder.currentView, builder.currentLabelId, builder.currentCategoryId, labels, categories]);
+
+  useBreadcrumb(breadcrumbItems);
 
   // Show loading state
   if (isLoading) {
