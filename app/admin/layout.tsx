@@ -1,6 +1,6 @@
 import { hasAnyAdmin } from "@/lib/admin";
 import { redirect } from "next/navigation";
-import AdminShell from "@/components/app-components/AdminShell";
+import { AdminShell } from "@/components/admin/dashboard";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 

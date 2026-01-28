@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import SocialLinks from "./SocialLinks";
+import SocialLinks from "@/components/app-components/SocialLinks";
 
 interface SocialLink {
   platform: string;
@@ -18,7 +18,7 @@ interface AdminFooterProps {
 
 const GITHUB_ISSUES_URL = "https://github.com/yuens1002/ecomm-ai-app/issues";
 
-export default function AdminFooter({
+export function AdminFooter({
   storeName,
   socialLinks,
 }: AdminFooterProps) {

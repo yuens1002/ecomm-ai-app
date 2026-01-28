@@ -700,23 +700,30 @@ function ProductAddOnsClient({ addOns, products }) {
 - Public users continue to sign in via the existing public flow.
 - No redirect loops between admin layout and auth pages.
 
-### Admin Dashboard Reorganization (Shadcn Dashboard Shell Migration)
+### Admin Dashboard Redesign (Shadcn Dashboard Shell)
 
 **Status**: Complete ✅
 **Priority**: High
-**Completed**: January 27, 2026 (v0.74.0)
-**Description**: Added breadcrumb navigation to admin header following shadcn dashboard-shell pattern.
+**Completed**: January 28, 2026 (v0.75.0)
+**Description**: Complete redesign replacing sidebar layout with top navbar layout inspired by shadcn dashboard-shell-04.
 
 **Implemented:**
-- [x] AdminBreadcrumb component with dynamic route parsing
-- [x] Breadcrumb header navigation across all admin pages
-- [x] Human-readable labels for all admin sections
-- [x] Clickable navigation links (except current page)
+- [x] Top sticky navbar with dropdown menus for all admin sections
+- [x] Mobile drawer navigation (Sheet component) for responsive layouts
+- [x] Footer with branding, legal links, and social icons
+- [x] Dynamic breadcrumb with `useBreadcrumb` hook for entity names
+- [x] StoreBrand component for logo + store name display
+- [x] Theme toggle and avatar dropdown with user menu
+- [x] Centralized nav config in `lib/admin-nav-config.ts`
 
-**Existing features retained:**
-- Collapsible sidebar (AdminSidebar.tsx)
-- Theme toggle and user menu (AdminHeader.tsx)
-- Mobile-responsive icon-only collapse
+**Component Architecture:**
+- All dashboard components consolidated in `components/admin/dashboard/`
+- Barrel exports via `index.ts` for clean imports
+- BreadcrumbContext with single declarative `useBreadcrumb(items)` API
+
+**Removed:**
+- Old sidebar-based layout (AdminSidebar.tsx, AdminHeader.tsx)
+- Components relocated from `components/app-components/` to dedicated dashboard directory
 
 ---
 
@@ -1644,4 +1651,4 @@ Requires separate feature branch for proper design, implementation, and testing.
 
 ---
 
-_Last Updated: January 27, 2026_
+_Last Updated: January 28, 2026_

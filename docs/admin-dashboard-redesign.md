@@ -2,7 +2,7 @@
 
 **Created:** 2026-01-27
 **Branch:** `feat/shadcn-dashboard`
-**Status:** Planning
+**Status:** Complete
 
 ---
 
@@ -38,8 +38,8 @@ Replace the current sidebar-based admin layout with a top navbar layout inspired
 | | Analytics | `/admin/analytics` |
 | **Products** | Coffees | `/admin/products` |
 | | Merch | `/admin/merch` |
-| | Categories | `/admin/product-menu?view=categories` |
-| | Labels | `/admin/product-menu?view=labels` |
+| | Categories | `/admin/product-menu?view=all-categories` |
+| | Labels | `/admin/product-menu?view=all-labels` |
 | | Menu | `/admin/product-menu?view=menu` |
 | **Orders** | All Orders | `/admin/orders` |
 | | Subscriptions | *(coming soon)* |
@@ -118,11 +118,14 @@ Replace the current sidebar-based admin layout with a top navbar layout inspired
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| `AdminTopNav.tsx` | `components/app-components/` | Main top navbar |
-| `AdminNavDropdown.tsx` | `components/app-components/` | Reusable dropdown for nav items |
-| `AdminMobileDrawer.tsx` | `components/app-components/` | Mobile navigation drawer |
-| `AdminFooter.tsx` | `components/app-components/` | Footer with branding/legal/social |
-| `AdminShell.tsx` | `components/app-components/` | Layout wrapper combining all pieces |
+| `AdminTopNav.tsx` | `components/admin/dashboard/` | Main top navbar |
+| `AdminMobileDrawer.tsx` | `components/admin/dashboard/` | Mobile navigation drawer |
+| `AdminFooter.tsx` | `components/admin/dashboard/` | Footer with branding/legal/social |
+| `AdminShell.tsx` | `components/admin/dashboard/` | Layout wrapper combining all pieces |
+| `AdminBreadcrumb.tsx` | `components/admin/dashboard/` | Route-based breadcrumb with dynamic items |
+| `StoreBrand.tsx` | `components/admin/dashboard/` | Logo + store name branding component |
+| `BreadcrumbContext.tsx` | `components/admin/dashboard/` | Context + `useBreadcrumb` hook for dynamic items |
+| `index.ts` | `components/admin/dashboard/` | Barrel exports for all dashboard components |
 
 ### Components to Modify
 
@@ -142,37 +145,32 @@ Replace the current sidebar-based admin layout with a top navbar layout inspired
 
 ## Implementation Steps
 
-### Phase 1: Core Shell Components
-1. [ ] Create `lib/admin-nav-config.ts` with centralized nav structure
-2. [ ] Create `AdminNavDropdown.tsx` for reusable dropdown pattern
-3. [ ] Create `AdminTopNav.tsx` with logo, nav items, theme toggle, avatar
-4. [ ] Create `AdminFooter.tsx` with responsive layout
-5. [ ] Create `AdminShell.tsx` to compose navbar + content + footer
+### Phase 1: Core Shell Components ✅
+1. [x] Create `lib/admin-nav-config.ts` with centralized nav structure
+2. [x] Create `AdminTopNav.tsx` with logo, nav items, theme toggle, avatar
+3. [x] Create `AdminFooter.tsx` with responsive layout
+4. [x] Create `AdminShell.tsx` to compose navbar + content + footer
 
-**Commit:** `feat(admin): add core shell components for dashboard redesign`
+### Phase 2: Integration & Navigation Logic ✅
+5. [x] Update `app/admin/layout.tsx` to use new AdminShell
+6. [x] Implement dropdown active states (highlight current section)
+7. [x] Update `AdminBreadcrumb.tsx` to hide on `/admin`
+8. [x] Remove old AdminSidebar and AdminHeader
 
-### Phase 2: Integration & Navigation Logic
-6. [ ] Update `app/admin/layout.tsx` to use new AdminShell
-7. [ ] Implement dropdown active states (highlight current section)
-8. [ ] Update `AdminBreadcrumb.tsx` to hide on `/admin`
-9. [ ] Remove old AdminSidebar and AdminHeader
+### Phase 3: Mobile/Responsive ✅
+9. [x] Create `AdminMobileDrawer.tsx` using Sheet component
+10. [x] Add responsive breakpoints to AdminTopNav (hamburger trigger)
+11. [x] Implement stacked footer for mobile
 
-**Commit:** `feat(admin): integrate new shell layout and remove sidebar`
+### Phase 4: Validation & Polish ✅
+12. [x] Run full test suite (`npm run test:ci`)
+13. [x] Run typecheck (`npm run typecheck`)
+14. [x] Manual testing and bug fixes
 
-### Phase 3: Mobile/Responsive
-10. [ ] Create `AdminMobileDrawer.tsx` using Sheet component
-11. [ ] Add responsive breakpoints to AdminTopNav (hamburger trigger)
-12. [ ] Implement stacked footer for mobile
-
-**Commit:** `feat(admin): add mobile drawer and responsive layout`
-
-### Phase 4: Validation & Polish
-13. [ ] Run full test suite (`npm run test:ci`)
-14. [ ] Run typecheck (`npm run typecheck`)
-15. [ ] Manual testing checklist (see below)
-16. [ ] Fix any issues found
-
-**Commit:** `fix(admin): polish and bug fixes for dashboard shell`
+### Phase 5: Component Relocation ✅
+15. [x] Relocate dashboard components from `components/app-components/` to `components/admin/dashboard/`
+16. [x] Create barrel exports via `index.ts`
+17. [x] Consolidate `useBreadcrumb` hook into BreadcrumbContext (single declarative API)
 
 ---
 
@@ -298,41 +296,49 @@ const adminNavConfig: NavItem[] = [
 
 ### New Files
 ```
-components/app-components/AdminTopNav.tsx
-components/app-components/AdminNavDropdown.tsx
-components/app-components/AdminMobileDrawer.tsx
-components/app-components/AdminFooter.tsx
-components/app-components/AdminShell.tsx
+components/admin/dashboard/AdminTopNav.tsx
+components/admin/dashboard/AdminMobileDrawer.tsx
+components/admin/dashboard/AdminFooter.tsx
+components/admin/dashboard/AdminShell.tsx
+components/admin/dashboard/AdminBreadcrumb.tsx
+components/admin/dashboard/StoreBrand.tsx
+components/admin/dashboard/BreadcrumbContext.tsx
+components/admin/dashboard/index.ts
 lib/admin-nav-config.ts
 ```
 
 ### Modified Files
 ```
 app/admin/layout.tsx
-components/app-components/AdminBreadcrumb.tsx
 ```
 
 ### Removed Files
 ```
 components/app-components/AdminSidebar.tsx
 components/app-components/AdminHeader.tsx
+components/app-components/AdminBreadcrumb.tsx (moved to dashboard/)
+components/app-components/AdminTopNav.tsx (moved to dashboard/)
+components/app-components/AdminMobileDrawer.tsx (moved to dashboard/)
+components/app-components/AdminFooter.tsx (moved to dashboard/)
+components/app-components/AdminShell.tsx (moved to dashboard/)
 ```
 
 ---
 
 ## Success Criteria
 
-- [ ] Top navbar displays correctly on desktop
-- [ ] All 6 dropdowns work with correct links
-- [ ] Avatar dropdown shows Profile, Password, Logout
-- [ ] Theme toggle works
-- [ ] `[<]` opens public site in new window
-- [ ] Breadcrumb hidden on Overview, visible elsewhere
-- [ ] Footer displays with correct links
-- [ ] Social icons load from site settings
-- [ ] Mobile drawer works on small screens
-- [ ] All existing admin functionality preserved
-- [ ] No regressions in admin pages
+- [x] Top navbar displays correctly on desktop
+- [x] All nav dropdowns work with correct links
+- [x] Avatar dropdown shows Profile, Password, Logout
+- [x] Theme toggle works
+- [x] `[<]` opens public site in new window
+- [x] Breadcrumb hidden on Overview, visible elsewhere
+- [x] Footer displays with correct links
+- [x] Social icons load from site settings
+- [x] Mobile drawer works on small screens
+- [x] All existing admin functionality preserved
+- [x] No regressions in admin pages
+- [x] Dashboard components consolidated in `components/admin/dashboard/`
 
 ---
 

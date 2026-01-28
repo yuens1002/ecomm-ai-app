@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
-import type { HistoryEntry, SelectedEntityKind, ViewType } from "../types/builder-state";
+import { ALL_VIEWS, type HistoryEntry, type SelectedEntityKind, type ViewType } from "../types/builder-state";
 import { getActionableKind } from "../types/identity-registry";
 
 type ActiveRow = {
@@ -26,7 +26,8 @@ export function useMenuBuilderState() {
 
   // ==================== NAVIGATION STATE (URL-BACKED) ====================
   // Persists across refresh via URL params
-  const currentView = (searchParams.get("view") as ViewType) || "menu";
+  const viewParam = searchParams.get("view");
+  const currentView: ViewType = ALL_VIEWS.includes(viewParam as ViewType) ? (viewParam as ViewType) : "menu";
   const currentLabelId = searchParams.get("labelId") || undefined;
   const currentCategoryId = searchParams.get("categoryId") || undefined;
 

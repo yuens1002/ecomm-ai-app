@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.75.0 - 2026-01-28
+
+### Features
+- **Admin Dashboard Shell**: Complete redesign with top navbar layout
+  - Top sticky navbar with dropdown menus for all admin sections
+  - Mobile drawer navigation for responsive layouts
+  - Footer with branding, legal links, and social icons
+  - Dynamic breadcrumb with `useBreadcrumb` hook for entity names
+
+### Refactor
+- **Dashboard Components**: Relocated and consolidated into `components/admin/dashboard/`
+  - AdminShell, AdminTopNav, AdminMobileDrawer, AdminBreadcrumb, AdminFooter, StoreBrand
+  - BreadcrumbContext with single declarative `useBreadcrumb(items)` API
+  - Barrel exports via `index.ts` for clean imports
+  - Removed old sidebar-based layout components
+
 ## 0.74.0 - 2026-01-27
 
 ### Features

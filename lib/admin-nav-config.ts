@@ -38,8 +38,8 @@ export const adminNavConfig: NavItem[] = [
     children: [
       { label: "Coffees", href: "/admin/products" },
       { label: "Merch", href: "/admin/merch" },
-      { label: "Categories", href: "/admin/product-menu?view=categories" },
-      { label: "Labels", href: "/admin/product-menu?view=labels" },
+      { label: "Categories", href: "/admin/product-menu?view=all-categories" },
+      { label: "Labels", href: "/admin/product-menu?view=all-labels" },
       { label: "Menu", href: "/admin/product-menu?view=menu" },
     ],
   },
@@ -83,6 +83,33 @@ export const adminNavConfig: NavItem[] = [
 ];
 
 /**
+ * Check if a nav child link is active based on current URL
+ * Handles both pathname-only and query param URLs
+ */
+export function isNavChildActive(
+  child: NavChild,
+  pathname: string,
+  searchParams?: URLSearchParams
+): boolean {
+  // Exact match for admin overview
+  if (child.href === "/admin") {
+    return pathname === "/admin";
+  }
+
+  // For links with query params, compare the full URL
+  const childHasQuery = child.href.includes("?");
+  if (childHasQuery && searchParams) {
+    const currentUrl = searchParams.toString()
+      ? `${pathname}?${searchParams.toString()}`
+      : pathname;
+    return currentUrl === child.href;
+  }
+
+  // For links without query params, use startsWith on pathname
+  return pathname.startsWith(child.href.split("?")[0]);
+}
+
+/**
  * Check if a nav item or any of its children is active based on current pathname
  */
 export function isNavItemActive(item: NavItem, pathname: string): boolean {
@@ -91,17 +118,7 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
   }
 
   if (item.children) {
-    return item.children.some((child) => {
-      // Exact match for overview
-      if (child.href === "/admin" && pathname === "/admin") {
-        return true;
-      }
-      // For other routes, check if pathname starts with href (but not /admin itself)
-      if (child.href !== "/admin" && pathname.startsWith(child.href.split("?")[0])) {
-        return true;
-      }
-      return false;
-    });
+    return item.children.some((child) => isNavChildActive(child, pathname));
   }
 
   return false;
@@ -112,17 +129,10 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
  */
 export function getActiveChild(
   item: NavItem,
-  pathname: string
+  pathname: string,
+  searchParams?: URLSearchParams
 ): NavChild | undefined {
   if (!item.children) return undefined;
 
-  return item.children.find((child) => {
-    if (child.href === "/admin" && pathname === "/admin") {
-      return true;
-    }
-    if (child.href !== "/admin" && pathname.startsWith(child.href.split("?")[0])) {
-      return true;
-    }
-    return false;
-  });
+  return item.children.find((child) => isNavChildActive(child, pathname, searchParams));
 }

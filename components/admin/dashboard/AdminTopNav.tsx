@@ -1,9 +1,8 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
 import { ArrowLeft, Moon, Sun, LogOut, User, KeyRound, ChevronDown } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -18,8 +17,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { adminNavConfig, isNavItemActive, NavItem } from "@/lib/admin-nav-config";
-import AdminMobileDrawer from "./AdminMobileDrawer";
+import { adminNavConfig, isNavItemActive, isNavChildActive, NavItem } from "@/lib/admin-nav-config";
+import { AdminMobileDrawer } from "./AdminMobileDrawer";
+import { StoreBrand } from "./StoreBrand";
 
 interface AdminTopNavProps {
   user: {
@@ -31,7 +31,7 @@ interface AdminTopNavProps {
   storeLogoUrl: string;
 }
 
-function NavDropdown({ item, pathname }: { item: NavItem; pathname: string }) {
+function NavDropdown({ item, pathname, searchParams }: { item: NavItem; pathname: string; searchParams: URLSearchParams }) {
   const isActive = isNavItemActive(item, pathname);
   const Icon = item.icon;
 
@@ -62,10 +62,7 @@ function NavDropdown({ item, pathname }: { item: NavItem; pathname: string }) {
       >
         <ul>
           {item.children?.map((child, index) => {
-            const isChildActive =
-              child.href === "/admin"
-                ? pathname === "/admin"
-                : pathname.startsWith(child.href.split("?")[0]);
+            const isChildActive = isNavChildActive(child, pathname, searchParams);
 
             // Render section header if present
             const sectionHeader = child.section ? (
@@ -120,13 +117,14 @@ function NavDropdown({ item, pathname }: { item: NavItem; pathname: string }) {
   );
 }
 
-export default function AdminTopNav({
+export function AdminTopNav({
   user,
   storeName,
   storeLogoUrl,
 }: AdminTopNavProps) {
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const initials =
     user.name
@@ -140,18 +138,20 @@ export default function AdminTopNav({
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Left: Mobile drawer + Back arrow + Logo/Brand */}
+        <div className="relative flex h-16 items-center justify-between">
+          {/* Left section */}
           <div className="flex items-center">
-            {/* Mobile menu drawer (shown on mobile/tablet) */}
-            <AdminMobileDrawer storeName={storeName} />
+            {/* Mobile menu drawer - negative margin offsets button's internal padding to align icon to edge */}
+            <div className="-ml-4 lg:hidden">
+              <AdminMobileDrawer storeName={storeName} />
+            </div>
 
-            {/* Back to public site - negative margin so arrow aligns with content edge */}
+            {/* Back to public site - desktop only */}
             <Button
               variant="ghost"
               size="icon"
               asChild
-              className="h-11 w-11 -ml-2.5"
+              className="hidden lg:flex h-11 w-11 -ml-2.5"
               title="Open public site"
             >
               <Link href="/" target="_blank" rel="noopener noreferrer">
@@ -160,29 +160,22 @@ export default function AdminTopNav({
               </Link>
             </Button>
 
-            {/* Logo OR Store Name (not both) */}
-            <div className="flex items-center ml-1">
-              {storeLogoUrl ? (
-                <Image
-                  src={storeLogoUrl}
-                  alt={storeName}
-                  width={32}
-                  height={32}
-                  className="h-8 w-8 object-contain"
-                />
-              ) : (
-                <span className="font-semibold text-lg hidden sm:inline">
-                  {storeName}
-                </span>
-              )}
+            {/* Logo/Brand - desktop only (in left section) */}
+            <div className="hidden lg:flex items-center ml-1">
+              <StoreBrand storeName={storeName} storeLogoUrl={storeLogoUrl} />
             </div>
           </div>
 
-          {/* Center: Navigation menu (hidden on mobile) */}
+          {/* Center: Store branding for mobile/tablet - absolutely positioned */}
+          <div className="absolute left-1/2 -translate-x-1/2 lg:hidden">
+            <StoreBrand storeName={storeName} storeLogoUrl={storeLogoUrl} />
+          </div>
+
+          {/* Center: Navigation menu - desktop only */}
           <NavigationMenuPrimitive.Root className="hidden lg:flex">
             <NavigationMenuPrimitive.List className="flex items-center gap-1">
               {adminNavConfig.map((item) => (
-                <NavDropdown key={item.label} item={item} pathname={pathname} />
+                <NavDropdown key={item.label} item={item} pathname={pathname} searchParams={searchParams} />
               ))}
             </NavigationMenuPrimitive.List>
           </NavigationMenuPrimitive.Root>

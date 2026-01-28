@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Home } from "lucide-react";
 import {
   Breadcrumb,
@@ -11,6 +11,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { useBreadcrumbItems, type BreadcrumbItem as BreadcrumbItemType } from "./BreadcrumbContext";
 
 /**
  * Maps route prefixes to their parent nav category
@@ -62,6 +63,17 @@ const routeLabels: Record<string, string> = {
 };
 
 /**
+ * Maps Menu Builder view query params to labels
+ */
+const menuBuilderViewLabels: Record<string, string> = {
+  menu: "Menu",
+  "all-labels": "Labels",
+  "all-categories": "Categories",
+  label: "Label",
+  category: "Category",
+};
+
+/**
  * Get label for a route segment
  */
 function getLabel(segment: string): string {
@@ -81,8 +93,37 @@ function getLabel(segment: string): string {
     .join(" ");
 }
 
-export default function AdminBreadcrumb() {
+/**
+ * Renders breadcrumb item content based on state
+ */
+function BreadcrumbItemContent({
+  item,
+  isLast
+}: {
+  item: BreadcrumbItemType & { href?: string };
+  isLast: boolean;
+}) {
+  if (isLast) {
+    return <BreadcrumbPage>{item.label}</BreadcrumbPage>;
+  }
+
+  if (item.href) {
+    return (
+      <BreadcrumbLink asChild>
+        <Link href={item.href} className="text-muted-foreground hover:text-foreground">
+          {item.label}
+        </Link>
+      </BreadcrumbLink>
+    );
+  }
+
+  return <span className="text-muted-foreground">{item.label}</span>;
+}
+
+export function AdminBreadcrumb() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const customItems = useBreadcrumbItems();
 
   // Split pathname into segments, filtering out empty strings
   const segments = pathname.split("/").filter(Boolean);
@@ -96,15 +137,49 @@ export default function AdminBreadcrumb() {
   const firstSegment = segments[1];
   const navCategory = navCategoryMap[firstSegment];
 
+  // Check if this is the Menu Builder page with a view param
+  const isMenuBuilder = firstSegment === "product-menu";
+  const viewParam = searchParams.get("view");
+
+  // Determine if custom items will be the "last" items
+  const hasCustomItems = customItems.length > 0;
+
   // Build breadcrumb items (skip "admin" segment)
   const pageSegments = segments.slice(1);
-  const items = pageSegments.map((segment, index) => {
+  let items = pageSegments.map((segment, index) => {
     const href = "/" + segments.slice(0, index + 2).join("/");
-    const label = getLabel(segment);
-    const isLast = index === pageSegments.length - 1;
+    let label = getLabel(segment);
+    // Item is last only if there are no custom items AND it's the last segment
+    const isLast = !hasCustomItems && index === pageSegments.length - 1;
+
+    // For Menu Builder, use the view name from query param
+    if (isMenuBuilder && segment === "product-menu" && viewParam) {
+      label = menuBuilderViewLabels[viewParam] || label;
+    }
 
     return { href, label, isLast };
   });
+
+  // If on Menu Builder with a view param, show the view-specific breadcrumb
+  if (isMenuBuilder && viewParam && items.length === 1) {
+    // For label/category views, show "Labels" or "Categories" as parent
+    const parentView = viewParam === "label" ? "all-labels" : viewParam === "category" ? "all-categories" : null;
+
+    if (parentView && hasCustomItems) {
+      // Show parent view as clickable link, custom item will be the page
+      items = [{
+        href: `/admin/product-menu?view=${parentView}`,
+        label: menuBuilderViewLabels[parentView] || "Menu Builder",
+        isLast: false
+      }];
+    } else {
+      items = [{
+        href: `/admin/product-menu?view=${viewParam}`,
+        label: menuBuilderViewLabels[viewParam] || "Menu Builder",
+        isLast: !hasCustomItems
+      }];
+    }
+  }
 
   return (
     <Breadcrumb className="mb-4">
@@ -134,11 +209,17 @@ export default function AdminBreadcrumb() {
           <span key={item.href} className="contents">
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              {item.isLast ? (
-                <BreadcrumbPage>{item.label}</BreadcrumbPage>
-              ) : (
-                <span className="text-muted-foreground">{item.label}</span>
-              )}
+              <BreadcrumbItemContent item={item} isLast={item.isLast} />
+            </BreadcrumbItem>
+          </span>
+        ))}
+
+        {/* Custom items from context (e.g., specific entity names) */}
+        {customItems.map((item, index) => (
+          <span key={`custom-${index}`} className="contents">
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbItemContent item={item} isLast={index === customItems.length - 1} />
             </BreadcrumbItem>
           </span>
         ))}
