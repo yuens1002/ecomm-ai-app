@@ -35,15 +35,15 @@ export function AdminShell({
 }: AdminShellProps) {
   return (
     <BreadcrumbProvider>
-      <div className="min-h-screen flex flex-col bg-muted/40">
+      <div className="h-dvh flex flex-col bg-muted/40">
         <AdminTopNav
           user={user}
           storeName={storeName}
           storeLogoUrl={storeLogoUrl}
         />
 
-        {/* Main content area */}
-        <main className="flex-1">
+        {/* Main content area - takes remaining space, scrolls internally */}
+        <main className="flex-1 min-h-0 overflow-y-auto">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
             <AdminBreadcrumb />
             {children}

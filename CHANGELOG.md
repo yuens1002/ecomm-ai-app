@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.75.1 - 2026-01-28
+
+### Bug Fixes
+- **Dashboard layout**: Fixed scrollbar and footer positioning
+  - Footer now fixed at viewport bottom using flexbox with `h-dvh`
+  - Content area scrolls independently without overlapping footer
+  - Added `scrollbar-gutter: stable` to prevent layout shift
+- **Mobile drawer**: Redesigned with collapsible sections, icons, logo support
+  - Sections expand/collapse based on current page
+  - Flattened "More" into separate Management/Settings sections
+  - Fixed hamburger icon alignment
+- **Dashboard tabs**: Horizontal scroll on tablet instead of wrap
+- **Menu Builder**: Fixed table header hover border color, removed action bar background, added border to dropdown buttons
+- **Nav config**: Removed "coming soon" label from Subscriptions
+
 ## 0.75.0 - 2026-01-28
 
 ### Features

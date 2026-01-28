@@ -43,7 +43,7 @@ export function ActionDropdownButton({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             disabled={disabled}
             aria-label={ariaLabel || tooltip}
@@ -62,7 +62,7 @@ export function ActionDropdownButton({
       <Tooltip open={isDropdownOpen ? false : undefined}>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" aria-label={ariaLabel || tooltip}>
+            <Button variant="outline" size="sm" aria-label={ariaLabel || tooltip}>
               <Icon className="size-4 mr-2" />
               {label}
               <ChevronDown className="size-3 ml-1" />

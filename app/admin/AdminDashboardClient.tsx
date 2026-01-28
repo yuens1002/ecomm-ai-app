@@ -66,28 +66,28 @@ export default function AdminDashboardClient({
         onValueChange={setActiveTab}
         className="space-y-6"
       >
-        <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:inline-grid">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
+        <TabsList className="h-auto inline-flex w-full overflow-x-auto scrollbar-hide gap-1 p-1 lg:w-auto">
+          <TabsTrigger value="overview" className="flex items-center gap-2 px-3 py-2">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2">
+          <TabsTrigger value="users" className="flex items-center gap-2 px-3 py-2">
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Users</span>
           </TabsTrigger>
-          <TabsTrigger value="orders" className="flex items-center gap-2">
+          <TabsTrigger value="orders" className="flex items-center gap-2 px-3 py-2">
             <ShoppingCart className="h-4 w-4" />
             <span className="hidden sm:inline">Orders</span>
           </TabsTrigger>
-          <TabsTrigger value="products" className="flex items-center gap-2">
+          <TabsTrigger value="products" className="flex items-center gap-2 px-3 py-2">
             <Package className="h-4 w-4" />
             <span className="hidden sm:inline">Products</span>
           </TabsTrigger>
-          <TabsTrigger value="newsletter" className="flex items-center gap-2">
+          <TabsTrigger value="newsletter" className="flex items-center gap-2 px-3 py-2">
             <Mail className="h-4 w-4" />
             <span className="hidden sm:inline">Newsletter</span>
           </TabsTrigger>
-          <TabsTrigger value="profile" className="flex items-center gap-2">
+          <TabsTrigger value="profile" className="flex items-center gap-2 px-3 py-2">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">Profile</span>
           </TabsTrigger>

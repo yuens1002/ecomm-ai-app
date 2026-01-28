@@ -462,7 +462,7 @@ export function MenuActionBar() {
 
   return (
     <TooltipProvider>
-      <div className="flex items-center justify-between gap-4 px-0 bg-background">
+      <div className="flex items-center justify-between gap-4 px-0">
         {/* LEFT SIDE */}
         <div className="flex items-center gap-2">
           {leftActions.map((action, index) => renderAction(action, index))}

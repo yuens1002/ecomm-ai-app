@@ -1,24 +1,24 @@
-import { Table as ShadcnTable } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import * as React from "react";
 
-type TableViewWrapperProps = React.ComponentPropsWithoutRef<typeof ShadcnTable>;
+type TableViewWrapperProps = React.HTMLAttributes<HTMLTableElement>;
 
 /**
  * Wrapper for table views that provides consistent table styling.
- * Each table view should wrap its content with this component.
  */
 export const TableViewWrapper = React.forwardRef<
   HTMLTableElement,
   TableViewWrapperProps
 >(({ className, children, ...props }, ref) => (
-  <ShadcnTable
-    ref={ref}
-    className={cn("table-fixed min-w-[660px] w-full mt-4", className)}
-    {...props}
-  >
-    {children}
-  </ShadcnTable>
+  <div className="relative w-full mt-4">
+    <table
+      ref={ref}
+      className={cn("w-full caption-bottom text-sm table-fixed", className)}
+      {...props}
+    >
+      {children}
+    </table>
+  </div>
 ));
 
 TableViewWrapper.displayName = "TableViewWrapper";

@@ -1,12 +1,5 @@
 "use client";
 
-import * as React from "react";
-import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
-import { ArrowLeft, Moon, Sun, LogOut, User, KeyRound, ChevronDown } from "lucide-react";
-import { useTheme } from "next-themes";
-import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,8 +9,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { adminNavConfig, isNavChildActive, isNavItemActive, NavItem } from "@/lib/admin-nav-config";
 import { cn } from "@/lib/utils";
-import { adminNavConfig, isNavItemActive, isNavChildActive, NavItem } from "@/lib/admin-nav-config";
+import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
+import { ArrowLeft, ChevronDown, KeyRound, LogOut, Moon, Sun, User } from "lucide-react";
+import { signOut } from "next-auth/react";
+import { useTheme } from "next-themes";
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+import * as React from "react";
 import { AdminMobileDrawer } from "./AdminMobileDrawer";
 import { StoreBrand } from "./StoreBrand";
 
@@ -31,7 +31,15 @@ interface AdminTopNavProps {
   storeLogoUrl: string;
 }
 
-function NavDropdown({ item, pathname, searchParams }: { item: NavItem; pathname: string; searchParams: URLSearchParams }) {
+function NavDropdown({
+  item,
+  pathname,
+  searchParams,
+}: {
+  item: NavItem;
+  pathname: string;
+  searchParams: URLSearchParams;
+}) {
   const isActive = isNavItemActive(item, pathname);
   const Icon = item.icon;
 
@@ -65,14 +73,16 @@ function NavDropdown({ item, pathname, searchParams }: { item: NavItem; pathname
             const isChildActive = isNavChildActive(child, pathname, searchParams);
 
             // Render section header if present
+            const SectionIcon = child.sectionIcon;
             const sectionHeader = child.section ? (
               <li
                 key={`section-${child.section}`}
                 className={cn(
-                  "px-2 py-1.5 text-xs font-medium text-muted-foreground",
+                  "flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-muted-foreground",
                   index > 0 && "mt-2 border-t pt-2"
                 )}
               >
+                {SectionIcon && <SectionIcon className="h-3.5 w-3.5" />}
                 {child.section}
               </li>
             ) : null;
@@ -117,11 +127,7 @@ function NavDropdown({ item, pathname, searchParams }: { item: NavItem; pathname
   );
 }
 
-export function AdminTopNav({
-  user,
-  storeName,
-  storeLogoUrl,
-}: AdminTopNavProps) {
+export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps) {
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -141,9 +147,9 @@ export function AdminTopNav({
         <div className="relative flex h-16 items-center justify-between">
           {/* Left section */}
           <div className="flex items-center">
-            {/* Mobile menu drawer - negative margin offsets button's internal padding to align icon to edge */}
-            <div className="-ml-4 lg:hidden">
-              <AdminMobileDrawer storeName={storeName} />
+            {/* Mobile menu drawer */}
+            <div className="lg:hidden">
+              <AdminMobileDrawer storeName={storeName} storeLogoUrl={storeLogoUrl} />
             </div>
 
             {/* Back to public site - desktop only */}
@@ -151,7 +157,7 @@ export function AdminTopNav({
               variant="ghost"
               size="icon"
               asChild
-              className="hidden lg:flex h-11 w-11 -ml-2.5"
+              className="hidden lg:flex h-11 w-11 -ml-3.5"
               title="Open public site"
             >
               <Link href="/" target="_blank" rel="noopener noreferrer">
@@ -175,7 +181,12 @@ export function AdminTopNav({
           <NavigationMenuPrimitive.Root className="hidden lg:flex">
             <NavigationMenuPrimitive.List className="flex items-center gap-1">
               {adminNavConfig.map((item) => (
-                <NavDropdown key={item.label} item={item} pathname={pathname} searchParams={searchParams} />
+                <NavDropdown
+                  key={item.label}
+                  item={item}
+                  pathname={pathname}
+                  searchParams={searchParams}
+                />
               ))}
             </NavigationMenuPrimitive.List>
           </NavigationMenuPrimitive.Root>
@@ -208,28 +219,20 @@ export function AdminTopNav({
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {user.name}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
-                    </p>
+                    <p className="text-sm font-medium leading-none">{user.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem disabled className="gap-2 opacity-50">
                   <User className="h-4 w-4" />
                   Profile
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    (coming soon)
-                  </span>
+                  <span className="ml-auto text-xs text-muted-foreground">(coming soon)</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem disabled className="gap-2 opacity-50">
                   <KeyRound className="h-4 w-4" />
                   Password
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    (coming soon)
-                  </span>
+                  <span className="ml-auto text-xs text-muted-foreground">(coming soon)</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
