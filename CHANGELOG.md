@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.75.2 - 2026-01-28
+
+### Bug Fixes
+- **Navigation state**: Unified navigation active state logic into single source of truth
+  - Created core `matchesNavChild` function for all URL matching
+  - Added `findActiveNavigation` for breadcrumb and multi-component use
+  - Fixed Dashboard and Products both showing active simultaneously
+  - Consistent behavior across top nav, mobile nav, and breadcrumbs
+- **Scrollbar layout shift**: Fixed page jog during navigation
+  - Set `overflow-y: scroll` on html to always show scrollbar
+  - Override Radix scroll lock padding globally
+- **Dropdown scroll lock**: Added `modal={false}` to all admin dropdowns/context menus to prevent body padding on open
+
 ## 0.75.1 - 2026-01-28
 
 ### Bug Fixes

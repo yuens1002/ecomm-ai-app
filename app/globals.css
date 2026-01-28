@@ -130,10 +130,16 @@ We define CSS variables for each theme.
     @apply border-border outline-ring/50;
   }
   html {
-    scrollbar-gutter: stable;
+    overflow-y: scroll;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Override Radix scroll lock padding - we always show scrollbar so no compensation needed */
+  body[data-scroll-locked] {
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+    --removed-body-scroll-bar-size: 0px !important;
   }
   button:not(:disabled),
   [role="button"]:not(:disabled) {
@@ -219,9 +225,6 @@ We define CSS variables for each theme.
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
-  }
-  .scrollbar-gutter-stable {
-    scrollbar-gutter: stable;
   }
 }
 

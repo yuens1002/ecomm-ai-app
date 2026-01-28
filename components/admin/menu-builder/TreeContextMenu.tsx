@@ -33,7 +33,7 @@ interface TreeContextMenuProps {
 
 export function TreeContextMenu({ trigger, actions }: TreeContextMenuProps) {
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         {actions.map((action, i) => (

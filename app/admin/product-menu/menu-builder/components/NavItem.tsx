@@ -52,7 +52,7 @@ export function NavItem({
 
   if (hasDropdown && children) {
     return (
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>{content}</DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"

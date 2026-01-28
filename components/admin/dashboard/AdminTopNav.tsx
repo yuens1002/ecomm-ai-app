@@ -9,10 +9,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { adminNavConfig, isNavChildActive, isNavItemActive, NavItem } from "@/lib/admin-nav-config";
+import { getDesktopNavConfig, isNavChildActive, isNavItemActive, NavItem } from "@/lib/admin-nav-config";
 import { cn } from "@/lib/utils";
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
-import { ArrowLeft, ChevronDown, KeyRound, LogOut, Moon, Sun, User } from "lucide-react";
+import { ArrowLeftIcon, ChevronDown, KeyRound, LogOut, Moon, Sun, User } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
@@ -40,7 +40,7 @@ function NavDropdown({
   pathname: string;
   searchParams: URLSearchParams;
 }) {
-  const isActive = isNavItemActive(item, pathname);
+  const isActive = isNavItemActive(item, pathname, searchParams);
   const Icon = item.icon;
 
   return (
@@ -48,8 +48,9 @@ function NavDropdown({
       <NavigationMenuPrimitive.Trigger
         className={cn(
           "group inline-flex h-auto items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-          "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none",
-          "data-[state=open]:bg-accent",
+          "hover:bg-accent/50 hover:text-accent-foreground",
+          "focus-visible:outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+          "data-[state=open]:bg-accent/50",
           isActive && "bg-accent text-accent-foreground"
         )}
       >
@@ -131,6 +132,10 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { visible: visibleNavItems, overflow: overflowNavItem } = React.useMemo(
+    () => getDesktopNavConfig(),
+    []
+  );
 
   const initials =
     user.name
@@ -146,28 +151,26 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="relative flex h-16 items-center justify-between">
           {/* Left section */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             {/* Mobile menu drawer */}
             <div className="lg:hidden">
               <AdminMobileDrawer storeName={storeName} storeLogoUrl={storeLogoUrl} />
             </div>
 
             {/* Back to public site - desktop only */}
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-              className="hidden lg:flex h-11 w-11 -ml-3.5"
-              title="Open public site"
+
+            <Link
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden lg:flex items-center text-muted-foreground hover:text-foreground transition-colors"
             >
-              <Link href="/" target="_blank" rel="noopener noreferrer">
-                <ArrowLeft className="h-5 w-5" />
-                <span className="sr-only">Open public site</span>
-              </Link>
-            </Button>
+              <ArrowLeftIcon className="h-4 w-4" />
+              <span className="sr-only">Open public site</span>
+            </Link>
 
             {/* Logo/Brand - desktop only (in left section) */}
-            <div className="hidden lg:flex items-center ml-1">
+            <div className="hidden lg:flex items-center">
               <StoreBrand storeName={storeName} storeLogoUrl={storeLogoUrl} />
             </div>
           </div>
@@ -179,8 +182,8 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
 
           {/* Center: Navigation menu - desktop only */}
           <NavigationMenuPrimitive.Root className="hidden lg:flex">
-            <NavigationMenuPrimitive.List className="flex items-center gap-1">
-              {adminNavConfig.map((item) => (
+            <NavigationMenuPrimitive.List className="flex items-center gap-2">
+              {visibleNavItems.map((item) => (
                 <NavDropdown
                   key={item.label}
                   item={item}
@@ -188,6 +191,14 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
                   searchParams={searchParams}
                 />
               ))}
+              {overflowNavItem && (
+                <NavDropdown
+                  key={overflowNavItem.label}
+                  item={overflowNavItem}
+                  pathname={pathname}
+                  searchParams={searchParams}
+                />
+              )}
             </NavigationMenuPrimitive.List>
           </NavigationMenuPrimitive.Root>
 
@@ -206,7 +217,7 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
             </Button>
 
             {/* Avatar Dropdown */}
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"

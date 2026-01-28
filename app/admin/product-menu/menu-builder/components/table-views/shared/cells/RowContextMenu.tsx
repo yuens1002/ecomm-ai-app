@@ -594,7 +594,7 @@ export function RowContextMenu({
   // Mixed selection: show disabled menu
   if (isMixedSelection && isInSelection) {
     return (
-      <ContextMenu onOpenChange={handleOpenChange}>
+      <ContextMenu modal={false} onOpenChange={handleOpenChange}>
         <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
         <ContextMenuContent className="w-56">
           <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
@@ -622,7 +622,7 @@ export function RowContextMenu({
   }
 
   return (
-    <ContextMenu onOpenChange={handleOpenChange}>
+    <ContextMenu modal={false} onOpenChange={handleOpenChange}>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent className="w-56">
         {/* Bulk mode header */}

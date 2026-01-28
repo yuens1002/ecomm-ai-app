@@ -68,12 +68,18 @@ export const adminNavConfig: NavItem[] = [
     ],
   },
   {
-    label: "More",
-    icon: MoreHorizontal,
+    label: "Management",
+    icon: Users,
     children: [
-      { label: "All Users", href: "/admin/users", section: "Management", sectionIcon: Users },
+      { label: "All Users", href: "/admin/users" },
       { label: "Newsletter", href: "/admin/newsletter" },
-      { label: "General", href: "/admin/settings", section: "Settings", sectionIcon: Settings },
+    ],
+  },
+  {
+    label: "Settings",
+    icon: Settings,
+    children: [
+      { label: "General", href: "/admin/settings" },
       { label: "Store Front", href: "/admin/settings/storefront" },
       { label: "Location", href: "/admin/settings/location" },
       { label: "Commerce", href: "/admin/settings/commerce" },
@@ -84,50 +90,159 @@ export const adminNavConfig: NavItem[] = [
   },
 ];
 
+/** Max nav items shown before overflow goes into "More" dropdown */
+const DESKTOP_NAV_MAX_VISIBLE = 4;
+
 /**
- * Check if a nav child link is active based on current URL
- * Handles both pathname-only and query param URLs
+ * Get desktop nav items, grouping overflow into a "More" dropdown.
  */
-export function isNavChildActive(
-  child: NavChild,
-  pathname: string,
-  searchParams?: URLSearchParams
-): boolean {
-  // Exact match for admin overview
-  if (child.href === "/admin") {
-    return pathname === "/admin";
+export function getDesktopNavConfig(): {
+  visible: NavItem[];
+  overflow: NavItem | null;
+} {
+  if (adminNavConfig.length <= DESKTOP_NAV_MAX_VISIBLE) {
+    return { visible: adminNavConfig, overflow: null };
   }
 
-  // For links with query params, compare the full URL
-  const childHasQuery = child.href.includes("?");
-  if (childHasQuery && searchParams) {
-    const currentUrl = searchParams.toString()
-      ? `${pathname}?${searchParams.toString()}`
-      : pathname;
-    return currentUrl === child.href;
-  }
+  const visible = adminNavConfig.slice(0, DESKTOP_NAV_MAX_VISIBLE);
+  const overflowItems = adminNavConfig.slice(DESKTOP_NAV_MAX_VISIBLE);
 
-  // For links without query params, use startsWith on pathname
-  return pathname.startsWith(child.href.split("?")[0]);
+  const overflowChildren: NavChild[] = overflowItems.flatMap((item) =>
+    (item.children ?? []).map((child, index) => ({
+      ...child,
+      ...(index === 0 ? { section: item.label, sectionIcon: item.icon } : {}),
+    }))
+  );
+
+  return {
+    visible,
+    overflow: {
+      label: "More",
+      icon: MoreHorizontal,
+      children: overflowChildren,
+    },
+  };
 }
 
 /**
- * Check if a nav item or any of its children is active based on current pathname
+ * Core matching logic for nav child links.
+ * Single source of truth for all navigation state.
+ *
+ * @param allowNestedMatch - When true, /admin/products/123 matches /admin/products.
+ *                           Used for parent highlighting, not for exact child highlighting.
  */
-export function isNavItemActive(item: NavItem, pathname: string): boolean {
-  if (item.href) {
-    return pathname === item.href;
+function matchesNavChild(
+  child: NavChild,
+  pathname: string,
+  searchParams?: URLSearchParams,
+  allowNestedMatch = false
+): boolean {
+  const childPathname = child.href.split("?")[0];
+
+  // Query param match (for links like /admin/product-menu?view=menu)
+  if (child.href.includes("?") && searchParams) {
+    const currentUrl = searchParams.toString()
+      ? `${pathname}?${searchParams.toString()}`
+      : pathname;
+    if (currentUrl === child.href) {
+      return true;
+    }
   }
 
-  if (item.children) {
-    return item.children.some((child) => isNavChildActive(child, pathname));
+  // Exact pathname match
+  if (pathname === childPathname) {
+    return true;
+  }
+
+  // Nested route match (e.g. /admin/products/123 matches /admin/products)
+  // But not for /admin root to avoid matching all admin routes
+  if (
+    allowNestedMatch &&
+    childPathname !== "/admin" &&
+    pathname.startsWith(childPathname + "/")
+  ) {
+    return true;
   }
 
   return false;
 }
 
 /**
- * Get the active child item for a nav item
+ * Find the active navigation match for a given URL.
+ * Returns both the parent item and specific child.
+ * This is the primary function for navigation state - use this when you need
+ * both parent and child information (e.g., breadcrumbs).
+ */
+export function findActiveNavigation(
+  pathname: string,
+  searchParams?: URLSearchParams
+): { parent: NavItem | null; child: NavChild | null } {
+  for (const item of adminNavConfig) {
+    // Direct link item (no children)
+    if (item.href && pathname === item.href) {
+      return { parent: item, child: null };
+    }
+
+    if (!item.children) continue;
+
+    // First try exact/query param match
+    const exactMatch = item.children.find((child) =>
+      matchesNavChild(child, pathname, searchParams, false)
+    );
+    if (exactMatch) {
+      return { parent: item, child: exactMatch };
+    }
+
+    // Then try nested route match
+    const nestedMatch = item.children.find((child) =>
+      matchesNavChild(child, pathname, searchParams, true)
+    );
+    if (nestedMatch) {
+      return { parent: item, child: nestedMatch };
+    }
+  }
+
+  return { parent: null, child: null };
+}
+
+/**
+ * Check if a nav child link is active (exact match only).
+ * Use for highlighting specific dropdown items.
+ */
+export function isNavChildActive(
+  child: NavChild,
+  pathname: string,
+  searchParams?: URLSearchParams
+): boolean {
+  return matchesNavChild(child, pathname, searchParams, false);
+}
+
+/**
+ * Check if a nav item (parent) is active.
+ * Returns true if any child matches, including nested routes.
+ * Use for highlighting parent menu items.
+ */
+export function isNavItemActive(
+  item: NavItem,
+  pathname: string,
+  searchParams?: URLSearchParams
+): boolean {
+  if (item.href) {
+    return pathname === item.href;
+  }
+
+  if (item.children) {
+    return item.children.some((child) =>
+      matchesNavChild(child, pathname, searchParams, true)
+    );
+  }
+
+  return false;
+}
+
+/**
+ * Get the active child item for a nav item.
+ * Includes nested route matching.
  */
 export function getActiveChild(
   item: NavItem,
@@ -136,5 +251,73 @@ export function getActiveChild(
 ): NavChild | undefined {
   if (!item.children) return undefined;
 
-  return item.children.find((child) => isNavChildActive(child, pathname, searchParams));
+  // First try exact match, then nested
+  return (
+    item.children.find((child) =>
+      matchesNavChild(child, pathname, searchParams, false)
+    ) ||
+    item.children.find((child) =>
+      matchesNavChild(child, pathname, searchParams, true)
+    )
+  );
 }
+
+export const mobileNavConfig: NavItem[] = [
+  {
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    children: [
+      { label: "Overview", href: "/admin" },
+      { label: "Analytics", href: "/admin/analytics" },
+    ],
+  },
+  {
+    label: "Products",
+    icon: Package,
+    children: [
+      { label: "Coffees", href: "/admin/products" },
+      { label: "Merch", href: "/admin/merch" },
+      { label: "Categories", href: "/admin/product-menu?view=all-categories" },
+      { label: "Labels", href: "/admin/product-menu?view=all-labels" },
+      { label: "Menu", href: "/admin/product-menu?view=menu" },
+    ],
+  },
+  {
+    label: "Orders",
+    icon: ClipboardList,
+    children: [
+      { label: "All Orders", href: "/admin/orders" },
+      { label: "Subscriptions", href: "#", disabled: true },
+    ],
+  },
+  {
+    label: "Pages",
+    icon: FileText,
+    children: [
+      { label: "About", href: "/admin/pages/about" },
+      { label: "Cafe", href: "/admin/pages/cafe" },
+      { label: "FAQ", href: "/admin/pages/faq" },
+    ],
+  },
+  {
+    label: "Management",
+    icon: Users,
+    children: [
+      { label: "All Users", href: "/admin/users" },
+      { label: "Newsletter", href: "/admin/newsletter" },
+    ],
+  },
+  {
+    label: "Settings",
+    icon: Settings,
+    children: [
+      { label: "General", href: "/admin/settings" },
+      { label: "Store Front", href: "/admin/settings/storefront" },
+      { label: "Location", href: "/admin/settings/location" },
+      { label: "Commerce", href: "/admin/settings/commerce" },
+      { label: "Marketing", href: "/admin/settings/marketing" },
+      { label: "Contact", href: "/admin/settings/contact" },
+      { label: "Social Links", href: "/admin/social-links" },
+    ],
+  },
+];

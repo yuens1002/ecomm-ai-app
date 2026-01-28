@@ -53,6 +53,7 @@ export function ActionComboButton({
             disabled={newButton.disabled}
             onClick={newButton.onClick}
             aria-label={newButton.ariaLabel || newButton.tooltip}
+            className={newButton.disabled ? "cursor-not-allowed" : ""}
           >
             <NewIcon className="size-4 mr-2" />
             {newButton.label}
@@ -85,13 +86,14 @@ export function ActionComboButton({
               size="sm"
               disabled={addButton.disabled}
               aria-label={addButton.tooltip}
+              className="cursor-not-allowed"
             >
               <ChevronDown className="size-4" />
             </Button>
           </TooltipTrigger>
         </Tooltip>
       ) : (
-        <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+        <DropdownMenu modal={false} open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
           <Tooltip open={isDropdownOpen ? false : undefined}>
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>

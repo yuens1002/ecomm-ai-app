@@ -10,7 +10,7 @@ export const TableViewWrapper = React.forwardRef<
   HTMLTableElement,
   TableViewWrapperProps
 >(({ className, children, ...props }, ref) => (
-  <div className="relative w-full mt-4">
+  <div className="relative w-full mt-4 overflow-x-auto">
     <table
       ref={ref}
       className={cn("w-full caption-bottom text-sm table-fixed", className)}

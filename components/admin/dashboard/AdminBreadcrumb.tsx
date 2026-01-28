@@ -12,55 +12,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useBreadcrumbItems, type BreadcrumbItem as BreadcrumbItemType } from "./BreadcrumbContext";
-
-/**
- * Maps route prefixes to their parent nav category
- */
-const navCategoryMap: Record<string, { label: string; href?: string }> = {
-  // Dashboard
-  analytics: { label: "Dashboard" },
-  // Products
-  products: { label: "Products" },
-  merch: { label: "Products" },
-  "product-menu": { label: "Products" },
-  // Orders
-  orders: { label: "Orders" },
-  // Pages
-  pages: { label: "Pages" },
-  // More (Management + Settings)
-  users: { label: "More" },
-  newsletter: { label: "More" },
-  settings: { label: "More" },
-  "social-links": { label: "More" },
-};
-
-/**
- * Maps route segments to human-readable labels
- */
-const routeLabels: Record<string, string> = {
-  admin: "Dashboard",
-  analytics: "Analytics",
-  orders: "Orders",
-  products: "Coffees",
-  merch: "Merchandise",
-  "product-menu": "Menu Builder",
-  pages: "Pages",
-  about: "About",
-  cafe: "Cafe",
-  faq: "FAQ",
-  link: "Link Pages",
-  new: "New",
-  edit: "Edit",
-  users: "All Users",
-  newsletter: "Newsletter",
-  settings: "General",
-  storefront: "Store Front",
-  location: "Location",
-  commerce: "Commerce",
-  marketing: "Marketing",
-  contact: "Contact",
-  "social-links": "Social Links",
-};
+import { findActiveNavigation } from "@/lib/admin-nav-config";
 
 /**
  * Maps Menu Builder view query params to labels
@@ -74,13 +26,9 @@ const menuBuilderViewLabels: Record<string, string> = {
 };
 
 /**
- * Get label for a route segment
+ * Get label for a route segment (fallback when not in nav config)
  */
 function getLabel(segment: string): string {
-  if (routeLabels[segment]) {
-    return routeLabels[segment];
-  }
-
   // For dynamic segments (IDs, slugs), return a formatted version
   if (segment.match(/^[a-z0-9-]{20,}$/i)) {
     return "Details";
@@ -133,40 +81,25 @@ export function AdminBreadcrumb() {
     return null;
   }
 
-  // Get the first segment after /admin to determine nav category
   const firstSegment = segments[1];
-  const navCategory = navCategoryMap[firstSegment];
+  const hasCustomItems = customItems.length > 0;
 
   // Check if this is the Menu Builder page with a view param
   const isMenuBuilder = firstSegment === "product-menu";
   const viewParam = searchParams.get("view");
 
-  // Determine if custom items will be the "last" items
-  const hasCustomItems = customItems.length > 0;
+  // Try to find matching nav item from config (single source of truth)
+  const { parent: navParent, child: navChild } = findActiveNavigation(pathname, searchParams);
 
-  // Build breadcrumb items (skip "admin" segment)
-  const pageSegments = segments.slice(1);
-  let items = pageSegments.map((segment, index) => {
-    const href = "/" + segments.slice(0, index + 2).join("/");
-    let label = getLabel(segment);
-    // Item is last only if there are no custom items AND it's the last segment
-    const isLast = !hasCustomItems && index === pageSegments.length - 1;
+  let category: string | null = null;
+  let items: Array<{ href: string; label: string; isLast: boolean }> = [];
 
-    // For Menu Builder, use the view name from query param
-    if (isMenuBuilder && segment === "product-menu" && viewParam) {
-      label = menuBuilderViewLabels[viewParam] || label;
-    }
-
-    return { href, label, isLast };
-  });
-
-  // If on Menu Builder with a view param, show the view-specific breadcrumb
-  if (isMenuBuilder && viewParam && items.length === 1) {
-    // For label/category views, show "Labels" or "Categories" as parent
+  if (isMenuBuilder && viewParam) {
+    // Special handling for Menu Builder with view params
+    category = "Products";
     const parentView = viewParam === "label" ? "all-labels" : viewParam === "category" ? "all-categories" : null;
 
     if (parentView && hasCustomItems) {
-      // Show parent view as clickable link, custom item will be the page
       items = [{
         href: `/admin/product-menu?view=${parentView}`,
         label: menuBuilderViewLabels[parentView] || "Menu Builder",
@@ -179,6 +112,22 @@ export function AdminBreadcrumb() {
         isLast: !hasCustomItems
       }];
     }
+  } else if (navParent && navChild) {
+    // Use nav config for category and page label
+    category = navParent.label;
+    items = [{
+      href: pathname,
+      label: navChild.label,
+      isLast: !hasCustomItems
+    }];
+  } else {
+    // Fallback: build from URL segments for pages not in nav config
+    const pageSegments = segments.slice(1);
+    items = pageSegments.map((segment, index) => ({
+      href: "/" + segments.slice(0, index + 2).join("/"),
+      label: getLabel(segment),
+      isLast: !hasCustomItems && index === pageSegments.length - 1
+    }));
   }
 
   return (
@@ -194,17 +143,17 @@ export function AdminBreadcrumb() {
           </BreadcrumbLink>
         </BreadcrumbItem>
 
-        {/* Nav category (if different from first item label) */}
-        {navCategory && navCategory.label !== items[0]?.label && (
+        {/* Nav category (always shown when available) */}
+        {category && (
           <>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <span className="text-muted-foreground">{navCategory.label}</span>
+              <span className="text-muted-foreground">{category}</span>
             </BreadcrumbItem>
           </>
         )}
 
-        {/* Page segments */}
+        {/* Page items */}
         {items.map((item) => (
           <span key={item.href} className="contents">
             <BreadcrumbSeparator />

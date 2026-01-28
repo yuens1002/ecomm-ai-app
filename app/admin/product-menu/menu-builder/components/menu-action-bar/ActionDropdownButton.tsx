@@ -47,6 +47,7 @@ export function ActionDropdownButton({
             size="sm"
             disabled={disabled}
             aria-label={ariaLabel || tooltip}
+            className="cursor-not-allowed"
           >
             <Icon className="size-4 mr-2" />
             {label}
@@ -58,7 +59,7 @@ export function ActionDropdownButton({
   }
 
   return (
-    <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+    <DropdownMenu modal={false} open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
       <Tooltip open={isDropdownOpen ? false : undefined}>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>

@@ -3,15 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  adminNavConfig,
   isNavChildActive,
   isNavItemActive,
-  type NavChild,
+  mobileNavConfig,
   type NavItem,
 } from "@/lib/admin-nav-config";
 import { cn } from "@/lib/utils";
 import * as SheetPrimitive from "@radix-ui/react-dialog";
-import { ArrowLeft, ChevronRight, Menu, Settings, Users, X } from "lucide-react";
+import { ArrowLeft, ChevronRight, Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -20,54 +19,6 @@ import * as React from "react";
 interface AdminMobileDrawerProps {
   storeName: string;
   storeLogoUrl?: string;
-}
-
-// Transform nav config to flatten "More" into separate sections
-function getMobileNavItems(): NavItem[] {
-  const items: NavItem[] = [];
-
-  for (const item of adminNavConfig) {
-    if (item.label === "More" && item.children) {
-      // Split "More" into Management and Settings sections
-      const managementItems: NavChild[] = [];
-      const settingsItems: NavChild[] = [];
-      let currentSection: "management" | "settings" | null = null;
-
-      for (const child of item.children) {
-        if (child.section === "Management") {
-          currentSection = "management";
-        } else if (child.section === "Settings") {
-          currentSection = "settings";
-        }
-
-        if (currentSection === "management") {
-          managementItems.push({ ...child, section: undefined, sectionIcon: undefined });
-        } else if (currentSection === "settings") {
-          settingsItems.push({ ...child, section: undefined, sectionIcon: undefined });
-        }
-      }
-
-      if (managementItems.length > 0) {
-        items.push({
-          label: "Management",
-          icon: Users,
-          children: managementItems,
-        });
-      }
-
-      if (settingsItems.length > 0) {
-        items.push({
-          label: "Settings",
-          icon: Settings,
-          children: settingsItems,
-        });
-      }
-    } else {
-      items.push(item);
-    }
-  }
-
-  return items;
 }
 
 function NavSection({
@@ -161,16 +112,16 @@ export function AdminMobileDrawer({ storeName, storeLogoUrl }: AdminMobileDrawer
   const searchParams = useSearchParams();
   const [open, setOpen] = React.useState(false);
 
-  const mobileNavItems = React.useMemo(() => getMobileNavItems(), []);
+  const mobileNavItems = mobileNavConfig;
 
   // Determine which section should be expanded based on current path
   const getInitialExpanded = React.useCallback(() => {
     const expanded: Record<string, boolean> = {};
     for (const item of mobileNavItems) {
-      expanded[item.label] = isNavItemActive(item, pathname);
+      expanded[item.label] = isNavItemActive(item, pathname, searchParams);
     }
     return expanded;
-  }, [mobileNavItems, pathname]);
+  }, [mobileNavItems, pathname, searchParams]);
 
   const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>(() =>
     getInitialExpanded()
@@ -197,7 +148,7 @@ export function AdminMobileDrawer({ storeName, storeLogoUrl }: AdminMobileDrawer
   return (
     <SheetPrimitive.Root open={open} onOpenChange={setOpen}>
       <SheetPrimitive.Trigger asChild>
-        <Button variant="ghost" size="icon" className="h-11 w-11 lg:hidden -ml-3.5">
+        <Button variant="outline" size="icon" className="lg:hidden">
           <Menu className="h-5 w-5" />
           <span className="sr-only">Open navigation menu</span>
         </Button>

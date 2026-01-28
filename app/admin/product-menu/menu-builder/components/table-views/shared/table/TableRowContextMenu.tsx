@@ -78,7 +78,7 @@ export function TableRowContextMenu({
   const hasAdditionalActions = actions.length > 0;
 
   return (
-    <ContextMenu>
+    <ContextMenu modal={false}>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         {/* Move Up / Move Down for reordering */}
