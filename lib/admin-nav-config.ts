@@ -4,6 +4,8 @@ import {
   ClipboardList,
   FileText,
   MoreHorizontal,
+  Users,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 
@@ -14,6 +16,7 @@ export type NavChild = {
   disabled?: boolean;
   disabledLabel?: string; // e.g., "coming soon"
   section?: string; // Section header for grouping
+  sectionIcon?: LucideIcon; // Icon for section header
 };
 
 export type NavItem = {
@@ -52,7 +55,6 @@ export const adminNavConfig: NavItem[] = [
         label: "Subscriptions",
         href: "#",
         disabled: true,
-        disabledLabel: "coming soon",
       },
     ],
   },
@@ -69,9 +71,9 @@ export const adminNavConfig: NavItem[] = [
     label: "More",
     icon: MoreHorizontal,
     children: [
-      { label: "All Users", href: "/admin/users", section: "Management" },
+      { label: "All Users", href: "/admin/users", section: "Management", sectionIcon: Users },
       { label: "Newsletter", href: "/admin/newsletter" },
-      { label: "General", href: "/admin/settings", section: "Settings" },
+      { label: "General", href: "/admin/settings", section: "Settings", sectionIcon: Settings },
       { label: "Store Front", href: "/admin/settings/storefront" },
       { label: "Location", href: "/admin/settings/location" },
       { label: "Commerce", href: "/admin/settings/commerce" },
