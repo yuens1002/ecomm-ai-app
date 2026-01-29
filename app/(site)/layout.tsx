@@ -2,6 +2,7 @@ import SiteHeaderWrapper from "@/components/app-components/SiteHeaderWrapper";
 import SiteFooter from "@components/app-components/SiteFooter";
 import { SiteBannerProvider } from "@/hooks/useSiteBanner";
 import { SiteBannerPortal } from "@/components/app-components/SiteBannerPortal";
+import { DemoBanner } from "@/components/app-components/DemoBanner";
 
 /**
  * Layout for all customer-facing (site) routes.
@@ -15,6 +16,9 @@ export default function SiteLayout({
   return (
     <SiteBannerProvider>
       <div className="relative flex min-h-screen flex-col">
+        {/* Demo banner - only shows when NEXT_PUBLIC_DEMO_MODE=true */}
+        <DemoBanner />
+
         {/* Banner portal - renders above header when active */}
         <SiteBannerPortal />
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { LoginForm } from "@/components/app-components/auth/LoginForm";
+import { DemoSignInButtons } from "@/components/app-components/auth/DemoSignInButtons";
 import { signInPublic } from "@/actions/auth";
 
 export function SignInContent() {
@@ -26,6 +27,11 @@ export function SignInContent() {
           {checkoutNotice}
         </div>
       )}
+
+      {/* Demo sign-in buttons - only visible when NEXT_PUBLIC_DEMO_MODE=true */}
+      <DemoSignInButtons />
+
+      {process.env.NEXT_PUBLIC_DEMO_MODE === "true" && <Separator className="my-4" />}
 
       <LoginForm signInAction={signInPublic} />
 

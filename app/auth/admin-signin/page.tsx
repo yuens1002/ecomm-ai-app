@@ -2,10 +2,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { Shield } from "lucide-react";
 import { SignIn } from "@/components/app-components/auth/SignIn";
-import { LoginForm } from "@/components/app-components/auth/LoginForm";
-import { signInAdmin } from "@/actions/auth";
 import { getSiteMetadata } from "@/lib/site-metadata";
-import Link from "next/link";
+import { AdminSignInContent } from "./admin-signin-content";
 
 export const metadata = {
   title: "Admin Sign In",
@@ -27,15 +25,7 @@ export default async function AdminSignInPage() {
       storeLogoUrl={storeLogoUrl}
       storeName={storeName}
     >
-      <LoginForm signInAction={signInAdmin} />
-      <div className="mt-6 text-center">
-        <Link
-          href="/"
-          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-        >
-          &larr; Back to Store
-        </Link>
-      </div>
+      <AdminSignInContent />
     </SignIn>
   );
 }

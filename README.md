@@ -2,6 +2,21 @@
 
 🚀 **Live Demo:** [https://ecomm-ai-app.vercel.app/](https://ecomm-ai-app.vercel.app/)
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app&env=DATABASE_URL,DIRECT_URL,AUTH_SECRET,STRIPE_SECRET_KEY,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,RESEND_API_KEY,RESEND_FROM_EMAIL,NEXT_PUBLIC_APP_URL&envDescription=Required%20environment%20variables%20for%20Artisan%20Roast.%20See%20.env.example%20for%20details.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
+
+### Try the Demo
+
+No signup required. Click the **"Sign in as Admin"** or **"Sign in as Demo Customer"** buttons on the [sign-in page](https://ecomm-ai-app.vercel.app/auth/signin) to explore instantly.
+
+| Account | What You'll See |
+|---------|-----------------|
+| **Admin** | Full dashboard: products, orders, analytics, Menu Builder, Pages CMS |
+| **Demo Customer** | Order history, active subscription, AI-powered recommendations |
+
+> This is a shared demo environment. Please be respectful with the data.
+
+---
+
 Artisan Roast is a full-stack, theme-able e-commerce application built for specialty coffee retail. This project serves as a comprehensive portfolio piece, designed from the ground up to demonstrate mastery of modern web development practices, end-to-end type safety, and AI integration.
 
 It features a minimal, high-quality product list and an AI-powered assistant to help customers find their perfect coffee, showcasing a blend of product-focused design and advanced technical implementation.
@@ -61,8 +76,6 @@ AI-powered content management system for informational pages:
 - **⚡ Type-Safe:** End-to-end TypeScript with Prisma for database type safety
 - **🚀 Production Ready:** Deployed on Vercel with PostgreSQL (Neon) backend
 
-> **Want to see the AI recommendations in action?** Contact me for demo account credentials to experience personalized product recommendations, behavioral analytics, and the full feature set.
-
 ## Tech Stack & Skills Showcased
 
 This project was built to demonstrate proficiency across the entire stack, as defined in the modern senior developer skill matrix.
@@ -107,9 +120,20 @@ This project was built to demonstrate proficiency across the entire stack, as de
 
 ## Quick Start
 
-Want to run this locally? See the **[📖 Complete Setup Guide](./SETUP.md)** for detailed instructions.
+### Option 1: One-Click Deploy (Easiest)
 
-### TL;DR
+Click the button below to deploy your own instance to Vercel:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app&env=DATABASE_URL,DIRECT_URL,AUTH_SECRET,STRIPE_SECRET_KEY,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,RESEND_API_KEY,RESEND_FROM_EMAIL,NEXT_PUBLIC_APP_URL&envDescription=Required%20environment%20variables%20for%20Artisan%20Roast.%20See%20.env.example%20for%20details.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
+
+You'll need:
+- [Neon](https://neon.tech) account (free tier available) for PostgreSQL database
+- [Stripe](https://stripe.com) account for payment processing
+- [Resend](https://resend.com) account (free tier: 3,000 emails/month) for transactional emails
+
+### Option 2: Local Development
+
+See the **[📖 Complete Setup Guide](./SETUP.md)** for detailed instructions, or follow the quick steps below:
 
 ```bash
 # 1. Clone and install
@@ -132,8 +156,6 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe # Terminal 2
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to see the app.
-
-**Important:** You'll need accounts for Neon (database), Stripe (payments), and OAuth providers (GitHub/Google). See [SETUP.md](./SETUP.md) for complete instructions.
 
 ## License
 
