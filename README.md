@@ -1,12 +1,29 @@
-# Artisan Roast: A Modern E-Commerce Coffee Store
+<div align="center">
 
-🚀 **Live Demo:** [https://ecomm-ai-app.vercel.app/](https://ecomm-ai-app.vercel.app/)
+# Artisan Roast
+
+### The open-source e-commerce platform built for specialty coffee
+
+**Your beans deserve better than Shopify.**
+
+[**Try the Live Demo**](https://ecomm-ai-app.vercel.app/) | [Self-Host Guide](#quick-start) | [Documentation](./docs/)
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app&env=DATABASE_URL,DIRECT_URL,AUTH_SECRET,STRIPE_SECRET_KEY,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,RESEND_API_KEY,RESEND_FROM_EMAIL,NEXT_PUBLIC_APP_URL,SEED_ON_BUILD&envDescription=Required%20environment%20variables%20for%20Artisan%20Roast.%20See%20.env.example%20for%20details.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
 
-### Try the Demo
+---
 
-No signup required. Click the **"Sign in as Admin"** or **"Sign in as Demo Customer"** buttons on the [sign-in page](https://ecomm-ai-app.vercel.app/auth/signin) to explore instantly.
+<!-- TODO: Add hero screenshot or GIF here -->
+<!-- ![Artisan Roast Demo](./docs/assets/hero-demo.gif) -->
+
+*Screenshot: AI barista helping a customer find their perfect roast*
+
+</div>
+
+---
+
+## Try the Demo
+
+No signup required. Click **"Sign in as Admin"** or **"Sign in as Demo Customer"** on the [sign-in page](https://ecomm-ai-app.vercel.app/auth/signin) to explore instantly.
 
 | Account | What You'll See |
 |---------|-----------------|
@@ -17,112 +34,33 @@ No signup required. Click the **"Sign in as Admin"** or **"Sign in as Demo Custo
 
 ---
 
-Artisan Roast is a full-stack, theme-able e-commerce application built for specialty coffee retail. This project serves as a comprehensive portfolio piece, designed from the ground up to demonstrate mastery of modern web development practices, end-to-end type safety, and AI integration.
+## Why Artisan Roast?
 
-It features a minimal, high-quality product list and an AI-powered assistant to help customers find their perfect coffee, showcasing a blend of product-focused design and advanced technical implementation.
+Most e-commerce platforms treat coffee like any other product. But your customers don't just want "a bag of coffee" - they want *their* coffee. Light and fruity? Dark and chocolatey? Something new to try?
 
-## Core Features
+**Artisan Roast understands coffee.**
 
-### 🛍️ E-Commerce Essentials
+- **AI that speaks coffee** - "I like bright, citrusy flavors" → instant recommendations
+- **Subscriptions that just work** - Set it and forget it, with easy customer self-service
+- **Menu Builder** - Organize your catalog the way *you* think about it (Origins → Ethiopian → Yirgacheffe)
+- **Self-host for free** - MIT licensed, your data stays yours
 
-- **🛒 Shopping Cart:** Zustand-powered cart with localStorage persistence, supports one-time purchases and subscriptions
-- **💳 Stripe Checkout:** Full payment integration with webhook processing for order fulfillment
-- **🔐 Authentication:** Auth.js with OAuth (GitHub/Google) and database sessions
-- **📦 Order Tracking:** Complete order history with status tracking and customer details
-- **🔄 Subscription Management:** Recurring orders with Stripe Billing Portal integration
-- **🔍 Product Search:** Full-text search with activity tracking across name, description, origin, and tasting notes
+---
 
-### 🤖 AI-Powered Personalization
+## See It In Action
 
-- **AI Recommendations:** Behavioral product recommendations based on user activity (purchases, views, searches)
-- **Personalized Context Injection:** Gemini-powered assistant with user context (order history, favorites, behavioral data)
-- **Smart Scoring Algorithm:** +10 roast match, +5 per tasting note match, +3 viewed, -20 recent purchase
-- **Homepage Recommendations:** Session-aware "Recommended For You" section with 6 personalized products
-- **Trending Products:** Fallback recommendations for anonymous users based on view counts
-- **Chat AI Assistant:** Text-based conversational interface with full order history context and brewing expertise *(In Progress)*
-- **Voice AI Barista:** Multilingual voice assistant for hands-free coffee recommendations *(In Progress)*
+| For Your Customers | For You |
+|---|---|
+| Browse by origin, roast, or tasting notes | Beautiful admin dashboard |
+| AI chat: "What's similar to Ethiopian Yirgacheffe?" | Drag-and-drop menu organization |
+| One-click subscriptions | Order management & analytics |
+| Stripe checkout (cards, Apple Pay, Google Pay) | Pages CMS with AI content generation |
 
-### 📊 Admin Dashboard
-
-- **Analytics & Insights:** Comprehensive analytics with trending products, top searches, conversion metrics
-- **Behavioral Tracking:** 5 activity types (PAGE_VIEW, PRODUCT_VIEW, SEARCH, ADD_TO_CART, REMOVE_FROM_CART)
-- **Session Tracking:** Supports both anonymous and authenticated users
-- **Daily Activity Trends:** Visual bar charts showing activity patterns over 7/30 days
-
-### 🍽️ Menu Builder (v0.72.0)
-
-Complete admin tool for managing product menu hierarchy with labels and categories:
-
-- **Multi-Select:** Shift+click range selection, checkbox bulk selection
-- **Drag-and-Drop:** Reorder items with undo/redo support
-- **Context Menus:** Bulk operations (clone, delete, move, visibility toggle)
-- **Keyboard Shortcuts:** Delete, C (clone), V (toggle visibility), H (hide)
-- **5 Table Views:** Menu overview, All Labels, All Categories, Label Detail, Category Detail
-- **Mobile-Friendly:** 44x44px touch targets (WCAG 2.5.5 compliance)
-
-### 📝 Pages CMS
-
-AI-powered content management system for informational pages:
-
-- **Rich Content Pages:** Create and manage pages with rich text content and hero images
-- **AI-Powered Generation:** 10-question wizard that generates compelling About pages in your brand's voice
-- **Hierarchical Structure:** Organize pages in parent-child relationships
-- **Publishing Workflow:** Draft and publish with footer navigation integration
-
-### 🎨 User Experience
-
-- **Theme-able UI:** Switch between Light and Dark modes (Tailwind CSS & CSS Variables)
-- **📱 Fully Responsive:** Clean, mobile-first layout that scales to all devices
-- **⚡ Type-Safe:** End-to-end TypeScript with Prisma for database type safety
-- **🚀 Production Ready:** Deployed on Vercel with PostgreSQL (Neon) backend
-
-## Tech Stack & Skills Showcased
-
-This project was built to demonstrate proficiency across the entire stack, as defined in the modern senior developer skill matrix.
-
-### 1. Core Technical Skills
-
-- **Framework:** **Next.js 16** (App Router, React 19, Server Components, Server Actions)
-
-- **Language:** **TypeScript** (Strict mode, with end-to-end type safety from database to UI)
-
-- **Styling:** **Tailwind CSS 4** (with a custom, theme-able design system built on CSS Variables)
-
-- **Component Library:** **shadcn/ui** (for accessible, theme-able, and unstyled components)
-
-- **State Management:** React Hooks (`useState`, `useContext`) & **Zustand** (for lightweight global state)
-
-### 2. Fullstack & Data Layer
-
-- **Backend:** **Next.js API Routes** & **Server Actions** (serverless backend)
-
-- **Database:** **PostgreSQL** (Neon)
-
-- **ORM:** **Prisma** (for type-safe database queries and migrations)
-
-### 3. DevOps & Modern Practices
-
-- **CI/CD:** **GitHub Actions** (configured to run tests and builds on every push)
-
-- **Deployment:** **Vercel** (automatic deployments from main branch)
-
-### 4. Emerging Trends & AI
-
-- **AI Integration:** Real-time, dynamic recommendations from the **Google Gemini API** (`gemini-2.5-flash:generateContent`)
-
-- **AI Content Generation:** Pages CMS with AI-powered About page wizard
-
-### 5. Testing & Quality
-
-- **Unit/Integration:** **Jest** with Testing Library for testing critical business logic (500+ tests)
-
-- **Accessibility:** Adherence to **WCAG** standards (supported by shadcn/ui, 44px touch targets)
+---
 
 ## Quick Start
 
-### Option 1: One-Click Deploy (Easiest)
-
-Click the button below to deploy your own instance to Vercel:
+### Option 1: One-Click Deploy (Recommended)
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app&env=DATABASE_URL,DIRECT_URL,AUTH_SECRET,STRIPE_SECRET_KEY,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,RESEND_API_KEY,RESEND_FROM_EMAIL,NEXT_PUBLIC_APP_URL,SEED_ON_BUILD&envDescription=Required%20environment%20variables%20for%20Artisan%20Roast.%20See%20.env.example%20for%20details.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
 
@@ -131,32 +69,112 @@ You'll need:
 - [Stripe](https://stripe.com) account for payment processing
 - [Resend](https://resend.com) account (free tier: 3,000 emails/month) for transactional emails
 
-### Option 2: Local Development
-
-See the **[📖 Complete Setup Guide](./SETUP.md)** for detailed instructions, or follow the quick steps below:
+### Option 2: Run Locally
 
 ```bash
-# 1. Clone and install
 git clone https://github.com/yuens1002/ecomm-ai-app.git
-cd artisan-roast
+cd ecomm-ai-app
 npm install
-
-# 2. Copy environment template
-cp .env.example .env.local
-# Edit .env.local with your credentials (see SETUP.md)
-
-# 3. Set up database
-npx prisma generate
-npx prisma migrate deploy
-npm run seed
-
-# 4. Start development (requires 2 terminals)
-npm run dev                                                    # Terminal 1
-stripe listen --forward-to localhost:3000/api/webhooks/stripe # Terminal 2
+cp .env.example .env.local  # Add your API keys
+npm run setup               # Database + seed data
+npm run dev                 # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the app.
+**Full setup guide:** [SETUP.md](./SETUP.md)
+
+---
+
+## Features
+
+### For Customers
+
+- **Smart Search** - Find coffee by name, origin, roast level, or tasting notes
+- **AI Recommendations** - Personalized suggestions based on browsing and purchase history
+- **AI Chat Assistant** - Ask questions like "What's good for cold brew?"
+- **Flexible Subscriptions** - Weekly, bi-weekly, or monthly delivery
+- **Subscription Portal** - Pause, skip, or cancel anytime (Stripe Billing Portal)
+
+### For Store Owners
+
+- **Menu Builder** - Visual drag-and-drop catalog organization
+  - Multi-select with Shift+click range selection
+  - Context menus for bulk operations (clone, delete, move)
+  - Keyboard shortcuts (Delete, C, V, H)
+  - 5 table views: Menu, Labels, Categories, and detail views
+  - Mobile-friendly with 44px touch targets (WCAG 2.5.5)
+- **Pages CMS** - AI-powered content management
+  - 10-question wizard generates About pages in your brand voice
+  - Rich text editing with hero images
+  - Draft/publish workflow
+- **Admin Dashboard** - Sales, trending products, top searches, activity trends
+- **Order Management** - Track orders from purchase to delivery
+
+### Technical
+
+- **Next.js 16** with App Router and React 19
+- **Type-safe** end-to-end (TypeScript strict + Prisma)
+- **Stripe** payments and subscriptions
+- **OAuth** login (Google, GitHub)
+- **AI** powered by Google Gemini
+- **500+ tests** with Jest and Testing Library
+
+---
+
+## The Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 16 (App Router, React 19) |
+| Language | TypeScript (strict mode) |
+| Database | PostgreSQL (Neon) |
+| ORM | Prisma |
+| Auth | NextAuth.js v5 |
+| Payments | Stripe Checkout + Billing Portal |
+| Email | Resend |
+| AI | Google Gemini API |
+| Styling | Tailwind CSS 4 + shadcn/ui |
+| State | Zustand (cart) + SWR (data) |
+| Testing | Jest + Testing Library |
+| Deployment | Vercel |
+
+---
+
+## Roadmap
+
+- [x] Core e-commerce (cart, checkout, orders)
+- [x] Stripe subscriptions
+- [x] AI product recommendations
+- [x] AI chat assistant
+- [x] Menu Builder (drag-and-drop catalog)
+- [x] Pages CMS with AI generation
+- [ ] Voice AI barista (in progress)
+- [ ] Inventory management
+- [ ] Multi-store support
+
+---
+
+## Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+**Quick wins we'd love help with:**
+- Documentation improvements
+- Accessibility audits
+- Translation/i18n
+- Bug reports and fixes
+
+---
 
 ## License
 
-This project is licensed under the **MIT License**. See the `LICENSE` file for details.
+MIT License - Use it however you want. See [LICENSE](./LICENSE).
+
+---
+
+<div align="center">
+
+**Built by a coffee nerd who codes.**
+
+[Demo](https://ecomm-ai-app.vercel.app/) · [GitHub](https://github.com/yuens1002/ecomm-ai-app) · [Setup Guide](./SETUP.md)
+
+</div>

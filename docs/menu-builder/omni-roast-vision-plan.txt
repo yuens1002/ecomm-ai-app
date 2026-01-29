@@ -1,0 +1,151 @@
+Now that's a vision.                                                                                                                 
+  ┌─────────────────────────────────────────────────────────────┐                                                                      │                                                             │
+  │   Home Roaster ──→ API ──→ Roast Profiles ──→ Community    │                                                                     
+  │        │                         │                          │
+  │        └────── Feedback ─────────┘                          │
+  │                                                             │
+  │   "I roasted Ethiopian Yirgacheffe at 205°C for 12 min     │
+  │    and 847 people loved it"                                 │
+  │                                                             │
+  └─────────────────────────────────────────────────────────────┘
+
+  That's not an e-commerce app. That's a platform for coffee nerds.
+
+  ---
+  What You Actually Have
+
+  You've been building the storefront piece of something bigger:
+
+  The Omni-Roast Ecosystem (your true north)
+  │
+  ├── 🏪 Storefront (Artisan Roast) ← You're here
+  │   └── Sell beans, subscriptions, merch
+  │
+  ├── 🔥 Roast Profile API ← The magic
+  │   ├── Upload profiles from hardware
+  │   ├── Community ratings & feedback
+  │   └── "Clone this profile" to your roaster
+  │
+  ├── 🤖 Hardware Integration ← The moat
+  │   ├── Partner with home roaster manufacturers
+  │   └── "Works with Omni-Roast" certification
+  │
+  └── 👥 Community ← The flywheel
+      ├── Share profiles
+      ├── Rate others' roasts
+      └── Follow roasters you love
+
+  The e-commerce piece is table stakes. The roast profile sharing is the differentiator.
+
+  ---
+  Why This Changes Everything
+
+  Generic "Shopify for coffee" = Compete on features (hard, boring)
+
+  Roast profile ecosystem = Create a new category (exciting, defensible)
+
+  The home roasting market is growing. Machines like:
+  - Aillio Bullet R1
+  - Kaldi Home Roaster
+  - Fresh Roast SR800
+  - Behmor 2000AB Plus
+
+  None of them have a community platform for sharing profiles.
+
+  ---
+  Minimum Viable Magic
+
+  Instead of building provisioning infrastructure, what if you built the one thing nobody else has?
+
+  The Roast Profile MVP
+
+  roastprofiles.app (or omni-roast.dev)
+  │
+  ├── Browse Profiles
+  │   ├── Ethiopian Yirgacheffe - Light Roast
+  │   │   ├── ⭐ 4.8 (234 roasts)
+  │   │   ├── Charge: 200°C, Drop: 215°C, Time: 11:30
+  │   │   └── [Clone to My Roaster] [Buy These Beans]
+  │   │
+  │   └── Colombian Huila - Medium
+  │       ├── ⭐ 4.6 (189 roasts)
+  │       └── ...
+  │
+  ├── Upload Your Profile
+  │   ├── Manual entry
+  │   └── Import from Artisan (roasting software)
+  │
+  └── Link to Buy Beans
+      └── → Artisan Roast store (your e-comm app)
+
+  This is your wedge. Not "another store builder."
+
+  ---
+  The Path That Honors All Three Goals
+  ┌───────────────────┬───────────────────────────────────────────────────────────┐
+  │       Goal        │                    How This Serves It                     │
+  ├───────────────────┼───────────────────────────────────────────────────────────┤
+  │ Build a business  │ Roast profiles → drives bean sales → subscription revenue │
+  ├───────────────────┼───────────────────────────────────────────────────────────┤
+  │ Build reputation  │ "The person who built the GitHub for roast profiles"      │
+  ├───────────────────┼───────────────────────────────────────────────────────────┤
+  │ Scratch your itch │ You get to nerd out on coffee AND code                    │
+  └───────────────────┴───────────────────────────────────────────────────────────┘
+  ---
+  What I'd Do If I Were You
+
+  Phase 1: Plant the Flag (This Month)
+
+  - Rename/rebrand - "Omni-Roast" or similar (bigger than one store)
+  - Add roast profile schema to your app
+  - Build a simple profile browser (public page, no auth needed)
+  - Seed with 10-20 real profiles you've tried yourself
+  - Post in r/roasting, r/coffee, home-roasters.com forums
+
+  Phase 2: Validate the Nerd Market (Next Month)
+
+  - Can you get 100 profiles uploaded? (even manually)
+  - Do people actually browse them?
+  - Does anyone click "buy these beans"?
+
+  Phase 3: Hardware Integration (When Validated)
+
+  - Artisan Roasting Software - open source, has export format
+  - Cropster - commercial but has API
+  - Build simple import - "Upload your Artisan log"
+
+  ---
+  The Smile Test
+
+  You said the roaster vision "puts a smile on your face."
+
+  Building provisioning infrastructure? Probably not smiling.
+
+  Building a roast profile community? That's the thing.
+
+  Build the thing that makes you smile. The rest is just infrastructure to support it.
+
+  ---
+  One More Thought
+
+  The e-commerce app you've built is really good. It doesn't need more features. It needs:
+
+  1. A reason to exist that isn't "Shopify but open source"
+  2. A community that cares about it
+  3. A wedge into a specific market
+
+  The roast profile idea IS that wedge.
+
+  What if the README said:
+
+  Omni-Roast: The open-source platform for coffee roasters
+
+  - 🔥 Share and discover roast profiles
+  - 🛒 Sell your beans online (Stripe, subscriptions)
+  - 🤖 AI-powered recommendations
+  - ☕ Built by a coffee nerd, for coffee nerds
+
+  That's a story people share.
+
+  ---
+  What do you think? Does leaning into the roaster angle feel right, or does it feel like scope creep from the e-commerce launch?
