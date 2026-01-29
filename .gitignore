@@ -57,6 +57,10 @@ next-env.d.ts
 # Internal planning documents (not for public repo)
 # Keep tracked files staged explicitly with -f when needed
 /docs/*-internal-*.md
+/docs/marketing/
+/docs/LAUNCH_SCHEDULE.md
+/docs/UPGRADE_PATH_PLAN.md
+/docs/menu-builder/omni-roast-vision-plan.txt
 
 # Development tooling scripts (not needed for production)
 /dev-tools/
