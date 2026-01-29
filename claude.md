@@ -247,6 +247,33 @@ git log --oneline -5                   # Verify commit has version
    git tag -a v0.x.y <commit-hash> -m "description"
    ```
 
+### Release Schedule
+
+**When to release:**
+- After completing a feature or set of related fixes
+- Before handing off to teammate (ensures clean sync point)
+- At end of work session if there are unreleased changes on main
+
+**Release commands:**
+```bash
+npm run release:patch   # Bug fixes, small changes (0.76.0 → 0.76.1)
+npm run release:minor   # New features (0.76.0 → 0.77.0)
+npm run release:major   # Breaking changes (0.76.0 → 1.0.0)
+```
+
+**What the release script does:**
+1. Shows commits since last tag (for changelog reference)
+2. Updates `package.json` and `lib/version.ts` automatically
+3. Adds CHANGELOG.md template with new version header
+4. Pauses for you to edit changelog
+5. Commits and creates annotated tag
+6. Optionally pushes to origin
+
+**GitHub Releases:**
+- Create for minor/major versions with user-facing changes
+- Skip for internal patches unless notable
+- After pushing tag, create release at: `https://github.com/yuens1002/ecomm-ai-app/releases/new`
+
 ---
 
 ## Common Development Patterns
