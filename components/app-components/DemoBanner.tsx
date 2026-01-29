@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { X, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
 /**
  * Demo banner that invites users to try the admin dashboard.
- * Only renders when NEXT_PUBLIC_DEMO_MODE env var is set to "true".
+ * Only renders when NEXT_PUBLIC_DEMO_MODE env var is set to "true" and user is not logged in.
  */
 export function DemoBanner() {
+  const { data: session } = useSession();
   const [isDismissed, setIsDismissed] = useState(false);
 
-  // Only show in demo mode
-  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true" || isDismissed) {
+  // Only show in demo mode when not logged in
+  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true" || isDismissed || session?.user) {
     return null;
   }
 
