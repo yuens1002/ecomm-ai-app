@@ -796,6 +796,75 @@ function ProductAddOnsClient({ addOns, products }) {
 
 ---
 
+### In-App Feedback Widget
+
+**Status**: Planned
+**Priority**: High (Launch requirement)
+**Description**: Add a frictionless feedback mechanism to collect bug reports, feature requests, and general feedback from users. Reuse existing contact form components.
+
+**Goals**:
+- Zero friction: No account required to submit feedback
+- Optional email: Users can opt-in to receive updates on their feedback
+- Categorization: Bug / Feature Request / Other
+- Bridge to community: Link to GitHub Discussions for public conversation
+
+**Proposed UI**:
+
+```
+┌──────────────────────────────────────────┐
+│ 💬 Share Feedback                   [X] │
+├──────────────────────────────────────────┤
+│ What's on your mind?                     │
+│ ┌──────────────────────────────────────┐ │
+│ │                                      │ │
+│ └──────────────────────────────────────┘ │
+│                                          │
+│ ○ Bug  ○ Feature Request  ○ Other        │
+│                                          │
+│ Email (optional - to receive updates)    │
+│ ┌──────────────────────────────────────┐ │
+│ │                                      │ │
+│ └──────────────────────────────────────┘ │
+│                                          │
+│ [  Submit Feedback  ]                    │
+│                                          │
+│ 💡 Or discuss publicly on GitHub →       │
+└──────────────────────────────────────────┘
+```
+
+**Technical Implementation**:
+
+1. **Reuse Contact Form**: Leverage existing `ContactForm` component styling and validation
+2. **Feedback Button**: Add to admin footer or floating button in admin layout
+3. **API Endpoint**: `POST /api/feedback`
+   - Fields: message, type (bug/feature/other), email (optional), instanceId, version
+   - Store in database or send to external service (GitHub Issues API, Supabase, etc.)
+4. **Optional Email Flow**: If email provided, send confirmation + updates when status changes
+5. **Admin View (Future)**: Dashboard to view/triage feedback submissions
+
+**Tasks**:
+
+- [ ] Create `FeedbackDialog` component (adapt from ContactForm)
+- [ ] Add feedback type radio buttons (Bug / Feature / Other)
+- [ ] Add optional email field with "Keep me updated" label
+- [ ] Create `POST /api/feedback` endpoint
+- [ ] Decide storage: Database table vs GitHub Issues API vs Supabase
+- [ ] Add "Feedback" button to admin layout footer
+- [ ] Link to GitHub Discussions in dialog
+- [ ] Send confirmation email if email provided (optional)
+
+**Acceptance Criteria**:
+
+- Users can submit feedback without creating an account
+- Feedback is categorized by type
+- Optional email captures users who want updates
+- Submissions are stored and reviewable
+- Clear path to GitHub Discussions for public conversation
+
+**Estimated Effort**: 3-4 hours
+
+---
+
 ## Medium Priority
 
 ---
