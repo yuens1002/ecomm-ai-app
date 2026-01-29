@@ -2,6 +2,47 @@
 
 ## High Priority
 
+### Admin Breadcrumb Navigation (Bug Fix)
+
+**Status**: TODO
+**Priority**: High
+**Description**: Admin breadcrumb navigation is buggy and doesn't correctly reflect the current page context when navigating within admin sections, views, and menus.
+
+**Current Issues:**
+- Breadcrumb doesn't update correctly when navigating between admin views
+- Nested navigation (e.g., Menu Builder → Labels → Edit) shows incorrect paths
+- Context is lost when switching between different admin sections
+- Dynamic entity names (product names, category names) not always displayed
+
+**Root Cause:**
+The current `useBreadcrumb` hook relies on individual pages setting their breadcrumbs, but this approach doesn't handle:
+- Route-based automatic breadcrumb generation
+- Parent-child relationships in nested admin routes
+- Query parameter-based views (e.g., `?view=labels`)
+
+**Proposed Solution:**
+1. Create a breadcrumb configuration that maps routes to breadcrumb paths
+2. Auto-generate breadcrumbs from URL structure with override capability
+3. Support dynamic segments (e.g., `/admin/products/[id]` → "Products / Ethiopian Yirgacheffe")
+4. Handle query-param based views in Menu Builder
+
+**Affected Areas:**
+- `/admin/product-menu/*` - Menu Builder views
+- `/admin/products/*` - Product editing
+- `/admin/orders/*` - Order details
+- `/admin/settings/*` - Nested settings pages
+- All admin pages with dynamic routes
+
+**Tasks:**
+- [ ] Audit current breadcrumb behavior across all admin routes
+- [ ] Design route-to-breadcrumb mapping config
+- [ ] Implement automatic breadcrumb generation from route
+- [ ] Add support for dynamic entity names
+- [ ] Handle query parameter views (Menu Builder tabs)
+- [ ] Test all admin navigation flows
+
+---
+
 ### Canonical Product URLs (SEO Fix)
 
 **Status**: Complete ✅
