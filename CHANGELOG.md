@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.76.0 - 2026-01-29
+
+### Features
+- **Version System**: VS Code-style update notifications for self-hosted instances
+  - Version check API fetches latest release from GitHub
+  - UpdateBanner component shows dismissible notification when updates available
+  - Dismissal persists for 7 days or until new version detected
+- **Telemetry**: Anonymous usage tracking (opt-out via `TELEMETRY_DISABLED=true`)
+  - Instance ID generated on first seed for identification
+  - Heartbeat cron endpoint for daily usage stats
+  - Install event sent on first deployment
+- **Feature Flags**: Community vs Pro edition gating (`lib/features.ts`)
+- **Admin Profile Page**: Profile management UI (demo - read-only for launch)
+  - Display name and email fields
+  - Proper shadcn InputGroup components
+
+### Infrastructure
+- Added `/api/version/check` endpoint
+- Added `/api/cron/heartbeat` endpoint (Vercel cron daily)
+- Added `/api/admin/profile` GET/PUT endpoint
+- Vercel cron configuration in `vercel.json`
+
 ## 0.75.2 - 2026-01-28
 
 ### Bug Fixes
