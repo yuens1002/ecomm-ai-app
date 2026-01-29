@@ -156,6 +156,66 @@ function runMigrations() {
 }
 
 /**
+ * Seed database if empty and SEED_ON_BUILD is enabled
+ * Uses minimal seed mode to keep initial data small
+ */
+async function seedIfEmpty() {
+  if (process.env.SEED_ON_BUILD !== "true") {
+    log.debug("SEED_ON_BUILD not enabled, skipping seed check");
+    return;
+  }
+
+  log.info("Checking if database needs seeding...");
+
+  try {
+    // Quick check: count products to see if DB is seeded
+    const result = execSync(
+      'npx prisma db execute --stdin <<< "SELECT COUNT(*) as count FROM \\"Product\\";"',
+      {
+        encoding: "utf-8",
+        env: {
+          ...process.env,
+          DATABASE_URL:
+            config.directUrl ||
+            process.env.DIRECT_URL ||
+            process.env.DATABASE_URL,
+        },
+        shell: true,
+      }
+    );
+
+    // Parse the count from output
+    const match = result.match(/(\d+)/);
+    const productCount = match ? parseInt(match[1], 10) : 0;
+
+    if (productCount > 0) {
+      log.info(`Database already has ${productCount} products, skipping seed`);
+      return;
+    }
+
+    log.info("Database is empty, running minimal seed...");
+    execSync("npx prisma db seed", {
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        DATABASE_URL:
+          config.directUrl ||
+          process.env.DIRECT_URL ||
+          process.env.DATABASE_URL,
+        SEED_PRODUCT_MODE: "minimal",
+        SEED_INCLUDE_USERS: "false",
+        SEED_INCLUDE_SYNTHETIC: "false",
+      },
+    });
+    log.success("Minimal seed completed");
+  } catch (error) {
+    // Non-fatal - log warning but continue build
+    log.warn(`Seed check/run failed: ${error.message}`);
+    log.warn("You may need to run 'npm run seed' manually after deployment");
+  }
+}
+
+/**
  * Build Next.js application
  */
 function buildNextjs() {
@@ -186,7 +246,10 @@ async function main() {
     // 3. Run migrations (optional, with retries)
     runMigrations();
 
-    // 4. Build Next.js app
+    // 4. Seed if empty (optional, only when SEED_ON_BUILD=true)
+    await seedIfEmpty();
+
+    // 5. Build Next.js app
     buildNextjs();
 
     // Success
