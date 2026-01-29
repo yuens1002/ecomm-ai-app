@@ -1,6 +1,12 @@
 {
   "buildCommand": "npm run vercel-build",
   "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/cron/heartbeat",
+      "schedule": "0 0 * * *"
+    }
+  ],
   "redirects": [],
   "rewrites": [],
   "headers": [

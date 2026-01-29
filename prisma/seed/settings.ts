@@ -1,7 +1,42 @@
 import { PrismaClient, WeightUnit } from "@prisma/client";
+import { randomUUID } from "crypto";
+import {
+  sendInstallEvent,
+  isTelemetryEnabled,
+} from "../../lib/telemetry";
 
 export async function seedSettings(prisma: PrismaClient) {
   console.log("  📋 Creating site settings...");
+
+  // Instance ID - generated once on first seed, never overwritten
+  const existingInstanceId = await prisma.siteSettings.findUnique({
+    where: { key: "app.instanceId" },
+  });
+
+  if (!existingInstanceId) {
+    const instanceId = randomUUID();
+    await prisma.siteSettings.create({
+      data: {
+        key: "app.instanceId",
+        value: instanceId,
+      },
+    });
+    console.log(`    ✓ Instance ID generated: ${instanceId.slice(0, 8)}...`);
+
+    // Send install telemetry event (fire-and-forget)
+    if (isTelemetryEnabled()) {
+      console.log("    📡 Sending anonymous install event...");
+      sendInstallEvent(instanceId).then((sent) => {
+        if (sent) {
+          console.log("    ✓ Install event sent");
+        }
+      });
+    }
+  } else {
+    console.log(
+      `    ✓ Instance ID exists: ${existingInstanceId.value.slice(0, 8)}...`
+    );
+  }
 
   // Category labels (used by categories.ts)
   const _labelRoasts = await prisma.siteSettings.upsert({
