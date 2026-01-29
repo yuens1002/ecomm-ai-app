@@ -177,4 +177,112 @@ describe("AiAssistClient", () => {
     );
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
+
+  it("shows loading state while regenerating", () => {
+    (useAiAssist as jest.Mock).mockReturnValue(
+      buildHookReturn({ isRegenerating: true })
+    );
+
+    render(
+      <AiAssistClient
+        open
+        onOpenChange={jest.fn()}
+        pageId="page-1"
+        pageTitle="About Us"
+        blocks={buildBlocks()}
+        onApplied={jest.fn()}
+      />
+    );
+
+    const regenerateButton = screen.getByRole("button", {
+      name: /regenerating/i,
+    });
+    expect(regenerateButton).toBeDisabled();
+
+    const cancelButton = screen.getByRole("button", { name: /cancel/i });
+    expect(cancelButton).toBeDisabled();
+  });
+
+  it("displays error toast on regeneration failure", async () => {
+    const regenerate = jest
+      .fn()
+      .mockRejectedValue(new Error("API rate limit exceeded"));
+
+    (useAiAssist as jest.Mock).mockReturnValue(buildHookReturn({ regenerate }));
+
+    render(
+      <AiAssistClient
+        open
+        onOpenChange={jest.fn()}
+        pageId="page-1"
+        pageTitle="About Us"
+        blocks={buildBlocks()}
+        onApplied={jest.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /regenerate/i }));
+
+    await waitFor(() => {
+      expect(mockToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Generation error",
+          description: "API rate limit exceeded",
+          variant: "destructive",
+        })
+      );
+    });
+  });
+
+  it("calls resetDraft when dialog is closed via cancel", () => {
+    const resetDraft = jest.fn();
+    const onOpenChange = jest.fn();
+
+    (useAiAssist as jest.Mock).mockReturnValue(buildHookReturn({ resetDraft }));
+
+    render(
+      <AiAssistClient
+        open
+        onOpenChange={onOpenChange}
+        pageId="page-1"
+        pageTitle="About Us"
+        blocks={buildBlocks()}
+        onApplied={jest.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+
+    expect(resetDraft).toHaveBeenCalled();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("passes selected field to regenerate when specified", async () => {
+    const regenerate = jest.fn().mockResolvedValue(undefined);
+
+    (useAiAssist as jest.Mock).mockReturnValue(
+      buildHookReturn({
+        regenerate,
+        selectedField: "foundingStory",
+      })
+    );
+
+    render(
+      <AiAssistClient
+        open
+        onOpenChange={jest.fn()}
+        pageId="page-1"
+        pageTitle="About Us"
+        blocks={buildBlocks()}
+        onApplied={jest.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /regenerate/i }));
+
+    await waitFor(() => expect(regenerate).toHaveBeenCalled());
+
+    const regenerateArgs = regenerate.mock.calls[0][0];
+    expect(regenerateArgs.selectedField).toBe("foundingStory");
+  });
 });
