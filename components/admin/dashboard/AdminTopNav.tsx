@@ -244,7 +244,7 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
                 <DropdownMenuItem disabled className="gap-2 opacity-50">
                   <KeyRound className="h-4 w-4" />
                   Password
-                  <span className="ml-auto text-xs text-muted-foreground">(coming soon)</span>
+                  <span className="ml-auto text-xs text-muted-foreground">(demo - disabled)</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
