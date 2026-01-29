@@ -63,9 +63,11 @@ export default function OrderManagementClient() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [shipDialogOpen, setShipDialogOpen] = useState(false);
   const [pickupDialogOpen, setPickupDialogOpen] = useState(false);
+  const [failDialogOpen, setFailDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [trackingNumber, setTrackingNumber] = useState("");
   const [carrier, setCarrier] = useState("");
+  const [failureReason, setFailureReason] = useState("");
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
 
@@ -175,6 +177,48 @@ export default function OrderManagementClient() {
     setShipDialogOpen(true);
   }
 
+  function openFailDialog(order: Order) {
+    setSelectedOrder(order);
+    setFailureReason("");
+    setFailDialogOpen(true);
+  }
+
+  async function handleMarkAsFailed() {
+    if (!selectedOrder || !failureReason.trim()) return;
+
+    setProcessing(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${selectedOrder.id}/fail`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: failureReason.trim() }),
+      });
+
+      if (!res.ok) throw new Error("Failed to mark as failed");
+
+      toast({
+        title: "Order Failed",
+        description: `Order #${selectedOrder.orderNumber || selectedOrder.id.slice(-8)} marked as failed`,
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
+
+      setFailDialogOpen(false);
+      setFailureReason("");
+      setSelectedOrder(null);
+      fetchOrders();
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to mark order as failed",
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  }
+
   function getTrackingUrl(carrier: string, trackingNumber: string): string {
     const carriers: Record<string, string> = {
       USPS: `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`,
@@ -196,6 +240,7 @@ export default function OrderManagementClient() {
       SHIPPED: "bg-green-100 text-green-800",
       PICKED_UP: "bg-purple-100 text-purple-800",
       CANCELLED: "bg-red-100 text-red-800",
+      FAILED: "bg-red-200 text-red-900",
     };
 
     const labels: Record<string, string> = {
@@ -204,6 +249,7 @@ export default function OrderManagementClient() {
       SHIPPED: "Shipped",
       PICKED_UP: "Picked Up",
       CANCELLED: "Canceled",
+      FAILED: "Failed",
     };
 
     return (
@@ -237,6 +283,7 @@ export default function OrderManagementClient() {
             <SelectItem value="all">All</SelectItem>
             <SelectItem value="PENDING">Pending</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="FAILED">Failed</SelectItem>
             <SelectItem value="CANCELLED">Canceled</SelectItem>
           </SelectContent>
         </Select>
@@ -371,7 +418,7 @@ export default function OrderManagementClient() {
                     </td>
                     <td className="py-4 px-4 text-center">
                       {order.status === "PENDING" ? (
-                        <div className="flex gap-2 justify-center">
+                        <div className="flex gap-2 justify-center flex-wrap">
                           {order.deliveryMethod === "DELIVERY" ? (
                             <Button
                               size="sm"
@@ -390,6 +437,13 @@ export default function OrderManagementClient() {
                               Pickup Ready
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => openFailDialog(order)}
+                          >
+                            Fail
+                          </Button>
                         </div>
                       ) : order.status === "SHIPPED" && order.trackingNumber ? (
                         <Button size="sm" variant="outline" asChild>
@@ -514,6 +568,64 @@ export default function OrderManagementClient() {
               disabled={processing}
             >
               {processing ? "Processing..." : "Confirm Pickup Ready"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fail Order Dialog */}
+      <Dialog open={failDialogOpen} onOpenChange={setFailDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark Order as Failed</DialogTitle>
+            <DialogDescription>
+              Provide a reason for failing order #
+              {selectedOrder?.orderNumber || selectedOrder?.id.slice(-8)}. The
+              customer will be notified via email.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="failureReason">Failure Reason</Label>
+              <Input
+                id="failureReason"
+                value={failureReason}
+                onChange={(e) => setFailureReason(e.target.value)}
+                placeholder="e.g., Out of stock, Payment issue, Unable to ship"
+              />
+              <p className="text-xs text-muted-foreground">
+                This message will be included in the customer notification.
+              </p>
+            </div>
+
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p>
+                <strong>Customer:</strong>{" "}
+                {selectedOrder?.user?.name ||
+                  selectedOrder?.recipientName ||
+                  "Guest"}
+              </p>
+              <p>
+                <strong>Email:</strong> {selectedOrder?.customerEmail}
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setFailDialogOpen(false)}
+              disabled={processing}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleMarkAsFailed}
+              disabled={!failureReason.trim() || processing}
+            >
+              {processing ? "Processing..." : "Mark as Failed"}
             </Button>
           </DialogFooter>
         </DialogContent>

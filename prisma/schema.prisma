@@ -259,6 +259,8 @@ model Order {
   carrier               String?
   shippedAt             DateTime?
   trackingNumber        String?
+  failureReason         String?
+  failedAt              DateTime?
   stripeSubscriptionId  String?        @unique
   user                  User?          @relation(fields: [userId], references: [id], onDelete: Restrict)
   items                 OrderItem[]
