@@ -235,10 +235,11 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem disabled className="gap-2 opacity-50">
-                  <User className="h-4 w-4" />
-                  Profile
-                  <span className="ml-auto text-xs text-muted-foreground">(coming soon)</span>
+                <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+                  <Link href="/admin/profile">
+                    <User className="h-4 w-4" />
+                    Profile
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem disabled className="gap-2 opacity-50">
                   <KeyRound className="h-4 w-4" />
