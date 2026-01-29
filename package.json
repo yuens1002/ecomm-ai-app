@@ -24,7 +24,10 @@
     "db:safe-migrate": "tsx dev-tools/safe-migrate.ts",
     "db:smoke": "tsx dev-tools/smoke-crud.ts",
     "create-admin": "tsx scripts/create-admin.ts",
-    "setup": "tsx scripts/setup.ts"
+    "setup": "tsx scripts/setup.ts",
+    "release:patch": "tsx scripts/release.ts patch",
+    "release:minor": "tsx scripts/release.ts minor",
+    "release:major": "tsx scripts/release.ts major"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
