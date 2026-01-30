@@ -3,7 +3,7 @@
  * Used for update notifications and telemetry
  */
 
-export const APP_VERSION = "0.76.0";
+export const APP_VERSION = "0.77.0";
 
 export type Edition = "community" | "pro";
 
