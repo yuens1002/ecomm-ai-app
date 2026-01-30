@@ -2,7 +2,7 @@ import { PrismaClient, WeightUnit } from "@prisma/client";
 import { randomUUID } from "crypto";
 import {
   sendInstallEvent,
-  isTelemetryEnabled,
+  isTelemetryDisabledByEnv,
 } from "../../lib/telemetry";
 
 export async function seedSettings(prisma: PrismaClient) {
@@ -24,9 +24,10 @@ export async function seedSettings(prisma: PrismaClient) {
     console.log(`    ✓ Instance ID generated: ${instanceId.slice(0, 8)}...`);
 
     // Send install telemetry event (fire-and-forget)
-    if (isTelemetryEnabled()) {
+    // Note: During seed, we only check env var since DB setting may not exist yet
+    if (!isTelemetryDisabledByEnv()) {
       console.log("    📡 Sending anonymous install event...");
-      sendInstallEvent(instanceId).then((sent) => {
+      sendInstallEvent(instanceId, prisma).then((sent) => {
         if (sent) {
           console.log("    ✓ Install event sent");
         }
