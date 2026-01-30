@@ -110,6 +110,8 @@ export default function OrdersPageClient({
         return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
       case "CANCELLED":
         return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      case "FAILED":
+        return "bg-red-200 text-red-900 dark:bg-red-900/50 dark:text-red-300";
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
     }
@@ -121,6 +123,8 @@ export default function OrdersPageClient({
         return "Picked Up";
       case "CANCELLED":
         return "Canceled";
+      case "FAILED":
+        return "Failed";
       default:
         return status.charAt(0) + status.slice(1).toLowerCase();
     }
@@ -167,6 +171,9 @@ export default function OrdersPageClient({
             </SelectItem>
             <SelectItem value="completed">
               Completed ({getOrderCount("completed")})
+            </SelectItem>
+            <SelectItem value="failed">
+              Failed ({getOrderCount("failed")})
             </SelectItem>
             <SelectItem value="cancelled">
               Canceled ({getOrderCount("cancelled")})
