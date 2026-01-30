@@ -72,8 +72,8 @@ export function UpdateBanner() {
   }
 
   return (
-    <div className="mb-4 flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
-      <RefreshCw className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+    <div className="mb-4 flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
+      <RefreshCw className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
       <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <span className="text-sm text-blue-800 dark:text-blue-200">
           <strong>Update available:</strong> v{data.latest} is now available.

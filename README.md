@@ -12,10 +12,7 @@
 
 ---
 
-<!-- TODO: Add hero screenshot or GIF here -->
-<!-- ![Artisan Roast Demo](./docs/assets/hero-demo.gif) -->
-
-*Screenshot: AI barista helping a customer find their perfect roast*
+![Artisan Roast Demo](./docs/assets/hero.gif)
 
 </div>
 
@@ -56,6 +53,43 @@ Most e-commerce platforms treat coffee like any other product. But your customer
 | One-click subscriptions | Order management & analytics |
 | Stripe checkout (cards, Apple Pay, Google Pay) | Pages CMS with AI content generation |
 
+### Screenshots
+
+<details>
+<summary><strong>Homepage</strong> - Clean, modern storefront</summary>
+
+![Homepage](./docs/assets/screenshots/homepage.png)
+
+</details>
+
+<details>
+<summary><strong>AI Chat Assistant</strong> - Natural language coffee recommendations</summary>
+
+![AI Chat](./docs/assets/screenshots/ai-chat.png)
+
+</details>
+
+<details>
+<summary><strong>Product Page</strong> - Rich product details with variant selection</summary>
+
+![Product Page](./docs/assets/screenshots/product-page.png)
+
+</details>
+
+<details>
+<summary><strong>Admin Dashboard</strong> - Analytics and store overview</summary>
+
+![Admin Dashboard](./docs/assets/screenshots/admin-dashboard.png)
+
+</details>
+
+<details>
+<summary><strong>Menu Builder</strong> - Drag-and-drop catalog organization</summary>
+
+![Menu Builder](./docs/assets/screenshots/menu-builder.png)
+
+</details>
+
 ---
 
 ## Quick Start
@@ -65,6 +99,7 @@ Most e-commerce platforms treat coffee like any other product. But your customer
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app&env=DATABASE_URL,DIRECT_URL,AUTH_SECRET,STRIPE_SECRET_KEY,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,RESEND_API_KEY,RESEND_FROM_EMAIL,NEXT_PUBLIC_APP_URL,SEED_ON_BUILD&envDescription=Required%20environment%20variables%20for%20Artisan%20Roast.%20See%20.env.example%20for%20details.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
 
 You'll need:
+
 - [Neon](https://neon.tech) account (free tier available) for PostgreSQL database
 - [Stripe](https://stripe.com) account for payment processing
 - [Resend](https://resend.com) account (free tier: 3,000 emails/month) for transactional emails
@@ -158,6 +193,7 @@ npm run dev                 # http://localhost:3000
 We welcome contributions! See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
 **Quick wins we'd love help with:**
+
 - Documentation improvements
 - Accessibility audits
 - Translation/i18n
