@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.77.0 - 2026-01-30
+
+### Features
+- **In-App Feedback Widget**: Collect bug reports, feature requests, and feedback from admin panel
+  - FeedbackDialog with FieldSet composition pattern
+  - Submissions create GitHub Issues automatically via API
+  - Graceful fallback when GitHub credentials not configured
+  - Link to GitHub Discussions for public conversation
+- **Failed Order Handling**: Mark orders as failed with customer notification
+  - Admin can mark PENDING orders as FAILED with reason
+  - FailedOrderNotification email template with refund info
+  - FAILED status styling in admin and customer views
+
+### Testing
+- **AI Assist Test Coverage**: Expanded test suite with realistic cases
+  - API route tests: 403 for non-admin, 400 for invalid blocks, GET/PUT validation
+  - Component tests: loading state, error toast, resetDraft, selectedField
+
+### Infrastructure
+- Added `/api/feedback` endpoint for GitHub Issues integration
+- Added `/api/admin/orders/[orderId]/fail` endpoint
+- Added `failureReason` and `failedAt` fields to Order model
+- Added GitHub feedback env vars to `.env.example`
+
 ## 0.76.0 - 2026-01-29
 
 ### Features
