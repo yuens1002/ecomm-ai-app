@@ -7,9 +7,12 @@
 
 import { APP_VERSION, EDITION } from "./version";
 
+// All instances report to the central Artisan Roast telemetry server
+// This helps us (the developers) track installs and health across all deployments
+// Can be overridden if someone wants to self-host their own telemetry
 const TELEMETRY_ENDPOINT =
   process.env.TELEMETRY_ENDPOINT ||
-  "https://telemetry.artisanroast.app/api/events";
+  "https://ecomm-ai-app.vercel.app/api/telemetry/events";
 
 export interface TelemetryEvent {
   event: "install" | "heartbeat" | "upgrade";
