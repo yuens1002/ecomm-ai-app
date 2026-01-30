@@ -15,7 +15,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { FeedbackData, feedbackTypeLabels } from "@/lib/feedback";
-import { ChevronLeft } from "lucide-react";
+import { DialogTitle } from "@radix-ui/react-dialog";
+import { ChevronLeftIcon, GithubIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -86,10 +87,13 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <FieldSet>
-              <FieldLegend>Share Feedback</FieldLegend>
-              <FieldDescription>
-                Help us improve Artisan Roast. Your feedback goes directly to our team.
-              </FieldDescription>
+              <DialogTitle>
+                <FieldLegend>Share Feedback</FieldLegend>
+                <FieldDescription>
+                  Help us improve Artisan Roast. Your feedback goes directly to our team.
+                </FieldDescription>
+              </DialogTitle>
+
               <FieldGroup>
                 <Field>
                   <FieldLabel htmlFor="message">What&apos;s on your mind?</FieldLabel>
@@ -146,23 +150,25 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               </FieldGroup>
             </FieldSet>
 
-            <Field orientation="horizontal">
-              <Button variant="link" asChild className="mr-auto">
+            <Field orientation="horizontal" className="justify-between space-x-2">
+              <Button variant="link" asChild disabled={isSubmitting} className="p-0!">
                 <Link href={GITHUB_DISCUSSIONS_URL} target="_blank" rel="noopener noreferrer">
-                  <ChevronLeft /> Discuss on GitHub
+                  <ChevronLeftIcon /> Discuss on GitHub <GithubIcon className="ml-1" />
                 </Link>
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Submitting..." : "Submit Feedback"}
-              </Button>
+              <div className="flex space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Submitting..." : "Submit"}
+                </Button>
+              </div>
             </Field>
           </FieldGroup>
         </form>
