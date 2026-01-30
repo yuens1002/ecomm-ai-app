@@ -10,10 +10,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Field, FieldGroup, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { FormHeading } from "@/components/ui/app/FormHeading";
 import { useToast } from "@/hooks/use-toast";
 import { FeedbackData, feedbackTypeLabels } from "@/lib/feedback";
 import Link from "next/link";
@@ -93,9 +94,9 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="message">What&apos;s on your mind?</Label>
+          <FieldGroup className="py-4">
+            <Field>
+              <FormHeading htmlFor="message" label="What's on your mind?" />
               <Textarea
                 id="message"
                 placeholder="Describe your feedback, bug report, or feature request..."
@@ -106,11 +107,12 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                 rows={4}
                 required
                 minLength={10}
+                disabled={isSubmitting}
               />
-            </div>
+            </Field>
 
-            <div className="space-y-2">
-              <Label>Type of feedback</Label>
+            <Field>
+              <FormHeading label="Type of feedback" />
               <RadioGroup
                 value={formData.type}
                 onValueChange={(value) =>
@@ -120,22 +122,26 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                   }))
                 }
                 className="flex flex-wrap gap-4"
+                disabled={isSubmitting}
               >
                 {(Object.keys(feedbackTypeLabels) as FeedbackData["type"][]).map(
                   (type) => (
                     <div key={type} className="flex items-center space-x-2">
                       <RadioGroupItem value={type} id={type} />
-                      <Label htmlFor={type} className="font-normal cursor-pointer">
+                      <FieldLabel
+                        htmlFor={type}
+                        className="font-normal cursor-pointer"
+                      >
                         {feedbackTypeLabels[type]}
-                      </Label>
+                      </FieldLabel>
                     </div>
                   )
                 )}
               </RadioGroup>
-            </div>
+            </Field>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email (optional)</Label>
+            <Field>
+              <FormHeading htmlFor="email" label="Email (optional)" />
               <Input
                 id="email"
                 type="email"
@@ -144,12 +150,13 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, email: e.target.value }))
                 }
+                disabled={isSubmitting}
               />
-              <p className="text-xs text-muted-foreground">
+              <FieldDescription>
                 Include if you&apos;d like us to follow up with you.
-              </p>
-            </div>
-          </div>
+              </FieldDescription>
+            </Field>
+          </FieldGroup>
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <p className="text-xs text-muted-foreground mr-auto">
