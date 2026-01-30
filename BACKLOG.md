@@ -714,11 +714,14 @@ function ProductAddOnsClient({ addOns, products }) {
 
 ### Testing – AI Assist About (must-do)
 
-- [ ] API happy paths: `/api/admin/pages/[id]/replace-blocks`, `/api/admin/pages/[id]/ai-state` (200/401/409-ish) via Jest + supertest or Next route harness.
-- [ ] AI Assist hook: `useAiAssist` caching/fingerprint, skip-on-same-state, cache reuse, `resetDraft`; mock fetch/localStorage to avoid network/state leaks.
-- [ ] UI smoke: `AiAssistClient`/`AiAssistContent` renders, disables buttons while regenerating, shows spinner overlay, auto-close on success.
-- [ ] E2E smoke: Admin logs in, opens About page editor, triggers regenerate, sees toast, blocks update, dialog closes.
-- [ ] Toast regressions: auto-dismiss after ~5s and manual close stays accessible.
+**Status**: Partial ✅ (v0.77.0)
+
+- [x] API happy paths: `/api/admin/pages/[id]/replace-blocks`, `/api/admin/pages/[id]/ai-state` (200/401/403/400)
+- [x] API edge cases: 403 for non-admin, 400 for invalid/empty blocks, malformed JSON handling
+- [x] UI smoke: `AiAssistClient` loading state, error toast, resetDraft on cancel, selectedField passed
+- [ ] AI Assist hook: `useAiAssist` caching/fingerprint, skip-on-same-state, cache reuse
+- [ ] E2E smoke: Admin logs in, opens About page editor, triggers regenerate, sees toast
+- [ ] Toast regressions: auto-dismiss after ~5s and manual close stays accessible
 
 ---
 
@@ -807,102 +810,43 @@ function ProductAddOnsClient({ addOns, products }) {
 
 ### Failed Order Handling System
 
-**Status**: Planned
-**Description**: Implement comprehensive failed order handling to notify customers and track fulfillment issues.
+**Status**: Complete ✅
+**Completed**: January 30, 2026 (v0.77.0)
+**Description**: Comprehensive failed order handling with customer notification.
 
-**Tasks**:
-
-- [ ] Add `FAILED` status to `OrderStatus` enum in Prisma schema
-- [ ] Create migration: `add_failed_order_status`
-- [ ] Create `FailedOrderNotification.tsx` email template
-  - Include order details, reason for failure, support contact
-  - Match existing email template styling
-- [ ] Update order history UI to display FAILED status
-  - Add red badge/styling for failed orders
-  - Show failure reason/message to customer
-- [ ] Create admin endpoint to mark orders as FAILED
-  - POST `/api/admin/orders/[id]/fail`
-  - Accept failure reason in request body
-  - Trigger customer notification email
-  - Update order status in database
-- [ ] Add failure reason field to Order model (optional)
-  - `failureReason String?` to track why order failed
-
-**Acceptance Criteria**:
-
-- Merchants can mark orders as FAILED with reason
-- Customers receive email notification when order fails
-- Failed orders visible in customer order history
-- Failed orders trackable in admin dashboard
+**Implemented**:
+- [x] Added `failureReason` and `failedAt` fields to Order model
+- [x] Created migration for failure fields
+- [x] Created `FailedOrderNotification.tsx` email template with refund info
+- [x] Updated order history UI with FAILED status styling
+- [x] Created `/api/admin/orders/[orderId]/fail` endpoint
+- [x] Admin UI with fail dialog and reason input
 
 ---
 
 ### In-App Feedback Widget
 
-**Status**: Planned
+**Status**: Complete ✅
+**Completed**: January 30, 2026 (v0.77.0)
 **Priority**: High (Launch requirement)
-**Description**: Add a frictionless feedback mechanism to collect bug reports, feature requests, and general feedback from users. Reuse existing contact form components.
+**Description**: Frictionless feedback mechanism using GitHub Issues integration.
 
-**Goals**:
-- Zero friction: No account required to submit feedback
-- Optional email: Users can opt-in to receive updates on their feedback
-- Categorization: Bug / Feature Request / Other
-- Bridge to community: Link to GitHub Discussions for public conversation
+**Implemented**:
+- [x] FeedbackDialog component with FieldSet composition pattern
+- [x] Feedback type radio buttons (Bug / Feature / Other)
+- [x] Optional email field for follow-up
+- [x] `POST /api/feedback` endpoint creating GitHub Issues
+- [x] Graceful fallback when GitHub not configured (logs locally)
+- [x] Feedback button in admin footer
+- [x] Link to GitHub Discussions in dialog
+- [x] Auto-labels: `bug`, `enhancement`, `question` + `user-feedback`
 
-**Proposed UI**:
-
+**Configuration**:
+```env
+GITHUB_TOKEN="github_pat_..."
+GITHUB_REPO_OWNER="yuens1002"
+GITHUB_REPO_NAME="ecomm-ai-app"
 ```
-┌──────────────────────────────────────────┐
-│ 💬 Share Feedback                   [X] │
-├──────────────────────────────────────────┤
-│ What's on your mind?                     │
-│ ┌──────────────────────────────────────┐ │
-│ │                                      │ │
-│ └──────────────────────────────────────┘ │
-│                                          │
-│ ○ Bug  ○ Feature Request  ○ Other        │
-│                                          │
-│ Email (optional - to receive updates)    │
-│ ┌──────────────────────────────────────┐ │
-│ │                                      │ │
-│ └──────────────────────────────────────┘ │
-│                                          │
-│ [  Submit Feedback  ]                    │
-│                                          │
-│ 💡 Or discuss publicly on GitHub →       │
-└──────────────────────────────────────────┘
-```
-
-**Technical Implementation**:
-
-1. **Reuse Contact Form**: Leverage existing `ContactForm` component styling and validation
-2. **Feedback Button**: Add to admin footer or floating button in admin layout
-3. **API Endpoint**: `POST /api/feedback`
-   - Fields: message, type (bug/feature/other), email (optional), instanceId, version
-   - Store in database or send to external service (GitHub Issues API, Supabase, etc.)
-4. **Optional Email Flow**: If email provided, send confirmation + updates when status changes
-5. **Admin View (Future)**: Dashboard to view/triage feedback submissions
-
-**Tasks**:
-
-- [ ] Create `FeedbackDialog` component (adapt from ContactForm)
-- [ ] Add feedback type radio buttons (Bug / Feature / Other)
-- [ ] Add optional email field with "Keep me updated" label
-- [ ] Create `POST /api/feedback` endpoint
-- [ ] Decide storage: Database table vs GitHub Issues API vs Supabase
-- [ ] Add "Feedback" button to admin layout footer
-- [ ] Link to GitHub Discussions in dialog
-- [ ] Send confirmation email if email provided (optional)
-
-**Acceptance Criteria**:
-
-- Users can submit feedback without creating an account
-- Feedback is categorized by type
-- Optional email captures users who want updates
-- Submissions are stored and reviewable
-- Clear path to GitHub Discussions for public conversation
-
-**Estimated Effort**: 3-4 hours
 
 ---
 
