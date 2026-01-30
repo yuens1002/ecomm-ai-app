@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.78.0 - 2026-01-30
+
+### Features
+- **Telemetry Backend**: Central server receives anonymous usage data from all instances
+  - TelemetryEvent table stores install/heartbeat/upgrade events
+  - GET endpoint provides aggregate stats for developers
+- **Support Page**: New admin page for support plans and data privacy
+  - Added to Management section in navigation
+  - Telemetry opt-out toggle for shop owners
+  - Support Plans section (coming soon placeholder)
+- **README Screenshots**: Added hero GIF and feature screenshot gallery
+
+### Infrastructure
+- Added `/api/telemetry/events` POST/GET endpoints
+- Added `/api/admin/settings/telemetry` endpoint for toggle
+- Added `telemetry_enabled` SiteSettings key
+- Telemetry checks both env var and database setting
+
 ## 0.77.0 - 2026-01-30
 
 ### Features
