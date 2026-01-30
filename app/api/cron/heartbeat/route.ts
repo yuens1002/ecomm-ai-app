@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!isTelemetryEnabled()) {
+  const telemetryEnabled = await isTelemetryEnabled(prisma);
+  if (!telemetryEnabled) {
     return NextResponse.json({
       success: true,
       message: "Telemetry disabled",
@@ -54,11 +55,15 @@ export async function GET(request: NextRequest) {
       prisma.order.count(),
     ]);
 
-    const sent = await sendHeartbeatEvent(instanceId, {
-      productCount,
-      userCount,
-      orderCount,
-    });
+    const sent = await sendHeartbeatEvent(
+      instanceId,
+      {
+        productCount,
+        userCount,
+        orderCount,
+      },
+      prisma
+    );
 
     return NextResponse.json({
       success: true,

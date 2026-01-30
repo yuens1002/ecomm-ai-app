@@ -6,6 +6,7 @@ import {
   MoreHorizontal,
   Users,
   Settings,
+  LifeBuoy,
   type LucideIcon,
 } from "lucide-react";
 
@@ -73,6 +74,7 @@ export const adminNavConfig: NavItem[] = [
     children: [
       { label: "All Users", href: "/admin/users" },
       { label: "Newsletter", href: "/admin/newsletter" },
+      { label: "Support", href: "/admin/support", icon: LifeBuoy },
     ],
   },
   {
@@ -305,6 +307,7 @@ export const mobileNavConfig: NavItem[] = [
     children: [
       { label: "All Users", href: "/admin/users" },
       { label: "Newsletter", href: "/admin/newsletter" },
+      { label: "Support", href: "/admin/support", icon: LifeBuoy },
     ],
   },
   {
