@@ -31,7 +31,7 @@ import {
   GenerateAboutResponse,
   WizardAnswers,
 } from "@/lib/api-schemas/generate-about";
-import { OptionCardGroup } from "@/components/admin/OptionCardGroup";
+import { OptionCardGroup } from "@/app/admin/_components/forms/OptionCardGroup";
 
 const questions = [
   {

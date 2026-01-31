@@ -16,8 +16,8 @@ import {
   FieldDescription,
 } from "@/components/ui/field";
 import { useToast } from "@/hooks/use-toast";
-import { SaveButton } from "@/components/admin/SaveButton";
-import { NameSlugField } from "@/components/app-components/NameSlugField";
+import { SaveButton } from "@/app/admin/_components/forms/SaveButton";
+import { NameSlugField } from "@/app/admin/_components/cms/fields/NameSlugField";
 
 interface LinkPageEditorClientProps {
   page: {

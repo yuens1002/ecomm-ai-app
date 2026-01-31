@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { Block, HeroBlock, RichTextBlock } from "@/lib/blocks/schemas";
 import { WizardAnswers } from "@/lib/api-schemas/generate-about";
-import { AiAssistDialog } from "@/components/app-components/AiAssistDialog";
+import { AiAssistDialog } from "@/app/admin/_components/dialogs/AiAssistDialog";
 import { AiAssistContent } from "@/components/ai-assist/AiAssistContent";
 import { useAiAssist } from "@/lib/ai-assist/useAiAssist";
 import { buildAiFallbackAnswers } from "@/lib/ai-assist/fallbackAnswers";

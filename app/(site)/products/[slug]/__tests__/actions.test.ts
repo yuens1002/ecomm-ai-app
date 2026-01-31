@@ -2,7 +2,7 @@
 
 import { getProductAddOns } from "../actions";
 import { prisma } from "@/lib/prisma";
-import { getWeightUnit } from "@/lib/app-settings";
+import { getWeightUnit } from "@/lib/config/app-settings";
 
 type PrismaMock = {
   addOnLink: {
@@ -39,7 +39,7 @@ jest.mock("@/lib/prisma", () => {
 });
 
 // Mock weight utils
-jest.mock("@/lib/app-settings", () => ({
+jest.mock("@/lib/config/app-settings", () => ({
   getWeightUnit: jest.fn().mockResolvedValue("grams"),
   fromGrams: jest.fn((grams: number, unit: string) => {
     if (unit === "ounces") return grams * 0.035274;

@@ -1,7 +1,7 @@
 "use client";
 
 import OrderManagementClient from "./OrderManagementClient";
-import { PageTitle } from "@/components/admin/PageTitle";
+import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 
 export default function AdminOrdersPage() {
   return (

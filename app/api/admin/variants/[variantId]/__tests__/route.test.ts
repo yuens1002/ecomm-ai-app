@@ -22,7 +22,7 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
-jest.mock("@/lib/app-settings", () => ({
+jest.mock("@/lib/config/app-settings", () => ({
   getWeightUnit: jest.fn().mockResolvedValue("g"),
 }));
 

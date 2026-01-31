@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { Shield } from "lucide-react";
-import { SignIn } from "@/components/app-components/auth/SignIn";
+import { SignIn } from "@/components/auth/SignIn";
 import { getSiteMetadata } from "@/lib/site-metadata";
 import { AdminSignInContent } from "./admin-signin-content";
 

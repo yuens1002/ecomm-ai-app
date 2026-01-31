@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
-import { stripe } from "@/lib/stripe";
+import { stripe } from "@/lib/services/stripe";
 import { getErrorMessage } from "@/lib/error-utils";
 
 /**

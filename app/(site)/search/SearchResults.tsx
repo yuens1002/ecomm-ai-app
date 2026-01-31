@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2 } from "lucide-react";
-import ProductCard from "@/components/app-components/ProductCard";
+import ProductCard from "@/app/(site)/_components/product/ProductCard";
 
 interface SearchProduct {
   id: string;

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import SearchResults from "./SearchResults";
 import Link from "next/link";
-import PageContainer from "@/components/app-components/PageContainer";
+import PageContainer from "@/components/shared/PageContainer";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { getSiteMetadata } from "@/lib/site-metadata";

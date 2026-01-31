@@ -1,5 +1,5 @@
 // Mock Resend before importing anything that uses it
-jest.mock("@/lib/resend", () => ({
+jest.mock("@/lib/services/resend", () => ({
   resend: {
     emails: {
       send: jest.fn(),
@@ -54,7 +54,7 @@ import {
   resetPasswordWithToken,
   RESET_EXPIRY_MINUTES,
 } from "@/lib/password-reset";
-import { resend } from "@/lib/resend";
+import { resend } from "@/lib/services/resend";
 import * as passwordLib from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 

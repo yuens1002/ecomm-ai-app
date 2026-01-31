@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { useBreadcrumb } from "@/components/admin/dashboard/BreadcrumbContext";
-import { SettingsField } from "@/components/admin/SettingsField";
-import { SettingsSection } from "@/components/admin/SettingsSection";
-import { PageTitle } from "@/components/admin/PageTitle";
+import { useBreadcrumb } from "@/app/admin/_components/dashboard/BreadcrumbContext";
+import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
+import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
+import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import {
   InputGroup,
   InputGroupAddon,

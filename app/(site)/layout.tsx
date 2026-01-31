@@ -1,8 +1,8 @@
-import SiteHeaderWrapper from "@/components/app-components/SiteHeaderWrapper";
-import SiteFooter from "@components/app-components/SiteFooter";
-import { SiteBannerProvider } from "@/hooks/useSiteBanner";
-import { SiteBannerPortal } from "@/components/app-components/SiteBannerPortal";
-import { DemoBanner } from "@/components/app-components/DemoBanner";
+import SiteHeaderWrapper from "@/app/(site)/_components/layout/SiteHeaderWrapper";
+import SiteFooter from "@/app/(site)/_components/layout/SiteFooter";
+import { SiteBannerProvider } from "@/app/(site)/_hooks/useSiteBanner";
+import { SiteBannerPortal } from "@/app/(site)/_components/layout/SiteBannerPortal";
+import { DemoBanner } from "@/app/(site)/_components/content/DemoBanner";
 
 /**
  * Layout for all customer-facing (site) routes.

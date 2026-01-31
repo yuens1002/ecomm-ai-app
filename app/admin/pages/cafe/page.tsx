@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import CafeEditorClient from "./CafeEditorClient";
 import { getPageBlocks } from "@/lib/blocks/actions";
-import { getLocationType } from "@/lib/app-settings";
+import { getLocationType } from "@/lib/config/app-settings";
 
 export default async function CafeEditorPage() {
   // Auth and admin checks are enforced by the parent admin layout

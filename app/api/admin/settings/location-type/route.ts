@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getLocationType, setLocationType } from "@/lib/app-settings";
+import { getLocationType, setLocationType } from "@/lib/config/app-settings";
 import { LocationType } from "@/lib/location-type";
 import { requireAdmin } from "@/lib/admin";
 

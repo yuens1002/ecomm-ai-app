@@ -1,4 +1,4 @@
-import { SignIn } from "@/components/app-components/auth/SignIn";
+import { SignIn } from "@/components/auth/SignIn";
 import { ResetPasswordContent } from "./reset-password-content";
 import { getSiteMetadata } from "@/lib/site-metadata";
 

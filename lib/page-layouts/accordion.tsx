@@ -6,10 +6,10 @@ import {
   FaqItemBlock,
   BLOCK_METADATA,
 } from "@/lib/blocks/schemas";
-import { FaqPageContent } from "@/components/app-components/FaqPageContent";
+import { FaqPageContent } from "@/app/(site)/_components/content/FaqPageContent";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { BlockRenderer } from "@/components/blocks/BlockRenderer";
+import { BlockRenderer } from "@/app/admin/_components/cms/blocks/BlockRenderer";
 
 /**
  * Accordion Layout Configuration

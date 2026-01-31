@@ -11,16 +11,16 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Typography } from "@/components/ui/typography";
-import { PullQuote } from "@/components/app-components/PullQuote";
-import { StatCard } from "@/components/app-components/StatCard";
-import { OptionCardGroup } from "@/components/admin/OptionCardGroup";
+import { PullQuote } from "@/app/(site)/_components/content/PullQuote";
+import { StatCard } from "@/app/(site)/_components/content/StatCard";
+import { OptionCardGroup } from "@/app/admin/_components/forms/OptionCardGroup";
 import {
   GenerateAboutRequest,
   GeneratedVariation,
   WizardAnswers,
 } from "@/lib/api-schemas/generate-about";
-import { AboutAnswerEditor } from "@/components/app-components/AboutAnswerEditor";
-import { SaveButton } from "@/components/admin/SaveButton";
+import { AboutAnswerEditor } from "@/app/admin/_components/cms/editors/AboutAnswerEditor";
+import { SaveButton } from "@/app/admin/_components/forms/SaveButton";
 
 type UiVariation = {
   style: "story" | "values" | "product";

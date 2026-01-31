@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { Field, FieldGroup } from "@/components/ui/field";
-import { PasswordFields } from "@/components/app-components/auth/PasswordFields";
+import { PasswordFields } from "@/components/auth/PasswordFields";
 import { signUpPublic } from "@/actions/auth";
 
 type State = {

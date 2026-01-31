@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { PageContainer } from "@/components/app-components/PageContainer";
+import { PageContainer } from "@/components/shared/PageContainer";
 
 interface OrdersPageClientProps {
   statusFilter?: string;

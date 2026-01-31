@@ -1,4 +1,4 @@
-import { CategoryMenuColumns } from "@/components/app-components/CategoryMenuColumns";
+import { CategoryMenuColumns } from "@/app/(site)/_components/navigation/CategoryMenuColumns";
 
 /**
  * Test/demo page for CategoryMenuColumns component

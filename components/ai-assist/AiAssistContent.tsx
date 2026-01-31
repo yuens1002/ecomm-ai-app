@@ -1,11 +1,11 @@
 "use client";
 import { Loader2 } from "lucide-react";
-import { AboutAnswerEditor } from "@/components/app-components/AboutAnswerEditor";
+import { AboutAnswerEditor } from "@/app/admin/_components/cms/editors/AboutAnswerEditor";
 import {
   GeneratedVariation,
   WizardAnswers,
 } from "@/lib/api-schemas/generate-about";
-import { OptionCardGroup } from "@/components/admin/OptionCardGroup";
+import { OptionCardGroup } from "@/app/admin/_components/forms/OptionCardGroup";
 
 export type AiAssistContentProps = {
   answers: WizardAnswers;

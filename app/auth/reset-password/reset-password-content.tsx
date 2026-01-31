@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ResetPasswordForm } from "@/components/app-components/auth/ResetPasswordForm";
+import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { resetPasswordWithTokenAction } from "@/actions/auth";
 
 export function ResetPasswordContent() {

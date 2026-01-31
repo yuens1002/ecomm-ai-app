@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { stripe } from "@/lib/services/stripe";
 import Stripe from "stripe";
 import { CartItem } from "@/lib/store/cart-store";
 import { getErrorMessage } from "@/lib/error-utils";

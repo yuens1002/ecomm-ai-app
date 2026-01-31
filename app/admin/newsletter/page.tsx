@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/admin";
 import NewsletterManagementClient from "./NewsletterManagementClient";
-import { PageTitle } from "@/components/admin/PageTitle";
+import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 
 export const metadata = {
   title: "Newsletter Subscribers | Admin",

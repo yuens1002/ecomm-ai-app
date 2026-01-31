@@ -7,8 +7,8 @@ import { Field, FieldDescription, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/app/FormHeading";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Store } from "lucide-react";
-import { IconPicker } from "@/components/app-components/IconPicker";
-import { SaveButton } from "@/components/admin/SaveButton";
+import { IconPicker } from "@/app/admin/_components/cms/fields/IconPicker";
+import { SaveButton } from "@/app/admin/_components/forms/SaveButton";
 
 interface ProductMenuSettings {
   icon: string;

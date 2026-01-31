@@ -4,7 +4,7 @@ import {
   getProductsByCategorySlug,
   getCategorySlugs,
 } from "@/lib/data";
-import CategoryClientPage from "@components/app-components/CategoryClientPage";
+import CategoryClientPage from "@/app/(site)/_components/category/CategoryClientPage";
 
 // Re-fetch this page in the background, at most once per hour.
 // This ensures new products added to a category will eventually appear.

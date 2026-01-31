@@ -9,12 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import TipTapEditor from "@/components/app-components/TipTapEditor";
-import { NameSlugField } from "@/components/app-components/NameSlugField";
+import TipTapEditor from "@/app/admin/_components/cms/editors/TipTapEditor";
+import { NameSlugField } from "@/app/admin/_components/cms/fields/NameSlugField";
 import {
   DynamicIcon,
   COMMON_PAGE_ICONS,
-} from "@/components/app-components/DynamicIcon";
+} from "@/components/shared/icons/DynamicIcon";
 import { useToast } from "@/hooks/use-toast";
 import {
   Select,
@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SaveButton } from "@/components/admin/SaveButton";
+import { SaveButton } from "@/app/admin/_components/forms/SaveButton";
 
 interface EditPageClientProps {
   page: {

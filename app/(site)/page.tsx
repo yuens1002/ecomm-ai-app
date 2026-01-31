@@ -1,10 +1,10 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import FeaturedProducts from "@components/app-components/FeaturedProducts";
-import RecommendationsSection from "@components/app-components/RecommendationsSection";
-import ChatBarista from "@components/app-components/ChatBarista";
-import VoiceBarista from "@components/app-components/VoiceBarista";
+import FeaturedProducts from "@/app/(site)/_components/product/FeaturedProducts";
+import RecommendationsSection from "@/app/(site)/_components/product/RecommendationsSection";
+import ChatBarista from "@/app/(site)/_components/ai/ChatBarista";
+import VoiceBarista from "@/app/(site)/_components/ai/VoiceBarista";
 
 // --- Main Page Component ---
 export default function Home() {

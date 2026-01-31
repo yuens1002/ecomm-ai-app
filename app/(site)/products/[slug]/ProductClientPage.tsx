@@ -21,16 +21,16 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
-import ProductCard from "@components/app-components/ProductCard";
-import { AddOnCard } from "@components/app-components/AddOnCard";
-import { ScrollCarousel } from "@components/app-components/ScrollCarousel";
-import { ImageCarousel } from "@components/app-components/ImageCarousel";
-import PageContainer from "@components/app-components/PageContainer";
+import ProductCard from "@/app/(site)/_components/product/ProductCard";
+import { AddOnCard } from "@/app/(site)/_components/cart/AddOnCard";
+import { ScrollCarousel } from "@/components/shared/media/ScrollCarousel";
+import { ImageCarousel } from "@/components/shared/media/ImageCarousel";
+import PageContainer from "@/components/shared/PageContainer";
 import { useCartStore, type CartItem } from "@/lib/store/cart-store";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
 import { AddOnItem } from "./actions";
 import { Badge } from "@/components/ui/badge";
-import { ProductSelectionsSection } from "@/components/product/ProductSelectionsSection";
+import { ProductSelectionsSection } from "@/app/(site)/_components/product/ProductSelectionsSection";
 
 interface ProductClientPageProps {
   product: Product;

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/store/cart-store";
-import { PageContainer } from "@/components/app-components/PageContainer";
+import { PageContainer } from "@/components/shared/PageContainer";
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();

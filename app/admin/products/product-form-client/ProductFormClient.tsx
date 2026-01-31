@@ -29,9 +29,9 @@ import { ProductCoffeeDetailsSection } from "./ProductCoffeeDetailsSection";
 import { ProductCategoriesSection } from "./ProductCategoriesSection";
 import { ProductVariantsSection } from "./ProductVariantsSection";
 import { ProductAddOnsSection } from "./ProductAddOnsSection";
-import { NameSlugField } from "@/components/app-components/NameSlugField";
-import { useMultiImageUpload } from "@/hooks/useImageUpload";
-import { SaveButton } from "@/components/admin/SaveButton";
+import { NameSlugField } from "@/app/admin/_components/cms/fields/NameSlugField";
+import { useMultiImageUpload } from "@/app/admin/_hooks/useImageUpload";
+import { SaveButton } from "@/app/admin/_components/forms/SaveButton";
 
 interface CategoryLabel {
   id: string;

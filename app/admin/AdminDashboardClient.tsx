@@ -18,7 +18,7 @@ import {
   Settings,
   Mail,
 } from "lucide-react";
-import { PageTitle } from "@/components/admin/PageTitle";
+import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import ProductManagementClient from "./products/ProductManagementClient";
 import UserManagementClient from "./users/UserManagementClient";
 import OrderManagementClient from "./orders/OrderManagementClient";

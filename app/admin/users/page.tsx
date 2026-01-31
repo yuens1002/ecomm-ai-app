@@ -1,7 +1,7 @@
 import { requireAdmin, getCurrentAdminUserId } from "@/lib/admin";
 import { Metadata } from "next";
 import UserManagementClient from "./UserManagementClient";
-import { PageTitle } from "@/components/admin/PageTitle";
+import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 
 export const metadata: Metadata = {
   title: "User Management - Admin",

@@ -1,9 +1,9 @@
 "use client";
 
-import { SettingsField } from "@/components/admin/SettingsField";
-import { SettingsSection } from "@/components/admin/SettingsSection";
-import { PageTitle } from "@/components/admin/PageTitle";
-import { OptionCardGroup } from "@/components/admin/OptionCardGroup";
+import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
+import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
+import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
+import { OptionCardGroup } from "@/app/admin/_components/forms/OptionCardGroup";
 import { AlertTriangle } from "lucide-react";
 
 export default function LocationSettingsPage() {

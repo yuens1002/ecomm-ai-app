@@ -1,8 +1,8 @@
 "use client";
 
 import { Separator } from "@/components/ui/separator";
-import { LoginForm } from "@/components/app-components/auth/LoginForm";
-import { DemoSignInButtons } from "@/components/app-components/auth/DemoSignInButtons";
+import { LoginForm } from "@/components/auth/LoginForm";
+import { DemoSignInButtons } from "@/components/auth/DemoSignInButtons";
 import { signInAdmin } from "@/actions/auth";
 import Link from "next/link";
 
