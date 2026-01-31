@@ -49,6 +49,7 @@ Navigation state is persisted in URL params (view + selected entity IDs). Select
 Example URL shapes:
 
 ```text
+
 /admin/menu-builder?view=menu
 /admin/menu-builder?view=label&labelId=abc123
 /admin/menu-builder?view=category&categoryId=def456
@@ -103,7 +104,8 @@ Implementation: `app/admin/(product-menu)/hooks/useMenuBuilderState.ts`
 When creating a new table view, use these hooks to avoid boilerplate:
 
 #### `useDragReorder` - Row drag-and-drop reordering
-```tsx
+```typescript
+
 const { getDragHandlers, getDragClasses } = useDragReorder({
   items: labels,
   onReorder: async (ids) => { await reorderLabels(ids); },
@@ -126,7 +128,8 @@ const dragHandlers = getDragHandlers(item.id);
 ```
 
 #### `useInlineEditHandlers` - Name/icon/visibility with undo
-```tsx
+```typescript
+
 const { handleNameSave, handleIconSave, handleVisibilitySave } = useInlineEditHandlers({
   builder,
   entityKind: "label",
@@ -142,7 +145,8 @@ const { handleNameSave, handleIconSave, handleVisibilitySave } = useInlineEditHa
 ```
 
 #### `useContextRowUiState` - Editing and pinned state
-```tsx
+```typescript
+
 const { editingId, pinnedId, clearEditing, clearPinnedIfMatches } = useContextRowUiState(
   builder,
   "label",
@@ -151,7 +155,8 @@ const { editingId, pinnedId, clearEditing, clearPinnedIfMatches } = useContextRo
 ```
 
 #### `usePinnedRow` - Pinned row + default sorting
-```tsx
+```typescript
+
 const { pinnedRow, rowsForTable } = usePinnedRow({
   rows: labels,
   pinnedId,
@@ -162,7 +167,8 @@ const { pinnedRow, rowsForTable } = usePinnedRow({
 ```
 
 #### `TableRow` - Built-in click/double-click handling
-```tsx
+```typescript
+
 <TableRow
   onRowClick={() => onToggleSelection(item.id)}     // 200ms delay
   onRowDoubleClick={() => navigateToDetail(item.id)} // Cancels pending click
@@ -183,7 +189,8 @@ const { pinnedRow, rowsForTable } = usePinnedRow({
 
 ## File Structure
 
-```text
+```tsx
+
 app/admin/(product-menu)/
   menu-builder/
     MenuBuilder.tsx
@@ -222,6 +229,7 @@ app/admin/(product-menu)/
 ## Testing & Checks
 
 ```bash
+
 # Typecheck + lint
 npm run precheck
 

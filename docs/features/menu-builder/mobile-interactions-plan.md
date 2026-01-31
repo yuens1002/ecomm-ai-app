@@ -50,6 +50,7 @@ This document outlines:
 **Implementation:**
 
 ```typescript
+
 // useContextSelectionModel.ts additions
 type SelectionState = {
   selectedKeys: Set<string>;
@@ -104,6 +105,7 @@ const handleRowClick = (key: string, event: MouseEvent) => {
 **Implementation:**
 
 ```typescript
+
 // CheckboxCell with long-press support
 const CheckboxCell = ({ rowKey, isSelected, onSelect, onRangeSelect, anchorKey }) => {
   const longPressTimer = useRef<NodeJS.Timeout>();
@@ -148,7 +150,7 @@ const CheckboxCell = ({ rowKey, isSelected, onSelect, onRangeSelect, anchorKey }
 ```
 
 **Tooltip (Desktop):**
-```
+```text
 [Checkbox hover tooltip]
 "Click to select, long-press to select range"
 -- or when anchor exists --
@@ -188,7 +190,8 @@ No separate mobile implementation needed!
 
 **Implementation:**
 
-```tsx
+```typescript
+
 import {
   ContextMenu,
   ContextMenuContent,
@@ -235,6 +238,7 @@ import {
 
 **Move Up/Down Handlers:**
 ```typescript
+
 const handleMoveUp = () => {
   const currentIndex = getRowIndex(rowKey);
   if (currentIndex > 0) {
@@ -279,6 +283,7 @@ shadcn/Radix ContextMenu handles scroll-vs-long-press detection automatically. T
 ### Implementation
 
 ```typescript
+
 // Wrapper for small interactive elements on mobile
 const TouchTarget = ({ children, className }: { children: ReactNode; className?: string }) => (
   <div className={cn("min-h-[44px] min-w-[44px] flex items-center justify-center", className)}>

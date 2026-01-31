@@ -18,7 +18,7 @@
 
 ## 📊 Current Architecture (What Works)
 
-```
+```tsx
 ProductMenuProvider (EXISTS, WORKS)
   ├─> useProductMenuData (data fetching)
   └─> useProductMenuMutations (CRUD operations)
@@ -42,6 +42,7 @@ Menu Builder (NEW, NEEDS ONLY UI STATE)
 **New hook:** `useMenuBuilderState.ts` (UI state only)
 
 ```typescript
+
 export function useMenuBuilderState() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -131,6 +132,7 @@ export function useMenuBuilderState() {
 **Add to ProductMenuProvider:**
 
 ```typescript
+
 export function ProductMenuProvider({ children }) {
   const data = useProductMenuData();
   const mutations = useProductMenuMutations();
@@ -157,6 +159,7 @@ export function ProductMenuProvider({ children }) {
 ### **MenuBuilder.tsx (Compositional Container)**
 
 ```typescript
+
 "use client";
 
 export default function MenuBuilder() {
@@ -181,6 +184,7 @@ export default function MenuBuilder() {
 #### **MenuNavBar.tsx**
 
 ```typescript
+
 export function MenuNavBar() {
   const {
     builder: { currentView, currentLabelId, navigateToView, ... },
@@ -196,6 +200,7 @@ export function MenuNavBar() {
 #### **MenuActionBar/index.tsx**
 
 ```typescript
+
 export function MenuActionBar() {
   const {
     builder: { currentView, selectedIds, toggleSelection, ... },
@@ -214,6 +219,7 @@ export function MenuActionBar() {
 #### **Future: MenuTableView**
 
 ```typescript
+
 export function MenuTableView() {
   const {
     builder: { selectedIds, expandedIds, toggleSelection, toggleExpand },
@@ -259,7 +265,7 @@ export function MenuTableView() {
 
 ### **Step 1: Create UI State Hook (NEW)**
 
-```
+```text
 File: hooks/useMenuBuilderState.ts
 Purpose: UI state for menu builder only
 Size: ~150 lines
@@ -267,7 +273,7 @@ Size: ~150 lines
 
 ### **Step 2: Extend Provider (MODIFY)**
 
-```
+```tsx
 File: ProductMenuProvider.tsx
 Change: Add builder state under "builder" namespace
 Lines: +3 lines
@@ -275,7 +281,7 @@ Lines: +3 lines
 
 ### **Step 3: Simplify MenuBuilder.tsx (SIMPLIFY)**
 
-```
+```tsx
 File: menu-builder/MenuBuilder.tsx
 Change: Remove useMenuBuilder, just compose sub-components
 Lines: Remove ~30 lines
@@ -283,7 +289,7 @@ Lines: Remove ~30 lines
 
 ### **Step 4: Update Sub-components (MODIFY)**
 
-```
+```tsx
 Files: MenuNavBar.tsx, MenuActionBar/index.tsx
 Change: Get data from useProductMenu() instead of props
 Lines: -props +useProductMenu()
@@ -291,7 +297,7 @@ Lines: -props +useProductMenu()
 
 ### **Step 5: Delete useMenuBuilder (DELETE)**
 
-```
+```text
 File: hooks/useMenuBuilder.ts
 Action: Delete (replaced by useMenuBuilderState in provider)
 ```
@@ -302,7 +308,7 @@ Action: Delete (replaced by useMenuBuilderState in provider)
 
 ### **Before (Current):**
 
-```
+```tsx
 useMenuBuilder (373 lines)
   ├─> Duplicates data fetching
   ├─> UI state
@@ -316,7 +322,7 @@ MenuBuilder
 
 ### **After (Proposed):**
 
-```
+```tsx
 ProductMenuProvider
   ├─> useProductMenuData (existing)
   ├─> useProductMenuMutations (existing)
@@ -336,6 +342,7 @@ MenuBuilder
 **Action strategies stay the same**, just get mutations from provider:
 
 ```typescript
+
 // constants/action-strategies.ts (NO CHANGE)
 export const ACTION_STRATEGIES = {
   menu: {

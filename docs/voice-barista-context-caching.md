@@ -23,14 +23,14 @@ Initially planned to use Gemini's Caching API, but discovered:
 
 ### Test Results
 **Turn 1 (Cache Creation Attempt):**
-```
+```text
 ❌ Cache creation failed: TotalCachedContentStorageTokensPerModelFreeTier limit exceeded
 ⚠️ Cache unavailable, using full prompt
 Gemini API responded in 1747ms with status 503 (overloaded)
 ```
 
 **Turn 2 (Retry - Automatic Caching):**
-```
+```json
 ✅ Gemini automatically cached content!
 "cachedContentTokenCount": 11,232 tokens
 "promptTokenCount": 11,420 tokens (total)
@@ -47,6 +47,7 @@ Response time: 3060ms
 **Strategy**: Send consistent prompt structure, let Gemini handle caching
 
 ```typescript
+
 // Build prompt with static content first (encourages caching)
 const prompt = `${VOICE_BARISTA_SYSTEM_PROMPT}
 

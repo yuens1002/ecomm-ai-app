@@ -7,6 +7,7 @@ Use this checklist to verify the file structure reorganization works correctly.
 Run these commands - all should pass:
 
 ```bash
+
 npm run typecheck    # TypeScript compilation
 npm run lint         # ESLint
 npm run test:ci      # All tests (599 tests)
@@ -94,7 +95,8 @@ npm run build        # Production build
 
 Verify no old import paths remain:
 
-```bash
+```tsx
+
 # Should return NO results:
 grep -r "components/app-components" app/ components/ --include="*.tsx" --include="*.ts"
 grep -r "components/admin/dashboard" app/ --include="*.tsx" --include="*.ts"
@@ -106,7 +108,7 @@ grep -r "@/components/ui/app" app/ components/ --include="*.tsx" --include="*.ts
 
 Confirm these directories exist and contain the right files:
 
-```
+```tsx
 app/(site)/_components/
 ├── account/         # OrdersClient
 ├── ai/              # ChatBarista, VoiceBarista, AiHelperModal
@@ -170,6 +172,7 @@ Test switching between local and Neon databases:
 After all checks pass:
 
 ```bash
+
 git add -A
 git commit -m "refactor: complete file structure reorganization"
 ```

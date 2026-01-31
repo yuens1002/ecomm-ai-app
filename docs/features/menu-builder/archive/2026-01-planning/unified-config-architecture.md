@@ -29,6 +29,7 @@
 ## 🏗️ Proposed Structure
 
 ```typescript
+
 // constants/view-configs.ts
 
 import type { ActionDefinition, ContextMenuAction } from "./shared-definitions";
@@ -349,7 +350,8 @@ export const VIEW_CONFIGS: Record<ViewType, ViewConfig> = {
 
 ## 📁 File Structure
 
-```text
+```tsx
+
 constants/
   shared-definitions.ts        # ACTION_DEFINITIONS, helper functions
   view-configs.ts              # Single unified config (VIEW_CONFIGS)
@@ -383,6 +385,7 @@ components/
 ### **Action Bar** (already exists)
 
 ```typescript
+
 // components/menu-action-bar/index.tsx
 function MenuActionBar() {
   const { builder } = useMenuBuilder();
@@ -412,6 +415,7 @@ function MenuActionBar() {
 ### **Table Renderer** (new component)
 
 ```typescript
+
 // components/table-views/TableViewRenderer.tsx
 function TableViewRenderer() {
   const { builder } = useMenuBuilder();
@@ -425,6 +429,7 @@ function TableViewRenderer() {
 ### **Context Menu** (new component)
 
 ```typescript
+
 // components/table-views/ContextMenuCell.tsx
 function ContextMenuCell({ row }: { row: unknown }) {
   const { builder } = useMenuBuilder();

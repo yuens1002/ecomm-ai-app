@@ -37,7 +37,7 @@ Your Claude Code setup now includes multi-agent workflows and auto-review capabi
 - "What's the structure of..."
 
 **Example:**
-```
+```text
 You: "Where are product mutations handled?"
 Claude: [Uses Exploration Agent to search codebase]
 Claude: "Product mutations are in app/admin/(product-menu)/hooks/useProductMenuMutations.ts:45"
@@ -51,7 +51,7 @@ Claude: "Product mutations are in app/admin/(product-menu)/hooks/useProductMenuM
 - Multi-file modifications
 
 **Example:**
-```
+```text
 You: "Add email notifications for orders"
 Claude: [Enters Plan Mode]
 Claude: "I'll create a plan for email notifications. Let me explore..."
@@ -74,7 +74,7 @@ Claude: [Implements based on approved plan]
 - Testing (coverage for critical paths)
 
 **Example:**
-```
+```text
 You: "Create a commit for this feature"
 Claude: [Runs auto-review]
 Claude: "Review complete. Found 2 issues:
@@ -104,7 +104,7 @@ Let me fix these..."
 ### For New Features
 
 **You say:**
-```
+```text
 "Add a favorites feature where users can save products"
 ```
 
@@ -121,7 +121,7 @@ Let me fix these..."
 ### For Bug Fixes
 
 **You say:**
-```
+```text
 "Fix the cart total calculation bug"
 ```
 
@@ -137,7 +137,7 @@ Let me fix these..."
 ### For Code Understanding
 
 **You say:**
-```
+```text
 "Explain how the menu builder state management works"
 ```
 
@@ -150,7 +150,7 @@ Let me fix these..."
 ### For Refactoring
 
 **You say:**
-```
+```text
 "Refactor the action bar config to be more type-safe"
 ```
 
@@ -295,7 +295,7 @@ Open VS Code Keyboard Shortcuts (`Ctrl+K Ctrl+S`) and set:
 ## Workflow Examples
 
 ### Workflow 1: Add New Feature
-```
+```text
 You: "Add a product review feature"
 
 [Planning Phase]
@@ -315,7 +315,7 @@ Claude: [Creates commit with conventional format]
 ```
 
 ### Workflow 2: Debug Production Issue
-```
+```text
 You: "Users report checkout failing with Stripe webhooks"
 
 [Investigation]
@@ -333,7 +333,7 @@ Claude: "Fix verified. Creating commit..."
 ```
 
 ### Workflow 3: Refactor for Performance
-```
+```text
 You: "The menu builder is slow when loading many products"
 
 [Analysis]
@@ -378,7 +378,8 @@ Claude: "Load time reduced from 3s to 300ms"
 ### Custom Workflows
 Edit `.clauderc` to add custom command sequences:
 
-```yaml
+```bash
+
 commands:
   my_workflow:
     description: "My custom workflow"
@@ -422,21 +423,21 @@ For complex tasks: "Run exploration and testing agents in parallel"
 
 ### 1. Test the Setup
 Try asking Claude:
-```
+```text
 "Explain the menu builder architecture"
 ```
 
 This will test if the Exploration Agent works correctly.
 
 ### 2. Try a Small Feature
-```
+```text
 "Add a console log to track when products are added to cart"
 ```
 
 This tests Planning → Implementation → Review workflow.
 
 ### 3. Create a Commit
-```
+```text
 "Review my changes and create a commit"
 ```
 

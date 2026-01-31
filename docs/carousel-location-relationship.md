@@ -33,19 +33,22 @@ This document explains the one-to-one relationship between carousel location sli
 
 ### Before (Optional Relationship)
 
-```typescript
+```text
+
 locationBlockName: z.string().optional(); // Weak link by name
 ```
 
 ### After (Required 1-to-1)
 
-```typescript
+```text
+
 locationBlockId: z.string().min(1, "Location block ID is required"); // Strong link by ID
 ```
 
 ### Removed Limits
 
-```typescript
+```text
+
 // Before
 .max(10, "Maximum 10 slides allowed")
 
@@ -79,7 +82,7 @@ locationBlockId: z.string().min(1, "Location block ID is required"); // Strong l
 
 **Warning Dialog:**
 
-```
+```text
 Converting to Location Carousel will:
 - Create a new location block for each slide
 - Use existing image and alt text
@@ -98,7 +101,7 @@ Converting to Location Carousel will:
      description: "",
      locationBlockId: `temp-${Date.now()}-${Math.random()}`
    }
-   ```
+```
 2. Update carouselType to "locationPreview"
 3. User fills in location details
 4. On save: Parent creates new location blocks for temp-\* IDs
@@ -111,7 +114,7 @@ Converting to Location Carousel will:
 
 **Warning Dialog:**
 
-```
+```text
 Converting to Image Carousel will:
 - Keep existing images
 - Remove all location block associations
@@ -127,7 +130,7 @@ Converting to Image Carousel will:
      url: existingSlide.url,
      alt: existingSlide.alt
    }
-   ```
+```
 2. Store old locationBlockIds for cleanup
 3. Update carouselType to "image"
 4. On save: Parent deletes orphaned location blocks
@@ -144,7 +147,8 @@ Converting to Image Carousel will:
 
 **Workflow:**
 
-```typescript
+```json
+
 // Insert after index
 handleAddUnit(afterIndex: 2)
 
@@ -172,6 +176,7 @@ slideUnits.splice(3, 0, {
 **Workflow for Image Slide:**
 
 ```typescript
+
 // Simply remove from array
 slideUnits = slideUnits.filter((_, i) => i !== 3);
 ```
@@ -179,6 +184,7 @@ slideUnits = slideUnits.filter((_, i) => i !== 3);
 **Workflow for Location Slide:**
 
 ```typescript
+
 const locationBlockId = slideUnits[3].locationBlockId;
 
 // Remove from array
@@ -204,6 +210,7 @@ When carousel dialog saves, the parent page editor must:
 #### 1. **Create New Location Blocks**
 
 ```typescript
+
 const newLocationBlocks = [];
 const idMapping = new Map(); // temp-id → real-id
 
@@ -248,6 +255,7 @@ carouselSlides = carouselSlides.map((slide) => {
 #### 2. **Delete Orphaned Location Blocks**
 
 ```typescript
+
 // Get all location block IDs currently in carousel
 const activeLocationIds = new Set(
   carouselSlides
@@ -269,6 +277,7 @@ orphanedBlocks.forEach((block) => {
 #### 3. **Update Location Block Content**
 
 ```typescript
+
 // When slide title/description changes, update location block
 for (const slide of carouselSlides) {
   if (slide.type === "locationPreview") {
@@ -287,7 +296,7 @@ for (const slide of carouselSlides) {
 
 ### Slide Header Labels
 
-```
+```text
 Slide 1 (New Location Block)         // temp-* ID
 Slide 2 (Linked to Location Block)   // Real ID
 ```
@@ -298,14 +307,14 @@ Shows in each locationPreview slide:
 
 **For New Blocks (temp-\*):**
 
-```
+```text
 Location Block: A new location block will be created
 when you save this carousel.
 ```
 
 **For Existing Blocks:**
 
-```
+```text
 Location Block: This slide is linked to an existing
 location block. Edit location details in the location
 block itself.
@@ -341,7 +350,8 @@ block itself.
 
 **Validation:**
 
-```typescript
+```text
+
 // For all slides
 if (!unit.url && !unit.pendingFile) error = "Image required";
 if (!unit.alt.trim()) error = "Alt text required";
@@ -375,7 +385,7 @@ if (!unit.locationBlockId) error = "Location block ID required";
 
 ## Data Flow Diagram
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     CAROUSEL DIALOG                         │
 │                                                             │

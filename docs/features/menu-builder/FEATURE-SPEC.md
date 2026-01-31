@@ -36,6 +36,7 @@ The Menu Builder is a single-page admin interface for organizing the product cat
 ### Three-Level Hierarchy
 
 ```text
+
 CategoryLabel (Label)
   ├─ id, name, icon, order, isVisible, autoOrder
   └─ CategoryLabelCategory[] (junction)
@@ -70,7 +71,7 @@ CategoryLabel (Label)
 
 ### Structure
 
-```
+```text
 [MenuIcon] Menu Text | [Tags] Labels ▼ | [FileSpreadsheet] Categories ▼
 ```
 
@@ -78,31 +79,31 @@ CategoryLabel (Label)
 
 **Menu View:**
 
-```
+```text
 [ShoppingBag] | [Tags] ▼ | [FileSpreadsheet] ▼
 ```
 
 **Label View (drilling into "Origins"):**
 
-```
+```text
 [ShoppingBag] (clickable) | [Tag] Origins ▼ | [FileSpreadsheet] ▼
 ```
 
 **Category View (drilling into "Ethiopian"):**
 
-```
+```text
 [ShoppingBag] (clickable) | [Tag] (clickable) ▼ | [FileSpreadsheet] Ethiopian ▼
 ```
 
 **All-Labels View:**
 
-```
+```text
 [ShoppingBag] (clickable) | [Tags] All labels ▼ | [FileSpreadsheet] ▼
 ```
 
 **All-Categories View:**
 
-```
+```text
 [ShoppingBag] (clickable) | [Tags] ▼ | [FileSpreadsheet] All categories ▼
 ```
 
@@ -364,7 +365,8 @@ CategoryLabel (Label)
 
 ### Implementation Pattern
 
-```tsx
+```typescript
+
 // From LabelsTable.tsx
 {editingLabelId === label.id ? (
   <div className="flex items-center gap-2">
@@ -425,7 +427,8 @@ CategoryLabel (Label)
 
 ### Implementation Pattern
 
-```tsx
+```typescript
+
 // From LabelsTable.tsx
 <TableRow
   draggable
@@ -473,7 +476,7 @@ CategoryLabel (Label)
 
 ### Name Collision Handling
 
-```
+```text
 Ethiopian → Ethiopian Copy
 Ethiopian Copy → Ethiopian Copy 2
 Ethiopian Copy 2 → Ethiopian Copy 3
@@ -548,7 +551,8 @@ Ethiopian Copy 2 → Ethiopian Copy 3
 
 ### Sort Options
 
-```tsx
+```json
+
 [
   { value: "alpha-asc", label: "A-Z" },
   { value: "alpha-desc", label: "Z-A" },
@@ -560,7 +564,8 @@ Ethiopian Copy 2 → Ethiopian Copy 3
 
 ### Sort Dropdown Component
 
-```tsx
+```typescript
+
 <DropdownMenu>
   <DropdownMenuTrigger asChild>
     <Button variant="ghost" size="sm" disabled={!hasSelection}>
@@ -595,7 +600,8 @@ Ethiopian Copy 2 → Ethiopian Copy 3
 
 ### Operations Tracked
 
-```typescript
+```json
+
 type UndoableOperation =
   | { type: "clone"; items: Item[] }
   | { type: "remove"; items: Item[] }
@@ -607,6 +613,7 @@ type UndoableOperation =
 ### Implementation Pattern
 
 ```typescript
+
 // Store in session storage
 const undoStack: UndoableOperation[] = [];
 const redoStack: UndoableOperation[] = [];
@@ -640,6 +647,7 @@ function undo() {
 ### Platform Detection
 
 ```typescript
+
 const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
 const modKey = isMac ? "Cmd" : "Ctrl";
 ```
@@ -680,7 +688,8 @@ const modKey = isMac ? "Cmd" : "Ctrl";
 
 ### Implementation Pattern
 
-```tsx
+```typescript
+
 useEffect(() => {
   const handleKeyDown = (e: KeyboardEvent) => {
     const isMod = isMac ? e.metaKey : e.ctrlKey;
@@ -720,7 +729,8 @@ useEffect(() => {
 
 ### Long Press (Native)
 
-```tsx
+```typescript
+
 // Works on mobile browsers
 <tr onContextMenu={(e) => {
   e.preventDefault(); // Prevent default browser menu
@@ -731,7 +741,8 @@ useEffect(() => {
 
 ### Double Tap (Optional)
 
-```tsx
+```typescript
+
 const [lastTap, setLastTap] = useState(0);
 
 const handleTouchEnd = () => {
@@ -777,6 +788,7 @@ const handleTouchEnd = () => {
 - `Esc`: Close menu
 
 ```tsx
+
 // Works on both platforms
 <ContextMenu>
   <DropdownMenuTrigger asChild>
@@ -827,7 +839,8 @@ const handleTouchEnd = () => {
 
 ### Implementation Pattern (from LabelsTable)
 
-```tsx
+```typescript
+
 <DropdownMenu>
   <DropdownMenuTrigger asChild>
     <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -888,7 +901,8 @@ const handleTouchEnd = () => {
 
 ### Implementation
 
-```tsx
+```typescript
+
 // Switch (interactive)
 <Switch
   checked={item.isVisible}
@@ -906,7 +920,7 @@ const handleTouchEnd = () => {
 
 ### Page Structure
 
-```
+```tsx
 app/admin/(product-menu)/
 ├── menu-builder/
 │   ├── page.tsx                    # Server component wrapper
@@ -923,7 +937,7 @@ app/admin/(product-menu)/
 
 ### Reusable Components (from existing)
 
-```
+```tsx
 components/admin/
 ├── LabelsTable.tsx                 # Reference for inline edit patterns
 └── menu-builder/
@@ -950,7 +964,8 @@ components/ui/
 
 ### State Management
 
-```tsx
+```typescript
+
 // SWR for data fetching
 const { data: menuData, mutate } = useSWR("/api/admin/menu/hierarchy");
 
@@ -967,6 +982,7 @@ const [redoStack, setRedoStack] = useState<UndoOp[]>([]);
 ### Server Actions
 
 ```typescript
+
 // app/admin/(product-menu)/actions/menu.ts
 "use server";
 

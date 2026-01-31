@@ -12,11 +12,11 @@ Uses a **greedy algorithm** to distribute label groups across 3 columns:
 
 1. **Weight Calculation**: Each label group has a weight based on visible items:
 
-   ```
+```text
    Weight = 1 (label header)
           + visible_categories_count
           + 1 (if "...more/less" link present)
-   ```
+```
 
 2. **Distribution**: For each label group in order:
    - Calculate its current weight (based on expanded/collapsed state)
@@ -42,7 +42,8 @@ Uses a **greedy algorithm** to distribute label groups across 3 columns:
 
 ### Basic Example
 
-```tsx
+```typescript
+
 import CategoryMenuColumns from "@/components/app-components/CategoryMenuColumns";
 
 // In your component
@@ -72,6 +73,7 @@ const categoryGroups = {
 ### In Footer
 
 ```tsx
+
 <CategoryMenuColumns
   categoryGroups={categoryGroups}
   maxInitialCategories={7}
@@ -82,6 +84,7 @@ const categoryGroups = {
 ### In Mobile Menu (Single Column)
 
 ```tsx
+
 <CategoryMenuColumns
   categoryGroups={categoryGroups}
   className="grid grid-cols-1 gap-y-6"
@@ -92,6 +95,7 @@ const categoryGroups = {
 ### In Header Dropdown
 
 ```tsx
+
 <CategoryMenuColumns
   categoryGroups={categoryGroups}
   maxInitialCategories={5}
@@ -114,6 +118,7 @@ const categoryGroups = {
 ### 1. Empty or Missing Data
 
 ```tsx
+
 // Empty groups object - renders nothing
 <CategoryMenuColumns categoryGroups={{}} />;
 
@@ -125,7 +130,8 @@ categoryGroups = {
 
 ### 2. Unbalanced Category Counts
 
-```tsx
+```json
+
 // Scenario: Label A has 2 categories, Label B has 20 categories
 // Solution: Greedy algorithm places heavy labels first, spreads lighter ones
 categoryGroups = {
@@ -138,7 +144,8 @@ categoryGroups = {
 
 ### 3. All Labels Expanded
 
-```tsx
+```text
+
 // All labels show full category lists
 // Columns remain balanced by total weight
 // May result in very tall columns (expected behavior)
@@ -146,7 +153,8 @@ categoryGroups = {
 
 ### 4. Single Label with Many Categories
 
-```tsx
+```json
+
 categoryGroups = {
   "Only Label": [cat1, cat2, ..., cat50], // Shows first 7 + "...more"
 };
@@ -155,7 +163,8 @@ categoryGroups = {
 
 ### 5. Rapid Expand/Collapse
 
-```tsx
+```text
+
 // User clicks "...more" on multiple labels quickly
 // React state batches updates, useMemo prevents excessive recalculations
 // Smooth rebalancing without flicker
@@ -163,7 +172,8 @@ categoryGroups = {
 
 ### 6. Long Label/Category Names
 
-```tsx
+```json
+
 categoryGroups = {
   "BY ROAST LEVEL AND PROCESSING METHOD": [...], // Truncates with ellipsis
   "Coffee Categories": [
@@ -175,7 +185,8 @@ categoryGroups = {
 
 ### 7. Dynamic Data Updates
 
-```tsx
+```text
+
 // Categories added/removed in database
 // Component receives new categoryGroups prop
 // useMemo recalculates distribution
@@ -186,7 +197,8 @@ categoryGroups = {
 
 ### Replace FooterCategories
 
-```tsx
+```typescript
+
 // Before (in SiteFooter.tsx)
 import FooterCategories from "./FooterCategories";
 
@@ -203,6 +215,7 @@ import CategoryMenuColumns from "./CategoryMenuColumns";
 ### Use in SiteHeader Desktop Dropdown
 
 ```tsx
+
 // In SiteHeader.tsx NavigationMenuContent
 <NavigationMenuContent>
   <div className="w-[600px] p-6 h-[330px] overflow-y-auto">
@@ -217,6 +230,7 @@ import CategoryMenuColumns from "./CategoryMenuColumns";
 ### Use in Mobile Sheet Menu
 
 ```tsx
+
 // In SiteHeader.tsx Sheet
 <Sheet>
   <SheetContent>
@@ -246,7 +260,8 @@ import CategoryMenuColumns from "./CategoryMenuColumns";
 
 ### Edge Case Test
 
-```tsx
+```typescript
+
 // Create test data with extremes
 const testData = {
   Tiny: [{ name: "A", slug: "a" }],

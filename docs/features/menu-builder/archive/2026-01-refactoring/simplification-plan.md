@@ -34,7 +34,7 @@ We created `useMenuBuilder` that **duplicates** the data fetching that `ProductM
 
 ### **Architecture:**
 
-```
+```tsx
 app/admin/(product-menu)/
 ├── layout.tsx (NEW)
 │   └── Wraps everything in <ProductMenuProvider>
@@ -62,6 +62,7 @@ app/admin/(product-menu)/
 **File:** `app/admin/(product-menu)/layout.tsx`
 
 ```typescript
+
 "use client";
 
 import { ProductMenuProvider } from "./ProductMenuProvider";
@@ -86,6 +87,7 @@ export default function ProductMenuLayout({
 **Remove:**
 
 ```typescript
+
 // ❌ Remove these
 import useSWR from "swr";
 import { listLabels } from "../actions/labels";
@@ -98,6 +100,7 @@ const { data: categoriesResponse, ... } = useSWR(...);
 **Add:**
 
 ```typescript
+
 // ✅ Add this
 import { useProductMenu } from "../ProductMenuProvider";
 
@@ -158,6 +161,7 @@ export function useMenuBuilder() {
 **Before:**
 
 ```typescript
+
 import { useProductMenuData } from "../hooks/useProductMenuData";
 
 export default function Page() {
@@ -169,6 +173,7 @@ export default function Page() {
 **After:**
 
 ```typescript
+
 import { useProductMenu } from "../ProductMenuProvider";
 
 export default function Page() {
@@ -185,7 +190,7 @@ export default function Page() {
 
 ### **Before (Complex):**
 
-```
+```tsx
 Menu Builder
   └─> useMenuBuilder
       ├─> useSWR("labels") ← Duplicate fetch
@@ -201,7 +206,7 @@ Categories Page
 
 ### **After (Simple):**
 
-```
+```tsx
 <ProductMenuProvider> ← Wraps everything once
   │
   ├─> Menu Builder

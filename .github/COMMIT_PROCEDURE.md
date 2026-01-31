@@ -16,6 +16,7 @@ This document defines the standard procedure for committing code changes during 
 ### 1. Stage Changes
 
 ```bash
+
 git add -A
 ```
 
@@ -57,6 +58,7 @@ Add entry at the top with:
 **Format:**
 
 ```bash
+
 git commit -m "<type>: <brief description> (v0.x.y)"
 ```
 
@@ -73,6 +75,7 @@ git commit -m "<type>: <brief description> (v0.x.y)"
 **Examples:**
 
 ```bash
+
 git commit -m "feat: add icon selection for pages with navigation ordering (v0.30.3)"
 git commit -m "fix: code quality improvements - ESLint/TypeScript cleanup (v0.30.4)"
 git commit -m "refactor: consolidate block rendering logic (v0.31.0)"
@@ -81,6 +84,7 @@ git commit -m "refactor: consolidate block rendering logic (v0.31.0)"
 ### 4. Push to Remote (when ready)
 
 ```bash
+
 git push origin <branch-name>
 ```
 
@@ -158,6 +162,7 @@ Consider creating a git hook or script:
 **File:** `.git/hooks/pre-commit` or `scripts/commit.sh`
 
 ```bash
+
 #!/bin/bash
 # Enforce changelog update before commit
 if ! git diff --cached --name-only | grep -q "CHANGELOG.md"; then
@@ -193,6 +198,7 @@ Before every commit:
 **Example:**
 
 ```bash
+
 # Feature development
 git checkout -b feat/add-user-authentication
 # ... development work ...
@@ -216,6 +222,7 @@ git merge feat/integration-auth
 For major bodies of work merging to integration or main, run the integrity pipeline before merging:
 
 ```bash
+
 npm run build:safe
 ```
 
@@ -232,6 +239,7 @@ If the model check fails, the backup and build do not run. Fix schema/table list
 **Always run before committing:**
 
 ```bash
+
 npm i                    # Install dependencies
 npm run precheck        # TypeScript + ESLint
 npm run build          # Production build verification
@@ -250,6 +258,7 @@ npm run build          # Production build verification
 **Example:**
 
 ```bash
+
 # After updating CHANGELOG.md to v0.31.0
 npm version 0.31.0 --no-git-tag-version  # Updates package.json only
 git add package.json
@@ -270,6 +279,7 @@ git push && git push --tags
 **Commit docs separately or with features:**
 
 ```bash
+
 git commit -m "docs: update API documentation for new endpoints"
 ```
 
@@ -285,6 +295,7 @@ git commit -m "docs: update API documentation for new endpoints"
 **Example progression:**
 
 ```bash
+
 git commit -m "feat: add user authentication skeleton (v0.31.0)"
 git commit -m "feat: implement login/logout flow (v0.31.0)"
 git commit -m "feat: add password reset functionality (v0.31.0)"

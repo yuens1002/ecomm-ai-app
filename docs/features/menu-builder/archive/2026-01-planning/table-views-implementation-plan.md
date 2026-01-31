@@ -35,7 +35,8 @@ Build 5 table view components that integrate with our existing architecture:
 
 ### **3-Tier Config Pattern**
 
-```text
+```typescript
+
 ┌─────────────────────────────────────────────────────────────┐
 │ 1. SHARED DEFINITIONS (Define Once)                         │
 ├─────────────────────────────────────────────────────────────┤
@@ -81,7 +82,8 @@ Build 5 table view components that integrate with our existing architecture:
 
 ❌ **Never do this:**
 
-```typescript
+```tsx
+
 if (view === "menu") return <MenuTableView />;
 if (view === "label") return <LabelTableView />;
 ```
@@ -89,6 +91,7 @@ if (view === "label") return <LabelTableView />;
 ✅ **Always do this:**
 
 ```typescript
+
 const config = VIEW_CONFIGS[view];
 return <config.tableComponent />;
 ```
@@ -96,6 +99,7 @@ return <config.tableComponent />;
 ### **File Structure**
 
 ```text
+
 constants/
   action-bar-config.ts          # Single giant config file
     ├─ ACTION_DEFINITIONS       # Shared action UI (icons, labels, kbd)
@@ -173,7 +177,8 @@ constants/
 
 ## 🗂️ File Structure
 
-```text
+```tsx
+
 app/admin/(product-menu)/menu-builder/
 ├── components/
 │   ├── table-views/                    # NEW - Phase 2
@@ -215,6 +220,7 @@ app/admin/(product-menu)/menu-builder/
 Instead of creating separate modal/dropdown components, we'll **extend action-bar-config.ts** with declarative configurations:
 
 ```typescript
+
 // Add to action-bar-config.ts
 // NOTE: code written here is for demo purposes only, DO NOT COPY & PASTE into production code
 
@@ -697,7 +703,8 @@ export function TableViewRenderer({ view, ...props }: TableViewRendererProps) {
 
 ### **Dynamic Modal Component:**
 
-```tsx
+```typescript
+
 // components/menu-action-bar/DynamicModal.tsx
 // components/menu-action-bar/DynamicModal.tsx
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -797,6 +804,7 @@ export function DynamicModal({ config, open, onOpenChange }: DynamicModalProps) 
 ### **Update action-bar-config.ts onClick Handlers:**
 
 ```typescript
+
 // In action-bar-config.ts, update TODO items:
 
 {
@@ -1030,7 +1038,8 @@ Each view has a specific set of columns optimized for its purpose. All views sta
 
 #### **1. CheckboxCell Component**
 
-```tsx
+```typescript
+
 // components/table-views/shared/CheckboxCell.tsx
 type CheckboxCellProps = {
   id: string;
@@ -1053,7 +1062,8 @@ export function CheckboxCell({ id, checked, onToggle, disabled }: CheckboxCellPr
 
 **Integration:**
 
-```tsx
+```typescript
+
 const { builder } = useMenuBuilder();
 <CheckboxCell
   id={label.id}
@@ -1064,7 +1074,8 @@ const { builder } = useMenuBuilder();
 
 #### **2. ExpandToggle Component**
 
-```tsx
+```typescript
+
 // components/table-views/shared/ExpandToggle.tsx
 type ExpandToggleProps = {
   id: string;
@@ -1086,7 +1097,8 @@ export function ExpandToggle({ id, isExpanded, hasChildren, onToggle }: ExpandTo
 
 **Integration:**
 
-```tsx
+```typescript
+
 const { builder } = useMenuBuilder();
 <ExpandToggle
   id={label.id}
@@ -1098,7 +1110,8 @@ const { builder } = useMenuBuilder();
 
 #### **3. VisibilityCell Component**
 
-```tsx
+```typescript
+
 // components/table-views/shared/VisibilityCell.tsx
 type VisibilityCellProps = {
   id: string;
@@ -1131,7 +1144,8 @@ export function VisibilityCell({
 
 **Integration:**
 
-```tsx
+```typescript
+
 const { updateLabel } = useMenuBuilder();
 <VisibilityCell
   id={label.id}
@@ -1145,7 +1159,8 @@ const { updateLabel } = useMenuBuilder();
 
 #### **4. InlineNameEditor Component**
 
-```tsx
+```typescript
+
 // components/table-views/shared/InlineNameEditor.tsx
 type InlineNameEditorProps = {
   id: string;
@@ -1213,7 +1228,8 @@ export function InlineNameEditor({ id, initialValue, onSave }: InlineNameEditorP
 
 **Integration:**
 
-```tsx
+```typescript
+
 const { updateLabel } = useMenuBuilder();
 <InlineNameEditor
   id={label.id}
@@ -1226,7 +1242,8 @@ const { updateLabel } = useMenuBuilder();
 
 #### **5. IconCell Component**
 
-```tsx
+```typescript
+
 // components/table-views/shared/IconCell.tsx
 type IconCellProps = {
   id: string;
@@ -1271,7 +1288,8 @@ export function IconCell({ id, iconName, onSave }: IconCellProps) {
 
 **Columns:** `checkbox | Icon | Name | Categories | Visibility`
 
-```tsx
+```typescript
+
 // components/table-views/AllLabelsTableView.tsx
 export function AllLabelsTableView() {
   const { builder, labels, updateLabel } = useMenuBuilder();
@@ -1344,7 +1362,8 @@ export function AllLabelsTableView() {
 
 **Columns:** `checkbox | Name | Labels | Visibility`
 
-```tsx
+```typescript
+
 // components/table-views/AllCategoriesTableView.tsx
 export function AllCategoriesTableView() {
   const { builder, categories, labels, updateCategory } = useMenuBuilder();
@@ -1417,7 +1436,8 @@ export function AllCategoriesTableView() {
 
 **Columns:** `checkbox | Labels | Visibility | Categories | Products`
 
-```tsx
+```typescript
+
 // components/table-views/MenuTableView.tsx
 export function MenuTableView() {
   const { builder, labels } = useMenuBuilder();
@@ -1577,7 +1597,8 @@ Shows ALL products (not just assigned). Categories column shows where product ap
 
 ### **Phase 2D: Update MenuBuilder.tsx**
 
-```tsx
+```typescript
+
 // MenuBuilder.tsx
 function MenuBuilderContent() {
   const { builder } = useMenuBuilder();
@@ -1623,7 +1644,8 @@ Following the pattern from LabelsTable.tsx - proven and working.
 
 ### **DragHandle Component**
 
-```tsx
+```typescript
+
 // components/table-views/shared/DragHandle.tsx
 import { GripVertical } from "lucide-react";
 
@@ -1647,7 +1669,8 @@ export function DragHandle({ onDragStart }: DragHandleProps) {
 
 ### **Drag State Management**
 
-```tsx
+```typescript
+
 // In table component
 const [draggedId, setDraggedId] = useState<string | null>(null);
 
@@ -1688,7 +1711,8 @@ const handleDrop = async (targetId: string) => {
 
 ### **Integration in Table Rows**
 
-```tsx
+```typescript
+
 <TableRow
   onDragOver={handleDragOver}
   onDrop={() => handleDrop(label.id)}
@@ -1752,6 +1776,7 @@ Checkbox visibility is responsive:
 - **md+**: checkboxes are shown on row hover/focus, and always visible when selected.
 
 ```tsx
+
 // Responsive: always visible on mobile; hover-reveal on md+
 <TableCell className="w-12">
   <CheckboxCell
@@ -1767,6 +1792,7 @@ Checkbox visibility is responsive:
 Ensure all interactive elements meet 44x44px minimum touch target:
 
 ```tsx
+
 // Button sizes
 <Button size="icon" className="h-10 w-10"> {/* 40px minimum */}
 
@@ -1781,7 +1807,8 @@ Ensure all interactive elements meet 44x44px minimum touch target:
 
 Drag handle hidden on touch devices:
 
-```tsx
+```typescript
+
 <TableCell className="hidden md:table-cell">
   <DragHandle onDragStart={() => handleDragStart(item.id)} />
 </TableCell>
@@ -1792,6 +1819,7 @@ Drag handle hidden on touch devices:
 ### **Responsive Table Layout**
 
 ```tsx
+
 // Stack columns on small screens
 <div className="overflow-x-auto">
   <Table className="min-w-[600px]">
@@ -1805,6 +1833,7 @@ Drag handle hidden on touch devices:
 Or use responsive columns:
 
 ```tsx
+
 // Hide less important columns on mobile
 <TableHead className="hidden md:table-cell">Categories</TableHead>
 <TableHead className="hidden lg:table-cell">Products</TableHead>
@@ -1815,6 +1844,7 @@ Or use responsive columns:
 Auto-focus and proper input types:
 
 ```tsx
+
 <Input
   type="text"
   autoFocus
@@ -1830,7 +1860,8 @@ Auto-focus and proper input types:
 
 ### **Arrow Key Navigation**
 
-```tsx
+```typescript
+
 // In table component
 useEffect(() => {
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -1884,7 +1915,8 @@ useEffect(() => {
 
 ### **Focus Management**
 
-```tsx
+```typescript
+
 // Track focused row
 const [focusedIndex, setFocusedIndex] = useState(0);
 const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);

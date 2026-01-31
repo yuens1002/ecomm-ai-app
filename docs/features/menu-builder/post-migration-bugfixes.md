@@ -14,6 +14,7 @@
 **Location:** `app/admin/(product-menu)/actions/utils.ts:70-72`
 
 ```typescript
+
 // Only catches Prisma errors, not manual uniqueness checks
 export function isUniqueConstraintError(error: unknown): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
@@ -24,7 +25,7 @@ export function isUniqueConstraintError(error: unknown): boolean {
 
 ### Flow
 
-```
+```tsx
 1. First "New Label" → Success (no conflict)
 2. Second "New Label" → Manual uniqueness check finds existing
 3. Throws Error("Label name must be unique")
@@ -39,6 +40,7 @@ export function isUniqueConstraintError(error: unknown): boolean {
 **Option A:** Update `isUniqueConstraintError()` to also catch manual errors:
 
 ```typescript
+
 export function isUniqueConstraintError(error: unknown): boolean {
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
     return true;
@@ -53,6 +55,7 @@ export function isUniqueConstraintError(error: unknown): boolean {
 **Option B:** Remove manual uniqueness check from `createCategoryLabel`, let Prisma constraint handle it:
 
 ```typescript
+
 // In data/labels.ts - REMOVE these lines:
 const existing = await prisma.categoryLabel.findUnique({ where: { name } });
 if (existing) throw new Error("Label name must be unique");
@@ -87,6 +90,7 @@ if (existing) throw new Error("Label name must be unique");
 MenuTableView uses **composite keys** but action handlers extract IDs incorrectly:
 
 ```typescript
+
 // MenuTableView selection key
 "category:labelId-categoryId"
 
@@ -102,6 +106,7 @@ categories.find(c => c.id === "labelId-categoryId")  // Never matches!
 After migration, action handlers will use:
 
 ```typescript
+
 const identity = registry.get(selectedKey);
 const entityId = identity.entityId;  // Returns "categoryId" (correct!)
 categories.find(c => c.id === entityId);  // Matches!
@@ -129,7 +134,7 @@ This bug is **automatically resolved** by Phase 5 of the migration plan. The Ide
 
 ### Locations
 
-```
+```typescript
 hooks/useContextSelectionModel.ts:14
   export type CheckboxState = "checked" | "indeterminate" | "unchecked";
 

@@ -39,7 +39,8 @@ Webhooks handle post-payment events like order fulfillment.
 
 #### Local Testing with Stripe CLI:
 
-```bash
+```text
+
 # Install Stripe CLI
 # https://stripe.com/docs/stripe-cli#install
 
@@ -70,7 +71,7 @@ STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
 6. Add to your production environment variables:
    ```env
    STRIPE_WEBHOOK_SECRET=whsec_your_production_secret_here
-   ```
+```
 
 ### 4. Test the Integration
 
@@ -78,7 +79,7 @@ STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
 
    ```bash
    npm run dev
-   ```
+```
 
 2. Add items to cart
 
@@ -128,6 +129,7 @@ Creates a Stripe Checkout Session from cart items.
 **Request:**
 
 ```json
+
 {
   "items": [
     {
@@ -146,6 +148,7 @@ Creates a Stripe Checkout Session from cart items.
 **Response:**
 
 ```json
+
 {
   "sessionId": "cs_test_...",
   "url": "https://checkout.stripe.com/..."

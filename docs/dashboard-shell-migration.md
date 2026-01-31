@@ -34,6 +34,7 @@ Enhance the admin layout with breadcrumb navigation following the shadcn dashboa
 
 **Route mapping:**
 ```typescript
+
 const routeLabels: Record<string, string> = {
   "admin": "Dashboard",
   "analytics": "Analytics",

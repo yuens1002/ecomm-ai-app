@@ -10,6 +10,7 @@ Use this checklist after building the Docker image/compose stack to confirm the 
 ## Bring up the stack
 
 ```bash
+
 # rebuild and start
 docker compose up --build -d
 
@@ -22,6 +23,7 @@ Expected: `artisan-roast-db-1` healthy; `artisan-roast-app-1` up.
 ## Logs to confirm normal behavior
 
 ```bash
+
 docker compose logs app --tail=120
 ```
 
@@ -34,7 +36,8 @@ Normal indicators:
 
 ## Health endpoint
 
-```bash
+```text
+
 curl -s http://localhost:3000/api/health
 ```
 
@@ -45,6 +48,7 @@ curl -s http://localhost:3000/api/health
 ## Optional setup/seed
 
 ```bash
+
 # create admin + seed minimal data
 docker compose run --rm app npm run setup -- --email=owner@shop.com --password=changeme
 ```
@@ -52,6 +56,7 @@ docker compose run --rm app npm run setup -- --email=owner@shop.com --password=c
 If you run setup after first boot, restart app to reload static content:
 
 ```bash
+
 docker compose restart app
 ```
 
@@ -64,6 +69,7 @@ docker compose restart app
 ## Persistence check
 
 ```bash
+
 docker compose down
 docker compose up -d
 ```

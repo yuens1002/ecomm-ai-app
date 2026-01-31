@@ -20,7 +20,7 @@
 
 ### Current Key Flow
 
-```
+```tsx
 View builds key → Selection stores key → Action extracts ID (BROKEN)
      ↓                    ↓                       ↓
 "category:L1-C1"    selectedIds has      getIdFromKey returns
@@ -29,7 +29,7 @@ View builds key → Selection stores key → Action extracts ID (BROKEN)
 
 ### Target Key Flow
 
-```
+```json
 View builds registry → All systems use registry.get(key)
      ↓                           ↓
 IdentityRegistry         { entityId: "C1", ... } (correct!)

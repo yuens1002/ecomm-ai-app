@@ -86,7 +86,7 @@ After triggering a recurring order, verify:
 
 Look for these console logs in your terminal:
 
-```
+```text
 📦 Creating recurring order for subscription renewal...
 📦 Recurring order created: [order-id]
 📉 Decremented stock for [product-name]
@@ -97,7 +97,8 @@ Look for these console logs in your terminal:
 
 ### 2. Check Database
 
-```sql
+```tsx
+
 -- View latest orders
 SELECT id, "totalInCents", status, "deliveryMethod", "createdAt"
 FROM "Order"
@@ -126,7 +127,8 @@ Visit `/admin/orders` to see the new recurring order with PENDING status.
 
 Verify that product stock was decremented:
 
-```sql
+```text
+
 SELECT p.name, pv.name as variant, pv."stockQuantity"
 FROM "ProductVariant" pv
 JOIN "Product" p ON p.id = pv."productId"

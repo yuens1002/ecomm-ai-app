@@ -9,7 +9,7 @@
 
 The Menu Builder is an admin interface for managing a 3-level product catalog hierarchy:
 
-```
+```text
 Labels → Categories → Products
 ```
 
@@ -82,7 +82,7 @@ flowchart TD
 
 The action bar uses a **colocated config pattern** (refactored v0.61.0):
 
-```
+```text
 constants/action-bar/
 ├── model.ts      # Types only (ActionBase, ActionSlot, ViewConfig, etc.)
 ├── shared.ts     # Helpers (hasSelection, modKey, etc.)
@@ -111,7 +111,7 @@ constants/action-bar/
        successToast: { "all-categories": { title: "Cloned categories" } },
      },
    }
-   ```
+```
 
 2. **views.ts** - Explicit left/right layout per view:
    ```typescript
@@ -130,13 +130,13 @@ constants/action-bar/
        { id: "redo" },
      ],
    }
-   ```
+```
 
 3. **index.ts** - Hydrates slots with base definitions:
    ```typescript
    const actions = getActionsForView("menu");
    // Returns ActionDefinition[] with position, type, and all metadata
-   ```
+```
 
 ### Benefits
 
@@ -151,7 +151,7 @@ constants/action-bar/
 
 Drag-and-drop uses a **layered hook architecture**:
 
-```
+```prisma
 ┌─────────────────────────────────────────────────────────┐
 │                    Table Views                          │
 │  AllLabelsTableView, CategoryTableView, LabelTableView  │
@@ -193,7 +193,8 @@ Drag-and-drop uses a **layered hook architecture**:
 
 Row identity is managed via `IdentityRegistry` (see `types/identity-registry.ts`):
 
-```typescript
+```json
+
 type EntityIdentity = {
   key: string;        // Unique key: "label:id" or "category:parentId~id"
   kind: string;       // Entity type: "label", "category", "product"
@@ -218,6 +219,7 @@ Right-click context menus provide quick actions per view+entity combination.
 Actions are determined by `CONTEXT_MENU_CONFIG` mapping `ViewType:EntityKind` to available actions:
 
 ```typescript
+
 const CONTEXT_MENU_CONFIG: Record<ViewEntityKey, ContextMenuActionId[]> = {
   "menu:label": ["clone", "remove", "move-up", "move-down", "delete"],
   "all-labels:label": ["manage-categories", "clone", "visibility", "move-up", "move-down", "delete"],
@@ -257,7 +259,7 @@ Handler logic is extracted to reusable hooks in `hooks/context-menu/`:
 
 Centralized Prisma operations with DTO mapping:
 
-```
+```text
 data/
 ├── categories.ts   # Category CRUD + DTO mapping
 ├── labels.ts       # Label CRUD + DTO mapping
@@ -277,6 +279,7 @@ data/
 `MenuBuilderProvider` composes three hooks into a single context:
 
 ```typescript
+
 // MenuBuilderProvider.tsx
 const data = useProductMenuData();        // SWR fetch: labels, categories, products
 const mutations = useProductMenuMutations(); // CRUD wrappers that revalidate SWR
@@ -287,6 +290,7 @@ const value = { ...data, ...mutations, builder };
 
 Consumer usage:
 ```typescript
+
 const { builder, labels, categories, products, updateCategory } = useMenuBuilder();
 ```
 
@@ -296,7 +300,7 @@ const { builder, labels, categories, products, updateCategory } = useMenuBuilder
 
 Navigation state persists in URL params:
 
-```
+```text
 /admin/menu-builder?view=menu
 /admin/menu-builder?view=label&labelId=abc123
 /admin/menu-builder?view=category&categoryId=def456
@@ -310,7 +314,7 @@ Selection and expand/collapse are local UI state (not URL-backed).
 
 ## File Structure
 
-```
+```tsx
 app/admin/(product-menu)/
 ├── menu-builder/
 │   ├── MenuBuilder.tsx              # Main component
@@ -392,6 +396,7 @@ app/admin/(product-menu)/
 
 ### Test Commands
 ```bash
+
 npm run test:ci                    # All tests
 npx jest "action-bar-config"       # Action bar config tests
 npx jest "categories.dto"          # DTO tests

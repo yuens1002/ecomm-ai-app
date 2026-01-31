@@ -26,7 +26,7 @@ Replace the current sidebar-based admin layout with a top navbar layout inspired
 
 ### Top Navbar (Left to Right)
 
-```
+```tsx
 [<] Logo │ Dashboard ▼ │ Products ▼ │ Orders ▼ │ Pages ▼ │ Management ▼ │ Settings ▼ │ ☀️ 👤
 ```
 
@@ -70,7 +70,7 @@ Replace the current sidebar-based admin layout with a top navbar layout inspired
 ## Footer Structure
 
 ### Desktop Layout
-```
+```text
 ┌────────────────────────────────────────────────────────────────────┐
 │  Artisan Roast    │    Disclaimer • License • Support    │  🐦 📘 📷  │
 │     (left)        │            (center)                  │  (right)  │
@@ -78,7 +78,7 @@ Replace the current sidebar-based admin layout with a top navbar layout inspired
 ```
 
 ### Mobile Layout (Stacked)
-```
+```text
 ┌────────────────────────────────────────┐
 │           Artisan Roast                │
 │  Disclaimer • License • Support  🐦📘📷  │
@@ -178,6 +178,7 @@ Replace the current sidebar-based admin layout with a top navbar layout inspired
 
 ### Automated Checks (must pass before each commit)
 ```bash
+
 npm run typecheck   # No TypeScript errors
 npm run test:ci     # All 595+ tests pass
 npm run lint        # No ESLint errors (warnings OK)
@@ -256,6 +257,7 @@ After Phase 4 commit, notify user for final review with:
 
 ### Navigation Config Structure
 ```typescript
+
 type NavItem = {
   label: string;
   icon?: LucideIcon;
@@ -295,7 +297,7 @@ const adminNavConfig: NavItem[] = [
 ## Files Changed Summary
 
 ### New Files
-```
+```tsx
 components/admin/dashboard/AdminTopNav.tsx
 components/admin/dashboard/AdminMobileDrawer.tsx
 components/admin/dashboard/AdminFooter.tsx
@@ -308,12 +310,12 @@ lib/admin-nav-config.ts
 ```
 
 ### Modified Files
-```
+```tsx
 app/admin/layout.tsx
 ```
 
 ### Removed Files
-```
+```tsx
 components/app-components/AdminSidebar.tsx
 components/app-components/AdminHeader.tsx
 components/app-components/AdminBreadcrumb.tsx (moved to dashboard/)

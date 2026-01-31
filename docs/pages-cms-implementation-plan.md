@@ -270,6 +270,7 @@ Build a simple, AI-powered content management system for informational pages wit
 ## Dependencies to Install
 
 ```bash
+
 # TipTap rich text editor
 npm install @tiptap/react @tiptap/starter-kit @tiptap/extension-image @tiptap/extension-link @tiptap/extension-placeholder
 
@@ -281,7 +282,8 @@ npm install @tiptap/extension-heading @tiptap/extension-bold @tiptap/extension-i
 
 ## Database Schema
 
-```prisma
+```json
+
 model Page {
   id              String   @id @default(cuid())
   slug            String   @unique
@@ -324,7 +326,7 @@ model Page {
 
 ## File Structure
 
-```
+```tsx
 app/
   about/
     page.tsx                           [MODIFIED - fetch from Page model]

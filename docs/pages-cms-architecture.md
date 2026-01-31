@@ -110,7 +110,8 @@ Current state: Static React components require code changes for content updates.
 
 ### Database Schema
 
-```prisma
+```json
+
 model Page {
   id              String   @id @default(cuid())
   slug            String   @unique  // about, cafe, brewing-v60
@@ -236,7 +237,7 @@ Each guide includes:
 
 **Menu as Page Example**:
 
-```
+```tsx
 /pages/menu
 Hero: Café photo
 Content:
@@ -275,7 +276,7 @@ Content:
 
 ### Admin UI Flow
 
-```
+```text
 /admin/pages
   - List all pages (published/draft)
   - Filter by status, search by title
@@ -302,7 +303,8 @@ Content:
 
 ### Frontend Rendering
 
-```typescript
+```tsx
+
 // app/pages/[...slug]/page.tsx
 - Dynamic route handles: /pages/about, /pages/brewing/v60, etc.
 - Fetches page by slug from database
@@ -357,7 +359,8 @@ Content:
 
 ### Blog System (v0.30.0+)
 
-```prisma
+```json
+
 model Post {
   id          String   @id @default(cuid())
   slug        String   @unique

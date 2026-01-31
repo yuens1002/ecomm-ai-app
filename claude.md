@@ -131,6 +131,7 @@
 
 **Test commands:**
 ```bash
+
 npm run test        # Watch mode
 npm run test:ci     # CI mode (single run)
 npm run precheck    # TypeScript + ESLint
@@ -152,7 +153,7 @@ npm run precheck    # TypeScript + ESLint
 #### Feature Branch Commits (no versioning)
 
 **Commit format:**
-```
+```tsx
 <type>: <brief description>
 ```
 
@@ -173,7 +174,7 @@ Use these trigger phrases **only on integration branches** (`unify-menu-builder`
 - `"commit - patch bump"` - For fixes/small changes (0.0.x)
 
 **Commit format (integration branch only):**
-```
+```tsx
 <type>: <brief description> (v0.x.y)
 ```
 
@@ -196,6 +197,7 @@ Use these trigger phrases **only on integration branches** (`unify-menu-builder`
 When committing only documentation files (`.md`, `.txt`), skip `npm run precheck` and use `git commit --no-verify` to avoid unnecessary TypeScript compilation. The CI will still run full checks on PR.
 
 ```bash
+
 # Docs-only commit (skip precheck)
 git add docs/
 git commit --no-verify -m "docs: update roadmap"
@@ -232,6 +234,7 @@ When multiple teammates work on separate branches concurrently, version conflict
 
 **Post-merge checklist:**
 ```bash
+
 # Verify version alignment
 grep '"version"' package.json          # Check package.json version
 git tag -l "v0.*" | sort -V | tail -5  # Check recent tags
@@ -245,7 +248,7 @@ git log --oneline -5                   # Verify commit has version
 4. Create missing tags for untagged commits if needed:
    ```bash
    git tag -a v0.x.y <commit-hash> -m "description"
-   ```
+```
 
 ### Release Schedule
 
@@ -256,6 +259,7 @@ git log --oneline -5                   # Verify commit has version
 
 **Release commands:**
 ```bash
+
 npm run release:patch   # Bug fixes, small changes (0.76.0 → 0.76.1)
 npm run release:minor   # New features (0.76.0 → 0.77.0)
 npm run release:major   # Breaking changes (0.76.0 → 1.0.0)
@@ -280,6 +284,7 @@ npm run release:major   # Breaking changes (0.76.0 → 1.0.0)
 
 ### Server Actions Pattern
 ```typescript
+
 // app/admin/(product-menu)/actions/example-action.ts
 'use server'
 
@@ -307,6 +312,7 @@ export async function exampleAction(data: z.infer<typeof schema>) {
 
 ### SWR Data Fetching Pattern
 ```typescript
+
 // app/admin/(product-menu)/hooks/useExampleData.ts
 import useSWR from 'swr'
 
@@ -320,6 +326,7 @@ export function useExampleData() {
 
 ### Provider Composition Pattern
 ```typescript
+
 // app/admin/(product-menu)/ExampleProvider.tsx
 const ExampleContext = createContext<ExampleContextValue | null>(null)
 
@@ -353,7 +360,8 @@ export function useExample() {
 4. **Verify:** `npm run db:smoke` (smoke test CRUD)
 
 ### Migration Process
-```bash
+```text
+
 # 1. Make schema changes in prisma/schema.prisma
 # 2. Create migration
 npx prisma migrate dev --name descriptive-name
@@ -364,6 +372,7 @@ npx prisma migrate deploy
 
 ### Rollback Process
 ```bash
+
 npm run db:restore
 ```
 
@@ -396,12 +405,14 @@ npm run db:restore
 
 ### Local Development
 ```bash
+
 npm run dev                                                    # Start dev server
 stripe listen --forward-to localhost:3000/api/webhooks/stripe # Stripe webhooks (Terminal 2)
 ```
 
 ### Build Process
 ```bash
+
 npm run build              # Standard build
 npm run build:safe         # Safe build (backup + checks)
 npm run build:no-migrate   # Build without migrations
@@ -521,6 +532,7 @@ Before creating pull request:
 ## Reference Commands Quick Guide
 
 ```bash
+
 # Development
 npm run dev                    # Start dev server
 npm run build                  # Build for production

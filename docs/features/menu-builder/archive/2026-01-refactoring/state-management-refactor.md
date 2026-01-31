@@ -11,7 +11,8 @@ We currently have **two separate systems** fetching the same data:
 
 ### **System 1: ProductMenuProvider (Existing)**
 
-```typescript
+```tsx
+
 ProductMenuProvider
   └─> useProductMenuData
       └─> listMenuData() // Fetches labels, categories, products, settings
@@ -19,7 +20,8 @@ ProductMenuProvider
 
 ### **System 2: useMenuBuilder (New)**
 
-```typescript
+```tsx
+
 useMenuBuilder
   ├─> useSWR("menu-labels") → listLabels()
   ├─> useSWR("menu-categories") → listCategories()
@@ -40,6 +42,7 @@ useMenuBuilder
 **`useMenuBuilder` should consume from `ProductMenuProvider`, not duplicate it:**
 
 ```typescript
+
 export function useMenuBuilder() {
   // ==================== DATA FROM PROVIDER ====================
   // Single source of truth - use existing ProductMenuProvider
@@ -69,7 +72,7 @@ export function useMenuBuilder() {
 
 ### **Current (Problematic):**
 
-```
+```tsx
 MenuBuilder
     ├─> useMenuBuilder
     │   ├─> useSWR (labels)
@@ -81,7 +84,7 @@ MenuBuilder
 
 ### **Proposed (Correct):**
 
-```
+```tsx
 <ProductMenuProvider>  ← Wraps entire (product-menu) section
     ├─> useProductMenuData (single SWR cache)
     ├─> useProductMenuMutations
@@ -114,6 +117,7 @@ MenuBuilder
 **Before:**
 
 ```typescript
+
 export default function MenuBuilder() {
   const {...} = useMenuBuilder();
   // ...
@@ -123,6 +127,7 @@ export default function MenuBuilder() {
 **After:**
 
 ```typescript
+
 function MenuBuilderContent() {
   const {...} = useMenuBuilder();
   // ...

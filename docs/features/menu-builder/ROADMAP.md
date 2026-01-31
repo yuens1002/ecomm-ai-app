@@ -722,7 +722,8 @@ Current code conflates hierarchy depth with entity type:
 
 ## File Structure
 
-```text
+```tsx
+
 app/admin/(product-menu)/
 ├─ menu-builder/
 │  ├─ MenuBuilderProvider.tsx       ✅

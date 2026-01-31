@@ -18,7 +18,8 @@ We use **Localtunnel** because it allows us to request a persistent subdomain (u
 
 In a separate terminal window, run:
 
-```bash
+```text
+
 npx localtunnel --port 3000 --subdomain stupid-cases-joke
 ```
 
@@ -34,6 +35,7 @@ npx localtunnel --port 3000 --subdomain stupid-cases-joke
 The configuration file controls how the assistant behaves. Key settings:
 
 ```typescript
+
 export const VAPI_ASSISTANT_CONFIG = {
   // ...
   server: {
@@ -56,13 +58,13 @@ export const VAPI_ASSISTANT_CONFIG = {
 
    ```bash
    npm run dev
-   ```
+```
 
 2. **Start the Tunnel (if not running):**
 
    ```bash
    npx localtunnel --port 3000 --subdomain stupid-cases-joke
-   ```
+```
 
 3. **Access the App:**
    - Open `http://localhost:3000` (for your own browsing).

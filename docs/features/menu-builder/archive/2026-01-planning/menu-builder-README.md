@@ -79,7 +79,7 @@
 
 ## 📂 Key Paths
 
-```
+```tsx
 docs/menu-builder/
   menu-builder-README.md
   menu-builder-implementation.md
@@ -105,6 +105,7 @@ app/admin/(product-menu)/
 ## 🧪 Checks
 
 ```bash
+
 npm run precheck
 
 # Jest (CI mode)

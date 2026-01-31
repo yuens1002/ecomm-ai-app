@@ -143,6 +143,7 @@ Organized and consolidated all docs:
 **Action Handlers:**
 
 ```typescript
+
 // Before: 120 lines of nested if/else
 const removeSelected = async () => {
   if (view === "menu") {
@@ -166,6 +167,7 @@ const removeSelected = async () => {
 **State Management:**
 
 ```typescript
+
 // Before: Multiple sources, props drilling
 const [state1, setState1] = useState();
 const [state2, setState2] = useState();
@@ -179,6 +181,7 @@ const { state, actions, data } = useMenuBuilder();
 **Navigation:**
 
 ```typescript
+
 // Before: Local state, lost on refresh
 const [currentView, setCurrentView] = useState("menu");
 

@@ -16,6 +16,7 @@ This guide covers migrating your Artisan Roast application from a local Docker P
 ## Step 1: Backup Local Database
 
 ```bash
+
 # Create a timestamped backup
 npm run db:backup
 
@@ -66,7 +67,8 @@ VERCEL_ENV=production
 
 ## Step 4: Run Migrations on Neon
 
-```bash
+```text
+
 # Generate Prisma Client for Neon adapter
 npx prisma generate
 
@@ -83,6 +85,7 @@ npx prisma migrate deploy
 Instead of seeding, restore your existing data from the backup you created in Step 1:
 
 ```bash
+
 # Restore from your backup file
 npm run db:restore -- dev-tools/backups/backup-YYYY-MM-DD-HH-MM-SS.json
 
@@ -98,7 +101,8 @@ npm run db:restore -- dev-tools/backups/backup-YYYY-MM-DD-HH-MM-SS.json
 
 ### 1. Check Database Connection
 
-```bash
+```tsx
+
 # Test connection
 npx prisma db execute --stdin <<< "SELECT NOW();"
 ```
@@ -106,6 +110,7 @@ npx prisma db execute --stdin <<< "SELECT NOW();"
 ### 2. Verify Schema
 
 ```bash
+
 # Open Prisma Studio
 npm run studio
 
@@ -118,6 +123,7 @@ npm run studio
 ### 3. Run Application Tests
 
 ```bash
+
 # Run full test suite
 npm test
 
@@ -128,6 +134,7 @@ npm test -- --testPathPattern=integration
 ### 4. Test Locally Against Neon
 
 ```bash
+
 # Start dev server
 npm run dev
 
@@ -155,6 +162,7 @@ npm run dev
 2. **Deploy**:
 
 ```bash
+
 # Via Vercel CLI
 vercel --prod
 
@@ -169,12 +177,14 @@ git push origin main
 1. Build application:
 
 ```bash
+
 npm run build
 ```
 
 2. Start production server:
 
 ```bash
+
 npm start
 ```
 
@@ -193,6 +203,7 @@ Neon handles connection pooling automatically. The Prisma adapter for Neon uses 
 ### Backup Strategy
 
 ```bash
+
 # Regular backups (add to cron/scheduled job)
 npm run db:backup
 
@@ -204,7 +215,8 @@ npm run db:backup
 
 Neon supports database branching for each PR:
 
-```bash
+```text
+
 # Create a branch for development
 neon branches create --project-id [project-id] --name dev-feature-x
 
@@ -218,6 +230,7 @@ If migration fails or issues arise:
 ### 1. Restore to Local Docker
 
 ```bash
+
 # Switch back to local connection
 DATABASE_URL="postgresql://postgres:password@localhost:5432/artisan_roast?schema=public"
 
@@ -228,6 +241,7 @@ npm run db:restore -- dev-tools/backups/backup-YYYY-MM-DD-HH-MM-SS.json
 ### 2. Verify Local Functionality
 
 ```bash
+
 npm run dev
 # Test all critical features
 ```

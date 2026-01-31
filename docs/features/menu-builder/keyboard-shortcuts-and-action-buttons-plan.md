@@ -86,6 +86,7 @@ Key considerations:
 
 **File:** `app/admin/(product-menu)/constants/action-bar/actions.ts`
 ```typescript
+
 help: {
   id: "help",
   icon: ConciergeBell,
@@ -144,6 +145,7 @@ View-specific bulleted text:
 
 **File:** `app/admin/(product-menu)/constants/action-bar/actions.ts`
 ```typescript
+
 delete: {
   id: "delete",
   icon: Trash2,
@@ -191,7 +193,8 @@ delete: {
 ##### Step 2: Add Delete Button to Views
 **File:** `app/admin/(product-menu)/constants/action-bar/views.ts`
 
-```typescript
+```json
+
 "all-labels": {
   left: [{ id: "new-label" }, { id: "clone" }],
   right: [

@@ -40,6 +40,7 @@ Simplified the menu builder architecture by **extending ProductMenuProvider** in
 **Change:** Added `builder` namespace to context
 
 ```typescript
+
 const builderState = useMenuBuilderState();
 
 const value = {
@@ -92,7 +93,7 @@ const value = {
 
 ### **Before (Complex):**
 
-```
+```tsx
 useMenuBuilder (373 lines)
   ├─> Duplicate data fetching (useSWR)
   ├─> UI state
@@ -108,7 +109,7 @@ MenuBuilder
 
 ### **After (Simple):**
 
-```
+```tsx
 ProductMenuProvider
   ├─> useProductMenuData (existing)
   ├─> useProductMenuMutations (existing)
@@ -217,6 +218,7 @@ MenuBuilder (pure composition)
 Now we can build table views with the clean architecture:
 
 ```typescript
+
 export function MenuTableView() {
   const {
     builder: { selectedIds, expandedIds, toggleSelection, toggleExpand },

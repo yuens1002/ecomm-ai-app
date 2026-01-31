@@ -33,7 +33,8 @@ This causes:
 
 The complete identity for any row in any table view.
 
-```typescript
+```json
+
 type RowIdentity = {
   // === UNIQUE IDENTIFIER ===
   /** Unique key for this row (React key, selection tracking) */
@@ -71,7 +72,8 @@ type RowIdentity = {
 
 Container for all row identities with O(1) lookup methods.
 
-```typescript
+```tsx
+
 type IdentityRegistry = {
   // === STORAGE ===
   /** All identities by key */
@@ -108,6 +110,7 @@ type IdentityRegistry = {
 For flat table views (AllLabels, AllCategories, etc.)
 
 ```typescript
+
 function buildFlatRegistry<T extends { id: string }>(
   items: T[],
   kind: string
@@ -125,6 +128,7 @@ const registry = buildFlatRegistry(labels, "label");
 For the 3-level menu hierarchy view.
 
 ```typescript
+
 function buildMenuHierarchyRegistry(
   labels: MenuLabel[],
   products: MenuProduct[]
@@ -141,6 +145,7 @@ function buildMenuHierarchyRegistry(
 For arbitrary hierarchies.
 
 ```typescript
+
 function buildHierarchyRegistry<T>(
   root: T[],
   config: {
@@ -161,6 +166,7 @@ function buildHierarchyRegistry<T>(
 Single hook for all table views.
 
 ```typescript
+
 function useRowClickHandler(
   registry: IdentityRegistry,
   options: {
@@ -185,6 +191,7 @@ function useRowClickHandler(
 **Behavior:**
 
 ```typescript
+
 // handleClick implementation
 const handleClick = (key: string) => {
   const identity = registry.get(key);
@@ -221,6 +228,7 @@ const handleDoubleClick = (key: string) => {
 For clone, remove, and other actions.
 
 ```typescript
+
 function useActionHandler(
   registry: IdentityRegistry,
   mutations: {
@@ -239,6 +247,7 @@ function useActionHandler(
 **Behavior:**
 
 ```typescript
+
 const handleClone = async (keys: string[]) => {
   for (const key of keys) {
     const identity = registry.get(key);
@@ -266,6 +275,7 @@ const handleClone = async (keys: string[]) => {
 ### In Table Views
 
 ```typescript
+
 function SomeTableView() {
   // 1. Build registry from data
   const registry = useMemo(
@@ -296,6 +306,7 @@ function SomeTableView() {
 ### In Action Bar
 
 ```typescript
+
 function useActionBarHandlers(registry: IdentityRegistry) {
   const { handleClone, handleRemove } = useActionHandler(registry, mutations);
 
@@ -329,7 +340,7 @@ function useActionBarHandlers(registry: IdentityRegistry) {
 When performing actions (clone, remove), we operate on **actionable roots** - selected keys whose parents are NOT also selected.
 
 **Example:**
-```
+```text
 Selection: ["label:L1", "category:L1-C1", "product:L1-C1-P1"]
 
 Actionable roots analysis:
@@ -345,6 +356,7 @@ The clone/remove action will operate on the label only (which includes its struc
 ### Helper Functions
 
 ```typescript
+
 // Get parent key from a key (based on kind hierarchy)
 function getParentKey(key: string): string | null;
 
@@ -367,7 +379,7 @@ This ensures completeness when selecting a parent (not indeterminate).
 
 ## Key Format Convention
 
-```
+```json
 {kind}:{compositeId}
 ```
 
@@ -413,7 +425,7 @@ Where `compositeId` encodes ancestry for uniqueness:
 
 ## File Locations
 
-```
+```text
 app/admin/(product-menu)/
 ├── types/
 │   └── identity-registry.ts      # RowIdentity, IdentityRegistry types

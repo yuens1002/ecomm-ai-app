@@ -18,7 +18,8 @@ This document outlines how database migrations and upgrades are applied across d
 
 Migrations run automatically during the build process:
 
-```bash
+```text
+
 # vercel-build script (from package.json)
 DATABASE_URL=$DIRECT_URL PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT=180000 node scripts/build-resilient.js
 ```
@@ -38,6 +39,7 @@ DATABASE_URL=$DIRECT_URL PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT=180000 node script
 Users upgrading a self-hosted instance should:
 
 ```bash
+
 # 1. Pull latest code
 git pull origin main
 
@@ -62,6 +64,7 @@ pm2 restart artisan-roast          # or however you run it
 #### Option 1: Manual Migration
 
 ```bash
+
 # After pulling new image
 docker compose exec app npx prisma migrate deploy
 docker compose restart app
@@ -78,7 +81,8 @@ CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
 
 Or in `docker-compose.yml`:
 
-```yaml
+```bash
+
 services:
   app:
     command: sh -c "npx prisma migrate deploy && npm start"
@@ -94,7 +98,8 @@ services:
 
 Use your local `artisan_roast` database to simulate an upgrade:
 
-```bash
+```text
+
 # 1. Ensure local DB is "behind" (missing recent migrations)
 #    Or manually drop a test column to simulate older state
 
@@ -110,7 +115,8 @@ npx prisma migrate status  # Should show "Database schema is up to date!"
 
 ### Method 2: Docker Simulation (Closest to Real)
 
-```bash
+```typescript
+
 # 1. Start fresh Docker instance with older image/state
 docker compose up -d db
 docker compose exec db psql -U postgres -c "CREATE DATABASE artisan_test;"
@@ -144,6 +150,7 @@ For production-critical testing:
 To test the upgrade path with a real schema change:
 
 ```bash
+
 # 1. Create a branch
 git checkout -b test/upgrade-path-verification
 
@@ -172,6 +179,7 @@ git branch -D test/upgrade-path-verification
 TODO: Create a dedicated upgrade command for self-hosted users:
 
 ```bash
+
 npm run upgrade
 ```
 
@@ -209,6 +217,7 @@ async function upgrade() {
 **Package.json entry:**
 
 ```json
+
 {
   "scripts": {
     "upgrade": "node scripts/upgrade.js"
@@ -222,7 +231,8 @@ async function upgrade() {
 
 ### If Migration Fails
 
-```bash
+```text
+
 # 1. Check which migration failed
 npx prisma migrate status
 
@@ -238,6 +248,7 @@ npx prisma migrate deploy
 ### Database Backup/Restore
 
 ```bash
+
 # Backup before upgrade (recommended)
 npm run db:backup
 

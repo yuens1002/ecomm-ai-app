@@ -10,6 +10,7 @@
 **Before:** Actions had deeply nested if/else chains:
 
 ```typescript
+
 const removeSelected = useCallback(
   async () => {
     if (selectedIds.length === 0) return;
@@ -58,6 +59,7 @@ const removeSelected = useCallback(
 **After:** Declarative configuration object:
 
 ```typescript
+
 // actionStrategies.ts - Configuration
 export const ACTION_STRATEGIES = {
   menu: {
@@ -128,7 +130,7 @@ const removeSelected = useCallback(
 
 ## 📊 Architecture
 
-```
+```tsx
 ┌─────────────────────────────────────────────────────────────┐
 │                    ACTION_STRATEGIES                        │
 │                  (Configuration Object)                     │
@@ -181,6 +183,7 @@ Each strategy has three parts:
 The actual logic to perform:
 
 ```typescript
+
 execute: async (context: ActionContext) => {
   // Do the work
   await Promise.all(
@@ -195,7 +198,8 @@ execute: async (context: ActionContext) => {
 
 Which data to refresh after success:
 
-```typescript
+```text
+
 refresh: ["labels"]; // Will call mutateLabels()
 refresh: ["labels", "categories"]; // Will call both
 ```
@@ -204,7 +208,8 @@ refresh: ["labels", "categories"]; // Will call both
 
 Custom error message for this strategy:
 
-```typescript
+```text
+
 errorMessage: "Failed to hide labels from menu";
 ```
 
@@ -217,6 +222,7 @@ errorMessage: "Failed to hide labels from menu";
 **After:** Add one configuration object:
 
 ```typescript
+
 // actionStrategies.ts
 export const ACTION_STRATEGIES = {
   // ... existing views
@@ -251,6 +257,7 @@ Done! All action handlers automatically work with the new view.
 **After:** Add strategy for each view that supports it:
 
 ```typescript
+
 // actionStrategies.ts
 export const ACTION_STRATEGIES = {
   menu: {
@@ -299,6 +306,7 @@ const handleNewAction = useCallback(
 ### **Before:**
 
 ```typescript
+
 it("should remove labels in menu view", () => {
   // Mock currentView, selectedIds, mutations
   // Call removeSelected()
@@ -319,6 +327,7 @@ it("should detach categories in label view", () => {
 ### **After:**
 
 ```typescript
+
 // Test strategies in isolation
 describe("ACTION_STRATEGIES", () => {
   it("menu.remove should hide labels", async () => {

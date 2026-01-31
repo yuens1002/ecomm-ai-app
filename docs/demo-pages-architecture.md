@@ -48,7 +48,8 @@ We are in active development of an e-commerce platform for coffee shop owners. T
 
 ## Current Implementation
 
-```
+```text
+
 Page Model:
   ├── content: String         // For demo pages (developer use)
   ├── blocks: Block[]         // For CMS pages (shop owner use)
@@ -57,7 +58,8 @@ Page Model:
 
 **Rendering Logic (PageContent.tsx):**
 
-```typescript
+```json
+
 if (blocks.length === 0) {
   // Option A: Show "Content coming soon" (current)
   // Option B: Fallback to page.content if it exists (hybrid)
@@ -85,6 +87,7 @@ if (blocks.length === 0) {
 **Code Change:**
 
 ```typescript
+
 // PageContent.tsx
 export function PageContent({ blocks, pageType, pageTitle, legacyContent }: PageContentProps) {
   const layoutRenderer = getLayoutRenderer(pageType);
@@ -125,7 +128,8 @@ export function PageContent({ blocks, pageType, pageTitle, legacyContent }: Page
 
 **Migration Script:**
 
-```typescript
+```text
+
 // dev-tools/migrate-static-to-blocks.ts
 // Converts page.content HTML into richText blocks
 ```

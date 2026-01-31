@@ -19,6 +19,7 @@ To make Prisma 7 work seamlessly with Neon in our Next.js application (both for 
 We import `ws` and explicitly assign it to the `neonConfig`. This bridges the gap between the serverless driver and the Node.js environment.
 
 ```typescript
+
 import { neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 
@@ -34,6 +35,7 @@ In Prisma 7, the `PrismaNeon` adapter acts as a factory and takes a configuratio
 **Old (Prisma 5/6):**
 
 ```typescript
+
 const pool = new Pool({ connectionString });
 const adapter = new PrismaNeon(pool);
 ```
@@ -41,6 +43,7 @@ const adapter = new PrismaNeon(pool);
 **New (Prisma 7):**
 
 ```typescript
+
 const adapter = new PrismaNeon({ connectionString });
 ```
 
@@ -49,6 +52,7 @@ const adapter = new PrismaNeon({ connectionString });
 Here is the robust singleton pattern used in `lib/prisma.ts`:
 
 ```typescript
+
 import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";

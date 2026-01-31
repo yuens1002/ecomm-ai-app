@@ -11,7 +11,8 @@
 
 ### **Keep Existing + Add New**
 
-```text
+```json
+
 action-bar-config.ts (UNCHANGED)
   ├─ SHARED_ACTIONS
   ├─ ACTION_BAR_CONFIG["all-categories"] = [actions array]
@@ -47,6 +48,7 @@ view-configs.ts
 ### **Styles (from mock2)**
 
 ```tsx
+
 // Header row
 <tr className="h-10 bg-muted/40 border-b">
   <td className="w-6 p-2"> {/* Checkbox */}
@@ -95,7 +97,8 @@ view-configs.ts
 
 ## 🏗️ File Structure
 
-```text
+```tsx
+
 constants/
   action-bar-config.ts (UNCHANGED)
   view-configs.ts (NEW)
@@ -126,6 +129,7 @@ components/table-views/
 ### **1. view-configs.ts**
 
 ```typescript
+
 // constants/view-configs.ts
 import type { ViewType } from "../types/builder-state";
 import type { ActionContext } from "./action-bar-config";
@@ -228,6 +232,7 @@ export const VIEW_CONFIGS: Record<ViewType, ViewConfig> = {
 ### **2. AllCategoriesTableView.tsx**
 
 ```typescript
+
 // components/table-views/AllCategoriesTableView.tsx
 "use client";
 
@@ -443,6 +448,7 @@ These extend shadcn table componecells/nts with consistent behavior:
 **TableHeader.tsx**
 
 ```typescript
+
 // components/table-views/shared/table/TableHeader.tsx
 import { TableHeader as ShadcnTableHeader, TableRow, TableHead } from "@/components/ui/table";
 
@@ -492,6 +498,7 @@ export function TableHeader({ columns, onSelectAll, allSelected }: TableHeaderPr
 **TableRow.tsx**
 
 ```typescript
+
 // components/table-views/shared/table/TableRow.tsx
 import { TableRow as ShadcnTableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -523,6 +530,7 @@ export function TableRow({ children, selected, onClick, className }: TableRowPro
 **TableCell.tsx**
 
 ```typescript
+
 // components/table-views/shared/table/TableCell.tsx
 import { TableCell as ShadcnTableCell } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -557,6 +565,7 @@ export function TableCell({ children, align, width, className }: TableCellProps)
 **CheckboxCell.tsx**
 
 ```typescript
+
 // components/table-views/shared/CheckboxCell.tsx
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -591,6 +600,7 @@ export function CheckboxCell({
 #### **InlineNameEditor.tsx**
 
 ```typescript
+
 // components/table-views/shared/InlineNameEditor.tsx
 import { useState } from "react";
 
@@ -649,6 +659,7 @@ export function InlineNameEditor({
 #### **VisibilityCell.tsx**
 
 ```typescript
+
 // components/table-views/shared/VisibilityCell.tsx
 import { Switch } from "@/components/ui/switch";
 import { Eye, EyeOff } from "lucide-react";

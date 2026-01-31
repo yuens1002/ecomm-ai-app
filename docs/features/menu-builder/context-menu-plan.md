@@ -225,6 +225,7 @@ When multiple items selected:
 The `ViewEntityKey` pattern (`${ViewType}:${SelectedEntityKind}`) is **correct and necessary**:
 
 ```typescript
+
 const CONTEXT_MENU_CONFIG: Record<ViewEntityKey, ContextMenuActionId[]> = {
   // Action order: manage-* → clone → remove → visibility → move-* → delete
   "menu:label": ["clone", "remove", "move-up", "move-down", "delete"],
@@ -255,6 +256,7 @@ const CONTEXT_MENU_CONFIG: Record<ViewEntityKey, ContextMenuActionId[]> = {
 
 **Implementation:**
 ```typescript
+
 // Bulk mode detection
 const isBulkMode = isInSelection && selectedCount > 1;
 const showCount = isBulkMode; // Only show counts when bulk
@@ -267,13 +269,15 @@ const showCount = isBulkMode; // Only show counts when bulk
 When context menu opens, highlight the right-clicked row distinctly from selection.
 
 **TableRow props:**
-```typescript
+```text
+
 isSelected?: boolean;      // Selection highlight (primary border, accent bg)
 isContextRow?: boolean;    // Context menu highlight (muted border, muted bg)
 ```
 
 **Styling (in TableRow.tsx):**
-```typescript
+```text
+
 isSelected
   ? "border-l-primary bg-accent/50"
   : isContextRow
@@ -282,7 +286,8 @@ isSelected
 ```
 
 **Usage in table view:**
-```tsx
+```typescript
+
 const [contextRowId, setContextRowId] = useState<string | null>(null);
 
 <RowContextMenu onOpenChange={(open) => setContextRowId(open ? item.id : null)}>
@@ -298,11 +303,13 @@ When selection contains mixed entity types, show disabled menu with explanation.
 
 **Detection:**
 ```typescript
+
 const isMixedSelection = actionableRoots.length > 0 && !isSameKind;
 ```
 
 **Disabled menu UI:**
 ```tsx
+
 {isMixedSelection && isInSelection && (
   <ContextMenuContent>
     <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
@@ -326,6 +333,7 @@ Actions define whether they support bulk operations. Non-bulk actions are **hidd
 
 **Action definition:**
 ```typescript
+
 const CONTEXT_MENU_ACTIONS: Record<ContextMenuActionId, ContextMenuAction> = {
   clone: { id: "clone", label: "Clone", icon: Copy, supportsBulk: true },
   "move-up": { id: "move-up", label: "Move Up", icon: ArrowUp, supportsBulk: false },
@@ -337,6 +345,7 @@ const CONTEXT_MENU_ACTIONS: Record<ContextMenuActionId, ContextMenuAction> = {
 
 **Filtering:**
 ```typescript
+
 const actionIds = isBulkMode
   ? allActionIds.filter((id) => CONTEXT_MENU_ACTIONS[id].supportsBulk)
   : allActionIds;
@@ -349,6 +358,7 @@ const actionIds = isBulkMode
 Show counts in labels when in bulk mode:
 
 ```typescript
+
 const renderLabel = (label: string) => {
   if (showCount) {
     return `${label} (${bulkCount})`;
@@ -377,6 +387,7 @@ Both `manage-categories` and `manage-labels` actions show submenus with:
 
 **Search state management:**
 ```typescript
+
 // Search state resets when menu closes
 const [categorySearch, setCategorySearch] = React.useState("");
 const handleOpenChange = React.useCallback((open: boolean) => {
@@ -387,6 +398,7 @@ const handleOpenChange = React.useCallback((open: boolean) => {
 
 **Sectioning with search filter:**
 ```typescript
+
 const searchLower = categorySearch.toLowerCase();
 const filteredCategories = categorySearch
   ? categoryTargets.filter((c) => c.name.toLowerCase().includes(searchLower))
@@ -398,7 +410,8 @@ const addedCategories = filteredCategories
 ```
 
 **Rendering:**
-```tsx
+```typescript
+
 <ContextMenuSub>
   <ContextMenuSubTrigger className="gap-2">
     <FileSpreadsheet className="size-4" />
@@ -432,6 +445,7 @@ Reusable component for both dropdown and context menu checkbox lists.
 
 **Props:**
 ```typescript
+
 type CheckboxListContentProps = {
   variant: "dropdown" | "context-menu";
   searchable?: boolean;
@@ -452,7 +466,8 @@ type CheckboxListContentProps = {
 
 Use `<Kbd>` component instead of `ContextMenuShortcut`:
 
-```tsx
+```typescript
+
 import { Kbd } from "@/components/ui/kbd";
 
 <ContextMenuItem>
@@ -464,6 +479,7 @@ import { Kbd } from "@/components/ui/kbd";
 
 **Shortcut formatting (platform-aware):**
 ```typescript
+
 function formatKbd(kbd: string[] | undefined, isMac: boolean): string | undefined {
   if (!kbd || kbd.length === 0) return undefined;
   return kbd
@@ -486,6 +502,7 @@ function formatKbd(kbd: string[] | undefined, isMac: boolean): string | undefine
 **ContextMenuSubTrigger:** Does NOT have gap. Add `className="gap-2"`.
 
 ```tsx
+
 // Regular item - gap-2 built-in
 <ContextMenuItem>
   <Icon className="size-4" />
@@ -509,6 +526,7 @@ Actions are grouped with separators:
 3. **Delete action** (destructive, always last)
 
 ```typescript
+
 const mainActions = actionIds.filter(
   (id) => !["move-up", "move-down", "move-to", "delete"].includes(id)
 );
@@ -525,6 +543,7 @@ const deleteAction = actionIds.includes("delete") ? ["delete"] : [];
 Move Up disabled when `isFirst`, Move Down disabled when `isLast`:
 
 ```tsx
+
 <ContextMenuItem disabled={!onMoveUp || isFirst}>
   <ArrowUp className="size-4" />
   Move Up

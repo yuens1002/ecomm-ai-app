@@ -33,6 +33,7 @@
 
 **Pattern:**
 ```typescript
+
 // Bulk version (3 views)
 const handleContextClone = useCallback(
   async (entityId: string) => {
@@ -75,6 +76,7 @@ const handleContextClone = useCallback(
 
 **Pattern:**
 ```typescript
+
 // Bulk version (All* views)
 const handleContextVisibilityToggle = useCallback(
   async (entityId: string, visible: boolean) => {
@@ -114,6 +116,7 @@ const handleContextVisibility = useCallback(
 
 **Pattern:**
 ```typescript
+
 const handleContextRemove = useCallback(
   async (childId: string) => {
     if (!currentParentId) return;
@@ -142,6 +145,7 @@ const handleContextRemove = useCallback(
 
 **Pattern for categories:**
 ```typescript
+
 const handleMoveTo = useCallback(
   async (entityId: string, toParentId: string) => {
     if (!currentParentId) return;
@@ -184,6 +188,7 @@ const handleMoveTo = useCallback(
 
 **Pattern:**
 ```typescript
+
 const handleRelationshipToggle = useCallback(
   async (entityId: string, relatedId: string, shouldAttach: boolean) => {
     if (shouldAttach) {
@@ -215,6 +220,7 @@ const handleRelationshipToggle = useCallback(
 
 **Pattern:**
 ```typescript
+
 const handleCategoryMoveUp = useCallback(
   async (categoryId: string, parentLabelId: string) => {
     const parentLabel = visibleLabels.find((l) => l.id === parentLabelId);
@@ -286,6 +292,7 @@ const handleCategoryMoveUp = useCallback(
 
 ### For `useContextVisibility`:
 ```typescript
+
 type UseContextVisibilityOptions = {
   updateEntity: (id: string, data: { isVisible: boolean }) => Promise<{ ok: boolean }>;
   getTargetIds?: (id: string) => string[];  // For bulk support
@@ -295,6 +302,7 @@ type UseContextVisibilityOptions = {
 
 ### For `useRelationshipToggle`:
 ```typescript
+
 type UseRelationshipToggleOptions = {
   attach: (primaryId: string, relatedId: string) => Promise<{ ok: boolean }>;
   detach: (primaryId: string, relatedId: string) => Promise<{ ok: boolean }>;

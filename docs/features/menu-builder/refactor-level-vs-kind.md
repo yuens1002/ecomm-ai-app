@@ -5,6 +5,7 @@
 Current code conflates hierarchy depth with entity type:
 
 ```typescript
+
 // FlatMenuRow uses "level" to mean entity type
 type FlatLabelRow = { level: "label"; ... }
 type FlatCategoryRow = { level: "category"; ... }
@@ -21,6 +22,7 @@ This breaks if we need to add a parent level above labels (e.g., "menu" or "sect
 
 In `types/identity-registry.ts`:
 ```typescript
+
 export type EntityIdentity = {
   readonly kind: string;    // Entity type: "label", "category", "product"
   readonly depth: number;   // Hierarchy position: 0, 1, 2, ...
@@ -30,6 +32,7 @@ export type EntityIdentity = {
 
 In `types/builder-state.ts`:
 ```typescript
+
 export type SelectedEntityKind = "label" | "category" | "product";
 ```
 
@@ -38,12 +41,14 @@ export type SelectedEntityKind = "label" | "category" | "product";
 ### 1. FlatMenuRow Types (`MenuTableView.types.ts`)
 
 **Before:**
-```typescript
+```json
+
 type FlatLabelRow = { level: "label"; ... }
 ```
 
 **After:**
-```typescript
+```json
+
 type FlatLabelRow = {
   kind: "label";
   depth: 0;
@@ -54,7 +59,8 @@ type FlatLabelRow = {
 ### 2. useMultiEntityDnd
 
 **Before:**
-```typescript
+```json
+
 type EntityLevel = "label" | "category";
 dragLevel: EntityLevel | null;
 if (row.level === "label") { ... }
@@ -62,7 +68,8 @@ isDraggingLabel: dragLevel === "label",
 ```
 
 **After:**
-```typescript
+```json
+
 dragKind: EntityKind | null;
 dragDepth: number | null;
 if (row.kind === "label") { ... }  // or use depth for level-based logic
@@ -74,6 +81,7 @@ isDraggingLabel: dragKind === "label",
 Make parent-child relationships configurable rather than hardcoded:
 
 ```typescript
+
 // Current: hardcoded checks
 if (targetKind === "label" && dragLevel === "category") { ... }
 
@@ -89,6 +97,7 @@ const hierarchyRules = {
 
 **Before:**
 ```typescript
+
 function isLabelRow(row: FlatMenuRow): row is FlatLabelRow {
   return row.level === "label";
 }
@@ -96,6 +105,7 @@ function isLabelRow(row: FlatMenuRow): row is FlatLabelRow {
 
 **After:**
 ```typescript
+
 function isLabelRow(row: FlatMenuRow): row is FlatLabelRow {
   return row.kind === "label";
 }
@@ -122,7 +132,8 @@ function isLabelRow(row: FlatMenuRow): row is FlatLabelRow {
 
 With this refactor, adding a new hierarchy level becomes straightforward:
 
-```typescript
+```json
+
 // Adding "section" above labels
 type FlatSectionRow = {
   kind: "section";

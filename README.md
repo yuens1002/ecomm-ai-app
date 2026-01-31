@@ -107,6 +107,7 @@ You'll need:
 ### Option 2: Run Locally
 
 ```bash
+
 git clone https://github.com/yuens1002/ecomm-ai-app.git
 cd ecomm-ai-app
 npm install

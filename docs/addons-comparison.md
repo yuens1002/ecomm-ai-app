@@ -4,7 +4,7 @@
 
 ### 🔵 mini carousel (Target)
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │        You May Also Like                │
 ├─────────────────────────────────────────┤
@@ -37,7 +37,7 @@
 
 ### ⚪ Current Implementation
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │      Complete Your Order                │
 ├─────────────────────────────────────────┤
@@ -93,6 +93,7 @@
 **Current Structure:**
 
 ```tsx
+
 <Card> // Horizontal layout
   <CardContent className="flex flex-row">
     <Image 32x32 />
@@ -113,6 +114,7 @@
 **Target Structure:**
 
 ```tsx
+
 <Card>
   {" "}
   // Vertical layout, centered
@@ -145,7 +147,8 @@
 
 **Current:**
 
-```tsx
+```typescript
+
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
   {addOns.map((addOn) => (
     <AddOnCard key={...} addOn={addOn} />
@@ -155,7 +158,8 @@
 
 **Target:**
 
-```tsx
+```typescript
+
 <Carousel
   mode="products"
   items={addOns}
@@ -192,6 +196,7 @@
 **Implementation:**
 
 ```tsx
+
 <h2 className="text-3xl font-bold text-center text-text-base mb-8">
   You May Also Like
 </h2>
@@ -258,6 +263,7 @@
 No changes needed - server action already fetches add-ons:
 
 ```typescript
+
 // Server side (page.tsx)
 const addOns = await getProductAddOns(product.id);
 
