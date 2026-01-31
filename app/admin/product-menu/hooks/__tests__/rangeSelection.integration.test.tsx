@@ -435,7 +435,7 @@ describe("Range Selection Integration", () => {
         createKey("label", "d"),
         createKey("label", "e"),
       ];
-      const [keyA, keyB, keyC, keyD, keyE] = keys;
+      const [keyA, keyB, keyC, keyD, _keyE] = keys;
 
       const builder = createMockBuilder();
       const registry = createTestRegistry(keys);

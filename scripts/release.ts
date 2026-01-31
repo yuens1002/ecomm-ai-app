@@ -159,7 +159,7 @@ async function main() {
   console.log("\n⚠️  Please edit CHANGELOG.md now with release notes.");
   console.log("   Use the commits above as reference.\n");
 
-  const editDone = await ask("Press Enter when done editing CHANGELOG.md...");
+  await ask("Press Enter when done editing CHANGELOG.md...");
 
   // Git operations
   run("git add package.json lib/version.ts CHANGELOG.md");
