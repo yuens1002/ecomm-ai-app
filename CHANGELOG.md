@@ -1,8 +1,24 @@
 # Changelog
 
+## 0.79.0 - 2026-01-31
+
+### Improvements
+
+- **Better organized codebase**: Cleaner file structure makes it easier to find and customize components
+- **Easier database switching**: Simpler setup for local development vs production databases
+- **Automatic markdown formatting**: Documentation stays consistent automatically
+
+### For Developers
+
+- Components now live alongside their routes (`_components` folders)
+- Clear separation: site components, admin components, and shared utilities
+- New documentation: upgrade path guide and restructure checklist
+- Markdownlint added to pre-commit hooks
+
 ## 0.78.0 - 2026-01-30
 
 ### Features
+
 - **Telemetry Backend**: Central server receives anonymous usage data from all instances
   - TelemetryEvent table stores install/heartbeat/upgrade events
   - GET endpoint provides aggregate stats for developers
@@ -13,6 +29,7 @@
 - **README Screenshots**: Added hero GIF and feature screenshot gallery
 
 ### Infrastructure
+
 - Added `/api/telemetry/events` POST/GET endpoints
 - Added `/api/admin/settings/telemetry` endpoint for toggle
 - Added `telemetry_enabled` SiteSettings key
@@ -21,6 +38,7 @@
 ## 0.77.0 - 2026-01-30
 
 ### Features
+
 - **In-App Feedback Widget**: Collect bug reports, feature requests, and feedback from admin panel
   - FeedbackDialog with FieldSet composition pattern
   - Submissions create GitHub Issues automatically via API
@@ -32,11 +50,13 @@
   - FAILED status styling in admin and customer views
 
 ### Testing
+
 - **AI Assist Test Coverage**: Expanded test suite with realistic cases
   - API route tests: 403 for non-admin, 400 for invalid blocks, GET/PUT validation
   - Component tests: loading state, error toast, resetDraft, selectedField
 
 ### Infrastructure
+
 - Added `/api/feedback` endpoint for GitHub Issues integration
 - Added `/api/admin/orders/[orderId]/fail` endpoint
 - Added `failureReason` and `failedAt` fields to Order model
@@ -45,6 +65,7 @@
 ## 0.76.0 - 2026-01-29
 
 ### Features
+
 - **Version System**: VS Code-style update notifications for self-hosted instances
   - Version check API fetches latest release from GitHub
   - UpdateBanner component shows dismissible notification when updates available
@@ -59,6 +80,7 @@
   - Proper shadcn InputGroup components
 
 ### Infrastructure
+
 - Added `/api/version/check` endpoint
 - Added `/api/cron/heartbeat` endpoint (Vercel cron daily)
 - Added `/api/admin/profile` GET/PUT endpoint
@@ -67,6 +89,7 @@
 ## 0.75.2 - 2026-01-28
 
 ### Bug Fixes
+
 - **Navigation state**: Unified navigation active state logic into single source of truth
   - Created core `matchesNavChild` function for all URL matching
   - Added `findActiveNavigation` for breadcrumb and multi-component use
@@ -80,6 +103,7 @@
 ## 0.75.1 - 2026-01-28
 
 ### Bug Fixes
+
 - **Dashboard layout**: Fixed scrollbar and footer positioning
   - Footer now fixed at viewport bottom using flexbox with `h-dvh`
   - Content area scrolls independently without overlapping footer
@@ -95,6 +119,7 @@
 ## 0.75.0 - 2026-01-28
 
 ### Features
+
 - **Admin Dashboard Shell**: Complete redesign with top navbar layout
   - Top sticky navbar with dropdown menus for all admin sections
   - Mobile drawer navigation for responsive layouts
@@ -102,6 +127,7 @@
   - Dynamic breadcrumb with `useBreadcrumb` hook for entity names
 
 ### Refactor
+
 - **Dashboard Components**: Relocated and consolidated into `components/admin/dashboard/`
   - AdminShell, AdminTopNav, AdminMobileDrawer, AdminBreadcrumb, AdminFooter, StoreBrand
   - BreadcrumbContext with single declarative `useBreadcrumb(items)` API
@@ -111,6 +137,7 @@
 ## 0.74.0 - 2026-01-27
 
 ### Features
+
 - **Admin breadcrumb navigation**: Added breadcrumb header to all admin pages following shadcn dashboard-shell pattern
   - Dynamic breadcrumb generation from current route
   - Human-readable labels for all admin sections
@@ -119,11 +146,13 @@
 ## 0.73.1 - 2026-01-27
 
 ### Bug Fixes
+
 - **Breadcrumb navigation context**: Restored `?from=` parameter support so breadcrumbs reflect user's navigation journey (e.g., Asia > Sumatra instead of always showing primary category)
 
 ## 0.73.0 - 2026-01-27
 
 ### Features
+
 - **Canonical Product URLs**: Migrated from `/{category}/{slug}` to `/products/{slug}` for SEO stability
   - Product URLs no longer change when admin recategorizes products
   - Reduced static build paths from 125 to 42 (3× improvement)
@@ -133,22 +162,26 @@
 ## 0.72.4 - 2026-01-27
 
 ### Documentation
+
 - **BACKLOG.md**: Updated Menu Builder status to Complete (v0.72.0), updated Admin Dashboard Reorganization to "Up Next" with dashboard-shell migration plan
 
 ## 0.72.3 - 2026-01-27
 
 ### Documentation
+
 - **ROADMAP.md**: Updated to v0.72.2, added recent completions (v0.68.0-v0.72.2), added shadcn dashboard-shell migration as next task
 
 ## 0.72.2 - 2026-01-27
 
 ### Documentation
+
 - **README.md**: Updated framework versions (Next.js 16, React 19, Tailwind CSS 4), added Menu Builder and Pages CMS features
 - **About page**: Added Menu Builder and Pages CMS to Admin Dashboard section, marked AI assistants as "In Progress"
 
 ## 0.72.1 - 2026-01-27
 
 ### Bug Fixes
+
 - **Drag cursor**: Fixed disabled cursor not showing on ineligible row drag attempts (centralized in DnD hook)
 - **Ghost checkbox**: Fixed checkbox artifact during category cascade animation (removed conflicting opacity transitions)
 - **Inline editor**: Fixed focus ring layout shift with `ring-inset`
@@ -156,6 +189,7 @@
 - **Checkbox alignment**: Fixed row checkboxes not aligned with header (removed `justify-center` from TouchTarget)
 
 ### UI/UX
+
 - **Row font defaults**: Added consistent `text-sm font-normal text-foreground` base styles to all table rows
 - **Empty label chevron**: Show disabled chevron on labels with no categories (visual consistency)
 - **Nav reorder**: Changed menu-builder nav order to Categories → Labels → Menu
@@ -164,6 +198,7 @@
 ## 0.72.0 - 2026-01-26 🚀 Menu Builder Launch
 
 ### Major Feature
+
 - **Menu Builder**: Complete admin tool for managing product menu hierarchy
   - Multi-select with Shift+click range selection
   - Drag-and-drop reordering with undo/redo
@@ -173,14 +208,17 @@
   - 5 table views: Menu, All Labels, All Categories, Label Detail, Category Detail
 
 ### Bug Fixes
+
 - **Chevron toggle**: Fixed expand/collapse chevron being disabled when labels were selected (only disable during active drag)
 
 ### UI/UX
+
 - **AdminSidebar**: Moved Menu Builder under E-commerce section (consolidated navigation)
 
 ## 0.71.5 - 2026-01-26
 
 ### Refactoring
+
 - **Route restructure**: Renamed `(product-menu)` route group to `product-menu` route segment
   - Menu Builder now accessible at `/admin/product-menu` (was hidden at `/admin/menu-builder`)
   - Deleted legacy `categories/` and `labels/` table views (replaced by Menu Builder)
@@ -188,11 +226,13 @@
   - Updated all import paths across 19 files
 
 ### Database
+
 - **Seed improvements**: Added icons to category labels, cleanup logic for obsolete labels
 
 ## 0.71.4 - 2026-01-26
 
 ### Documentation
+
 - **CLAUDE.md**: Added parallel work & version management guidelines
 - **Git workflow**: Separated feature branch commits (no version) from integration branch commits (with version)
 - **Trigger phrases**: Clarified `commit - patch/minor bump` only for integration branches
@@ -200,6 +240,7 @@
 ## 0.71.3 - 2026-01-26
 
 ### Refactoring
+
 - **Config-driven table views**: Implemented ViewConfig pattern for declarative table rendering
   - Phase 1: Core infrastructure (`ViewConfig<T>`, `useConfiguredRow`, `ConfiguredTableRow`)
   - Phase 2: AllCategoriesTableView migration with sort/filter support
@@ -208,20 +249,24 @@
   - Phase 5: MenuView with hierarchy support (labels → categories)
 
 ### Bug Fixes
+
 - **useMoveHandlers stability**: Fixed handler reference stability by memoizing `getItems` and `reorder` functions
 - **RowContextMenu**: Added missing visibility action for label:category view
 - **Test expectations**: Updated non-existent item test to expect `{ isFirst: true, isLast: true }` (disables both move buttons)
 
 ### Chores
+
 - Removed dead code: `useTableViewSetup.ts` (197 lines), `PlaceholderTableView.tsx` (32 lines)
 - Merged remote context-menu handler extraction with config-driven views
 
 ## 0.70.4 - 2026-01-26
 
 ### Improvements
+
 - **Label view context menu**: Removed visibility toggle from category context menu in label view (visibility managed in All Categories)
 
 ### Documentation
+
 - **ROADMAP.md**: Updated Phase 3 to complete (context menus, range selection, mobile interactions, clone operations)
 - **ARCHITECTURE.md**: Added Context Menu Architecture section with shared hooks documentation
 - **context-menu-plan.md**: Updated to reflect complete implementation status
@@ -229,6 +274,7 @@
 ## 0.70.3 - 2026-01-26
 
 ### Refactoring
+
 - **Context menu hooks**: Extracted shared context menu handlers into reusable hooks in `hooks/context-menu/`
 - **New hooks**: useContextRowHighlight, useMoveHandlers, useBulkAction, useDeleteConfirmation, useContextClone, useContextVisibility, useContextRemove, useContextMoveTo, useRelationshipToggle
 - **Unified useMoveHandlers**: Consolidated flat list and nested list move handlers into single hook with `getItems(parentId?)` pattern
@@ -237,11 +283,13 @@
 ## 0.70.2 - 2026-01-25
 
 ### Bug Fixes
+
 - **Range selection with sorting**: Fixed shift+click range selection not respecting visual row order when columns are sorted in AllCategoriesTableView, CategoryTableView, and LabelTableView
 
 ## 0.71.2 - 2026-01-25
 
 ### Refactoring
+
 - **DnD state derivation**: Derive DnD hierarchy state from eligibility instead of syncing via useEffect
 - Removed brittle 6-dependency useEffect that synchronized drag state
 - Hierarchy info (`dragKind`, `dragParentId`, `draggedChildren`) now computed on-demand from eligibility
@@ -249,12 +297,14 @@
 ## 0.71.1 - 2026-01-25
 
 ### Refactoring
+
 - **Shared DeleteConfirmationDialog**: Extracted reusable delete confirmation dialog component
 - **useTableViewSetup hook**: Extracted common table view setup logic (later removed in v0.70.5)
 
 ## 0.71.0 - 2026-01-25
 
 ### Refactoring
+
 - **level → kind rename**: Renamed `level` property to `kind` for semantic clarity
   - `MenuRowLevel` → `MenuRowKind` (entity type: "label" | "category" | "product")
   - `dragLevel` → `dragKind` in useMultiEntityDnd
@@ -263,31 +313,37 @@
 ## 0.70.1 - 2026-01-25
 
 ### Features
+
 - **Product category management**: Products in CategoryTableView can now manage which categories they belong to via context menu
 - **Search in relationship submenus**: manage-categories and manage-labels submenus now have search bars for filtering
 - **Consistent icons**: manage-categories uses FileSpreadsheet icon (matches navigation)
 
 ### Improvements
-- **Action order alignment**: Context menu actions now follow action bar order (manage-* → clone → remove → visibility → move-* → delete)
+
+- **Action order alignment**: Context menu actions now follow action bar order (manage-*→ clone → remove → visibility → move-* → delete)
 - **Simplified category context menus**: Removed delete from menu/label view category context menus to prevent accidental deletion
 - **Simplified product context menu**: Removed move-to action from products (use drag-and-drop instead)
 - **Removed all-categories action bar remove**: Remove action removed from all-categories view (many-to-many with labels)
 
 ### Tests
+
 - Updated RowContextMenu tests for new action configurations
 
 ### Documentation
+
 - Updated context-menu-plan.md with Phase 3 completion and new patterns
 
 ## 0.70.0 - 2026-01-25
 
 ### Features
+
 - **Context menus for all table views**: Right-click menus for AllCategoriesTableView, MenuTableView, LabelTableView, and CategoryTableView
 - **Menu view context actions**: Clone, remove, delete, and reorder for labels; clone, visibility, delete, move-to, and reorder for categories
 - **Label view context actions**: Clone, visibility, remove, delete, move-to, and reorder for categories within a label
 - **Category view context actions**: Visibility, remove, move-to, and reorder for products within a category
 
 ### Improvements
+
 - **Simplified all-categories config**: Removed non-applicable actions (move, remove) since view uses table sorting
 - **Position-aware move actions**: Move up/down disabled at boundaries for accurate UX feedback
 - **Delete confirmation dialogs**: AlertDialog prompts for all destructive delete operations
@@ -296,10 +352,12 @@
 ## 0.69.1 - 2026-01-25
 
 ### Features
+
 - **TouchTarget component**: Wrapper that expands touch targets to 44x44px on mobile (WCAG 2.5.5 compliance), no change on desktop
 - **Mobile touch targets**: Applied TouchTarget to CheckboxCell and ChevronToggleCell across all 5 table views
 
 ### Improvements
+
 - **Inline button touch targets**: Added pseudo-element technique (`before:-inset-*`) to expand hit areas for:
   - Pencil edit trigger in InlineNameEditor
   - Check/X confirm/cancel buttons in InlineNameEditor
@@ -307,27 +365,32 @@
 - **Mobile-only expansion**: All touch target enhancements use `md:` breakpoint to preserve desktop sizing
 
 ### Documentation
+
 - Updated mobile-interactions-plan.md with touch target implementation status
 
 ## 0.68.0 - 2026-01-25
 
 ### Features
+
 - **RowContextMenu enhancements**: Bulk mode support, mixed selection handling, category management submenu
 - **CheckboxListContent**: Shared component for dropdown and context menu checkbox lists with sectioned layout
 - **Context row highlighting**: Visual distinction between selected rows and right-clicked row via `isContextRow` prop
 - **AllLabelsTableView integration**: Full context menu with bulk actions, category management, and move operations
 
 ### Improvements
+
 - **Entity+View pattern**: Context menus configured per `ViewType:EntityKind` for granular action control
 - **Platform-aware shortcuts**: Kbd component displays Mac/Windows appropriate modifier keys
 - **Action grouping**: Context menu actions organized into main, move, and delete groups with separators
 
 ### Documentation
+
 - **Implementation details**: Comprehensive patterns documentation in context-menu-plan.md for future entity implementations
 
 ## 0.67.0 - 2026-01-24
 
 ### Features
+
 - **Keyboard shortcuts**: Single-key Gmail/Slack style shortcuts to avoid browser conflicts
   - `N` - New item (label or category)
   - `D` - Duplicate selected
@@ -344,11 +407,13 @@
 - **Full undo/redo for delete**: `restoreLabel` and `restoreCategory` server actions recreate entities with all relationships
 
 ### Improvements
+
 - **Accessible disabled buttons**: Changed from `disabled` to `aria-disabled` to keep buttons in tab order
 - **Shifted character handling**: Keyboard shortcuts correctly handle characters that require Shift (like `?`)
 - **Modal awareness**: Shortcuts disabled when dialogs are open
 
 ### New Files
+
 - `hooks/useKeyboardShortcuts.ts` - Global keyboard shortcut handler
 - `constants/help-content.ts` - View-specific help content
 - `menu-action-bar/HelpPopoverButton.tsx` - Help popover component
@@ -379,6 +444,7 @@
 - **Fixed race condition in clearDragState**: `dropInProgressRef` now managed only by drop/dragEnd handlers
 
 **Known Issues:**
+
 - Multi-drag ghost may not appear when items selected via individual clicks and drag starts immediately (race condition)
 
 ## 0.66.16 - 2026-01-23
@@ -400,6 +466,7 @@
 - **Added auto-collapse on drag cancel**: Auto-expanded labels collapse when drag ends without drop
 
 **Known Issues (Auto-Expand UX):**
+
 - Target label collapses upon drop completion (should stay expanded)
 - Flash animation triggers on already-expanded labels (should only flash on actual expansion)
 
@@ -2092,7 +2159,7 @@
   - Merchant notification emails sent to admin for new orders requiring fulfillment
   - Added tracking fields to Order model: `trackingNumber`, `carrier`, `shippedAt`
   - Inventory management: automatically decrement stock quantity when orders are placed
-  - Environment configuration for email service with development-friendly defaults (onboarding@resend.dev)
+  - Environment configuration for email service with development-friendly defaults (<onboarding@resend.dev>)
 
 ## 0.11.1 - 2025-11-15
 
