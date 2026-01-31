@@ -192,7 +192,6 @@ describe("selectableKeys order pattern", () => {
     const sorting: SortingState = [{ id: "createdAt", desc: true }];
 
     const { result } = renderHook(() => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
       const table = useReactTable({
         data: rows,
         columns,
@@ -203,7 +202,6 @@ describe("selectableKeys order pattern", () => {
       });
 
       // CORRECT PATTERN: derive selectableKeys from sorted rows
-      // eslint-disable-next-line react-hooks/rules-of-hooks
       const selectableKeys = useMemo(() => {
         return table.getRowModel().rows.map((row) =>
           createKey("category", row.original.id)
@@ -211,7 +209,6 @@ describe("selectableKeys order pattern", () => {
       }, [table]);
 
       // WRONG PATTERN: using original data order
-      // eslint-disable-next-line react-hooks/rules-of-hooks
       const wrongSelectableKeys = useMemo(() => {
         return rows.map((row) => createKey("category", row.id));
       }, []);

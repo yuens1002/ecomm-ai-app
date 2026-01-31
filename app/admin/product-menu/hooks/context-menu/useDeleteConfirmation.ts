@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import type { SelectedEntityKind } from "../../types/builder-state";
+// SelectedEntityKind type available from "../../types/builder-state" if needed
 
 /**
  * useDeleteConfirmation - Generic delete dialog state and handlers.

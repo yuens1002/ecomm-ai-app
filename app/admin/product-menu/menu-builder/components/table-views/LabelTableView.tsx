@@ -151,7 +151,6 @@ export function LabelTableView() {
   );
 
   // Initialize table - BEFORE selection model so we can get sorted row order
-  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: categoriesForTable,
     columns,

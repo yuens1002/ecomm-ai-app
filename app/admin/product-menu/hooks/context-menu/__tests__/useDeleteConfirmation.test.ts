@@ -6,7 +6,7 @@
  */
 
 import { renderHook, act } from "@testing-library/react";
-import { useDeleteConfirmation, type DeleteEntityKind } from "../useDeleteConfirmation";
+import { useDeleteConfirmation } from "../useDeleteConfirmation";
 
 // Mock useToast
 const mockToast = jest.fn();
