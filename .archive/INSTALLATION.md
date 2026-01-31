@@ -67,41 +67,72 @@ Visit ```http://localhost:3000``` and sign in with the admin you created.
 
 ### Switching between Neon and local Postgres
 
-- Neon (default): keep `.env.local` `DATABASE_URL` pointing to Neon. Clear any shell override with `unset DATABASE_URL` and (optionally) set `DATABASE_ADAPTER=neon`. Start `npm run dev`.
-- Local Postgres (Docker, single DB `artisan_roast`): export the URL below and force the pg adapter. Start `npm run dev` in that shell (or set `PORT=3001` if you prefer 3001).
-- To flip back to Neon, open a fresh shell (or `unset DATABASE_URL` / `unset DATABASE_ADAPTER`) so `.env.local` wins.
+There are two methods to switch databases. **Method 1 is recommended** for daily development.
 
-> Docker Compose uses `.env.docker` and ignores your shell exports. Update `DATABASE_URL`, `AUTH_SECRET`, `AUTH_TRUST_HOST=true`, and `NEXTAUTH_URL=http://localhost:3000` there, then `docker compose restart app`. Seed the compose DB via `docker compose exec app sh -c "SEED_PRODUCT_MODE=full SEED_INCLUDE_USERS=true SEED_INCLUDE_SYNTHETIC=true npm run seed"`.
+#### Method 1: Edit `.env.local` (Recommended)
 
-#### Copy-paste commands (local Docker DB: `artisan_roast`)
+Simply edit `.env.local` to comment/uncomment the desired database:
 
-Create and seed (first time or reset):
+**For Local PostgreSQL:**
+```env
+DATABASE_ADAPTER="standard"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
+# DATABASE_URL="postgresql://...@neon.tech/neondb?sslmode=require..."
+```
+
+**For Neon:**
+```env
+# DATABASE_ADAPTER="standard"
+# DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
+DATABASE_URL="postgresql://...@neon.tech/neondb?sslmode=require..."
+```
+
+Then restart `npm run dev`. The adapter auto-detects Neon from the URL when `DATABASE_ADAPTER` is not set.
+
+> **Important:** This method only works if you have NOT exported `DATABASE_URL` or `DATABASE_ADAPTER` in your shell. Shell exports override `.env.local`. If switching doesn't work, run `unset DATABASE_URL DATABASE_ADAPTER` first.
+
+#### Method 2: Shell exports (for one-off sessions)
+
+Use this for temporary switches without modifying files. **Shell exports override `.env.local`.**
+
+```bash
+# Switch to local
+export DATABASE_ADAPTER=postgres
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
+npm run dev
+
+# Switch back to Neon (clears exports, .env.local takes over)
+unset DATABASE_URL
+unset DATABASE_ADAPTER
+npm run dev
+```
+
+PowerShell equivalent:
+```pwsh
+# Switch to local
+$env:DATABASE_ADAPTER = "postgres"
+$env:DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
+npm run dev
+
+# Switch back to Neon
+Remove-Item Env:DATABASE_ADAPTER
+Remove-Item Env:DATABASE_URL
+npm run dev
+```
+
+#### Initial setup for local DB (`artisan_roast`)
+
+First time only - create and seed the local database:
 
 ```bash
 export DATABASE_ADAPTER=postgres
 export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
 npm run setup -- --email=owner@example.com --password='Changeme123!' --name='Shop Owner' --product-mode=full --seed-users=true --seed-synthetic=true
+# After setup, unset exports if you want to use Method 1 going forward:
+unset DATABASE_URL DATABASE_ADAPTER
 ```
 
-Run dev against the same DB (example on port 3001):
-
-```bash
-export DATABASE_ADAPTER=postgres
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
-PORT=3000 npm run dev
-```
-
-```pwsh
-$env:DATABASE_ADAPTER = "postgres"; $env:DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"; $env:PORT = "3000"; npm run dev
-```
-
-Switch back to Neon (uses `.env.local`):
-
-```bash
-unset DATABASE_URL
-unset DATABASE_ADAPTER
-npm run dev
-```
+> Docker Compose uses `.env.docker` and ignores shell exports. Update `DATABASE_URL`, `AUTH_SECRET`, `AUTH_TRUST_HOST=true`, and `NEXTAUTH_URL=http://localhost:3000` there, then `docker compose restart app`. Seed via `docker compose exec app sh -c "SEED_PRODUCT_MODE=full SEED_INCLUDE_USERS=true SEED_INCLUDE_SYNTHETIC=true npm run seed"`.
 
 ## Troubleshooting
 

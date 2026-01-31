@@ -6,7 +6,7 @@ import { Upload, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
-import { FormHeading } from "@/components/ui/app/FormHeading";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
 
 interface ImageFieldProps {
   /** Unique identifier for the field (used for id/htmlFor) */

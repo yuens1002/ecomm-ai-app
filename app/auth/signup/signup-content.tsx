@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { FormHeading } from "@/components/ui/app/FormHeading";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { PasswordFields } from "@/components/auth/PasswordFields";
 import { signUpPublic } from "@/actions/auth";

@@ -10,7 +10,7 @@ import {
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from "@/components/ui/app/InputGroup";
+} from "@/components/ui/forms/InputGroup";
 import { Save, User } from "lucide-react";
 
 export default function AdminProfilePage() {

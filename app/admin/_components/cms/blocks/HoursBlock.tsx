@@ -4,7 +4,7 @@ import { HoursBlock as HoursBlockType } from "@/lib/blocks/schemas";
 import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
-import { FormHeading } from "@/components/ui/app/FormHeading";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { BlockDialog } from "./BlockDialog";

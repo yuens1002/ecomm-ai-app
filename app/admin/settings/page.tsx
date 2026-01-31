@@ -3,7 +3,7 @@
 import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
 import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
-import { FormTextArea } from "@/components/ui/app/FormTextArea";
+import { FormTextArea } from "@/components/ui/forms/FormTextArea";
 
 export default function GeneralSettingsPage() {
   return (

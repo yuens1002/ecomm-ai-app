@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
-import { FormHeading } from "@/components/ui/app/FormHeading";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { ImageField } from "./ImageField";
 import { ImageCard } from "./ImageCard";
 

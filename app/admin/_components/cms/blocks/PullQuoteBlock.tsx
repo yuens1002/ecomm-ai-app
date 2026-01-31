@@ -8,7 +8,7 @@ import { PullQuote } from "@/app/(site)/_components/content/PullQuote";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
-import { FormHeading } from "@/components/ui/app/FormHeading";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { BlockDialog } from "./BlockDialog";

@@ -2,7 +2,7 @@ import { Control } from "react-hook-form";
 import { FormField } from "@/components/ui/form";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FormCard } from "@/components/ui/app/FormCard";
+import { FormCard } from "@/components/ui/forms/FormCard";
 
 interface CategoryLabel {
   id: string;

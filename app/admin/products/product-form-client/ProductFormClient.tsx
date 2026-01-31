@@ -23,8 +23,8 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { FormHeading } from "@/components/ui/app/FormHeading";
-import { MultiImageUpload } from "@/components/ui/app/MultiImageUpload";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
+import { MultiImageUpload } from "@/components/ui/forms/MultiImageUpload";
 import { ProductCoffeeDetailsSection } from "./ProductCoffeeDetailsSection";
 import { ProductCategoriesSection } from "./ProductCategoriesSection";
 import { ProductVariantsSection } from "./ProductVariantsSection";

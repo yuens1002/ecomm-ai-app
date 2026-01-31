@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FormHeading } from "@/components/ui/app/FormHeading";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { Field } from "@/components/ui/field";
 import { CheckCircle, Circle } from "lucide-react";
 import {

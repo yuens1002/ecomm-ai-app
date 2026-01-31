@@ -1,12 +1,12 @@
 "use client";
 
 import { Field } from "@/components/ui/field";
-import { FormHeading } from "@/components/ui/app/FormHeading";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from "@/components/ui/app/InputGroup";
+} from "@/components/ui/forms/InputGroup";
 import { generateSlug } from "@/app/admin/_hooks/useSlugGenerator";
 
 export interface NameSlugFieldProps {

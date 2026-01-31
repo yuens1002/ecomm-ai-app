@@ -4,7 +4,7 @@ import { ImageGalleryBlock as ImageGalleryBlockType } from "@/lib/blocks/schemas
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
-import { FormHeading } from "@/components/ui/app/FormHeading";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload } from "lucide-react";
 import { useState, useEffect } from "react";

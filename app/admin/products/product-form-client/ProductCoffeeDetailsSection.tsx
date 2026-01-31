@@ -9,8 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FormCard } from "@/components/ui/app/FormCard";
-import { FormHeading } from "@/components/ui/app/FormHeading";
+import { FormCard } from "@/components/ui/forms/FormCard";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { ROAST_LEVELS } from "@/lib/productEnums";
 
 type ProductCoffeeDetailsSectionProps = {

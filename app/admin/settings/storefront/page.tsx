@@ -5,7 +5,7 @@ import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { ShoppingBag } from "lucide-react";
 import { IconPicker } from "@/app/admin/_components/cms/fields/IconPicker";
-import { InputGroupInput } from "@/components/ui/app/InputGroup";
+import { InputGroupInput } from "@/components/ui/forms/InputGroup";
 
 /**
  * Store Front Settings Page

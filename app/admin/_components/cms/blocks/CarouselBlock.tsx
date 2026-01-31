@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { BlockDialog } from "./BlockDialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FormHeading } from "@/components/ui/app/FormHeading";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { Switch } from "@/components/ui/switch";
 import { Plus, ArrowRight } from "lucide-react";
 import Image from "next/image";

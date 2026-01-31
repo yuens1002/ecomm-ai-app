@@ -2,10 +2,10 @@
 
 import { useState, useEffect, ReactNode, useRef, useCallback } from "react";
 import { Field, FieldDescription } from "@/components/ui/field";
-import { FormHeading } from "@/components/ui/app/FormHeading";
-import { FormInputField } from "@/components/ui/app/FormInputField";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
+import { FormInputField } from "@/components/ui/forms/FormInputField";
 import { useToast } from "@/hooks/use-toast";
-import { InputGroupInput } from "@/components/ui/app/InputGroup";
+import { InputGroupInput } from "@/components/ui/forms/InputGroup";
 
 interface SettingsFieldProps<T = string> {
   /** API endpoint to fetch/save (e.g., "/api/admin/settings/branding") */
