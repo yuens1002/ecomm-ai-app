@@ -21,5 +21,14 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# Run markdownlint on staged .md files (auto-fix and re-stage)
+STAGED_MD=$(git diff --cached --name-only --diff-filter=ACM | grep '\.md$' || true)
+if [ -n "$STAGED_MD" ]; then
+  echo "📝 Checking markdown files..."
+  echo "$STAGED_MD" | xargs npx markdownlint-cli2 --fix 2>/dev/null || true
+  # Re-stage any fixed files
+  echo "$STAGED_MD" | xargs git add 2>/dev/null || true
+fi
+
 echo "✅ All checks passed!"
 exit 0
