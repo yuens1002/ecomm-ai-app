@@ -176,13 +176,7 @@ git commit -m "refactor: complete file structure reorganization"
 
 ---
 
-## Future: Upgrade Path Testing
+## Related Documentation
 
-TODO: Document and test the upgrade path for self-hosted instances:
-
-1. Spin up fresh Docker instance with older schema
-2. Create mock migration
-3. Run upgrade commands
-4. Verify migration applied
-
-See `.archive/INSTALLATION.md` for current upgrade documentation.
+- [UPGRADE-PATH.md](./UPGRADE-PATH.md) - Upgrade procedures for all deployment types
+- [INSTALLATION.md](../../.archive/INSTALLATION.md) - Initial setup and DB toggle instructions
