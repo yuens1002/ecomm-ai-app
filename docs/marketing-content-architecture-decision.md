@@ -10,7 +10,8 @@ During v0.26.0 development, we needed to make marketing copy (section headings, 
 
 Create dedicated database models for each feature section:
 
-```prisma
+```json
+
 model FeaturedSection {
   id          String  @id @default(cuid())
   heading     String  @default("Our Small Batch Collection")
@@ -47,7 +48,8 @@ model RecommendationsSection {
 
 Extend existing `SiteSettings` key-value table with marketing content:
 
-```prisma
+```json
+
 model SiteSettings {
   id        String   @id @default(cuid())
   key       String   @unique

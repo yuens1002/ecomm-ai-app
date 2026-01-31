@@ -13,6 +13,7 @@ This guide walks a technical shop owner or developer through installing Artisan 
 ## 1) Clone and install
 
 ```bash
+
 git clone https://github.com/yuens1002/ecomm-ai-app.git artisan-roast
 cd artisan-roast
 npm install
@@ -36,6 +37,7 @@ Edit `.env.local`:
 Creates schema, seeds data, and provisions the first admin. Safe to rerun.
 
 ```bash
+
 npm run setup -- --email=owner@shop.com --password=changeme \
   --product-mode=minimal --seed-users=false --seed-synthetic=false
 ```
@@ -50,12 +52,13 @@ Flags:
 ## 4) Start the app
 
 ```bash
+
 npm run dev
 # In another terminal (optional for payments):
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
 
-Visit ```http://localhost:3000``` and sign in with the admin you created.
+Visit `http://localhost:3000` and sign in with the admin you created.
 
 ## 5) Production notes
 
@@ -77,7 +80,8 @@ Visit ```http://localhost:3000``` and sign in with the admin you created.
 
 Create and seed (first time or reset):
 
-```bash
+```typescript
+
 export DATABASE_ADAPTER=postgres
 export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
 npm run setup -- --email=owner@example.com --password='Changeme123!' --name='Shop Owner' --product-mode=full --seed-users=true --seed-synthetic=true
@@ -85,19 +89,22 @@ npm run setup -- --email=owner@example.com --password='Changeme123!' --name='Sho
 
 Run dev against the same DB (example on port 3001):
 
-```bash
+```typescript
+
 export DATABASE_ADAPTER=postgres
 export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
 PORT=3000 npm run dev
 ```
 
-```pwsh
+```bash
+
 $env:DATABASE_ADAPTER = "postgres"; $env:DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"; $env:PORT = "3000"; npm run dev
 ```
 
 Switch back to Neon (uses `.env.local`):
 
 ```bash
+
 unset DATABASE_URL
 unset DATABASE_ADAPTER
 npm run dev

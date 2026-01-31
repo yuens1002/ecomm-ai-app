@@ -10,7 +10,7 @@ import ConnectedAccountsTab from "./tabs/ConnectedAccountsTab";
 import AddressesTab from "./tabs/AddressesTab";
 import SubscriptionsTab from "./tabs/SubscriptionsTab";
 import DangerZoneTab from "./tabs/DangerZoneTab";
-import { PageContainer } from "@/components/app-components/PageContainer";
+import { PageContainer } from "@/components/shared/PageContainer";
 
 interface Address {
   id: string;

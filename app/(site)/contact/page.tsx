@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { PageContainer } from "@/components/app-components/PageContainer";
+import { PageContainer } from "@/components/shared/PageContainer";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),

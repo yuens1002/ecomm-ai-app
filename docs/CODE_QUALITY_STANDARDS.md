@@ -17,7 +17,7 @@ The following rules are configured as **errors** (not warnings) and will show re
    // ✅ GOOD
    function process(data: Record<string, unknown>) { ... }
    function process(data: { id: string; name: string }) { ... }
-   ```
+```
 
 2. **`react-hooks/set-state-in-effect`** - NEVER call setState directly in useEffect
 
@@ -38,7 +38,7 @@ The following rules are configured as **errors** (not warnings) and will show re
      const timer = setTimeout(() => setState(newValue), 0);
      return () => clearTimeout(timer);
    }, [dependency]);
-   ```
+```
 
 3. **`react-hooks/static-components`** - NEVER create components during render
 
@@ -54,7 +54,7 @@ The following rules are configured as **errors** (not warnings) and will show re
      const IconToRender = getIcon(); // Reference to existing component
      return <IconToRender />;
    }
-   ```
+```
 
 4. **`react-hooks/exhaustive-deps`** - ALWAYS include all dependencies
 
@@ -68,7 +68,7 @@ The following rules are configured as **errors** (not warnings) and will show re
    useEffect(() => {
      doSomething(value);
    }, [value]);
-   ```
+```
 
 5. **`@typescript-eslint/no-unused-vars`** - Remove unused imports/variables
 
@@ -81,7 +81,7 @@ The following rules are configured as **errors** (not warnings) and will show re
 
    // ✅ GOOD - Prefix with _ if intentionally unused
    const [_unusedState, setUsedState] = useState();
-   ```
+```
 
 ### Pre-commit Hook
 
@@ -97,13 +97,15 @@ If either fails, the commit is blocked until issues are fixed.
 ### 1. Install Husky (if not already installed)
 
 ```bash
+
 npm install --save-dev husky
 npx husky init
 ```
 
 ### 2. Make pre-commit hook executable (Linux/Mac)
 
-```bash
+```text
+
 chmod +x .husky/pre-commit
 ```
 
@@ -118,6 +120,7 @@ Install the ESLint extension:
 Configure VS Code to auto-fix on save (`.vscode/settings.json`):
 
 ```json
+
 {
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
@@ -162,6 +165,7 @@ Configure VS Code to auto-fix on save (`.vscode/settings.json`):
 If you need to bypass the pre-commit hook (emergency only):
 
 ```bash
+
 git commit --no-verify -m "message"
 ```
 

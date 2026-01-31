@@ -21,6 +21,7 @@ Implement fallback rendering for pages that have static HTML content but no bloc
 **Change:** Include `content` field when fetching page
 
 ```typescript
+
 async function getPage(slug: string) {
   const page = await prisma.page.findUnique({
     where: { slug },
@@ -56,6 +57,7 @@ async function getPage(slug: string) {
 **Change:** Pass `page.content` to `PageContent`
 
 ```typescript
+
 export default async function Page({ params, searchParams }: PageProps) {
   // ... existing code ...
 
@@ -84,6 +86,7 @@ export default async function Page({ params, searchParams }: PageProps) {
 **Changes:**
 
 ```typescript
+
 interface PageContentProps {
   blocks: Block[];
   pageType: PageType;
@@ -183,6 +186,7 @@ When ready to remove legacy content support:
 ### Phase 1: Audit
 
 ```typescript
+
 // dev-tools/audit-legacy-content.ts
 // Find all pages with content but no blocks
 const pagesWithLegacyContent = await prisma.page.findMany({
@@ -205,6 +209,7 @@ const legacyPages = pagesWithLegacyContent.filter(
 ### Phase 2: Migrate
 
 ```typescript
+
 // dev-tools/migrate-static-to-blocks.ts
 // Convert page.content HTML into richText blocks
 for (const page of legacyPages) {

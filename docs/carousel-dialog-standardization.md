@@ -31,6 +31,7 @@ Refactored the carousel block edit dialog to follow a standardized pattern and i
 **Props:**
 
 ```typescript
+
 interface BlockEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -48,6 +49,7 @@ interface BlockEditDialogProps {
 **Usage Pattern:**
 
 ```tsx
+
 <BlockEditDialog
   open={isOpen}
   onOpenChange={setIsOpen}
@@ -79,6 +81,7 @@ interface BlockEditDialogProps {
 **Props:**
 
 ```typescript
+
 interface PendingImageUploadProps {
   onImageSelect: (file: File) => void;
   currentImageUrl?: string;
@@ -145,7 +148,8 @@ interface PendingImageUploadProps {
 
 **SlideUnit Type:**
 
-```typescript
+```json
+
 type SlideUnit = {
   type: "image" | "locationPreview";
   url: string; // Existing URL from DB
@@ -161,6 +165,7 @@ type SlideUnit = {
 ### Key State Management
 
 ```typescript
+
 const [carouselType, setCarouselType] = useState<
   "image" | "locationPreview" | null
 >(null);
@@ -183,6 +188,7 @@ const [errors, setErrors] = useState<Record<string, string>>({});
 **Validation Logic:**
 
 ```typescript
+
 const validateSlides = (): boolean => {
   slideUnits.forEach((unit, index) => {
     if (!unit.url && !unit.pendingFile) {
@@ -207,6 +213,7 @@ const validateSlides = (): boolean => {
 ### Upload on Save
 
 ```typescript
+
 const handleSave = async () => {
   if (!validateSlides()) return;
 
@@ -302,6 +309,7 @@ const handleSave = async () => {
 ### Example Migration (HeroBlock)
 
 ```tsx
+
 // Before: Custom dialog with inline structure
 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
   <DialogContent className="max-w-2xl">

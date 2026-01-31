@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageContainer } from "@/components/app-components/PageContainer";
+import { PageContainer } from "@/components/shared/PageContainer";
 
 export default function CheckoutCancelPage() {
   const router = useRouter();

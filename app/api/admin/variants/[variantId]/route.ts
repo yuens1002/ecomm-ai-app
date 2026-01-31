@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
-import { getWeightUnit } from "@/lib/app-settings";
+import { getWeightUnit } from "@/lib/config/app-settings";
 import {
   WeightUnitOption,
   toGrams,

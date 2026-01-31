@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/lib/admin";
 import { ProductType } from "@prisma/client";
 import ProductManagementClient from "./ProductManagementClient";
-import { PageTitle } from "@/components/admin/PageTitle";
+import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 
 export default async function ProductManagementPage() {
   await requireAdmin();

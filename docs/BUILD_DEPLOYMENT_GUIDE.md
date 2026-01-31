@@ -5,17 +5,21 @@
 ### Local Development
 
 ```bash
+
 npm run dev           # Start dev server
 npm run build         # Full build with migrations (resilient with retries)
 npm run build:safe    # Backup DB + validate + build (safest option)
 npm run build:no-migrate  # Build without running migrations
 ```
 
+
 ### Staging/Production
 
 ```bash
+
 npm run vercel-build  # Optimized for Vercel (uses DIRECT_URL, 3min timeout)
 ```
+
 
 ---
 
@@ -32,7 +36,7 @@ The new **resilient build system** handles:
 
 ### Build Flow
 
-```
+```text
 1. Validate environment variables
    ↓
 2. Generate Prisma Client (always)
@@ -50,7 +54,8 @@ The new **resilient build system** handles:
 
 ### Required Variables
 
-```bash
+```text
+
 # Database - use DIRECT_URL for builds, DATABASE_URL for runtime
 DATABASE_URL="postgresql://user:pwd@host-pooler...?connection_limit=10"    # Pooler (runtime)
 DIRECT_URL="postgresql://user:pwd@host...?connect_timeout=30"             # Direct (builds)
@@ -58,14 +63,17 @@ DIRECT_URL="postgresql://user:pwd@host...?connect_timeout=30"             # Dire
 # If only one is available, the build script uses fallback logic
 ```
 
+
 ### Vercel Configuration
 
 **Settings → Environment Variables:**
 
-```
+```text
+
 DATABASE_URL          = pooled-connection
 DIRECT_URL           = direct-connection (for build phase)
 ```
+
 
 **Settings → Build & Development:**
 
@@ -93,7 +101,8 @@ DIRECT_URL           = direct-connection (for build phase)
    npm run build:no-migrate
    # Then run migrations separately:
    npm run db:safe-migrate
-   ```
+```
+
 
 3. **Check Neon dashboard**
    - https://console.neon.tech
@@ -104,7 +113,8 @@ DIRECT_URL           = direct-connection (for build phase)
    ```bash
    BUILD_RETRIES=5 PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT=300000 npm run build
    # 300000ms = 5 minutes
-   ```
+```
+
 
 ### Database Connection Failed
 
@@ -117,18 +127,21 @@ DIRECT_URL           = direct-connection (for build phase)
    ```bash
    echo $DATABASE_URL
    echo $DIRECT_URL
-   ```
+```
+
 
 2. **Test connection directly**
 
    ```bash
    npx prisma db execute --stdin < /dev/null
-   ```
+```
+
 
 3. **Use direct URL instead of pooler**
    ```bash
    DIRECT_URL="postgresql://..." npm run build
-   ```
+```
+
 
 ### Next.js Build Timeout
 
@@ -140,7 +153,8 @@ DIRECT_URL           = direct-connection (for build phase)
 
    ```bash
    npm run build:no-migrate
-   ```
+```
+
 
 2. **Increase Next.js build timeout** (in vercel.json)
    ```json
@@ -148,7 +162,8 @@ DIRECT_URL           = direct-connection (for build phase)
      "buildCommand": "npm run vercel-build",
      "buildTimeout": 1800
    }
-   ```
+```
+
 
 ---
 
@@ -156,7 +171,8 @@ DIRECT_URL           = direct-connection (for build phase)
 
 ### GitHub Actions Example
 
-```yaml
+```bash
+
 name: Build & Deploy
 
 on:
@@ -193,9 +209,11 @@ jobs:
           PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT: "180000"
 ```
 
+
 ### GitLab CI Example
 
-```yaml
+```bash
+
 stages:
   - test
   - build
@@ -215,6 +233,7 @@ build_job:
     DIRECT_URL: $DIRECT_URL
     PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT: "180000"
 ```
+
 
 ---
 
@@ -289,6 +308,7 @@ A: Yes! Use `npm run build:no-migrate`, then run migrations in a separate step.
 ## Related Commands
 
 ```bash
+
 # Database operations
 npm run db:safe-migrate     # Run migrations with safety checks
 npm run db:backup           # Backup database before operations

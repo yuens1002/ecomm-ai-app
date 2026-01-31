@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
-import { resend } from "@/lib/resend";
+import { resend } from "@/lib/services/resend";
 import { render } from "@react-email/components";
 import PickupReadyEmail from "@/emails/PickupReadyEmail";
 

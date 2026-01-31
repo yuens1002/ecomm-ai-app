@@ -1,5 +1,5 @@
 import SocialLinksManagement from "./SocialLinksManagement";
-import { PageTitle } from "@/components/admin/PageTitle";
+import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 
 export const metadata = {
   title: "Social Media - Admin",

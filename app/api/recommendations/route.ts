@@ -45,8 +45,28 @@ export async function GET(request: Request) {
       });
     }
 
-    // Authenticated user - get personalized recommendations
-    const userContext = await getUserRecommendationContext(userId);
+    // Authenticated user - try to get personalized recommendations
+    // Fall back to trending if personalization fails
+    let userContext;
+    try {
+      userContext = await getUserRecommendationContext(userId);
+    } catch (contextError) {
+      console.warn("Failed to get user context, falling back to trending:", contextError);
+      const trending = await getTrendingProducts(limit, 7);
+      return NextResponse.json({
+        products: trending.map((p) => ({
+          id: p!.id,
+          name: p!.name,
+          slug: p!.slug,
+          tastingNotes: p!.tastingNotes,
+          images: p!.images,
+          variants: p!.variants,
+          categories: p!.categories,
+        })),
+        isPersonalized: false,
+        source: "trending",
+      });
+    }
 
     // Check if user has enough history for personalization
     const hasHistory =

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { SignIn } from "@/components/app-components/auth/SignIn";
+import { SignIn } from "@/components/auth/SignIn";
 import { getSiteMetadata } from "@/lib/site-metadata";
 import { SignupContent } from "./signup-content";
 

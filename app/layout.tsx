@@ -3,11 +3,11 @@ import { Inter } from "next/font/google";
 import "./globals.css"; // Your global styles with CSS variables
 
 // Import the new layout components
-import { ThemeProvider } from "@components/app-components/ThemeProvider";
-import { SessionProvider } from "@components/app-components/SessionProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { SessionProvider } from "@/components/providers/SessionProvider";
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/react";
-import { EnvironmentIndicator } from "@/components/app-components/EnvironmentIndicator";
+import { EnvironmentIndicator } from "@/components/shared/EnvironmentIndicator";
 import { getSiteMetadata } from "@/lib/site-metadata";
 
 // Setup the Inter font with a CSS variable

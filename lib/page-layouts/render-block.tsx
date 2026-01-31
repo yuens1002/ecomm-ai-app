@@ -1,5 +1,5 @@
 import { Block } from "@/lib/blocks/schemas";
-import { BlockRenderer } from "@/components/blocks/BlockRenderer";
+import { BlockRenderer } from "@/app/admin/_components/cms/blocks/BlockRenderer";
 import { BlockHandlers } from "./types";
 
 /**

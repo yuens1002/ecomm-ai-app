@@ -10,7 +10,8 @@ The newsletter system provides email collection, welcome emails, subscriber mana
 
 **NewsletterSubscriber**
 
-```prisma
+```json
+
 model NewsletterSubscriber {
   id                String   @id @default(cuid())
   email             String   @unique
@@ -22,7 +23,8 @@ model NewsletterSubscriber {
 
 **SiteSettings**
 
-```prisma
+```json
+
 model SiteSettings {
   id    String @id @default(cuid())
   key   String @unique

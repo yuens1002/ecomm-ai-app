@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { WeightUnit } from "@prisma/client";
 import { requireAdmin } from "@/lib/admin";
-import { getWeightUnit, setWeightUnit } from "@/lib/app-settings";
+import { getWeightUnit, setWeightUnit } from "@/lib/config/app-settings";
 
 export async function GET() {
   try {

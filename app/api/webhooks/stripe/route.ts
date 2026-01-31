@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { stripe } from "@/lib/stripe";
+import { stripe } from "@/lib/services/stripe";
 import { prisma } from "@/lib/prisma";
-import { resend } from "@/lib/resend";
+import { resend } from "@/lib/services/resend";
 import Stripe from "stripe";
 import OrderConfirmationEmail from "@/emails/OrderConfirmationEmail";
 import MerchantOrderNotification from "@/emails/MerchantOrderNotification";

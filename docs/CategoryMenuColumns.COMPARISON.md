@@ -8,7 +8,7 @@
 
 #### Algorithm
 
-```
+```text
 1. Flatten all labels + categories into sequential list:
    [Label1, Cat1, Cat2, ...more, Label2, Cat1, Cat2, ...]
 
@@ -50,7 +50,7 @@
 
 #### Algorithm
 
-```
+```text
 1. Calculate weight for each label group:
    Weight = 1 (header) + visible_categories + 1 (if ...more link)
 
@@ -93,7 +93,8 @@
 
 ### Test Data
 
-```typescript
+```json
+
 {
   "BY ROAST LEVEL": [Light, Medium, Dark],              // 3 categories
   "ORIGINS": [Central, Islands, Africa, ...],           // 10 categories
@@ -104,7 +105,7 @@
 
 ### Sequential Result (Item counts: 10, 10, 9)
 
-```
+```text
 Column 1 (10 items):          Column 2 (10 items):          Column 3 (9 items):
 ┌─────────────────┐           ┌─────────────────┐           ┌─────────────────┐
 │ BY ROAST LEVEL  │           │ Central America │           │ ...more         │
@@ -122,7 +123,7 @@ Column 1 (10 items):          Column 2 (10 items):          Column 3 (9 items):
 
 ### Weight-Balanced Result (Item counts: 12, 11, 6)
 
-```
+```text
 Column 1 (12 items):          Column 2 (11 items):          Column 3 (6 items):
 ┌─────────────────┐           ┌─────────────────┐           ┌─────────────────┐
 │ BY ROAST LEVEL  │           │ COLLECTIONS     │           │ BLENDS          │

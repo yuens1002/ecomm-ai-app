@@ -12,7 +12,7 @@ An interactive Q&A wizard that guides store owners through creating their About 
 
 ## User Flow
 
-```
+```text
 Admin clicks: "Create About Page with AI"
   ↓
 Interactive Q&A Wizard (10 questions across 4 sections)
@@ -146,6 +146,7 @@ Can regenerate or manually edit anytime
 ### System Prompt
 
 ```typescript
+
 const ABOUT_PAGE_GENERATOR_SYSTEM_PROMPT = `You are an expert copywriter specializing in specialty coffee brand storytelling for independent roasters and café owners.
 
 Your task is to create a compelling "About Us" page that:
@@ -181,6 +182,7 @@ Be specific, concrete, and authentic based on the provided details.`;
 ### User Prompt Template
 
 ```typescript
+
 function buildUserPrompt(answers: WizardAnswers): string {
   return `
 Create an About page for a specialty coffee business with these details:
@@ -243,7 +245,8 @@ Generate **2-3 style variations** for user to choose from:
 
 ## Database Schema Additions
 
-```prisma
+```json
+
 model Page {
   // ... existing fields from pages-cms-architecture.md ...
 
@@ -257,6 +260,7 @@ model Page {
 **Example stored prompt**:
 
 ```json
+
 {
   "inspiration": "Fell in love with coffee in Ethiopia...",
   "yearFounded": "2018",
@@ -280,7 +284,7 @@ model Page {
 
 ### 1. Wizard Landing Page
 
-```
+```text
 /admin/pages/new
 
 [Card: Manual Creation]
@@ -296,6 +300,7 @@ Perfect for first-time setup!
 ### 2. Wizard Interface
 
 ```typescript
+
 // /admin/pages/new/wizard
 
 export default function AboutPageWizard() {
@@ -376,6 +381,7 @@ export default function AboutPageWizard() {
 ### 3. Variation Selector
 
 ```typescript
+
 // After AI generates 2-3 versions
 
 function VariationSelector({ variations, onSelect }) {
@@ -441,6 +447,7 @@ function getVariationDescription(index: number): string {
 ### 4. Review & Edit Screen
 
 ```typescript
+
 function ReviewAndEdit({ content, answers, onSave, onRegenerate }) {
   const [editedContent, setEditedContent] = useState(content);
   const [showInputs, setShowInputs] = useState(false);
@@ -602,7 +609,7 @@ function getStyleGuidance(style: string): string {
   };
   return guidance[style];
 }
-````
+```
 
 ---
 

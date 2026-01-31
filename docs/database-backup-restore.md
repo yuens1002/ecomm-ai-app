@@ -132,7 +132,7 @@ npx tsx dev-tools/restore-database.ts db-backup-2025-11-25T10-00-00-000Z.json
 
 **Restoration order** (important for foreign key constraints):
 
-```
+```text
 user → account → session → address → category → product →
 categoriesOnProducts → productVariant → order → orderItem →
 subscription → siteSettings → socialLink → userActivity
@@ -167,7 +167,8 @@ subscription → siteSettings → socialLink → userActivity
 
 **1. Adding new fields with defaults**
 
-```prisma
+```json
+
 // Before
 model Product {
   id    String
@@ -186,7 +187,8 @@ model Product {
 
 **2. Adding new tables**
 
-```prisma
+```json
+
 // NEW MODEL
 model NewsletterSubscriber {
   id       String
@@ -199,7 +201,8 @@ model NewsletterSubscriber {
 
 **3. Removing fields**
 
-```prisma
+```json
+
 // Before
 model Product {
   oldField String
@@ -215,7 +218,8 @@ model Product {
 
 **4. Adding optional fields**
 
-```prisma
+```json
+
 model Product {
   description String?  // Optional, no default needed
 }
@@ -225,7 +229,8 @@ model Product {
 
 **5. Making optional field required (with default)**
 
-```prisma
+```json
+
 // Before
 model Product {
   featured Boolean?
@@ -243,7 +248,8 @@ model Product {
 
 **1. Changing field types incompatibly**
 
-```prisma
+```json
+
 // Before
 model Product {
   price Int
@@ -259,7 +265,8 @@ model Product {
 
 **2. Renaming fields**
 
-```prisma
+```json
+
 // Before
 model Product {
   productName String
@@ -275,7 +282,8 @@ model Product {
 
 **3. Complex data transformations**
 
-```prisma
+```json
+
 // Before
 model Product {
   deliverySchedule String  // "Every 2 weeks"
@@ -292,7 +300,8 @@ model Product {
 
 **4. Adding required field without default**
 
-```prisma
+```json
+
 model Product {
   sku String  // Required, no default
 }
@@ -304,7 +313,8 @@ model Product {
 
 The restore system uses **Prisma's `createMany`**:
 
-```typescript
+```json
+
 await prisma[table].createMany({
   data: records,
   skipDuplicates: true,
@@ -330,6 +340,7 @@ Before running `npm run db:safe-migrate`, verify:
 ## Backup File Structure
 
 ```json
+
 {
   "timestamp": ["2025-11-25T12:30:45.123Z"],
   "user": [
@@ -384,7 +395,7 @@ DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
    ```powershell
    npm run db:backup
    npx prisma migrate dev --name your_migration
-   ```
+```
 
 2. **Keep multiple backups**
    - Timestamped files are kept automatically
@@ -402,7 +413,7 @@ DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
 5. **Use safe-migrate for complex changes**
    ```powershell
    npm run db:safe-migrate
-   ```
+```
 
 ## Production Considerations
 

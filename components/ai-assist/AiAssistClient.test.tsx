@@ -12,7 +12,7 @@ jest.mock("@/hooks/use-toast", () => ({
 }));
 
 // Simplify the dialog and content to focus on client logic
-jest.mock("@/components/app-components/AiAssistDialog", () => ({
+jest.mock("@/app/admin/_components/dialogs/AiAssistDialog", () => ({
   AiAssistDialog: ({
     children,
     footer,

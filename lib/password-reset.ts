@@ -1,6 +1,6 @@
 import { randomBytes, createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { resend } from "@/lib/resend";
+import { resend } from "@/lib/services/resend";
 import { render } from "@react-email/render";
 import PasswordResetEmail from "@/emails/PasswordResetEmail";
 import { hashPassword, isStrongPassword } from "@/lib/password";

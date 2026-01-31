@@ -4,7 +4,7 @@ import { LayoutRenderer, BlockHandlers } from "./types";
 import { Block, BlockType, BLOCK_METADATA } from "@/lib/blocks/schemas";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { BlockRenderer } from "@/components/blocks/BlockRenderer";
+import { BlockRenderer } from "@/app/admin/_components/cms/blocks/BlockRenderer";
 import { useState } from "react";
 import {
   Carousel,

@@ -18,7 +18,7 @@ import {
   DynamicIcon,
   getAvailableIcons,
   COMMON_PAGE_ICONS,
-} from "@/components/app-components/DynamicIcon";
+} from "@/components/shared/icons/DynamicIcon";
 import { cn } from "@/lib/utils";
 import * as React from "react";
 import { useMemo, useState } from "react";

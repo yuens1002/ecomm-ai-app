@@ -34,6 +34,7 @@ This behavior was observed in **Stripe test mode only**. It's unclear if this is
 If this issue persists in production, you can disable Link by:
 
 ```typescript
+
 // In app/api/checkout/route.ts
 const session = await stripe.checkout.sessions.create({
   // ... other config

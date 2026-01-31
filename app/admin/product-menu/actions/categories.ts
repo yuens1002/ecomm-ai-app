@@ -12,7 +12,7 @@ import {
   createNewCategorySchema,
   updateCategorySchema,
 } from "@/app/admin/product-menu/types/category";
-import { generateSlug } from "@/hooks/useSlugGenerator";
+import { generateSlug } from "@/app/admin/_hooks/useSlugGenerator";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import {

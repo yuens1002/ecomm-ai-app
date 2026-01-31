@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { SettingsField } from "@/components/admin/SettingsField";
+import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
 import {
   Field,
   FieldContent,
@@ -10,7 +10,7 @@ import {
   FieldTitle,
 } from "@/components/ui/field";
 import { Store } from "lucide-react";
-import FileUpload from "@/components/app-components/FileUpload";
+import FileUpload from "@/app/admin/_components/cms/fields/FileUpload";
 
 export default function BrandingSettingsSection() {
   return (

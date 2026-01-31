@@ -1,5 +1,5 @@
 import ProductVariantsClient from "@/app/admin/products/ProductVariantsClient";
-import { FormCard } from "@/components/ui/app/FormCard";
+import { FormCard } from "@/components/ui/forms/FormCard";
 
 type ProductVariantsSectionProps = {
   productId?: string;

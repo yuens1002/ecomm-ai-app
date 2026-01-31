@@ -8,7 +8,8 @@ The `SettingsField` component is a reusable, configuration-based solution for ma
 
 **Before**: Each setting required ~50 lines of repetitive code:
 
-```tsx
+```typescript
+
 const [settings, setSettings] = useState({});
 const [originalSettings, setOriginalSettings] = useState({});
 const [saving, setSaving] = useState(false);
@@ -39,6 +40,7 @@ return (
 **After**: Each setting requires ~10 lines of configuration:
 
 ```tsx
+
 <SettingsField
   endpoint="/api/admin/settings/branding"
   field="storeName"
@@ -49,7 +51,8 @@ return (
 
 ## Basic Usage
 
-```tsx
+```typescript
+
 import SettingsField from "@/components/admin/SettingsField";
 
 <SettingsField
@@ -64,7 +67,8 @@ import SettingsField from "@/components/admin/SettingsField";
 
 Use the `input` render prop for custom components:
 
-```tsx
+```typescript
+
 <SettingsField
   endpoint="/api/admin/settings/product-menu"
   field="icon"
@@ -81,7 +85,8 @@ Use the `input` render prop for custom components:
 
 ### Textarea Example
 
-```tsx
+```typescript
+
 <SettingsField
   endpoint="/api/admin/settings/branding"
   field="description"
@@ -101,7 +106,8 @@ Use the `input` render prop for custom components:
 
 ### Switch Example
 
-```tsx
+```typescript
+
 <SettingsField
   endpoint="/api/admin/settings/newsletter"
   field="enabled"
@@ -123,7 +129,8 @@ Use the `input` render prop for custom components:
 
 ### RadioGroup Example
 
-```tsx
+```typescript
+
 <SettingsField
   endpoint="/api/admin/settings/weight-unit"
   field="weightUnit"
@@ -151,7 +158,8 @@ Use the `input` render prop for custom components:
 
 Use `transformSave` and `transformLoad` for complex data:
 
-```tsx
+```typescript
+
 <SettingsField
   endpoint="/api/admin/settings/social"
   field="links"
@@ -166,7 +174,8 @@ Use `transformSave` and `transformLoad` for complex data:
 
 ## API Props
 
-```tsx
+```typescript
+
 interface SettingsFieldProps<T = string> {
   endpoint: string; // API endpoint (GET/PUT/PATCH/POST)
   field: string; // Field name in settings object
@@ -197,7 +206,7 @@ interface SettingsFieldProps<T = string> {
 
 Settings are organized into dedicated pages with sidebar navigation:
 
-```
+```text
 /admin/settings          → General (store name, tagline, description)
 /admin/settings/storefront → Store Front (product menu, add-ons)
 /admin/settings/location   → Location (café setup)
@@ -214,7 +223,8 @@ Settings are organized into dedicated pages with sidebar navigation:
 
 Example:
 
-```tsx
+```typescript
+
 import { requireAdmin } from "@/lib/admin";
 import SettingsField from "@/components/admin/SettingsField";
 
@@ -259,7 +269,8 @@ Each settings endpoint should:
 
 Example:
 
-```tsx
+```typescript
+
 // GET /api/admin/settings/branding
 export async function GET() {
   const settings = await prisma.setting.findFirst();
@@ -295,7 +306,8 @@ export async function PUT(req: Request) {
 
 Each section component just duplicates fetch/save/state logic:
 
-```tsx
+```typescript
+
 // BAD: BrandingSettings.tsx (300 lines of duplication)
 const [settings, setSettings] = useState({});
 const [original, setOriginal] = useState({});
@@ -310,6 +322,7 @@ const save = async () => {
 ### ✅ Do Use SettingsField Configuration
 
 ```tsx
+
 // GOOD: Direct SettingsField usage (10 lines per field)
 <SettingsField endpoint="..." field="..." label="..." />
 ```
@@ -320,7 +333,8 @@ const save = async () => {
 
 FileUpload components handle their own upload and don't fit the SettingsField pattern. Keep them in dedicated sections:
 
-```tsx
+```typescript
+
 <div className="space-y-6">
   <div>
     <Label>Store Logo</Label>
@@ -338,7 +352,8 @@ FileUpload components handle their own upload and don't fit the SettingsField pa
 
 For sections with complex interdependencies, create a dedicated component but use SettingsField internally:
 
-```tsx
+```typescript
+
 function SocialLinksSection() {
   return (
     <div className="space-y-4">

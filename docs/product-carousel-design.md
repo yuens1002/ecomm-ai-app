@@ -21,6 +21,7 @@ A reusable carousel component for displaying products with consistent styling an
 ### Current Props
 
 ```typescript
+
 interface ImageCarouselProps {
   images: Array<{ url: string; alt?: string }>;
   aspectRatio?: "4/3" | "16/9" | "square";
@@ -51,6 +52,7 @@ interface ImageCarouselProps {
 ### New Component Interface
 
 ```typescript
+
 interface ProductCarouselProps<T> {
   // Data & rendering
   items: T[];
@@ -74,7 +76,8 @@ interface ProductCarouselProps<T> {
 
 #### 1. Add-ons Carousel (Blue Bottle Pattern)
 
-```tsx
+```typescript
+
 <ProductCarousel
   items={addOns}
   renderItem={(addOn) => (
@@ -101,7 +104,8 @@ interface ProductCarouselProps<T> {
 
 #### 2. Related Products (Current Use Case)
 
-```tsx
+```typescript
+
 <ProductCarousel
   items={relatedProducts}
   renderItem={(product) => (
@@ -122,7 +126,8 @@ interface ProductCarouselProps<T> {
 
 #### 3. Multi-item Carousel (Optional Future)
 
-```tsx
+```typescript
+
 <ProductCarousel
   items={products}
   renderItem={(product) => <ProductCard product={product} />}
@@ -185,7 +190,7 @@ interface ProductCarouselProps<T> {
 
 ### File Structure
 
-```
+```tsx
 components/app-components/
   ├── Carousel.tsx              # Renamed from ImageCarousel
   ├── CarouselDots.tsx          # Existing, no changes
@@ -195,6 +200,7 @@ components/app-components/
 ### Enhanced Carousel Component
 
 ```typescript
+
 "use client";
 
 import { useState, ReactNode } from "react";

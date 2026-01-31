@@ -1,6 +1,6 @@
 "use client";
 
-import { PageEditor } from "@/components/app-components/PageEditor";
+import { PageEditor } from "@/app/admin/_components/cms/editors/PageEditor";
 import { Block } from "@/lib/blocks/schemas";
 import { renderLocationInfoLayout } from "@/lib/page-layouts";
 import { PageType } from "@prisma/client";

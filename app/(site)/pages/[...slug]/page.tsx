@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import { getPageBlocks } from "@/lib/blocks/actions";
 import { PageContent } from "./PageContent";
 import { isAdmin } from "@/lib/admin";
-import { PreviewBannerSetter } from "@/components/app-components/PreviewBannerSetter";
+import { PreviewBannerSetter } from "@/app/(site)/_components/content/PreviewBannerSetter";
 
 interface PageProps {
   params: Promise<{

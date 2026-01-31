@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getWeightUnit } from "@/lib/app-settings";
+import { getWeightUnit } from "@/lib/config/app-settings";
 import { fromGrams, roundToInt, WeightUnitOption } from "@/lib/weight-unit";
 import { WeightUnit } from "@prisma/client";
 

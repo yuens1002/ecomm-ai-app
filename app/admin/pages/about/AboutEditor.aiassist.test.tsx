@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { PageEditor } from "@/components/app-components/PageEditor";
+import { PageEditor } from "@/app/admin/_components/cms/editors/PageEditor";
 import { PageType } from "@prisma/client";
 import { LayoutRenderer } from "@/lib/page-layouts";
 import { Block } from "@/lib/blocks/schemas";

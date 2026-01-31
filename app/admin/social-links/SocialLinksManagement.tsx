@@ -12,8 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { SettingsField } from "@/components/admin/SettingsField";
-import { FormTextArea } from "@/components/ui/app/FormTextArea";
+import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
+import { FormTextArea } from "@/components/ui/forms/FormTextArea";
 import {
   Select,
   SelectContent,

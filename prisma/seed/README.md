@@ -19,6 +19,7 @@ This directory contains modular database seeding scripts for the Artisan Roast a
 Run all seed modules in the correct order:
 
 ```bash
+
 npm run seed
 ```
 
@@ -27,6 +28,7 @@ npm run seed
 You can also run individual modules by importing them:
 
 ```typescript
+
 import { seedProducts } from "./prisma/seed/products";
 
 // In your script

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resend } from "@/lib/resend";
+import { resend } from "@/lib/services/resend";
 import { render } from "@react-email/render";
 import NewsletterWelcomeEmail from "@/emails/NewsletterWelcomeEmail";
 import NewsletterSignupNotification from "@/emails/NewsletterSignupNotification";

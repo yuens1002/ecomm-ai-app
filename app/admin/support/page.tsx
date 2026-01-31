@@ -1,8 +1,8 @@
 "use client";
 
-import { SettingsField } from "@/components/admin/SettingsField";
-import { SettingsSection } from "@/components/admin/SettingsSection";
-import { PageTitle } from "@/components/admin/PageTitle";
+import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
+import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
+import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { DynamicIcon } from "@/components/app-components/DynamicIcon";
+import { DynamicIcon } from "@/components/shared/icons/DynamicIcon";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {

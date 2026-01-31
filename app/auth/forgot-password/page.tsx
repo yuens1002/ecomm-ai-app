@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { SignIn } from "@/components/app-components/auth/SignIn";
+import { SignIn } from "@/components/auth/SignIn";
 import { ForgotPasswordContent } from "./forgot-password-content";
 import { getSiteMetadata } from "@/lib/site-metadata";
 

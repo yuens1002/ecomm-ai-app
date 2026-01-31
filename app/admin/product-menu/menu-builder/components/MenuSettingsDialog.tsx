@@ -10,11 +10,11 @@ import {
   Field,
   FieldDescription,
 } from "@/components/ui/field";
-import { FormHeading } from "@/components/ui/app/FormHeading";
-import { FormInputField } from "@/components/ui/app/FormInputField";
-import { InputGroupInput } from "@/components/ui/app/InputGroup";
-import { DialogShell } from "@/components/app-components/DialogShell";
-import { IconPicker } from "@/components/app-components/IconPicker";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
+import { FormInputField } from "@/components/ui/forms/FormInputField";
+import { InputGroupInput } from "@/components/ui/forms/InputGroup";
+import { DialogShell } from "@/app/admin/_components/dialogs/DialogShell";
+import { IconPicker } from "@/app/admin/_components/cms/fields/IconPicker";
 import { productMenuSettingsSchema } from "../../types/menu";
 import { useMenuBuilder } from "../MenuBuilderProvider";
 

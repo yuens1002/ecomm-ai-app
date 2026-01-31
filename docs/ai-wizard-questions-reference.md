@@ -241,6 +241,7 @@
 ## Complete Data Structure
 
 ```typescript
+
 interface WizardAnswers {
   // Section 1: Origin Story
   inspiration: string; // Q1
@@ -279,6 +280,7 @@ interface WizardAnswers {
 ### Validation Rules
 
 ```typescript
+
 const validationRules = {
   inspiration: { required: true, minLength: 50 },
   yearFounded: { required: true, pattern: /^\d{4}$/, min: 1900, max: 2025 },
@@ -300,7 +302,7 @@ const validationRules = {
 
 ### Progress Calculation
 
-```
+```text
 Section 1: Steps 1-3 (30%)
 Section 2: Steps 4-6 (60%)
 Section 3: Steps 7-8 (80%)

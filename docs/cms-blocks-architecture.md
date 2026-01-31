@@ -27,6 +27,7 @@ This approach is intentional because:
 All block content is validated by **Zod schemas** (`lib/blocks/schemas.ts`):
 
 ```typescript
+
 // Example: LocationBlock schema
 export const locationBlockSchema = baseBlockSchema.extend({
   type: z.literal("location"),
@@ -58,6 +59,7 @@ export const locationBlockSchema = baseBlockSchema.extend({
 Each page type has a **layout config** (`lib/page-layouts/layouts.ts`):
 
 ```typescript
+
 export interface PageLayoutConfig {
   allowedBlocks: BlockType[]; // Which block types can exist
   maxBlocks: Record<BlockType, number>; // Max count per type
@@ -79,6 +81,7 @@ export interface PageLayoutConfig {
 The `*` indicator is passed **manually** via the `required` prop:
 
 ```tsx
+
 <FormHeading
   label="Location Name"
   required // Shows * indicator
@@ -101,7 +104,8 @@ Look at the **Zod schema** for the block:
 
 From the schema:
 
-```typescript
+```json
+
 content: z.object({
   name: z.string().min(1, "..."),        // REQUIRED
   address: z.string().min(1, "..."),     // REQUIRED
@@ -114,6 +118,7 @@ content: z.object({
 In the component:
 
 ```tsx
+
 <FormHeading label="Location Name" required />     // ✅ Has *
 <FormHeading label="Address" required />           // ✅ Has *
 <FormHeading label="Phone" />                      // No *
@@ -126,6 +131,7 @@ In the component:
 A future improvement could auto-derive `required` from schemas:
 
 ```typescript
+
 // Pseudo-code for future enhancement
 function isFieldRequired(schema: ZodSchema, fieldPath: string): boolean {
   const fieldSchema = getFieldSchema(schema, fieldPath);
@@ -137,7 +143,8 @@ function isFieldRequired(schema: ZodSchema, fieldPath: string): boolean {
 
 ### Standard Block Component Pattern
 
-```tsx
+```typescript
+
 export function ExampleBlock({
   block,
   isEditing,
@@ -207,7 +214,8 @@ export function ExampleBlock({
 
 For blocks with a single image:
 
-```tsx
+```typescript
+
 <ImageField
   label="Hero Image"
   required
@@ -226,7 +234,8 @@ For blocks with a single image:
 
 For blocks with multiple images:
 
-```tsx
+```typescript
+
 <ImageListField
   label="Photos"
   required
@@ -251,6 +260,7 @@ For blocks with multiple images:
 Standard field label with validation states:
 
 ```tsx
+
 <FormHeading
   label="Field Name"
   required // Shows * indicator
@@ -289,7 +299,7 @@ This pattern:
        // ...
      }),
    });
-   ```
+```
 
 2. **Add to discriminated union**:
 
@@ -298,13 +308,13 @@ This pattern:
      // ...existing
      newBlockSchema,
    ]);
-   ```
+```
 
 3. **Export type**:
 
    ```typescript
    export type NewBlock = z.infer<typeof newBlockSchema>;
-   ```
+```
 
 4. **Add to BLOCK_TYPES and BLOCK_METADATA**
 
@@ -318,7 +328,7 @@ This pattern:
 
 ## File Structure
 
-```
+```tsx
 lib/
   blocks/
     schemas.ts          # Zod schemas for all block types
@@ -351,7 +361,7 @@ components/
 
 ## Validation Flow
 
-```
+```text
 User clicks Save
       ↓
 Block component validateBlock()

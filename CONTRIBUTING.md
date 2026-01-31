@@ -33,6 +33,7 @@ This project follows our [Code of Conduct](./CODE_OF_CONDUCT.md). By participati
 ### Local Setup
 
 ```bash
+
 # Fork the repo on GitHub, then clone your fork
 git clone https://github.com/YOUR_USERNAME/ecomm-ai-app.git
 cd ecomm-ai-app
@@ -92,7 +93,7 @@ Other ways to help:
 
 ### Branch Naming
 
-```
+```text
 feature/add-inventory-alerts
 fix/cart-quantity-bug
 docs/update-setup-guide
@@ -102,6 +103,7 @@ refactor/simplify-menu-builder
 ### Running Tests
 
 ```bash
+
 npm run test        # Watch mode
 npm run test:ci     # Single run (CI mode)
 ```
@@ -109,6 +111,7 @@ npm run test:ci     # Single run (CI mode)
 ### Code Quality Checks
 
 ```bash
+
 npm run precheck    # TypeScript + ESLint (run before committing)
 npm run typecheck   # TypeScript only
 npm run lint        # ESLint only
@@ -118,7 +121,8 @@ npm run lint        # ESLint only
 
 If your change requires schema modifications:
 
-```bash
+```text
+
 # 1. Edit prisma/schema.prisma
 # 2. Create migration
 npx prisma migrate dev --name your-migration-name
@@ -180,6 +184,7 @@ Closes #123
 - **Zod validation** for all external inputs (forms, API requests)
 
 ```typescript
+
 // Good
 function calculateTotal(items: CartItem[]): number {
   return items.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -198,6 +203,7 @@ function calculateTotal(items: any) {
 - **Named exports** - Except for default page exports
 
 ```typescript
+
 // Good
 export function ProductCard({ product }: { product: Product }) {
   return <div>...</div>
@@ -218,6 +224,7 @@ export default class ProductCard extends React.Component { ... }
 Group imports in this order:
 
 ```typescript
+
 // 1. External packages
 import { useState } from 'react'
 import { z } from 'zod'
@@ -237,7 +244,8 @@ import type { Product } from './types'
 - Comments explain **why**, not **what**
 - Don't commit commented-out code
 
-```typescript
+```tsx
+
 // Good - explains why
 // Skip validation for admin users to allow bulk operations
 if (user.role === 'admin') return data
@@ -251,7 +259,7 @@ if (user.role === 'admin') return data
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
-```
+```text
 feat: add inventory low-stock alerts
 fix: cart quantity not updating on mobile
 docs: clarify Stripe webhook setup

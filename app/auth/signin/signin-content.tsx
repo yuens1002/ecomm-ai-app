@@ -5,8 +5,8 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { LoginForm } from "@/components/app-components/auth/LoginForm";
-import { DemoSignInButtons } from "@/components/app-components/auth/DemoSignInButtons";
+import { LoginForm } from "@/components/auth/LoginForm";
+import { DemoSignInButtons } from "@/components/auth/DemoSignInButtons";
 import { signInPublic } from "@/actions/auth";
 
 export function SignInContent() {

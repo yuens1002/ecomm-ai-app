@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { PageTitle } from "@/components/admin/PageTitle";
+import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useBreadcrumb } from "@/components/admin/dashboard";
+import { useBreadcrumb } from "@/app/admin/_components/dashboard";
 import { MenuBuilderProvider, useMenuBuilder } from "./MenuBuilderProvider";
 import { MenuNavBar } from "./components/MenuNavBar";
 import { MenuSettingsDialog } from "./components/MenuSettingsDialog";

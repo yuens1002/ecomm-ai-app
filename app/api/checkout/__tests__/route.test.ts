@@ -5,7 +5,7 @@ import { POST } from "../route";
 
 const purchaseOptionFindManyMock = jest.fn();
 
-jest.mock("@/lib/stripe", () => {
+jest.mock("@/lib/services/stripe", () => {
   const createMock = jest.fn();
   return {
     __esModule: true,
@@ -28,7 +28,7 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
-const stripeSessionCreateMock = jest.requireMock("@/lib/stripe").__mock
+const stripeSessionCreateMock = jest.requireMock("@/lib/services/stripe").__mock
   .createMock as jest.Mock;
 
 // Silence console noise in tests

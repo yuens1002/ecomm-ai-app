@@ -287,6 +287,7 @@ Add a new section at the top with **user-facing summary only**:
 Update the `version` field:
 
 ```json
+
 "version": "0.22.0"
 ```
 
