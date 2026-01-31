@@ -25,6 +25,7 @@ DATABASE_URL=$DIRECT_URL PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT=180000 node script
 ```
 
 **What happens:**
+
 1. `DIRECT_URL` (non-pooled Neon connection) is used for migrations
 2. `prisma migrate deploy` runs with retry logic
 3. `prisma generate` regenerates the client
@@ -174,55 +175,72 @@ git branch -D test/upgrade-path-verification
 
 ---
 
-## Future: `npm run upgrade` Command
+## `npm run upgrade` Command
 
-TODO: Create a dedicated upgrade command for self-hosted users:
+A dedicated upgrade command for self-hosted users:
 
 ```bash
-
 npm run upgrade
 ```
 
-**Proposed behavior:**
+**What it does:**
 
-```javascript
-// scripts/upgrade.js
-async function upgrade() {
-  console.log("🔄 Starting Artisan Roast upgrade...");
+1. Shows current version
+2. Checks database migration status
+3. Applies pending migrations (if any)
+4. Regenerates Prisma client
+5. Clears Next.js cache
 
-  // 1. Check current version
-  const currentVersion = require('../package.json').version;
-  console.log(`📦 Current version: ${currentVersion}`);
+**Example output (with pending migrations):**
 
-  // 2. Run migrations
-  console.log("🗄️  Running database migrations...");
-  execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+```text
+========================================
+   Artisan Roast Upgrade
+========================================
 
-  // 3. Regenerate Prisma client
-  console.log("⚙️  Regenerating Prisma client...");
-  execSync('npx prisma generate', { stdio: 'inherit' });
+Current version: 0.79.0
 
-  // 4. Run any data migrations (future)
-  // await runDataMigrations();
+Checking database migration status...
 
-  // 5. Clear caches
-  console.log("🧹 Clearing caches...");
-  execSync('rm -rf .next', { stdio: 'inherit' });
+Found 3 pending migration(s).
 
-  console.log("✅ Upgrade complete!");
-  console.log("👉 Run 'npm run build && npm start' to start the application");
-}
+Applying database migrations...
+
+$ npx prisma migrate deploy
+...
+All migrations have been successfully applied.
+
+Migrations applied successfully.
+
+Regenerating Prisma client...
+
+========================================
+   Upgrade complete!
+========================================
+
+Next steps:
+  1. Run: npm run build
+  2. Run: npm start (or restart your process manager)
 ```
 
-**Package.json entry:**
+**Example output (already up to date):**
 
-```json
+```text
+========================================
+   Artisan Roast Upgrade
+========================================
 
-{
-  "scripts": {
-    "upgrade": "node scripts/upgrade.js"
-  }
-}
+Current version: 0.79.0
+
+Checking database migration status...
+
+Database is already up to date.
+
+Regenerating Prisma client...
+
+========================================
+   Upgrade complete!
+========================================
 ```
 
 ---

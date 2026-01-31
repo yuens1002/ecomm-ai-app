@@ -27,6 +27,7 @@
     "db:smoke": "tsx dev-tools/smoke-crud.ts",
     "create-admin": "tsx scripts/create-admin.ts",
     "setup": "tsx scripts/setup.ts",
+    "upgrade": "tsx scripts/upgrade.ts",
     "release:patch": "tsx scripts/release.ts patch",
     "release:minor": "tsx scripts/release.ts minor",
     "release:major": "tsx scripts/release.ts major"
