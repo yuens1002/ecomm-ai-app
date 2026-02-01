@@ -757,6 +757,30 @@ export async function POST(req: NextRequest) {
 
               console.log("✅ Subscription record created/updated");
 
+              // Store shipping address in Stripe subscription metadata for renewal orders
+              if (shippingAddress) {
+                try {
+                  await stripe.subscriptions.update(subscription.id, {
+                    metadata: {
+                      shipping_address: JSON.stringify({
+                        name: shippingName,
+                        line1: shippingAddress.line1,
+                        line2: shippingAddress.line2 || "",
+                        city: shippingAddress.city,
+                        state: shippingAddress.state,
+                        postal_code: shippingAddress.postal_code,
+                        country: shippingAddress.country,
+                      }),
+                      deliveryMethod: deliveryMethod,
+                    },
+                  });
+                  console.log("📍 Stored shipping address in subscription metadata");
+                } catch (metadataError) {
+                  console.error("Failed to store shipping metadata:", metadataError);
+                  // Non-fatal - subscription still works, just renewals won't have address
+                }
+              }
+
               // Link subscription to the subscription order
               // Find the order that contains subscription items
               const subscriptionOrder = createdOrders.find((order) =>
@@ -1162,6 +1186,14 @@ export async function POST(req: NextRequest) {
               }
             }
 
+            // Get delivery method from subscription metadata or fallback to shipping check
+            const storedDeliveryMethod = subscription.metadata.deliveryMethod as
+              | "DELIVERY"
+              | "PICKUP"
+              | undefined;
+            const renewalDeliveryMethod =
+              storedDeliveryMethod || (shipping ? "DELIVERY" : "PICKUP");
+
             // Create the recurring order
             const order = await prisma.order.create({
               data: {
@@ -1171,7 +1203,7 @@ export async function POST(req: NextRequest) {
                 customerEmail: user.email || null,
                 totalInCents,
                 status: "PENDING",
-                deliveryMethod: shipping ? "DELIVERY" : "PICKUP",
+                deliveryMethod: renewalDeliveryMethod,
                 paymentCardLast4,
                 userId: user.id,
                 recipientName: shipping?.name || user.name || null,

@@ -275,7 +275,7 @@ model Order {
   trackingNumber        String?
   failureReason         String?
   failedAt              DateTime?
-  stripeSubscriptionId  String?        @unique
+  stripeSubscriptionId  String?
   user                  User?          @relation(fields: [userId], references: [id], onDelete: Restrict)
   items                 OrderItem[]
 
