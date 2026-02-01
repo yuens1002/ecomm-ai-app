@@ -135,6 +135,9 @@
   },
   "overrides": {
     "hono": "^4.10.3",
-    "test-exclude": "^7.0.1"
+    "test-exclude": "^7.0.1",
+    "next-auth": {
+      "@auth/core": "0.41.1"
+    }
   }
 }
