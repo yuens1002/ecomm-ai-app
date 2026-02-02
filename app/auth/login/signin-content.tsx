@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/LoginForm";
-import { signInPublic } from "@/actions/auth";
+import { signInPublic } from "@/app/auth/actions";
 
 export function SignInContent() {
   const [checkoutNotice] = useState(() => {
