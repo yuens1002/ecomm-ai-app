@@ -17,6 +17,7 @@ The following rules are configured as **errors** (not warnings) and will show re
    // ✅ GOOD
    function process(data: Record<string, unknown>) { ... }
    function process(data: { id: string; name: string }) { ... }
+
 ```
 
 2. **`react-hooks/set-state-in-effect`** - NEVER call setState directly in useEffect
@@ -40,7 +41,7 @@ The following rules are configured as **errors** (not warnings) and will show re
    }, [dependency]);
 ```
 
-3. **`react-hooks/static-components`** - NEVER create components during render
+1. **`react-hooks/static-components`** - NEVER create components during render
 
    ```typescript
    // ❌ BAD
@@ -54,6 +55,7 @@ The following rules are configured as **errors** (not warnings) and will show re
      const IconToRender = getIcon(); // Reference to existing component
      return <IconToRender />;
    }
+
 ```
 
 4. **`react-hooks/exhaustive-deps`** - ALWAYS include all dependencies
@@ -70,7 +72,7 @@ The following rules are configured as **errors** (not warnings) and will show re
    }, [value]);
 ```
 
-5. **`@typescript-eslint/no-unused-vars`** - Remove unused imports/variables
+1. **`@typescript-eslint/no-unused-vars`** - Remove unused imports/variables
 
    ```typescript
    // ❌ BAD
@@ -81,6 +83,7 @@ The following rules are configured as **errors** (not warnings) and will show re
 
    // ✅ GOOD - Prefix with _ if intentionally unused
    const [_unusedState, setUsedState] = useState();
+
 ```
 
 ### Pre-commit Hook

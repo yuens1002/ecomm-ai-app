@@ -32,6 +32,7 @@
 | LabelTableView | `handleContextClone` | ❌ single | 10 |
 
 **Pattern:**
+
 ```typescript
 
 // Bulk version (3 views)
@@ -75,6 +76,7 @@ const handleContextClone = useCallback(
 | CategoryTableView | `handleContextVisibility` | ❌ (no-op) | 5 |
 
 **Pattern:**
+
 ```typescript
 
 // Bulk version (All* views)
@@ -115,6 +117,7 @@ const handleContextVisibility = useCallback(
 | CategoryTableView | `handleContextRemove` | `currentCategoryId` | 10 |
 
 **Pattern:**
+
 ```typescript
 
 const handleContextRemove = useCallback(
@@ -144,6 +147,7 @@ const handleContextRemove = useCallback(
 | CategoryTableView | `handleMoveTo` | Product | 20 |
 
 **Pattern for categories:**
+
 ```typescript
 
 const handleMoveTo = useCallback(
@@ -187,6 +191,7 @@ const handleMoveTo = useCallback(
 | CategoryTableView | `handleCategoryToggle` | Product ↔ Category | 15 |
 
 **Pattern:**
+
 ```typescript
 
 const handleRelationshipToggle = useCallback(
@@ -219,6 +224,7 @@ const handleRelationshipToggle = useCallback(
 | MenuTableView | `handleCategoryMoveDown` | Requires parentLabelId at call time |
 
 **Pattern:**
+
 ```typescript
 
 const handleCategoryMoveUp = useCallback(
@@ -253,21 +259,21 @@ const handleCategoryMoveUp = useCallback(
 
 ### Medium Priority
 
-3. **`useContextClone`** - 5 implementations, ~44 lines total
+1. **`useContextClone`** - 5 implementations, ~44 lines total
    - Could extend `useBulkAction` to handle single item
    - OR create dedicated hook
 
-4. **`useContextRemove`** - 2 implementations, ~20 lines total
+2. **`useContextRemove`** - 2 implementations, ~20 lines total
    - Simple detach pattern with parent context
    - Small win but clean abstraction
 
 ### Low Priority
 
-5. **`useContextMoveTo`** - 3 implementations, ~70 lines total
+1. **`useContextMoveTo`** - 3 implementations, ~70 lines total
    - More complex, different signatures for products vs categories
    - May not be worth abstracting
 
-6. **Category move in hierarchy** - 2 implementations, ~30 lines total
+2. **Category move in hierarchy** - 2 implementations, ~30 lines total
    - Only used in MenuTableView
    - Keep view-specific
 
@@ -290,7 +296,8 @@ const handleCategoryMoveUp = useCallback(
 
 ## Implementation Notes
 
-### For `useContextVisibility`:
+### For `useContextVisibility`
+
 ```typescript
 
 type UseContextVisibilityOptions = {
@@ -300,7 +307,8 @@ type UseContextVisibilityOptions = {
 };
 ```
 
-### For `useRelationshipToggle`:
+### For `useRelationshipToggle`
+
 ```typescript
 
 type UseRelationshipToggleOptions = {
@@ -313,6 +321,7 @@ type UseRelationshipToggleOptions = {
 ---
 
 **Next Steps:**
+
 1. Decide which hooks to implement based on priority
 2. Write tests first (TDD)
 3. Implement hooks in `hooks/context-menu/`

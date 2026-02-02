@@ -52,11 +52,7 @@ export const adminNavConfig: NavItem[] = [
     icon: ClipboardList,
     children: [
       { label: "All Orders", href: "/admin/orders" },
-      {
-        label: "Subscriptions",
-        href: "#",
-        disabled: true,
-      },
+      { label: "Subscriptions", href: "/admin/subscriptions" },
     ],
   },
   {
@@ -289,7 +285,7 @@ export const mobileNavConfig: NavItem[] = [
     icon: ClipboardList,
     children: [
       { label: "All Orders", href: "/admin/orders" },
-      { label: "Subscriptions", href: "#", disabled: true },
+      { label: "Subscriptions", href: "/admin/subscriptions" },
     ],
   },
   {

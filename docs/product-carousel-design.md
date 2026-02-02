@@ -363,6 +363,6 @@ export function ImageCarousel(props: Omit<ImageCarouselMode, "mode">) {
 
 ## References
 
-- Blue Bottle add-ons pattern: https://bluebottlecoffee.com/us/eng/product/hayes-valley-espresso
+- Blue Bottle add-ons pattern: <https://bluebottlecoffee.com/us/eng/product/hayes-valley-espresso>
 - Existing ImageCarousel: `components/app-components/ImageCarousel.tsx`
 - CarouselDots: `components/app-components/CarouselDots.tsx`

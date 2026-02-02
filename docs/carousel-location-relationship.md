@@ -92,6 +92,7 @@ Converting to Location Carousel will:
 **If Confirmed:**
 
 1. For each image slide:
+
    ```typescript
    {
      type: "locationPreview",
@@ -101,6 +102,7 @@ Converting to Location Carousel will:
      description: "",
      locationBlockId: `temp-${Date.now()}-${Math.random()}`
    }
+
 ```
 2. Update carouselType to "locationPreview"
 3. User fills in location details
@@ -124,12 +126,14 @@ Converting to Image Carousel will:
 **If Confirmed:**
 
 1. For each location slide:
+
    ```typescript
    {
      type: "image",
      url: existingSlide.url,
      alt: existingSlide.alt
    }
+
 ```
 2. Store old locationBlockIds for cleanup
 3. Update carouselType to "image"

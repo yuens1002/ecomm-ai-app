@@ -58,6 +58,7 @@ export const VAPI_ASSISTANT_CONFIG = {
 
    ```bash
    npm run dev
+
 ```
 
 2. **Start the Tunnel (if not running):**
@@ -66,7 +67,7 @@ export const VAPI_ASSISTANT_CONFIG = {
    npx localtunnel --port 3000 --subdomain stupid-cases-joke
 ```
 
-3. **Access the App:**
+1. **Access the App:**
    - Open `http://localhost:3000` (for your own browsing).
    - The Voice Assistant will internally use the `https://stupid-cases-joke.loca.lt` URL to communicate with VAPI.
 
@@ -99,6 +100,7 @@ When deploying to Vercel:
 1. You do **not** need localtunnel.
 2. Update `lib/vapi-config.ts` to use your production URL (e.g., `https://artisan-roast.vercel.app/api/vapi/webhook`).
 3. Ideally, use an Environment Variable for the base URL:
+
    ```typescript
    url: `${process.env.NEXT_PUBLIC_APP_URL}/api/vapi/webhook`;
    ```

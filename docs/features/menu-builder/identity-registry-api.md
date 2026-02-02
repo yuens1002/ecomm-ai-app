@@ -14,6 +14,7 @@ Current architecture has multiple identity formats for different systems:
 | Mutations | Database ID | `"catId"` |
 
 This causes:
+
 - Actions fail because `getIdFromKey()` returns composite, not entity ID
 - Per-view click handlers with duplicated logic
 - Tight coupling between level (depth) and entity type
@@ -340,6 +341,7 @@ function useActionBarHandlers(registry: IdentityRegistry) {
 When performing actions (clone, remove), we operate on **actionable roots** - selected keys whose parents are NOT also selected.
 
 **Example:**
+
 ```text
 Selection: ["label:L1", "category:L1-C1", "product:L1-C1-P1"]
 
@@ -370,6 +372,7 @@ function getActionableKind(selectedIds: string[]): string | null;
 ### Master Switch Behavior
 
 When clicking a parent checkbox:
+
 1. **Select**: Parent key + all descendant keys are added to selection
 2. **Deselect**: Parent key + all descendant keys are removed from selection
 
@@ -384,11 +387,13 @@ This ensures completeness when selecting a parent (not indeterminate).
 ```
 
 Where `compositeId` encodes ancestry for uniqueness:
+
 - Labels: `label:{labelId}` → `"label:abc"`
 - Categories: `category:{labelId}-{categoryId}` → `"category:abc-def"`
 - Products: `product:{labelId}-{categoryId}-{productId}` → `"product:abc-def-ghi"`
 
 **Why this format?**
+
 - `kind:` prefix enables mixed-kind selection validation
 - Composite part ensures uniqueness (same category under different labels = different keys)
 - Human-readable for debugging

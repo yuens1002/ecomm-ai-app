@@ -9,6 +9,7 @@
 **Description**: Admin breadcrumb navigation is buggy and doesn't correctly reflect the current page context when navigating within admin sections, views, and menus.
 
 **Current Issues:**
+
 - Breadcrumb doesn't update correctly when navigating between admin views
 - Nested navigation (e.g., Menu Builder → Labels → Edit) shows incorrect paths
 - Context is lost when switching between different admin sections
@@ -16,17 +17,20 @@
 
 **Root Cause:**
 The current `useBreadcrumb` hook relies on individual pages setting their breadcrumbs, but this approach doesn't handle:
+
 - Route-based automatic breadcrumb generation
 - Parent-child relationships in nested admin routes
 - Query parameter-based views (e.g., `?view=labels`)
 
 **Proposed Solution:**
+
 1. Create a breadcrumb configuration that maps routes to breadcrumb paths
 2. Auto-generate breadcrumbs from URL structure with override capability
 3. Support dynamic segments (e.g., `/admin/products/[id]` → "Products / Ethiopian Yirgacheffe")
 4. Handle query-param based views in Menu Builder
 
 **Affected Areas:**
+
 - `/admin/product-menu/*` - Menu Builder views
 - `/admin/products/*` - Product editing
 - `/admin/orders/*` - Order details
@@ -34,6 +38,7 @@ The current `useBreadcrumb` hook relies on individual pages setting their breadc
 - All admin pages with dynamic routes
 
 **Tasks:**
+
 - [ ] Audit current breadcrumb behavior across all admin routes
 - [ ] Design route-to-breadcrumb mapping config
 - [ ] Implement automatic breadcrumb generation from route
@@ -51,17 +56,20 @@ The current `useBreadcrumb` hook relies on individual pages setting their breadc
 **Description**: Migrate from dynamic category-based URLs (`/{category}/{slug}`) to stable product-only URLs (`/products/{slug}`) for better SEO and build performance.
 
 **Problem:**
+
 - Products accessible at multiple URLs (one per category they belong to)
 - No canonical URL - search engines see duplicate content
 - Build generates 3× more static pages than needed (125 paths for 42 products)
 - URL changes when admin recategorizes products (bad for SEO/bookmarks)
 
 **Solution:**
+
 - Single canonical URL per product: `/products/{slug}`
 - 301 redirects from old `/{category}/{slug}` URLs
 - Reduces static paths from O(products × categories) to O(products)
 
 **Impact Analysis:**
+
 | Products | Old (all paths) | New (product-only) |
 |----------|-----------------|-------------------|
 | 42 (current) | 125 paths | 42 paths |
@@ -69,6 +77,7 @@ The current `useBreadcrumb` hook relies on individual pages setting their breadc
 | 500 | ~1,500 paths | 500 paths |
 
 **Tasks:**
+
 - [x] Create `/products/[slug]` route with ProductClientPage and actions
 - [x] Update `generateStaticParams` to only generate `/products/*` paths
 - [x] Update ProductCard to use `/products/{slug}` URLs
@@ -243,27 +252,27 @@ The goal is to make the Menu Builder predictable and shippable by driving UI beh
 - Decide what is config vs code. Keep config to stable declarations only (IDs, capabilities, tableViewId).
 - Keep business logic in server actions/data layer; config references capabilities, it doesn’t re-implement them.
 
-2. **Make view rendering 100% config-driven**
+1. **Make view rendering 100% config-driven**
 
 - Replace remaining view-based conditionals with a `tableViewId → component` registry in `TableViewRenderer`.
 - Acceptance: adding a new table view requires only registering the component + setting `VIEW_CONFIGS[view].tableViewId`.
 
-3. **Align table “surfaces” behind shared primitives**
+1. **Align table “surfaces” behind shared primitives**
 
 - Continue building shared table cells (selection, visibility, inline name editor) so each new table is mostly data + columns.
 - Acceptance: second table view ships with minimal duplicated cell logic.
 
-4. **Drive secondary surfaces (context menus) from action IDs**
+1. **Drive secondary surfaces (context menus) from action IDs**
 
 - Context menus should reference action IDs already defined in `ACTION_BAR_CONFIG` (avoid duplicate action definitions).
 - Acceptance: a context-menu item triggers the same execute logic as the action bar.
 
-5. **Lock the pathway with a small set of invariants tests**
+1. **Lock the pathway with a small set of invariants tests**
 
 - DTO invariants are already covered (join-table ordering).
 - Add config invariant tests as needed (e.g. each view has a valid `tableViewId`, referenced action IDs exist).
 
-6. **Decompose `ACTION_BAR_CONFIG` (reduce mixed config+logic)**
+1. **Decompose `ACTION_BAR_CONFIG` (reduce mixed config+logic)**
 
 - Target split:
   - `ACTION_DEFINITIONS` (UI-only metadata)
@@ -752,6 +761,7 @@ function ProductAddOnsClient({ addOns, products }) {
 **Description**: Complete redesign replacing sidebar layout with top navbar layout inspired by shadcn dashboard-shell-04.
 
 **Implemented:**
+
 - [x] Top sticky navbar with dropdown menus for all admin sections
 - [x] Mobile drawer navigation (Sheet component) for responsive layouts
 - [x] Footer with branding, legal links, and social icons
@@ -761,11 +771,13 @@ function ProductAddOnsClient({ addOns, products }) {
 - [x] Centralized nav config in `lib/admin-nav-config.ts`
 
 **Component Architecture:**
+
 - All dashboard components consolidated in `components/admin/dashboard/`
 - Barrel exports via `index.ts` for clean imports
 - BreadcrumbContext with single declarative `useBreadcrumb(items)` API
 
 **Removed:**
+
 - Old sidebar-based layout (AdminSidebar.tsx, AdminHeader.tsx)
 - Components relocated from `components/app-components/` to dedicated dashboard directory
 
@@ -815,6 +827,7 @@ function ProductAddOnsClient({ addOns, products }) {
 **Description**: Comprehensive failed order handling with customer notification.
 
 **Implemented**:
+
 - [x] Added `failureReason` and `failedAt` fields to Order model
 - [x] Created migration for failure fields
 - [x] Created `FailedOrderNotification.tsx` email template with refund info
@@ -832,6 +845,7 @@ function ProductAddOnsClient({ addOns, products }) {
 **Description**: Frictionless feedback mechanism using GitHub Issues integration.
 
 **Implemented**:
+
 - [x] FeedbackDialog component with FieldSet composition pattern
 - [x] Feedback type radio buttons (Bug / Feature / Other)
 - [x] Optional email field for follow-up
@@ -842,6 +856,7 @@ function ProductAddOnsClient({ addOns, products }) {
 - [x] Auto-labels: `bug`, `enhancement`, `question` + `user-feedback`
 
 **Configuration**:
+
 ```env
 GITHUB_TOKEN="github_pat_..."
 GITHUB_REPO_OWNER="yuens1002"
@@ -851,6 +866,71 @@ GITHUB_REPO_NAME="ecomm-ai-app"
 ---
 
 ## Medium Priority
+
+---
+
+### Checkout Redirect After Sign-Up (Bug)
+
+**Status**: Backlog
+**Priority**: Medium
+**Description**: After signing up for a new account during checkout flow, clicking checkout redirects to the account page instead of proceeding to Stripe checkout.
+
+**Repro Steps**:
+
+1. Log out if signed in
+2. Add a subscription item to the cart
+3. Click "Check out" on the cart drawer
+4. Click "Sign up for a new account" on the login page
+5. Complete sign-up
+6. Click "Check out" on the cart drawer
+
+**Current Behavior**: User is redirected to the account page when clicking checkout link in cart after sign-up.
+
+**Expected Behavior**: User should be taken to the Stripe checkout page with their cart items preserved.
+
+**Technical Notes**:
+
+- Likely related to session/auth callback URL handling after sign-up
+- May need to preserve checkout intent through auth flow
+- Check `callbackUrl` parameter propagation through sign-up process
+
+**Files to Investigate**:
+
+- `app/(site)/auth/signin/page.tsx`
+- `app/(site)/auth/signup/page.tsx`
+- `app/api/checkout/route.ts`
+- Cart drawer checkout button logic
+
+---
+
+### Cart Drawer Opens After Successful Order (Bug)
+
+**Status**: Backlog
+**Priority**: Medium
+**Description**: Shopping cart drawer automatically opens showing an empty cart state after a successful order completion.
+
+**Repro Steps**:
+
+1. Add any item to the cart
+2. Click "Check out"
+3. Complete the Stripe checkout flow
+4. Observe: Cart drawer automatically opens showing empty cart
+
+**Current Behavior**: Cart drawer opens automatically on successful order return, displaying empty cart state.
+
+**Expected Behavior**: Cart drawer should NOT open automatically when an order is successful. User should land on confirmation/success page without cart interference.
+
+**Technical Notes**:
+
+- Likely triggered by cart state clearing after successful checkout
+- May need to check checkout success redirect handling
+- Cart drawer open state should not be triggered by cart clearing
+
+**Files to Investigate**:
+
+- Cart drawer component and its open state trigger logic
+- Checkout success return URL handling
+- Zustand cart store logic for clearing cart after purchase
 
 ---
 
@@ -1008,6 +1088,7 @@ This virtual block:
    ```
 
 7. **Handle legacy block deletion**
+
    ```typescript
    // Delete legacy block = clear page.content
    if (block.type === "legacyContent") {
@@ -1457,6 +1538,148 @@ When user clicks "Migrate to Blocks":
 - All hardcoded brand values removed or have default fallback from settings service
 - Emails inherit settings so transactional + marketing messages stay on-brand
 - Site renders even if some settings missing, using seeded defaults
+
+---
+
+### Customer Self-Service Shipping Address Update
+
+**Status**: Backlog
+**Priority**: Medium
+**Description**: Allow customers to update their subscription shipping address from the account page. Stripe Customer Portal only supports billing address updates, not shipping.
+
+**Current State**:
+
+- Stripe portal only allows billing address changes
+- No way for customers to update shipping address without contacting support
+- `customer.updated` webhook syncs billing address but not shipping
+
+**Proposed Solution**:
+
+- Add "Edit Shipping Address" button to SubscriptionsTab for each subscription
+- Open modal with address form pre-populated with current address
+- Create `/api/user/subscriptions/[id]/address` endpoint
+- Update: local Subscription record, pending Order records, Stripe subscription metadata
+
+**Tasks**:
+
+- [ ] Add EditAddressDialog component to SubscriptionsTab
+- [ ] Create PATCH `/api/user/subscriptions/[id]/address` endpoint
+- [ ] Update Subscription shipping fields in database
+- [ ] Update Stripe subscription metadata for future renewals
+- [ ] Update any PENDING orders linked to subscription
+- [ ] Add validation for required address fields
+
+**Acceptance Criteria**:
+
+- Customer can update shipping address from account page
+- Changes apply to subscription and all pending orders
+- Future renewal orders use updated address (via Stripe metadata)
+- Address validation prevents incomplete submissions
+
+**Test Flow Reference**:
+
+```
+6. Address Update Flow (Customer Self-Service)
+  Step: 6a - Customer clicks "Edit Address" on subscription
+  Step: 6b - Modal opens with current address pre-filled
+  Step: 6c - Customer submits updated address
+  Step: 6d - Subscription, pending orders, and Stripe metadata updated
+```
+
+---
+
+### Order History Ship To Column & Edit for Pending Orders
+
+**Status**: Backlog
+**Priority**: Medium
+**Description**: Add Ship To column to customer Order History page showing recipient name, phone, and address. Allow customers to edit Ship To info for orders with PENDING status.
+
+**Current State**:
+
+- Order History table shows: Order #, Date, Items, Status, Total
+- No shipping address/phone displayed in the table
+- Customers cannot edit shipping info after placing an order
+
+**Proposed Changes**:
+
+1. **Display**: Add "Ship To" column showing recipient name, phone, and address
+2. **Edit**: Add "Edit" button for PENDING orders that opens a modal to update shipping info
+
+**Tasks**:
+
+- [x] Add Ship To column to OrdersPageClient.tsx table
+- [x] Display recipientName, customerPhone, and shipping address
+- [ ] Create EditShipToDialog component for pending orders
+- [ ] Create PATCH `/api/user/orders/[id]/address` endpoint
+- [ ] Update Order shipping fields in database
+- [ ] Show "Edit" button only for PENDING orders
+- [ ] Validate address fields before saving
+
+**Acceptance Criteria**:
+
+- Ship To column visible in Order History (desktop view)
+- Phone number displayed when available
+- Edit button appears only for PENDING orders
+- Modal allows editing: recipient name, phone, street, city, state, postal code, country
+- Changes saved to database immediately
+- Updated address reflected in admin Orders page
+
+**Notes**:
+
+- This is separate from subscription shipping updates
+- Once order is shipped/picked up, address cannot be changed
+- Phone number can be used for delivery notifications (future feature)
+
+---
+
+### Refactor Stripe Webhook Handler
+
+**Status**: Backlog
+**Priority**: Medium
+**Description**: The `app/api/webhooks/stripe/route.ts` file has grown to ~2000 lines with complex nested logic. Refactor into smaller, maintainable handler functions.
+
+**Current Issues**:
+
+- Single 2000-line file handling all webhook events
+- Duplicated logic between `checkout.session.completed` and `invoice.payment_succeeded`
+- Complex nested if/else and switch cases
+- Difficult to test individual handlers
+- Hard to trace event flow
+
+**Proposed Refactor**:
+
+```
+app/api/webhooks/stripe/
+├── route.ts                    # Main entry point, event routing
+├── handlers/
+│   ├── checkout-completed.ts   # checkout.session.completed
+│   ├── invoice-paid.ts         # invoice.payment_succeeded (renewals only)
+│   ├── subscription-updated.ts # customer.subscription.updated
+│   ├── subscription-deleted.ts # customer.subscription.deleted
+│   └── customer-updated.ts     # customer.updated
+├── utils/
+│   ├── payment-ids.ts          # Extract payment IDs from invoice
+│   ├── order-utils.ts          # Create orders, update orders
+│   └── subscription-utils.ts   # Create/update subscription records
+└── types.ts                    # Shared webhook types
+```
+
+**Tasks**:
+
+- [ ] Extract each case handler into separate file
+- [ ] Create shared utility functions for common operations
+- [ ] Remove duplicate logic (checkout vs invoice handlers)
+- [ ] Simplify `invoice.payment_succeeded` to only handle renewals
+- [ ] Add unit tests for individual handlers
+- [ ] Document event flow and handler responsibilities
+
+**Acceptance Criteria**:
+
+- Each webhook event has dedicated handler file
+- No duplicated business logic
+- Easy to trace which handler processes which event
+- Unit tests for each handler
+- Main route.ts under 100 lines
 
 ---
 

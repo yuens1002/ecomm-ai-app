@@ -37,7 +37,7 @@ For Vercel deployment, add these in:
 
 Webhooks handle post-payment events like order fulfillment.
 
-#### Local Testing with Stripe CLI:
+#### Local Testing with Stripe CLI
 
 ```text
 
@@ -55,7 +55,7 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
 ```
 
-#### Production Setup:
+#### Production Setup
 
 1. Go to [Stripe Dashboard → Webhooks](https://dashboard.stripe.com/webhooks)
 2. Click **Add endpoint**
@@ -69,8 +69,10 @@ STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
    - `customer.subscription.deleted`
 5. Copy the **Signing secret** (starts with `whsec_`)
 6. Add to your production environment variables:
+
    ```env
    STRIPE_WEBHOOK_SECRET=whsec_your_production_secret_here
+
 ```
 
 ### 4. Test the Integration
@@ -81,18 +83,18 @@ STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
    npm run dev
 ```
 
-2. Add items to cart
+1. Add items to cart
 
-3. Click "Proceed to Checkout"
+2. Click "Proceed to Checkout"
 
-4. Use Stripe test card:
+3. Use Stripe test card:
 
    - Card number: `4242 4242 4242 4242`
    - Expiry: Any future date (e.g., `12/34`)
    - CVC: Any 3 digits (e.g., `123`)
    - ZIP: Any 5 digits (e.g., `12345`)
 
-5. Complete checkout and verify:
+4. Complete checkout and verify:
    - Redirected to success page
    - Cart cleared
    - Webhook received (check terminal logs)

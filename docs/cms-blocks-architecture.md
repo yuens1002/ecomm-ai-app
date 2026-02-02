@@ -299,6 +299,7 @@ This pattern:
        // ...
      }),
    });
+
 ```
 
 2. **Add to discriminated union**:
@@ -310,10 +311,11 @@ This pattern:
    ]);
 ```
 
-3. **Export type**:
+1. **Export type**:
 
    ```typescript
    export type NewBlock = z.infer<typeof newBlockSchema>;
+
 ```
 
 4. **Add to BLOCK_TYPES and BLOCK_METADATA**

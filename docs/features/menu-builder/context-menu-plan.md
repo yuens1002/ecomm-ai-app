@@ -24,7 +24,7 @@ Right-click context menus for table views providing quick actions and mobile DnD
 
 ## Actions by View & Entity
 
-**Action Order:** manage-* → clone → remove → visibility → move-* → delete
+**Action Order:** manage-*→ clone → remove → visibility → move-* → delete
 
 ### Label
 
@@ -98,6 +98,7 @@ Right-click context menus for table views providing quick actions and mobile DnD
 ## Bulk Selection
 
 When multiple items selected:
+
 - Bulk-compatible actions operate on all selected
 - Labels reflect plurality ("Delete 3 categories")
 - Move Up/Down hidden (single item only)
@@ -129,6 +130,7 @@ When multiple items selected:
 ## Implementation Phases
 
 ### Phase 1: Setup & Server Actions ✅ COMPLETE
+
 - [x] Verify shadcn context-menu installed
 - [x] Create `reorderLabel` action (uses existing reorderLabels)
 - [x] Create `reorderCategory` action (uses existing)
@@ -137,11 +139,13 @@ When multiple items selected:
 - [x] Add to `useProductMenuMutations`
 
 **Validation:**
+
 - [x] Server actions work via direct calls
 - [x] Order field updates correctly
 - [x] SWR revalidates after mutation
 
 ### Phase 2: RowContextMenu Component ✅ COMPLETE
+
 - [x] Create `RowContextMenu.tsx` in `shared/cells/`
 - [x] Props: `entityKind`, `viewType`, `entityId`, `isVisible`, `position`
 - [x] Map view+entity to available actions
@@ -150,12 +154,14 @@ When multiple items selected:
 - [x] Add ContextMenuSub for "Categories" (label entity)
 
 **Validation:**
+
 - [x] Menu renders on right-click
 - [x] Correct actions shown per view/entity
 - [x] Disabled states work
 - [x] Switch toggles visibility
 
 ### Phase 3: Table View Integration ✅ COMPLETE
+
 - [x] Add to `AllLabelsTableView`
 - [x] Add to `AllCategoriesTableView`
 - [x] Add to `MenuTableView`
@@ -163,12 +169,14 @@ When multiple items selected:
 - [x] Add to `CategoryTableView`
 
 **Validation:**
+
 - [x] Context menu works in all views
 - [x] Actions execute correctly
 - [x] Undo/redo integration works
 - [x] Toast notifications show
 
 ### Phase 4: Hooks Refactoring ✅ COMPLETE
+
 - [x] Extract `useContextRowHighlight` - Row highlighting state
 - [x] Extract `useMoveHandlers` - Move up/down with unified flat/nested pattern
 - [x] Extract `useBulkAction` - Bulk operation executor with `getTargetIds`
@@ -181,6 +189,7 @@ When multiple items selected:
 - [x] Align consumers with `CONTEXT_MENU_CONFIG` spec
 
 **Validation:**
+
 - [x] All hooks tested
 - [x] TypeScript compiles
 - [x] Consumers use hooks consistently
@@ -190,6 +199,7 @@ When multiple items selected:
 ## Files
 
 ### New Files
+
 - `menu-builder/components/table-views/shared/cells/RowContextMenu.tsx`
 - `hooks/context-menu/` - Shared handler hooks:
   - `useContextRowHighlight.ts`
@@ -204,6 +214,7 @@ When multiple items selected:
   - `index.ts` (barrel export)
 
 ### Modified Files
+
 - `AllLabelsTableView.tsx` - Uses context menu hooks
 - `AllCategoriesTableView.tsx` - Uses context menu hooks
 - `MenuTableView.tsx` - Uses context menu hooks
@@ -238,6 +249,7 @@ const CONTEXT_MENU_CONFIG: Record<ViewEntityKey, ContextMenuActionId[]> = {
 ```
 
 **Why not per-view only:**
+
 - MenuTableView has hierarchical entities (labels + categories) needing different menus per level
 - Label view can have categories attached - different actions needed
 - Category view manages products - different entity = different actions
@@ -255,6 +267,7 @@ const CONTEXT_MENU_CONFIG: Record<ViewEntityKey, ContextMenuActionId[]> = {
 | Right-click item IN selection (count>1) | Bulk mode on all selected items |
 
 **Implementation:**
+
 ```typescript
 
 // Bulk mode detection
@@ -269,6 +282,7 @@ const showCount = isBulkMode; // Only show counts when bulk
 When context menu opens, highlight the right-clicked row distinctly from selection.
 
 **TableRow props:**
+
 ```text
 
 isSelected?: boolean;      // Selection highlight (primary border, accent bg)
@@ -276,6 +290,7 @@ isContextRow?: boolean;    // Context menu highlight (muted border, muted bg)
 ```
 
 **Styling (in TableRow.tsx):**
+
 ```text
 
 isSelected
@@ -286,6 +301,7 @@ isSelected
 ```
 
 **Usage in table view:**
+
 ```typescript
 
 const [contextRowId, setContextRowId] = useState<string | null>(null);
@@ -302,12 +318,14 @@ const [contextRowId, setContextRowId] = useState<string | null>(null);
 When selection contains mixed entity types, show disabled menu with explanation.
 
 **Detection:**
+
 ```typescript
 
 const isMixedSelection = actionableRoots.length > 0 && !isSameKind;
 ```
 
 **Disabled menu UI:**
+
 ```tsx
 
 {isMixedSelection && isInSelection && (
@@ -332,6 +350,7 @@ const isMixedSelection = actionableRoots.length > 0 && !isSameKind;
 Actions define whether they support bulk operations. Non-bulk actions are **hidden** (not disabled) in bulk mode.
 
 **Action definition:**
+
 ```typescript
 
 const CONTEXT_MENU_ACTIONS: Record<ContextMenuActionId, ContextMenuAction> = {
@@ -344,6 +363,7 @@ const CONTEXT_MENU_ACTIONS: Record<ContextMenuActionId, ContextMenuAction> = {
 ```
 
 **Filtering:**
+
 ```typescript
 
 const actionIds = isBulkMode
@@ -377,15 +397,18 @@ const renderLabel = (label: string) => {
 ### Relationship Management Submenus
 
 Both `manage-categories` and `manage-labels` actions show submenus with:
+
 - **Search bar** at top (sticky, filters results)
 - **Added** section: items currently attached (checked)
 - **Available** section: items not yet attached (unchecked)
 
 **Icons:**
+
 - `manage-categories`: `FileSpreadsheet` (matches nav icon)
 - `manage-labels`: `Tags`
 
 **Search state management:**
+
 ```typescript
 
 // Search state resets when menu closes
@@ -397,6 +420,7 @@ const handleOpenChange = React.useCallback((open: boolean) => {
 ```
 
 **Sectioning with search filter:**
+
 ```typescript
 
 const searchLower = categorySearch.toLowerCase();
@@ -410,6 +434,7 @@ const addedCategories = filteredCategories
 ```
 
 **Rendering:**
+
 ```typescript
 
 <ContextMenuSub>
@@ -444,6 +469,7 @@ Reusable component for both dropdown and context menu checkbox lists.
 **Location:** `menu-builder/components/shared/CheckboxListContent.tsx`
 
 **Props:**
+
 ```typescript
 
 type CheckboxListContentProps = {
@@ -478,6 +504,7 @@ import { Kbd } from "@/components/ui/kbd";
 ```
 
 **Shortcut formatting (platform-aware):**
+
 ```typescript
 
 function formatKbd(kbd: string[] | undefined, isMac: boolean): string | undefined {
@@ -521,6 +548,7 @@ function formatKbd(kbd: string[] | undefined, isMac: boolean): string | undefine
 ### Action Grouping
 
 Actions are grouped with separators:
+
 1. **Main actions** (clone, visibility, remove, manage-categories)
 2. **Move actions** (move-up, move-down, move-to)
 3. **Delete action** (destructive, always last)

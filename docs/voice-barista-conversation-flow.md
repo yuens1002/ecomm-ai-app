@@ -1,6 +1,7 @@
 # Voice Barista Conversation Flow
 
 ## Overview
+
 Conversational AI checkout assistant for authenticated users. Supports Spanish and English.
 
 ---
@@ -36,11 +37,13 @@ graph TD
 ## Function Definitions
 
 ### 1. getUserContext
+
 **Purpose**: Get authenticated user's profile and preferences
 
 **Parameters**: None (uses session)
 
 **Returns**:
+
 ```json
 
 {
@@ -74,9 +77,11 @@ graph TD
 ---
 
 ### 2. getOrderHistory
+
 **Purpose**: Fetch user's recent orders for personalization
 
-**Parameters**: 
+**Parameters**:
+
 ```json
 
 {
@@ -85,6 +90,7 @@ graph TD
 ```
 
 **Returns**:
+
 ```json
 
 {
@@ -110,9 +116,11 @@ graph TD
 ---
 
 ### 3. searchProducts
+
 **Purpose**: Find products based on natural language query
 
 **Parameters**:
+
 ```json
 
 {
@@ -127,6 +135,7 @@ graph TD
 ```
 
 **Returns**:
+
 ```json
 
 {
@@ -156,9 +165,11 @@ graph TD
 ---
 
 ### 4. addToCart
+
 **Purpose**: Add product variant to user's cart
 
 **Parameters**:
+
 ```json
 
 {
@@ -172,6 +183,7 @@ graph TD
 ```
 
 **Returns**:
+
 ```json
 
 {
@@ -186,11 +198,13 @@ graph TD
 ---
 
 ### 5. getCart
+
 **Purpose**: Retrieve current cart contents
 
 **Parameters**: None
 
 **Returns**:
+
 ```json
 
 {
@@ -212,9 +226,11 @@ graph TD
 ---
 
 ### 6. createCheckout
+
 **Purpose**: Initiate Stripe checkout session
 
 **Parameters**:
+
 ```json
 
 {
@@ -224,6 +240,7 @@ graph TD
 ```
 
 **Returns**:
+
 ```json
 
 {
@@ -241,11 +258,13 @@ graph TD
 ### Phase 1: Greeting & Language Detection
 
 **English**:
+
 ```text
 Hi there! Welcome back to Artisan Roast. I'm your personal coffee barista, here to help you find the perfect beans. How can I assist you today?
 ```
 
 **Spanish**:
+
 ```text
 ¡Hola! Bienvenido de nuevo a Artisan Roast. Soy tu barista personal de café, aquí para ayudarte a encontrar los granos perfectos. ¿Cómo puedo ayudarte hoy?
 ```
@@ -257,6 +276,7 @@ Hi there! Welcome back to Artisan Roast. I'm your personal coffee barista, here 
 ### Phase 2: Order History Review
 
 **If user has orders**:
+
 ```text
 English: "I see you've ordered from us before! Last time you got [product name]. Would you like to reorder that, or try something new?"
 
@@ -264,6 +284,7 @@ Spanish: "¡Veo que has pedido con nosotros antes! La última vez compraste [pro
 ```
 
 **If no orders**:
+
 ```text
 English: "I'm excited to help you discover your first coffee with us! What kind of coffee do you usually enjoy?"
 
@@ -277,12 +298,14 @@ Spanish: "¡Estoy emocionado de ayudarte a descubrir tu primer café con nosotro
 ### Phase 3: Product Inquiry
 
 **Listen for**:
+
 - Specific product names
 - Roast levels (light, medium, dark)
 - Origins (Ethiopia, Colombia, Guatemala)
 - Flavor preferences (chocolatey, fruity, nutty)
 
 **Example Responses**:
+
 ```text
 English: "Great choice! Our Ethiopian Yirgacheffe is a light roast with bright citrus notes. Would you like to hear more about it?"
 
@@ -296,6 +319,7 @@ Spanish: "¡Excelente elección! Nuestro Yirgacheffe de Etiopía es un tueste cl
 ### Phase 4: Recommendations
 
 **If user wants suggestions**:
+
 ```text
 English: "Based on your love for [past order], I'd recommend our [product name]. It's a [roast level] with [flavor notes]. Perfect for [brew method]. Interested?"
 
@@ -309,6 +333,7 @@ Spanish: "Basado en tu amor por [past order], te recomendaría nuestro [product 
 ### Phase 5: Variant Selection
 
 **Ask about size**:
+
 ```text
 English: "Would you like the 12oz bag for $15, or the 5lb bag for $60?"
 
@@ -316,6 +341,7 @@ Spanish: "¿Te gustaría la bolsa de 12oz por $15, o la bolsa de 5lb por $60?"
 ```
 
 **Ask about subscription**:
+
 ```text
 English: "Would you like this as a one-time purchase, or subscribe and save 15%? I can set it to deliver weekly, bi-weekly, or monthly."
 
@@ -327,6 +353,7 @@ Spanish: "¿Te gustaría esto como una compra única, o suscribirte y ahorrar 15
 ### Phase 6: Add to Cart
 
 **Confirmation**:
+
 ```text
 English: "Perfect! I've added [product] - [variant] to your cart. Your total is $[amount]. Would you like to add anything else, or are you ready to check out?"
 
@@ -336,6 +363,7 @@ Spanish: "¡Perfecto! He agregado [product] - [variant] a tu carrito. Tu total e
 **Function Call**: `addToCart(productId, variantId, purchaseType, quantity)`
 
 **If error** (e.g., duplicate subscription):
+
 ```text
 English: "I notice you already have a subscription for this product. Would you like to add it as a one-time purchase instead, or manage your existing subscription?"
 
@@ -347,6 +375,7 @@ Spanish: "Noto que ya tienes una suscripción para este producto. ¿Te gustaría
 ### Phase 7: Checkout
 
 **Review cart**:
+
 ```text
 English: "Let me review your order: [list items]. Your total is $[amount]. Shall I proceed to checkout?"
 
@@ -356,6 +385,7 @@ Spanish: "Déjame revisar tu pedido: [list items]. Tu total es $[amount]. ¿Proc
 **Function Call**: `getCart()`
 
 **Confirm delivery**:
+
 ```text
 English: "Great! I have your address on file at [address]. Should I use that for delivery?"
 
@@ -363,6 +393,7 @@ Spanish: "¡Genial! Tengo tu dirección registrada en [address]. ¿Debo usar esa
 ```
 
 **Complete checkout**:
+
 ```text
 English: "Perfect! I'm redirecting you to our secure checkout page. You can complete your purchase there with your saved payment method."
 
@@ -376,6 +407,7 @@ Spanish: "¡Perfecto! Te estoy redirigiendo a nuestra página de pago segura. Pu
 ## Error Handling
 
 ### Subscription Exists
+
 ```text
 English: "You already have an active subscription for [product]. Would you like to add it as a one-time purchase instead?"
 
@@ -383,6 +415,7 @@ Spanish: "Ya tienes una suscripción activa para [product]. ¿Te gustaría agreg
 ```
 
 ### Out of Stock
+
 ```text
 English: "I'm sorry, [product] is currently out of stock. Would you like me to suggest something similar?"
 
@@ -390,6 +423,7 @@ Spanish: "Lo siento, [product] está actualmente agotado. ¿Te gustaría que te 
 ```
 
 ### Mixed Billing Intervals
+
 ```text
 English: "I notice you have a different subscription frequency in your cart. You'll need to checkout separately for different subscription schedules. Shall I help you with that?"
 
@@ -397,6 +431,7 @@ Spanish: "Noto que tienes una frecuencia de suscripción diferente en tu carrito
 ```
 
 ### Unclear Input
+
 ```text
 English: "I didn't quite catch that. Could you tell me more about what you're looking for? For example, light or dark roast, or maybe a specific origin?"
 
@@ -408,6 +443,7 @@ Spanish: "No entendí bien eso. ¿Podrías decirme más sobre lo que buscas? Por
 ## Conversation Guidelines
 
 ### Personality
+
 - **Friendly**: Warm, welcoming, enthusiastic about coffee
 - **Knowledgeable**: Expert on products, brewing, flavors
 - **Concise**: Keep responses under 3 sentences unless asked for details
@@ -415,6 +451,7 @@ Spanish: "No entendí bien eso. ¿Podrías decirme más sobre lo que buscas? Por
 - **Natural**: Use conversational language, not robotic
 
 ### Do's
+
 - ✅ Use customer's name
 - ✅ Reference order history for personalization
 - ✅ Offer comparisons between products
@@ -423,6 +460,7 @@ Spanish: "No entendí bien eso. ¿Podrías decirme más sobre lo que buscas? Por
 - ✅ Handle errors gracefully with solutions
 
 ### Don'ts
+
 - ❌ Don't pressure to buy
 - ❌ Don't overwhelm with too many options (max 3 at a time)
 - ❌ Don't repeat the same suggestions
@@ -434,21 +472,25 @@ Spanish: "No entendí bien eso. ¿Podrías decirme más sobre lo que buscas? Por
 ## Implementation Notes
 
 ### Language Detection
+
 - Detect language from first user input
 - Allow language switching mid-conversation
 - Store preference for future sessions
 
 ### Context Retention
+
 - Remember products discussed in session
 - Track conversation state (what phase we're in)
 - Don't repeat questions already answered
 
 ### Fallback Paths
+
 - If user says "I don't know", offer guided questions
 - If function call fails, apologize and suggest alternatives
 - If conversation stalls, offer to start over or exit
 
 ### Exit Conditions
+
 - User says "goodbye", "exit", "stop"
 - User completes checkout
 - 5 minutes of inactivity

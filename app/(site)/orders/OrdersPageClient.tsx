@@ -28,6 +28,173 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageContainer } from "@/components/shared/PageContainer";
 
+// --- Shared Helper Functions ---
+
+function getStatusColor(status: string) {
+  switch (status) {
+    case "PENDING":
+      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+    case "SHIPPED":
+    case "PICKED_UP":
+      return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+    case "CANCELLED":
+      return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+    case "FAILED":
+      return "bg-red-200 text-red-900 dark:bg-red-900/50 dark:text-red-300";
+    default:
+      return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
+  }
+}
+
+function getStatusLabel(status: string) {
+  switch (status) {
+    case "PICKED_UP":
+      return "Picked Up";
+    case "CANCELLED":
+      return "Canceled";
+    case "FAILED":
+      return "Failed";
+    default:
+      return status.charAt(0) + status.slice(1).toLowerCase();
+  }
+}
+
+function formatPrice(priceInCents: number) {
+  return `$${(priceInCents / 100).toFixed(2)}`;
+}
+
+// --- Shared Components ---
+
+function StatusBadge({ status }: { status: string }) {
+  return (
+    <span
+      className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(status)}`}
+    >
+      {getStatusLabel(status)}
+    </span>
+  );
+}
+
+function OrderItemsList({ items }: { items: OrderItemWithDetails[] }) {
+  return (
+    <div className="space-y-2">
+      {items.map((item, idx) => (
+        <div key={item.id}>
+          <div className="text-sm">
+            <Link
+              href={`/products/${item.purchaseOption.variant.product.slug}`}
+              className="text-text-base hover:text-primary"
+            >
+              {item.purchaseOption.variant.product.name}
+            </Link>
+          </div>
+          <div className="text-xs text-text-muted">
+            {item.purchaseOption.variant.name} •{" "}
+            {item.purchaseOption.type === "SUBSCRIPTION"
+              ? "Subscription"
+              : "One-time"}{" "}
+            • Qty: {item.quantity}
+          </div>
+          {idx < items.length - 1 && (
+            <div className="border-t border-border mt-2 pt-2" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ShipToInfo({
+  order,
+  variant = "default",
+}: {
+  order: OrderWithItems;
+  variant?: "default" | "card";
+}) {
+  if (order.deliveryMethod !== "DELIVERY" || !order.shippingStreet) {
+    return (
+      <span className="text-text-muted italic text-sm">Store Pickup</span>
+    );
+  }
+
+  const content = (
+    <>
+      {order.recipientName && (
+        <div className="font-medium">{order.recipientName}</div>
+      )}
+      {order.customerPhone && (
+        <div className="text-text-muted">{order.customerPhone}</div>
+      )}
+      <div className="text-text-muted">
+        {order.shippingStreet}
+        {variant === "card" && `, ${order.shippingCity}, ${order.shippingState} ${order.shippingPostalCode}`}
+      </div>
+      {variant === "default" && (
+        <div className="text-text-muted">
+          {order.shippingCity}, {order.shippingState} {order.shippingPostalCode}
+        </div>
+      )}
+    </>
+  );
+
+  if (variant === "card") {
+    return (
+      <div className="text-sm bg-muted/30 rounded-md p-3">
+        <div className="text-xs text-text-muted uppercase tracking-wide mb-1">
+          Ship To
+        </div>
+        {content}
+      </div>
+    );
+  }
+
+  return <div className="text-sm">{content}</div>;
+}
+
+function CancelOrderDialog({
+  orderId,
+  isLoading,
+  onCancel,
+}: {
+  orderId: string;
+  isLoading: boolean;
+  onCancel: (orderId: string) => void;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="outline" size="sm" disabled={isLoading}>
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <span>Cancel Order</span>
+          )}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cancel Order #{orderId.slice(-8)}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will immediately cancel your order and process a full refund to
+            your original payment method. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep Order</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => onCancel(orderId)}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Cancel Order & Refund
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+// --- Main Component ---
+
 interface OrdersPageClientProps {
   statusFilter?: string;
 }
@@ -94,39 +261,6 @@ export default function OrdersPageClient({
       alert(err instanceof Error ? err.message : "Failed to cancel order");
     } finally {
       setCancellingOrderId(null);
-    }
-  };
-
-  const formatPrice = (priceInCents: number) => {
-    return `$${(priceInCents / 100).toFixed(2)}`;
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "PENDING":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
-      case "SHIPPED":
-      case "PICKED_UP":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-      case "CANCELLED":
-        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
-      case "FAILED":
-        return "bg-red-200 text-red-900 dark:bg-red-900/50 dark:text-red-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "PICKED_UP":
-        return "Picked Up";
-      case "CANCELLED":
-        return "Canceled";
-      case "FAILED":
-        return "Failed";
-      default:
-        return status.charAt(0) + status.slice(1).toLowerCase();
     }
   };
 
@@ -199,145 +333,109 @@ export default function OrdersPageClient({
         </Card>
       ) : (
         <Card>
-          <div className="hidden md:block">
+          {/* Desktop Table Header - only on lg screens */}
+          <div className="hidden lg:block">
             <CardHeader className="pb-3">
-              <div className="grid grid-cols-12 gap-4 font-semibold text-sm text-text-muted">
-                <div className="col-span-2">Order</div>
-                <div className="col-span-2">Date</div>
-                <div className="col-span-2">Item(s)</div>
-                <div className="col-span-2 text-center">Status</div>
-                <div className="col-span-2 text-right">Total</div>
-                <div className="col-span-2 text-right"></div>
+              <div className="grid grid-cols-7 gap-x-[6em] font-semibold text-sm text-text-muted">
+                <div>Order</div>
+                <div>Date</div>
+                <div>Item(s)</div>
+                <div>Ship To</div>
+                <div className="text-right">Total</div>
+                <div className="text-center">Status</div>
+                <div className="text-right"></div>
               </div>
             </CardHeader>
           </div>
           <CardContent className="p-0">
             <div className="divide-y">
-              {filteredOrders.map((order, index) => (
-                <div
-                  key={order.id}
-                  className={`grid grid-cols-1 md:grid-cols-12 gap-4 hover:bg-muted/50 transition-colors md:items-center ${
-                    index === 0 ? "pt-0 md:p-4 pb-4 px-4" : "p-4"
-                  }`}
-                >
-                  {/* Status - Mobile First */}
-                  <div className="col-span-1 md:col-span-2 md:order-4 md:text-center">
-                    <span
-                      className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                        order.status
-                      )}`}
-                    >
-                      {getStatusLabel(order.status)}
-                    </span>
-                  </div>
-
-                  {/* Order Number - Mobile Second */}
-                  <div className="col-span-1 md:col-span-2 md:order-1">
-                    <h2 className="md:hidden text-lg font-semibold">
-                      <Link
-                        href={`/orders/${order.id}`}
-                        className="text-primary hover:underline"
-                      >
-                        #{order.id.slice(-8)}
-                      </Link>
-                    </h2>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      asChild
-                      className="hidden md:inline-flex"
-                    >
-                      <Link href={`/orders/${order.id}`}>
-                        #{order.id.slice(-8)}
-                      </Link>
-                    </Button>
-                  </div>
-
-                  {/* Date - Desktop Only */}
-                  <div className="hidden md:block md:col-span-2 md:order-2">
-                    <div className="text-sm text-text-muted">
-                      {format(new Date(order.createdAt), "MMM d, yyyy")}
+              {filteredOrders.map((order) => (
+                <div key={order.id}>
+                  {/* Mobile/Tablet Card Layout */}
+                  <div className="lg:hidden p-4 space-y-3">
+                    {/* Header Row: Status, Order #, Date */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <StatusBadge status={order.status} />
+                        <Link
+                          href={`/orders/${order.id}`}
+                          className="text-primary hover:underline font-semibold"
+                        >
+                          #{order.id.slice(-8)}
+                        </Link>
+                      </div>
+                      <div className="text-sm text-text-muted">
+                        {format(new Date(order.createdAt), "MMM d, yyyy")}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Items - Mobile Third */}
-                  <div className="col-span-1 md:col-span-2 md:order-3">
-                    <div className="space-y-2">
-                      {order.items.map(
-                        (item: OrderItemWithDetails, idx: number) => (
-                          <div key={item.id}>
-                            <div className="text-sm">
-                              <Link
-                                href={`/products/${item.purchaseOption.variant.product.slug}`}
-                                className="text-text-base hover:text-primary"
-                              >
-                                {item.purchaseOption.variant.product.name}
-                              </Link>
-                            </div>
-                            <div className="text-xs text-text-muted">
-                              {item.purchaseOption.variant.name} •{" "}
-                              {item.purchaseOption.type === "SUBSCRIPTION"
-                                ? "Subscription"
-                                : "One-time"}{" "}
-                              • Qty: {item.quantity}
-                            </div>
-                            {idx < order.items.length - 1 && (
-                              <div className="border-t border-border mt-2 pt-2" />
-                            )}
-                          </div>
-                        )
+                    {/* Items */}
+                    <OrderItemsList items={order.items} />
+
+                    {/* Ship To */}
+                    <ShipToInfo order={order} variant="card" />
+
+                    {/* Footer Row: Total and Actions */}
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="font-semibold text-lg">
+                        {formatPrice(order.totalInCents)}
+                      </div>
+                      {order.status === "PENDING" && (
+                        <CancelOrderDialog
+                          orderId={order.id}
+                          isLoading={cancellingOrderId === order.id}
+                          onCancel={handleCancelOrder}
+                        />
                       )}
                     </div>
                   </div>
 
-                  {/* Total - Desktop Only */}
-                  <div className="hidden md:block md:col-span-2 md:order-5 md:text-right">
-                    <div className="font-semibold">
+                  {/* Desktop Table Row - only on lg screens */}
+                  <div className="hidden lg:grid grid-cols-7 gap-x-[6em] p-4 hover:bg-muted/50 transition-colors items-center">
+                    {/* Order */}
+                    <div>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/orders/${order.id}`}>
+                          #{order.id.slice(-8)}
+                        </Link>
+                      </Button>
+                    </div>
+
+                    {/* Date */}
+                    <div className="text-sm text-text-muted">
+                      {format(new Date(order.createdAt), "MMM d, yyyy")}
+                    </div>
+
+                    {/* Items */}
+                    <div>
+                      <OrderItemsList items={order.items} />
+                    </div>
+
+                    {/* Ship To */}
+                    <div>
+                      <ShipToInfo order={order} />
+                    </div>
+
+                    {/* Total */}
+                    <div className="text-right font-semibold">
                       {formatPrice(order.totalInCents)}
                     </div>
-                  </div>
 
-                  {/* Actions - Mobile Fourth (Cancel Button Only) */}
-                  <div className="col-span-1 md:col-span-2 md:order-6 flex items-center justify-start md:justify-end">
-                    {order.status === "PENDING" && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full md:w-auto"
-                            disabled={cancellingOrderId === order.id}
-                          >
-                            {cancellingOrderId === order.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <span>Cancel Order</span>
-                            )}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              Cancel Order #{order.id.slice(-8)}?
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will immediately cancel your order and
-                              process a full refund to your original payment
-                              method. This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Keep Order</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleCancelOrder(order.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Cancel Order & Refund
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
+                    {/* Status */}
+                    <div className="text-center">
+                      <StatusBadge status={order.status} />
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex justify-end">
+                      {order.status === "PENDING" && (
+                        <CancelOrderDialog
+                          orderId={order.id}
+                          isLoading={cancellingOrderId === order.id}
+                          onCancel={handleCancelOrder}
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

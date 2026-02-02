@@ -76,6 +76,7 @@ Have an idea? [Open a discussion](https://github.com/yuens1002/ecomm-ai-app/disc
 Look for issues labeled [`good first issue`](https://github.com/yuens1002/ecomm-ai-app/labels/good%20first%20issue). These are specifically chosen to be approachable for new contributors.
 
 Other ways to help:
+
 - **Documentation** - Fix typos, clarify confusing sections, add examples
 - **Accessibility** - Audit and improve a11y (keyboard nav, screen readers, ARIA)
 - **Testing** - Add test coverage for untested code paths
@@ -281,6 +282,7 @@ chore: update dependencies
 ## Recognition
 
 Contributors are recognized in:
+
 - The GitHub contributors graph
 - Release notes for significant contributions
 - A future Contributors page on the site

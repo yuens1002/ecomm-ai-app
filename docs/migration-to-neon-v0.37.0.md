@@ -26,7 +26,7 @@ npm run db:backup
 ## Step 2: Set Up Neon Database
 
 1. **Create Neon Project** (if not already done):
-   - Go to https://console.neon.tech
+   - Go to <https://console.neon.tech>
    - Create a new project
    - Select your preferred region (closest to your users)
    - Note the connection string
@@ -54,7 +54,7 @@ DATABASE_ADAPTER="neon"
 # These are automatically detected when the URL contains "neon.tech"
 ```
 
-2. **Environment-Specific Settings**:
+1. **Environment-Specific Settings**:
 
 ```env
 # Development
@@ -181,7 +181,7 @@ git push origin main
 npm run build
 ```
 
-2. Start production server:
+1. Start production server:
 
 ```bash
 
@@ -302,8 +302,8 @@ npm run dev
 
 ## Support Resources
 
-- **Neon Docs**: https://neon.tech/docs
-- **Prisma Docs**: https://www.prisma.io/docs
+- **Neon Docs**: <https://neon.tech/docs>
+- **Prisma Docs**: <https://www.prisma.io/docs>
 - **Project Backups**: `dev-tools/backups/`
 - **Seed Documentation**: `prisma/seed/README.md`
 

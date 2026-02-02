@@ -395,6 +395,7 @@ DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
    ```powershell
    npm run db:backup
    npx prisma migrate dev --name your_migration
+
 ```
 
 2. **Keep multiple backups**

@@ -711,10 +711,10 @@ Before implementing, confirm:
 
 ## 🚀 Nextshared/table/ compositional components (TableHeader, TableRow, TableCell)
 
-3. Create shared/cells/ components (CheckboxCell, InlineNameEditor, VisibilityCell)
-4. Create `AllCategoriesTableView.tsx` using shared table components
-5. Test table rendering with real data
-6. Test action bar integration (buttons should work with selection)
+1. Create shared/cells/ components (CheckboxCell, InlineNameEditor, VisibilityCell)
+2. Create `AllCategoriesTableView.tsx` using shared table components
+3. Test table rendering with real data
+4. Test action bar integration (buttons should work with selection)
 
 **Implementation order:**
 
@@ -722,9 +722,9 @@ Before implementing, confirm:
 - ✅ Cell components second (building blocks)
 - ✅ AllCategoriesTableView last (composi
 
-3. Create 3 shared components (CheckboxCell, InlineNameEditor, VisibilityCell)
-4. Test table rendering with real data
-5. Test action bar integration (buttons should work with selection)
+1. Create 3 shared components (CheckboxCell, InlineNameEditor, VisibilityCell)
+2. Test table rendering with real data
+3. Test action bar integration (buttons should work with selection)
 
 ---
 
