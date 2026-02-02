@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.80.0 - 2026-02-02
+
+### Features
+
+- **Admin Subscription Management**: New admin page to manage customer subscriptions
+  - Skip next billing period, resume paused subscriptions, cancel at period end
+  - Server Actions pattern (no API routes) following Next.js 16 best practices
+  - Status filtering tabs and shipping address display
+- **User Subscription Self-Service**: Customers can manage their own subscriptions
+  - Skip delivery, resume, and cancel from account page
+  - Clear status indicators and next billing date display
+- **Order History Improvements**: Ship To column with responsive layout
+  - Displays recipient name, phone, and address
+  - Mobile card view and desktop table view
+  - Extracted shared components for DRY code
+- **Duplicate Subscription Prevention**: Block checkout if user already has active subscription for same product variant
+
+### Fixes
+
+- Fixed Stripe duplicate shipping rates error in checkout
+- Allow multiple renewal orders per subscription
+- DATABASE_URL fallback for prisma generate during npm install
+- Resolved @auth/core peer dependency conflict with nodemailer v7
+- Added Prisma mock to search API tests
+- Resolved all ESLint warnings
+
+### Infrastructure
+
+- Added phone fields to Order and User models
+- Added pausedUntil field to Subscription model
+- Added stripeChargeId and stripeInvoiceId to Order model
+- New database migrations for schema changes
+
 ## 0.79.0 - 2026-01-31
 
 ### Improvements
