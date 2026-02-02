@@ -3,36 +3,91 @@
  * Release script for Artisan Roast
  *
  * Usage:
- *   npm run release:patch   # 0.76.0 → 0.76.1
- *   npm run release:minor   # 0.76.0 → 0.77.0
- *   npm run release:major   # 0.76.0 → 1.0.0
+ *   Interactive mode:
+ *     npm run release:patch
+ *     npm run release:minor
+ *
+ *   Non-interactive (Claude-friendly):
+ *     npm run release:patch -- --yes --push
+ *     npm run release:minor -- -y --push --github-release --message "Add new feature"
+ *
+ * Flags:
+ *   --yes, -y           Skip confirmation prompts
+ *   --push              Push to origin after release
+ *   --github-release    Create GitHub Release (triggers upgrade notice in app)
+ *   --message, -m       Release message for changelog and tag
  *
  * What it does:
  *   1. Bumps version in package.json and lib/version.ts
- *   2. Shows commits since last tag (for changelog reference)
- *   3. Updates CHANGELOG.md with new version header
- *   4. Commits and creates annotated tag
- *   5. Optionally pushes to origin
+ *   2. Updates CHANGELOG.md with new version header
+ *   3. Commits and creates annotated git tag
+ *   4. Optionally pushes to origin
+ *   5. Optionally creates GitHub Release (this triggers upgrade notices!)
  */
 
 import { execSync } from "child_process";
 import { readFileSync, writeFileSync } from "fs";
 import { createInterface } from "readline";
 
-const rl = createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+// Parse CLI arguments
+const args = process.argv.slice(2);
+const bumpType = args.find((a) => ["patch", "minor", "major"].includes(a)) || "patch";
+const flags = {
+  yes: args.includes("--yes") || args.includes("-y"),
+  push: args.includes("--push"),
+  githubRelease: args.includes("--github-release"),
+  message: getArgValue("--message") || getArgValue("-m"),
+};
 
-const ask = (question: string): Promise<string> =>
-  new Promise((resolve) => rl.question(question, resolve));
+function getArgValue(flag: string): string | undefined {
+  const index = args.indexOf(flag);
+  if (index !== -1 && args[index + 1] && !args[index + 1].startsWith("-")) {
+    return args[index + 1];
+  }
+  return undefined;
+}
 
-const exec = (cmd: string) => execSync(cmd, { encoding: "utf-8" }).trim();
+// Readline for interactive mode
+let rl: ReturnType<typeof createInterface> | null = null;
 
-const run = (cmd: string) => {
+function getReadline() {
+  if (!rl) {
+    rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+  }
+  return rl;
+}
+
+function closeReadline() {
+  if (rl) {
+    rl.close();
+    rl = null;
+  }
+}
+
+const ask = (question: string): Promise<string> => {
+  if (flags.yes) {
+    console.log(`${question} (auto: y)`);
+    return Promise.resolve("y");
+  }
+  return new Promise((resolve) => getReadline().question(question, resolve));
+};
+
+// Cross-platform exec helpers
+function exec(cmd: string): string {
+  try {
+    return execSync(cmd, { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }).trim();
+  } catch {
+    return "";
+  }
+}
+
+function run(cmd: string) {
   console.log(`\n$ ${cmd}`);
   execSync(cmd, { stdio: "inherit" });
-};
+}
 
 type BumpType = "patch" | "minor" | "major";
 
@@ -54,20 +109,16 @@ function getCurrentVersion(): string {
 }
 
 function getLastTag(): string | null {
-  try {
-    return exec('git describe --tags --abbrev=0 2>/dev/null || echo ""') || null;
-  } catch {
-    return null;
-  }
+  // Cross-platform: use git directly without shell redirects
+  const tags = exec("git tag -l v* --sort=-v:refname");
+  if (!tags) return null;
+  const firstTag = tags.split("\n")[0];
+  return firstTag || null;
 }
 
 function getCommitsSinceTag(tag: string | null): string {
   const range = tag ? `${tag}..HEAD` : "HEAD~10..HEAD";
-  try {
-    return exec(`git log ${range} --oneline --no-decorate`);
-  } catch {
-    return "(no commits found)";
-  }
+  return exec(`git log ${range} --oneline --no-decorate`) || "(no commits found)";
 }
 
 function updatePackageJson(newVersion: string) {
@@ -86,31 +137,53 @@ function updateVersionTs(newVersion: string) {
   writeFileSync(path, content);
 }
 
-function updateChangelog(newVersion: string): string {
+function updateChangelog(newVersion: string, message?: string): string {
   const path = "CHANGELOG.md";
   const date = new Date().toISOString().split("T")[0];
   const header = `## ${newVersion} - ${date}`;
-  const template = `${header}
 
-### Features
--
-
-### Bug Fixes
--
-
-`;
+  // If message provided, use it directly; otherwise use template
+  const content_block = message
+    ? `${header}\n\n${message}\n\n`
+    : `${header}\n\n### Changes\n- \n\n`;
 
   let content = readFileSync(path, "utf-8");
-  content = content.replace("# Changelog\n\n", `# Changelog\n\n${template}`);
+  content = content.replace("# Changelog\n\n", `# Changelog\n\n${content_block}`);
   writeFileSync(path, content);
   return path;
 }
 
-async function main() {
-  const bumpType = (process.argv[2] as BumpType) || "patch";
+function createGitHubRelease(version: string, message?: string) {
+  const tag = `v${version}`;
+  const repo = "yuens1002/ecomm-ai-app";
+  const title = encodeURIComponent(`Release ${tag}`);
+  const body = encodeURIComponent(message || `Release ${tag}`);
 
+  // Use gh CLI if available (works cross-platform)
+  const ghAvailable = exec("gh --version");
+  if (ghAvailable) {
+    console.log("\n📦 Creating GitHub Release with gh CLI...");
+    const releaseBody = message || `Release ${tag}`;
+    try {
+      run(`gh release create ${tag} --title "Release ${tag}" --notes "${releaseBody.replace(/"/g, '\\"')}"`);
+      console.log(`\n✅ GitHub Release created: https://github.com/${repo}/releases/tag/${tag}`);
+      return true;
+    } catch (e) {
+      console.error("Failed to create release with gh CLI:", e);
+      return false;
+    }
+  }
+
+  // Fallback: print URL for manual creation
+  const url = `https://github.com/${repo}/releases/new?tag=${tag}&title=${title}&body=${body}`;
+  console.log("\n📦 To create GitHub Release (triggers upgrade notice), visit:");
+  console.log(`   ${url}`);
+  return false;
+}
+
+async function main() {
   if (!["patch", "minor", "major"].includes(bumpType)) {
-    console.error("Usage: release.ts [patch|minor|major]");
+    console.error("Usage: release.ts [patch|minor|major] [--yes] [--push] [--github-release] [--message '...']");
     process.exit(1);
   }
 
@@ -123,7 +196,7 @@ async function main() {
   }
 
   const currentVersion = getCurrentVersion();
-  const newVersion = bumpVersion(currentVersion, bumpType);
+  const newVersion = bumpVersion(currentVersion, bumpType as BumpType);
   const lastTag = getLastTag();
 
   console.log("\n📦 Release Script");
@@ -131,19 +204,20 @@ async function main() {
   console.log(`Current version: ${currentVersion}`);
   console.log(`New version:     ${newVersion} (${bumpType})`);
   console.log(`Last tag:        ${lastTag || "(none)"}`);
+  console.log(`Mode:            ${flags.yes ? "non-interactive" : "interactive"}`);
 
   // Show commits since last tag
   console.log("\n📝 Commits since last release:");
   console.log("─".repeat(50));
   const commits = getCommitsSinceTag(lastTag);
-  console.log(commits || "(no commits)");
+  console.log(commits);
   console.log("─".repeat(50));
 
   // Confirm
   const confirm = await ask(`\nProceed with release v${newVersion}? (y/N) `);
   if (confirm.toLowerCase() !== "y") {
     console.log("Aborted.");
-    rl.close();
+    closeReadline();
     process.exit(0);
   }
 
@@ -153,13 +227,15 @@ async function main() {
   console.log("   ✓ package.json");
   updateVersionTs(newVersion);
   console.log("   ✓ lib/version.ts");
-  updateChangelog(newVersion);
-  console.log("   ✓ CHANGELOG.md (template added)");
+  updateChangelog(newVersion, flags.message);
+  console.log("   ✓ CHANGELOG.md");
 
-  console.log("\n⚠️  Please edit CHANGELOG.md now with release notes.");
-  console.log("   Use the commits above as reference.\n");
-
-  await ask("Press Enter when done editing CHANGELOG.md...");
+  // If no message provided and interactive mode, pause for editing
+  if (!flags.message && !flags.yes) {
+    console.log("\n⚠️  Please edit CHANGELOG.md now with release notes.");
+    console.log("   Use the commits above as reference.\n");
+    await ask("Press Enter when done editing CHANGELOG.md...");
+  }
 
   // Git operations
   run("git add package.json lib/version.ts CHANGELOG.md");
@@ -168,22 +244,51 @@ async function main() {
 
   console.log("\n✅ Release v" + newVersion + " prepared locally.");
 
-  const push = await ask("\nPush to origin? (y/N) ");
-  if (push.toLowerCase() === "y") {
-    run("git push origin main");
+  // Push
+  let shouldPush = flags.push;
+  if (!flags.yes && !shouldPush) {
+    const pushAnswer = await ask("\nPush to origin? (y/N) ");
+    shouldPush = pushAnswer.toLowerCase() === "y";
+  }
+
+  if (shouldPush) {
+    // Get current branch
+    const branch = exec("git rev-parse --abbrev-ref HEAD") || "main";
+    run(`git push origin ${branch}`);
     run(`git push origin v${newVersion}`);
-    console.log("\n🚀 Pushed! Don't forget to create GitHub release:");
-    console.log(`   https://github.com/yuens1002/ecomm-ai-app/releases/new?tag=v${newVersion}`);
+    console.log("\n✅ Pushed to origin.");
   } else {
+    const branch = exec("git rev-parse --abbrev-ref HEAD") || "main";
     console.log("\nTo push later:");
-    console.log("   git push origin main");
+    console.log(`   git push origin ${branch}`);
     console.log(`   git push origin v${newVersion}`);
   }
 
-  rl.close();
+  // GitHub Release (triggers upgrade notice!)
+  console.log("\n" + "─".repeat(50));
+  console.log("📢 UPGRADE NOTICE INFO:");
+  console.log("   Git tags alone do NOT trigger upgrade notices.");
+  console.log("   Only GitHub Releases trigger the in-app upgrade notice.");
+  console.log("─".repeat(50));
+
+  let shouldCreateRelease = flags.githubRelease;
+  if (!flags.yes && !shouldCreateRelease && shouldPush) {
+    const releaseAnswer = await ask("\nCreate GitHub Release? (triggers upgrade notice) (y/N) ");
+    shouldCreateRelease = releaseAnswer.toLowerCase() === "y";
+  }
+
+  if (shouldCreateRelease && shouldPush) {
+    createGitHubRelease(newVersion, flags.message);
+  } else if (!shouldPush && flags.githubRelease) {
+    console.log("\n⚠️  Skipping GitHub Release - must push first.");
+  }
+
+  console.log("\n🎉 Done!");
+  closeReadline();
 }
 
 main().catch((err) => {
   console.error("Error:", err);
+  closeReadline();
   process.exit(1);
 });

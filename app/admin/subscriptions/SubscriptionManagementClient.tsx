@@ -39,6 +39,7 @@ type Subscription = {
   pausedUntil: Date | null;
   productNames: string[];
   recipientName: string | null;
+  recipientPhone: string | null;
   shippingStreet: string | null;
   shippingCity: string | null;
   shippingState: string | null;
@@ -273,6 +274,9 @@ export default function SubscriptionManagementClient({
         {subscription.recipientName && (
           <div className="font-medium">{subscription.recipientName}</div>
         )}
+        {subscription.recipientPhone && (
+          <div className="text-muted-foreground">{subscription.recipientPhone}</div>
+        )}
         <div>{subscription.shippingStreet}</div>
         <div>
           {subscription.shippingCity}, {subscription.shippingState}{" "}
@@ -326,7 +330,7 @@ export default function SubscriptionManagementClient({
                     Items
                   </th>
                   <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Shipping Address
+                    Ship To
                   </th>
                   <th className="text-right py-3 px-4 font-semibold text-sm">
                     Total
