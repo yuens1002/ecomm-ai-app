@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { logger } from "@/lib/logger";
 import {
   normalizeInvoicePayment,
   normalizeSubscription,
@@ -25,28 +26,28 @@ export async function handleInvoicePaymentSucceeded(
   const invoiceFromEvent = context.event.data
     .object as InvoiceWithSubscriptionDetails;
 
-  console.log("\n=== INVOICE PAYMENT SUCCEEDED ===");
-  console.log("Invoice ID:", invoiceFromEvent.id);
-  console.log("Customer ID:", invoiceFromEvent.customer);
+  logger.debug("\n=== INVOICE PAYMENT SUCCEEDED ===");
+  logger.debug("Invoice ID:", invoiceFromEvent.id);
+  logger.debug("Customer ID:", invoiceFromEvent.customer);
 
   // Normalize invoice payment event
   const normalizedInvoice = await normalizeInvoicePayment(
     invoiceFromEvent as Stripe.Invoice
   );
 
-  console.log("Payment Intent ID from invoice.payments:", normalizedInvoice.paymentInfo.transactionId);
+  logger.debug("Payment Intent ID from invoice.payments:", normalizedInvoice.paymentInfo.transactionId);
 
   // Extract subscription ID
   const subscriptionId = extractSubscriptionId(invoiceFromEvent);
 
   if (!subscriptionId) {
-    console.log("⏭️ Skipping non-subscription invoice");
+    logger.debug("⏭️ Skipping non-subscription invoice");
     return { success: true, message: "Non-subscription invoice skipped" };
   }
 
-  console.log("✅ Found subscription ID:", subscriptionId);
-  console.log("Billing Reason:", normalizedInvoice.billingReason);
-  console.log("Is Renewal:", normalizedInvoice.isRenewal);
+  logger.debug("✅ Found subscription ID:", subscriptionId);
+  logger.debug("Billing Reason:", normalizedInvoice.billingReason);
+  logger.debug("Is Renewal:", normalizedInvoice.isRenewal);
 
   // Fetch full subscription from Stripe
   const stripeSubscription = await context.stripe.subscriptions.retrieve(
@@ -54,8 +55,8 @@ export async function handleInvoicePaymentSucceeded(
     { expand: ["items.data"] }
   );
 
-  console.log("Processing subscription:", stripeSubscription.id);
-  console.log("Subscription Status:", stripeSubscription.status);
+  logger.debug("Processing subscription:", stripeSubscription.id);
+  logger.debug("Subscription Status:", stripeSubscription.status);
 
   // Find user
   let user = await findUserByProcessorCustomerId(
@@ -64,28 +65,28 @@ export async function handleInvoicePaymentSucceeded(
 
   // Fallback: get email from Stripe customer
   if (!user) {
-    console.log("⚠️ User not found via orders, fetching from Stripe customer...");
+    logger.debug("⚠️ User not found via orders, fetching from Stripe customer...");
     const customerEmail = await getStripeCustomerEmail(
       stripeSubscription.customer as string
     );
     if (customerEmail) {
       user = await findUserByEmail(customerEmail);
-      console.log("🔍 Looked up user by email:", customerEmail);
+      logger.debug("🔍 Looked up user by email:", customerEmail);
     }
   }
 
   if (!user) {
-    console.log("⚠️ User not found for subscription:", stripeSubscription.id);
-    console.log("Searched for customer ID:", stripeSubscription.customer);
+    logger.debug("⚠️ User not found for subscription:", stripeSubscription.id);
+    logger.debug("Searched for customer ID:", stripeSubscription.customer);
     return { success: false, error: "User not found" };
   }
 
-  console.log("✅ Found user:", user.email, "(ID:", user.id, ")");
+  logger.debug("✅ Found user:", user.email, "(ID:", user.id, ")");
 
   // Normalize subscription
   const normalizedSub = await normalizeSubscription(stripeSubscription);
 
-  console.log(
+  logger.debug(
     "📊 Mapped Status:",
     stripeSubscription.status,
     "->",
@@ -96,15 +97,15 @@ export async function handleInvoicePaymentSucceeded(
 
   if (!normalizedInvoice.isRenewal) {
     // INITIAL SUBSCRIPTION CREATION
-    console.log("🆕 Processing initial subscription creation...");
+    logger.debug("🆕 Processing initial subscription creation...");
 
     await ensureSubscription({
       subscription: normalizedSub,
       userId: user.id,
     });
 
-    console.log("✅ Subscription created/updated in database:", stripeSubscription.id);
-    console.log("Database Record:", {
+    logger.debug("✅ Subscription created/updated in database:", stripeSubscription.id);
+    logger.debug("Database Record:", {
       stripeSubscriptionId: stripeSubscription.id,
       userId: user.id,
       status: normalizedSub.status,
@@ -122,17 +123,17 @@ export async function handleInvoicePaymentSucceeded(
     });
 
     if (updatedCount > 0) {
-      console.log(
+      logger.debug(
         `💳 Updated ${updatedCount} order(s) with payment IDs: PI=${normalizedInvoice.paymentInfo.transactionId}, Charge=${normalizedInvoice.paymentInfo.chargeId}, Invoice=${invoiceFromEvent.id}`
       );
     } else {
-      console.log(
+      logger.debug(
         `ℹ️ No orders needed payment ID update (likely already populated by checkout.session.completed)`
       );
     }
   } else {
     // SUBSCRIPTION RENEWAL
-    console.log("🔄 Processing subscription renewal - creating recurring order...");
+    logger.debug("🔄 Processing subscription renewal - creating recurring order...");
 
     // Get payment card info
     let cardLast4 = normalizedInvoice.paymentInfo.cardLast4;
@@ -176,7 +177,7 @@ export async function handleInvoicePaymentSucceeded(
     });
 
     if (!order) {
-      console.log("Skipping order creation but subscription is still active");
+      logger.debug("Skipping order creation but subscription is still active");
       return {
         success: true,
         message: "No matching purchase options for renewal",
@@ -184,7 +185,7 @@ export async function handleInvoicePaymentSucceeded(
     }
 
     // Skip customer email for recurring orders - send with tracking when shipped
-    console.log(
+    logger.debug(
       "⏭️ Skipping customer email - will send with tracking when order ships"
     );
 
@@ -195,10 +196,10 @@ export async function handleInvoicePaymentSucceeded(
       deliverySchedule: normalizedSub.deliverySchedule,
     });
 
-    console.log("✅ Recurring order processed successfully");
+    logger.debug("✅ Recurring order processed successfully");
   }
 
-  console.log("=======================\n");
+  logger.debug("=======================\n");
   return {
     success: true,
     message: normalizedInvoice.isRenewal

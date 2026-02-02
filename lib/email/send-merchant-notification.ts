@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { resend } from "@/lib/services/resend";
 import MerchantOrderNotification from "@/emails/MerchantOrderNotification";
 import type { SendMerchantNotificationParams, EmailSendResult } from "./types";
@@ -48,10 +49,10 @@ export async function sendMerchantNotification(
       }),
     });
 
-    console.log(`📧 Merchant notification sent for order ${orderNumber}`);
+    logger.debug(`📧 Merchant notification sent for order ${orderNumber}`);
     return { success: true };
   } catch (error) {
-    console.error("Failed to send merchant email:", error);
+    logger.error("Failed to send merchant email:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

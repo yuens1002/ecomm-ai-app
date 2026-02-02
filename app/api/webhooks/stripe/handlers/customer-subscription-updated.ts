@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { normalizeSubscription } from "@/lib/payments/stripe/adapter";
 import { restoreInventory } from "@/lib/orders/inventory";
@@ -11,20 +12,20 @@ import type { WebhookHandlerContext, WebhookHandlerResult } from "./types";
 export async function handleCustomerSubscriptionUpdated(
   context: WebhookHandlerContext
 ): Promise<WebhookHandlerResult> {
-  console.log("\n=== SUBSCRIPTION UPDATED ===");
-  console.log("Event Type:", context.event.type);
+  logger.debug("\n=== SUBSCRIPTION UPDATED ===");
+  logger.debug("Event Type:", context.event.type);
 
   const stripeSubscription = context.event.data.object as Stripe.Subscription;
 
-  console.log("Subscription ID:", stripeSubscription.id);
-  console.log("Customer ID:", stripeSubscription.customer);
-  console.log("Status:", stripeSubscription.status);
+  logger.debug("Subscription ID:", stripeSubscription.id);
+  logger.debug("Customer ID:", stripeSubscription.customer);
+  logger.debug("Status:", stripeSubscription.status);
 
   // Get existing subscription to check for status changes
   const existingSub = await getSubscriptionByProcessorId(stripeSubscription.id);
 
   if (!existingSub) {
-    console.log(
+    logger.debug(
       "⏭️ Skipping update - subscription not yet created (waiting for payment)"
     );
     return { success: true, message: "Subscription not yet created" };
@@ -38,7 +39,7 @@ export async function handleCustomerSubscriptionUpdated(
   const wasNotCanceling = !existingSub.cancelAtPeriodEnd;
 
   if (willCancel && wasNotCanceling) {
-    console.log(
+    logger.debug(
       "🔄 Subscription marked for cancellation - checking for PENDING orders..."
     );
 
@@ -50,7 +51,7 @@ export async function handleCustomerSubscriptionUpdated(
     });
 
     if (pendingOrders.length > 0) {
-      console.log(
+      logger.debug(
         `📦 Found ${pendingOrders.length} PENDING order(s) - canceling immediately...`
       );
 
@@ -62,7 +63,7 @@ export async function handleCustomerSubscriptionUpdated(
               payment_intent: order.stripePaymentIntentId,
               reason: "requested_by_customer",
             });
-            console.log(`💰 Refund processed for order ${order.id}`);
+            logger.debug(`💰 Refund processed for order ${order.id}`);
           }
 
           // Cancel the order
@@ -70,12 +71,12 @@ export async function handleCustomerSubscriptionUpdated(
             where: { id: order.id },
             data: { status: "CANCELLED" },
           });
-          console.log(`✅ Order ${order.id} canceled`);
+          logger.debug(`✅ Order ${order.id} canceled`);
 
           // Restore inventory
           await restoreInventory(order.id);
         } catch (orderCancelError) {
-          console.error(
+          logger.error(
             `❌ Failed to cancel order ${order.id}:`,
             orderCancelError
           );
@@ -83,17 +84,17 @@ export async function handleCustomerSubscriptionUpdated(
       }
 
       // Cancel subscription immediately in Stripe
-      console.log("🔄 Canceling subscription immediately in Stripe...");
+      logger.debug("🔄 Canceling subscription immediately in Stripe...");
       await context.stripe.subscriptions.cancel(stripeSubscription.id);
-      console.log("✅ Subscription canceled immediately");
+      logger.debug("✅ Subscription canceled immediately");
     }
   }
 
   // Update subscription in database
   await updateSubscription(normalizedSub);
 
-  console.log("✅ Subscription updated in database:", stripeSubscription.id);
-  console.log("=======================\n");
+  logger.debug("✅ Subscription updated in database:", stripeSubscription.id);
+  logger.debug("=======================\n");
 
   return { success: true, message: "Subscription updated" };
 }

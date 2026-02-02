@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { resend } from "@/lib/services/resend";
 import OrderConfirmationEmail from "@/emails/OrderConfirmationEmail";
 import type { SendOrderConfirmationParams, EmailSendResult } from "./types";
@@ -54,12 +55,12 @@ export async function sendOrderConfirmation(
       }),
     });
 
-    console.log(
+    logger.debug(
       `📧 Customer confirmation email sent for ${orders.length} order(s)`
     );
     return { success: true };
   } catch (error) {
-    console.error("Failed to send customer email:", error);
+    logger.error("Failed to send customer email:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

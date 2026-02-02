@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import type { OrderWithItems } from "@/lib/types";
 import type {
@@ -56,7 +57,7 @@ export async function createOrdersFromCheckout(
     purchaseOptions
   );
 
-  console.log(
+  logger.debug(
     `📦 Creating orders: ${oneTimeItems.length} one-time items, ${subscriptionItems.length} subscription items`
   );
 
@@ -77,7 +78,7 @@ export async function createOrdersFromCheckout(
 
   // Create order for one-time items (if any)
   if (oneTimeItems.length > 0) {
-    console.log("📦 Creating one-time order...");
+    logger.debug("📦 Creating one-time order...");
     const oneTimeOrder = await createSingleOrder({
       sessionId,
       subscriptionId: null,
@@ -92,12 +93,12 @@ export async function createOrdersFromCheckout(
       paymentInfo,
     });
     createdOrders.push(oneTimeOrder);
-    console.log("✅ One-time order created:", oneTimeOrder.id);
+    logger.debug("✅ One-time order created:", oneTimeOrder.id);
   }
 
   // Create order for subscription items (if any)
   if (subscriptionItems.length > 0) {
-    console.log(
+    logger.debug(
       `📦 Creating subscription order with ${subscriptionItems.length} items...`
     );
 
@@ -121,10 +122,10 @@ export async function createOrdersFromCheckout(
       paymentInfo,
     });
     createdOrders.push(subOrder);
-    console.log("✅ Subscription order created:", subOrder.id);
+    logger.debug("✅ Subscription order created:", subOrder.id);
   }
 
-  console.log(`✅ Created ${createdOrders.length} order(s) total`);
+  logger.debug(`✅ Created ${createdOrders.length} order(s) total`);
 
   // Decrement inventory for all orders
   for (const order of createdOrders) {
@@ -259,7 +260,7 @@ export async function createRenewalOrder(
     });
 
     if (!purchaseOption) {
-      console.error(
+      logger.error(
         "⚠️ Could not find matching purchase option for:",
         productName
       );
@@ -272,11 +273,11 @@ export async function createRenewalOrder(
       purchaseOptionId: purchaseOption.id,
     });
 
-    console.log(`  ✅ Found purchase option for ${productName}`);
+    logger.debug(`  ✅ Found purchase option for ${productName}`);
   }
 
   if (orderItemsData.length === 0) {
-    console.error(
+    logger.error(
       "⚠️ Could not find any matching purchase options for subscription items"
     );
     return null;
@@ -325,7 +326,7 @@ export async function createRenewalOrder(
     },
   });
 
-  console.log("📦 Recurring order created:", order.id);
+  logger.debug("📦 Recurring order created:", order.id);
 
   // Decrement inventory
   await decrementInventory(order.items);
@@ -344,7 +345,7 @@ export async function linkSubscriptionToOrder(
     where: { id: orderId },
     data: { stripeSubscriptionId: subscriptionId },
   });
-  console.log(`🔗 Order ${orderId} linked to subscription ${subscriptionId}`);
+  logger.debug(`🔗 Order ${orderId} linked to subscription ${subscriptionId}`);
 }
 
 /**
@@ -370,7 +371,7 @@ export async function updateOrderPaymentIds(params: {
   if (paymentIntentId) updateData.stripePaymentIntentId = paymentIntentId;
   if (chargeId) updateData.stripeChargeId = chargeId;
 
-  console.log(`🔍 Looking for order with stripeSubscriptionId=${subscriptionId}`);
+  logger.debug(`🔍 Looking for order with stripeSubscriptionId=${subscriptionId}`);
 
   // First try to find by subscription ID
   let result = await prisma.order.updateMany({
@@ -383,7 +384,7 @@ export async function updateOrderPaymentIds(params: {
 
   // Fallback: if no orders found by subscription ID, try by customer ID
   if (result.count === 0) {
-    console.log(
+    logger.debug(
       `⚠️ No orders found by subscription ID, trying customer ID fallback...`
     );
     result = await prisma.order.updateMany({

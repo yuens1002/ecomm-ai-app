@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import {
   normalizeCheckoutSession,
@@ -22,7 +23,7 @@ export async function handleCheckoutSessionCompleted(
 ): Promise<WebhookHandlerResult> {
   let session = context.event.data.object as Stripe.Checkout.Session;
 
-  console.log("📥 Processing checkout.session.completed event:", session.id);
+  logger.debug("📥 Processing checkout.session.completed event:", session.id);
 
   // Retrieve full session with shipping and customer details
   try {
@@ -30,11 +31,11 @@ export async function handleCheckoutSessionCompleted(
       expand: ["line_items", "customer_details"],
     });
   } catch (retrieveError) {
-    console.error("Failed to retrieve session:", retrieveError);
+    logger.error("Failed to retrieve session:", retrieveError);
     throw retrieveError;
   }
 
-  console.log("✅ Checkout completed:", session.id);
+  logger.debug("✅ Checkout completed:", session.id);
 
   // Normalize checkout session to common format
   const normalizedCheckout = await normalizeCheckoutSession(session);
@@ -119,14 +120,14 @@ export async function handleCheckoutSessionCompleted(
 
   // Handle subscription creation
   if (session.mode === "subscription" && session.subscription && userId) {
-    console.log("\n🔄 Processing subscription from checkout session...");
-    console.log("Session payment_status:", session.payment_status);
+    logger.debug("\n🔄 Processing subscription from checkout session...");
+    logger.debug("Session payment_status:", session.payment_status);
 
     if (session.payment_status !== "paid") {
-      console.log(
+      logger.debug(
         "⏭️ Skipping subscription creation - payment not confirmed yet"
       );
-      console.log("   Will be created via invoice.payment_succeeded event");
+      logger.debug("   Will be created via invoice.payment_succeeded event");
       return { success: true, message: "Orders created, subscription pending" };
     }
 
@@ -136,14 +137,14 @@ export async function handleCheckoutSessionCompleted(
         { expand: ["latest_invoice", "default_payment_method"] }
       );
 
-      console.log("📋 Subscription retrieved:", stripeSubscription.id);
-      console.log("Status:", stripeSubscription.status);
+      logger.debug("📋 Subscription retrieved:", stripeSubscription.id);
+      logger.debug("Status:", stripeSubscription.status);
 
       if (
         stripeSubscription.status !== "active" &&
         stripeSubscription.status !== "trialing"
       ) {
-        console.log(
+        logger.debug(
           `⏭️ Subscription status is ${stripeSubscription.status}, will handle via invoice.payment_succeeded`
         );
         return { success: true, message: "Orders created, subscription pending" };
@@ -162,7 +163,7 @@ export async function handleCheckoutSessionCompleted(
         userId,
       });
 
-      console.log("✅ Subscription record created/updated");
+      logger.debug("✅ Subscription record created/updated");
 
       // Store shipping in Stripe metadata for renewal orders
       if (normalizedCheckout.shippingAddress) {
@@ -183,14 +184,14 @@ export async function handleCheckoutSessionCompleted(
       );
 
       if (subscriptionOrder) {
-        console.log(
+        logger.debug(
           `🔗 Linking subscription ${stripeSubscription.id} to order ${subscriptionOrder.id}`
         );
         await linkSubscriptionToOrder(stripeSubscription.id, subscriptionOrder.id);
-        console.log("✅ Order linked to subscription");
+        logger.debug("✅ Order linked to subscription");
       }
     } catch (subError) {
-      console.error("Failed to create subscription record:", subError);
+      logger.error("Failed to create subscription record:", subError);
       // Don't fail webhook - order is already created
     }
   }

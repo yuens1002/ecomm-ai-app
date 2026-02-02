@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import type {
   WebhookHandler,
   WebhookHandlerContext,
@@ -34,7 +35,7 @@ export async function dispatchEvent(
   context: WebhookHandlerContext
 ): Promise<WebhookHandlerResult> {
   if (!isSupportedEvent(type)) {
-    console.log(`Unhandled event type: ${type}`);
+    logger.debug(`Unhandled event type: ${type}`);
     return { success: true, message: "Event type not handled" };
   }
 

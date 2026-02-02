@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { logger } from "@/lib/logger";
 import { cancelSubscription } from "@/lib/services/subscription";
 import type { WebhookHandlerContext, WebhookHandlerResult } from "./types";
 
@@ -7,13 +8,13 @@ export async function handleCustomerSubscriptionDeleted(
 ): Promise<WebhookHandlerResult> {
   const subscription = context.event.data.object as Stripe.Subscription;
 
-  console.log("\n=== SUBSCRIPTION DELETED ===");
-  console.log("Subscription ID:", subscription.id);
-  console.log("Customer ID:", subscription.customer);
+  logger.debug("\n=== SUBSCRIPTION DELETED ===");
+  logger.debug("Subscription ID:", subscription.id);
+  logger.debug("Customer ID:", subscription.customer);
 
   await cancelSubscription(subscription.id);
 
-  console.log("=======================\n");
+  logger.debug("=======================\n");
 
   return { success: true, message: "Subscription canceled" };
 }

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import type { NormalizedShippingAddress } from "@/lib/payments/types";
 
@@ -71,7 +72,7 @@ export async function saveUserAddress(
         isDefault: false,
       },
     });
-    console.log("📍 Saved address for future reuse");
+    logger.debug("📍 Saved address for future reuse");
   }
 }
 

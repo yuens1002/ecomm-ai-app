@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { getErrorMessage } from "@/lib/error-utils";
 import type { VerifyWebhookResult, VerifyWebhookParams } from "./types";
 
@@ -19,7 +20,7 @@ export function verifyWebhook({
   }
 
   if (!secret) {
-    console.error("STRIPE_WEBHOOK_SECRET is not set");
+    logger.error("STRIPE_WEBHOOK_SECRET is not set");
     return {
       success: false,
       error: "Webhook secret not configured",
@@ -32,7 +33,7 @@ export function verifyWebhook({
     return { success: true, event };
   } catch (err: unknown) {
     const errorMessage = getErrorMessage(err, "Webhook verification failed");
-    console.error("Webhook signature verification failed:", errorMessage);
+    logger.error("Webhook signature verification failed:", errorMessage);
     return {
       success: false,
       error: `Webhook Error: ${errorMessage}`,

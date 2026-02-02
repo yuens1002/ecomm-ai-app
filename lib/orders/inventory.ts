@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import type { NormalizedCartItem } from "@/lib/payments/types";
 import type { PurchaseOptionWithDetails, ValidationResult } from "./types";
@@ -94,11 +95,11 @@ export async function decrementInventory(
           },
         },
       });
-      console.log(
+      logger.debug(
         `📉 Decremented stock for ${item.purchaseOption.variant.product.name} - ${item.purchaseOption.variant.name}`
       );
     } catch (inventoryError) {
-      console.error("Failed to update inventory:", inventoryError);
+      logger.error("Failed to update inventory:", inventoryError);
       // Continue processing even if inventory update fails
     }
   }
@@ -124,7 +125,7 @@ export async function restoreInventory(orderId: string): Promise<void> {
   });
 
   if (!orderWithItems) {
-    console.error(`Order ${orderId} not found for inventory restoration`);
+    logger.error(`Order ${orderId} not found for inventory restoration`);
     return;
   }
 
@@ -133,7 +134,7 @@ export async function restoreInventory(orderId: string): Promise<void> {
       where: { id: item.purchaseOption.variant.id },
       data: { stockQuantity: { increment: item.quantity } },
     });
-    console.log(
+    logger.debug(
       `📈 Restored stock for variant ${item.purchaseOption.variant.id}`
     );
   }

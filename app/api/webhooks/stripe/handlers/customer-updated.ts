@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import {
   normalizeCustomerUpdate,
@@ -11,23 +12,23 @@ export async function handleCustomerUpdated(
 ): Promise<WebhookHandlerResult> {
   const customer = context.event.data.object as Stripe.Customer;
 
-  console.log("\n=== CUSTOMER UPDATED ===");
-  console.log("Customer ID:", customer.id);
-  console.log("Email:", customer.email);
-  console.log("Phone:", customer.phone);
+  logger.debug("\n=== CUSTOMER UPDATED ===");
+  logger.debug("Customer ID:", customer.id);
+  logger.debug("Email:", customer.email);
+  logger.debug("Phone:", customer.phone);
 
   // Normalize customer update event
   const normalizedUpdate = normalizeCustomerUpdate(customer);
 
   if (!normalizedUpdate.shippingAddress && !normalizedUpdate.phone) {
-    console.log("⏭️ No shipping address or phone on customer, skipping");
+    logger.debug("⏭️ No shipping address or phone on customer, skipping");
     return { success: true, message: "No address or phone to update" };
   }
 
   if (normalizedUpdate.shippingAddress) {
-    console.log("📍 Shipping address:", normalizedUpdate.shippingName);
-    console.log("   ", normalizedUpdate.shippingAddress.line1);
-    console.log(
+    logger.debug("📍 Shipping address:", normalizedUpdate.shippingName);
+    logger.debug("   ", normalizedUpdate.shippingAddress.line1);
+    logger.debug(
       "   ",
       normalizedUpdate.shippingAddress.city,
       normalizedUpdate.shippingAddress.state,
@@ -35,7 +36,7 @@ export async function handleCustomerUpdated(
     );
   }
   if (normalizedUpdate.phone) {
-    console.log("📞 Phone:", normalizedUpdate.phone);
+    logger.debug("📞 Phone:", normalizedUpdate.phone);
   }
 
   // Find all subscriptions for this customer
@@ -49,11 +50,11 @@ export async function handleCustomerUpdated(
   });
 
   if (subscriptions.length === 0) {
-    console.log("⏭️ No subscriptions found for this customer");
+    logger.debug("⏭️ No subscriptions found for this customer");
     return { success: true, message: "No subscriptions to update" };
   }
 
-  console.log(`📦 Found ${subscriptions.length} subscription(s) to update`);
+  logger.debug(`📦 Found ${subscriptions.length} subscription(s) to update`);
 
   // Update each subscription
   for (const sub of subscriptions) {
@@ -85,7 +86,7 @@ export async function handleCustomerUpdated(
       where: { id: sub.id },
       data: subscriptionUpdateData,
     });
-    console.log(
+    logger.debug(
       `  ✅ Updated subscription ${sub.stripeSubscriptionId.slice(-8)}`
     );
 
@@ -106,7 +107,7 @@ export async function handleCustomerUpdated(
     });
 
     if (pendingOrders.length > 0) {
-      console.log(`  📦 Updating ${pendingOrders.length} pending order(s)`);
+      logger.debug(`  📦 Updating ${pendingOrders.length} pending order(s)`);
 
       const orderUpdateData: {
         recipientName?: string | null;
@@ -137,7 +138,7 @@ export async function handleCustomerUpdated(
         },
         data: orderUpdateData,
       });
-      console.log(`  ✅ Updated pending orders`);
+      logger.debug(`  ✅ Updated pending orders`);
     }
   }
 
@@ -174,13 +175,13 @@ export async function handleCustomerUpdated(
   });
 
   if (customerPendingOrders.count > 0) {
-    console.log(
+    logger.debug(
       `✅ Updated ${customerPendingOrders.count} pending one-time order(s)`
     );
   }
 
-  console.log("✅ Customer address/phone sync complete");
-  console.log("=======================\n");
+  logger.debug("✅ Customer address/phone sync complete");
+  logger.debug("=======================\n");
 
   return { success: true, message: "Customer info synced" };
 }

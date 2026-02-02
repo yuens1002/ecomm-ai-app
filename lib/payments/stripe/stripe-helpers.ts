@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { logger } from "@/lib/logger";
 import type { PaymentInfo, InvoiceWithPayments } from "./types";
 
 /**
@@ -37,7 +38,7 @@ export async function getPaymentDetailsFromIntent(
       cardLast4,
     };
   } catch (error) {
-    console.error("Failed to retrieve payment details:", error);
+    logger.error("Failed to retrieve payment details:", error);
     return {
       paymentIntentId,
       chargeId: null,
@@ -74,7 +75,7 @@ export async function getPaymentDetailsFromSubscription(
     }
 
     result.invoiceId = latestInvoice.id;
-    console.log(`📄 Subscription invoice: ${result.invoiceId}`);
+    logger.debug(`📄 Subscription invoice: ${result.invoiceId}`);
 
     // Step 2: Retrieve invoice with payments expanded (separate call to avoid expansion depth limit)
     const invoiceWithPayments = (await stripe.invoices.retrieve(
@@ -89,7 +90,7 @@ export async function getPaymentDetailsFromSubscription(
         typeof firstPayment.payment_intent === "string"
           ? firstPayment.payment_intent
           : firstPayment.payment_intent.id;
-      console.log(`💳 Payment Intent from invoice.payments: ${result.paymentIntentId}`);
+      logger.debug(`💳 Payment Intent from invoice.payments: ${result.paymentIntentId}`);
     }
 
     // Step 3: Get charge ID and card info from payment intent
@@ -104,7 +105,7 @@ export async function getPaymentDetailsFromSubscription(
           typeof paymentIntent.latest_charge === "string"
             ? paymentIntent.latest_charge
             : (paymentIntent.latest_charge as Stripe.Charge).id;
-        console.log(`💵 Charge ID from PaymentIntent: ${result.chargeId}`);
+        logger.debug(`💵 Charge ID from PaymentIntent: ${result.chargeId}`);
       }
 
       if (
@@ -119,14 +120,14 @@ export async function getPaymentDetailsFromSubscription(
         }
       }
     } else {
-      console.log(
+      logger.debug(
         `⚠️ No payment_intent in invoice.payments yet - will be captured via invoice.payment_succeeded`
       );
     }
 
     return result;
   } catch (error) {
-    console.error("Failed to retrieve subscription invoice:", error);
+    logger.error("Failed to retrieve subscription invoice:", error);
     return result;
   }
 }
@@ -172,7 +173,7 @@ export async function getPaymentDetailsFromInvoice(
 
     return result;
   } catch (error) {
-    console.error("Failed to retrieve invoice payment details:", error);
+    logger.error("Failed to retrieve invoice payment details:", error);
     return result;
   }
 }
@@ -199,7 +200,7 @@ export async function getCardInfoFromCharge(
     }
     return null;
   } catch (error) {
-    console.error("Failed to retrieve card info:", error);
+    logger.error("Failed to retrieve card info:", error);
     return null;
   }
 }

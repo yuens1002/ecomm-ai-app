@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { logger } from "@/lib/logger";
 import type {
   WebhookCartItem,
   ShippingAddressData,
@@ -22,7 +23,7 @@ export function parseCartMetadata(
       quantity: item.qty,
     }));
   } catch {
-    console.error("Failed to parse cart metadata");
+    logger.error("Failed to parse cart metadata");
     return [];
   }
 }
@@ -84,7 +85,7 @@ export function parseShippingFromSubscription(
       country: parsed.country || null,
     };
   } catch {
-    console.error("Failed to parse subscription shipping metadata");
+    logger.error("Failed to parse subscription shipping metadata");
     return null;
   }
 }

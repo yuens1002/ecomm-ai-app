@@ -4,6 +4,7 @@
  */
 
 import type Stripe from "stripe";
+import { logger } from "@/lib/logger";
 import type {
   NormalizedCheckoutEvent,
   NormalizedPaymentInfo,
@@ -178,7 +179,7 @@ export async function normalizeSubscription(
       productName = product.name || productName;
       productDescription = (product.description as string) || null;
     } catch (err) {
-      console.warn("⚠️ Failed to retrieve Stripe product", err);
+      logger.warn("⚠️ Failed to retrieve Stripe product", err);
     }
 
     const quantity = item.quantity || 1;
@@ -336,7 +337,7 @@ export async function getStripeCustomerEmail(
     const customer = await stripe.customers.retrieve(customerId);
     return (customer as Stripe.Customer).email;
   } catch (error) {
-    console.error("Failed to retrieve Stripe customer:", error);
+    logger.error("Failed to retrieve Stripe customer:", error);
     return null;
   }
 }
@@ -365,9 +366,9 @@ export async function storeShippingInStripeMetadata(
         deliveryMethod,
       },
     });
-    console.log("📍 Stored shipping address in subscription metadata");
+    logger.debug("📍 Stored shipping address in subscription metadata");
   } catch (metadataError) {
-    console.error("Failed to store shipping metadata:", metadataError);
+    logger.error("Failed to store shipping metadata:", metadataError);
   }
 }
 
@@ -392,8 +393,8 @@ export async function updateStripeSubscriptionShipping(
         }),
       },
     });
-    console.log(`✅ Updated Stripe metadata for subscription`);
+    logger.debug(`✅ Updated Stripe metadata for subscription`);
   } catch (metadataError) {
-    console.error(`⚠️ Failed to update Stripe metadata:`, metadataError);
+    logger.error(`⚠️ Failed to update Stripe metadata:`, metadataError);
   }
 }

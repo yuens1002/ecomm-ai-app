@@ -18,6 +18,7 @@ The payments system uses a **processor-agnostic architecture** that normalizes p
 ## Directory Structure
 
 ```
+
 lib/
 ├── payments/
 │   ├── types.ts                    # Normalized interfaces (processor-agnostic)
@@ -61,6 +62,7 @@ app/api/webhooks/stripe/
     ├── customer-updated.ts
     ├── payment-intent-succeeded.ts
     └── payment-intent-failed.ts
+
 ```
 
 ## Core Normalized Types
@@ -68,11 +70,13 @@ app/api/webhooks/stripe/
 All payment processors normalize to these common interfaces defined in `lib/payments/types.ts`:
 
 ### PaymentProcessor
+
 ```typescript
 type PaymentProcessor = "stripe" | "paypal" | "square";
 ```
 
 ### NormalizedPaymentInfo
+
 ```typescript
 interface NormalizedPaymentInfo {
   processor: PaymentProcessor;
@@ -85,6 +89,7 @@ interface NormalizedPaymentInfo {
 ```
 
 ### NormalizedCheckoutEvent
+
 ```typescript
 interface NormalizedCheckoutEvent {
   processor: PaymentProcessor;
@@ -101,6 +106,7 @@ interface NormalizedCheckoutEvent {
 ```
 
 ### NormalizedSubscriptionData
+
 ```typescript
 interface NormalizedSubscriptionData {
   processor: PaymentProcessor;
@@ -210,6 +216,7 @@ Key functions in `lib/payments/stripe/adapter.ts`:
 To add support for a new processor (e.g., PayPal):
 
 ### 1. Create Processor Directory
+
 ```
 lib/payments/paypal/
 ├── adapter.ts      # PayPal → Normalized converters
@@ -219,6 +226,7 @@ lib/payments/paypal/
 ```
 
 ### 2. Implement Adapter Functions
+
 ```typescript
 // lib/payments/paypal/adapter.ts
 export async function normalizePayPalCheckout(
@@ -238,6 +246,7 @@ export async function normalizePayPalCheckout(
 ```
 
 ### 3. Create Webhook Route
+
 ```
 app/api/webhooks/paypal/
 ├── route.ts
@@ -247,6 +256,7 @@ app/api/webhooks/paypal/
 ```
 
 ### 4. Handlers Use Same Business Logic
+
 ```typescript
 // app/api/webhooks/paypal/handlers/order-completed.ts
 export async function handleOrderCompleted(context: PayPalWebhookContext) {
@@ -277,15 +287,20 @@ export async function handleOrderCompleted(context: PayPalWebhookContext) {
 ## Testing
 
 ### Local Development
+
 ```bash
 # Terminal 1: Start dev server
 npm run dev
 
 # Terminal 2: Forward Stripe webhooks
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
+
+# Enable debug logging (optional)
+LOG_LEVEL=debug npm run dev
 ```
 
 ### Trigger Test Events
+
 ```bash
 stripe trigger checkout.session.completed
 stripe trigger invoice.payment_succeeded
@@ -293,7 +308,9 @@ stripe trigger customer.subscription.updated
 ```
 
 ### Unit Tests
+
 Tests should be placed in `__tests__/` folders adjacent to modules:
+
 - `lib/payments/stripe/__tests__/adapter.test.ts`
 - `lib/orders/__tests__/create-order.test.ts`
 - `lib/services/__tests__/subscription.test.ts`
@@ -313,6 +330,7 @@ Tests should be placed in `__tests__/` folders adjacent to modules:
 ## Migration Notes
 
 The original webhook handler (`route.ts`) was ~1,972 lines. After refactoring:
+
 - `route.ts`: 45 lines (97% reduction)
 - Total across all modules: ~1,400 lines
 - Each handler: 25-150 lines (focused, testable)
