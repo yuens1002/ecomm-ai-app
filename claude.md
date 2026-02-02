@@ -197,48 +197,59 @@ npm run precheck    # TypeScript + ESLint
 
 ### Versioning & Releases
 
-**Key concept:** Git tags track versions, but only **GitHub Releases** trigger upgrade notices in the app.
+#### How It Works
 
-| Action | Version Bump | Git Tag | Upgrade Notice |
-|--------|--------------|---------|----------------|
-| Merge PR | No | No | No |
-| `npm run release:patch` | Yes | Yes | No |
-| `npm run release:patch` + GitHub Release | Yes | Yes | **Yes** |
+- **Version is derived from git tags at build time** (see `next.config.ts`)
+- No version commits needed - just create and push tags
+- `package.json` version is for npm only, not the app
+- **GitHub Releases** (not tags) trigger upgrade notices in the app
+
+#### Release Flow
+
+```
+1. Merge PR to main
+2. Run: npm run release:patch -- -y --push
+3. Done! (No extra branches, no extra CI runs)
+```
+
+| Action | Creates Tag | Triggers Build | Upgrade Notice |
+|--------|-------------|----------------|----------------|
+| Merge PR | No | Yes | No |
+| `npm run release:patch --push` | Yes | No | No |
+| + `--github-release` | Yes | No | **Yes** |
 
 #### Release Commands
 
 ```bash
-# Interactive mode (for humans)
+# Interactive mode
 npm run release:patch
 npm run release:minor
 
-# Non-interactive mode (for Claude)
-npm run release:patch -- --yes --push --message "Fix webhook bug"
-npm run release:minor -- -y --push --github-release --message "Add log levels"
+# Non-interactive (Claude-friendly)
+npm run release:patch -- -y --push
+npm run release:minor -- -y --push --github-release
 ```
 
 **Flags:**
 
-- `--yes, -y` - Skip confirmation prompts
-- `--push` - Auto-push to origin
-- `--github-release` - Create GitHub Release (triggers upgrade notice!)
-- `--message, -m` - Release message for changelog
+- `--yes, -y` - Skip prompts
+- `--push` - Push tag to origin
+- `--github-release` - Create GitHub Release (triggers upgrade notice)
+- `--message, -m` - Tag annotation message
 
 #### When to Create GitHub Release
 
-- **Yes:** User-facing features, important bug fixes, breaking changes
-- **No:** Internal refactors, dev tooling, minor fixes
-
-The release script will prompt: `Create GitHub Release? (triggers upgrade notice)`
+- **Yes:** User-facing features, important fixes, breaking changes
+- **No:** Internal refactors, dev tooling, minor tweaks
 
 #### Quick Reference
 
 ```bash
-# After merging a PR - bump version, no upgrade notice
-npm run release:patch -- -y --push --message "Refactor webhook handlers"
+# Standard release (no user notification)
+npm run release:patch -- -y --push
 
-# After merging a user-facing feature - bump + notify users
-npm run release:minor -- -y --push --github-release --message "Add subscription management"
+# User-facing release (shows upgrade notice)
+npm run release:minor -- -y --push --github-release
 ```
 
 ---

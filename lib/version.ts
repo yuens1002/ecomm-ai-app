@@ -1,9 +1,12 @@
 /**
  * Version management for Artisan Roast
  * Used for update notifications and telemetry
+ *
+ * APP_VERSION is derived from git tags at build time (see next.config.ts)
+ * Fallback for local dev when env var not set
  */
 
-export const APP_VERSION = "0.80.1";
+export const APP_VERSION = process.env.APP_VERSION || "0.0.0-dev";
 
 export type Edition = "community" | "pro";
 
