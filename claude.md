@@ -167,152 +167,79 @@ npm run precheck    # TypeScript + ESLint
 
 **When to use:** Creating commits, PRs, managing git workflow
 
-**Full procedure:** See [.github/COMMIT_PROCEDURE.md](.github/COMMIT_PROCEDURE.md)
-
 **Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`
 
-#### Feature Branch Commits (no versioning)
+#### Commit Format
 
-**Commit format:**
-
-```tsx
+```
 <type>: <brief description>
 ```
 
 **Rules:**
 
-- Single-line commit messages only (under 72 characters)
-- **No multi-line bodies or co-authoring mentions**
-- Use imperative mood ("add feature" not "added feature")
-- **NO version numbers** - versioning happens on merge to integration branch
+- Single-line messages only (under 72 characters)
+- Imperative mood ("add feature" not "added feature")
+- NO version numbers in commits - use release script instead
 
-**Example:** `feat: add config-driven table views`
+**Example:** `feat: add webhook log levels`
 
-#### Integration Branch Commits (with versioning)
+#### Pre-commit
 
-Use these trigger phrases **only on integration branches** (`unify-menu-builder`, `main`):
+- Husky runs TypeScript + ESLint automatically
+- For docs-only changes: `git commit --no-verify -m "docs: update readme"`
 
-**Trigger phrases:**
-
-- `"commit - minor bump"` - For new features (0.x.0)
-- `"commit - patch bump"` - For fixes/small changes (0.0.x)
-
-**Commit format (integration branch only):**
-
-```tsx
-<type>: <brief description> (v0.x.y)
-```
-
-**Commit procedure (auto-executed on trigger):**
-
-1. Stage changes: `git add -A`
-2. Check highest version: `git tag -l "v0.*" | sort -V | tail -1`
-3. Update CHANGELOG.md with version, date, and changes
-4. Update package.json version to match
-5. Commit with format above
-6. Create annotated tag: `git tag -a v0.x.y -m "<summary>"`
-7. Push commit and tag: `git push && git push origin v0.x.y`
-
-#### Pre-commit & Other
-
-**Pre-commit checks:**
-
-- Husky runs automatically
-- Must pass: TypeScript compilation, ESLint
-
-**Skip TypeScript check for docs-only changes:**
-When committing only documentation files (`.md`, `.txt`), skip `npm run precheck` and use `git commit --no-verify` to avoid unnecessary TypeScript compilation. The CI will still run full checks on PR.
-
-```bash
-
-# Docs-only commit (skip precheck)
-git add docs/
-git commit --no-verify -m "docs: update roadmap"
-```
-
-**PR process:**
+#### PR Workflow
 
 1. Create feature branch from `main`
-2. Make changes + tests
-3. Run `npm run precheck` locally
-4. Commit with conventional format (no version)
-5. Push and create PR
-6. Wait for CI checks (GitHub Actions)
-7. On merge: version, changelog, tag on integration branch
+2. Make changes, commit with conventional format
+3. Push and create PR
+4. After PR approved and merged → run release script
 
-### Parallel Work & Version Management
+### Versioning & Releases
 
-When multiple teammates work on separate branches concurrently, version conflicts can occur on merge. Follow these guidelines:
+**Key concept:** Git tags track versions, but only **GitHub Releases** trigger upgrade notices in the app.
 
-**During feature branch development:**
+| Action | Version Bump | Git Tag | Upgrade Notice |
+|--------|--------------|---------|----------------|
+| Merge PR | No | No | No |
+| `npm run release:patch` | Yes | Yes | No |
+| `npm run release:patch` + GitHub Release | Yes | Yes | **Yes** |
 
-- **DO NOT** include version numbers in commit messages (e.g., avoid `feat: add feature (v0.72.0)`)
-- **DO NOT** update `package.json` version or `CHANGELOG.md`
-- **DO NOT** create git tags
-- Use descriptive commit messages without versions: `feat: add config-driven table views`
-
-**On merge to integration branch (`unify-menu-builder` or `main`):**
-
-1. Merge the feature branch (resolve conflicts if any)
-2. Check current highest version: `git tag -l "v0.*" | sort -V | tail -1`
-3. Determine next version (patch/minor) based on changes
-4. Update `package.json` to next version
-5. Add `CHANGELOG.md` entry for the merged work
-6. Commit: `git commit -m "feat: <summary> (v0.x.y)"`
-7. Create tag: `git tag -a v0.x.y -m "<summary>"`
-8. Push both: `git push && git push origin v0.x.y`
-
-**Post-merge checklist:**
+#### Release Commands
 
 ```bash
+# Interactive mode (for humans)
+npm run release:patch
+npm run release:minor
 
-# Verify version alignment
-grep '"version"' package.json          # Check package.json version
-git tag -l "v0.*" | sort -V | tail -5  # Check recent tags
-git log --oneline -5                   # Verify commit has version
+# Non-interactive mode (for Claude)
+npm run release:patch -- --yes --push --message "Fix webhook bug"
+npm run release:minor -- -y --push --github-release --message "Add log levels"
 ```
 
-**If versions get out of sync:**
+**Flags:**
 
-1. Identify the highest tagged version
-2. Update `package.json` to next logical version
-3. Ensure `CHANGELOG.md` has entries for all tagged versions
-4. Create missing tags for untagged commits if needed:
+- `--yes, -y` - Skip confirmation prompts
+- `--push` - Auto-push to origin
+- `--github-release` - Create GitHub Release (triggers upgrade notice!)
+- `--message, -m` - Release message for changelog
 
-   ```bash
-   git tag -a v0.x.y <commit-hash> -m "description"
+#### When to Create GitHub Release
 
-```
+- **Yes:** User-facing features, important bug fixes, breaking changes
+- **No:** Internal refactors, dev tooling, minor fixes
 
-### Release Schedule
+The release script will prompt: `Create GitHub Release? (triggers upgrade notice)`
 
-**When to release:**
-- After completing a feature or set of related fixes
-- Before handing off to teammate (ensures clean sync point)
-- At end of work session if there are unreleased changes on main
+#### Quick Reference
 
-**Release commands:**
 ```bash
+# After merging a PR - bump version, no upgrade notice
+npm run release:patch -- -y --push --message "Refactor webhook handlers"
 
-npm run release:patch   # Bug fixes, small changes (0.76.0 → 0.76.1)
-npm run release:minor   # New features (0.76.0 → 0.77.0)
-npm run release:major   # Breaking changes (0.76.0 → 1.0.0)
+# After merging a user-facing feature - bump + notify users
+npm run release:minor -- -y --push --github-release --message "Add subscription management"
 ```
-
-**What the release script does:**
-
-1. Shows commits since last tag (for changelog reference)
-2. Updates `package.json` and `lib/version.ts` automatically
-3. Adds CHANGELOG.md template with new version header
-4. Pauses for you to edit changelog
-5. Commits and creates annotated tag
-6. Optionally pushes to origin
-
-**GitHub Releases:**
-
-- Create for minor/major versions with user-facing changes
-- Skip for internal patches unless notable
-- After pushing tag, create release at: `https://github.com/yuens1002/ecomm-ai-app/releases/new`
 
 ---
 
