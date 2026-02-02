@@ -50,6 +50,7 @@ export async function getSubscriptions() {
       pausedUntil: true,
       productNames: true,
       recipientName: true,
+      recipientPhone: true,
       shippingStreet: true,
       shippingCity: true,
       shippingState: true,
