@@ -3,7 +3,7 @@
 import { Separator } from "@/components/ui/separator";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { DemoSignInButtons } from "@/components/auth/DemoSignInButtons";
-import { signInAdmin } from "@/actions/auth";
+import { signInAdmin } from "@/app/auth/actions";
 import Link from "next/link";
 
 export function AdminSignInContent() {

@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
-import { requestPasswordResetAction } from "@/actions/auth";
+import { requestPasswordResetAction } from "@/app/auth/actions";
 
 export function ForgotPasswordContent() {
   const searchParams = useSearchParams();
