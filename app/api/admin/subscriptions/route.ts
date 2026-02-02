@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
         deliverySchedule: true,
         currentPeriodEnd: true,
         cancelAtPeriodEnd: true,
+        pausedUntil: true,
         productNames: true,
         recipientName: true,
         shippingStreet: true,

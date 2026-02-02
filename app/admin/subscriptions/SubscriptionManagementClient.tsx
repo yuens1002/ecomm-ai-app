@@ -30,6 +30,7 @@ type Subscription = {
   deliverySchedule: string | null;
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
+  pausedUntil: string | null;
   productNames: string[];
   recipientName: string | null;
   shippingStreet: string | null;
@@ -68,6 +69,7 @@ export default function SubscriptionManagementClient() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [skipDialogOpen, setSkipDialogOpen] = useState(false);
+  const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
   const [selectedSubscription, setSelectedSubscription] =
     useState<Subscription | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -194,6 +196,50 @@ export default function SubscriptionManagementClient() {
     }
   }
 
+  async function handleResumeSubscription() {
+    if (!selectedSubscription) return;
+
+    setProcessing(true);
+    try {
+      const res = await fetch(
+        `/api/admin/subscriptions/${selectedSubscription.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "resume" }),
+        }
+      );
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to resume subscription");
+      }
+
+      toast({
+        title: "Subscription Resumed",
+        description: `Subscription #${selectedSubscription.id.slice(-8)} has been resumed`,
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
+
+      setResumeDialogOpen(false);
+      setSelectedSubscription(null);
+      fetchSubscriptions();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to resume subscription",
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  }
+
   function openCancelDialog(subscription: Subscription) {
     setSelectedSubscription(subscription);
     setCancelDialogOpen(true);
@@ -202,6 +248,11 @@ export default function SubscriptionManagementClient() {
   function openSkipDialog(subscription: Subscription) {
     setSelectedSubscription(subscription);
     setSkipDialogOpen(true);
+  }
+
+  function openResumeDialog(subscription: Subscription) {
+    setSelectedSubscription(subscription);
+    setResumeDialogOpen(true);
   }
 
   function getStatusBadge(status: string, cancelAtPeriodEnd: boolean) {
@@ -221,6 +272,38 @@ export default function SubscriptionManagementClient() {
         {labels[status] || status}
       </span>
     );
+  }
+
+  function getNextDateDisplay(subscription: Subscription) {
+    if (subscription.status === "CANCELED") {
+      return <span className="text-muted-foreground">—</span>;
+    }
+
+    if (subscription.status === "PAUSED") {
+      if (subscription.pausedUntil) {
+        return format(new Date(subscription.pausedUntil), "MMM d, yyyy");
+      }
+      // Paused indefinitely
+      return <span className="text-muted-foreground">—</span>;
+    }
+
+    // ACTIVE or PAST_DUE - show next renewal date
+    return format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy");
+  }
+
+  function canSkip(subscription: Subscription) {
+    return subscription.status === "ACTIVE" && !subscription.cancelAtPeriodEnd;
+  }
+
+  function canCancel(subscription: Subscription) {
+    return (
+      (subscription.status === "ACTIVE" || subscription.status === "PAUSED") &&
+      !subscription.cancelAtPeriodEnd
+    );
+  }
+
+  function canResume(subscription: Subscription) {
+    return subscription.status === "PAUSED";
   }
 
   function formatShippingAddress(subscription: Subscription) {
@@ -285,7 +368,7 @@ export default function SubscriptionManagementClient() {
                     Schedule
                   </th>
                   <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Next Date
+                    Next / Resumes
                   </th>
                   <th className="text-left py-3 px-4 font-semibold text-sm">
                     Customer
@@ -318,11 +401,8 @@ export default function SubscriptionManagementClient() {
                     <td className="py-4 px-4 text-sm">
                       {subscription.deliverySchedule || "—"}
                     </td>
-                    <td className="py-4 px-4 text-sm text-muted-foreground">
-                      {format(
-                        new Date(subscription.currentPeriodEnd),
-                        "MMM d, yyyy"
-                      )}
+                    <td className="py-4 px-4 text-sm">
+                      {getNextDateDisplay(subscription)}
                     </td>
                     <td className="py-4 px-4">
                       <div className="text-sm font-medium">
@@ -354,29 +434,55 @@ export default function SubscriptionManagementClient() {
                       )}
                     </td>
                     <td className="py-4 px-4 text-center">
-                      {subscription.status === "ACTIVE" &&
-                        !subscription.cancelAtPeriodEnd && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => openSkipDialog(subscription)}
-                              >
-                                Skip Next Billing
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => openCancelDialog(subscription)}
-                                className="text-red-600"
-                              >
-                                Cancel Subscription
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={
+                              subscription.status === "CANCELED" ||
+                              subscription.cancelAtPeriodEnd
+                            }
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => openSkipDialog(subscription)}
+                            disabled={!canSkip(subscription)}
+                            className={
+                              !canSkip(subscription)
+                                ? "text-muted-foreground"
+                                : ""
+                            }
+                          >
+                            Skip Next Billing
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => openResumeDialog(subscription)}
+                            disabled={!canResume(subscription)}
+                            className={
+                              canResume(subscription)
+                                ? "text-green-600"
+                                : "text-muted-foreground"
+                            }
+                          >
+                            Resume Subscription
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => openCancelDialog(subscription)}
+                            disabled={!canCancel(subscription)}
+                            className={
+                              canCancel(subscription)
+                                ? "text-red-600"
+                                : "text-muted-foreground"
+                            }
+                          >
+                            Cancel Subscription
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))}
@@ -481,6 +587,54 @@ export default function SubscriptionManagementClient() {
             </Button>
             <Button onClick={handleSkipBilling} disabled={processing}>
               {processing ? "Processing..." : "Skip Next Billing"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Resume Subscription Dialog */}
+      <Dialog open={resumeDialogOpen} onOpenChange={setResumeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resume Subscription</DialogTitle>
+            <DialogDescription>
+              Resume subscription #{selectedSubscription?.id.slice(-8)}? Billing
+              will continue from the next billing cycle.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-2 text-sm text-muted-foreground">
+            <p>
+              <strong>Customer:</strong>{" "}
+              {selectedSubscription?.user?.name ||
+                selectedSubscription?.recipientName ||
+                "—"}
+            </p>
+            <p>
+              <strong>Schedule:</strong>{" "}
+              {selectedSubscription?.deliverySchedule || "—"}
+            </p>
+            {selectedSubscription?.pausedUntil && (
+              <p>
+                <strong>Was set to resume:</strong>{" "}
+                {format(
+                  new Date(selectedSubscription.pausedUntil),
+                  "MMM d, yyyy"
+                )}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setResumeDialogOpen(false)}
+              disabled={processing}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleResumeSubscription} disabled={processing}>
+              {processing ? "Processing..." : "Resume Subscription"}
             </Button>
           </DialogFooter>
         </DialogContent>

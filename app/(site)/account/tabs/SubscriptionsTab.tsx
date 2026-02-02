@@ -12,7 +12,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, ExternalLink, Package, Calendar } from "lucide-react";
+import {
+  Loader2,
+  ExternalLink,
+  Package,
+  Calendar,
+  PauseCircle,
+  PlayCircle,
+  XCircle,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 
 type SubscriptionStatus = "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE";
@@ -31,6 +49,7 @@ interface Subscription {
   currentPeriodEnd: Date;
   cancelAtPeriodEnd: boolean;
   canceledAt: Date | null;
+  pausedUntil: Date | null;
   recipientName: string | null;
   shippingStreet: string | null;
   shippingCity: string | null;
@@ -48,8 +67,94 @@ export default function SubscriptionsTab({
   subscriptions,
 }: SubscriptionsTabProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [invalidCustomerIds, setInvalidCustomerIds] = useState<Set<string>>(new Set());
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [invalidCustomerIds, setInvalidCustomerIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    action: "skip" | "resume" | "cancel" | null;
+    subscription: Subscription | null;
+  }>({ open: false, action: null, subscription: null });
+  const [localSubscriptions, setLocalSubscriptions] =
+    useState<Subscription[]>(subscriptions);
   const { toast } = useToast();
+
+  const handleAction = async (
+    action: "skip" | "resume" | "cancel",
+    subscription: Subscription
+  ) => {
+    setActionLoading(subscription.id);
+    try {
+      const res = await fetch(`/api/user/subscriptions/${subscription.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || `Failed to ${action} subscription`);
+      }
+
+      const result = await res.json();
+
+      // Update local state
+      setLocalSubscriptions((prev) =>
+        prev.map((s) => {
+          if (s.id !== subscription.id) return s;
+          if (action === "skip") {
+            return {
+              ...s,
+              status: "PAUSED" as SubscriptionStatus,
+              pausedUntil: result.resumesAt ? new Date(result.resumesAt) : null,
+            };
+          }
+          if (action === "resume") {
+            return {
+              ...s,
+              status: "ACTIVE" as SubscriptionStatus,
+              pausedUntil: null,
+            };
+          }
+          if (action === "cancel") {
+            return { ...s, cancelAtPeriodEnd: true };
+          }
+          return s;
+        })
+      );
+
+      const messages = {
+        skip: "Next delivery will be skipped",
+        resume: "Subscription has been resumed",
+        cancel: "Subscription will be canceled at period end",
+      };
+
+      toast({
+        title: "Success",
+        description: messages[action],
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error, `Failed to ${action} subscription`),
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
+    } finally {
+      setActionLoading(null);
+      setConfirmDialog({ open: false, action: null, subscription: null });
+    }
+  };
+
+  const openConfirmDialog = (
+    action: "skip" | "resume" | "cancel",
+    subscription: Subscription
+  ) => {
+    setConfirmDialog({ open: true, action, subscription });
+  };
 
   const handleManageSubscription = async (
     stripeCustomerId: string,
@@ -115,7 +220,7 @@ export default function SubscriptionsTab({
     }).format(cents / 100);
   };
 
-  if (subscriptions.length === 0) {
+  if (localSubscriptions.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -141,7 +246,7 @@ export default function SubscriptionsTab({
 
   return (
     <div className="space-y-4">
-      {subscriptions.map((subscription) => (
+      {localSubscriptions.map((subscription) => (
         <Card key={subscription.id}>
           <CardHeader>
             <div className="flex items-start justify-between">
@@ -233,7 +338,7 @@ export default function SubscriptionsTab({
               </div>
             )}
 
-            {/* Cancel Notice */}
+            {/* Status Notices */}
             {subscription.cancelAtPeriodEnd && (
               <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
                 <p className="text-sm text-yellow-800 dark:text-yellow-300">
@@ -245,6 +350,54 @@ export default function SubscriptionsTab({
                 </p>
               </div>
             )}
+
+            {subscription.status === "PAUSED" && subscription.pausedUntil && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                  ⏸️ Next delivery skipped. Resumes{" "}
+                  {format(new Date(subscription.pausedUntil), "MMM d, yyyy")}
+                </p>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            {subscription.status !== "CANCELED" &&
+              !subscription.cancelAtPeriodEnd && (
+                <div className="flex flex-wrap gap-2">
+                  {subscription.status === "ACTIVE" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openConfirmDialog("skip", subscription)}
+                      disabled={actionLoading === subscription.id}
+                    >
+                      <PauseCircle className="mr-2 h-4 w-4" />
+                      Skip Next Delivery
+                    </Button>
+                  )}
+                  {subscription.status === "PAUSED" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openConfirmDialog("resume", subscription)}
+                      disabled={actionLoading === subscription.id}
+                    >
+                      <PlayCircle className="mr-2 h-4 w-4" />
+                      Resume Now
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openConfirmDialog("cancel", subscription)}
+                    disabled={actionLoading === subscription.id}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Cancel Subscription
+                  </Button>
+                </div>
+              )}
 
             {/* Manage Button or Info Message */}
             {subscription.status !== "CANCELED" && (
@@ -291,6 +444,64 @@ export default function SubscriptionsTab({
           </CardContent>
         </Card>
       ))}
+
+      {/* Confirmation Dialog */}
+      <AlertDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) =>
+          !open &&
+          setConfirmDialog({ open: false, action: null, subscription: null })
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmDialog.action === "skip" && "Skip Next Delivery?"}
+              {confirmDialog.action === "resume" && "Resume Subscription?"}
+              {confirmDialog.action === "cancel" && "Cancel Subscription?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDialog.action === "skip" &&
+                "Your next delivery will be skipped and your subscription will automatically resume after one billing cycle."}
+              {confirmDialog.action === "resume" &&
+                "Your subscription will be resumed and billing will continue from the next cycle."}
+              {confirmDialog.action === "cancel" &&
+                "Your subscription will be canceled at the end of the current billing period. You will still receive any remaining deliveries."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading !== null}>
+              Go Back
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                confirmDialog.action &&
+                confirmDialog.subscription &&
+                handleAction(confirmDialog.action, confirmDialog.subscription)
+              }
+              disabled={actionLoading !== null}
+              className={
+                confirmDialog.action === "cancel"
+                  ? "bg-red-600 hover:bg-red-700"
+                  : ""
+              }
+            >
+              {actionLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  {confirmDialog.action === "skip" && "Skip Delivery"}
+                  {confirmDialog.action === "resume" && "Resume"}
+                  {confirmDialog.action === "cancel" && "Cancel Subscription"}
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

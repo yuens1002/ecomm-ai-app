@@ -173,6 +173,7 @@ model User {
   id                  String               @id @default(cuid())
   name                String?
   email               String?              @unique
+  phone               String?
   emailVerified       DateTime?
   image               String?
   passwordHash        String?
@@ -260,8 +261,11 @@ model Order {
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
   customerEmail         String?
+  customerPhone         String?
   stripeCustomerId      String?
   stripePaymentIntentId String?
+  stripeChargeId        String?
+  stripeInvoiceId       String?
   stripeSessionId       String?
   paymentCardLast4      String?
   recipientName         String?
@@ -309,7 +313,9 @@ model Subscription {
   currentPeriodEnd     DateTime
   cancelAtPeriodEnd    Boolean            @default(false)
   canceledAt           DateTime?
+  pausedUntil          DateTime?
   recipientName        String?
+  recipientPhone       String?
   shippingStreet       String?
   shippingCity         String?
   shippingState        String?

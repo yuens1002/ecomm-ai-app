@@ -303,6 +303,9 @@ export async function POST(req: NextRequest) {
       mode: checkoutMode,
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/checkout/cancel`,
+      phone_number_collection: {
+        enabled: true,
+      },
       ...(shippingAddressCollection && {
         shipping_address_collection: shippingAddressCollection,
       }),

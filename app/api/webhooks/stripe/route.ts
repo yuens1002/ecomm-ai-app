@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
 
         // Find user by email if they're signed in
         const customerEmail = session.customer_details?.email;
+        const customerPhone = session.customer_details?.phone;
         let userId: string | null = null;
 
         // Extract shipping info from Stripe session
@@ -105,16 +106,22 @@ export async function POST(req: NextRequest) {
         if (customerEmail) {
           const user = await prisma.user.findUnique({
             where: { email: customerEmail },
-            select: { id: true, name: true },
+            select: { id: true, name: true, phone: true },
           });
           userId = user?.id || null;
 
-          // Update user's name if they don't have one and Stripe collected it
-          if (userId && shippingName && !user?.name) {
-            await prisma.user.update({
-              where: { id: userId },
-              data: { name: shippingName },
-            });
+          // Update user's name and phone if they don't have them and Stripe collected them
+          if (userId && (shippingName || customerPhone)) {
+            const updates: { name?: string; phone?: string } = {};
+            if (shippingName && !user?.name) updates.name = shippingName;
+            if (customerPhone && !user?.phone) updates.phone = customerPhone;
+
+            if (Object.keys(updates).length > 0) {
+              await prisma.user.update({
+                where: { id: userId },
+                data: updates,
+              });
+            }
           }
 
           // For logged-in users, optionally save address to Address table for reuse
@@ -151,14 +158,20 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Get payment card last 4 digits
+        // Get payment card last 4 digits, payment intent, and charge ID
         let paymentCardLast4: string | undefined;
+        let stripeChargeId: string | undefined;
+        let stripeInvoiceId: string | undefined;
+        let stripePaymentIntentId: string | undefined;
+
         if (session.payment_intent) {
+          // One-time payment - get charge from payment intent
+          stripePaymentIntentId = session.payment_intent as string;
           try {
             const paymentIntent = await stripe.paymentIntents.retrieve(
-              session.payment_intent as string,
+              stripePaymentIntentId,
               {
-                expand: ["payment_method"],
+                expand: ["payment_method", "latest_charge"],
               }
             );
             const paymentMethod =
@@ -170,8 +183,94 @@ export async function POST(req: NextRequest) {
                 paymentMethod.card.brand.slice(1);
               paymentCardLast4 = `${brand} ****${paymentMethod.card.last4}`;
             }
+            // Get charge ID
+            if (paymentIntent.latest_charge) {
+              stripeChargeId =
+                typeof paymentIntent.latest_charge === "string"
+                  ? paymentIntent.latest_charge
+                  : paymentIntent.latest_charge.id;
+            }
           } catch (error) {
             console.error("Failed to retrieve payment method:", error);
+          }
+        } else if (session.subscription) {
+          // Subscription payment - get payment IDs from subscription's latest invoice
+          // In newer Stripe API versions (2022+), payment_intent is under invoice.payments.data[].payment
+          // Note: Stripe has a 4-level expansion limit, so we do this in two steps
+          try {
+            // Step 1: Get the subscription with latest_invoice expanded
+            const subscription = await stripe.subscriptions.retrieve(
+              session.subscription as string,
+              { expand: ["latest_invoice"] }
+            );
+            const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
+
+            if (latestInvoice) {
+              stripeInvoiceId = latestInvoice.id;
+              console.log(`📄 Subscription invoice: ${stripeInvoiceId}`);
+
+              // Step 2: Retrieve the invoice with payments expanded (separate call to avoid expansion depth limit)
+              type InvoiceWithPayments = Stripe.Invoice & {
+                payments?: {
+                  data: Array<{
+                    payment?: {
+                      type: string;
+                      payment_intent?: string | Stripe.PaymentIntent;
+                    };
+                  }>;
+                };
+              };
+
+              const invoiceWithPayments = await stripe.invoices.retrieve(stripeInvoiceId, {
+                expand: ["payments.data.payment.payment_intent"],
+              }) as InvoiceWithPayments;
+
+              // Get payment_intent from the payments array (newer API structure)
+              const firstPayment = invoiceWithPayments.payments?.data?.[0]?.payment;
+              let invoicePaymentIntentId: string | undefined;
+
+              if (firstPayment?.type === "payment_intent" && firstPayment.payment_intent) {
+                invoicePaymentIntentId = typeof firstPayment.payment_intent === "string"
+                  ? firstPayment.payment_intent
+                  : firstPayment.payment_intent.id;
+              }
+
+              if (invoicePaymentIntentId) {
+                stripePaymentIntentId = invoicePaymentIntentId;
+                console.log(`💳 Payment Intent from invoice.payments: ${stripePaymentIntentId}`);
+
+                // Retrieve the PaymentIntent to get latest_charge (per Stripe docs)
+                try {
+                  const paymentIntent = await stripe.paymentIntents.retrieve(invoicePaymentIntentId, {
+                    expand: ["latest_charge", "payment_method"],
+                  });
+
+                  // Get charge ID from latest_charge
+                  if (paymentIntent.latest_charge) {
+                    stripeChargeId =
+                      typeof paymentIntent.latest_charge === "string"
+                        ? paymentIntent.latest_charge
+                        : (paymentIntent.latest_charge as Stripe.Charge).id;
+                    console.log(`💵 Charge ID from PaymentIntent: ${stripeChargeId}`);
+                  }
+
+                  // Get card info from payment method
+                  if (paymentIntent.payment_method && typeof paymentIntent.payment_method === "object") {
+                    const pm = paymentIntent.payment_method as Stripe.PaymentMethod;
+                    if (pm?.card?.last4) {
+                      const brand = pm.card.brand.charAt(0).toUpperCase() + pm.card.brand.slice(1);
+                      paymentCardLast4 = `${brand} ****${pm.card.last4}`;
+                    }
+                  }
+                } catch (piError) {
+                  console.error("Failed to retrieve PaymentIntent:", piError);
+                }
+              } else {
+                console.log(`⚠️ No payment_intent in invoice.payments yet - will be captured via invoice.payment_succeeded`);
+              }
+            }
+          } catch (error) {
+            console.error("Failed to retrieve subscription invoice:", error);
           }
         }
 
@@ -274,9 +373,11 @@ export async function POST(req: NextRequest) {
             const oneTimeOrder = await prisma.order.create({
               data: {
                 stripeSessionId: session.id,
-                stripePaymentIntentId: session.payment_intent as string,
+                stripePaymentIntentId: stripePaymentIntentId || null,
+                stripeChargeId: stripeChargeId || null,
                 stripeCustomerId: session.customer as string,
                 customerEmail: customerEmail || null,
+                customerPhone: customerPhone || null,
                 totalInCents: oneTimeTotal + shippingCostInCents, // One-time order includes shipping
                 status: "PENDING",
                 deliveryMethod: deliveryMethod as "DELIVERY" | "PICKUP",
@@ -332,9 +433,12 @@ export async function POST(req: NextRequest) {
               data: {
                 stripeSessionId: session.id,
                 // Note: stripeSubscriptionId will be populated later when subscription is created
-                stripePaymentIntentId: session.payment_intent as string,
+                stripePaymentIntentId: stripePaymentIntentId || null,
+                stripeChargeId: stripeChargeId || null,
+                stripeInvoiceId: stripeInvoiceId || null,
                 stripeCustomerId: session.customer as string,
                 customerEmail: customerEmail || null,
+                customerPhone: customerPhone || null,
                 totalInCents: orderTotal,
                 status: "PENDING",
                 deliveryMethod: deliveryMethod as "DELIVERY" | "PICKUP",
@@ -746,6 +850,7 @@ export async function POST(req: NextRequest) {
                     currentPeriodEnd: new Date(currentPeriodEnd * 1000),
                     cancelAtPeriodEnd: subscription.cancel_at_period_end,
                     recipientName: shippingName || null,
+                    recipientPhone: customerPhone || null,
                     shippingStreet: shipping?.line1 || null,
                     shippingCity: shipping?.city || null,
                     shippingState: shipping?.state || null,
@@ -829,15 +934,60 @@ export async function POST(req: NextRequest) {
       }
 
       case "invoice.payment_succeeded": {
-        const invoice = event.data.object as Stripe.Invoice & {
+        // In newer Stripe API versions (2022+), payment_intent is under invoice.payments.data[].payment
+        // We need to retrieve the invoice with payments expanded to get the payment_intent
+        const invoiceFromEvent = event.data.object as Stripe.Invoice & {
           subscription?: string | { id: string };
           parent?: { subscription_details?: { subscription: string } };
-          charge?: string | Stripe.Charge;
-          payment_intent?: string | Stripe.PaymentIntent;
         };
+
         console.log("\n=== INVOICE PAYMENT SUCCEEDED ===");
-        console.log("Invoice ID:", invoice.id);
-        console.log("Customer ID:", invoice.customer);
+        console.log("Invoice ID:", invoiceFromEvent.id);
+        console.log("Customer ID:", invoiceFromEvent.customer);
+
+        // Retrieve the invoice with payments expanded to get payment_intent
+        type InvoiceWithPayments = Stripe.Invoice & {
+          payments?: {
+            data: Array<{
+              payment?: {
+                type: string;
+                payment_intent?: string | Stripe.PaymentIntent;
+              };
+            }>;
+          };
+        };
+
+        let invoicePaymentIntentId: string | null = null;
+        let retrievedChargeId: string | null = null;
+
+        try {
+          const invoice = await stripe.invoices.retrieve(invoiceFromEvent.id, {
+            expand: ["payments.data.payment.payment_intent"],
+          }) as InvoiceWithPayments;
+
+          // Get payment_intent from the payments array (newer API structure)
+          const firstPayment = invoice.payments?.data?.[0]?.payment;
+          if (firstPayment?.type === "payment_intent" && firstPayment.payment_intent) {
+            invoicePaymentIntentId = typeof firstPayment.payment_intent === "string"
+              ? firstPayment.payment_intent
+              : firstPayment.payment_intent.id;
+          }
+          console.log("Payment Intent ID from invoice.payments:", invoicePaymentIntentId);
+
+          // Retrieve the PaymentIntent to get latest_charge (per Stripe docs)
+          if (invoicePaymentIntentId) {
+            const paymentIntent = await stripe.paymentIntents.retrieve(invoicePaymentIntentId);
+            retrievedChargeId = typeof paymentIntent.latest_charge === "string"
+              ? paymentIntent.latest_charge
+              : (paymentIntent.latest_charge as Stripe.Charge | null)?.id || null;
+            console.log("Charge ID from PaymentIntent:", retrievedChargeId);
+          }
+        } catch (fetchError) {
+          console.error("Failed to retrieve invoice/PaymentIntent:", fetchError);
+        }
+
+        // Use the invoiceFromEvent for the rest of the handler
+        const invoice = invoiceFromEvent;
 
         // Only process invoices that are for subscriptions
         // Check both invoice.subscription and invoice.parent.subscription_details.subscription
@@ -1042,6 +1192,7 @@ export async function POST(req: NextRequest) {
                       )
                     : null,
                 recipientName: shipping?.name || null,
+                recipientPhone: user.phone || null,
                 shippingStreet: shipping?.line1 || null,
                 shippingCity: shipping?.city || null,
                 shippingState: shipping?.state || null,
@@ -1088,6 +1239,57 @@ export async function POST(req: NextRequest) {
             stripeProductIds,
             priceInCents: totalPriceInCents,
           });
+
+          // Update the order with payment IDs
+          // Use the values retrieved at the start of invoice.payment_succeeded handler
+          const orderUpdateData: {
+            stripePaymentIntentId?: string;
+            stripeChargeId?: string;
+            stripeInvoiceId?: string;
+          } = {};
+
+          if (invoicePaymentIntentId) orderUpdateData.stripePaymentIntentId = invoicePaymentIntentId;
+          if (retrievedChargeId) orderUpdateData.stripeChargeId = retrievedChargeId;
+          orderUpdateData.stripeInvoiceId = invoice.id;
+
+          if (Object.keys(orderUpdateData).length > 0) {
+            console.log(`🔍 Looking for order with stripeSubscriptionId=${subscription.id}`);
+
+            // First try to find by subscription ID
+            let updatedOrder = await prisma.order.updateMany({
+              where: {
+                stripeSubscriptionId: subscription.id,
+                stripePaymentIntentId: null,
+              },
+              data: orderUpdateData,
+            });
+
+            // Fallback: if no orders found by subscription ID, try by customer ID
+            // This handles race condition where checkout.session.completed hasn't linked the order yet
+            if (updatedOrder.count === 0) {
+              console.log(`⚠️ No orders found by subscription ID, trying customer ID fallback...`);
+              updatedOrder = await prisma.order.updateMany({
+                where: {
+                  stripeCustomerId: subscription.customer as string,
+                  stripePaymentIntentId: null,
+                  stripeSubscriptionId: null, // Not yet linked
+                  createdAt: {
+                    gte: new Date(Date.now() - 5 * 60 * 1000), // Within last 5 minutes
+                  },
+                },
+                data: {
+                  ...orderUpdateData,
+                  stripeSubscriptionId: subscription.id, // Also link the subscription
+                },
+              });
+            }
+
+            if (updatedOrder.count > 0) {
+              console.log(`💳 Updated ${updatedOrder.count} order(s) with payment IDs: PI=${invoicePaymentIntentId}, Charge=${retrievedChargeId}, Invoice=${invoice.id}`);
+            } else {
+              console.log(`ℹ️ No orders needed payment ID update (likely already populated by checkout.session.completed)`);
+            }
+          }
         } else {
           // SUBSCRIPTION RENEWAL - Create recurring order
           console.log(
@@ -1161,11 +1363,11 @@ export async function POST(req: NextRequest) {
             const shippingCost = invoice.total - invoice.subtotal; // Stripe calculates shipping
             const totalInCents = totalPriceInCents + shippingCost;
 
-            // Get payment method details
+            // Get payment method details from the charge we already retrieved
             let paymentCardLast4: string | undefined;
-            if (invoice.charge && typeof invoice.charge === "string") {
+            if (retrievedChargeId) {
               try {
-                const charge = await stripe.charges.retrieve(invoice.charge, {
+                const charge = await stripe.charges.retrieve(retrievedChargeId, {
                   expand: ["payment_method"],
                 });
                 if (
@@ -1194,13 +1396,18 @@ export async function POST(req: NextRequest) {
             const renewalDeliveryMethod =
               storedDeliveryMethod || (shipping ? "DELIVERY" : "PICKUP");
 
+            // Use charge ID and payment intent ID retrieved at start of handler
+
             // Create the recurring order
             const order = await prisma.order.create({
               data: {
                 stripeSubscriptionId: subscription.id, // Link to subscription
-                stripePaymentIntentId: invoice.payment_intent as string,
+                stripePaymentIntentId: invoicePaymentIntentId,
+                stripeChargeId: retrievedChargeId,
+                stripeInvoiceId: invoice.id,
                 stripeCustomerId: subscription.customer as string,
                 customerEmail: user.email || null,
+                customerPhone: user.phone || null,
                 totalInCents,
                 status: "PENDING",
                 deliveryMethod: renewalDeliveryMethod,
@@ -1395,8 +1602,10 @@ export async function POST(req: NextRequest) {
         // Check both cancel_at_period_end AND cancel_at (scheduled cancellation)
         const willCancel =
           subscription.cancel_at_period_end || !!subscription.cancel_at;
+        // Check if billing is paused (pause_collection doesn't change status field)
+        const isPaused = !!subscription.pause_collection;
         if (stripeStatus === "canceled") status = "CANCELED";
-        else if (stripeStatus === "paused") status = "PAUSED";
+        else if (stripeStatus === "paused" || isPaused) status = "PAUSED";
         else if (stripeStatus === "past_due") status = "PAST_DUE";
 
         console.log(
@@ -1404,6 +1613,7 @@ export async function POST(req: NextRequest) {
           stripeStatus,
           "->",
           status,
+          isPaused ? "(billing paused)" : "",
           willCancel
             ? `(cancels ${subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toLocaleDateString() : "at period end"})`
             : ""
@@ -1508,6 +1718,9 @@ export async function POST(req: NextRequest) {
                       Math.floor(Date.now() / 1000)) * 1000
                   )
                 : null,
+            pausedUntil: subscription.pause_collection?.resumes_at
+              ? new Date(subscription.pause_collection.resumes_at * 1000)
+              : null,
             deliverySchedule,
             stripeProductIds: [stripeProductId],
             stripePriceIds: [stripePriceId],
@@ -1549,6 +1762,196 @@ export async function POST(req: NextRequest) {
           status: updated.status,
           canceledAt: updated.canceledAt,
         });
+        console.log("=======================\n");
+        break;
+      }
+
+      case "customer.updated": {
+        const customer = event.data.object as Stripe.Customer;
+        console.log("\n=== CUSTOMER UPDATED ===");
+        console.log("Customer ID:", customer.id);
+        console.log("Email:", customer.email);
+        console.log("Phone:", customer.phone);
+
+        // Check if shipping address or phone was updated
+        const shipping = customer.shipping;
+        const customerPhone = customer.phone;
+
+        if (!shipping?.address && !customerPhone) {
+          console.log("⏭️ No shipping address or phone on customer, skipping");
+          break;
+        }
+
+        if (shipping?.address) {
+          console.log("📍 Shipping address:", shipping.name);
+          console.log("   ", shipping.address.line1);
+          console.log(
+            "   ",
+            shipping.address.city,
+            shipping.address.state,
+            shipping.address.postal_code
+          );
+        }
+        if (customerPhone) {
+          console.log("📞 Phone:", customerPhone);
+        }
+
+        // Find all subscriptions for this customer
+        const subscriptions = await prisma.subscription.findMany({
+          where: { stripeCustomerId: customer.id },
+          select: {
+            id: true,
+            stripeSubscriptionId: true,
+            status: true,
+          },
+        });
+
+        if (subscriptions.length === 0) {
+          console.log("⏭️ No subscriptions found for this customer");
+          break;
+        }
+
+        console.log(`📦 Found ${subscriptions.length} subscription(s) to update`);
+
+        // Update each subscription's shipping address and phone
+        for (const sub of subscriptions) {
+          // Build update data dynamically based on what's available
+          const subscriptionUpdateData: {
+            recipientName?: string | null;
+            recipientPhone?: string | null;
+            shippingStreet?: string | null;
+            shippingCity?: string | null;
+            shippingState?: string | null;
+            shippingPostalCode?: string | null;
+            shippingCountry?: string | null;
+          } = {};
+
+          if (shipping?.address) {
+            subscriptionUpdateData.recipientName = shipping.name || null;
+            subscriptionUpdateData.shippingStreet = shipping.address.line1 || null;
+            subscriptionUpdateData.shippingCity = shipping.address.city || null;
+            subscriptionUpdateData.shippingState = shipping.address.state || null;
+            subscriptionUpdateData.shippingPostalCode = shipping.address.postal_code || null;
+            subscriptionUpdateData.shippingCountry = shipping.address.country || null;
+          }
+          if (customerPhone) {
+            subscriptionUpdateData.recipientPhone = customerPhone;
+          }
+
+          // Update local database
+          await prisma.subscription.update({
+            where: { id: sub.id },
+            data: subscriptionUpdateData,
+          });
+          console.log(`  ✅ Updated subscription ${sub.stripeSubscriptionId.slice(-8)}`);
+
+          // Update Stripe subscription metadata so renewals use fresh address
+          if (shipping?.address) {
+            try {
+              await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+                metadata: {
+                  shipping_address: JSON.stringify({
+                    name: shipping.name,
+                    line1: shipping.address.line1,
+                    line2: shipping.address.line2 || "",
+                    city: shipping.address.city,
+                    state: shipping.address.state,
+                    postal_code: shipping.address.postal_code,
+                    country: shipping.address.country,
+                  }),
+                },
+              });
+              console.log(`  ✅ Updated Stripe metadata for ${sub.stripeSubscriptionId.slice(-8)}`);
+            } catch (metadataError) {
+              console.error(`  ⚠️ Failed to update Stripe metadata:`, metadataError);
+            }
+          }
+
+          // Update any PENDING orders for this subscription
+          const pendingOrders = await prisma.order.findMany({
+            where: {
+              stripeSubscriptionId: sub.stripeSubscriptionId,
+              status: "PENDING",
+            },
+          });
+
+          if (pendingOrders.length > 0) {
+            console.log(`  📦 Updating ${pendingOrders.length} pending order(s)`);
+
+            // Build order update data dynamically
+            const orderUpdateData: {
+              recipientName?: string | null;
+              customerPhone?: string | null;
+              shippingStreet?: string | null;
+              shippingCity?: string | null;
+              shippingState?: string | null;
+              shippingPostalCode?: string | null;
+              shippingCountry?: string | null;
+            } = {};
+
+            if (shipping?.address) {
+              orderUpdateData.recipientName = shipping.name || null;
+              orderUpdateData.shippingStreet = shipping.address.line1 || null;
+              orderUpdateData.shippingCity = shipping.address.city || null;
+              orderUpdateData.shippingState = shipping.address.state || null;
+              orderUpdateData.shippingPostalCode = shipping.address.postal_code || null;
+              orderUpdateData.shippingCountry = shipping.address.country || null;
+            }
+            if (customerPhone) {
+              orderUpdateData.customerPhone = customerPhone;
+            }
+
+            await prisma.order.updateMany({
+              where: {
+                stripeSubscriptionId: sub.stripeSubscriptionId,
+                status: "PENDING",
+              },
+              data: orderUpdateData,
+            });
+            console.log(`  ✅ Updated pending orders`);
+          }
+        }
+
+        // Also update any PENDING orders directly linked to this customer (non-subscription)
+        // Build order update data dynamically for one-time orders
+        const oneTimeOrderUpdateData: {
+          recipientName?: string | null;
+          customerPhone?: string | null;
+          shippingStreet?: string | null;
+          shippingCity?: string | null;
+          shippingState?: string | null;
+          shippingPostalCode?: string | null;
+          shippingCountry?: string | null;
+        } = {};
+
+        if (shipping?.address) {
+          oneTimeOrderUpdateData.recipientName = shipping.name || null;
+          oneTimeOrderUpdateData.shippingStreet = shipping.address.line1 || null;
+          oneTimeOrderUpdateData.shippingCity = shipping.address.city || null;
+          oneTimeOrderUpdateData.shippingState = shipping.address.state || null;
+          oneTimeOrderUpdateData.shippingPostalCode = shipping.address.postal_code || null;
+          oneTimeOrderUpdateData.shippingCountry = shipping.address.country || null;
+        }
+        if (customerPhone) {
+          oneTimeOrderUpdateData.customerPhone = customerPhone;
+        }
+
+        const customerPendingOrders = await prisma.order.updateMany({
+          where: {
+            stripeCustomerId: customer.id,
+            status: "PENDING",
+            stripeSubscriptionId: null, // One-time orders only
+          },
+          data: oneTimeOrderUpdateData,
+        });
+
+        if (customerPendingOrders.count > 0) {
+          console.log(
+            `✅ Updated ${customerPendingOrders.count} pending one-time order(s)`
+          );
+        }
+
+        console.log("✅ Customer address/phone sync complete");
         console.log("=======================\n");
         break;
       }

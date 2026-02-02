@@ -5,7 +5,7 @@ import { stripe } from "@/lib/services/stripe";
 import { z } from "zod";
 
 const actionSchema = z.object({
-  action: z.enum(["cancel", "skip"]),
+  action: z.enum(["cancel", "skip", "resume"]),
 });
 
 /**
@@ -71,9 +71,21 @@ export async function PATCH(
       );
     }
 
-    if (subscription.status !== "ACTIVE") {
+    // Skip requires ACTIVE status, Cancel allows ACTIVE or PAUSED
+    if (action === "skip" && subscription.status !== "ACTIVE") {
       return NextResponse.json(
-        { error: "Can only perform actions on active subscriptions" },
+        { error: "Can only skip billing on active subscriptions" },
+        { status: 400 }
+      );
+    }
+
+    if (
+      action === "cancel" &&
+      subscription.status !== "ACTIVE" &&
+      subscription.status !== "PAUSED"
+    ) {
+      return NextResponse.json(
+        { error: "Can only cancel active or paused subscriptions" },
         { status: 400 }
       );
     }
@@ -113,11 +125,12 @@ export async function PATCH(
         },
       });
 
-      // Update local database to PAUSED
+      // Update local database to PAUSED with resume date
       await prisma.subscription.update({
         where: { id },
         data: {
           status: "PAUSED",
+          pausedUntil: new Date(resumesAt * 1000),
         },
       });
 
@@ -125,6 +138,34 @@ export async function PATCH(
         success: true,
         message: "Next billing period will be skipped",
         resumesAt: new Date(resumesAt * 1000).toISOString(),
+      });
+    }
+
+    if (action === "resume") {
+      if (subscription.status !== "PAUSED") {
+        return NextResponse.json(
+          { error: "Can only resume paused subscriptions" },
+          { status: 400 }
+        );
+      }
+
+      // Remove pause_collection to resume billing
+      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        pause_collection: "",
+      });
+
+      // Update local database to ACTIVE
+      await prisma.subscription.update({
+        where: { id },
+        data: {
+          status: "ACTIVE",
+          pausedUntil: null,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Subscription has been resumed",
       });
     }
 
