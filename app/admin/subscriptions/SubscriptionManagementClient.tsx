@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,11 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { MoreHorizontal } from "lucide-react";
+import {
+  cancelSubscription,
+  skipBillingPeriod,
+  resumeSubscription,
+} from "./actions";
 
 type Subscription = {
   id: string;
@@ -67,10 +73,7 @@ const statusColors: Record<string, string> = {
 export default function SubscriptionManagementClient({
   initialSubscriptions,
 }: SubscriptionManagementClientProps) {
-  const [subscriptions, setSubscriptions] =
-    useState<Subscription[]>(initialSubscriptions);
-  const [filteredSubscriptions, setFilteredSubscriptions] =
-    useState<Subscription[]>(initialSubscriptions);
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState("all");
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [skipDialogOpen, setSkipDialogOpen] = useState(false);
@@ -80,49 +83,21 @@ export default function SubscriptionManagementClient({
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
 
-  const fetchSubscriptions = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/subscriptions");
-      if (!res.ok) throw new Error("Failed to fetch subscriptions");
-      const data = await res.json();
-      setSubscriptions(data.subscriptions);
-    } catch {
-      toast({
-        title: "Error",
-        description: "Failed to load subscriptions",
-        variant: undefined,
-        className: "!bg-foreground !text-background !border-foreground",
-      });
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    if (statusFilter === "all") {
-      setFilteredSubscriptions(subscriptions);
-    } else {
-      setFilteredSubscriptions(
-        subscriptions.filter((s) => s.status === statusFilter)
-      );
-    }
-  }, [statusFilter, subscriptions]);
+  // Filter subscriptions based on status
+  const filteredSubscriptions =
+    statusFilter === "all"
+      ? initialSubscriptions
+      : initialSubscriptions.filter((s) => s.status === statusFilter);
 
   async function handleCancelSubscription() {
     if (!selectedSubscription) return;
 
     setProcessing(true);
     try {
-      const res = await fetch(
-        `/api/admin/subscriptions/${selectedSubscription.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "cancel" }),
-        }
-      );
+      const result = await cancelSubscription(selectedSubscription.id);
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to cancel subscription");
+      if (!result.success) {
+        throw new Error(result.error || "Failed to cancel subscription");
       }
 
       toast({
@@ -134,7 +109,7 @@ export default function SubscriptionManagementClient({
 
       setCancelDialogOpen(false);
       setSelectedSubscription(null);
-      fetchSubscriptions();
+      router.refresh();
     } catch (error) {
       toast({
         title: "Error",
@@ -155,18 +130,10 @@ export default function SubscriptionManagementClient({
 
     setProcessing(true);
     try {
-      const res = await fetch(
-        `/api/admin/subscriptions/${selectedSubscription.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "skip" }),
-        }
-      );
+      const result = await skipBillingPeriod(selectedSubscription.id);
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to skip billing period");
+      if (!result.success) {
+        throw new Error(result.error || "Failed to skip billing period");
       }
 
       toast({
@@ -178,7 +145,7 @@ export default function SubscriptionManagementClient({
 
       setSkipDialogOpen(false);
       setSelectedSubscription(null);
-      fetchSubscriptions();
+      router.refresh();
     } catch (error) {
       toast({
         title: "Error",
@@ -199,18 +166,10 @@ export default function SubscriptionManagementClient({
 
     setProcessing(true);
     try {
-      const res = await fetch(
-        `/api/admin/subscriptions/${selectedSubscription.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "resume" }),
-        }
-      );
+      const result = await resumeSubscription(selectedSubscription.id);
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to resume subscription");
+      if (!result.success) {
+        throw new Error(result.error || "Failed to resume subscription");
       }
 
       toast({
@@ -222,7 +181,7 @@ export default function SubscriptionManagementClient({
 
       setResumeDialogOpen(false);
       setSelectedSubscription(null);
-      fetchSubscriptions();
+      router.refresh();
     } catch (error) {
       toast({
         title: "Error",
