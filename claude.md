@@ -208,9 +208,26 @@ npm run precheck    # TypeScript + ESLint
 
 ```
 1. Merge PR to main
-2. Run: npm run release:patch -- -y --push
-3. Done! (No extra branches, no extra CI runs)
+2. Update CHANGELOG.md with version and changes
+3. Run: npm run release:patch -- -y --push
+4. Done! (No extra branches, no extra CI runs)
 ```
+
+#### Changelog Updates
+
+Always update `CHANGELOG.md` when tagging a release:
+
+```markdown
+## [0.80.3] - 2026-02-02
+
+### Changed
+- Move auth actions to app/auth (co-locate with auth pages)
+
+### Removed
+- Remove test-carousel and test dev pages
+```
+
+**Categories:** `Added`, `Changed`, `Fixed`, `Removed`, `Security`
 
 | Action | Creates Tag | Triggers Build | Upgrade Notice |
 |--------|-------------|----------------|----------------|

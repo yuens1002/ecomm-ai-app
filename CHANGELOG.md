@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.80.3 - 2026-02-02
+
+### Changed
+
+- Move auth actions to `app/auth/actions.ts` (co-locate with auth pages)
+
+### Removed
+
+- Remove `app/test-carousel/` and `app/test/` dev pages
+
+## 0.80.2 - 2026-02-02
+
+### Changed
+
+- Tag-only releases with build-time version from git tags
+- Simplified release workflow (no version commits needed)
+
+## 0.80.1 - 2026-02-02
+
+### Fixed
+
+- Subscriptions page: changed "Shipping Address" to "Ship To", added phone display
+
 ## 0.80.0 - 2026-02-02
 
 ### Features
