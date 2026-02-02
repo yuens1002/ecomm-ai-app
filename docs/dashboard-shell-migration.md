@@ -27,12 +27,14 @@ Enhance the admin layout with breadcrumb navigation following the shadcn dashboa
 **File:** `components/app-components/AdminBreadcrumb.tsx`
 
 **Features:**
+
 - Read current pathname via `usePathname()`
 - Map routes to human-readable labels
 - Generate breadcrumb trail
 - Use existing `components/ui/breadcrumb.tsx` primitives
 
 **Route mapping:**
+
 ```typescript
 
 const routeLabels: Record<string, string> = {
@@ -60,6 +62,7 @@ const routeLabels: Record<string, string> = {
 **File:** `components/app-components/AdminHeader.tsx`
 
 **Changes:**
+
 - Import and render `AdminBreadcrumb` in the left section
 - Replace placeholder comment with actual breadcrumb
 

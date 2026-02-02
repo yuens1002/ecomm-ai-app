@@ -74,6 +74,7 @@ There are two methods to switch databases. **Method 1 is recommended** for daily
 Simply edit `.env.local` to comment/uncomment the desired database:
 
 **For Local PostgreSQL:**
+
 ```env
 DATABASE_ADAPTER="standard"
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
@@ -81,6 +82,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema
 ```
 
 **For Neon:**
+
 ```env
 # DATABASE_ADAPTER="standard"
 # DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
@@ -108,6 +110,7 @@ npm run dev
 ```
 
 PowerShell equivalent:
+
 ```pwsh
 # Switch to local
 $env:DATABASE_ADAPTER = "postgres"

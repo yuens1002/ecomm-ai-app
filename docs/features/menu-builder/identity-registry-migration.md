@@ -42,6 +42,7 @@ IdentityRegistry         { entityId: "C1", ... } (correct!)
 ### Phase 1: Create Core Types and Builders
 
 **Files to create:**
+
 - `types/identity-registry.ts`
 - `hooks/useIdentityRegistry.ts`
 
@@ -54,6 +55,7 @@ IdentityRegistry         { entityId: "C1", ... } (correct!)
 5. Add unit tests for builders
 
 **Verification:**
+
 - Types compile
 - Builders produce correct output for sample data
 - O(1) lookups work
@@ -63,6 +65,7 @@ IdentityRegistry         { entityId: "C1", ... } (correct!)
 ### Phase 2: Create Unified Handlers
 
 **Files to create:**
+
 - `hooks/useRowClickHandler.ts`
 - `hooks/useActionHandler.ts`
 
@@ -77,6 +80,7 @@ IdentityRegistry         { entityId: "C1", ... } (correct!)
 3. Handlers should work with ANY registry (flat or hierarchical)
 
 **Verification:**
+
 - Handlers work with mock registry
 - No view-specific logic in handlers
 
@@ -112,6 +116,7 @@ IdentityRegistry         { entityId: "C1", ... } (correct!)
 ```
 
 **Verification per view:**
+
 - Selection works (single, multi, select-all)
 - Navigation works (double-click)
 - Drag reorder works
@@ -152,6 +157,7 @@ IdentityRegistry         { entityId: "C1", ... } (correct!)
 ```
 
 **Verification:**
+
 - 3-level hierarchy renders correctly
 - Selection cascade works (parent → children)
 - Tri-state checkboxes work
@@ -179,6 +185,7 @@ IdentityRegistry         { entityId: "C1", ... } (correct!)
 ```
 
 **Verification:**
+
 - Clone action works for all entity types
 - Remove action works for all entity types
 - Actions receive correct database IDs
@@ -196,6 +203,7 @@ IdentityRegistry         { entityId: "C1", ... } (correct!)
 5. Delete dead code
 
 **Files to modify:**
+
 - `useContextSelectionModel.ts` - Remove key utilities
 - `useFlattenedMenuRows.ts` - Remove hierarchy builder
 - `MenuTableView.types.ts` - Remove CheckboxState
@@ -205,6 +213,7 @@ IdentityRegistry         { entityId: "C1", ... } (correct!)
 ## Migration Checklist
 
 ### Phase 1: Core Types
+
 - [ ] Create `types/identity-registry.ts`
 - [ ] Create `hooks/useIdentityRegistry.ts`
 - [ ] Implement `buildFlatRegistry()`
@@ -212,11 +221,13 @@ IdentityRegistry         { entityId: "C1", ... } (correct!)
 - [ ] Add tests
 
 ### Phase 2: Unified Handlers
+
 - [ ] Create `hooks/useRowClickHandler.ts`
 - [ ] Create `hooks/useActionHandler.ts`
 - [ ] Add tests
 
 ### Phase 3: Flat Views
+
 - [ ] Migrate `AllLabelsTableView.tsx`
 - [ ] Migrate `AllCategoriesTableView.tsx`
 - [ ] Migrate `CategoryTableView.tsx`
@@ -224,18 +235,21 @@ IdentityRegistry         { entityId: "C1", ... } (correct!)
 - [ ] Verify each view works
 
 ### Phase 4: MenuTableView
+
 - [ ] Replace hierarchy builder
 - [ ] Replace click handlers
 - [ ] Update row rendering
 - [ ] Verify all features work
 
 ### Phase 5: Action Bar
+
 - [ ] Update clone action
 - [ ] Update remove action
 - [ ] Update other actions
 - [ ] Verify all actions work
 
 ### Phase 6: Cleanup
+
 - [ ] Remove old key utilities
 - [ ] Remove old hierarchy builder
 - [ ] Remove duplicate types
@@ -261,16 +275,19 @@ Each phase should be a separate commit for easy rollback.
 ## Testing Strategy
 
 ### Unit Tests
+
 - Registry builders produce correct identities
 - Handlers call correct callbacks
 - Edge cases (empty data, single item, etc.)
 
 ### Integration Tests
+
 - Selection works across all views
 - Actions execute with correct IDs
 - Navigation routes correctly
 
 ### Manual Testing
+
 - Walk through all table views
 - Test selection in each view
 - Test actions (clone, remove) in each view

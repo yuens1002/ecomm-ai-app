@@ -40,6 +40,7 @@ interface Subscription {
   currentPeriodEnd: Date;
   cancelAtPeriodEnd: boolean;
   canceledAt: Date | null;
+  pausedUntil: Date | null;
   recipientName: string | null;
   shippingStreet: string | null;
   shippingCity: string | null;

@@ -9,9 +9,10 @@
 **Name:** Artisan Roast
 **Type:** Full-stack E-commerce Coffee Store with AI Integration
 **Version:** 0.71.4
-**Live Demo:** https://ecomm-ai-app.vercel.app/
+**Live Demo:** <https://ecomm-ai-app.vercel.app/>
 
 ### Tech Stack
+
 - **Framework:** Next.js 16 (App Router, React 19)
 - **Language:** TypeScript (strict mode, end-to-end type safety)
 - **Database:** PostgreSQL (Neon) with Prisma ORM
@@ -28,16 +29,19 @@
 ## Current Development Context
 
 ### Active Branch
+
 **Branch:** `unify-menu-builder`
 **Base:** `main`
 
 ### Recent Work
+
 - Menu Builder architecture refactoring
 - Action bar configuration system
 - Table view renderer implementation
 - All Categories table view (v0.59.0)
 
 ### Key Documentation
+
 - [Menu Builder Implementation](docs/menu-builder/menu-builder-implementation.md)
 - [Architecture Map](docs/menu-builder/menu-builder-architecture-map.md)
 - [Code Quality Standards](docs/CODE_QUALITY_STANDARDS.md)
@@ -48,9 +52,11 @@
 ## Multi-Agent Workflow Configuration
 
 ### 1. Code Exploration Agent
+
 **When to use:** Understanding codebase structure, finding files, analyzing architecture
 
 **Context to provide:**
+
 - App structure: Next.js App Router in `app/` directory
 - Key directories:
   - `app/admin/(product-menu)/` - Menu Builder feature
@@ -60,15 +66,18 @@
   - `lib/` - Utilities and helpers
 
 **Search patterns:**
+
 - Server Actions: `app/**/actions/*.ts`
 - React Hooks: `app/**/hooks/*.ts`
 - Types: `app/**/types/*.ts`, `types/*.ts`
 - Components: `app/**/components/**/*.tsx`, `components/**/*.tsx`
 
 ### 2. Implementation Planning Agent
+
 **When to use:** Designing new features, refactoring, architectural decisions
 
 **Critical considerations:**
+
 - **Type Safety:** All code must maintain end-to-end TypeScript safety
 - **Prisma Schema:** Check schema before DB changes
 - **Server Actions:** Follow Next.js 14+ server action patterns
@@ -76,6 +85,7 @@
 - **Migration Safety:** Use safe migration scripts in `dev-tools/`
 
 **Planning checklist:**
+
 1. Review existing patterns in similar features
 2. Check if Prisma schema changes needed
 3. Identify required server actions
@@ -85,23 +95,27 @@
 7. Consider migration/deployment impact
 
 ### 3. Code Review Agent
+
 **When to use:** Before commits, PR creation, quality checks
 
 **Auto-Review Checklist:**
 
 #### Type Safety
+
 - [ ] No `any` types (use `unknown` + guards instead)
 - [ ] All server actions have Zod validation
 - [ ] Prisma types used correctly (no manual type definitions)
 - [ ] Form schemas use Zod with proper types
 
 #### Next.js Best Practices
+
 - [ ] Server Components by default (`"use client"` only when needed)
 - [ ] Server Actions in separate files under `actions/`
 - [ ] API routes use proper error handling
 - [ ] No client-side data fetching (use Server Components or SWR)
 
 #### Code Quality
+
 - [ ] No unused imports or variables
 - [ ] Proper error boundaries for client components
 - [ ] Accessibility: semantic HTML, ARIA labels
@@ -109,27 +123,32 @@
 - [ ] Consistent file naming (kebab-case for files, PascalCase for components)
 
 #### Database & Prisma
+
 - [ ] No direct SQL queries (use Prisma)
 - [ ] Transactions for multi-step operations
 - [ ] Proper error handling for database operations
 - [ ] Migration files generated for schema changes
 
 #### Security
+
 - [ ] Authentication checks in server actions
 - [ ] Input validation with Zod
 - [ ] No sensitive data in client components
 - [ ] CSRF protection via server actions
 
 #### Performance
+
 - [ ] Images use Next.js Image component
 - [ ] Proper loading states to prevent layout shift
 - [ ] Database queries optimized (include relations, select specific fields)
 - [ ] React.memo only when proven necessary (avoid premature optimization)
 
 ### 4. Testing Agent
+
 **When to use:** Running tests, fixing failures, adding test coverage
 
 **Test commands:**
+
 ```bash
 
 npm run test        # Watch mode
@@ -138,12 +157,14 @@ npm run precheck    # TypeScript + ESLint
 ```
 
 **Testing patterns:**
+
 - Unit tests: `*.test.ts` or `*.test.tsx`
 - Test location: `__tests__/` folder or co-located with source
 - Mock Prisma: Use `jest.mock('@prisma/client')`
 - Mock Next.js: Use `jest.mock('next/navigation')`
 
 ### 5. Git/Commit Agent
+
 **When to use:** Creating commits, PRs, managing git workflow
 
 **Full procedure:** See [.github/COMMIT_PROCEDURE.md](.github/COMMIT_PROCEDURE.md)
@@ -153,11 +174,13 @@ npm run precheck    # TypeScript + ESLint
 #### Feature Branch Commits (no versioning)
 
 **Commit format:**
+
 ```tsx
 <type>: <brief description>
 ```
 
 **Rules:**
+
 - Single-line commit messages only (under 72 characters)
 - **No multi-line bodies or co-authoring mentions**
 - Use imperative mood ("add feature" not "added feature")
@@ -170,15 +193,18 @@ npm run precheck    # TypeScript + ESLint
 Use these trigger phrases **only on integration branches** (`unify-menu-builder`, `main`):
 
 **Trigger phrases:**
+
 - `"commit - minor bump"` - For new features (0.x.0)
 - `"commit - patch bump"` - For fixes/small changes (0.0.x)
 
 **Commit format (integration branch only):**
+
 ```tsx
 <type>: <brief description> (v0.x.y)
 ```
 
 **Commit procedure (auto-executed on trigger):**
+
 1. Stage changes: `git add -A`
 2. Check highest version: `git tag -l "v0.*" | sort -V | tail -1`
 3. Update CHANGELOG.md with version, date, and changes
@@ -190,6 +216,7 @@ Use these trigger phrases **only on integration branches** (`unify-menu-builder`
 #### Pre-commit & Other
 
 **Pre-commit checks:**
+
 - Husky runs automatically
 - Must pass: TypeScript compilation, ESLint
 
@@ -204,6 +231,7 @@ git commit --no-verify -m "docs: update roadmap"
 ```
 
 **PR process:**
+
 1. Create feature branch from `main`
 2. Make changes + tests
 3. Run `npm run precheck` locally
@@ -217,12 +245,14 @@ git commit --no-verify -m "docs: update roadmap"
 When multiple teammates work on separate branches concurrently, version conflicts can occur on merge. Follow these guidelines:
 
 **During feature branch development:**
+
 - **DO NOT** include version numbers in commit messages (e.g., avoid `feat: add feature (v0.72.0)`)
 - **DO NOT** update `package.json` version or `CHANGELOG.md`
 - **DO NOT** create git tags
 - Use descriptive commit messages without versions: `feat: add config-driven table views`
 
 **On merge to integration branch (`unify-menu-builder` or `main`):**
+
 1. Merge the feature branch (resolve conflicts if any)
 2. Check current highest version: `git tag -l "v0.*" | sort -V | tail -1`
 3. Determine next version (patch/minor) based on changes
@@ -233,6 +263,7 @@ When multiple teammates work on separate branches concurrently, version conflict
 8. Push both: `git push && git push origin v0.x.y`
 
 **Post-merge checklist:**
+
 ```bash
 
 # Verify version alignment
@@ -242,12 +273,15 @@ git log --oneline -5                   # Verify commit has version
 ```
 
 **If versions get out of sync:**
+
 1. Identify the highest tagged version
 2. Update `package.json` to next logical version
 3. Ensure `CHANGELOG.md` has entries for all tagged versions
 4. Create missing tags for untagged commits if needed:
+
    ```bash
    git tag -a v0.x.y <commit-hash> -m "description"
+
 ```
 
 ### Release Schedule
@@ -266,6 +300,7 @@ npm run release:major   # Breaking changes (0.76.0 → 1.0.0)
 ```
 
 **What the release script does:**
+
 1. Shows commits since last tag (for changelog reference)
 2. Updates `package.json` and `lib/version.ts` automatically
 3. Adds CHANGELOG.md template with new version header
@@ -274,6 +309,7 @@ npm run release:major   # Breaking changes (0.76.0 → 1.0.0)
 6. Optionally pushes to origin
 
 **GitHub Releases:**
+
 - Create for minor/major versions with user-facing changes
 - Skip for internal patches unless notable
 - After pushing tag, create release at: `https://github.com/yuens1002/ecomm-ai-app/releases/new`
@@ -283,6 +319,7 @@ npm run release:major   # Breaking changes (0.76.0 → 1.0.0)
 ## Common Development Patterns
 
 ### Server Actions Pattern
+
 ```typescript
 
 // app/admin/(product-menu)/actions/example-action.ts
@@ -311,6 +348,7 @@ export async function exampleAction(data: z.infer<typeof schema>) {
 ```
 
 ### SWR Data Fetching Pattern
+
 ```typescript
 
 // app/admin/(product-menu)/hooks/useExampleData.ts
@@ -325,6 +363,7 @@ export function useExampleData() {
 ```
 
 ### Provider Composition Pattern
+
 ```typescript
 
 // app/admin/(product-menu)/ExampleProvider.tsx
@@ -354,12 +393,14 @@ export function useExample() {
 ## Database Safety Protocols
 
 ### Before Schema Changes
+
 1. **Backup:** `npm run db:backup`
 2. **Review:** Check `prisma/schema.prisma` for conflicts
 3. **Migrate:** `npm run db:safe-migrate` (runs checks first)
 4. **Verify:** `npm run db:smoke` (smoke test CRUD)
 
 ### Migration Process
+
 ```text
 
 # 1. Make schema changes in prisma/schema.prisma
@@ -371,6 +412,7 @@ npx prisma migrate deploy
 ```
 
 ### Rollback Process
+
 ```bash
 
 npm run db:restore
@@ -381,6 +423,7 @@ npm run db:restore
 ## Critical Files & Directories
 
 ### Must-Read Before Changes
+
 - `prisma/schema.prisma` - Database schema (check before any DB work)
 - `app/admin/(product-menu)/constants/action-bar-config.ts` - Menu Builder actions
 - `app/admin/(product-menu)/constants/view-configs.ts` - Menu Builder views
@@ -388,11 +431,13 @@ npm run db:restore
 - `middleware.ts` - Route protection
 
 ### Never Modify Directly
+
 - `node_modules/` - Dependencies
 - `.next/` - Build output
 - `prisma/migrations/` - Generated migrations (create new instead)
 
 ### Configuration Files
+
 - `.env.local` - Local environment variables (not in repo)
 - `.env.example` - Template for required env vars
 - `next.config.js` - Next.js configuration
@@ -404,6 +449,7 @@ npm run db:restore
 ## Build & Deployment
 
 ### Local Development
+
 ```bash
 
 npm run dev                                                    # Start dev server
@@ -411,6 +457,7 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe # Stripe webhooks 
 ```
 
 ### Build Process
+
 ```bash
 
 npm run build              # Standard build
@@ -419,6 +466,7 @@ npm run build:no-migrate   # Build without migrations
 ```
 
 ### Deployment (Vercel)
+
 - **Trigger:** Push to `main` branch
 - **Env Vars:** Set in Vercel dashboard
 - **Build Command:** `npm run vercel-build`
@@ -429,14 +477,18 @@ npm run build:no-migrate   # Build without migrations
 ## Auto-Review Triggers
 
 ### Pre-Commit Review
+
 Run automatic review before every commit:
+
 1. Type safety check
 2. ESLint validation
 3. Test execution
 4. Import organization
 
 ### Pre-PR Review
+
 Before creating pull request:
+
 1. All tests passing
 2. No TypeScript errors
 3. No ESLint errors
@@ -445,7 +497,9 @@ Before creating pull request:
 6. Documentation updated if needed
 
 ### Code Quality Gates
+
 **Block merge if:**
+
 - CI checks failing
 - TypeScript errors present
 - ESLint errors present
@@ -456,9 +510,10 @@ Before creating pull request:
 
 ## AI Assistant Context
 
-### When I Ask You To...
+### When I Ask You To
 
 **"Add a new feature"**
+
 1. Use Planning Agent to design approach
 2. Review similar existing features
 3. Check if schema changes needed
@@ -468,6 +523,7 @@ Before creating pull request:
 7. Create commit
 
 **"Fix a bug"**
+
 1. Reproduce the issue
 2. Identify root cause
 3. Write failing test
@@ -477,6 +533,7 @@ Before creating pull request:
 7. Create commit
 
 **"Refactor code"**
+
 1. Use Exploration Agent to understand current implementation
 2. Plan refactoring strategy
 3. Ensure tests exist for current behavior
@@ -486,6 +543,7 @@ Before creating pull request:
 7. Create commit
 
 **"Review my code"**
+
 1. Use Review Agent with full checklist
 2. Check type safety
 3. Verify patterns match project conventions
@@ -495,6 +553,7 @@ Before creating pull request:
 7. Provide specific, actionable feedback
 
 **"Create a PR"**
+
 1. Verify all commits follow convention
 2. Run full test suite
 3. Generate PR description with:
@@ -508,6 +567,7 @@ Before creating pull request:
 ## Workflow Preferences
 
 ### Code Style
+
 - **Imports:** Group by external → internal → relative
 - **Components:** Functional components with TypeScript
 - **Async:** Use async/await (no raw promises)
@@ -515,6 +575,7 @@ Before creating pull request:
 - **Comments:** Only for "why" not "what" (code should be self-documenting)
 
 ### Communication Style
+
 - Be concise but thorough
 - Explain reasoning for architectural decisions
 - Suggest alternatives when relevant
@@ -522,6 +583,7 @@ Before creating pull request:
 - Provide file paths with line numbers for references
 
 ### Multi-Agent Coordination
+
 - **Sequential tasks:** Plan → Implement → Test → Review → Commit
 - **Parallel tasks:** Multiple file reads, independent feature analysis
 - **Context handoff:** Share relevant findings between agents
@@ -592,6 +654,7 @@ GEMINI_API_KEY=           # Google Gemini API
 ## Success Metrics
 
 When evaluating implementations:
+
 - **Type Safety:** 100% (no `any`, all validated)
 - **Test Coverage:** Critical paths covered
 - **Build Success:** No errors or warnings

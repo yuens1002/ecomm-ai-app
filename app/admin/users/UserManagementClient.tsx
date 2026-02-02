@@ -26,6 +26,7 @@ interface UserData {
   id: string;
   name: string | null;
   email: string | null;
+  phone: string | null;
   isAdmin: boolean;
   createdAt: string;
   _count: {
@@ -141,6 +142,7 @@ export default function UserManagementClient({ currentUserId }: UserManagementCl
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Phone</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Orders</TableHead>
                 <TableHead>Subscriptions</TableHead>
@@ -151,7 +153,7 @@ export default function UserManagementClient({ currentUserId }: UserManagementCl
             <TableBody>
               {users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     No users found
                   </TableCell>
                 </TableRow>
@@ -168,6 +170,9 @@ export default function UserManagementClient({ currentUserId }: UserManagementCl
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {user.email}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {user.phone || "—"}
                     </TableCell>
                     <TableCell>
                       {user.isAdmin ? (

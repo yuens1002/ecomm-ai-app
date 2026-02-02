@@ -5,6 +5,7 @@
 ## Bug #1: New Label Add Fails After First
 
 ### Symptoms
+
 - First "New Label" creation works
 - Second+ attempts fail silently
 - No error shown to user
@@ -66,10 +67,12 @@ if (existing) throw new Error("Label name must be unique");
 **Recommended:** Option B is cleaner - single source of truth for uniqueness.
 
 ### Files to Modify
+
 - `app/admin/(product-menu)/data/labels.ts` - Remove manual check
 - OR `app/admin/(product-menu)/actions/utils.ts` - Expand error detection
 
 ### Testing
+
 1. Create "New Label" → Success
 2. Create another "New Label" → Should create "New Label (2)"
 3. Create another → Should create "New Label (3)"
@@ -79,6 +82,7 @@ if (existing) throw new Error("Label name must be unique");
 ## Bug #2: Action Bar Items Don't Work in MenuTableView
 
 ### Symptoms
+
 - Clone, Remove actions do nothing
 - Undo/Redo buttons don't respond
 - Actions work in other table views
@@ -117,6 +121,7 @@ categories.find(c => c.id === entityId);  // Matches!
 This bug is **automatically resolved** by Phase 5 of the migration plan. The IdentityRegistry provides correct `entityId` extraction.
 
 ### Verification After Migration
+
 1. Select a category in MenuTableView
 2. Click Clone → Should clone the category
 3. Click Remove → Should remove the category
@@ -128,6 +133,7 @@ This bug is **automatically resolved** by Phase 5 of the migration plan. The Ide
 ## Bug #3: Duplicate CheckboxState Type
 
 ### Symptoms
+
 - Type defined in two places
 - Potential for drift
 - Confusing imports
@@ -158,6 +164,7 @@ menu-builder/components/table-views/MenuTableView.types.ts:15
 Or better, after migration the type may move to `types/identity-registry.ts`.
 
 ### Verification
+
 - TypeScript compiles
 - No duplicate type definitions
 - Single import source
@@ -195,12 +202,14 @@ Or better, after migration the type may move to `types/identity-registry.ts`.
 ## Testing Checklist (Post-Migration)
 
 ### Bug #1: Label Creation
+
 - [ ] Create first label → Works
 - [ ] Create second label → Creates with (2) suffix
 - [ ] Create third label → Creates with (3) suffix
 - [ ] Error handling → Shows error if actual failure
 
 ### Bug #2: Action Bar (Auto-fixed)
+
 - [ ] Clone label in MenuTableView → Works
 - [ ] Clone category in MenuTableView → Works
 - [ ] Remove label in MenuTableView → Works
@@ -209,6 +218,7 @@ Or better, after migration the type may move to `types/identity-registry.ts`.
 - [ ] Redo after undo → Re-removes item
 
 ### Bug #3: Type Cleanup
+
 - [ ] Single CheckboxState definition
 - [ ] All imports point to canonical location
 - [ ] TypeScript compiles clean

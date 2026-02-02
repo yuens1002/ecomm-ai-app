@@ -1,6 +1,7 @@
 # Voice AI Platform Comparison
 
 ## Executive Summary
+
 Comparison of leading voice AI platforms for implementing conversational checkout assistant.
 
 ---
@@ -8,6 +9,7 @@ Comparison of leading voice AI platforms for implementing conversational checkou
 ## 1. VAPI ✅ **RECOMMENDED**
 
 ### Strengths
+
 - **Developer-First**: API-native with extensive configuration options (4.2K+ docs)
 - **Multilingual**: 100+ languages including Spanish
 - **Function Calling**: Built-in tool calling for custom API integration
@@ -20,10 +22,12 @@ Comparison of leading voice AI platforms for implementing conversational checkou
 - **Community**: 13K+ Discord community, active support
 
 ### Pricing
+
 - Not explicitly listed on website (contact for quote)
 - Likely pay-per-minute model (~$0.05-0.15/min estimated)
 
 ### Best For
+
 - Developer-heavy teams needing full control
 - Complex workflows with custom function calling
 - Multi-channel deployment (web, phone, SMS)
@@ -33,6 +37,7 @@ Comparison of leading voice AI platforms for implementing conversational checkou
 ## 2. Retell AI
 
 ### Strengths
+
 - **Fast Setup**: Easy agent builder, minimal code
 - **Multilingual**: 18+ languages including Spanish
 - **Latency**: 500ms response time
@@ -43,10 +48,12 @@ Comparison of leading voice AI platforms for implementing conversational checkou
 - **Integrations**: Cal.com, n8n, GoHighLevel, Twilio, Vonage
 
 ### Pricing
+
 - Pay-as-you-go model (pricing on website)
 - Transparent pricing structure
 
 ### Best For
+
 - Fast deployment with minimal code
 - Teams needing quick ROI
 - Healthcare/compliance-heavy industries
@@ -56,6 +63,7 @@ Comparison of leading voice AI platforms for implementing conversational checkou
 ## 3. Bland AI
 
 ### Strengths
+
 - **Speed**: "Fastest conversational AI in the world"
 - **Enterprise Focus**: Custom trained models, dedicated infrastructure
 - **Omni-channel**: Voice, SMS, and chat in one platform
@@ -66,11 +74,13 @@ Comparison of leading voice AI platforms for implementing conversational checkou
 - **Forward Deployed**: Engineers help build custom agents
 
 ### Pricing
+
 - Enterprise-focused (contact sales)
 - Likely higher cost than others
 - Includes custom model training
 
 ### Best For
+
 - Large enterprises with budget
 - Companies wanting proprietary models
 - Maximum customization needs
@@ -80,6 +90,7 @@ Comparison of leading voice AI platforms for implementing conversational checkou
 ## 4. ElevenLabs Conversational AI
 
 ### Strengths
+
 - **Voice Quality**: Industry-leading natural voice
 - **Latency**: Sub-100ms (fastest on this list)
 - **Multilingual**: 32+ languages
@@ -89,10 +100,12 @@ Comparison of leading voice AI platforms for implementing conversational checkou
 - **Known For**: Best-in-class TTS technology
 
 ### Pricing
+
 - Not explicitly listed (contact sales)
 - Known for premium voice quality
 
 ### Best For
+
 - Projects where voice quality is paramount
 - Gaming, entertainment, high-end customer experiences
 - Teams already using ElevenLabs TTS
@@ -101,7 +114,7 @@ Comparison of leading voice AI platforms for implementing conversational checkou
 
 ## Recommendation for Artisan Roast
 
-### Choose **VAPI** because:
+### Choose **VAPI** because
 
 1. **Function Calling**: Perfect for our use case (getUserContext, searchProducts, addToCart, createCheckout)
 2. **Developer Control**: We can customize every aspect
@@ -112,25 +125,29 @@ Comparison of leading voice AI platforms for implementing conversational checkou
 7. **Web SDK**: Easy integration into React/Next.js apps
 8. **Testing**: Built-in tools for quality assurance
 
-### Implementation Plan with VAPI:
+### Implementation Plan with VAPI
 
 **Phase 1: Text-based MVP (Week 1-2)**
+
 - Build conversation flow with Gemini
 - Implement function calling endpoints
 - Test with text interface
 
 **Phase 2: Voice Integration (Week 3-4)**
+
 - Add VAPI SDK to Next.js
 - Configure Spanish + English voices
 - Connect function calls to backend
 - Test latency and quality
 
 **Phase 3: Production (Week 5+)**
+
 - Deploy to account dashboard
 - Monitor call metrics
 - Optimize based on user feedback
 
-### Estimated Costs:
+### Estimated Costs
+
 - **Development**: ~$50-100/month (testing phase)
 - **Production**: ~$0.10/min × 5 min avg × 100 calls = $50/month initially
 - **Scale**: ~$500/month at 1000 calls
@@ -159,5 +176,5 @@ Comparison of leading voice AI platforms for implementing conversational checkou
 4. **Prototype text-based flow** - Validate conversation logic
 5. **Add voice layer** - Once text flow is proven
 
-**Documentation**: https://docs.vapi.ai/
+**Documentation**: <https://docs.vapi.ai/>
 **Pricing**: Contact for enterprise quote or start with pay-as-you-go

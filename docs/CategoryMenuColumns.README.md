@@ -18,12 +18,12 @@ Uses a **greedy algorithm** to distribute label groups across 3 columns:
           + 1 (if "...more/less" link present)
 ```
 
-2. **Distribution**: For each label group in order:
+1. **Distribution**: For each label group in order:
    - Calculate its current weight (based on expanded/collapsed state)
    - Add it to the column with the smallest current total weight
    - Update that column's total weight
 
-3. **Rebalancing**: Whenever a user clicks "...more" or "...less":
+2. **Rebalancing**: Whenever a user clicks "...more" or "...less":
    - Expansion states update
    - Weight recalculation triggers
    - All labels redistribute across columns

@@ -199,69 +199,49 @@ export default function OrdersPageClient({
         </Card>
       ) : (
         <Card>
-          <div className="hidden md:block">
+          {/* Desktop Table Header - only on lg screens */}
+          <div className="hidden lg:block">
             <CardHeader className="pb-3">
-              <div className="grid grid-cols-12 gap-4 font-semibold text-sm text-text-muted">
-                <div className="col-span-2">Order</div>
-                <div className="col-span-2">Date</div>
-                <div className="col-span-2">Item(s)</div>
-                <div className="col-span-2 text-center">Status</div>
-                <div className="col-span-2 text-right">Total</div>
-                <div className="col-span-2 text-right"></div>
+              <div className="grid grid-cols-7 gap-x-[6em] font-semibold text-sm text-text-muted">
+                <div>Order</div>
+                <div>Date</div>
+                <div>Item(s)</div>
+                <div>Ship To</div>
+                <div className="text-right">Total</div>
+                <div className="text-center">Status</div>
+                <div className="text-right"></div>
               </div>
             </CardHeader>
           </div>
           <CardContent className="p-0">
             <div className="divide-y">
-              {filteredOrders.map((order, index) => (
-                <div
-                  key={order.id}
-                  className={`grid grid-cols-1 md:grid-cols-12 gap-4 hover:bg-muted/50 transition-colors md:items-center ${
-                    index === 0 ? "pt-0 md:p-4 pb-4 px-4" : "p-4"
-                  }`}
-                >
-                  {/* Status - Mobile First */}
-                  <div className="col-span-1 md:col-span-2 md:order-4 md:text-center">
-                    <span
-                      className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                        order.status
-                      )}`}
-                    >
-                      {getStatusLabel(order.status)}
-                    </span>
-                  </div>
-
-                  {/* Order Number - Mobile Second */}
-                  <div className="col-span-1 md:col-span-2 md:order-1">
-                    <h2 className="md:hidden text-lg font-semibold">
-                      <Link
-                        href={`/orders/${order.id}`}
-                        className="text-primary hover:underline"
-                      >
-                        #{order.id.slice(-8)}
-                      </Link>
-                    </h2>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      asChild
-                      className="hidden md:inline-flex"
-                    >
-                      <Link href={`/orders/${order.id}`}>
-                        #{order.id.slice(-8)}
-                      </Link>
-                    </Button>
-                  </div>
-
-                  {/* Date - Desktop Only */}
-                  <div className="hidden md:block md:col-span-2 md:order-2">
-                    <div className="text-sm text-text-muted">
-                      {format(new Date(order.createdAt), "MMM d, yyyy")}
+              {filteredOrders.map((order) => (
+                <div key={order.id}>
+                  {/* Mobile/Tablet Card Layout */}
+                  <div className="lg:hidden p-4 space-y-3">
+                    {/* Header Row: Status, Order #, Date */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                            order.status
+                          )}`}
+                        >
+                          {getStatusLabel(order.status)}
+                        </span>
+                        <Link
+                          href={`/orders/${order.id}`}
+                          className="text-primary hover:underline font-semibold"
+                        >
+                          #{order.id.slice(-8)}
+                        </Link>
+                      </div>
+                      <div className="text-sm text-text-muted">
+                        {format(new Date(order.createdAt), "MMM d, yyyy")}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Items - Mobile Third */}
-                  <div className="col-span-1 md:col-span-2 md:order-3">
+                    {/* Items */}
                     <div className="space-y-2">
                       {order.items.map(
                         (item: OrderItemWithDetails, idx: number) => (
@@ -288,56 +268,216 @@ export default function OrdersPageClient({
                         )
                       )}
                     </div>
-                  </div>
 
-                  {/* Total - Desktop Only */}
-                  <div className="hidden md:block md:col-span-2 md:order-5 md:text-right">
-                    <div className="font-semibold">
-                      {formatPrice(order.totalInCents)}
+                    {/* Ship To */}
+                    {order.deliveryMethod === "DELIVERY" &&
+                    order.shippingStreet ? (
+                      <div className="text-sm bg-muted/30 rounded-md p-3">
+                        <div className="text-xs text-text-muted uppercase tracking-wide mb-1">
+                          Ship To
+                        </div>
+                        {order.recipientName && (
+                          <div className="font-medium">{order.recipientName}</div>
+                        )}
+                        {order.customerPhone && (
+                          <div className="text-text-muted">
+                            {order.customerPhone}
+                          </div>
+                        )}
+                        <div className="text-text-muted">
+                          {order.shippingStreet}, {order.shippingCity},{" "}
+                          {order.shippingState} {order.shippingPostalCode}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-text-muted italic">
+                        Store Pickup
+                      </div>
+                    )}
+
+                    {/* Footer Row: Total and Actions */}
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="font-semibold text-lg">
+                        {formatPrice(order.totalInCents)}
+                      </div>
+                      {order.status === "PENDING" && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={cancellingOrderId === order.id}
+                            >
+                              {cancellingOrderId === order.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <span>Cancel Order</span>
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Cancel Order #{order.id.slice(-8)}?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will immediately cancel your order and
+                                process a full refund to your original payment
+                                method. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Keep Order</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleCancelOrder(order.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Cancel Order & Refund
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                   </div>
 
-                  {/* Actions - Mobile Fourth (Cancel Button Only) */}
-                  <div className="col-span-1 md:col-span-2 md:order-6 flex items-center justify-start md:justify-end">
-                    {order.status === "PENDING" && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full md:w-auto"
-                            disabled={cancellingOrderId === order.id}
-                          >
-                            {cancellingOrderId === order.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <span>Cancel Order</span>
-                            )}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              Cancel Order #{order.id.slice(-8)}?
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will immediately cancel your order and
-                              process a full refund to your original payment
-                              method. This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Keep Order</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleCancelOrder(order.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  {/* Desktop Table Row - only on lg screens */}
+                  <div className="hidden lg:grid grid-cols-7 gap-x-[6em] p-4 hover:bg-muted/50 transition-colors items-center">
+                    {/* Order */}
+                    <div>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/orders/${order.id}`}>
+                          #{order.id.slice(-8)}
+                        </Link>
+                      </Button>
+                    </div>
+
+                    {/* Date */}
+                    <div>
+                      <div className="text-sm text-text-muted">
+                        {format(new Date(order.createdAt), "MMM d, yyyy")}
+                      </div>
+                    </div>
+
+                    {/* Items */}
+                    <div>
+                      <div className="space-y-2">
+                        {order.items.map(
+                          (item: OrderItemWithDetails, idx: number) => (
+                            <div key={item.id}>
+                              <div className="text-sm">
+                                <Link
+                                  href={`/products/${item.purchaseOption.variant.product.slug}`}
+                                  className="text-text-base hover:text-primary"
+                                >
+                                  {item.purchaseOption.variant.product.name}
+                                </Link>
+                              </div>
+                              <div className="text-xs text-text-muted">
+                                {item.purchaseOption.variant.name} •{" "}
+                                {item.purchaseOption.type === "SUBSCRIPTION"
+                                  ? "Subscription"
+                                  : "One-time"}{" "}
+                                • Qty: {item.quantity}
+                              </div>
+                              {idx < order.items.length - 1 && (
+                                <div className="border-t border-border mt-2 pt-2" />
+                              )}
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Ship To */}
+                    <div>
+                      {order.deliveryMethod === "DELIVERY" &&
+                      order.shippingStreet ? (
+                        <div className="text-sm">
+                          {order.recipientName && (
+                            <div className="font-medium">
+                              {order.recipientName}
+                            </div>
+                          )}
+                          {order.customerPhone && (
+                            <div className="text-text-muted">
+                              {order.customerPhone}
+                            </div>
+                          )}
+                          <div className="text-text-muted">
+                            {order.shippingStreet}
+                          </div>
+                          <div className="text-text-muted">
+                            {order.shippingCity}, {order.shippingState}{" "}
+                            {order.shippingPostalCode}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-text-muted italic text-sm">
+                          Store Pickup
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Total */}
+                    <div className="text-right">
+                      <div className="font-semibold">
+                        {formatPrice(order.totalInCents)}
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="text-center">
+                      <span
+                        className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                          order.status
+                        )}`}
+                      >
+                        {getStatusLabel(order.status)}
+                      </span>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex justify-end">
+                      {order.status === "PENDING" && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={cancellingOrderId === order.id}
                             >
-                              Cancel Order & Refund
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
+                              {cancellingOrderId === order.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <span>Cancel Order</span>
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Cancel Order #{order.id.slice(-8)}?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will immediately cancel your order and
+                                process a full refund to your original payment
+                                method. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Keep Order</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleCancelOrder(order.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Cancel Order & Refund
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

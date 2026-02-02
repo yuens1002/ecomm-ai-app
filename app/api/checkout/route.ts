@@ -268,17 +268,17 @@ export async function POST(req: NextRequest) {
       // Add shipping rate options only for payment mode
       // Note: Stripe doesn't support shipping_options in subscription mode
       if (!isSubscription) {
-        shippingOptions = [
-          {
-            shipping_rate: process.env.STRIPE_STANDARD_SHIPPING_RATE!,
-          },
-          {
-            shipping_rate: process.env.STRIPE_EXPRESS_SHIPPING_RATE!,
-          },
-          {
-            shipping_rate: process.env.STRIPE_OVERNIGHT_SHIPPING_RATE!,
-          },
+        // Deduplicate shipping rates in case env vars have same value
+        const uniqueRates = [
+          ...new Set([
+            process.env.STRIPE_STANDARD_SHIPPING_RATE,
+            process.env.STRIPE_EXPRESS_SHIPPING_RATE,
+            process.env.STRIPE_OVERNIGHT_SHIPPING_RATE,
+          ].filter(Boolean)),
         ];
+        shippingOptions = uniqueRates.map((rate) => ({
+          shipping_rate: rate!,
+        }));
       } else {
         // For subscription mode, add shipping as a one-time line item
         // This charges shipping upfront for the initial delivery

@@ -30,13 +30,16 @@ Your Claude Code setup now includes multi-agent workflows and auto-review capabi
 ## How Multi-Agent Workflows Work
 
 ### 1. Exploration Agent
+
 **Triggers automatically when you ask:**
+
 - "Where is X implemented?"
 - "How does Y work?"
 - "Show me all files related to Z"
 - "What's the structure of..."
 
 **Example:**
+
 ```text
 You: "Where are product mutations handled?"
 Claude: [Uses Exploration Agent to search codebase]
@@ -44,13 +47,16 @@ Claude: "Product mutations are in app/admin/(product-menu)/hooks/useProductMenuM
 ```
 
 ### 2. Planning Agent
+
 **Triggers automatically for:**
+
 - New feature requests
 - Refactoring tasks
 - Architectural changes
 - Multi-file modifications
 
 **Example:**
+
 ```text
 You: "Add email notifications for orders"
 Claude: [Enters Plan Mode]
@@ -61,12 +67,15 @@ Claude: [Implements based on approved plan]
 ```
 
 ### 3. Review Agent
+
 **Triggers automatically before:**
+
 - Creating commits
 - Creating pull requests
 - Major code changes
 
 **Reviews for:**
+
 - Type safety (no `any` types)
 - Security (input validation, auth checks)
 - Performance (query optimization, re-renders)
@@ -74,6 +83,7 @@ Claude: [Implements based on approved plan]
 - Testing (coverage for critical paths)
 
 **Example:**
+
 ```text
 You: "Create a commit for this feature"
 Claude: [Runs auto-review]
@@ -86,12 +96,15 @@ Let me fix these..."
 ```
 
 ### 4. Testing Agent
+
 **Triggers automatically after:**
+
 - Code implementations
 - Bug fixes
 - Refactoring
 
 **Runs:**
+
 - Unit tests
 - Type checking
 - Linting
@@ -104,11 +117,13 @@ Let me fix these..."
 ### For New Features
 
 **You say:**
+
 ```text
 "Add a favorites feature where users can save products"
 ```
 
 **What happens:**
+
 1. Planning Agent activates
 2. Explores existing patterns (products, user data)
 3. Proposes architecture (schema changes, server actions, UI)
@@ -121,11 +136,13 @@ Let me fix these..."
 ### For Bug Fixes
 
 **You say:**
+
 ```text
 "Fix the cart total calculation bug"
 ```
 
 **What happens:**
+
 1. Exploration Agent finds cart logic
 2. Identifies the issue
 3. Writes a failing test
@@ -137,11 +154,13 @@ Let me fix these..."
 ### For Code Understanding
 
 **You say:**
+
 ```text
 "Explain how the menu builder state management works"
 ```
 
 **What happens:**
+
 1. Exploration Agent finds relevant files
 2. Reads implementation
 3. Explains architecture with file references
@@ -150,11 +169,13 @@ Let me fix these..."
 ### For Refactoring
 
 **You say:**
+
 ```text
 "Refactor the action bar config to be more type-safe"
 ```
 
 **What happens:**
+
 1. Exploration Agent understands current implementation
 2. Planning Agent proposes refactoring strategy
 3. Ensures tests exist
@@ -169,30 +190,35 @@ Let me fix these..."
 ### What Gets Reviewed
 
 #### ✅ Type Safety
+
 - No `any` types
 - All server actions have Zod validation
 - Prisma types used correctly
 - Proper TypeScript strictness
 
 #### ✅ Next.js Patterns
+
 - Server Components by default
 - Server Actions in correct locations
 - Proper error handling
 - Client-side rendering only when needed
 
 #### ✅ Security
+
 - Input validation with Zod
 - Authentication checks
 - No secrets in code
 - CSRF protection
 
 #### ✅ Performance
+
 - Optimized database queries
 - No N+1 query problems
 - Proper React optimization
 - Image optimization
 
 #### ✅ Accessibility
+
 - Semantic HTML
 - ARIA labels
 - Keyboard navigation
@@ -208,42 +234,49 @@ Let me fix these..."
 
 ## Quick Commands Reference
 
-### Ask Claude To...
+### Ask Claude To
 
 **Explore Codebase:**
+
 - "Show me the file structure for menu builder"
 - "Where is authentication handled?"
 - "Find all Stripe webhook handlers"
 - "How does AI recommendation work?"
 
 **Implement Features:**
+
 - "Add [feature description]"
 - "Implement [specific functionality]"
 - "Create a new [component/hook/action]"
 
 **Fix Issues:**
+
 - "Fix the [bug description]"
 - "Debug why [something isn't working]"
 - "The [feature] is broken, help fix it"
 
 **Review Code:**
+
 - "Review my recent changes"
 - "Check if this code is secure"
 - "Is this component optimized?"
 - "Review before commit"
 
 **Refactor:**
+
 - "Refactor [file/component] to [improvement]"
 - "Improve the structure of [code]"
 - "Make this more type-safe"
 
 **Testing:**
+
 - "Run the tests"
 - "Add tests for [feature]"
 - "Fix failing tests"
 - "Increase test coverage for [code]"
 
 **Git Operations:**
+
 - "Create a commit"
 - "Create a PR for this branch"
 - "Show me what changed"
@@ -267,24 +300,29 @@ Open VS Code Keyboard Shortcuts (`Ctrl+K Ctrl+S`) and set:
 ## Best Practices
 
 ### 1. Be Specific
+
 ❌ "Make this better"
 ✅ "Refactor this to use Zod validation and add error handling"
 
 ### 2. Provide Context
+
 ❌ "Fix the bug"
 ✅ "The cart total is showing $0 when adding subscription products. Fix the calculation in the cart reducer."
 
 ### 3. Use Selection
+
 - Highlight code in editor
 - Ask Claude about it
 - Claude sees your selection automatically
 
 ### 4. Review Suggestions
+
 - Claude will suggest alternatives
 - Ask "why" if you want reasoning
 - Can request different approaches
 
 ### 5. Iterate
+
 - Start with exploration
 - Then planning
 - Then implementation
@@ -295,6 +333,7 @@ Open VS Code Keyboard Shortcuts (`Ctrl+K Ctrl+S`) and set:
 ## Workflow Examples
 
 ### Workflow 1: Add New Feature
+
 ```text
 You: "Add a product review feature"
 
@@ -315,6 +354,7 @@ Claude: [Creates commit with conventional format]
 ```
 
 ### Workflow 2: Debug Production Issue
+
 ```text
 You: "Users report checkout failing with Stripe webhooks"
 
@@ -333,6 +373,7 @@ Claude: "Fix verified. Creating commit..."
 ```
 
 ### Workflow 3: Refactor for Performance
+
 ```text
 You: "The menu builder is slow when loading many products"
 
@@ -357,18 +398,23 @@ Claude: "Load time reduced from 3s to 300ms"
 ## Troubleshooting
 
 ### Claude doesn't understand project context
+
 **Solution:** Claude reads `claude.md` automatically. If context is missing, update that file.
 
 ### Auto-review is too strict
+
 **Solution:** Adjust severity in `.clauderc` under `auto_review.checks`
 
 ### Agent not activating automatically
+
 **Solution:** Check `.clauderc` under `agents.{agent_name}.auto_enable`
 
 ### Tests failing after changes
+
 **Solution:** Ask "Run tests and fix any failures"
 
 ### Want different commit message
+
 **Solution:** "Create commit with message: [your message]"
 
 ---
@@ -376,6 +422,7 @@ Claude: "Load time reduced from 3s to 300ms"
 ## Advanced Features
 
 ### Custom Workflows
+
 Edit `.clauderc` to add custom command sequences:
 
 ```bash
@@ -392,10 +439,12 @@ commands:
 Then: "Run my_workflow"
 
 ### Context Sharing
+
 Claude can share context between conversations. Reference previous work:
 "Continue with the feature we discussed earlier"
 
 ### Parallel Agents
+
 For complex tasks: "Run exploration and testing agents in parallel"
 
 ---
@@ -403,16 +452,19 @@ For complex tasks: "Run exploration and testing agents in parallel"
 ## Configuration Files Reference
 
 ### claude.md
+
 - **Purpose:** Main project context
 - **Update when:** Architecture changes, new patterns, important decisions
 - **Sections:** Project overview, patterns, workflows, agent configs
 
 ### .clauderc
+
 - **Purpose:** Automation and behavior settings
 - **Update when:** Want to change automation rules, quality gates, integrations
 - **Sections:** Agent settings, workflows, quality rules, integrations
 
 ### .vscode/settings.json
+
 - **Purpose:** VS Code and Claude Code IDE integration
 - **Update when:** Want different editor behavior or tool settings
 - **Sections:** Editor, language, Claude Code, file management
@@ -422,7 +474,9 @@ For complex tasks: "Run exploration and testing agents in parallel"
 ## Next Steps
 
 ### 1. Test the Setup
+
 Try asking Claude:
+
 ```text
 "Explain the menu builder architecture"
 ```
@@ -430,6 +484,7 @@ Try asking Claude:
 This will test if the Exploration Agent works correctly.
 
 ### 2. Try a Small Feature
+
 ```text
 "Add a console log to track when products are added to cart"
 ```
@@ -437,6 +492,7 @@ This will test if the Exploration Agent works correctly.
 This tests Planning → Implementation → Review workflow.
 
 ### 3. Create a Commit
+
 ```text
 "Review my changes and create a commit"
 ```
@@ -444,6 +500,7 @@ This tests Planning → Implementation → Review workflow.
 This tests the Review Agent and git integration.
 
 ### 4. Customize Further
+
 - Adjust `.clauderc` rules to your preferences
 - Add project-specific patterns to `claude.md`
 - Set up keyboard shortcuts
@@ -452,24 +509,28 @@ This tests the Review Agent and git integration.
 
 ## Getting Help
 
-### In this session:
+### In this session
+
 - "How do I [task]?"
 - "Explain [concept]"
 - "Show me an example of [pattern]"
 
-### Documentation:
+### Documentation
+
 - Main config: [claude.md](claude.md)
 - Automation: [.clauderc](.clauderc)
 - Project docs: [docs/](docs/)
 
-### Feedback:
-- Report issues: https://github.com/anthropics/claude-code/issues
+### Feedback
+
+- Report issues: <https://github.com/anthropics/claude-code/issues>
 
 ---
 
 **Setup Complete!** 🎉
 
 You now have:
+
 - ✅ Multi-agent workflows configured
 - ✅ Auto-review enabled
 - ✅ Project context optimized

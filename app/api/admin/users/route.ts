@@ -16,6 +16,7 @@ export async function GET() {
         id: true,
         name: true,
         email: true,
+        phone: true,
         isAdmin: true,
         createdAt: true,
         _count: {

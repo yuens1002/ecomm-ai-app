@@ -70,6 +70,7 @@ Replace the current sidebar-based admin layout with a top navbar layout inspired
 ## Footer Structure
 
 ### Desktop Layout
+
 ```text
 ┌────────────────────────────────────────────────────────────────────┐
 │  Artisan Roast    │    Disclaimer • License • Support    │  🐦 📘 📷  │
@@ -78,6 +79,7 @@ Replace the current sidebar-based admin layout with a top navbar layout inspired
 ```
 
 ### Mobile Layout (Stacked)
+
 ```text
 ┌────────────────────────────────────────┐
 │           Artisan Roast                │
@@ -86,6 +88,7 @@ Replace the current sidebar-based admin layout with a top navbar layout inspired
 ```
 
 ### Footer Links
+
 - **Disclaimer**: Placeholder link
 - **License**: Placeholder link
 - **Support**: `https://github.com/yuens1002/ecomm-ai-app/issues`
@@ -96,16 +99,19 @@ Replace the current sidebar-based admin layout with a top navbar layout inspired
 ## Responsive Behavior
 
 ### Desktop (≥1024px)
+
 - Full top navbar with all dropdowns visible
 - Fixed max-width container (e.g., `max-w-7xl`)
 - Footer in 3-column layout
 
 ### Tablet (768px - 1023px)
+
 - Top navbar may compress
 - Consider hamburger menu trigger
 - Left drawer for navigation
 
 ### Mobile (<768px)
+
 - Hamburger menu icon in navbar
 - Left drawer sheet with full navigation
 - Stacked footer (2 rows)
@@ -146,37 +152,43 @@ Replace the current sidebar-based admin layout with a top navbar layout inspired
 ## Implementation Steps
 
 ### Phase 1: Core Shell Components ✅
+
 1. [x] Create `lib/admin-nav-config.ts` with centralized nav structure
 2. [x] Create `AdminTopNav.tsx` with logo, nav items, theme toggle, avatar
 3. [x] Create `AdminFooter.tsx` with responsive layout
 4. [x] Create `AdminShell.tsx` to compose navbar + content + footer
 
 ### Phase 2: Integration & Navigation Logic ✅
-5. [x] Update `app/admin/layout.tsx` to use new AdminShell
-6. [x] Implement dropdown active states (highlight current section)
-7. [x] Update `AdminBreadcrumb.tsx` to hide on `/admin`
-8. [x] Remove old AdminSidebar and AdminHeader
+
+1. [x] Update `app/admin/layout.tsx` to use new AdminShell
+2. [x] Implement dropdown active states (highlight current section)
+3. [x] Update `AdminBreadcrumb.tsx` to hide on `/admin`
+4. [x] Remove old AdminSidebar and AdminHeader
 
 ### Phase 3: Mobile/Responsive ✅
-9. [x] Create `AdminMobileDrawer.tsx` using Sheet component
-10. [x] Add responsive breakpoints to AdminTopNav (hamburger trigger)
-11. [x] Implement stacked footer for mobile
+
+1. [x] Create `AdminMobileDrawer.tsx` using Sheet component
+2. [x] Add responsive breakpoints to AdminTopNav (hamburger trigger)
+3. [x] Implement stacked footer for mobile
 
 ### Phase 4: Validation & Polish ✅
-12. [x] Run full test suite (`npm run test:ci`)
-13. [x] Run typecheck (`npm run typecheck`)
-14. [x] Manual testing and bug fixes
+
+1. [x] Run full test suite (`npm run test:ci`)
+2. [x] Run typecheck (`npm run typecheck`)
+3. [x] Manual testing and bug fixes
 
 ### Phase 5: Component Relocation ✅
-15. [x] Relocate dashboard components from `components/app-components/` to `components/admin/dashboard/`
-16. [x] Create barrel exports via `index.ts`
-17. [x] Consolidate `useBreadcrumb` hook into BreadcrumbContext (single declarative API)
+
+1. [x] Relocate dashboard components from `components/app-components/` to `components/admin/dashboard/`
+2. [x] Create barrel exports via `index.ts`
+3. [x] Consolidate `useBreadcrumb` hook into BreadcrumbContext (single declarative API)
 
 ---
 
 ## Validation Plan
 
 ### Automated Checks (must pass before each commit)
+
 ```bash
 
 npm run typecheck   # No TypeScript errors
@@ -187,6 +199,7 @@ npm run lint        # No ESLint errors (warnings OK)
 ### Manual Testing Checklist (Phase 4)
 
 #### Desktop (≥1024px)
+
 - [ ] Top navbar displays with all 6 dropdowns
 - [ ] Each dropdown opens and shows correct items
 - [ ] Clicking dropdown items navigates to correct route
@@ -203,6 +216,7 @@ npm run lint        # No ESLint errors (warnings OK)
 - [ ] Content area has max-w-7xl constraint
 
 #### Mobile (<768px)
+
 - [ ] Hamburger menu icon visible
 - [ ] Clicking hamburger opens left drawer
 - [ ] Drawer shows full navigation tree
@@ -211,6 +225,7 @@ npm run lint        # No ESLint errors (warnings OK)
 - [ ] All touch targets are ≥44px
 
 #### Route Testing (verify no broken pages)
+
 - [ ] `/admin` - Overview
 - [ ] `/admin/analytics` - Analytics
 - [ ] `/admin/products` - Coffees
@@ -243,7 +258,9 @@ npm run lint        # No ESLint errors (warnings OK)
 | Final | `chore: bump version to 0.75.0` | CHANGELOG + package.json |
 
 ### Final Review Checkpoint
+
 After Phase 4 commit, notify user for final review with:
+
 - Summary of changes
 - Screenshot of desktop layout
 - Screenshot of mobile layout
@@ -256,6 +273,7 @@ After Phase 4 commit, notify user for final review with:
 ## Technical Decisions
 
 ### Navigation Config Structure
+
 ```typescript
 
 type NavItem = {
@@ -283,11 +301,13 @@ const adminNavConfig: NavItem[] = [
 ```
 
 ### Active State Detection
+
 - Parent nav item highlighted if any child route is active
 - Use `usePathname()` and check if path starts with section prefix
 - Example: `/admin/settings/commerce` highlights "Settings" nav item
 
 ### Sheet Component for Mobile
+
 - Use shadcn `Sheet` with `side="left"`
 - Trigger via hamburger icon in navbar (mobile only)
 - Full navigation tree in accordion or list format
@@ -297,6 +317,7 @@ const adminNavConfig: NavItem[] = [
 ## Files Changed Summary
 
 ### New Files
+
 ```tsx
 components/admin/dashboard/AdminTopNav.tsx
 components/admin/dashboard/AdminMobileDrawer.tsx
@@ -310,11 +331,13 @@ lib/admin-nav-config.ts
 ```
 
 ### Modified Files
+
 ```tsx
 app/admin/layout.tsx
 ```
 
 ### Removed Files
+
 ```tsx
 components/app-components/AdminSidebar.tsx
 components/app-components/AdminHeader.tsx

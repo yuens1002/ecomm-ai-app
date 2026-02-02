@@ -107,8 +107,8 @@ For partial seeding, comment out modules in `index.ts` and run individual functi
   - Source: `dev-tools/seed-cafe-page.ts` imports `seedCafePage` from `prisma/seed/cms-pages.ts`.
 - **Before schema changes:** run a backup (`npm run db:backup`) and, if migrating, prefer `npm run db:safe-migrate` to capture/restore data if needed.
 - **After schema changes:**
-  1.  Run `prisma generate` and migrations.
-  2.  Re-run seeds (full or selective) and fix any type errors or constraint issues immediately.
+  1. Run `prisma generate` and migrations.
+  2. Re-run seeds (full or selective) and fix any type errors or constraint issues immediately.
 - **Validation loop:** After seeding, run lightweight checks (e.g., `npx tsx dev-tools/check-cafe-page.ts`) to confirm critical pages/blocks exist.
 - **Environment flags:** Use `SEED_LOCATION_TYPE` to test SINGLE vs MULTI café layouts without editing seed code.
 - **Idempotency:** All seeds use `upsert`; rerun is safe. Keep deterministic data to reduce drift.

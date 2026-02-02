@@ -13,6 +13,7 @@
 ## 1️⃣ Product Search Feature
 
 ### Search Functionality
+
 - [ ] **Desktop Search Dialog**
   - [ ] Click search icon in header opens dialog
   - [ ] Dialog displays title "Search Products"
@@ -46,6 +47,7 @@
 ## 2️⃣ Homepage Recommendations
 
 ### Anonymous User Experience
+
 - [ ] **Trending Products Section**
   - [ ] Section displays with "Trending Now" heading
   - [ ] Shows TrendingUp icon (not Sparkles)
@@ -56,6 +58,7 @@
   - [ ] Loading skeleton displays initially
 
 ### Authenticated User Experience
+
 - [ ] **Login as Demo User**
   - [ ] Navigate to `/auth/signin`
   - [ ] Sign in with demo credentials
@@ -80,6 +83,7 @@
 ## 3️⃣ AI Helper Modal Personalization
 
 ### Anonymous User
+
 - [ ] **Open AI Modal**
   - [ ] Click "Ask AI for Help" button
   - [ ] Modal opens with chat interface
@@ -92,6 +96,7 @@
   - [ ] No mention of purchase history or preferences
 
 ### Authenticated User (Demo Account)
+
 - [ ] **Personalization Badge**
   - [ ] Green badge displays: "Personalized Based on Your History"
   - [ ] Checkmark SVG icon visible
@@ -114,6 +119,7 @@
 ## 4️⃣ Admin Analytics Dashboard
 
 ### Access Control
+
 - [ ] **Unauthenticated Access**
   - [ ] Navigate to `/admin/analytics`
   - [ ] Redirected to sign-in page
@@ -131,6 +137,7 @@
   - [ ] Dashboard loads successfully
 
 ### Dashboard Functionality
+
 - [ ] **Period Selection**
   - [ ] "7 Days" button selected by default
   - [ ] Click "30 Days" button changes data
@@ -180,6 +187,7 @@
   - [ ] Can navigate to other admin pages
 
 ### Data Accuracy
+
 - [ ] **Cross-Reference with Database**
   - [ ] Run: `SELECT activityType, COUNT(*) FROM "UserActivity" GROUP BY activityType;`
   - [ ] Counts match Activity Breakdown
@@ -196,6 +204,7 @@
 ## 5️⃣ User Behavior Tracking
 
 ### Activity Logging
+
 - [ ] **Search Activity**
   - [ ] Search for a product
   - [ ] Check database: `SELECT * FROM "UserActivity" WHERE activityType='SEARCH' ORDER BY createdAt DESC LIMIT 1;`
@@ -213,6 +222,7 @@
   - [ ] SessionId should persist in sessionStorage
 
 ### Data Functions
+
 - [ ] **getUserRecommendationContext**
   - [ ] Sign in as demo user
   - [ ] Open AI modal (triggers context fetch)
@@ -224,6 +234,7 @@
 ## 6️⃣ Edge Cases & Error Handling
 
 ### Search Edge Cases
+
 - [ ] Empty search query returns gracefully
 - [ ] Special characters in search (e.g., "caf\u00e9")
 - [ ] Very long search queries (100+ characters)
@@ -231,12 +242,14 @@
 - [ ] Network error displays error message
 
 ### Recommendations Edge Cases
+
 - [ ] New user with no history shows trending products
 - [ ] User with only one order gets recommendations
 - [ ] All recommended products in cart (check fallback)
 - [ ] API timeout shows error state
 
 ### Analytics Edge Cases
+
 - [ ] No data in selected period shows zero states
 - [ ] Admin with no UserActivity records
 - [ ] Period change while data loading
@@ -247,12 +260,14 @@
 ## 7️⃣ Performance & UX
 
 ### Loading States
+
 - [ ] Homepage recommendations show skeleton (animate-pulse)
 - [ ] Search results show loading spinner
 - [ ] AI modal shows "..." while thinking
 - [ ] Analytics dashboard shows loader on period change
 
 ### Responsive Design
+
 - [ ] Test all pages at 375px (mobile)
 - [ ] Test all pages at 768px (tablet)
 - [ ] Test all pages at 1440px (desktop)
@@ -260,6 +275,7 @@
 - [ ] Touch targets ≥44px on mobile
 
 ### Accessibility
+
 - [ ] Search dialog has proper focus trap
 - [ ] Can navigate recommendations with keyboard (Tab)
 - [ ] Screen reader announces search results count
@@ -271,6 +287,7 @@
 ## 8️⃣ Integration Testing
 
 ### End-to-End User Flow
+
 - [ ] **Anonymous User Journey**
   1. Visit homepage
   2. See "Trending Now" recommendations
@@ -292,6 +309,7 @@
   8. Sign out
 
 ### Cross-Feature Integration
+
 - [ ] Search tracking appears in admin analytics
 - [ ] Product views from recommendations logged
 - [ ] AI recommendations align with homepage recommendations
@@ -302,12 +320,14 @@
 ## 9️⃣ Database Integrity
 
 ### Schema Validation
+
 - [ ] UserActivity table exists
 - [ ] ActivityType enum has 5 values
 - [ ] Indexes created on userId, sessionId, productId, activityType
 - [ ] Foreign key to User is nullable (supports anonymous)
 
 ### Data Quality
+
 - [ ] No orphaned activities (productId references valid products)
 - [ ] SessionIds follow expected format
 - [ ] Timestamps are accurate (UTC)
@@ -318,18 +338,21 @@
 ## 🔟 Production Readiness
 
 ### Environment Variables
+
 - [ ] GEMINI_API_KEY configured
 - [ ] DATABASE_URL configured (pooled connection)
 - [ ] DIRECT_URL configured (direct connection)
 - [ ] All required env vars in Vercel dashboard
 
 ### Security
+
 - [ ] Admin routes protected (authentication + authorization)
 - [ ] API endpoints validate user permissions
 - [ ] No sensitive data in client-side logs
 - [ ] Rate limiting considered for AI endpoints
 
 ### Monitoring
+
 - [ ] Error boundaries catch React errors
 - [ ] API errors logged to console with context
 - [ ] 404 pages for invalid routes

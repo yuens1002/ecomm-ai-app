@@ -104,6 +104,7 @@ Implementation: `app/admin/(product-menu)/hooks/useMenuBuilderState.ts`
 When creating a new table view, use these hooks to avoid boilerplate:
 
 #### `useDragReorder` - Row drag-and-drop reordering
+
 ```typescript
 
 const { getDragHandlers, getDragClasses } = useDragReorder({
@@ -128,6 +129,7 @@ const dragHandlers = getDragHandlers(item.id);
 ```
 
 #### `useInlineEditHandlers` - Name/icon/visibility with undo
+
 ```typescript
 
 const { handleNameSave, handleIconSave, handleVisibilitySave } = useInlineEditHandlers({
@@ -145,6 +147,7 @@ const { handleNameSave, handleIconSave, handleVisibilitySave } = useInlineEditHa
 ```
 
 #### `useContextRowUiState` - Editing and pinned state
+
 ```typescript
 
 const { editingId, pinnedId, clearEditing, clearPinnedIfMatches } = useContextRowUiState(
@@ -155,6 +158,7 @@ const { editingId, pinnedId, clearEditing, clearPinnedIfMatches } = useContextRo
 ```
 
 #### `usePinnedRow` - Pinned row + default sorting
+
 ```typescript
 
 const { pinnedRow, rowsForTable } = usePinnedRow({
@@ -167,6 +171,7 @@ const { pinnedRow, rowsForTable } = usePinnedRow({
 ```
 
 #### `TableRow` - Built-in click/double-click handling
+
 ```typescript
 
 <TableRow

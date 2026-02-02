@@ -108,6 +108,7 @@ export interface OrderWithItems {
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   customerEmail: string | null;
+  customerPhone: string | null;
   paymentCardLast4: string | null;
   recipientName: string | null;
   shippingStreet: string | null;

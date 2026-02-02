@@ -30,6 +30,7 @@ type Order = {
   totalInCents: number;
   deliveryMethod: string;
   customerEmail: string;
+  customerPhone: string | null;
   recipientName: string | null;
   shippingStreet: string | null;
   shippingCity: string | null;
@@ -315,7 +316,7 @@ export default function OrderManagementClient() {
                     Items
                   </th>
                   <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Shipping Address
+                    Ship To
                   </th>
                   <th className="text-right py-3 px-4 font-semibold text-sm">
                     Total
@@ -393,6 +394,11 @@ export default function OrderManagementClient() {
                           {order.recipientName && (
                             <div className="font-medium">
                               {order.recipientName}
+                            </div>
+                          )}
+                          {order.customerPhone && (
+                            <div className="text-muted-foreground">
+                              {order.customerPhone}
                             </div>
                           )}
                           <div>{order.shippingStreet}</div>

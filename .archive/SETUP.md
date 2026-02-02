@@ -340,13 +340,17 @@ Your app will be deployed at `https://your-app.vercel.app`. Now create productio
 1. Go back to Google Cloud Console → Credentials
 2. Create new OAuth client ID for production
 3. **Authorized JavaScript origins:**
+
    ```
    https://your-app.vercel.app
    ```
+
 4. **Authorized redirect URIs:**
+
    ```
    https://your-app.vercel.app/api/auth/callback/google
    ```
+
 5. Update `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` in Vercel **Production** environment
 
 #### GitHub OAuth (Production)

@@ -14,11 +14,13 @@ Mobile admin usage is not a common use case. This plan focuses on **minimal viab
 **Core principle:** Context menu handles all mobile interactions (no dedicated Reorder Mode).
 
 This document outlines:
+
 1. **Range Selection** - Shift+click on desktop, long-press checkbox on both platforms
 2. **Context Menus** - Right-click (desktop) + long-press row (mobile) with Move Up/Down
 3. **Touch Target Compliance** - 44x44px minimum targets
 
 **Explicitly deferred:**
+
 - ~~Touch DnD with drag gesture~~
 - ~~Dedicated Reorder Mode UI~~
 - ~~@dnd-kit migration~~
@@ -28,6 +30,7 @@ This document outlines:
 ## Feature 1: Range Selection
 
 ### Current State
+
 - Single-click toggles individual row selection
 - Cmd/Ctrl+click adds to selection (desktop only)
 - No way to select a contiguous range of items
@@ -36,12 +39,14 @@ This document outlines:
 ### Desktop: Shift+Click
 
 **Behavior:**
+
 1. User clicks row A (selected, becomes "anchor")
 2. User Shift+clicks row B
 3. All rows from A to B become selected (inclusive)
 4. Anchor remains at A for subsequent Shift+clicks
 
 **Edge Cases:**
+
 - Shift+click with no prior selection → select from first visible row to clicked row
 - Shift+click on already-selected row → no change (or deselect range?)
 - Shift+click across collapsed sections → only select visible rows
@@ -74,6 +79,7 @@ const handleRowClick = (key: string, event: MouseEvent) => {
 ```
 
 **Files to Modify:**
+
 - `hooks/useContextSelectionModel.ts` - Add anchor tracking, range selection logic
 - `hooks/useRowClickHandler.ts` - Pass shift/meta key state
 - `menu-builder/components/table-views/shared/table/TableRow.tsx` - Forward click event
@@ -81,23 +87,27 @@ const handleRowClick = (key: string, event: MouseEvent) => {
 ### Mobile & Desktop: Long-Press Checkbox for Range Selection
 
 **Behavior:**
+
 1. User taps/clicks checkbox A (selected, becomes anchor)
 2. User **long-presses checkbox B** (500ms)
 3. All visible rows from A to B immediately selected (no confirmation needed)
 4. Toast feedback: "Selected 5 items"
 
 **Why Long-Press on Checkbox?**
+
 - **Inline gesture** - No extra buttons needed, action happens where user is already interacting
 - **Clear intent** - Long-press on checkbox clearly signals "special selection behavior"
 - **Works on both platforms** - Same gesture for desktop and mobile
 - **Discoverable** - Tooltip on desktop: "Long-press to select range"
 
 **Visual Feedback During Long-Press:**
+
 - Checkbox shows progress indicator (circular fill or pulse animation)
 - After 500ms, haptic feedback (mobile) + visual confirmation
 - Range highlight previews which rows will be selected
 
 **Scroll-Safe Implementation:**
+
 - Cancel long-press if touch moves > 10px (user is scrolling)
 - Uses same `useLongPress` hook with movement threshold
 - See "Long-Press Detection (Scroll-Safe)" section below for implementation
@@ -150,6 +160,7 @@ const CheckboxCell = ({ rowKey, isSelected, onSelect, onRangeSelect, anchorKey }
 ```
 
 **Tooltip (Desktop):**
+
 ```text
 [Checkbox hover tooltip]
 "Click to select, long-press to select range"
@@ -160,6 +171,7 @@ const CheckboxCell = ({ rowKey, isSelected, onSelect, onRangeSelect, anchorKey }
 **Fallback: "Select Range" Button (Optional)**
 
 If long-press discoverability is a concern, add optional action bar button:
+
 - Appears when 1+ items selected
 - Shows on mobile only (desktop has Shift+click)
 - Entering range mode highlights anchor row
@@ -170,6 +182,7 @@ If long-press discoverability is a concern, add optional action bar button:
 ## Feature 2: Context Menus (Right-Click + Long-Press)
 
 ### Current State
+
 - No context menu implementation
 - Right-click does nothing
 - Long-press does nothing on mobile
@@ -178,12 +191,14 @@ If long-press discoverability is a concern, add optional action bar button:
 ### Implementation
 
 **shadcn ContextMenu handles both platforms automatically:**
+
 - **Desktop:** Right-click triggers menu
 - **Mobile:** Long-press triggers menu (built into Radix UI)
 
 No separate mobile implementation needed!
 
 **Menu Items (per view):**
+
 - Same actions as action bar, filtered by selection state
 - **Move Up / Move Down** - Mobile alternative to drag-and-drop
 - Example for all-labels: Move Up, Move Down, Clone, Toggle Visibility, Delete
@@ -237,6 +252,7 @@ import {
 ```
 
 **Move Up/Down Handlers:**
+
 ```typescript
 
 const handleMoveUp = () => {
@@ -263,10 +279,12 @@ shadcn/Radix ContextMenu handles scroll-vs-long-press detection automatically. T
 ## Feature 3: Touch Target Compliance
 
 ### Current State
+
 - Some targets may be < 44x44px
 - Row height varies (h-10 on desktop)
 
 ### Requirements (WCAG 2.5.5)
+
 - Minimum touch target: 44x44px (CSS pixels)
 - Spacing between targets: 8px minimum
 
@@ -353,6 +371,7 @@ const TouchTarget = ({ children, className }: { children: ReactNode; className?:
 4. ⏭️ Row height increase - deferred (test on devices first)
 
 **Implementation approach:**
+
 - Block elements (checkbox, chevron): Use `TouchTarget` wrapper with `min-h/w-[44px] md:min-h/w-0`
 - Inline elements (pencil icon): Use `before:absolute before:-inset-3 before:md:hidden` pseudo-element
 
@@ -361,9 +380,11 @@ const TouchTarget = ({ children, className }: { children: ReactNode; className?:
 ## Files Summary
 
 ### New Files
+
 - `hooks/useLongPress.ts` - Scroll-safe long-press detection (for checkbox range selection only)
 
 ### Modified Files
+
 - `hooks/useContextSelectionModel.ts` - Anchor tracking, range selection
 - `hooks/useRowClickHandler.ts` - Shift key handling
 - `menu-builder/components/table-views/shared/cells/CheckboxCell.tsx` - Long-press range selection
@@ -375,6 +396,7 @@ const TouchTarget = ({ children, className }: { children: ReactNode; className?:
 ## Acceptance Criteria
 
 ### Range Selection
+
 - [x] Shift+click selects range on desktop
 - [x] Long-press checkbox selects range (both platforms)
 - [ ] Anchor row visually indicated (subtle highlight) - deferred
@@ -383,6 +405,7 @@ const TouchTarget = ({ children, className }: { children: ReactNode; className?:
 - [ ] Toast confirms range selection count - not implemented
 
 ### Context Menus (includes Mobile Reorder)
+
 - [x] Right-click shows context menu on desktop (AllLabelsTableView)
 - [x] Long-press shows context menu on mobile (shadcn handles this)
 - [x] Menu items for Move Up/Down, Add to Labels/Categories
@@ -391,6 +414,7 @@ const TouchTarget = ({ children, className }: { children: ReactNode; className?:
 - [x] Actions execute correctly
 
 ### Touch Targets
+
 - [x] Interactive elements have adequate touch area (44x44px on mobile)
 - [ ] Row height comfortable for touch - test on devices
 - [x] No overlapping touch targets

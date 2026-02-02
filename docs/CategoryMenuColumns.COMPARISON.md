@@ -36,7 +36,7 @@
 - **Less semantic**: Breaks logical grouping for mathematical equality
 - **Visual confusion**: Reader might see "ORIGINS" header in column 2 but most categories in column 3
 
-#### Best for:
+#### Best for
 
 - Strict requirement: "columns must have equal counts"
 - Data with similar-sized groups
@@ -81,7 +81,7 @@
 - **Complex algorithm**: Greedy approach, harder to predict
 - **Dynamic rebalancing**: Expanding one label can move entire groups between columns
 
-#### Best for:
+#### Best for
 
 - Visual aesthetics priority
 - Mixed group sizes (some labels with 2 cats, others with 15)
@@ -144,14 +144,14 @@ Column 1 (12 items):          Column 2 (11 items):          Column 3 (6 items):
 
 ## Decision Guide
 
-### Choose **Sequential** if:
+### Choose **Sequential** if
 
 - ✅ Requirement: "Columns must have equal item counts"
 - ✅ Data has mostly similar-sized groups
 - ✅ Splitting groups across columns is acceptable
 - ✅ You want simple, predictable behavior
 
-### Choose **Weight-Balanced** if:
+### Choose **Weight-Balanced** if
 
 - ✅ Visual balance is more important than exact counts
 - ✅ Data has mixed group sizes (some tiny, some huge)

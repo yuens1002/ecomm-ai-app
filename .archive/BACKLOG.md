@@ -1541,6 +1541,148 @@ When user clicks "Migrate to Blocks":
 
 ---
 
+### Customer Self-Service Shipping Address Update
+
+**Status**: Backlog
+**Priority**: Medium
+**Description**: Allow customers to update their subscription shipping address from the account page. Stripe Customer Portal only supports billing address updates, not shipping.
+
+**Current State**:
+
+- Stripe portal only allows billing address changes
+- No way for customers to update shipping address without contacting support
+- `customer.updated` webhook syncs billing address but not shipping
+
+**Proposed Solution**:
+
+- Add "Edit Shipping Address" button to SubscriptionsTab for each subscription
+- Open modal with address form pre-populated with current address
+- Create `/api/user/subscriptions/[id]/address` endpoint
+- Update: local Subscription record, pending Order records, Stripe subscription metadata
+
+**Tasks**:
+
+- [ ] Add EditAddressDialog component to SubscriptionsTab
+- [ ] Create PATCH `/api/user/subscriptions/[id]/address` endpoint
+- [ ] Update Subscription shipping fields in database
+- [ ] Update Stripe subscription metadata for future renewals
+- [ ] Update any PENDING orders linked to subscription
+- [ ] Add validation for required address fields
+
+**Acceptance Criteria**:
+
+- Customer can update shipping address from account page
+- Changes apply to subscription and all pending orders
+- Future renewal orders use updated address (via Stripe metadata)
+- Address validation prevents incomplete submissions
+
+**Test Flow Reference**:
+
+```
+6. Address Update Flow (Customer Self-Service)
+  Step: 6a - Customer clicks "Edit Address" on subscription
+  Step: 6b - Modal opens with current address pre-filled
+  Step: 6c - Customer submits updated address
+  Step: 6d - Subscription, pending orders, and Stripe metadata updated
+```
+
+---
+
+### Order History Ship To Column & Edit for Pending Orders
+
+**Status**: Backlog
+**Priority**: Medium
+**Description**: Add Ship To column to customer Order History page showing recipient name, phone, and address. Allow customers to edit Ship To info for orders with PENDING status.
+
+**Current State**:
+
+- Order History table shows: Order #, Date, Items, Status, Total
+- No shipping address/phone displayed in the table
+- Customers cannot edit shipping info after placing an order
+
+**Proposed Changes**:
+
+1. **Display**: Add "Ship To" column showing recipient name, phone, and address
+2. **Edit**: Add "Edit" button for PENDING orders that opens a modal to update shipping info
+
+**Tasks**:
+
+- [x] Add Ship To column to OrdersPageClient.tsx table
+- [x] Display recipientName, customerPhone, and shipping address
+- [ ] Create EditShipToDialog component for pending orders
+- [ ] Create PATCH `/api/user/orders/[id]/address` endpoint
+- [ ] Update Order shipping fields in database
+- [ ] Show "Edit" button only for PENDING orders
+- [ ] Validate address fields before saving
+
+**Acceptance Criteria**:
+
+- Ship To column visible in Order History (desktop view)
+- Phone number displayed when available
+- Edit button appears only for PENDING orders
+- Modal allows editing: recipient name, phone, street, city, state, postal code, country
+- Changes saved to database immediately
+- Updated address reflected in admin Orders page
+
+**Notes**:
+
+- This is separate from subscription shipping updates
+- Once order is shipped/picked up, address cannot be changed
+- Phone number can be used for delivery notifications (future feature)
+
+---
+
+### Refactor Stripe Webhook Handler
+
+**Status**: Backlog
+**Priority**: Medium
+**Description**: The `app/api/webhooks/stripe/route.ts` file has grown to ~2000 lines with complex nested logic. Refactor into smaller, maintainable handler functions.
+
+**Current Issues**:
+
+- Single 2000-line file handling all webhook events
+- Duplicated logic between `checkout.session.completed` and `invoice.payment_succeeded`
+- Complex nested if/else and switch cases
+- Difficult to test individual handlers
+- Hard to trace event flow
+
+**Proposed Refactor**:
+
+```
+app/api/webhooks/stripe/
+├── route.ts                    # Main entry point, event routing
+├── handlers/
+│   ├── checkout-completed.ts   # checkout.session.completed
+│   ├── invoice-paid.ts         # invoice.payment_succeeded (renewals only)
+│   ├── subscription-updated.ts # customer.subscription.updated
+│   ├── subscription-deleted.ts # customer.subscription.deleted
+│   └── customer-updated.ts     # customer.updated
+├── utils/
+│   ├── payment-ids.ts          # Extract payment IDs from invoice
+│   ├── order-utils.ts          # Create orders, update orders
+│   └── subscription-utils.ts   # Create/update subscription records
+└── types.ts                    # Shared webhook types
+```
+
+**Tasks**:
+
+- [ ] Extract each case handler into separate file
+- [ ] Create shared utility functions for common operations
+- [ ] Remove duplicate logic (checkout vs invoice handlers)
+- [ ] Simplify `invoice.payment_succeeded` to only handle renewals
+- [ ] Add unit tests for individual handlers
+- [ ] Document event flow and handler responsibilities
+
+**Acceptance Criteria**:
+
+- Each webhook event has dedicated handler file
+- No duplicated business logic
+- Easy to trace which handler processes which event
+- Unit tests for each handler
+- Main route.ts under 100 lines
+
+---
+
 ### Subscription Cancellation Feedback Tracking
 
 **Status**: Backlog

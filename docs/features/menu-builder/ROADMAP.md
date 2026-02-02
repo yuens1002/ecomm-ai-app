@@ -24,6 +24,7 @@ Total       ██████████████████████�
 ```
 
 ### Recent Completions (v0.66.x - v0.72.x)
+
 - ✅ IdentityRegistry architecture (unified row identity management)
 - ✅ 2-level Menu View (Labels → Categories, products as count only)
 - ✅ Same-level DnD with auto-collapse/expand behaviors
@@ -543,6 +544,7 @@ Total       ██████████████████████�
 
 **Overview:**
 Dragging categories across label boundaries in Menu Table View:
+
 - Move a **category** from one label to another
 
 Note: Products are not shown in menu view (2-level hierarchy), so cross-boundary product moves are not applicable here.
@@ -653,15 +655,18 @@ Dragging multiple selected items at once, moving them together to a new location
 
 **Problem:**
 Current code conflates hierarchy depth with entity type:
+
 - `FlatMenuRow` uses `level: "label" | "category"` where `level` means entity type
 - `useMultiEntityDnd` has `EntityLevel = "label" | "category"` hardcoded
 - This breaks if we need to add levels above labels or between existing levels
 
 **Already Have (identity-registry.ts):**
+
 - `kind: string` - Entity type ("label", "category", "product")
 - `depth: number` - Hierarchy position (0, 1, 2, ...)
 
 **What Needs to Change:**
+
 1. Rename `level` → `kind` in `FlatMenuRow` types
 2. Add numeric `depth` field for hierarchy position
 3. Update DnD hooks to use `kind` for entity type, `depth` for level logic
@@ -687,6 +692,7 @@ Current code conflates hierarchy depth with entity type:
 - [x] Works in all 5 table views
 
 **Files Modified:**
+
 - `hooks/useContextSelectionModel.ts` - Added `anchorKey`, `rangeSelect`
 - `hooks/useRowClickHandler.ts` - Shift key handling
 - `table-views/shared/cells/CheckboxCell.tsx` - Long-press support with visual feedback
@@ -710,11 +716,13 @@ Current code conflates hierarchy depth with entity type:
 - [x] Works in all 5 table views
 
 **Explicitly Deferred:**
+
 - ~~Touch DnD with drag gesture~~
 - ~~Dedicated Reorder Mode with arrow buttons~~
 - ~~@dnd-kit migration~~
 
 **Files Created:**
+
 - `table-views/shared/cells/RowContextMenu.tsx`
 - `table-views/shared/cells/TouchTarget.tsx`
 
@@ -910,6 +918,7 @@ app/admin/(product-menu)/
 
 **Decision:** Single-level table with TanStack sorting instead of 2-level hierarchy with autoOrder mode
 **Rationale:**
+
 - 2-level hierarchy (categories → products) added complexity for little value
 - autoOrder toggle is redundant when TanStack provides 5 sorting options
 - Double-click to drill into category keeps product management in Category View
@@ -926,6 +935,7 @@ app/admin/(product-menu)/
 
 **Decision:** Extract column sort persistence into `usePersistColumnSort` hook
 **Rationale:**
+
 - Both LabelTableView and CategoryTableView needed identical logic
 - Pattern: watch TanStack sorting state → persist to DB via mutation
 - Guards against concurrent persists with a ref
@@ -963,7 +973,7 @@ app/admin/(product-menu)/
    - Sidebar navigation with collapsible sections
    - Breadcrumb header navigation
    - Consistent admin UI pattern
-   - See: https://shadcnstudio.com/blocks/dashboard-and-application/dashboard-shell
+   - See: <https://shadcnstudio.com/blocks/dashboard-and-application/dashboard-shell>
 
 ### Future Enhancements
 

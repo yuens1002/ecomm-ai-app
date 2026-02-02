@@ -94,6 +94,7 @@ constants/action-bar/
 ### How It Works
 
 1. **actions.ts** - Each action is fully defined in one place:
+
    ```typescript
    clone: {
      id: "clone",
@@ -111,6 +112,7 @@ constants/action-bar/
        successToast: { "all-categories": { title: "Cloned categories" } },
      },
    }
+
 ```
 
 2. **views.ts** - Explicit left/right layout per view:
@@ -132,10 +134,12 @@ constants/action-bar/
    }
 ```
 
-3. **index.ts** - Hydrates slots with base definitions:
+1. **index.ts** - Hydrates slots with base definitions:
+
    ```typescript
    const actions = getActionsForView("menu");
    // Returns ActionDefinition[] with position, type, and all metadata
+
 ```
 
 ### Benefits
@@ -289,6 +293,7 @@ const value = { ...data, ...mutations, builder };
 ```
 
 Consumer usage:
+
 ```typescript
 
 const { builder, labels, categories, products, updateCategory } = useMenuBuilder();
@@ -390,11 +395,13 @@ app/admin/(product-menu)/
 ## Testing Strategy
 
 ### Unit Tests
+
 - **Config invariants** - All action IDs referenced must exist
 - **DTO mapping** - Ordering guarantees preserved
 - **Structural snapshots** - Action bar layout locked
 
 ### Test Commands
+
 ```bash
 
 npm run test:ci                    # All tests
@@ -407,11 +414,13 @@ npx jest "categories.dto"          # DTO tests
 ## Adding New Features
 
 ### Add a Table View
+
 1. Add `tableViewId` to `TableViewId` union in `view-configs.ts`
 2. Create component in `components/table-views/`
 3. Register in `TableViewRenderer.tsx`
 
 ### Add an Action
+
 1. Add action definition to `actions.ts` with execute/effects
 2. Add action ID to appropriate views in `views.ts`
 3. If new mutation needed, add to `useProductMenuMutations.ts`
