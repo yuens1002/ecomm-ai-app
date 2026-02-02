@@ -28,9 +28,9 @@ type Subscription = {
   status: "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE";
   priceInCents: number;
   deliverySchedule: string | null;
-  currentPeriodEnd: string;
+  currentPeriodEnd: Date;
   cancelAtPeriodEnd: boolean;
-  pausedUntil: string | null;
+  pausedUntil: Date | null;
   productNames: string[];
   recipientName: string | null;
   shippingStreet: string | null;
@@ -38,12 +38,16 @@ type Subscription = {
   shippingState: string | null;
   shippingPostalCode: string | null;
   shippingCountry: string | null;
-  createdAt: string;
+  createdAt: Date;
   user: {
     name: string | null;
     email: string | null;
   };
 };
+
+interface SubscriptionManagementClientProps {
+  initialSubscriptions: Subscription[];
+}
 
 const STATUS_TABS = [
   { value: "all", label: "All" },
@@ -60,12 +64,13 @@ const statusColors: Record<string, string> = {
   CANCELED: "bg-gray-100 text-gray-800",
 };
 
-export default function SubscriptionManagementClient() {
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [filteredSubscriptions, setFilteredSubscriptions] = useState<
-    Subscription[]
-  >([]);
-  const [loading, setLoading] = useState(true);
+export default function SubscriptionManagementClient({
+  initialSubscriptions,
+}: SubscriptionManagementClientProps) {
+  const [subscriptions, setSubscriptions] =
+    useState<Subscription[]>(initialSubscriptions);
+  const [filteredSubscriptions, setFilteredSubscriptions] =
+    useState<Subscription[]>(initialSubscriptions);
   const [statusFilter, setStatusFilter] = useState("all");
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [skipDialogOpen, setSkipDialogOpen] = useState(false);
@@ -81,7 +86,6 @@ export default function SubscriptionManagementClient() {
       if (!res.ok) throw new Error("Failed to fetch subscriptions");
       const data = await res.json();
       setSubscriptions(data.subscriptions);
-      setFilteredSubscriptions(data.subscriptions);
     } catch {
       toast({
         title: "Error",
@@ -89,14 +93,8 @@ export default function SubscriptionManagementClient() {
         variant: undefined,
         className: "!bg-foreground !text-background !border-foreground",
       });
-    } finally {
-      setLoading(false);
     }
   }, [toast]);
-
-  useEffect(() => {
-    fetchSubscriptions();
-  }, [fetchSubscriptions]);
 
   useEffect(() => {
     if (statusFilter === "all") {
@@ -321,14 +319,6 @@ export default function SubscriptionManagementClient() {
           {subscription.shippingCity}, {subscription.shippingState}{" "}
           {subscription.shippingPostalCode}
         </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="text-center">Loading subscriptions...</div>
       </div>
     );
   }
