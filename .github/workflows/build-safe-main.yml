@@ -81,9 +81,10 @@ jobs:
       - name: Build (no migrations, skip SSG)
         if: steps.filter.outputs.code == 'true'
         env:
-          # Use direct connection for any DB-adjacent steps, but skip migrations in CI
-          DATABASE_URL: ${{ secrets.DIRECT_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          # Use direct connection with connection_limit=1 to prevent exhausting Neon connections
+          # The limit serializes queries which is slower but avoids "too many connections" errors
+          DATABASE_URL: ${{ secrets.DIRECT_URL }}?connection_limit=1
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}?connection_limit=1
           BUILD_VERBOSE: "true"
           # Skip static site generation to reduce DB connections during CI builds
           # Pages will be generated via ISR on first request in production
