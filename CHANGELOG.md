@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.81.2 - 2026-02-03
+
+### Fixed
+
+- Add `connection_limit=1` to CI database URL to prevent connection exhaustion
+
 ## 0.81.1 - 2026-02-03
 
 ### Changed
@@ -7,6 +13,7 @@
 - Skip SSG in CI builds to reduce database connections
 - Add `SKIP_SSG` env check to category, product, and CMS page routes
 - CI builds now use ISR fallback; production builds unchanged
+- CI workflow always reports status (fixes required check for docs-only PRs)
 
 ## 0.81.0 - 2026-02-03
 
