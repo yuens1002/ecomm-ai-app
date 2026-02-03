@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.81.3 - 2026-02-03
+
+### Fixed
+
+- Mobile nav only expands best matching section (not multiple sections)
+
 ## 0.81.2 - 2026-02-03
 
 ### Fixed
