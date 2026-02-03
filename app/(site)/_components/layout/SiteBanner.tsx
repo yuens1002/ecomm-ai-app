@@ -54,7 +54,7 @@ export function SiteBanner({
         className
       )}
     >
-      <div className="container mx-auto flex items-center justify-center gap-2">
+      <div className="container mx-auto flex flex-wrap items-center justify-center gap-2 text-center">
         <DynamicIcon name={iconName} className="h-4 w-4 shrink-0" />
         <span>{message}</span>
         {link && (

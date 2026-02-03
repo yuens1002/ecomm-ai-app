@@ -29,6 +29,9 @@ type DragHandleCellProps = {
  * Visibility rules match checkbox:
  * - Always visible when checked or indeterminate
  * - Hover-only when unchecked
+ *
+ * Mobile: Hidden on touch devices (md breakpoint). Context menu provides
+ * Move Up/Down actions as DnD alternative on mobile.
  */
 export function DragHandleCell({
   isEligible,
@@ -49,12 +52,12 @@ export function DragHandleCell({
   return (
     <div
       className={cn(
-        "flex items-center justify-center",
+        // Hidden on mobile/touch devices, flex on md+ (desktop)
+        "hidden md:flex items-center justify-center",
         // Cursor based on eligibility
         isEnabled ? "cursor-grab active:cursor-grabbing" : "cursor-not-allowed",
-        // Visibility: always visible on mobile, conditional on md+
-        "opacity-100",
-        isVisible ? "md:opacity-100" : "md:opacity-0",
+        // Visibility: conditional based on selection/hover state
+        isVisible ? "opacity-100" : "opacity-0",
         className
       )}
     >

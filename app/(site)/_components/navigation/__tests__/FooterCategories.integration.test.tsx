@@ -116,8 +116,8 @@ describe("FooterCategories - Integration Tests", () => {
         <FooterCategories categoryGroups={mockCategoryGroups} />
       );
 
-      // Should have the 3-column grid structure from CategoryMenuColumns
-      const gridContainer = container.querySelector(".grid.grid-cols-3");
+      // Should have the responsive grid structure from CategoryMenuColumns
+      const gridContainer = container.querySelector(".grid.grid-cols-1");
       expect(gridContainer).toBeInTheDocument();
     });
 

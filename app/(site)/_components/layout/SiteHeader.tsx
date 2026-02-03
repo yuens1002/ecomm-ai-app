@@ -3,8 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { ThemeSwitcher } from "@/components/shared/ThemeSwitcher";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ShoppingCart } from "@/app/(site)/_components/cart/ShoppingCart";
 import { UserMenu } from "@/app/(site)/_components/navigation/UserMenu";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -129,13 +128,44 @@ export default function SiteHeader({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
   const { settings } = useSiteSettings();
+
+  const handleScroll = useCallback(() => {
+    const currentScrollY = window.scrollY;
+    const threshold = 10;
+
+    // Always show header when at top of page
+    if (currentScrollY < threshold) {
+      setIsHeaderVisible(true);
+      lastScrollY.current = currentScrollY;
+      return;
+    }
+
+    // Determine scroll direction with threshold to avoid jitter
+    const scrollDiff = currentScrollY - lastScrollY.current;
+    if (Math.abs(scrollDiff) < threshold) return;
+
+    if (scrollDiff > 0) {
+      // Scrolling down - hide header
+      setIsHeaderVisible(false);
+    } else {
+      // Scrolling up - show header
+      setIsHeaderVisible(true);
+    }
+
+    lastScrollY.current = currentScrollY;
+  }, []);
 
   useEffect(() => {
     // Mounted flag guards Radix IDs from mismatching between SSR and client.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
-  }, []);
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -147,7 +177,12 @@ export default function SiteHeader({
   }
 
   return (
-    <header className="bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md">
+    <header
+      className={cn(
+        "bg-white/90 dark:bg-slate-950/90 shadow-md sticky top-0 z-50 w-full backdrop-blur-md transition-transform duration-300",
+        isHeaderVisible ? "translate-y-0" : "-translate-y-full"
+      )}
+    >
       {/* Site Banner - inline above header content */}
       {banner && !isBannerDismissed && (
         <SiteBanner
@@ -160,37 +195,25 @@ export default function SiteHeader({
         />
       )}
       <div className="mx-auto max-w-screen-2xl px-4 md:px-8 py-4 flex items-center gap-6 md:gap-12">
-        {/* Logo/Title */}
-        <Link href="/" className="flex items-center gap-2 text-primary">
-          {/* Mobile View: Stacked */}
-          <div className="flex flex-col items-center lg:hidden">
-            <Image
-              src={settings.storeLogoUrl}
-              alt={`${settings.storeName} Logo`}
-              width={32}
-              height={32}
-              className="w-8 h-8"
-            />
-            <span className="text-[10px] uppercase tracking-wide font-medium leading-none mt-1">
-              {settings.storeName}
-            </span>
-          </div>
-
-          {/* Desktop View: Side by Side */}
-          <div className="hidden lg:flex items-center gap-2">
-            <Image
-              src={settings.storeLogoUrl}
-              alt={`${settings.storeName} Logo`}
-              width={32}
-              height={32}
-              className="w-8 h-8"
-            />
-            <span className="text-2xl font-bold">{settings.storeName}</span>
-          </div>
+        {/* Logo/Title - Stacked on mobile/tablet, side-by-side on large desktop */}
+        <Link
+          href="/"
+          className="flex flex-col lg:flex-row items-center gap-1 lg:gap-2 text-primary"
+        >
+          <Image
+            src={settings.storeLogoUrl}
+            alt={`${settings.storeName} Logo`}
+            width={32}
+            height={32}
+            className="w-8 h-8"
+          />
+          <span className="text-[10px] lg:text-2xl uppercase lg:normal-case tracking-wide lg:tracking-normal font-medium lg:font-bold">
+            {settings.storeName}
+          </span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-4">
+        {/* Desktop Navigation - centered in available space */}
+        <div className="hidden md:flex flex-1 items-center justify-center">
           {isClient ? (
             <NavigationMenu>
               <NavigationMenuList>
@@ -257,7 +280,7 @@ export default function SiteHeader({
         </div>
 
         {/* Right Side Controls */}
-        <div className="flex items-center space-x-4 ml-auto">
+        <div className="flex items-center gap-4 ml-auto">
           {isClient ? (
             <>
               {/* Search Dialog */}
@@ -293,7 +316,6 @@ export default function SiteHeader({
                 </DialogContent>
               </Dialog>
 
-              <ThemeSwitcher />
               <ShoppingCart />
               {user ? (
                 <UserMenu user={user} />

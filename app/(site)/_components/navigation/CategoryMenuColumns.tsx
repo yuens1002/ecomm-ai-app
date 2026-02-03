@@ -125,8 +125,8 @@ function LabelGroupColumn({
 
   return (
     <div className="space-y-3">
-      {/* Label Header with optional icon */}
-      <div className="flex items-center gap-2 border-b pb-2">
+      {/* Label Header with optional icon - no border on mobile when stacked */}
+      <div className="flex items-center gap-2 sm:border-b sm:pb-2">
         {icon && <DynamicIcon name={icon} className="h-4 w-4 shrink-0" />}
         <h4 className={labelClassName}>{label}</h4>
       </div>
@@ -174,7 +174,7 @@ export function CategoryMenuColumns({
   categoryGroups,
   labelIcons,
   maxInitialCategories = 7,
-  className = "grid grid-cols-3 gap-x-6 gap-y-4",
+  className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4",
   linkClassName = "text-sm hover:underline hover:text-primary transition-colors truncate block",
   labelClassName = "text-xs font-bold uppercase tracking-wider text-muted-foreground truncate",
 }: CategoryMenuColumnsProps) {
@@ -216,7 +216,7 @@ export function CategoryMenuColumns({
   return (
     <div className={className}>
       {/* Column 1 */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {distribution.column1.map((group) => (
           <LabelGroupColumn
             key={group.label}
@@ -231,7 +231,7 @@ export function CategoryMenuColumns({
       </div>
 
       {/* Column 2 */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {distribution.column2.map((group) => (
           <LabelGroupColumn
             key={group.label}
@@ -246,7 +246,7 @@ export function CategoryMenuColumns({
       </div>
 
       {/* Column 3 */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {distribution.column3.map((group) => (
           <LabelGroupColumn
             key={group.label}

@@ -52,13 +52,13 @@ describe("CategoryMenuColumns", () => {
       expect(nuttyLink).toHaveAttribute("href", "/nutty-chocolatey");
     });
 
-    it("renders in 3-column grid layout", () => {
+    it("renders in responsive grid layout", () => {
       const { container } = render(
         <CategoryMenuColumns categoryGroups={mockCategoryGroups} />
       );
 
       const gridContainer = container.firstChild;
-      expect(gridContainer).toHaveClass("grid", "grid-cols-3");
+      expect(gridContainer).toHaveClass("grid", "grid-cols-1", "lg:grid-cols-3");
     });
   });
 

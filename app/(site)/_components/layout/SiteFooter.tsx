@@ -9,6 +9,7 @@ import FooterCategories from "../navigation/FooterCategories";
 import FooterAccountLinks from "../navigation/FooterAccountLinks";
 import { getPagesForFooter } from "@/app/actions";
 import { getProductMenuSettings } from "@/lib/product-menu-settings";
+import { ThemeSwitcher } from "@/components/shared/ThemeSwitcher";
 
 interface NavCategory {
   id: string;
@@ -250,7 +251,7 @@ export default async function SiteFooter() {
                 {brandingSettings.storeName}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground mt-2 ml-11">
+            <p className="text-sm text-muted-foreground mt-2">
               {brandingSettings.storeTagline}
             </p>
           </Link>
@@ -396,11 +397,12 @@ export default async function SiteFooter() {
 
       {/* Copyright - Full Width Separator */}
       <div className="border-t border-border/30 bg-white/90 dark:bg-slate-950/90">
-        <div className="mx-auto max-w-screen-2xl px-4 md:px-8 py-4 text-center">
+        <div className="mx-auto max-w-screen-2xl px-4 md:px-8 py-4 flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} {brandingSettings.storeName}. All
             rights reserved.
           </p>
+          <ThemeSwitcher />
         </div>
       </div>
     </footer>
