@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useBreadcrumb } from "@/app/admin/_components/dashboard/BreadcrumbContext";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -110,6 +111,13 @@ export default function ProductFormClient({
   const [loading, setLoading] = useState(!!productId);
   const [categories, setCategories] = useState<Category[]>([]);
   const [originalName, setOriginalName] = useState<string>("");
+
+  // Set product name in breadcrumb when editing
+  const breadcrumbItems = useMemo(
+    () => (originalName ? [{ label: originalName }] : []),
+    [originalName]
+  );
+  useBreadcrumb(breadcrumbItems);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),

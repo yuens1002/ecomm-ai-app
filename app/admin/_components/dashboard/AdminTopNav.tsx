@@ -9,14 +9,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getDesktopNavConfig, isNavChildActive, isNavItemActive, NavItem } from "@/lib/config/admin-nav";
+import { getDesktopNavConfig, NavChild, NavItem } from "@/lib/config/admin-nav";
+import { useIsHrefActive, useHasActiveDescendant } from "@/lib/navigation/hooks";
+import { findRouteByHref } from "@/lib/navigation/navigation-core";
 import { cn } from "@/lib/utils";
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
 import { ArrowLeftIcon, ChevronDown, KeyRound, LogOut, Moon, Sun, User } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { AdminMobileDrawer } from "./AdminMobileDrawer";
 import { StoreBrand } from "./StoreBrand";
@@ -31,16 +32,44 @@ interface AdminTopNavProps {
   storeLogoUrl: string;
 }
 
-function NavDropdown({
-  item,
-  pathname,
-  searchParams,
-}: {
-  item: NavItem;
-  pathname: string;
-  searchParams: URLSearchParams;
-}) {
-  const isActive = isNavItemActive(item, pathname, searchParams);
+/**
+ * Individual nav child link with active state via hook.
+ * Extracted to allow hook usage (hooks can't be called in map callbacks).
+ */
+function NavChildLink({ child }: { child: NavChild }) {
+  const isChildActive = useIsHrefActive(child.href);
+
+  return (
+    <NavigationMenuPrimitive.Link asChild>
+      <Link
+        href={child.href}
+        className={cn(
+          "block rounded-sm px-2 py-1.5 text-sm transition-colors",
+          "hover:bg-accent hover:text-accent-foreground",
+          isChildActive && "bg-accent font-medium"
+        )}
+      >
+        {child.label}
+      </Link>
+    </NavigationMenuPrimitive.Link>
+  );
+}
+
+function NavDropdown({ item }: { item: NavItem }) {
+  // Find the parent route ID by looking at the first child's route
+  const firstChildRoute = item.children?.[0]
+    ? findRouteByHref(item.children[0].href)
+    : null;
+  const parentRouteId = firstChildRoute?.parentId || "";
+
+  // Check if any child is active (parent should be highlighted)
+  const hasActiveChild = useHasActiveDescendant(parentRouteId);
+
+  // Also need to check direct match for parent items with a direct href
+  const directHref = item.href || "";
+  const isDirectActive = useIsHrefActive(directHref);
+
+  const isActive = hasActiveChild || (item.href ? isDirectActive : false);
   const Icon = item.icon;
 
   return (
@@ -71,8 +100,6 @@ function NavDropdown({
       >
         <ul>
           {item.children?.map((child, index) => {
-            const isChildActive = isNavChildActive(child, pathname, searchParams);
-
             // Render section header if present
             const SectionIcon = child.sectionIcon;
             const sectionHeader = child.section ? (
@@ -106,18 +133,7 @@ function NavDropdown({
               <React.Fragment key={child.href}>
                 {sectionHeader}
                 <li>
-                  <NavigationMenuPrimitive.Link asChild>
-                    <Link
-                      href={child.href}
-                      className={cn(
-                        "block rounded-sm px-2 py-1.5 text-sm transition-colors",
-                        "hover:bg-accent hover:text-accent-foreground",
-                        isChildActive && "bg-accent font-medium"
-                      )}
-                    >
-                      {child.label}
-                    </Link>
-                  </NavigationMenuPrimitive.Link>
+                  <NavChildLink child={child} />
                 </li>
               </React.Fragment>
             );
@@ -130,8 +146,6 @@ function NavDropdown({
 
 export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps) {
   const { theme, setTheme } = useTheme();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { visible: visibleNavItems, overflow: overflowNavItem } = React.useMemo(
     () => getDesktopNavConfig(),
     []
@@ -184,20 +198,10 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
           <NavigationMenuPrimitive.Root className="hidden lg:flex">
             <NavigationMenuPrimitive.List className="flex items-center gap-2">
               {visibleNavItems.map((item) => (
-                <NavDropdown
-                  key={item.label}
-                  item={item}
-                  pathname={pathname}
-                  searchParams={searchParams}
-                />
+                <NavDropdown key={item.label} item={item} />
               ))}
               {overflowNavItem && (
-                <NavDropdown
-                  key={overflowNavItem.label}
-                  item={overflowNavItem}
-                  pathname={pathname}
-                  searchParams={searchParams}
-                />
+                <NavDropdown key={overflowNavItem.label} item={overflowNavItem} />
               )}
             </NavigationMenuPrimitive.List>
           </NavigationMenuPrimitive.Root>

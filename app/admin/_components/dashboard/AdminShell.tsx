@@ -1,10 +1,11 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 import { AdminTopNav } from "./AdminTopNav";
 import { AdminFooter } from "./AdminFooter";
 import { AdminBreadcrumb } from "./AdminBreadcrumb";
 import { BreadcrumbProvider } from "./BreadcrumbContext";
+import { NavigationProvider } from "@/lib/contexts/NavigationContext";
 import { UpdateBanner } from "@/app/admin/_components/shared/UpdateBanner";
 
 interface SocialLink {
@@ -35,22 +36,26 @@ export function AdminShell({
   children,
 }: AdminShellProps) {
   return (
-    <BreadcrumbProvider>
-      <div className="min-h-dvh flex flex-col bg-muted/40">
-        <AdminTopNav
-          user={user}
-          storeName={storeName}
-          storeLogoUrl={storeLogoUrl}
-        />
+    <Suspense fallback={null}>
+      <NavigationProvider>
+        <BreadcrumbProvider>
+          <div className="min-h-dvh flex flex-col bg-muted/40">
+            <AdminTopNav
+              user={user}
+              storeName={storeName}
+              storeLogoUrl={storeLogoUrl}
+            />
 
-        <main className="flex-1 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-6">
-          <AdminBreadcrumb />
-          <UpdateBanner />
-          {children}
-        </main>
+            <main className="flex-1 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-6">
+              <AdminBreadcrumb />
+              <UpdateBanner />
+              {children}
+            </main>
 
-        <AdminFooter storeName={storeName} socialLinks={socialLinks} />
-      </div>
-    </BreadcrumbProvider>
+            <AdminFooter storeName={storeName} socialLinks={socialLinks} />
+          </div>
+        </BreadcrumbProvider>
+      </NavigationProvider>
+    </Suspense>
   );
 }
