@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.81.0 - 2026-02-03
+
+### Added
+
+- **Unified Admin Navigation System**: Centralized navigation using pub/sub architecture
+  - Route Registry as single source of truth for all admin routes
+  - Purpose-built hooks: `useIsRouteActive`, `useBreadcrumbTrail`, `useHasActiveDescendant`
+  - New `prefix-nested` match mode for path-segment dynamic routes (`/orders/[id]`)
+  - 50 unit tests for route matching
+- **Navigation Documentation**: Comprehensive docs in `docs/navigation/`
+  - Use cases guide with step-by-step examples
+  - Architecture docs, hooks API reference
+  - Feature development patterns added to CLAUDE.md
+
+### Fixed
+
+- Menu Builder bug where all nav items showed as active simultaneously
+- Admin dashboard now uses navigation links instead of inline tabs
+- Mobile nav auto-expands to show current route's section
+- Breadcrumb parent links now navigable
+
+### Changed
+
+- Admin dashboard tabs converted to proper navigation links
+- Product edit pages now show product name in breadcrumb
+
 ## 0.80.3 - 2026-02-02
 
 ### Changed
