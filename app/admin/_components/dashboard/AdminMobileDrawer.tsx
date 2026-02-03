@@ -159,28 +159,43 @@ export function AdminMobileDrawer({ storeName, storeLogoUrl }: AdminMobileDrawer
   // State for expanded sections
   const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({});
 
-  // When drawer opens, expand the section containing the active route
+  // When drawer opens, expand only the section with the best matching child
   React.useEffect(() => {
     if (open && activeRoute) {
-      const initial: Record<string, boolean> = {};
       const routePathname = activeRoute.pathname;
 
+      // Find the best matching section by scoring each child
+      let bestMatch: { label: string; score: number } | null = null;
+
       for (const item of mobileNavItems) {
-        // Check if any child in this section matches the active route
-        const hasActiveChild = item.children?.some((child) => {
+        for (const child of item.children ?? []) {
           const childPathname = child.href.split("?")[0];
+          let score = 0;
 
-          // Exact pathname match
-          if (childPathname === routePathname) return true;
-
-          // Child pathname is a prefix of route pathname (for nested routes)
+          // Exact pathname match - high score
+          if (childPathname === routePathname) {
+            score = 100 + childPathname.length;
+          }
+          // Prefix match (nested routes) - lower score
           // e.g., child is /admin/settings, route is /admin/settings/storefront
-          if (routePathname.startsWith(childPathname + "/")) return true;
+          // Exclude /admin root to avoid matching all admin routes
+          else if (
+            childPathname !== "/admin" &&
+            routePathname.startsWith(childPathname + "/")
+          ) {
+            score = 50 + childPathname.length;
+          }
 
-          return false;
-        });
+          if (score > 0 && (!bestMatch || score > bestMatch.score)) {
+            bestMatch = { label: item.label, score };
+          }
+        }
+      }
 
-        initial[item.label] = hasActiveChild ?? false;
+      // Only expand the section with the best match
+      const initial: Record<string, boolean> = {};
+      for (const item of mobileNavItems) {
+        initial[item.label] = bestMatch?.label === item.label;
       }
       setExpandedSections(initial);
     }
