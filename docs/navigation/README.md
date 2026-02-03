@@ -126,3 +126,5 @@ The old functions in `admin-nav.ts` are deprecated:
 | `isNavChildActive()` | `useIsHrefActive()` |
 | `findActiveNavigation()` | `useBreadcrumbTrail()` |
 | `getActiveChild()` | `useIsHrefActive()` for each child |
+
+<!-- CI skip test -->
