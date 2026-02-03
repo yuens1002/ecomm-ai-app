@@ -35,13 +35,14 @@
 
 ### Recent Work
 
+- Unified Admin Navigation System (pub/sub architecture)
 - Menu Builder architecture refactoring
 - Action bar configuration system
 - Table view renderer implementation
-- All Categories table view (v0.59.0)
 
 ### Key Documentation
 
+- [Navigation System](docs/navigation/README.md) - Route registry, hooks, use cases
 - [Menu Builder Implementation](docs/menu-builder/menu-builder-implementation.md)
 - [Architecture Map](docs/menu-builder/menu-builder-architecture-map.md)
 - [Code Quality Standards](docs/CODE_QUALITY_STANDARDS.md)
@@ -64,6 +65,7 @@
   - `prisma/` - Database schema and migrations
   - `components/` - Shared UI components
   - `lib/` - Utilities and helpers
+  - `lib/navigation/` - Unified navigation system (route registry, hooks)
 
 **Search patterns:**
 
@@ -619,6 +621,64 @@ When evaluating implementations:
 
 ---
 
+## Feature Development Patterns
+
+Patterns learned from feature development iterations:
+
+### Documentation-Driven Development
+
+For features requiring developer opt-in (like navigation, theming, plugins):
+
+1. **Create use-cases doc first** (`docs/<feature>/use-cases.md`):
+   - Quick reference table: scenario → what to do
+   - Each use case includes:
+     - When it applies
+     - What's automatic vs what you opt into
+     - Step-by-step with complete code examples
+     - Expected result
+   - Common mistakes section with fixes
+   - Checklist for new implementations
+
+2. **Architecture docs** for complex systems:
+   - High-level pattern (e.g., pub/sub, registry)
+   - Data flow diagrams
+   - Design decisions with rationale
+
+### Test-Driven Feature Addition
+
+When adding new capabilities to existing systems:
+
+1. Write failing tests that describe expected behavior
+2. Implement the minimal fix
+3. Tests serve as living documentation and regression protection
+
+```bash
+# Workflow:
+# 1. Write tests for new behavior (they fail)
+# 2. Add types/interfaces if needed
+# 3. Implement the logic
+# 4. Tests pass
+# 5. Update docs
+```
+
+### Pre-PR Bug Tracking
+
+Use `docs/<feature>/TEMP-PR-FIXES.md` to track bugs/fixes discovered during development:
+
+- Checkboxes for each issue
+- Brief description of fix and files changed
+- Delete after PR merged
+
+### Extensible Scoring Systems
+
+For systems that need to match/resolve (routes, permissions, themes):
+
+- Use numeric scoring where higher = more specific
+- Leave gaps in score ranges for future additions
+- New modes can be added without breaking existing behavior
+
+---
+
 ## Notes for Claude Code Agents
 
 1. **Always read before editing:** Never propose changes to files you haven't read
@@ -635,6 +695,6 @@ When evaluating implementations:
 
 ---
 
-**Last Updated:** 2026-01-26
+**Last Updated:** 2026-02-03
 **Maintained By:** yuens1002
 **Claude Code Version:** 2.1.4

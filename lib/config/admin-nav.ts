@@ -124,7 +124,10 @@ export function getDesktopNavConfig(): {
 
 /**
  * Core matching logic for nav child links.
- * Single source of truth for all navigation state.
+ *
+ * @deprecated Use useIsHrefActive() from lib/navigation/hooks.ts instead.
+ * This function has a bug where all Menu Builder routes match when any one is active.
+ * The new navigation system uses proper query param matching.
  *
  * @param allowNestedMatch - When true, /admin/products/123 matches /admin/products.
  *                           Used for parent highlighting, not for exact child highlighting.
@@ -168,8 +171,9 @@ function matchesNavChild(
 /**
  * Find the active navigation match for a given URL.
  * Returns both the parent item and specific child.
- * This is the primary function for navigation state - use this when you need
- * both parent and child information (e.g., breadcrumbs).
+ *
+ * @deprecated Use useBreadcrumbTrail() from lib/navigation/hooks.ts instead.
+ * The new navigation system provides more accurate route matching and breadcrumb generation.
  */
 export function findActiveNavigation(
   pathname: string,
@@ -205,7 +209,9 @@ export function findActiveNavigation(
 
 /**
  * Check if a nav child link is active (exact match only).
- * Use for highlighting specific dropdown items.
+ *
+ * @deprecated Use useIsHrefActive(child.href) from lib/navigation/hooks.ts instead.
+ * The new hook provides more accurate query param matching.
  */
 export function isNavChildActive(
   child: NavChild,
@@ -218,7 +224,9 @@ export function isNavChildActive(
 /**
  * Check if a nav item (parent) is active.
  * Returns true if any child matches, including nested routes.
- * Use for highlighting parent menu items.
+ *
+ * @deprecated Use useHasActiveDescendant(routeId) from lib/navigation/hooks.ts instead.
+ * The new hook provides more accurate parent highlighting.
  */
 export function isNavItemActive(
   item: NavItem,
@@ -241,6 +249,8 @@ export function isNavItemActive(
 /**
  * Get the active child item for a nav item.
  * Includes nested route matching.
+ *
+ * @deprecated Use useIsHrefActive() from lib/navigation/hooks.ts for each child instead.
  */
 export function getActiveChild(
   item: NavItem,
