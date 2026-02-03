@@ -64,12 +64,15 @@ jobs:
       - name: Run tests (Jest CI)
         run: npm run test:ci
 
-      - name: Build (no migrations)
+      - name: Build (no migrations, skip SSG)
         env:
           # Use direct connection for any DB-adjacent steps, but skip migrations in CI
           DATABASE_URL: ${{ secrets.DIRECT_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
           BUILD_VERBOSE: "true"
+          # Skip static site generation to reduce DB connections during CI builds
+          # Pages will be generated via ISR on first request in production
+          SKIP_SSG: "true"
         run: npm run build:no-migrate
 
       - name: Save Next.js cache

@@ -42,10 +42,19 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   );
 }
 
+// Allow ISR for non-pre-rendered paths (works with SKIP_SSG in CI)
+export const dynamicParams = true;
+
 /**
  * This function pre-renders all category pages at build time
+ *
+ * Set SKIP_SSG=true in CI to skip static generation and reduce DB connections
  */
 export async function generateStaticParams() {
+  if (process.env.SKIP_SSG === "true") {
+    return [];
+  }
+
   const categories = await getCategorySlugs();
 
   // Returns: [{ category: 'blends' }, { category: 'single-origin' }, { category: 'light-roast' }]

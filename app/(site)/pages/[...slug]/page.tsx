@@ -31,7 +31,19 @@ async function getPage(slug: string) {
   return page;
 }
 
+// Allow ISR for non-pre-rendered paths (works with SKIP_SSG in CI)
+export const dynamicParams = true;
+
+/**
+ * Pre-render published pages at build time
+ *
+ * Set SKIP_SSG=true in CI to skip static generation and reduce DB connections
+ */
 export async function generateStaticParams() {
+  if (process.env.SKIP_SSG === "true") {
+    return [];
+  }
+
   const pages = await prisma.page.findMany({
     where: { isPublished: true },
     select: { slug: true },

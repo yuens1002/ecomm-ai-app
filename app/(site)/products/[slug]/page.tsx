@@ -82,11 +82,20 @@ export default async function ProductPage({
   );
 }
 
+// Allow ISR for non-pre-rendered paths (works with SKIP_SSG in CI)
+export const dynamicParams = true;
+
 /**
  * Generate static paths for all products (one path per product)
  * This is much more efficient than generating paths for every product-category combination
+ *
+ * Set SKIP_SSG=true in CI to skip static generation and reduce DB connections
  */
 export async function generateStaticParams() {
+  if (process.env.SKIP_SSG === "true") {
+    return [];
+  }
+
   const products = await prisma.product.findMany({
     select: { slug: true },
     where: { isDisabled: false },
