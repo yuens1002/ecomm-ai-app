@@ -261,6 +261,32 @@ npm run release:minor -- -y --push --github-release
 - **Yes:** User-facing features, important fixes, breaking changes
 - **No:** Internal refactors, dev tooling, minor tweaks
 
+#### GitHub Release Notes
+
+When creating a GitHub Release with `--github-release`, add customer-facing release notes from the changelog. After the release script creates the release, edit it on GitHub to add notes:
+
+```markdown
+## What's New in v0.81.0
+
+### New Features
+- **Unified Navigation System**: Improved admin dashboard navigation with consistent breadcrumbs and active state highlighting
+
+### Bug Fixes
+- Fixed issue where all Menu Builder tabs showed as active simultaneously
+
+### Improvements
+- Admin dashboard now navigates to dedicated pages instead of inline tabs
+- Mobile navigation auto-expands to show current section
+```
+
+**Guidelines:**
+
+- Write for end users, not developers
+- Focus on benefits, not implementation details
+- Group by: New Features, Bug Fixes, Improvements
+- Keep it concise - link to docs for details
+- Omit internal changes (refactors, dev tooling, tests)
+
 #### Quick Reference
 
 ```bash
