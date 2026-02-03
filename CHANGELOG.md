@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.81.4 - 2026-02-03
+
+### Fixed
+
+- Checkout redirect after sign-up now returns to checkout instead of account page
+- Cart drawer no longer auto-opens after completing Stripe checkout
+
+### Added
+
+- `/checkout/resume` page to handle post-auth checkout flow
+- `callbackUrl` support in sign-in/sign-up flow
+
 ## 0.81.3 - 2026-02-03
 
 ### Fixed
