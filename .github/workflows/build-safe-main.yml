@@ -3,22 +3,8 @@ name: Build Safe (main)
 on:
   push:
     branches: ["main"]
-    paths-ignore:
-      - "**.md"
-      - "docs/**"
-      - ".archive/**"
-      - "*.txt"
-      - "LICENSE"
-      - ".gitignore"
   pull_request:
     branches: ["main"]
-    paths-ignore:
-      - "**.md"
-      - "docs/**"
-      - ".archive/**"
-      - "*.txt"
-      - "LICENSE"
-      - ".gitignore"
 
 # Ensure only one run per ref; cancel previous in-progress jobs
 concurrency:
@@ -38,13 +24,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Check if code files changed (vs docs-only)
+      - name: Check for code changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - '**/*.ts'
+              - '**/*.tsx'
+              - '**/*.js'
+              - '**/*.jsx'
+              - '**/*.json'
+              - '**/*.css'
+              - '**/*.yml'
+              - '**/*.yaml'
+              - 'prisma/**'
+              - '.github/workflows/**'
+
+      # Skip build for docs-only changes
+      - name: Skip build (docs only)
+        if: steps.filter.outputs.code == 'false'
+        run: echo "✅ Skipping build - only documentation changes detected"
+
       - name: Setup Node
+        if: steps.filter.outputs.code == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
       - name: Restore Next.js cache
+        if: steps.filter.outputs.code == 'true'
         id: next-cache
         uses: actions/cache/restore@v4
         with:
@@ -56,15 +67,19 @@ jobs:
             ${{ runner.os }}-next-cache-
 
       - name: Install dependencies
+        if: steps.filter.outputs.code == 'true'
         run: npm ci
 
       - name: Typecheck and lint
+        if: steps.filter.outputs.code == 'true'
         run: npm run precheck
 
       - name: Run tests (Jest CI)
+        if: steps.filter.outputs.code == 'true'
         run: npm run test:ci
 
       - name: Build (no migrations, skip SSG)
+        if: steps.filter.outputs.code == 'true'
         env:
           # Use direct connection for any DB-adjacent steps, but skip migrations in CI
           DATABASE_URL: ${{ secrets.DIRECT_URL }}
@@ -76,7 +91,7 @@ jobs:
         run: npm run build:no-migrate
 
       - name: Save Next.js cache
-        if: steps.next-cache.outputs.cache-hit != 'true'
+        if: steps.filter.outputs.code == 'true' && steps.next-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
