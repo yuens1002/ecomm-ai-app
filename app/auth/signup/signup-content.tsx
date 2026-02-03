@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { Suspense, useActionState, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,18 @@ type State = {
   confirmPasswordError?: string;
 };
 
-export function SignupContent() {
+function SignupContentInner() {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/account";
+
+  const signInHref = useMemo(() => {
+    const url = new URL("/auth/signin", window.location.origin);
+    if (callbackUrl !== "/account") {
+      url.searchParams.set("callbackUrl", callbackUrl);
+    }
+    return url.pathname + url.search;
+  }, [callbackUrl]);
+
   const [state, action, isPending] = useActionState<State, FormData>(
     signUpPublic,
     {}
@@ -30,6 +42,9 @@ export function SignupContent() {
 
   return (
     <form action={action}>
+      {callbackUrl !== "/account" && (
+        <input type="hidden" name="redirectTo" value={callbackUrl} />
+      )}
       <FieldGroup>
         <Field>
           <FormHeading htmlFor="name" label="Name" />
@@ -106,11 +121,25 @@ export function SignupContent() {
 
         <div className="mt-2 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/auth/signin" className="text-primary hover:underline">
+          <Link href={signInHref} className="text-primary hover:underline">
             Sign in
           </Link>
         </div>
       </FieldGroup>
     </form>
+  );
+}
+
+export function SignupContent() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-8">
+          <Spinner />
+        </div>
+      }
+    >
+      <SignupContentInner />
+    </Suspense>
   );
 }

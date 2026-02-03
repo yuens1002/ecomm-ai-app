@@ -25,14 +25,18 @@ interface LoginFormProps {
     passwordError?: string;
     email?: string;
   }>;
+  redirectTo?: string;
 }
 
-export function LoginForm({ signInAction }: LoginFormProps) {
+export function LoginForm({ signInAction, redirectTo }: LoginFormProps) {
   const [state, action, isPending] = useActionState(signInAction, undefined);
   const [showPassword, setShowPassword] = useState(false);
 
   return (
     <form action={action}>
+      {redirectTo && (
+        <input type="hidden" name="redirectTo" value={redirectTo} />
+      )}
       <FieldGroup>
         <Field>
           <FormHeading

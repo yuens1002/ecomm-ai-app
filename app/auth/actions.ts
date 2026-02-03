@@ -96,6 +96,7 @@ export async function signInPublic(
 }> {
   const email = formData.get("email");
   const password = formData.get("password");
+  const redirectTo = (formData.get("redirectTo") as string | null) || "/account";
 
   try {
     const validated = credentialsSchema.safeParse({ email, password });
@@ -117,7 +118,7 @@ export async function signInPublic(
     await signIn("credentials", {
       email: validated.data.email,
       password: validated.data.password,
-      redirectTo: "/account",
+      redirectTo,
     });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -266,6 +267,7 @@ export async function signUpPublic(
   const password = (formData.get("password") as string | null) ?? "";
   const confirmPassword =
     (formData.get("confirmPassword") as string | null) ?? "";
+  const redirectTo = (formData.get("redirectTo") as string | null) || "/account";
 
   const validated = signupSchema.safeParse({
     name: name || undefined,
@@ -324,7 +326,7 @@ export async function signUpPublic(
     await signIn("credentials", {
       email: validated.data.email,
       password: validated.data.password,
-      redirectTo: "/account",
+      redirectTo,
     });
   } catch (error) {
     if (error instanceof AuthError) {
