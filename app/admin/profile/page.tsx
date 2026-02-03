@@ -1,7 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
-import { useBreadcrumb } from "@/app/admin/_components/dashboard/BreadcrumbContext";
 import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
 import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
@@ -14,8 +12,7 @@ import {
 import { Save, User } from "lucide-react";
 
 export default function AdminProfilePage() {
-  const breadcrumbs = useMemo(() => [{ label: "Profile" }], []);
-  useBreadcrumb(breadcrumbs);
+  // Breadcrumb is handled by the navigation system (route: admin.profile)
 
   return (
     <div className="space-y-8">

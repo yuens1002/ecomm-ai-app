@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Plus, Pencil, ArrowLeft } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ProductFormClient from "./product-form-client/ProductFormClient";
 import { ProductType } from "@prisma/client";
@@ -106,27 +106,16 @@ export default function ProductManagementClient({
 
   if (view === "form") {
     return (
-      <div className="space-y-4">
-        <Button
-          variant="ghost"
-          onClick={() => {
-            router.push(basePath);
-          }}
-          className="pl-0 hover:bg-transparent hover:text-primary"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back to catalog
-        </Button>
-        <ProductFormClient
-          productId={selectedProductId}
-          productType={productType}
-          onClose={() => {
-            router.push(basePath);
-          }}
-          onSaved={(id) => {
-            router.push(`${basePath}?view=edit&id=${id}`);
-          }}
-        />
-      </div>
+      <ProductFormClient
+        productId={selectedProductId}
+        productType={productType}
+        onClose={() => {
+          router.push(basePath);
+        }}
+        onSaved={(id) => {
+          router.push(`${basePath}?view=edit&id=${id}`);
+        }}
+      />
     );
   }
 

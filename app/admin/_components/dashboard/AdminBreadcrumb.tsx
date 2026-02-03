@@ -1,177 +1,104 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Home } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { useBreadcrumbItems, type BreadcrumbItem as BreadcrumbItemType } from "./BreadcrumbContext";
-import { findActiveNavigation } from "@/lib/config/admin-nav";
+import { useBreadcrumbItems } from "./BreadcrumbContext";
+import { useBreadcrumbTrail } from "@/lib/navigation/hooks";
 
 /**
- * Maps Menu Builder view query params to labels
+ * Shared styles for breadcrumb items.
+ * All items use default foreground color.
+ * Navigable items show underline on hover.
  */
-const menuBuilderViewLabels: Record<string, string> = {
-  menu: "Menu",
-  "all-labels": "Labels",
-  "all-categories": "Categories",
-  label: "Label",
-  category: "Category",
-};
+const linkStyles = "underline-offset-4 hover:underline";
 
 /**
- * Get label for a route segment (fallback when not in nav config)
- */
-function getLabel(segment: string): string {
-  // For dynamic segments (IDs, slugs), return a formatted version
-  if (segment.match(/^[a-z0-9-]{20,}$/i)) {
-    return "Details";
-  }
-
-  // Capitalize and replace hyphens with spaces
-  return segment
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-/**
- * Renders breadcrumb item content based on state
+ * Renders breadcrumb item content with consistent styling.
  */
 function BreadcrumbItemContent({
   item,
   isLast
 }: {
-  item: BreadcrumbItemType & { href?: string };
+  item: { label: string; href?: string | null };
   isLast: boolean;
 }) {
-  if (isLast) {
-    return <BreadcrumbPage>{item.label}</BreadcrumbPage>;
+  // Non-navigable: last item or no href - plain text
+  if (isLast || !item.href) {
+    return <span>{item.label}</span>;
   }
 
-  if (item.href) {
-    return (
-      <BreadcrumbLink asChild>
-        <Link href={item.href} className="text-muted-foreground hover:text-foreground">
-          {item.label}
-        </Link>
-      </BreadcrumbLink>
-    );
-  }
-
-  return <span className="text-muted-foreground">{item.label}</span>;
+  // Navigable: underline on hover
+  return (
+    <Link href={item.href} className={linkStyles}>
+      {item.label}
+    </Link>
+  );
 }
 
 export function AdminBreadcrumb() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const navBreadcrumbs = useBreadcrumbTrail();
   const customItems = useBreadcrumbItems();
 
-  // Split pathname into segments, filtering out empty strings
-  const segments = pathname.split("/").filter(Boolean);
-
   // Hide breadcrumb on overview page (/admin)
+  const segments = pathname.split("/").filter(Boolean);
   if (segments.length <= 1) {
     return null;
   }
 
-  const firstSegment = segments[1];
-  const hasCustomItems = customItems.length > 0;
-
-  // Check if this is the Menu Builder page with a view param
-  const isMenuBuilder = firstSegment === "product-menu";
-  const viewParam = searchParams.get("view");
-
-  // Try to find matching nav item from config (single source of truth)
-  const { parent: navParent, child: navChild } = findActiveNavigation(pathname, searchParams);
-
-  let category: string | null = null;
-  let items: Array<{ href: string; label: string; isLast: boolean }> = [];
-
-  if (isMenuBuilder && viewParam) {
-    // Special handling for Menu Builder with view params
-    category = "Products";
-    const parentView = viewParam === "label" ? "all-labels" : viewParam === "category" ? "all-categories" : null;
-
-    if (parentView && hasCustomItems) {
-      items = [{
-        href: `/admin/product-menu?view=${parentView}`,
-        label: menuBuilderViewLabels[parentView] || "Menu Builder",
-        isLast: false
-      }];
-    } else {
-      items = [{
-        href: `/admin/product-menu?view=${viewParam}`,
-        label: menuBuilderViewLabels[viewParam] || "Menu Builder",
-        isLast: !hasCustomItems
-      }];
-    }
-  } else if (navParent && navChild) {
-    // Use nav config for category and page label
-    category = navParent.label;
-    items = [{
-      href: pathname,
-      label: navChild.label,
-      isLast: !hasCustomItems
-    }];
-  } else {
-    // Fallback: build from URL segments for pages not in nav config
-    const pageSegments = segments.slice(1);
-    items = pageSegments.map((segment, index) => ({
-      href: "/" + segments.slice(0, index + 2).join("/"),
-      label: getLabel(segment),
-      isLast: !hasCustomItems && index === pageSegments.length - 1
-    }));
-  }
+  // Combine nav breadcrumbs with custom items
+  // Nav breadcrumbs provide the base trail, custom items are appended for entity names
+  const allItems: Array<{ id: string; label: string; href: string | null }> = [
+    ...navBreadcrumbs.map((item) => ({
+      id: item.id,
+      label: item.label,
+      href: item.href,
+    })),
+    ...customItems.map((item, index) => ({
+      id: `custom-${index}`,
+      label: item.label,
+      href: item.href || null,
+    })),
+  ];
 
   return (
     <Breadcrumb className="mb-4">
-      <BreadcrumbList>
-        {/* Home icon */}
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link href="/admin" className="flex items-center">
-              <Home className="h-4 w-4" />
-              <span className="sr-only">Dashboard</span>
-            </Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
+      <BreadcrumbList className="text-foreground pl-0">
+        {allItems.map((item, index) => {
+          const isFirst = index === 0;
+          const isLast = index === allItems.length - 1;
 
-        {/* Nav category (always shown when available) */}
-        {category && (
-          <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <span className="text-muted-foreground">{category}</span>
-            </BreadcrumbItem>
-          </>
-        )}
+          // First item (Home) gets special icon treatment
+          if (isFirst && item.id === "admin") {
+            return (
+              <BreadcrumbItem key={item.id}>
+                <Link href="/admin" className={linkStyles}>
+                  <Home className="h-4 w-4" />
+                  <span className="sr-only">Dashboard</span>
+                </Link>
+              </BreadcrumbItem>
+            );
+          }
 
-        {/* Page items */}
-        {items.map((item) => (
-          <span key={item.href} className="contents">
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbItemContent item={item} isLast={item.isLast} />
-            </BreadcrumbItem>
-          </span>
-        ))}
-
-        {/* Custom items from context (e.g., specific entity names) */}
-        {customItems.map((item, index) => (
-          <span key={`custom-${index}`} className="contents">
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbItemContent item={item} isLast={index === customItems.length - 1} />
-            </BreadcrumbItem>
-          </span>
-        ))}
+          return (
+            <span key={item.id} className="contents">
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbItemContent
+                  item={item}
+                  isLast={isLast}
+                />
+              </BreadcrumbItem>
+            </span>
+          );
+        })}
       </BreadcrumbList>
     </Breadcrumb>
   );
