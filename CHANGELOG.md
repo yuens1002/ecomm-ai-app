@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.81.1 - 2026-02-03
+
+### Changed
+
+- Skip SSG in CI builds to reduce database connections
+- Add `SKIP_SSG` env check to category, product, and CMS page routes
+- CI builds now use ISR fallback; production builds unchanged
+
 ## 0.81.0 - 2026-02-03
 
 ### Added
