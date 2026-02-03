@@ -13,11 +13,13 @@ function CheckoutSuccessContent() {
   const sessionId = searchParams.get("session_id");
   const [verifying, setVerifying] = useState(true);
   const clearCart = useCartStore((state) => state.clearCart);
+  const setCartOpen = useCartStore((state) => state.setCartOpen);
 
   useEffect(() => {
-    // Clear the cart after successful checkout
+    // Clear the cart and close drawer after successful checkout
     if (sessionId) {
       clearCart();
+      setCartOpen(false); // Ensure cart drawer is closed
       // Simulate verification delay
       const timer = setTimeout(() => setVerifying(false), 1500);
       return () => clearTimeout(timer);
@@ -25,7 +27,7 @@ function CheckoutSuccessContent() {
     // Only set verifying to false in timeout to avoid sync setState
     const timer = setTimeout(() => setVerifying(false), 0);
     return () => clearTimeout(timer);
-  }, [sessionId, clearCart]);
+  }, [sessionId, clearCart, setCartOpen]);
 
   if (verifying) {
     return (

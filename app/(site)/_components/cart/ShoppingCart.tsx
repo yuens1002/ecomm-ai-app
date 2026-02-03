@@ -210,7 +210,8 @@ export function ShoppingCart() {
           );
           setIsCheckingOut(false);
           setIsOpen(false);
-          router.push("/auth/signin");
+          // Include callbackUrl so user returns to checkout after auth
+          router.push("/auth/signin?callbackUrl=/checkout/resume");
           return;
         }
 
@@ -255,6 +256,7 @@ export function ShoppingCart() {
 
       // Redirect to Stripe Checkout
       if (data.url) {
+        setIsOpen(false); // Close drawer before redirect to prevent it opening on return
         window.location.href = data.url;
       }
     } catch (error) {
