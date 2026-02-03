@@ -3,8 +3,22 @@ name: Build Safe (main)
 on:
   push:
     branches: ["main"]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".archive/**"
+      - "*.txt"
+      - "LICENSE"
+      - ".gitignore"
   pull_request:
     branches: ["main"]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".archive/**"
+      - "*.txt"
+      - "LICENSE"
+      - ".gitignore"
 
 # Ensure only one run per ref; cancel previous in-progress jobs
 concurrency:

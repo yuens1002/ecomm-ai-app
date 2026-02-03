@@ -190,6 +190,17 @@ npm run precheck    # TypeScript + ESLint
 - Husky runs TypeScript + ESLint automatically
 - For docs-only changes: `git commit --no-verify -m "docs: update readme"`
 
+#### CI Path Filtering
+
+CI build (`build-safe`) automatically **skips** for non-code changes:
+
+- `**.md` - Markdown files
+- `docs/**` - Documentation folder
+- `.archive/**` - Archive folder
+- `*.txt`, `LICENSE`, `.gitignore`
+
+This saves CI time and resources for docs-only PRs.
+
 #### PR Workflow
 
 1. Create feature branch from `main`
@@ -261,31 +272,50 @@ npm run release:minor -- -y --push --github-release
 - **Yes:** User-facing features, important fixes, breaking changes
 - **No:** Internal refactors, dev tooling, minor tweaks
 
-#### GitHub Release Notes
+#### GitHub Release Notes (Auto-Generated)
 
-When creating a GitHub Release with `--github-release`, add customer-facing release notes from the changelog. After the release script creates the release, edit it on GitHub to add notes:
+When using `--github-release`, the script **automatically extracts** notes from `CHANGELOG.md`:
+
+1. Reads the changelog section for the release version
+2. Maps sections: Added → New Features, Fixed → Bug Fixes, Changed → Improvements
+3. Formats into consistent user-facing release notes
+
+**Output format:**
 
 ```markdown
 ## What's New in v0.81.0
 
 ### New Features
-- **Unified Navigation System**: Improved admin dashboard navigation with consistent breadcrumbs and active state highlighting
+- Feature description from changelog
 
 ### Bug Fixes
-- Fixed issue where all Menu Builder tabs showed as active simultaneously
+- Bug fix from changelog
 
 ### Improvements
-- Admin dashboard now navigates to dedicated pages instead of inline tabs
-- Mobile navigation auto-expands to show current section
+- Improvement from changelog
 ```
 
-**Guidelines:**
+**Changelog format** (entries are auto-extracted):
+
+```markdown
+## 0.81.0 - 2026-02-03
+
+### Added
+- **Feature Name**: User-facing description
+
+### Fixed
+- Bug description
+
+### Changed
+- Improvement description
+```
+
+**Guidelines for changelog entries:**
 
 - Write for end users, not developers
-- Focus on benefits, not implementation details
-- Group by: New Features, Bug Fixes, Improvements
-- Keep it concise - link to docs for details
-- Omit internal changes (refactors, dev tooling, tests)
+- Focus on benefits, not implementation
+- One line per change, keep concise
+- Omit internal changes (refactors, tests)
 
 #### Quick Reference
 

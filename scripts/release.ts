@@ -24,7 +24,7 @@
  *   1. Determines next version from latest tag
  *   2. Creates annotated git tag
  *   3. Optionally pushes tag to origin
- *   4. Optionally creates GitHub Release (this triggers upgrade notices!)
+ *   4. Optionally creates GitHub Release with notes from CHANGELOG.md
  *
  * Note: No commits are created. The tag points to the current HEAD.
  * APP_VERSION is derived from git tags at build time.
@@ -32,6 +32,11 @@
 
 import { execSync } from "child_process";
 import { createInterface } from "readline";
+import { readFileSync, existsSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Parse CLI arguments
 const args = process.argv.slice(2);
@@ -127,18 +132,125 @@ function getCommitsSinceTag(tag: string | null): string {
   return exec(`git log ${range} --oneline --no-decorate`) || "(no commits)";
 }
 
+/**
+ * Extract release notes from CHANGELOG.md for a specific version
+ */
+function extractChangelogNotes(version: string): Record<string, string[]> {
+  const changelogPath = join(__dirname, "..", "CHANGELOG.md");
+  if (!existsSync(changelogPath)) {
+    console.log("⚠️  CHANGELOG.md not found");
+    return {};
+  }
+
+  const changelog = readFileSync(changelogPath, "utf-8");
+  const lines = changelog.split("\n");
+
+  // Find the section for this version
+  const versionHeader = `## ${version}`;
+  const versionHeaderAlt = `## [${version}]`; // Some formats use brackets
+  let inSection = false;
+  let currentCategory = "";
+  const sections: Record<string, string[]> = {};
+
+  for (const line of lines) {
+    // Check if we hit this version's section
+    if (line.startsWith(versionHeader) || line.startsWith(versionHeaderAlt)) {
+      inSection = true;
+      continue;
+    }
+
+    // Check if we hit the next version (end of our section)
+    if (inSection && line.startsWith("## ")) {
+      break;
+    }
+
+    if (!inSection) continue;
+
+    // Parse category headers (### Added, ### Fixed, etc.)
+    if (line.startsWith("### ")) {
+      currentCategory = line.replace("### ", "").trim().toUpperCase();
+      sections[currentCategory] = [];
+      continue;
+    }
+
+    // Parse bullet points
+    if (line.startsWith("- ") && currentCategory) {
+      // Convert developer-facing notes to user-facing
+      let note = line.substring(2).trim();
+      // Remove technical details in parentheses for cleaner notes
+      note = note.replace(/\s*\([^)]*\)\s*$/, "");
+      if (note) {
+        sections[currentCategory].push(note);
+      }
+    }
+  }
+
+  return sections;
+}
+
+/**
+ * Format release notes using the template
+ */
+function formatReleaseNotes(version: string, sections: Record<string, string[]>): string {
+  // Build notes from sections
+  const parts: string[] = [`## What's New in v${version}`, ""];
+
+  // Map changelog categories to user-friendly sections
+  const categoryMap: Record<string, string> = {
+    ADDED: "New Features",
+    FIXED: "Bug Fixes",
+    CHANGED: "Improvements",
+    REMOVED: "Removed",
+    SECURITY: "Security",
+  };
+
+  for (const [category, title] of Object.entries(categoryMap)) {
+    const items = sections[category];
+    if (items && items.length > 0) {
+      parts.push(`### ${title}`);
+      for (const item of items) {
+        parts.push(`- ${item}`);
+      }
+      parts.push("");
+    }
+  }
+
+  // If no sections found, return simple message
+  if (parts.length <= 2) {
+    return `Release v${version}`;
+  }
+
+  return parts.join("\n").trim();
+}
+
 function createGitHubRelease(version: string, message?: string) {
   const tag = `v${version}`;
   const repo = "yuens1002/ecomm-ai-app";
+
+  // Extract notes from CHANGELOG if no custom message
+  let releaseBody: string;
+  if (message) {
+    releaseBody = message;
+  } else {
+    console.log("\n📝 Extracting release notes from CHANGELOG.md...");
+    const sections = extractChangelogNotes(version);
+    releaseBody = formatReleaseNotes(version, sections);
+    if (releaseBody !== `Release v${version}`) {
+      console.log("✅ Found changelog entries");
+    } else {
+      console.log("⚠️  No changelog entries found, using default message");
+    }
+  }
 
   // Use gh CLI if available
   const ghAvailable = exec("gh --version");
   if (ghAvailable) {
     console.log("\n📦 Creating GitHub Release...");
-    const releaseBody = message || `Release ${tag}`;
     try {
+      // Use heredoc for multiline notes
+      const escapedBody = releaseBody.replace(/'/g, "'\\''");
       run(
-        `gh release create ${tag} --title "Release ${tag}" --notes "${releaseBody.replace(/"/g, '\\"')}"`
+        `gh release create ${tag} --title "Release ${tag}" --notes $'${escapedBody}'`
       );
       console.log(
         `\n✅ GitHub Release created: https://github.com/${repo}/releases/tag/${tag}`
@@ -152,7 +264,7 @@ function createGitHubRelease(version: string, message?: string) {
 
   // Fallback: print URL
   const title = encodeURIComponent(`Release ${tag}`);
-  const body = encodeURIComponent(message || `Release ${tag}`);
+  const body = encodeURIComponent(releaseBody);
   const url = `https://github.com/${repo}/releases/new?tag=${tag}&title=${title}&body=${body}`;
   console.log("\n📦 Create GitHub Release at:");
   console.log(`   ${url}`);
