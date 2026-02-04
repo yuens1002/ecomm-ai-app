@@ -1891,7 +1891,7 @@ async function main() {
       isDeleted: false,
       content: {
         heading: "Our Story",
-        imageUrl: "https://placehold.co/1920x800/8B4513/FFF?text=Our+Story",
+        imageUrl: "https://images.unsplash.com/photo-1544457070-4cd773b4d71e?w=1920&h=800&fit=crop&crop=entropy",
         imageAlt: "Artisan Roast coffee roastery",
         caption: "Crafting exceptional coffee experiences since 2015",
       },
@@ -2014,23 +2014,23 @@ async function main() {
         content: {
           slides: [
             {
-              url: "https://placehold.co/800x600/8B4513/FFF?text=Cozy+Interior",
+              url: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&h=600&fit=crop&crop=entropy",
               alt: "Cozy interior seating with natural light",
             },
             {
-              url: "https://placehold.co/800x600/654321/FFF?text=Espresso+Bar",
+              url: "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=800&h=600&fit=crop&crop=entropy",
               alt: "Espresso bar with barista at work",
             },
             {
-              url: "https://placehold.co/800x600/A0522D/FFF?text=Outdoor+Patio",
+              url: "https://images.unsplash.com/photo-1678233517592-657a186396b8?w=800&h=600&fit=crop&crop=entropy",
               alt: "Outdoor patio seating area",
             },
             {
-              url: "https://placehold.co/800x600/8B4513/FFF?text=Brewing+Station",
+              url: "https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=800&h=600&fit=crop&crop=entropy",
               alt: "Coffee brewing station and equipment",
             },
             {
-              url: "https://placehold.co/800x600/654321/FFF?text=Lounge+Area",
+              url: "https://images.unsplash.com/photo-1678233517591-1ca561b9fe45?w=800&h=600&fit=crop&crop=entropy",
               alt: "Comfortable lounge area for working",
             },
           ],
@@ -2061,15 +2061,15 @@ async function main() {
           ],
           images: [
             {
-              url: "https://placehold.co/600x400/8B4513/FFF?text=Cafe+Exterior",
+              url: "https://images.unsplash.com/photo-1667020080976-9dfee090458e?w=600&h=600&fit=crop&crop=entropy",
               alt: "Café exterior storefront",
             },
             {
-              url: "https://placehold.co/600x400/654321/FFF?text=Interior+Seating",
+              url: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&h=600&fit=crop&crop=entropy",
               alt: "Interior seating area",
             },
             {
-              url: "https://placehold.co/600x400/A0522D/FFF?text=Espresso+Bar",
+              url: "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=600&h=600&fit=crop&crop=entropy",
               alt: "Espresso bar close-up",
             },
           ],
@@ -2115,21 +2115,21 @@ async function main() {
         content: {
           slides: [
             {
-              url: "https://placehold.co/800x600/654321/FFF?text=Market+Street",
+              url: "https://images.unsplash.com/photo-1667020080976-9dfee090458e?w=600&h=600&fit=crop&crop=entropy",
               alt: "Market Street location with large windows",
               title: "Market Street",
               description: "Our flagship location in the heart of the city",
               locationBlockId: "temp-1",
             },
             {
-              url: "https://placehold.co/800x600/8B4513/FFF?text=Pearl+Street",
+              url: "https://images.unsplash.com/photo-1504963642567-227b3bbd79de?w=600&h=600&fit=crop&crop=entropy",
               alt: "Pearl Street location interior seating area",
               title: "Pearl Street",
               description: "Cozy neighborhood spot with fresh pastries daily",
               locationBlockId: "temp-2",
             },
             {
-              url: "https://placehold.co/800x600/A0522D/FFF?text=Hawthorne+Blvd",
+              url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&h=600&fit=crop&crop=entropy",
               alt: "Hawthorne Boulevard cafe with outdoor seating",
               title: "Hawthorne Boulevard",
               description:
@@ -2162,15 +2162,15 @@ async function main() {
           ],
           images: [
             {
-              url: "https://placehold.co/600x400/654321/FFF?text=Market+St+Exterior",
+              url: "https://images.unsplash.com/photo-1667020080976-9dfee090458e?w=600&h=600&fit=crop&crop=entropy",
               alt: "Market Street exterior",
             },
             {
-              url: "https://placehold.co/600x400/8B4513/FFF?text=Market+St+Interior",
+              url: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&h=600&fit=crop&crop=entropy",
               alt: "Interior seating area",
             },
             {
-              url: "https://placehold.co/600x400/A0522D/FFF?text=Market+St+Bar",
+              url: "https://images.unsplash.com/photo-1667020080976-9dfee090458e?w=600&h=600&fit=crop&crop=entropy",
               alt: "Espresso bar",
             },
           ],
@@ -2198,15 +2198,15 @@ async function main() {
           ],
           images: [
             {
-              url: "https://placehold.co/600x400/8B4513/FFF?text=Pearl+St+Storefront",
+              url: "https://images.unsplash.com/photo-1504963642567-227b3bbd79de?w=600&h=600&fit=crop&crop=entropy",
               alt: "Pearl Street storefront",
             },
             {
-              url: "https://placehold.co/600x400/654321/FFF?text=Pearl+St+Pastries",
+              url: "https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=600&h=600&fit=crop&crop=entropy",
               alt: "Pastry display case",
             },
             {
-              url: "https://placehold.co/600x400/A0522D/FFF?text=Pearl+St+Patio",
+              url: "https://images.unsplash.com/photo-1678233517592-657a186396b8?w=600&h=600&fit=crop&crop=entropy",
               alt: "Outdoor patio seating",
             },
           ],
@@ -2235,15 +2235,15 @@ async function main() {
           ],
           images: [
             {
-              url: "https://placehold.co/600x400/A0522D/FFF?text=Hawthorne+Entrance",
+              url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&h=600&fit=crop&crop=entropy",
               alt: "Hawthorne Boulevard entrance",
             },
             {
-              url: "https://placehold.co/600x400/8B4513/FFF?text=Hawthorne+Seating",
+              url: "https://images.unsplash.com/photo-1678233517591-1ca561b9fe45?w=600&h=600&fit=crop&crop=entropy",
               alt: "Comfortable seating area",
             },
             {
-              url: "https://placehold.co/600x400/654321/FFF?text=Hawthorne+Bar",
+              url: "https://images.unsplash.com/photo-1678233517592-657a186396b8?w=600&h=600&fit=crop&crop=entropy",
               alt: "Coffee and tea bar",
             },
           ],
@@ -2350,7 +2350,7 @@ async function main() {
       isDeleted: false,
       content: {
         heading: "Frequently Asked Questions",
-        imageUrl: "https://placehold.co/1920x800/654321/FFF?text=FAQ",
+        imageUrl: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1920&h=800&fit=crop&crop=entropy",
         imageAlt: "Coffee beans background",
         caption:
           "Find answers to common questions about our coffee, orders, shipping, and more.",

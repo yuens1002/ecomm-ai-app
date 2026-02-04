@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.82.3 - 2026-02-04
+
+### Fixed
+
+- Update seed file to use Unsplash images for CMS pages (cafe, about, FAQ)
+
 ## 0.82.2 - 2026-02-04
 
 ### Added
