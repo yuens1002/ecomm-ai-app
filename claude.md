@@ -217,7 +217,7 @@ This saves CI time and resources for docs-only PRs.
 | **Git Tags** (v0.82.1) | App version at build time | `npm run release:patch` |
 | **GitHub Release** | "Update available" banner | `--github-release` flag |
 | **CHANGELOG.md** | Human-readable history | Manually in feature PR |
-| **package.json** | npm only (ignore) | Never |
+| **package.json** | Vercel build fallback | Manually in feature PR |
 
 - Version is derived from git tags at build time (see `next.config.ts`)
 - `package.json` version is for npm only, not the app
@@ -225,13 +225,13 @@ This saves CI time and resources for docs-only PRs.
 #### Release Flow
 
 ```
-1. In feature PR: Update CHANGELOG.md with the version you'll tag
+1. In feature PR: Update CHANGELOG.md AND package.json version
 2. Merge PR to main
 3. Run: npm run release:patch -- -y --push
 4. Done!
 ```
 
-**Important:** Update the changelog IN your feature PR before merging. Branch protection prevents pushing directly to main after merge.
+**Important:** Update both CHANGELOG.md AND package.json IN your feature PR before merging. Branch protection prevents pushing directly to main after merge. Vercel needs package.json version because git tags aren't available in its build environment.
 
 #### Changelog Updates
 
