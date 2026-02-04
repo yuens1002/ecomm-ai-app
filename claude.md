@@ -212,23 +212,30 @@ This saves CI time and resources for docs-only PRs.
 
 #### How It Works
 
-- **Version is derived from git tags at build time** (see `next.config.ts`)
-- No version commits needed - just create and push tags
+| Source | Purpose | Updated By |
+|--------|---------|------------|
+| **Git Tags** (v0.82.1) | App version at build time | `npm run release:patch` |
+| **GitHub Release** | "Update available" banner | `--github-release` flag |
+| **CHANGELOG.md** | Human-readable history | Manually in feature PR |
+| **package.json** | npm only (ignore) | Never |
+
+- Version is derived from git tags at build time (see `next.config.ts`)
 - `package.json` version is for npm only, not the app
-- **GitHub Releases** (not tags) trigger upgrade notices in the app
 
 #### Release Flow
 
 ```
-1. Merge PR to main
-2. Update CHANGELOG.md with version and changes
+1. In feature PR: Update CHANGELOG.md with the version you'll tag
+2. Merge PR to main
 3. Run: npm run release:patch -- -y --push
-4. Done! (No extra branches, no extra CI runs)
+4. Done!
 ```
+
+**Important:** Update the changelog IN your feature PR before merging. Branch protection prevents pushing directly to main after merge.
 
 #### Changelog Updates
 
-Always update `CHANGELOG.md` when tagging a release:
+Update `CHANGELOG.md` in your feature PR with the next version number:
 
 ```markdown
 ## [0.80.3] - 2026-02-02
