@@ -244,7 +244,7 @@ export default function ProductFormClient({
 
       const payload = {
         ...data,
-        images: cleanImages.length > 0 ? cleanImages : undefined,
+        images: cleanImages,
         origin: isCoffee ? toList(data.origin) : [],
         tastingNotes: isCoffee ? toList(data.tastingNotes) : [],
         variety: isCoffee ? data.variety : "",

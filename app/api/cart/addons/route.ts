@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
 
 export async function POST(request: Request) {
   try {
@@ -91,9 +92,10 @@ export async function POST(request: Request) {
             name: addOn.addOnProduct.name,
             slug: addOn.addOnProduct.slug,
             description: addOn.addOnProduct.description,
+            // Add-ons are merch products, use "culture" for coffee lifestyle images
             imageUrl:
               addOn.addOnProduct.images[0]?.url ||
-              "https://placehold.co/300x300/CCCCCC/FFFFFF.png?text=No+Image",
+              getPlaceholderImage(addOn.addOnProduct.name, 400, "culture"),
             categorySlug:
               addOn.addOnProduct.categories[0]?.category.slug || "shop",
           },

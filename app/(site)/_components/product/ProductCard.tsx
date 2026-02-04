@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { ProductType } from "@prisma/client";
 import { ProductCardProps } from "@/lib/types"; // lib path stays the same
 import { useCartStore } from "@/lib/store/cart-store";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
 
 // Import shadcn/ui components
 import {
@@ -41,12 +42,13 @@ export default function ProductCard({
     ? (oneTimePrice.priceInCents / 100).toFixed(2)
     : "N/A";
 
-  // Note: Image URLs are fixed to return .png for optimization
+  // Use product name as seed for consistent placeholder image selection
+  // Merch products use culture images (cups, equipment), coffee products use bean images
+  const placeholderCategory = product.type === ProductType.MERCH ? "culture" : "beans";
   const displayImage =
-    product.images[0]?.url ||
-    "https://placehold.co/600x400/CCCCCC/FFFFFF.png?text=Image+Not+Found";
+    product.images[0]?.url || getPlaceholderImage(product.name, 800, placeholderCategory);
   const altText =
-    product.images[0]?.altText || `A bag of ${product.name} coffee`;
+    product.images[0]?.altText || (product.type === ProductType.MERCH ? product.name : `A bag of ${product.name} coffee`);
 
   // Canonical product URL with optional ?from= to preserve navigation context
   const productUrl = categorySlug

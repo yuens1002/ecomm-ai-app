@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getWeightUnit } from "@/lib/config/app-settings";
 import { fromGrams, roundToInt, WeightUnitOption } from "@/lib/weight-unit";
 import { WeightUnit } from "@prisma/client";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
 
 export interface AddOnItem {
   product: {
@@ -140,9 +141,10 @@ export async function getProductAddOns(
         },
         discountedPriceInCents:
           addOn.discountedPriceInCents ?? purchaseOption.priceInCents,
+        // Add-ons are merch products, use "culture" category for coffee lifestyle images
         imageUrl:
           addOn.addOnProduct.images[0]?.url ||
-          "https://placehold.co/300x300/CCCCCC/FFFFFF.png?text=No+Image",
+          getPlaceholderImage(addOn.addOnProduct.name, 400, "culture"),
         categorySlug: addOn.addOnProduct.categories[0]?.category.slug || "shop",
       };
     });

@@ -30,6 +30,7 @@ import { useCartStore, type CartItem } from "@/lib/store/cart-store";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
 import { AddOnItem } from "./actions";
 import { Badge } from "@/components/ui/badge";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
 import { ProductSelectionsSection } from "@/app/(site)/_components/product/ProductSelectionsSection";
 
 interface ProductClientPageProps {
@@ -172,11 +173,12 @@ export default function ProductClientPage({
       item.purchaseType === "SUBSCRIPTION"
   );
 
+  // Merch products use culture images (cups, equipment), coffee products use bean images
+  const placeholderCategory = product.type === ProductType.MERCH ? "culture" : "beans";
   const displayImage =
-    product.images[0]?.url ||
-    "https://placehold.co/600x400/CCCCCC/FFFFFF.png?text=Image+Not+Found";
+    product.images[0]?.url || getPlaceholderImage(product.name, 800, placeholderCategory);
   const altText =
-    product.images[0]?.altText || `A bag of ${product.name} coffee`;
+    product.images[0]?.altText || (product.type === ProductType.MERCH ? product.name : `A bag of ${product.name} coffee`);
   const galleryImages =
     product.images.length > 0
       ? product.images.map((img) => ({ url: img.url, alt: img.altText }))
@@ -290,9 +292,10 @@ export default function ProductClientPage({
       purchaseOptionId: addOn.variant.purchaseOptions[0].id,
       purchaseType: "ONE_TIME",
       priceInCents: addOn.discountedPriceInCents,
+      // Add-ons are merch products, use "culture" for coffee lifestyle images
       imageUrl:
         addOn.imageUrl ||
-        "https://placehold.co/300x300/CCCCCC/FFFFFF.png?text=No+Image",
+        getPlaceholderImage(addOn.product.name, 400, "culture"),
       quantity: 1,
     });
 
