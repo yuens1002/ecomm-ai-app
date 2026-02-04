@@ -22,6 +22,7 @@ const GITHUB_ISSUES_URL = "https://github.com/yuens1002/ecomm-ai-app/issues";
 
 export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const appVersion = process.env.APP_VERSION || "dev";
 
   return (
     <>
@@ -29,9 +30,10 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Desktop Layout: 3 columns */}
           <div className="hidden sm:flex h-16 items-center justify-between">
-            {/* Left: Branding with copyright */}
+            {/* Left: Branding with copyright and version */}
             <div className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} {storeName}
+              <span className="ml-2 text-xs opacity-60">v{appVersion}</span>
             </div>
 
             {/* Center: Links */}
@@ -75,9 +77,10 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
 
           {/* Mobile Layout: Stacked */}
           <div className="sm:hidden py-4 space-y-3">
-            {/* Row 1: Branding with copyright */}
+            {/* Row 1: Branding with copyright and version */}
             <div className="text-sm text-muted-foreground text-center">
               © {new Date().getFullYear()} {storeName}
+              <span className="ml-2 text-xs opacity-60">v{appVersion}</span>
             </div>
 
             {/* Row 2: Links + Social */}

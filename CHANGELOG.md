@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.82.2 - 2026-02-04
+
+### Added
+
+- Display app version in admin footer
+
 ## 0.82.1 - 2026-02-04
 
 ### Added
