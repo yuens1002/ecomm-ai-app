@@ -1,4 +1,8 @@
 import { PrismaClient } from "@prisma/client";
+import {
+  getPlaceholderImage,
+  getPlaceholderBanner,
+} from "../../lib/placeholder-images";
 
 export async function seedAboutPage(prisma: PrismaClient) {
   const aboutPage = await prisma.page.upsert({
@@ -46,7 +50,7 @@ export async function seedAboutPage(prisma: PrismaClient) {
       isDeleted: false,
       content: {
         heading: "Our Story",
-        imageUrl: "https://placehold.co/1920x800/8B4513/FFF?text=Our+Story",
+        imageUrl: getPlaceholderBanner("about-hero"),
         imageAlt: "Artisan Roast coffee roastery",
         caption: "Crafting exceptional coffee experiences since 2015",
       },
@@ -156,23 +160,23 @@ export async function seedCafePage(
         content: {
           slides: [
             {
-              url: "https://placehold.co/800x600/8B4513/FFF?text=Cozy+Interior",
+              url: getPlaceholderImage("cozy-interior", 800, "cafe"),
               alt: "Cozy interior seating",
             },
             {
-              url: "https://placehold.co/800x600/654321/FFF?text=Espresso+Bar",
+              url: getPlaceholderImage("espresso-bar", 800, "cafe"),
               alt: "Espresso bar",
             },
             {
-              url: "https://placehold.co/800x600/A0522D/FFF?text=Outdoor+Patio",
+              url: getPlaceholderImage("outdoor-patio", 800, "cafe"),
               alt: "Outdoor patio",
             },
             {
-              url: "https://placehold.co/800x600/8B4513/FFF?text=Brewing+Station",
+              url: getPlaceholderImage("brewing-station", 800, "cafe"),
               alt: "Brewing station",
             },
             {
-              url: "https://placehold.co/800x600/654321/FFF?text=Lounge+Area",
+              url: getPlaceholderImage("lounge-area", 800, "cafe"),
               alt: "Lounge area",
             },
           ],
@@ -202,15 +206,15 @@ export async function seedCafePage(
           ],
           images: [
             {
-              url: "https://placehold.co/600x400/8B4513/FFF?text=Cafe+Exterior",
+              url: getPlaceholderImage("cafe-exterior", 600, "cafe"),
               alt: "Café exterior",
             },
             {
-              url: "https://placehold.co/600x400/654321/FFF?text=Interior+Seating",
+              url: getPlaceholderImage("interior-seating", 600, "cafe"),
               alt: "Interior seating",
             },
             {
-              url: "https://placehold.co/600x400/A0522D/FFF?text=Espresso+Bar",
+              url: getPlaceholderImage("espresso-bar-detail", 600, "cafe"),
               alt: "Espresso bar",
             },
           ],
@@ -231,7 +235,7 @@ export async function seedCafePage(
       content: {
         slides: [
           {
-            url: "https://placehold.co/800x600/654321/FFF?text=Market+Street",
+            url: getPlaceholderImage("market-street", 800, "cafe"),
             alt: "Market Street location",
             title: "Market Street",
             description:
@@ -239,7 +243,7 @@ export async function seedCafePage(
             locationBlockId: "temp-1",
           },
           {
-            url: "https://placehold.co/800x600/8B4513/FFF?text=Pearl+Street",
+            url: getPlaceholderImage("pearl-street", 800, "cafe"),
             alt: "Pearl Street location",
             title: "Pearl Street",
             description:
@@ -247,7 +251,7 @@ export async function seedCafePage(
             locationBlockId: "temp-2",
           },
           {
-            url: "https://placehold.co/800x600/A0522D/FFF?text=Hawthorne+Blvd",
+            url: getPlaceholderImage("hawthorne-blvd", 800, "cafe"),
             alt: "Hawthorne Boulevard cafe",
             title: "Hawthorne Boulevard",
             description:
@@ -276,15 +280,15 @@ export async function seedCafePage(
       ],
       images: [
         {
-          url: "https://placehold.co/600x400/654321/FFF?text=Market+St+Exterior",
+          url: getPlaceholderImage("market-exterior", 600, "cafe"),
           alt: "Market Street exterior",
         },
         {
-          url: "https://placehold.co/600x400/8B4513/FFF?text=Market+St+Interior",
+          url: getPlaceholderImage("market-interior", 600, "cafe"),
           alt: "Interior seating",
         },
         {
-          url: "https://placehold.co/600x400/A0522D/FFF?text=Market+St+Bar",
+          url: getPlaceholderImage("market-bar", 600, "cafe"),
           alt: "Espresso bar",
         },
       ],
@@ -295,22 +299,22 @@ export async function seedCafePage(
       phone: "(303) 555-0198",
       mapsUrl: "https://maps.google.com/?q=1523+Pearl+St+Boulder+CO+80302",
       description:
-        "Discover a cozy retreat on Boulder’s historic Pearl Street. Known for our delicious house-baked pastries and welcoming neighborhood vibe, this café is the perfect place to warm up. Enjoy a handcrafted latte on our patio or relax inside with friends.",
+        "Discover a cozy retreat on Boulder's historic Pearl Street. Known for our delicious house-baked pastries and welcoming neighborhood vibe, this café is the perfect place to warm up. Enjoy a handcrafted latte on our patio or relax inside with friends.",
       schedule: [
         { day: "Monday - Friday", hours: "6AM - 6PM" },
         { day: "Saturday - Sunday", hours: "7AM - 5PM" },
       ],
       images: [
         {
-          url: "https://placehold.co/600x400/8B4513/FFF?text=Pearl+St+Storefront",
+          url: getPlaceholderImage("pearl-storefront", 600, "cafe"),
           alt: "Pearl Street storefront",
         },
         {
-          url: "https://placehold.co/600x400/654321/FFF?text=Pearl+St+Pastries",
+          url: getPlaceholderImage("pearl-pastries", 600, "cafe"),
           alt: "Pastry display",
         },
         {
-          url: "https://placehold.co/600x400/A0522D/FFF?text=Pearl+St+Patio",
+          url: getPlaceholderImage("pearl-patio", 600, "cafe"),
           alt: "Outdoor patio",
         },
       ],
@@ -322,7 +326,7 @@ export async function seedCafePage(
       mapsUrl:
         "https://maps.google.com/?q=812+SE+Hawthorne+Blvd+Portland+OR+97214",
       description:
-        "Immerse yourself in Portland’s creative spirit at our Hawthorne Boulevard café. With spacious seating and a relaxed atmosphere, it is the ultimate destination for students and remote workers. Settle in for a productive afternoon or a casual meetup in this community hub.",
+        "Immerse yourself in Portland's creative spirit at our Hawthorne Boulevard café. With spacious seating and a relaxed atmosphere, it is the ultimate destination for students and remote workers. Settle in for a productive afternoon or a casual meetup in this community hub.",
       schedule: [
         { day: "Monday - Thursday", hours: "7AM - 8PM" },
         { day: "Friday", hours: "7AM - 10PM" },
@@ -330,15 +334,15 @@ export async function seedCafePage(
       ],
       images: [
         {
-          url: "https://placehold.co/600x400/A0522D/FFF?text=Hawthorne+Entrance",
+          url: getPlaceholderImage("hawthorne-entrance", 600, "cafe"),
           alt: "Hawthorne Boulevard entrance",
         },
         {
-          url: "https://placehold.co/600x400/8B4513/FFF?text=Hawthorne+Seating",
+          url: getPlaceholderImage("hawthorne-seating", 600, "cafe"),
           alt: "Comfortable seating",
         },
         {
-          url: "https://placehold.co/600x400/654321/FFF?text=Hawthorne+Bar",
+          url: getPlaceholderImage("hawthorne-bar", 600, "cafe"),
           alt: "Coffee and tea bar",
         },
       ],
@@ -429,7 +433,7 @@ export async function seedFaqPage(prisma: PrismaClient) {
       isDeleted: false,
       content: {
         heading: "Frequently Asked Questions",
-        imageUrl: "https://placehold.co/1920x800/654321/FFF?text=FAQ",
+        imageUrl: getPlaceholderBanner("faq-hero"),
         imageAlt: "Coffee beans background",
         caption:
           "Find answers to common questions about our coffee, orders, shipping, and more.",

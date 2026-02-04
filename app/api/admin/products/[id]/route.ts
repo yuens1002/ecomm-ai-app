@@ -136,22 +136,24 @@ export async function PUT(
         },
       });
 
-      // 2. Update Images (replace all images if provided)
-      if (images && images.length > 0) {
+      // 2. Update Images (replace all images if provided, including empty array to delete all)
+      if (images !== undefined) {
         // Delete existing images
         await tx.productImage.deleteMany({
           where: { productId: id },
         });
 
-        // Create new images
-        await tx.productImage.createMany({
-          data: images.map((img, index) => ({
-            productId: id,
-            url: img.url,
-            altText: img.alt || name,
-            order: index,
-          })),
-        });
+        // Create new images if any
+        if (images.length > 0) {
+          await tx.productImage.createMany({
+            data: images.map((img, index) => ({
+              productId: id,
+              url: img.url,
+              altText: img.alt || name,
+              order: index,
+            })),
+          });
+        }
       }
 
       // 3. Update categories

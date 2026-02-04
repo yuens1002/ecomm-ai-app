@@ -275,10 +275,8 @@ export async function seedMerch(prisma: PrismaClient) {
         featuredOrder: item.featuredOrder,
         type: ProductType.MERCH,
         roastLevel: RoastLevel.MEDIUM,
-        images: {
-          deleteMany: {},
-          create: [{ url: item.imageUrl, altText: item.name, order: 1 }],
-        },
+        // Delete existing images so placeholders are used
+        images: { deleteMany: {} },
         categories: { deleteMany: {}, create: [primaryCategory] },
         // Do not delete/recreate variants on update to avoid breaking
         // existing OrderItem.purchaseOptionId foreign keys.
@@ -294,9 +292,6 @@ export async function seedMerch(prisma: PrismaClient) {
         featuredOrder: item.featuredOrder,
         type: ProductType.MERCH,
         roastLevel: RoastLevel.MEDIUM,
-        images: {
-          create: [{ url: item.imageUrl, altText: item.name, order: 1 }],
-        },
         categories: { create: [primaryCategory] },
         variants: { create: variants },
       },

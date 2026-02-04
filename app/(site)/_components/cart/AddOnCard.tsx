@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
 
 interface AddOnCardProps {
   addOn: {
@@ -50,9 +51,9 @@ export function AddOnCard({
   const hasDiscount =
     discountedPriceInCents && discountedPriceInCents < regularPrice;
 
+  // Add-ons are typically merch products, use "culture" category for coffee lifestyle images
   const imageUrl =
-    addOn.imageUrl ||
-    "https://placehold.co/300x200/CCCCCC/FFFFFF.png?text=No+Image";
+    addOn.imageUrl || getPlaceholderImage(addOn.product.name, 400, "culture");
 
   return (
     <div className="flex flex-row gap-4 w-full">

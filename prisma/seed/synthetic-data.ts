@@ -74,12 +74,19 @@ export async function seedSyntheticData(prisma: PrismaClient) {
 
   // Get existing users and products
   const users = await prisma.user.findMany();
-  const products = await prisma.product.findMany({
+  const allProducts = await prisma.product.findMany({
     include: {
       variants: { include: { purchaseOptions: true } },
       categories: { include: { category: true } },
     },
   });
+
+  // Filter to only products with valid variants and purchase options
+  const products = allProducts.filter(
+    (p) =>
+      p.variants.length > 0 &&
+      p.variants.some((v) => v.purchaseOptions.length > 0)
+  );
 
   if (users.length === 0 || products.length === 0) {
     throw new Error(
@@ -190,7 +197,11 @@ export async function seedSyntheticData(prisma: PrismaClient) {
 
       for (let j = 0; j < numItems; j++) {
         const product = randomElement(products);
-        const variant = randomElement(product.variants);
+        const validVariants = product.variants.filter(
+          (v) => v.purchaseOptions.length > 0
+        );
+        if (validVariants.length === 0) continue;
+        const variant = randomElement(validVariants);
         const purchaseOption = randomElement(variant.purchaseOptions);
 
         orderProducts.push({
