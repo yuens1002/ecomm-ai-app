@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.81.5 - 2026-02-04
+
+### Added
+
+- Curated Unsplash placeholder images for products without uploaded images
+- 30 unique coffee bean photos for coffee products
+- 12 coffee culture photos for merch products
+- Documentation for placeholder image system
+
 ## 0.81.4 - 2026-02-03
 
 ### Fixed
