@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.81.5 - 2026-02-04
+## 0.82.1 - 2026-02-04
 
 ### Added
 
@@ -8,6 +8,19 @@
 - 30 unique coffee bean photos for coffee products
 - 12 coffee culture photos for merch products
 - Documentation for placeholder image system
+- `/checkout/resume` page to handle post-auth checkout flow
+- `callbackUrl` support in sign-in/sign-up flow
+
+### Fixed
+
+- Checkout redirect after sign-up now returns to checkout instead of account page
+- Cart drawer no longer auto-opens after completing Stripe checkout
+
+## 0.82.0 - 2026-02-03
+
+### Fixed
+
+- Responsive UX improvements for public site and admin
 
 ## 0.81.4 - 2026-02-03
 
