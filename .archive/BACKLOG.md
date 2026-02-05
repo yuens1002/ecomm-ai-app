@@ -871,66 +871,46 @@ GITHUB_REPO_NAME="ecomm-ai-app"
 
 ### Checkout Redirect After Sign-Up (Bug)
 
-**Status**: Backlog
+**Status**: Complete ✅
 **Priority**: Medium
+**Completed**: February 4, 2026
 **Description**: After signing up for a new account during checkout flow, clicking checkout redirects to the account page instead of proceeding to Stripe checkout.
 
-**Repro Steps**:
+**Solution Implemented**:
 
-1. Log out if signed in
-2. Add a subscription item to the cart
-3. Click "Check out" on the cart drawer
-4. Click "Sign up for a new account" on the login page
-5. Complete sign-up
-6. Click "Check out" on the cart drawer
+- Auth pages (signin/signup) now respect `callbackUrl` parameter for redirect after auth
+- New `/checkout/resume` page with server-side auth check
+- New `CheckoutResumeClient` component that auto-submits checkout form after auth
+- New `/api/checkout/redirect` API endpoint for form-based checkout submission
+- Webhook handler uses case-insensitive email matching for guest order → user account linking
 
-**Current Behavior**: User is redirected to the account page when clicking checkout link in cart after sign-up.
+**Files Changed**:
 
-**Expected Behavior**: User should be taken to the Stripe checkout page with their cart items preserved.
-
-**Technical Notes**:
-
-- Likely related to session/auth callback URL handling after sign-up
-- May need to preserve checkout intent through auth flow
-- Check `callbackUrl` parameter propagation through sign-up process
-
-**Files to Investigate**:
-
-- `app/(site)/auth/signin/page.tsx`
-- `app/(site)/auth/signup/page.tsx`
-- `app/api/checkout/route.ts`
-- Cart drawer checkout button logic
+- `app/auth/signin/page.tsx` - Respect callbackUrl
+- `app/auth/signup/page.tsx` - Respect callbackUrl
+- `app/(site)/checkout/resume/page.tsx` - Server-side auth check
+- `app/(site)/checkout/resume/checkout-resume-client.tsx` - Auto-submit client
+- `app/api/checkout/redirect/route.ts` - Form-based checkout API
+- `app/(site)/_components/cart/ShoppingCart.tsx` - Session loading state handling
+- `app/api/webhooks/stripe/handlers/checkout-session-completed.ts` - Case-insensitive email lookup
 
 ---
 
 ### Cart Drawer Opens After Successful Order (Bug)
 
-**Status**: Backlog
+**Status**: Complete ✅
 **Priority**: Medium
+**Completed**: February 4, 2026
 **Description**: Shopping cart drawer automatically opens showing an empty cart state after a successful order completion.
 
-**Repro Steps**:
+**Solution Implemented**:
 
-1. Add any item to the cart
-2. Click "Check out"
-3. Complete the Stripe checkout flow
-4. Observe: Cart drawer automatically opens showing empty cart
+- Cart drawer is now explicitly closed (`setIsOpen(false)`) before redirecting to Stripe checkout
+- This prevents the drawer from re-opening when user returns from checkout
 
-**Current Behavior**: Cart drawer opens automatically on successful order return, displaying empty cart state.
+**Files Changed**:
 
-**Expected Behavior**: Cart drawer should NOT open automatically when an order is successful. User should land on confirmation/success page without cart interference.
-
-**Technical Notes**:
-
-- Likely triggered by cart state clearing after successful checkout
-- May need to check checkout success redirect handling
-- Cart drawer open state should not be triggered by cart clearing
-
-**Files to Investigate**:
-
-- Cart drawer component and its open state trigger logic
-- Checkout success return URL handling
-- Zustand cart store logic for clearing cart after purchase
+- `app/(site)/_components/cart/ShoppingCart.tsx` - Close drawer before redirect
 
 ---
 
