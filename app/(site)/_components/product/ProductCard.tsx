@@ -4,11 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import clsx from "clsx";
 import { ProductType } from "@prisma/client";
-import { ProductCardProps } from "@/lib/types"; // lib path stays the same
-import { useCartStore } from "@/lib/store/cart-store";
+import { ProductCardProps } from "@/lib/types";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
+import { useAddToCartWithFeedback } from "@/hooks/useAddToCartWithFeedback";
+import { AddToCartButton } from "./AddToCartButton";
 
-// Import shadcn/ui components
 import {
   Card,
   CardHeader,
@@ -16,8 +16,7 @@ import {
   CardDescription,
   CardFooter,
   CardTitle,
-} from "@/components/ui/card"; // shadcn/ui path remains the same
-import { Button } from "@/components/ui/button"; // shadcn/ui path remains the same
+} from "@/components/ui/card";
 
 // --- Product Card Component ---
 export default function ProductCard({
@@ -27,11 +26,17 @@ export default function ProductCard({
   categorySlug,
   priority = false,
   cardPaddingClass,
+  hidePrice = false,
+  hidePriceOnMobile = false,
 }: Omit<ProductCardProps, "onAddToCart"> & {
   categorySlug?: string;
   priority?: boolean;
+  hidePrice?: boolean;
+  /** Hide price on mobile/sm breakpoints only (for carousel context) */
+  hidePriceOnMobile?: boolean;
 }) {
-  const addItem = useCartStore((state) => state.addItem);
+  const { buttonState, isCheckingOut, handleAddToCart, handleActionClick } =
+    useAddToCartWithFeedback();
 
   // --- Find price and image ---
   const displayVariant = product.variants[0];
@@ -54,6 +59,27 @@ export default function ProductCard({
   const productUrl = categorySlug
     ? `/products/${product.slug}?from=${encodeURIComponent(categorySlug)}`
     : `/products/${product.slug}`;
+
+  const handleAdd = () => {
+    if (displayVariant && oneTimePrice) {
+      handleAddToCart({
+        productId: product.id,
+        productName: product.name,
+        productSlug: product.slug,
+        categorySlug,
+        variantId: displayVariant.id,
+        variantName: displayVariant.name,
+        purchaseOptionId: oneTimePrice.id,
+        purchaseType: "ONE_TIME",
+        priceInCents: oneTimePrice.priceInCents,
+        imageUrl: displayImage,
+      });
+    }
+  };
+
+  const handleAction = async () => {
+    await handleActionClick();
+  };
 
   return (
     <Link
@@ -81,7 +107,6 @@ export default function ProductCard({
         </CardHeader>
 
         {/* 2. CardContent holds all text content. */}
-        {/* Added the 'grow' class to push the footer down. */}
         <div className="border-x border-b rounded-b-lg">
           <CardContent className="grow py-4">
             <CardTitle className="text-xl overflow-hidden text-ellipsis whitespace-nowrap p-0">
@@ -98,36 +123,21 @@ export default function ProductCard({
           {/* 3. CardFooter (only shows if purchase options are enabled) */}
           {showPurchaseOptions && (
             <CardFooter className="pb-8 flex items-center justify-between">
-              <Button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-
-                  // Add to cart with default variant and one-time purchase
-                  if (displayVariant && oneTimePrice) {
-                    addItem({
-                      productId: product.id,
-                      productName: product.name,
-                      productSlug: product.slug,
-                      categorySlug,
-                      variantId: displayVariant.id,
-                      variantName: displayVariant.name,
-                      purchaseOptionId: oneTimePrice.id,
-                      purchaseType: "ONE_TIME",
-                      priceInCents: oneTimePrice.priceInCents,
-                      imageUrl: displayImage,
-                    });
-                  }
-                }}
+              <AddToCartButton
+                buttonState={buttonState}
+                onAddToCart={handleAdd}
+                onActionClick={handleAction}
+                disabled={!displayVariant || !oneTimePrice}
+                isProcessing={isCheckingOut}
                 className="cursor-pointer"
-              >
-                Add to Cart
-              </Button>
-              <div>
-                <p className="text-lg font-bold text-primary">
-                  ${displayPrice}
-                </p>
-              </div>
+              />
+              {!hidePrice && (
+                <div className={hidePriceOnMobile ? "hidden md:block" : ""}>
+                  <p className="text-lg font-bold text-primary">
+                    ${displayPrice}
+                  </p>
+                </div>
+              )}
             </CardFooter>
           )}
         </div>

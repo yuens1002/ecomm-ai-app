@@ -6,6 +6,7 @@ import { ProductDeliverySchedule } from "./ProductDeliverySchedule";
 import { ProductQuantityCart } from "./ProductQuantityCart";
 import { cn } from "@/lib/utils";
 import type { Product, ProductVariant, PurchaseOption } from "@/lib/types";
+import type { ButtonState } from "@/hooks/useAddToCartWithFeedback";
 
 interface ProductSelectionsSectionProps {
   product: Product;
@@ -23,6 +24,9 @@ interface ProductSelectionsSectionProps {
   onSubscriptionCadenceChange: (optionId: string) => void;
   onQuantityChange: (quantity: number) => void;
   onAddToCart: () => void;
+  onActionClick?: () => void;
+  buttonState?: ButtonState;
+  isProcessing?: boolean;
   spacing?: "2" | "3" | "4";
 }
 
@@ -42,6 +46,9 @@ export function ProductSelectionsSection({
   onSubscriptionCadenceChange,
   onQuantityChange,
   onAddToCart,
+  onActionClick,
+  buttonState = "idle",
+  isProcessing = false,
   spacing = "3",
 }: ProductSelectionsSectionProps) {
   const doubleSpacing = spacing === "2" ? "4" : spacing === "3" ? "6" : "8";
@@ -99,8 +106,12 @@ export function ProductSelectionsSection({
                 quantity={quantity}
                 stockQuantity={selectedVariant.stockQuantity}
                 hasSelectedPurchaseOption={!!selectedPurchaseOption}
+                priceInCents={selectedPurchaseOption?.priceInCents}
                 onQuantityChange={onQuantityChange}
                 onAddToCart={onAddToCart}
+                onActionClick={onActionClick}
+                buttonState={buttonState}
+                isProcessing={isProcessing}
                 spacing={spacing}
               />
             </div>
@@ -115,6 +126,9 @@ export function ProductSelectionsSection({
             priceInCents={selectedPurchaseOption?.priceInCents}
             onQuantityChange={onQuantityChange}
             onAddToCart={onAddToCart}
+            onActionClick={onActionClick}
+            buttonState={buttonState}
+            isProcessing={isProcessing}
             spacing={spacing}
           />
         )}

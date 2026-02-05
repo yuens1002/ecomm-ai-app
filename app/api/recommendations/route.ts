@@ -22,6 +22,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "6");
+    const excludeId = searchParams.get("exclude"); // Optional product ID to exclude
 
     // Check for authenticated user
     const session = await auth();
@@ -29,9 +30,10 @@ export async function GET(request: Request) {
 
     if (!userId) {
       // Anonymous user - return trending products
-      const trending = await getTrendingProducts(limit, 7);
+      const trending = await getTrendingProducts(limit + 1, 7);
+      const filtered = trending.filter((p) => !excludeId || p!.id !== excludeId).slice(0, limit);
       return NextResponse.json({
-        products: trending.map((p) => ({
+        products: filtered.map((p) => ({
           id: p!.id,
           name: p!.name,
           slug: p!.slug,
@@ -52,9 +54,10 @@ export async function GET(request: Request) {
       userContext = await getUserRecommendationContext(userId);
     } catch (contextError) {
       console.warn("Failed to get user context, falling back to trending:", contextError);
-      const trending = await getTrendingProducts(limit, 7);
+      const trending = await getTrendingProducts(limit + 1, 7);
+      const filtered = trending.filter((p) => !excludeId || p!.id !== excludeId).slice(0, limit);
       return NextResponse.json({
-        products: trending.map((p) => ({
+        products: filtered.map((p) => ({
           id: p!.id,
           name: p!.name,
           slug: p!.slug,
@@ -75,9 +78,10 @@ export async function GET(request: Request) {
 
     if (!hasHistory) {
       // New user - return trending products
-      const trending = await getTrendingProducts(limit, 7);
+      const trending = await getTrendingProducts(limit + 1, 7);
+      const filtered = trending.filter((p) => !excludeId || p!.id !== excludeId).slice(0, limit);
       return NextResponse.json({
-        products: trending.map((p) => ({
+        products: filtered.map((p) => ({
           id: p!.id,
           name: p!.name,
           slug: p!.slug,
@@ -97,9 +101,13 @@ export async function GET(request: Request) {
     );
     const recentlyViewedIds = userContext.recentViews.map((v) => v.name);
 
-    // Fetch all products
+    // Fetch all products (excluding the specified product if provided)
     const allProducts = await prisma.product.findMany({
-      where: { type: ProductType.COFFEE, isDisabled: false },
+      where: {
+        type: ProductType.COFFEE,
+        isDisabled: false,
+        ...(excludeId && { id: { not: excludeId } }),
+      },
       include: {
         images: {
           orderBy: { order: "asc" },
