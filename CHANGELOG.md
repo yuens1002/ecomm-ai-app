@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.82.4 - 2026-02-04
+
+### Fixed
+
+- Restore category structure to use regional groupings instead of individual countries
+- Update product-category mappings to match original structure
+
 ## 0.82.3 - 2026-02-04
 
 ### Fixed
