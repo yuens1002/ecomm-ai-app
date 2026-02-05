@@ -205,8 +205,9 @@ This saves CI time and resources for docs-only PRs.
 
 1. Create feature branch from `main`
 2. Make changes, commit with conventional format
-3. Push and create PR
-4. After PR approved and merged → run release script
+3. **Run validation before PR:** `npm run precheck && npm run test:ci`
+4. Push and create PR
+5. After PR approved and merged → run release script
 
 ### Versioning & Releases
 
