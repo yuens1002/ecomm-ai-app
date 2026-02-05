@@ -224,14 +224,22 @@ This saves CI time and resources for docs-only PRs.
 
 #### Release Flow
 
+Use the `/release` skill (recommended) or follow manual steps:
+
+```bash
+/release patch              # Skill guides you through workflow
+# OR manually:
+npm run release:patch -- -y --push --sync-package
+```
+
 ```
 1. In feature PR: Update CHANGELOG.md AND package.json version
 2. Merge PR to main
-3. Run: npm run release:patch -- -y --push
+3. Run: npm run release:patch -- -y --push --sync-package
 4. Done!
 ```
 
-**Important:** Update both CHANGELOG.md AND package.json IN your feature PR before merging. Branch protection prevents pushing directly to main after merge. Vercel needs package.json version because git tags aren't available in its build environment.
+**Important:** Update both CHANGELOG.md AND package.json IN your feature PR before merging. If you forget, the `--sync-package` flag will create a PR to sync package.json before tagging. Vercel needs package.json version because git tags aren't available in its build environment.
 
 #### Changelog Updates
 
@@ -271,6 +279,7 @@ npm run release:minor -- -y --push --github-release
 
 - `--yes, -y` - Skip prompts
 - `--push` - Push tag to origin
+- `--sync-package` - Sync package.json version (creates PR if on main)
 - `--github-release` - Create GitHub Release (triggers upgrade notice)
 - `--message, -m` - Tag annotation message
 
@@ -328,10 +337,14 @@ When using `--github-release`, the script **automatically extracts** notes from 
 
 ```bash
 # Standard release (no user notification)
-npm run release:patch -- -y --push
+npm run release:patch -- -y --push --sync-package
 
 # User-facing release (shows upgrade notice)
-npm run release:minor -- -y --push --github-release
+npm run release:minor -- -y --push --sync-package --github-release
+
+# Or use the skill
+/release patch
+/release minor --github-release
 ```
 
 ---
