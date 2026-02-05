@@ -45,7 +45,7 @@ import { CartAddOnsSuggestions } from "./CartAddOnsSuggestions";
  * Renders a cart button with badge + drawer showing cart contents
  */
 export function ShoppingCart() {
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
   const { toast } = useToast();
   const { trackActivity } = useActivityTracking();
@@ -183,6 +183,22 @@ export function ShoppingCart() {
   };
 
   const handleCheckout = async () => {
+    // Check if cart has subscriptions
+    const hasSubscription = items.some(
+      (item) => item.purchaseType === "SUBSCRIPTION"
+    );
+
+    // If session is still loading and cart has subscriptions, wait a bit
+    if (hasSubscription && sessionStatus === "loading") {
+      toast({
+        title: "Please wait",
+        description: "Loading your session...",
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
+      return;
+    }
+
     setIsCheckingOut(true);
     try {
       const response = await fetch("/api/checkout", {
@@ -258,6 +274,14 @@ export function ShoppingCart() {
       if (data.url) {
         setIsOpen(false); // Close drawer before redirect to prevent it opening on return
         window.location.href = data.url;
+      } else {
+        toast({
+          title: "Checkout error",
+          description: "No checkout URL received. Please try again.",
+          variant: undefined,
+          className: "!bg-foreground !text-background !border-foreground",
+        });
+        setIsCheckingOut(false);
       }
     } catch (error) {
       console.error("Checkout error:", error);
@@ -539,21 +563,38 @@ export function ShoppingCart() {
               </div>
 
               {/* Checkout Button */}
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={handleCheckout}
-                disabled={isCheckingOut}
-              >
-                {isCheckingOut ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  "Proceed to Checkout"
-                )}
-              </Button>
+              {(() => {
+                const hasSubscription = items.some(
+                  (item) => item.purchaseType === "SUBSCRIPTION"
+                );
+                const isSessionLoading =
+                  hasSubscription && sessionStatus === "loading";
+                const isDisabled = isCheckingOut || isSessionLoading;
+
+                return (
+                  <Button
+                    type="button"
+                    className="w-full"
+                    size="lg"
+                    onClick={handleCheckout}
+                    disabled={isDisabled}
+                  >
+                    {isSessionLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading session...
+                      </>
+                    ) : isCheckingOut ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Proceed to Checkout"
+                    )}
+                  </Button>
+                );
+              })()}
 
               {/* Clear Cart */}
               <Button

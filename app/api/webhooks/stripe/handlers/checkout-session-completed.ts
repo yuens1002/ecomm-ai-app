@@ -40,13 +40,18 @@ export async function handleCheckoutSessionCompleted(
   // Normalize checkout session to common format
   const normalizedCheckout = await normalizeCheckoutSession(session);
 
-  // Find user by email
+  // Find user by email (case-insensitive to handle Stripe Link email variations)
   let userId: string | null = null;
   let existingUser: { id: string; name: string | null; phone: string | null } | null = null;
 
   if (normalizedCheckout.customer.email) {
-    const user = await prisma.user.findUnique({
-      where: { email: normalizedCheckout.customer.email },
+    const user = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: normalizedCheckout.customer.email,
+          mode: "insensitive"
+        }
+      },
       select: { id: true, name: true, phone: true },
     });
     existingUser = user;
