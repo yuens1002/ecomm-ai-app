@@ -29,80 +29,11 @@ interface CategoryMenuColumnsProps {
   labelClassName?: string;
 }
 
-interface ColumnDistribution {
-  column1: LabelGroup[];
-  column2: LabelGroup[];
-  column3: LabelGroup[];
-}
-
-/**
- * Calculate the "weight" (number of visible items) for a label group.
- * Weight = 1 (for label header) + number of visible categories
- */
-function calculateLabelWeight(
-  labelGroup: LabelGroup,
-  isExpanded: boolean,
-  maxInitial: number
-): number {
-  const visibleCount = isExpanded
-    ? labelGroup.categories.length
-    : Math.min(labelGroup.categories.length, maxInitial);
-
-  // 1 for label header + visible categories + 1 for "...more/less" if applicable
-  const hasMoreLink = labelGroup.categories.length > maxInitial || isExpanded;
-  return 1 + visibleCount + (hasMoreLink ? 1 : 0);
-}
-
-/**
- * Distribute label groups across 3 columns using a greedy algorithm
- * to balance the total weight (visual height) of each column.
- *
- * Algorithm:
- * 1. Start with 3 empty columns
- * 2. For each label group (in order):
- *    - Calculate its weight based on expansion state
- *    - Add it to the column with the smallest current weight
- * 3. Return the balanced distribution
- */
-function distributeLabelsAcrossColumns(
-  labelGroups: LabelGroup[],
-  expansionStates: Map<string, boolean>,
-  maxInitial: number
-): ColumnDistribution {
-  const columns: [LabelGroup[], number][] = [
-    [[], 0], // [items, totalWeight]
-    [[], 0],
-    [[], 0],
-  ];
-
-  // Greedy distribution: always add to the lightest column
-  labelGroups.forEach((group) => {
-    const isExpanded = expansionStates.get(group.label) ?? false;
-    const weight = calculateLabelWeight(group, isExpanded, maxInitial);
-
-    // Find column with minimum weight
-    const minIndex = columns.reduce(
-      (minIdx, col, idx, arr) => (col[1] < arr[minIdx][1] ? idx : minIdx),
-      0
-    );
-
-    // Add to that column
-    columns[minIndex][0].push(group);
-    columns[minIndex][1] += weight;
-  });
-
-  return {
-    column1: columns[0][0],
-    column2: columns[1][0],
-    column3: columns[2][0],
-  };
-}
-
 /**
  * Renders a single label group with its categories.
  * Handles expand/collapse for labels with > maxInitial categories.
  */
-function LabelGroupColumn({
+function LabelGroupItem({
   labelGroup,
   isExpanded,
   onToggle,
@@ -124,8 +55,9 @@ function LabelGroupColumn({
     : categories.slice(0, maxInitial);
 
   return (
-    <div className="space-y-3">
-      {/* Label Header with optional icon - no border on mobile when stacked */}
+    // break-inside-avoid keeps each label group together in one column
+    <div className="break-inside-avoid space-y-3 mb-6">
+      {/* Label Header with optional icon */}
       <div className="flex items-center gap-2 sm:border-b sm:pb-2">
         {icon && <DynamicIcon name={icon} className="h-4 w-4 shrink-0" />}
         <h4 className={labelClassName}>{label}</h4>
@@ -160,21 +92,32 @@ function LabelGroupColumn({
 }
 
 /**
- * Self-balancing 3-column category menu.
+ * Responsive category menu with column-based layout.
  *
  * Features:
- * - Distributes label groups across 3 columns to balance visual height
+ * - Items flow top-to-bottom within each column, then to next column
+ * - CSS multi-column automatically balances heights across columns
+ * - Consistent column-first reading order at all breakpoints
  * - Each label can show up to `maxInitialCategories` (default 7) before "...more"
- * - Clicking "...more" expands that label and rebalances all columns
- * - Clicking "...less" collapses that label and rebalances again
+ * - Clicking "...more" expands that label inline
  *
- * Use cases: Header navigation, Footer navigation, Mobile menu
+ * Layout:
+ * - Mobile (< 640px): 1 column
+ * - Tablet (640px+): 2 columns
+ * - Desktop (1024px+): 3 columns
+ *
+ * Reading order example with labels A, B, C, D, E, F:
+ * - 3 cols: A D / B E / C F (column 1, column 2, column 3)
+ * - 2 cols: A C E / B D F
+ * - 1 col:  A / B / C / D / E / F
+ *
+ * Use cases: Header navigation, Footer navigation
  */
 export function CategoryMenuColumns({
   categoryGroups,
   labelIcons,
   maxInitialCategories = 7,
-  className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4",
+  className = "columns-1 sm:columns-2 lg:columns-3 gap-x-6",
   linkClassName = "text-sm hover:underline hover:text-primary transition-colors truncate block",
   labelClassName = "text-xs font-bold uppercase tracking-wider text-muted-foreground truncate",
 }: CategoryMenuColumnsProps) {
@@ -194,17 +137,6 @@ export function CategoryMenuColumns({
     [categoryGroups, labelIcons]
   );
 
-  // Distribute labels across 3 columns (recalculates when expansion states change)
-  const distribution = useMemo(
-    () =>
-      distributeLabelsAcrossColumns(
-        labelGroups,
-        expandedLabels,
-        maxInitialCategories
-      ),
-    [labelGroups, expandedLabels, maxInitialCategories]
-  );
-
   const toggleLabel = (labelName: string) => {
     setExpandedLabels((prev) => {
       const next = new Map(prev);
@@ -215,50 +147,23 @@ export function CategoryMenuColumns({
 
   return (
     <div className={className}>
-      {/* Column 1 */}
-      <div className="space-y-4 sm:space-y-6">
-        {distribution.column1.map((group) => (
-          <LabelGroupColumn
-            key={group.label}
-            labelGroup={group}
-            isExpanded={expandedLabels.get(group.label) ?? false}
-            onToggle={() => toggleLabel(group.label)}
-            maxInitial={maxInitialCategories}
-            linkClassName={linkClassName}
-            labelClassName={labelClassName}
-          />
-        ))}
-      </div>
-
-      {/* Column 2 */}
-      <div className="space-y-4 sm:space-y-6">
-        {distribution.column2.map((group) => (
-          <LabelGroupColumn
-            key={group.label}
-            labelGroup={group}
-            isExpanded={expandedLabels.get(group.label) ?? false}
-            onToggle={() => toggleLabel(group.label)}
-            maxInitial={maxInitialCategories}
-            linkClassName={linkClassName}
-            labelClassName={labelClassName}
-          />
-        ))}
-      </div>
-
-      {/* Column 3 */}
-      <div className="space-y-4 sm:space-y-6">
-        {distribution.column3.map((group) => (
-          <LabelGroupColumn
-            key={group.label}
-            labelGroup={group}
-            isExpanded={expandedLabels.get(group.label) ?? false}
-            onToggle={() => toggleLabel(group.label)}
-            maxInitial={maxInitialCategories}
-            linkClassName={linkClassName}
-            labelClassName={labelClassName}
-          />
-        ))}
-      </div>
+      {/*
+        CSS multi-column layout fills columns top-to-bottom:
+        - Items flow down column 1, then column 2, then column 3
+        - Automatic height balancing across columns
+        - break-inside-avoid on items prevents label groups from splitting
+      */}
+      {labelGroups.map((group) => (
+        <LabelGroupItem
+          key={group.label}
+          labelGroup={group}
+          isExpanded={expandedLabels.get(group.label) ?? false}
+          onToggle={() => toggleLabel(group.label)}
+          maxInitial={maxInitialCategories}
+          linkClassName={linkClassName}
+          labelClassName={labelClassName}
+        />
+      ))}
     </div>
   );
 }

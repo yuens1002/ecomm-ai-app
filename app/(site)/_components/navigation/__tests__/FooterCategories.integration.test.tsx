@@ -111,14 +111,14 @@ describe("FooterCategories - Integration Tests", () => {
   });
 
   describe("CategoryMenuColumns Integration", () => {
-    it("uses weight-balanced distribution from CategoryMenuColumns", () => {
+    it("uses CSS columns layout from CategoryMenuColumns", () => {
       const { container } = render(
         <FooterCategories categoryGroups={mockCategoryGroups} />
       );
 
-      // Should have the responsive grid structure from CategoryMenuColumns
-      const gridContainer = container.querySelector(".grid.grid-cols-1");
-      expect(gridContainer).toBeInTheDocument();
+      // Should have the responsive columns structure from CategoryMenuColumns
+      const columnsContainer = container.querySelector(".columns-1");
+      expect(columnsContainer).toBeInTheDocument();
     });
 
     it("supports expand/collapse functionality from CategoryMenuColumns", () => {

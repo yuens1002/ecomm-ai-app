@@ -52,13 +52,13 @@ describe("CategoryMenuColumns", () => {
       expect(nuttyLink).toHaveAttribute("href", "/nutty-chocolatey");
     });
 
-    it("renders in responsive grid layout", () => {
+    it("renders in responsive columns layout", () => {
       const { container } = render(
         <CategoryMenuColumns categoryGroups={mockCategoryGroups} />
       );
 
-      const gridContainer = container.firstChild;
-      expect(gridContainer).toHaveClass("grid", "grid-cols-1", "lg:grid-cols-3");
+      const columnsContainer = container.firstChild;
+      expect(columnsContainer).toHaveClass("columns-1", "sm:columns-2", "lg:columns-3");
     });
   });
 
@@ -206,15 +206,15 @@ describe("CategoryMenuColumns", () => {
     });
   });
 
-  describe("Weight-Balanced Distribution", () => {
-    it("distributes label groups across 3 columns", () => {
+  describe("CSS Columns Layout", () => {
+    it("renders all label groups as direct children", () => {
       const { container } = render(
         <CategoryMenuColumns categoryGroups={mockCategoryGroups} />
       );
 
-      // Should have 3 column divs
-      const columns = container.querySelectorAll(".grid > div");
-      expect(columns.length).toBe(3);
+      // With CSS columns, label groups are direct children with break-inside-avoid
+      const labelGroups = container.querySelectorAll(".break-inside-avoid");
+      expect(labelGroups.length).toBe(3); // 3 label groups
     });
 
     it("keeps label groups together (no splitting)", () => {
@@ -231,7 +231,7 @@ describe("CategoryMenuColumns", () => {
       expect(originsLabels.length).toBe(1);
     });
 
-    it("rebalances columns when a label is expanded", () => {
+    it("maintains group count when a label is expanded", () => {
       const { container } = render(
         <CategoryMenuColumns
           categoryGroups={mockCategoryGroups}
@@ -239,10 +239,8 @@ describe("CategoryMenuColumns", () => {
         />
       );
 
-      // Get initial column structure
-      const columnsBefore = Array.from(
-        container.querySelectorAll(".grid > div")
-      ).map((col) => col.querySelectorAll(".space-y-3").length);
+      // Count label groups before expansion
+      const groupsBefore = container.querySelectorAll(".break-inside-avoid").length;
 
       // Expand ORIGINS
       const moreButton = screen.getByRole("button", {
@@ -250,15 +248,11 @@ describe("CategoryMenuColumns", () => {
       });
       fireEvent.click(moreButton);
 
-      // Get column structure after expansion
-      const columnsAfter = Array.from(
-        container.querySelectorAll(".grid > div")
-      ).map((col) => col.querySelectorAll(".space-y-3").length);
+      // Count label groups after expansion
+      const groupsAfter = container.querySelectorAll(".break-inside-avoid").length;
 
       // Total groups should remain the same
-      const totalBefore = columnsBefore.reduce((a, b) => a + b, 0);
-      const totalAfter = columnsAfter.reduce((a, b) => a + b, 0);
-      expect(totalBefore).toBe(totalAfter);
+      expect(groupsBefore).toBe(groupsAfter);
     });
   });
 
