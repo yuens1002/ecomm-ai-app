@@ -69,3 +69,4 @@ next-env.d.ts
 # Claude Code - ignore local settings, allow shared skills
 .claude/*
 !.claude/skills/
+nul
