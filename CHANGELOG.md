@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.83.0 - 2026-02-05
+
+### Added
+
+- **Cart-Aware Add to Cart Button**: Button transforms through states (Adding → Added → Buy Now/Checkout Now) based on cart contents
+- **First-Time Buyer Fast Path**: Empty cart triggers "Buy Now" for direct Stripe checkout in 3 clicks
+- **Floating Add to Cart Button**: Mobile floating button appears when inline button scrolls out of view
+- **Price Display in Button**: Add to Cart button shows price with proper styling and contrast
+- **Recommendations Fallback**: Empty "You might also like" section now shows trending products
+
+### Changed
+
+- Quantity + button layout adapts by breakpoint (stacked on xs/md, inline on sm/lg+)
+- ProductCard and ProductPage use shared transform button component
+
 ## 0.82.7 - 2026-02-05
 
 ### Fixed
