@@ -49,6 +49,33 @@ const prisma = createPrismaClient();
 async function main() {
   console.log(`Start seeding with 30 specialty coffee products...`);
 
+  // --- 0. Clean up old individual country categories ---
+  const oldCategorySlugs = [
+    'ethiopia', 'kenya', 'colombia', 'guatemala', 'costa-rica', 'brazil',
+    'indonesia', 'papua-new-guinea', 'honduras', 'mexico', 'peru', 'nicaragua',
+    'el-salvador', 'rwanda', 'burundi', 'tanzania', 'panama', 'bolivia',
+    'yemen', 'india', 'hawaii', 'blends', 'single-origin'
+  ];
+
+  const oldCategoryIds = await prisma.category.findMany({
+    where: { slug: { in: oldCategorySlugs } },
+    select: { id: true },
+  });
+
+  if (oldCategoryIds.length > 0) {
+    const ids = oldCategoryIds.map((c: { id: string }) => c.id);
+    await prisma.categoriesOnProducts.deleteMany({
+      where: { categoryId: { in: ids } },
+    });
+    await prisma.categoryLabelCategory.deleteMany({
+      where: { categoryId: { in: ids } },
+    });
+    await prisma.category.deleteMany({
+      where: { id: { in: ids } },
+    });
+    console.log(`✓ Cleaned up ${oldCategoryIds.length} old categories`);
+  }
+
   // --- 1. Create SiteSettings for category labels ---
   console.log("Creating SiteSettings...");
 
@@ -267,144 +294,218 @@ async function main() {
   console.log("✓ SiteSettings created");
 
   // --- 2. Create Category Labels ---
-  const labelCollectionsNew = await prisma.categoryLabel.upsert({
-    where: { name: "Collections" },
+  const labelByRoastLevel = await prisma.categoryLabel.upsert({
+    where: { name: "By Roast Level" },
     update: { order: 0 },
-    create: { name: "Collections", order: 0 },
+    create: { name: "By Roast Level", order: 0 },
   });
 
-  const labelOriginsNew = await prisma.categoryLabel.upsert({
+  const labelByTasteProfile = await prisma.categoryLabel.upsert({
+    where: { name: "By Taste Profile" },
+    update: { order: 1 },
+    create: { name: "By Taste Profile", order: 1 },
+  });
+
+  const labelOrigins = await prisma.categoryLabel.upsert({
     where: { name: "Origins" },
     update: { order: 2 },
     create: { name: "Origins", order: 2 },
   });
 
+  const labelBlends = await prisma.categoryLabel.upsert({
+    where: { name: "Blends" },
+    update: { order: 3 },
+    create: { name: "Blends", order: 3 },
+  });
+
+  const labelCollectionsCategory = await prisma.categoryLabel.upsert({
+    where: { name: "Collections" },
+    update: { order: 4 },
+    create: { name: "Collections", order: 4 },
+  });
+
+  const labelMerch = await prisma.categoryLabel.upsert({
+    where: { name: "Merch" },
+    update: { order: 5 },
+    create: { name: "Merch", order: 5 },
+  });
+
   // --- 3. Create Categories ---
-  const catBlends = await prisma.category.upsert({
-    where: { slug: "blends" },
+  // Roast Levels
+  const catLight = await prisma.category.upsert({
+    where: { slug: "light-roast" },
     update: {},
-    create: {
-      name: "Blend",
-      slug: "blends",
-      order: 20,
-    },
-  });
-
-  const catSingleOrigin = await prisma.category.upsert({
-    where: { slug: "single-origin" },
-    update: {},
-    create: {
-      name: "Single Origin",
-      slug: "single-origin",
-      order: 22,
-    },
-  });
-
-  const catMicroLot = await prisma.category.upsert({
-    where: { slug: "micro-lot" },
-    update: {},
-    create: {
-      name: "Micro Lot",
-      slug: "micro-lot",
-      order: 21,
-    },
-  });
-
-  const catDark = await prisma.category.upsert({
-    where: { slug: "dark-roast" },
-    update: {},
-    create: {
-      name: "Dark Roast",
-      slug: "dark-roast",
-      order: 3,
-    },
+    create: { name: "Light Roast", slug: "light-roast", order: 1 },
   });
 
   const catMedium = await prisma.category.upsert({
     where: { slug: "medium-roast" },
     update: {},
-    create: {
-      name: "Medium Roast",
-      slug: "medium-roast",
-      order: 2,
-    },
+    create: { name: "Medium Roast", slug: "medium-roast", order: 2 },
   });
 
-  const catLight = await prisma.category.upsert({
-    where: { slug: "light-roast" },
+  const catDark = await prisma.category.upsert({
+    where: { slug: "dark-roast" },
     update: {},
-    create: {
-      name: "Light Roast",
-      slug: "light-roast",
-      order: 1,
-    },
+    create: { name: "Dark Roast", slug: "dark-roast", order: 3 },
   });
 
-  // Origin Categories
-  const origins = [
-    "Ethiopia",
-    "Kenya",
-    "Colombia",
-    "Guatemala",
-    "Costa Rica",
-    "Brazil",
-    "Indonesia",
-    "Papua New Guinea",
-    "Honduras",
-    "Mexico",
-    "Peru",
-    "Nicaragua",
-    "El Salvador",
-    "Rwanda",
-    "Burundi",
-    "Tanzania",
-    "Panama",
-    "Bolivia",
-    "Yemen",
-    "India",
-    "Hawaii",
-  ];
+  // Taste Profiles
+  const catNuttyChocolatey = await prisma.category.upsert({
+    where: { slug: "nutty-chocolatey" },
+    update: {},
+    create: { name: "Nutty & Chocolatey", slug: "nutty-chocolatey", order: 10 },
+  });
 
-  const originCategories: Record<
-    string,
-    { id: string; name: string; slug: string }
-  > = {};
-  for (let i = 0; i < origins.length; i++) {
-    const origin = origins[i];
-    const slug = origin.toLowerCase().replace(/\s+/g, "-");
-    originCategories[origin] = await prisma.category.upsert({
-      where: { slug },
-      update: {},
-      create: {
-        name: origin,
-        slug,
-        order: 100 + i,
-      },
-    });
-  }
+  const catFruityFloral = await prisma.category.upsert({
+    where: { slug: "fruity-floral" },
+    update: {},
+    create: { name: "Fruity & Floral", slug: "fruity-floral", order: 11 },
+  });
 
+  const catSpicyEarthy = await prisma.category.upsert({
+    where: { slug: "spicy-earthy" },
+    update: {},
+    create: { name: "Spicy & Earthy", slug: "spicy-earthy", order: 12 },
+  });
+
+  // Regional Origins
+  const catCentralAmerica = await prisma.category.upsert({
+    where: { slug: "central-america" },
+    update: {},
+    create: { name: "Central America", slug: "central-america", order: 20 },
+  });
+
+  const catIslands = await prisma.category.upsert({
+    where: { slug: "islands" },
+    update: {},
+    create: { name: "Islands", slug: "islands", order: 21 },
+  });
+
+  const catAfrica = await prisma.category.upsert({
+    where: { slug: "africa" },
+    update: {},
+    create: { name: "Africa", slug: "africa", order: 22 },
+  });
+
+  const catAsia = await prisma.category.upsert({
+    where: { slug: "asia" },
+    update: {},
+    create: { name: "Asia", slug: "asia", order: 23 },
+  });
+
+  const catSouthAmerica = await prisma.category.upsert({
+    where: { slug: "south-america" },
+    update: {},
+    create: { name: "South America", slug: "south-america", order: 24 },
+  });
+
+  // Blend Types
+  const catEspressoBlends = await prisma.category.upsert({
+    where: { slug: "espresso-blends" },
+    update: {},
+    create: { name: "Espresso Blends", slug: "espresso-blends", order: 30 },
+  });
+
+  const catFilterDripBlends = await prisma.category.upsert({
+    where: { slug: "filter-drip-blends" },
+    update: {},
+    create: { name: "Filter/Drip Blends", slug: "filter-drip-blends", order: 31 },
+  });
+
+  const catColdBrewBlends = await prisma.category.upsert({
+    where: { slug: "cold-brew-blends" },
+    update: {},
+    create: { name: "Cold Brew Blends", slug: "cold-brew-blends", order: 32 },
+  });
+
+  // Collections
+  const catNewArrivals = await prisma.category.upsert({
+    where: { slug: "new-arrivals" },
+    update: {},
+    create: { name: "New Arrivals", slug: "new-arrivals", order: 40 },
+  });
+
+  const catMicroLot = await prisma.category.upsert({
+    where: { slug: "micro-lot" },
+    update: {},
+    create: { name: "Micro Lot", slug: "micro-lot", order: 41 },
+  });
+
+  // Merch Categories
+  const catDrinkware = await prisma.category.upsert({
+    where: { slug: "drinkware" },
+    update: {},
+    create: { name: "Drinkware", slug: "drinkware", kind: "MERCH", order: 50 },
+  });
+
+  const catWearables = await prisma.category.upsert({
+    where: { slug: "wearables" },
+    update: {},
+    create: { name: "Wearables", slug: "wearables", kind: "MERCH", order: 51 },
+  });
+
+  const catSupplies = await prisma.category.upsert({
+    where: { slug: "supplies" },
+    update: {},
+    create: { name: "Supplies", slug: "supplies", kind: "MERCH", order: 52 },
+  });
+
+  const catBrewing = await prisma.category.upsert({
+    where: { slug: "brewing" },
+    update: {},
+    create: { name: "Brewing", slug: "brewing", kind: "MERCH", order: 53 },
+  });
+
+  const catGadgets = await prisma.category.upsert({
+    where: { slug: "gadgets" },
+    update: {},
+    create: { name: "Gadgets", slug: "gadgets", kind: "MERCH", order: 54 },
+  });
+
+  // --- 4. Attach Categories to Labels ---
   const attach = async (labelId: string, categoryId: string, order: number) => {
     await prisma.categoryLabelCategory.upsert({
       where: {
-        labelId_categoryId: {
-          labelId,
-          categoryId,
-        },
+        labelId_categoryId: { labelId, categoryId },
       },
       update: { order },
       create: { labelId, categoryId, order },
     });
   };
 
-  await attach(labelCollectionsNew.id, catBlends.id, 0);
-  await attach(labelCollectionsNew.id, catMicroLot.id, 1);
-  await attach(labelCollectionsNew.id, catSingleOrigin.id, 2);
+  // By Roast Level
+  await attach(labelByRoastLevel.id, catLight.id, 0);
+  await attach(labelByRoastLevel.id, catMedium.id, 1);
+  await attach(labelByRoastLevel.id, catDark.id, 2);
 
-  await Promise.all(
-    Object.values(originCategories).map((cat, idx) =>
-      attach(labelOriginsNew.id, cat.id, idx)
-    )
-  );
+  // By Taste Profile
+  await attach(labelByTasteProfile.id, catNuttyChocolatey.id, 10);
+  await attach(labelByTasteProfile.id, catFruityFloral.id, 11);
+  await attach(labelByTasteProfile.id, catSpicyEarthy.id, 12);
+
+  // Origins
+  await attach(labelOrigins.id, catAfrica.id, 0);
+  await attach(labelOrigins.id, catIslands.id, 1);
+  await attach(labelOrigins.id, catCentralAmerica.id, 4);
+  await attach(labelOrigins.id, catAsia.id, 5);
+  await attach(labelOrigins.id, catSouthAmerica.id, 6);
+
+  // Blends
+  await attach(labelBlends.id, catEspressoBlends.id, 30);
+  await attach(labelBlends.id, catFilterDripBlends.id, 31);
+  await attach(labelBlends.id, catColdBrewBlends.id, 32);
+
+  // Collections
+  await attach(labelCollectionsCategory.id, catNewArrivals.id, 40);
+  await attach(labelCollectionsCategory.id, catMicroLot.id, 41);
+
+  // Merch
+  await attach(labelMerch.id, catDrinkware.id, 50);
+  await attach(labelMerch.id, catWearables.id, 51);
+  await attach(labelMerch.id, catSupplies.id, 52);
+  await attach(labelMerch.id, catBrewing.id, 53);
+  await attach(labelMerch.id, catGadgets.id, 54);
 
   console.log("Categories created/verified.");
 
@@ -481,8 +582,11 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catBlends.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
+        { categoryId: catDark.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catSouthAmerica.id, isPrimary: false },
+        { categoryId: catAsia.id, isPrimary: false },
+        { categoryId: catEspressoBlends.id, isPrimary: false },
       ],
     },
 
@@ -520,8 +624,10 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catBlends.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
+        { categoryId: catDark.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catSouthAmerica.id, isPrimary: false },
+        { categoryId: catCentralAmerica.id, isPrimary: false },
       ],
     },
 
@@ -559,8 +665,10 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
+        { categoryId: catDark.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catSpicyEarthy.id, isPrimary: false },
+        { categoryId: catAsia.id, isPrimary: false },
       ],
     },
 
@@ -606,8 +714,10 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catBlends.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
+        { categoryId: catDark.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catSouthAmerica.id, isPrimary: false },
+        { categoryId: catFilterDripBlends.id, isPrimary: false },
       ],
     },
 
@@ -645,8 +755,11 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMicroLot.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catSpicyEarthy.id, isPrimary: false },
+        { categoryId: catIslands.id, isPrimary: false },
       ],
     },
 
@@ -693,8 +806,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catDark.id, isPrimary: false },
+        { categoryId: catDark.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catSouthAmerica.id, isPrimary: false },
       ],
     },
 
@@ -768,8 +882,12 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catBlends.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catSouthAmerica.id, isPrimary: false },
+        { categoryId: catCentralAmerica.id, isPrimary: false },
+        { categoryId: catFilterDripBlends.id, isPrimary: false },
       ],
     },
 
@@ -815,8 +933,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catSouthAmerica.id, isPrimary: false },
       ],
     },
 
@@ -871,8 +990,10 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catCentralAmerica.id, isPrimary: false },
       ],
     },
 
@@ -910,8 +1031,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catCentralAmerica.id, isPrimary: false },
       ],
     },
 
@@ -957,8 +1079,10 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catSouthAmerica.id, isPrimary: false },
+        { categoryId: catColdBrewBlends.id, isPrimary: false },
       ],
     },
 
@@ -996,8 +1120,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catCentralAmerica.id, isPrimary: false },
       ],
     },
 
@@ -1035,8 +1160,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catSpicyEarthy.id, isPrimary: false },
       ],
     },
 
@@ -1083,8 +1209,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catSouthAmerica.id, isPrimary: false },
       ],
     },
 
@@ -1122,8 +1249,10 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMedium.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catCentralAmerica.id, isPrimary: false },
       ],
     },
 
@@ -1161,8 +1290,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMicroLot.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catCentralAmerica.id, isPrimary: false },
       ],
     },
 
@@ -1219,8 +1349,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
+        { categoryId: catLight.id, isPrimary: true },
+        { categoryId: catAfrica.id, isPrimary: false },
+        { categoryId: catFruityFloral.id, isPrimary: false },
       ],
     },
 
@@ -1259,8 +1390,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMicroLot.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catAfrica.id, isPrimary: false },
+        { categoryId: catFruityFloral.id, isPrimary: false },
       ],
     },
 
@@ -1298,8 +1430,10 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
+        { categoryId: catLight.id, isPrimary: true },
+        { categoryId: catAfrica.id, isPrimary: false },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catFruityFloral.id, isPrimary: false },
       ],
     },
 
@@ -1337,8 +1471,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMicroLot.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catAfrica.id, isPrimary: false },
+        { categoryId: catFruityFloral.id, isPrimary: false },
       ],
     },
 
@@ -1376,8 +1511,10 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMicroLot.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catAfrica.id, isPrimary: false },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catFruityFloral.id, isPrimary: false },
       ],
     },
 
@@ -1415,8 +1552,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMicroLot.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catAfrica.id, isPrimary: false },
+        { categoryId: catFruityFloral.id, isPrimary: false },
       ],
     },
 
@@ -1454,8 +1592,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMicroLot.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catCentralAmerica.id, isPrimary: false },
       ],
     },
 
@@ -1493,8 +1632,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMicroLot.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catSouthAmerica.id, isPrimary: false },
       ],
     },
 
@@ -1532,8 +1672,9 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMicroLot.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catCentralAmerica.id, isPrimary: false },
       ],
     },
 
@@ -1571,8 +1712,10 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catLight.id, isPrimary: false },
+        { categoryId: catLight.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catCentralAmerica.id, isPrimary: false },
       ],
     },
 
@@ -1610,8 +1753,11 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMicroLot.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catSouthAmerica.id, isPrimary: false },
+        { categoryId: catNewArrivals.id, isPrimary: false },
       ],
     },
 
@@ -1649,8 +1795,12 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMicroLot.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catFruityFloral.id, isPrimary: false },
+        { categoryId: catSpicyEarthy.id, isPrimary: false },
+        { categoryId: catAsia.id, isPrimary: false },
+        { categoryId: catNewArrivals.id, isPrimary: false },
       ],
     },
 
@@ -1688,8 +1838,10 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMicroLot.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catSpicyEarthy.id, isPrimary: false },
+        { categoryId: catAsia.id, isPrimary: false },
+        { categoryId: catNewArrivals.id, isPrimary: false },
       ],
     },
 
@@ -1727,8 +1879,10 @@ async function main() {
         },
       },
       categories: [
-        { categoryId: catSingleOrigin.id, isPrimary: true },
-        { categoryId: catMicroLot.id, isPrimary: false },
+        { categoryId: catMedium.id, isPrimary: true },
+        { categoryId: catNuttyChocolatey.id, isPrimary: false },
+        { categoryId: catIslands.id, isPrimary: false },
+        { categoryId: catNewArrivals.id, isPrimary: false },
       ],
     },
   ];
@@ -1737,47 +1891,13 @@ async function main() {
   for (const item of coffeeData) {
     const { product: productData, categories: categoryLinks } = item;
 
-    // Determine roast level from old categories
+    // Determine roast level from primary category
     let roastLevel = RoastLevel.MEDIUM; // Default
-    if (categoryLinks.some((l) => l.categoryId === catDark.id)) {
+    const primaryCat = categoryLinks.find((l) => l.isPrimary);
+    if (primaryCat?.categoryId === catDark.id) {
       roastLevel = RoastLevel.DARK;
-    } else if (categoryLinks.some((l) => l.categoryId === catLight.id)) {
+    } else if (primaryCat?.categoryId === catLight.id) {
       roastLevel = RoastLevel.LIGHT;
-    }
-
-    // Determine new categories based on origin
-    const newCategories: Array<{ categoryId: string; isPrimary: boolean }> = [];
-    const origins = productData.origin;
-    const isMicroLot = categoryLinks.some(
-      (l) => l.categoryId === catMicroLot.id
-    );
-
-    if (origins.length === 1) {
-      // Single origin - use origin category as primary
-      const originCategory = originCategories[origins[0]];
-      if (originCategory) {
-        newCategories.push({ categoryId: originCategory.id, isPrimary: true });
-      } else {
-        // Fallback to single-origin collection
-        newCategories.push({ categoryId: catSingleOrigin.id, isPrimary: true });
-      }
-    } else {
-      // Multiple origins - use blend as primary
-      newCategories.push({ categoryId: catBlends.id, isPrimary: true });
-    }
-
-    // Add roast level as secondary
-    if (roastLevel === RoastLevel.DARK) {
-      newCategories.push({ categoryId: catDark.id, isPrimary: false });
-    } else if (roastLevel === RoastLevel.LIGHT) {
-      newCategories.push({ categoryId: catLight.id, isPrimary: false });
-    } else {
-      newCategories.push({ categoryId: catMedium.id, isPrimary: false });
-    }
-
-    // Add micro lot if applicable
-    if (isMicroLot) {
-      newCategories.push({ categoryId: catMicroLot.id, isPrimary: false });
     }
 
     const product = await prisma.product.upsert({
@@ -1791,7 +1911,6 @@ async function main() {
         roastLevel: roastLevel,
         isFeatured: productData.isFeatured,
         featuredOrder: productData.featuredOrder,
-        // We do not update images/variants here to avoid breaking FK constraints with Orders
       },
       create: {
         ...productData,
@@ -1804,7 +1923,7 @@ async function main() {
     });
 
     await prisma.categoriesOnProducts.createMany({
-      data: newCategories.map((cat) => ({
+      data: categoryLinks.map((cat) => ({
         ...cat,
         productId: product.id,
       })),
