@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.82.7 - 2026-02-05
+
+### Fixed
+
+- Category menu reading order now consistent across all responsive breakpoints
+- Switch from JS weight-balancing to CSS multi-column layout for automatic height balancing
+
 ## 0.82.4 - 2026-02-04
 
 ### Fixed
