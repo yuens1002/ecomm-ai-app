@@ -8,12 +8,18 @@ export const metadata = {
   title: "Sign Up",
 };
 
-export default async function SignUpPage() {
+interface SignUpPageProps {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}
+
+export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   const session = await auth();
   const { storeLogoUrl, storeName } = await getSiteMetadata();
+  const { callbackUrl } = await searchParams;
 
   if (session?.user) {
-    redirect("/account");
+    // Respect callbackUrl if provided, otherwise default to account
+    redirect(callbackUrl || "/account");
   }
 
   return (

@@ -1,47 +1,15 @@
-"use client";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { CheckoutResumeClient } from "./checkout-resume-client";
 
-import { useEffect, Suspense } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
-import { useCartStore } from "@/lib/store/cart-store";
-import { PageContainer } from "@/components/shared/PageContainer";
+export default async function CheckoutResumePage() {
+  const session = await auth();
 
-function CheckoutResumeContent() {
-  const router = useRouter();
-  const items = useCartStore((state) => state.items);
-  const setCartOpen = useCartStore((state) => state.setCartOpen);
+  // Server-side auth check - if not authenticated, redirect to sign-in
+  if (!session?.user) {
+    redirect("/auth/signin?callbackUrl=/checkout/resume");
+  }
 
-  useEffect(() => {
-    // If cart has items, open the cart drawer and redirect to home
-    // so user can complete checkout
-    if (items.length > 0) {
-      setCartOpen(true);
-      router.replace("/");
-    } else {
-      // No items in cart, just go home
-      router.replace("/");
-    }
-  }, [items.length, setCartOpen, router]);
-
-  return (
-    <PageContainer className="flex flex-col items-center justify-center min-h-[60vh]">
-      <Loader2 className="w-16 h-16 text-primary animate-spin mb-4" />
-      <p className="text-lg text-text-muted">Resuming your checkout...</p>
-    </PageContainer>
-  );
-}
-
-export default function CheckoutResumePage() {
-  return (
-    <Suspense
-      fallback={
-        <PageContainer className="py-16 flex flex-col items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-16 h-16 text-primary animate-spin mb-4" />
-          <p className="text-lg text-text-muted">Loading...</p>
-        </PageContainer>
-      }
-    >
-      <CheckoutResumeContent />
-    </Suspense>
-  );
+  // User is authenticated - render client component that will auto-submit
+  return <CheckoutResumeClient userId={session.user.id || ""} />;
 }
