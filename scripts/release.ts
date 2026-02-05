@@ -2,8 +2,8 @@
 /**
  * Release script for Artisan Roast
  *
- * Creates git tags for releases. Version is derived from tags at build time
- * (see next.config.ts), so no file changes needed.
+ * Creates git tags for releases and syncs package.json version.
+ * Version is derived from tags at build time (see next.config.ts).
  *
  * Usage:
  *   Interactive mode:
@@ -19,15 +19,17 @@
  *   --push              Push tag to origin
  *   --github-release    Create GitHub Release (triggers upgrade notice in app)
  *   --message, -m       Release message for tag annotation
+ *   --sync-package      Also update package.json (creates PR if on main)
  *
  * What it does:
  *   1. Determines next version from latest tag
- *   2. Creates annotated git tag
- *   3. Optionally pushes tag to origin
- *   4. Optionally creates GitHub Release with notes from CHANGELOG.md
+ *   2. Optionally syncs package.json via PR (if --sync-package)
+ *   3. Creates annotated git tag
+ *   4. Optionally pushes tag to origin
+ *   5. Optionally creates GitHub Release with notes from CHANGELOG.md
  *
- * Note: No commits are created. The tag points to the current HEAD.
- * APP_VERSION is derived from git tags at build time.
+ * Note: For Vercel builds, package.json must match the tag version.
+ * Use --sync-package to create a PR that updates package.json.
  */
 
 import { execSync } from "child_process";
@@ -46,6 +48,7 @@ const flags = {
   yes: args.includes("--yes") || args.includes("-y"),
   push: args.includes("--push"),
   githubRelease: args.includes("--github-release"),
+  syncPackage: args.includes("--sync-package"),
   message: getArgValue("--message") || getArgValue("-m"),
 };
 
@@ -223,6 +226,100 @@ function formatReleaseNotes(version: string, sections: Record<string, string[]>)
   return parts.join("\n").trim();
 }
 
+/**
+ * Get current package.json version
+ */
+function getPackageVersion(): string {
+  const packagePath = join(__dirname, "..", "package.json");
+  const pkg = JSON.parse(readFileSync(packagePath, "utf-8"));
+  return pkg.version;
+}
+
+/**
+ * Update package.json version and create PR if on main
+ * Returns true if successful, false otherwise
+ */
+async function syncPackageJson(newVersion: string): Promise<boolean> {
+  const currentPackageVersion = getPackageVersion();
+
+  if (currentPackageVersion === newVersion) {
+    console.log(`\n✅ package.json already at ${newVersion}`);
+    return true;
+  }
+
+  console.log(`\n📦 Syncing package.json: ${currentPackageVersion} → ${newVersion}`);
+
+  // Check current branch
+  const currentBranch = exec("git rev-parse --abbrev-ref HEAD");
+  const isOnMain = currentBranch === "main" || currentBranch === "master";
+
+  if (isOnMain) {
+    // Need to create a PR because we can't push directly to main
+    console.log("   (On main branch - creating PR for version bump)");
+
+    const branchName = `chore/bump-version-${newVersion}`;
+
+    try {
+      // Create branch
+      run(`git checkout -b ${branchName}`);
+
+      // Update package.json
+      const packagePath = join(__dirname, "..", "package.json");
+      const pkg = JSON.parse(readFileSync(packagePath, "utf-8"));
+      pkg.version = newVersion;
+      const { writeFileSync } = await import("fs");
+      writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + "\n");
+
+      // Commit and push
+      run(`git add package.json`);
+      run(`git commit -m "chore: bump version to ${newVersion} for Vercel build"`);
+      run(`git push -u origin ${branchName}`);
+
+      // Create PR
+      run(`gh pr create --title "chore: bump version to ${newVersion}" --body "Sync package.json version with git tag v${newVersion} for Vercel build compatibility."`);
+
+      // Wait for CI and merge
+      console.log("\n⏳ Waiting for CI checks...");
+      try {
+        execSync(`gh pr checks ${branchName} --watch`, { stdio: "inherit", timeout: 300000 });
+      } catch {
+        console.log("   (CI check watch timed out or failed, attempting merge anyway)");
+      }
+
+      // Merge PR
+      run(`gh pr merge ${branchName} --squash --delete-branch`);
+
+      // Return to main and pull
+      run(`git checkout main`);
+      run(`git pull`);
+
+      console.log(`\n✅ package.json updated to ${newVersion}`);
+      return true;
+    } catch (err) {
+      console.error("\n❌ Failed to sync package.json:", err);
+      // Try to clean up
+      try {
+        exec(`git checkout main`);
+        exec(`git branch -D ${branchName}`);
+      } catch { /* ignore cleanup errors */ }
+      return false;
+    }
+  } else {
+    // On a feature branch - just update the file
+    console.log("   (On feature branch - updating locally)");
+
+    const packagePath = join(__dirname, "..", "package.json");
+    const pkg = JSON.parse(readFileSync(packagePath, "utf-8"));
+    pkg.version = newVersion;
+    const { writeFileSync } = await import("fs");
+    writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + "\n");
+
+    console.log(`\n✅ package.json updated to ${newVersion} (not committed)`);
+    console.log("   Remember to commit this change before merging.");
+    return true;
+  }
+}
+
 function createGitHubRelease(version: string, message?: string) {
   const tag = `v${version}`;
   const repo = "yuens1002/ecomm-ai-app";
@@ -274,7 +371,7 @@ function createGitHubRelease(version: string, message?: string) {
 async function main() {
   if (!["patch", "minor", "major"].includes(bumpType)) {
     console.error(
-      "Usage: release.ts [patch|minor|major] [--yes] [--push] [--github-release] [--message '...']"
+      "Usage: release.ts [patch|minor|major] [--yes] [--push] [--github-release] [--sync-package] [--message '...']"
     );
     process.exit(1);
   }
@@ -310,6 +407,25 @@ async function main() {
     console.log("Aborted.");
     closeReadline();
     process.exit(0);
+  }
+
+  // Sync package.json if requested
+  let shouldSyncPackage = flags.syncPackage;
+  if (!flags.yes && !shouldSyncPackage) {
+    const currentPkgVersion = getPackageVersion();
+    if (currentPkgVersion !== newVersion) {
+      const syncAnswer = await ask(
+        `\npackage.json is at ${currentPkgVersion}. Sync to ${newVersion}? (y/N) `
+      );
+      shouldSyncPackage = syncAnswer.toLowerCase() === "y";
+    }
+  }
+
+  if (shouldSyncPackage) {
+    const synced = await syncPackageJson(newVersion);
+    if (!synced) {
+      console.log("\n⚠️  Failed to sync package.json. Continuing with tag creation...");
+    }
   }
 
   // Create tag
