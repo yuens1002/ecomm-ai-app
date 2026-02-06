@@ -35,12 +35,10 @@ export function ProductQuantityCart({
 
   return (
     <div className={cn(
-      "w-full",
-      // xs: stacked, sm: inline, md: stacked (image takes half width), lg+: inline
-      "flex flex-col sm:grid sm:grid-cols-[1fr_2fr] md:flex md:flex-col lg:grid lg:grid-cols-[1fr_2fr]",
+      "w-full flex flex-col",
       `gap-${spacing}`
     )}>
-      {/* +/- stepper (all breakpoints) */}
+      {/* +/- stepper */}
       <ButtonGroup className="w-full">
         <Button
           type="button"
@@ -57,7 +55,7 @@ export function ProductQuantityCart({
           readOnly
           tabIndex={-1}
           value={quantity}
-          className="h-14 flex-1 min-w-0 text-center text-base font-semibold border border-border bg-transparent outline-none"
+          className="h-14 flex-1 min-w-0 text-center text-base font-semibold border border-input bg-transparent outline-none"
         />
         <Button
           type="button"

@@ -25,6 +25,7 @@ model Product {
   roastLevel        RoastLevel?
   altitude          String?
   variety           String?
+  processing        String?
   categories        CategoriesOnProducts[]
   images            ProductImage[]
   tags              ProductTag[]

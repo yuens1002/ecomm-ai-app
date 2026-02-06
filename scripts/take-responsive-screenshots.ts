@@ -25,7 +25,7 @@ const BREAKPOINTS: Breakpoint[] = [
   { name: "desktop", width: 1440, height: 900 }, // Desktop (lg+)
 ];
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 const OUTPUT_DIR = path.join(__dirname, "..", ".screenshots");
 
 async function takeScreenshots(prefix = "before") {
