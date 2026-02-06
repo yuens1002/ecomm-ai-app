@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.84.0 - 2026-02-06
+
+### Added
+
+- **Coffee Details Panel**: Two-column PDP layout with roast level indicator, tasting notes, brew method suggestions, variety, altitude, and processing info
+- **Roast Level Indicator**: Visual three-segment bar showing light/medium/dark roast with color-coded shading
+- **Processing Field**: New product attribute for coffee processing method (washed, natural, honey, etc.)
+
+### Changed
+
+- Product detail page redesigned with two-column layout (image left, details right) on desktop
+- Roast level colors use yellow palette for better dark mode visibility
+- Quantity stepper borders unified for consistent thickness and color
+
 ## 0.83.1 - 2026-02-05
 
 ### Changed

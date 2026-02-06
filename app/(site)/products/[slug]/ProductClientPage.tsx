@@ -49,6 +49,12 @@ const roastLabels: Record<RoastLevel, string> = {
 
 const roastSegments: RoastLevel[] = ["LIGHT", "MEDIUM", "DARK"];
 
+const roastActiveColor: Record<RoastLevel, string> = {
+  LIGHT: "bg-yellow-600",
+  MEDIUM: "bg-yellow-800",
+  DARK: "bg-yellow-950",
+};
+
 const getOneTimeOption = (variant: ProductVariant): PurchaseOption | null =>
   variant.purchaseOptions.find((p) => p.type === "ONE_TIME") ?? null;
 
@@ -393,7 +399,7 @@ export default function ProductClientPage({
       </Breadcrumb>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-x-10 md:gap-y-5 lg:gap-x-14 lg:gap-y-8">
-        <div className="w-full">
+        <div className="w-full md:sticky md:top-6 md:self-start">
           <ImageCarousel
             images={galleryImages}
             aspectRatio="square"
@@ -402,21 +408,20 @@ export default function ProductClientPage({
           />
         </div>
 
-        <div className="w-full flex flex-col space-y-6">
-          {/* Header area */}
+        <div className="w-full flex flex-col gap-4">
+          {/* ---- Coffee header: origin, name, roast bar, tasting notes ---- */}
           {isCoffee && product.origin.length > 0 && (
             <p className="text-xs font-medium uppercase tracking-widest text-text-muted">
               {product.origin.join(" + ")}
             </p>
           )}
 
-          <h1 className={`text-4xl font-bold text-text-base ${isCoffee && product.origin.length > 0 ? "-mt-4" : ""}`}>
+          <h1 className={`text-4xl font-bold text-text-base ${isCoffee && product.origin.length > 0 ? "-mt-2" : ""}`}>
             {product.name}
           </h1>
 
           {isCoffee && (
-            <div className="flex flex-col space-y-2 -mt-2">
-              {/* Roast level bar */}
+            <div className="flex flex-col gap-2 -mt-1">
               {product.roastLevel && (
                 <div className="flex items-center gap-3">
                   <div className="flex gap-0.5">
@@ -425,7 +430,7 @@ export default function ProductClientPage({
                         key={level}
                         className={`h-1.5 w-8 rounded-full ${
                           level === product.roastLevel
-                            ? "bg-amber-600"
+                            ? roastActiveColor[level]
                             : "bg-border"
                         }`}
                       />
@@ -445,13 +450,20 @@ export default function ProductClientPage({
             </div>
           )}
 
-          <Separator />
-
-          {/* Two-column sub-layout: details | sales at lg+, reversed stack below */}
+          {/* ---- Coffee: details (40%) + purchase controls (60%) at lg+; reversed stack on mobile so CTA stays above fold ---- */}
           {isCoffee ? (
-            <div className="lg:grid lg:grid-cols-2 lg:gap-8 flex flex-col gap-6">
-              {/* Sales column — order-first on smaller screens so it renders above details */}
-              <div className="order-first lg:order-last" ref={inlineButtonRef}>
+            <div className="flex flex-col-reverse lg:flex-row gap-4 lg:gap-8 lg:mt-4">
+              <div className="lg:flex-[2] lg:min-w-0">
+                <CoffeeDetails
+                  roastLevel={product.roastLevel}
+                  variety={product.variety}
+                  altitude={product.altitude}
+                  isOrganic={product.isOrganic}
+                  processing={product.processing}
+                />
+              </div>
+
+              <div ref={inlineButtonRef} className="lg:flex-[3] lg:min-w-0">
                 <ProductSelectionsSection
                   product={product}
                   selectedVariant={selectedVariant}
@@ -472,16 +484,6 @@ export default function ProductClientPage({
                   buttonState={buttonState}
                   isProcessing={isCheckingOut}
                   spacing="3"
-                />
-              </div>
-
-              {/* Details column */}
-              <div className="order-last lg:order-first">
-                <CoffeeDetails
-                  roastLevel={product.roastLevel}
-                  variety={product.variety}
-                  altitude={product.altitude}
-                  isOrganic={product.isOrganic}
                 />
               </div>
             </div>
@@ -511,42 +513,36 @@ export default function ProductClientPage({
             </div>
           )}
 
-          {/* The Story */}
+          {/* ---- Story: full-width below ---- */}
           {product.description && (
-            <>
-              <Separator />
-              <div>
-                <h2 className="text-sm font-medium uppercase tracking-wide text-text-muted mb-2">
-                  The Story
-                </h2>
-                <p className="text-text-base leading-relaxed">
-                  {product.description}
-                </p>
-              </div>
-            </>
+            <div className="lg:mt-4">
+              <h2 className="text-xs font-medium uppercase tracking-wide text-foreground/50 mb-1">
+                The Story
+              </h2>
+              <p className="text-sm text-text-base leading-relaxed">
+                {product.description}
+              </p>
+            </div>
           )}
 
           {addOns.length > 0 && (
-            <>
-              <Separator className="my-6" />
-              <div>
-                <h2 className="text-lg font-bold text-left text-text-base mb-6">
-                  {settings.productAddOnsSectionTitle}
-                </h2>
+            <div className="mt-4">
+              <h2 className="text-lg font-bold text-left text-text-base mb-6">
+                {settings.productAddOnsSectionTitle}
+              </h2>
 
-                <ScrollCarousel slidesPerView={1} noBorder>
-                  {addOns.map((addOn) => (
-                    <AddOnCard
-                      key={`${addOn.product.id}-${addOn.variant.id}`}
-                      addOn={addOn}
-                      weightUnit="g"
-                      buttonText="Add Bundle"
-                      onAddToCart={() => handleAddOnToCart(addOn)}
-                    />
-                  ))}
-                </ScrollCarousel>
-              </div>
-            </>
+              <ScrollCarousel slidesPerView={1} noBorder>
+                {addOns.map((addOn) => (
+                  <AddOnCard
+                    key={`${addOn.product.id}-${addOn.variant.id}`}
+                    addOn={addOn}
+                    weightUnit="g"
+                    buttonText="Add Bundle"
+                    onAddToCart={() => handleAddOnToCart(addOn)}
+                  />
+                ))}
+              </ScrollCarousel>
+            </div>
           )}
         </div>
       </div>

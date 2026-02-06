@@ -23,7 +23,7 @@ export function ProductDeliverySchedule({
   onSubscriptionCadenceChange,
 }: ProductDeliveryScheduleProps) {
   return (
-    <InputGroup className="h-14 w-full rounded-md border border-border bg-muted/60 overflow-hidden">
+    <InputGroup className="h-14 w-full rounded-md border border-border overflow-hidden">
       <InputGroupAddon
         align="inline-start"
         className="h-full px-4 text-sm font-semibold text-text-base"
