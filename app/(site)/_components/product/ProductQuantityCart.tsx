@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { cn } from "@/lib/utils";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { AddToCartButton } from "./AddToCartButton";
@@ -41,25 +41,29 @@ export function ProductQuantityCart({
       `gap-${spacing}`
     )}>
       {/* +/- stepper (all breakpoints) */}
-      <ButtonGroup className="w-full h-14 rounded-md border border-border bg-muted/60 overflow-hidden">
+      <ButtonGroup className="w-full">
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           size="icon"
-          className="h-full w-14 rounded-none text-2xl font-semibold"
+          className="h-14 w-14"
           onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
           disabled={isDisabled}
         >
           <MinusIcon />
         </Button>
-        <ButtonGroupText className="h-full flex-1 justify-center px-4 text-base font-semibold bg-transparent border-0 shadow-none">
-          {quantity}
-        </ButtonGroupText>
+        <input
+          type="text"
+          readOnly
+          tabIndex={-1}
+          value={quantity}
+          className="h-14 flex-1 min-w-0 text-center text-base font-semibold border border-border bg-transparent outline-none"
+        />
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           size="icon"
-          className="h-full w-14 rounded-none text-2xl font-semibold"
+          className="h-14 w-14"
           onClick={() => onQuantityChange(quantity + 1)}
           disabled={isDisabled}
         >

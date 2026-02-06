@@ -7,7 +7,6 @@ import {
   Loader2,
   Check,
   Zap,
-  ArrowRight,
 } from "lucide-react";
 import type { ButtonState } from "@/hooks/useAddToCartWithFeedback";
 
@@ -52,8 +51,8 @@ const stateConfig: Record<
     className: "bg-amber-500 hover:bg-amber-600 text-white animate-pulse",
   },
   "checkout-now": {
-    text: "Checkout Now",
-    Icon: ArrowRight,
+    text: "View Cart",
+    Icon: ShoppingCart,
     className: "bg-amber-500 hover:bg-amber-600 text-white",
   },
 };
@@ -112,10 +111,14 @@ export function AddToCartButton({
         <span>{config.text}</span>
       </span>
       {showPrice && (
-        <span className="flex items-center gap-2 shrink-0">
-          <span className="h-5 w-px bg-primary-foreground/30" />
-          <span className="font-semibold">${formatPrice(priceInCents)}</span>
-        </span>
+        <>
+          <span className="flex-1 flex justify-center">
+            <span className="h-5 w-px bg-primary-foreground/30" />
+          </span>
+          <span className="font-semibold shrink-0">
+            ${formatPrice(priceInCents)}
+          </span>
+        </>
       )}
     </Button>
   );

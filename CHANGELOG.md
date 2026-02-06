@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.83.1 - 2026-02-05
+
+### Changed
+
+- Widen shopping cart drawer to 500px on desktop
+- Rearrange cart item controls: quantity stepper + price on one line
+- Cart quantity stepper uses ButtonGroup with outline buttons for proper focus rings
+- Delivery method uses choice card pattern on desktop, compact inline on mobile
+- "Checkout Now" button state renamed to "View Cart" to match actual behavior
+- "Delivery Schedule" label shortened to "Schedule" on product page
+- Add to Cart button price now spaced apart with centered divider
+- Theme toggle icon shows what it switches to (Moon in light, Sun in dark)
+- Sign-in redirects back to current page instead of always to account page
+
+### Removed
+
+- Clear Cart button from cart footer
+- Shipping address picker from cart (Stripe Checkout collects natively)
+- Cart drawer border lines for cleaner look
+
+### Fixed
+
+- Page scrollbar no longer visible behind cart/dialog overlays
+- Cart quantity stepper buttons now have proper keyboard focus rings
+
 ## 0.83.0 - 2026-02-05
 
 ### Added
