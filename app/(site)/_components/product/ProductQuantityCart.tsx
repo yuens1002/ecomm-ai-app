@@ -41,7 +41,7 @@ export function ProductQuantityCart({
       `gap-${spacing}`
     )}>
       {/* +/- stepper (all breakpoints) */}
-      <ButtonGroup className="w-full">
+      <ButtonGroup className="w-fit sm:w-full md:w-fit lg:w-full">
         <Button
           type="button"
           variant="outline"

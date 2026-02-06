@@ -2,7 +2,6 @@
 
 import { useEffect, useState, startTransition, useRef } from "react";
 import Link from "next/link";
-import { Coffee, Flame, Leaf } from "lucide-react";
 import { ProductType, RoastLevel, PurchaseType } from "@prisma/client";
 import {
   Product,
@@ -30,8 +29,8 @@ import { useCartStore, type CartItem } from "@/lib/store/cart-store";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
 import { useAddToCartWithFeedback } from "@/hooks/useAddToCartWithFeedback";
 import { AddOnItem } from "./actions";
-import { Badge } from "@/components/ui/badge";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
+import { CoffeeDetails } from "@/app/(site)/_components/product/CoffeeDetails";
 import { ProductSelectionsSection } from "@/app/(site)/_components/product/ProductSelectionsSection";
 import { FloatingAddToCartButton } from "@/app/(site)/_components/product/FloatingAddToCartButton";
 
@@ -42,11 +41,13 @@ interface ProductClientPageProps {
   addOns: AddOnItem[];
 }
 
-const brewMethodsByRoast: Record<RoastLevel, string[]> = {
-  LIGHT: ["Pour-over (V60/Chemex)", "Aeropress", "Filter"],
-  MEDIUM: ["Drip", "Chemex", "Aeropress"],
-  DARK: ["Espresso", "French press", "Moka"],
+const roastLabels: Record<RoastLevel, string> = {
+  LIGHT: "Light Roast",
+  MEDIUM: "Medium Roast",
+  DARK: "Dark Roast",
 };
+
+const roastSegments: RoastLevel[] = ["LIGHT", "MEDIUM", "DARK"];
 
 const getOneTimeOption = (variant: ProductVariant): PurchaseOption | null =>
   variant.purchaseOptions.find((p) => p.type === "ONE_TIME") ?? null;
@@ -391,7 +392,7 @@ export default function ProductClientPage({
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 lg:gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-x-10 md:gap-y-5 lg:gap-x-14 lg:gap-y-8">
         <div className="w-full">
           <ImageCarousel
             images={galleryImages}
@@ -402,80 +403,128 @@ export default function ProductClientPage({
         </div>
 
         <div className="w-full flex flex-col space-y-6">
-          <h1 className="text-4xl font-bold text-text-base">{product.name}</h1>
+          {/* Header area */}
+          {isCoffee && product.origin.length > 0 && (
+            <p className="text-xs font-medium uppercase tracking-widest text-text-muted">
+              {product.origin.join(" + ")}
+            </p>
+          )}
+
+          <h1 className={`text-4xl font-bold text-text-base ${isCoffee && product.origin.length > 0 ? "-mt-4" : ""}`}>
+            {product.name}
+          </h1>
 
           {isCoffee && (
-            <div className="flex flex-col space-y-1">
+            <div className="flex flex-col space-y-2 -mt-2">
+              {/* Roast level bar */}
+              {product.roastLevel && (
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-0.5">
+                    {roastSegments.map((level) => (
+                      <div
+                        key={level}
+                        className={`h-1.5 w-8 rounded-full ${
+                          level === product.roastLevel
+                            ? "bg-amber-600"
+                            : "bg-border"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-text-muted">
+                    {roastLabels[product.roastLevel]}
+                  </span>
+                </div>
+              )}
+
               {product.tastingNotes.length > 0 && (
                 <span className="text-lg text-text-muted italic">
                   {product.tastingNotes.join(", ")}
                 </span>
               )}
-
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-text-base">
-                {product.roastLevel && (
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Flame className="h-4 w-4 text-amber-600" />
-                    <span className="font-semibold capitalize">
-                      {product.roastLevel.toLowerCase()}
-                    </span>
-                  </Badge>
-                )}
-                {product.variety && (
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Leaf className="h-4 w-4 text-emerald-600" />
-                    <span>{product.variety}</span>
-                  </Badge>
-                )}
-                {product.roastLevel && (
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Coffee className="h-4 w-4 text-brown-600" />
-                    <span className="whitespace-nowrap">Best for:</span>
-                    <span className="font-medium">
-                      {brewMethodsByRoast[product.roastLevel]?.join(", ")}
-                    </span>
-                  </Badge>
-                )}
-              </div>
             </div>
           )}
 
           <Separator />
 
-          <div ref={inlineButtonRef}>
-            <ProductSelectionsSection
-              product={product}
-              selectedVariant={selectedVariant}
-              selectedPurchaseOption={selectedPurchaseOption}
-              selectedSubscriptionOptionId={selectedSubscriptionOptionId}
-              quantity={quantity}
-              hasSubscriptionInCart={hasSubscriptionInCart}
-              oneTimeOption={oneTimeOption}
-              subscriptionOptions={subscriptionOptions}
-              subscriptionDisplayOption={subscriptionDisplayOption}
-              subscriptionDiscountMessage={subscriptionDiscountMessage}
-              onVariantChange={handleVariantChange}
-              onPurchaseTypeChange={handlePurchaseTypeChange}
-              onSubscriptionCadenceChange={handleSubscriptionCadenceChange}
-              onQuantityChange={setQuantity}
-              onAddToCart={handleAddToCart}
-              onActionClick={handleActionClick}
-              buttonState={buttonState}
-              isProcessing={isCheckingOut}
-              spacing="3"
-            />
-          </div>
+          {/* Two-column sub-layout: details | sales at lg+, reversed stack below */}
+          {isCoffee ? (
+            <div className="lg:grid lg:grid-cols-2 lg:gap-8 flex flex-col gap-6">
+              {/* Sales column — order-first on smaller screens so it renders above details */}
+              <div className="order-first lg:order-last" ref={inlineButtonRef}>
+                <ProductSelectionsSection
+                  product={product}
+                  selectedVariant={selectedVariant}
+                  selectedPurchaseOption={selectedPurchaseOption}
+                  selectedSubscriptionOptionId={selectedSubscriptionOptionId}
+                  quantity={quantity}
+                  hasSubscriptionInCart={hasSubscriptionInCart}
+                  oneTimeOption={oneTimeOption}
+                  subscriptionOptions={subscriptionOptions}
+                  subscriptionDisplayOption={subscriptionDisplayOption}
+                  subscriptionDiscountMessage={subscriptionDiscountMessage}
+                  onVariantChange={handleVariantChange}
+                  onPurchaseTypeChange={handlePurchaseTypeChange}
+                  onSubscriptionCadenceChange={handleSubscriptionCadenceChange}
+                  onQuantityChange={setQuantity}
+                  onAddToCart={handleAddToCart}
+                  onActionClick={handleActionClick}
+                  buttonState={buttonState}
+                  isProcessing={isCheckingOut}
+                  spacing="3"
+                />
+              </div>
 
-          <div className="space-y-2">
-            <p className="text-text-base leading-relaxed">
-              {product.description}
-            </p>
-            {product.isOrganic && (
-              <span className="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                Organic
-              </span>
-            )}
-          </div>
+              {/* Details column */}
+              <div className="order-last lg:order-first">
+                <CoffeeDetails
+                  roastLevel={product.roastLevel}
+                  variety={product.variety}
+                  altitude={product.altitude}
+                  isOrganic={product.isOrganic}
+                />
+              </div>
+            </div>
+          ) : (
+            <div ref={inlineButtonRef}>
+              <ProductSelectionsSection
+                product={product}
+                selectedVariant={selectedVariant}
+                selectedPurchaseOption={selectedPurchaseOption}
+                selectedSubscriptionOptionId={selectedSubscriptionOptionId}
+                quantity={quantity}
+                hasSubscriptionInCart={hasSubscriptionInCart}
+                oneTimeOption={oneTimeOption}
+                subscriptionOptions={subscriptionOptions}
+                subscriptionDisplayOption={subscriptionDisplayOption}
+                subscriptionDiscountMessage={subscriptionDiscountMessage}
+                onVariantChange={handleVariantChange}
+                onPurchaseTypeChange={handlePurchaseTypeChange}
+                onSubscriptionCadenceChange={handleSubscriptionCadenceChange}
+                onQuantityChange={setQuantity}
+                onAddToCart={handleAddToCart}
+                onActionClick={handleActionClick}
+                buttonState={buttonState}
+                isProcessing={isCheckingOut}
+                spacing="3"
+              />
+            </div>
+          )}
+
+          {/* The Story */}
+          {product.description && (
+            <>
+              <Separator />
+              <div>
+                <h2 className="text-sm font-medium uppercase tracking-wide text-text-muted mb-2">
+                  The Story
+                </h2>
+                <p className="text-text-base leading-relaxed">
+                  {product.description}
+                </p>
+              </div>
+            </>
+          )}
 
           {addOns.length > 0 && (
             <>

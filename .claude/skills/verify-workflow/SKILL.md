@@ -5,248 +5,269 @@ description: Full verification workflow automation - precheck, tests, UI verific
 
 # Verify Workflow Skill
 
-This skill orchestrates a complete verification workflow before handing off to human review. It ensures all automated checks pass before stopping for iteration.
+This skill orchestrates the full autonomous feature development loop — from implementation through verification — with human checkpoints, iterating until ready for review.
 
 ## Purpose
 
-Automate the verification loop so that:
+Drive a complete **implement → verify → iterate** loop so that:
 
-1. Code quality is verified (TypeScript, ESLint)
-2. Tests pass
-3. UI matches acceptance criteria (visual verification)
-4. A consolidated report is generated
+1. Code is implemented per plan
+2. UI is visually verified against ACs at all breakpoints
+3. Issues are fixed autonomously, re-verified
+4. Code quality passes (TypeScript, ESLint)
+5. Test suite passes
+6. A consolidated report confirms "ready for review"
 
-**Goal:** "Work is done and verified" before human review.
+**Goal:** Autonomous completion with human-in-the-loop only for approval gates.
 
 ## Usage
 
 ```text
-/verify-workflow                           # Run full verification
+/verify-workflow                           # Run full loop (implement → verify → review-ready)
+/verify-workflow --verify-only             # Skip implementation, run verify + test only
 /verify-workflow --skip-ui                 # Skip UI verification (code-only changes)
-/verify-workflow --acs "AC1" "AC2"         # Verify specific ACs
+/verify-workflow --acs "AC1" "AC2"         # Verify specific ACs only
 ```
 
-## Workflow Steps
+## The Loop
 
-### Step 1: Precheck (TypeScript + ESLint)
+```text
+┌─────────────────────────────────────────────────┐
+│  1. IMPLEMENT                                   │
+│     - Write code per approved plan              │
+│     - Track progress with task list             │
+│     - Run precheck after implementation         │
+│     - Fix any TS/ESLint errors before moving on │
+│                                                 │
+│  2. UI VERIFY                                   │
+│     - Ensure dev server is running              │
+│     - Take screenshots at all breakpoints       │
+│     - Read screenshots, verify each AC          │
+│     - Generate AC verification table            │
+│                                                 │
+│  3. ITERATE (if issues found)                   │
+│     - Fix code based on screenshot findings     │
+│     - Re-take screenshots                       │
+│     - Re-verify failed ACs                      │
+│     - Repeat until all ACs pass                 │
+│                                                 │
+│  4. UI VERIFY (confirmation pass)               │
+│     - Final screenshot pass after fixes         │
+│     - Confirm all ACs pass                      │
+│                                                 │
+│  5. END-TO-END FUNCTIONAL CHECK                 │
+│     - Verify existing functionality preserved   │
+│     - Check interactive elements (buttons,      │
+│       forms, state transitions)                 │
+│     - Flag any regressions                      │
+│                                                 │
+│  6. PRECHECK + TESTS                            │
+│     - npm run precheck (TypeScript + ESLint)    │
+│     - npm run test:ci (full test suite)         │
+│     - If failures → fix → re-run               │
+│                                                 │
+│  7. READY FOR REVIEW                            │
+│     - All ACs pass                              │
+│     - All tests pass                            │
+│     - Consolidated report generated             │
+│     - Exit loop                                 │
+└─────────────────────────────────────────────────┘
+```
+
+## Detailed Steps
+
+### Step 1: Implement
+
+Execute the approved plan. Track progress with task list (TaskCreate/TaskUpdate).
+
+**After implementation:**
 
 ```bash
 npm run precheck
 ```
 
-**Pass criteria:** Exit code 0, no errors
+**Pass criteria:** Exit code 0. Fix any errors before proceeding.
 
-**On failure:**
+### Step 2: UI Verify
 
-- Report specific TypeScript/ESLint errors
-- Suggest fixes based on error messages
-- Do NOT proceed to next steps
+**Prerequisites:**
 
-### Step 2: Test Suite
-
-```bash
-npm run test:ci
-```
-
-**Pass criteria:** All tests pass
-
-**On failure:**
-
-- Report failing test names and assertions
-- Show relevant code context
-- Do NOT proceed to next steps
-
-### Step 3: UI Verification (if applicable)
-
-Only runs when:
-
-- Changes affect UI components
-- `--skip-ui` flag is NOT set
+- Dev server running (check with `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000`)
+- If server restarted on a different port, update `BASE_URL` env var
+- Puppeteer installed (`npm install -D puppeteer`)
 
 **Process:**
 
-1. Ensure dev server is running on localhost:3000
-2. Take screenshots: `npx tsx scripts/take-responsive-screenshots.ts after`
-3. Read screenshots and verify against ACs
-4. Report pass/fail for each AC at each breakpoint
+1. Clear stale cache if needed (`rm -rf .next` + restart dev server)
+2. Take screenshots:
 
-### Step 4: Consolidated Report
+   ```bash
+   BASE_URL=http://localhost:3000 npx tsx scripts/take-responsive-screenshots.ts after
+   ```
 
-Generate a summary report:
+3. Read each product-page screenshot at every breakpoint
+4. Verify against ACs from the plan
+
+**Output:** AC verification table:
+
+```text
+### AC 1 — Feature Name
+| Breakpoint | Status | Notes |
+|------------|--------|-------|
+| mobile     | PASS   | Description of what was verified |
+| sm         | PASS   | ... |
+| tablet     | PASS   | ... |
+| desktop    | PASS   | ... |
+```
+
+### Step 3: Iterate (if needed)
+
+If any AC fails:
+
+1. Identify the root cause from the screenshot
+2. Fix the code
+3. Re-take screenshots (Step 2)
+4. Re-verify only the failed ACs
+5. Repeat until all pass
+
+**Key:** Don't re-verify passing ACs unless the fix could affect them.
+
+### Step 4: UI Verify — Confirmation Pass
+
+After fixes, do a full screenshot pass to confirm:
+
+- Previously passing ACs still pass (no regressions)
+- Previously failing ACs now pass
+
+### Step 5: End-to-End Functional Check
+
+Verify interactive behavior hasn't regressed. Check against functional ACs:
+
+- Buttons clickable, state transitions correct
+- Form inputs functional
+- Navigation works
+- No console errors
+- No layout overflow or broken elements
+
+**Note:** This is a visual/manual check from screenshots + code review, not automated E2E tests.
+
+### Step 6: Precheck + Tests
+
+```bash
+npm run precheck    # TypeScript + ESLint
+npm run test:ci     # Full test suite
+```
+
+**On failure:**
+
+- Report specific errors
+- Fix the issue
+- Re-run only the failing check
+- Do NOT skip to review
+
+### Step 7: Ready for Review
+
+Generate consolidated report:
 
 ```text
 ## Verification Report
+
+### Implementation
+- Files modified: 4
+- Files created: 1
+- Task completion: 6/6
 
 ### Code Quality
 - TypeScript: PASS
 - ESLint: PASS
 
 ### Tests
-- Total: 45
-- Passed: 45
+- Total: 694
+- Passed: 694
 - Failed: 0
-- Status: PASS
 
 ### UI Verification
-| AC | Mobile | Tablet | Desktop | Status |
-|----|--------|--------|---------|--------|
-| ProductCard layout | PASS | PASS | PASS | PASS |
-| +/- stepper visible | PASS | PASS | PASS | PASS |
+| AC | mobile | sm | tablet | desktop | Result |
+|----|--------|----|--------|---------|--------|
+| Header area | PASS | PASS | PASS | PASS | PASS |
+| Two-col layout | — | — | — | PASS | PASS |
+| Stacked layout | PASS | PASS | PASS | — | PASS |
 
-### Overall: PASS - Ready for human review
+### Iterations
+- Iteration 1: All ACs passed (no fixes needed)
+
+### OVERALL: PASS — Ready for review
 ```
 
-Or if failures:
+## Human Checkpoints
+
+The loop is autonomous but pauses for human input at these gates:
+
+| Gate | When | Why |
+|------|------|-----|
+| **Dev server** | Server not running or wrong port | Need human to start/confirm |
+| **Cache stale** | Screenshots show old UI after code changes | Need `rm -rf .next` + server restart |
+| **Ambiguous AC** | Screenshot doesn't clearly pass or fail | Ask human to verify visually |
+| **Scope creep** | Fix for one AC breaks another | Ask human whether to accept tradeoff |
+
+## Gotchas & Lessons Learned
+
+### Next.js Cache
+
+After modifying client components, the dev server may serve stale builds. If screenshots don't reflect code changes:
+
+1. Stop dev server
+2. `rm -rf .next`
+3. Restart dev server
+4. Wait for compilation before taking screenshots
+
+### Screenshot Script Port
+
+The screenshot script defaults to `localhost:3000`. If the dev server runs on a different port:
+
+```bash
+BASE_URL=http://localhost:3001 npx tsx scripts/take-responsive-screenshots.ts after
+```
+
+The script reads `process.env.BASE_URL` with fallback to `http://localhost:3000`.
+
+### Puppeteer Not Installed
+
+The screenshot script requires puppeteer. Install as dev dependency:
+
+```bash
+npm install -D puppeteer
+```
+
+### Prisma Client in Scripts
+
+To run ad-hoc DB verification scripts, use the project's own prisma instance (`import { prisma } from "./lib/prisma"`) rather than `new PrismaClient()` directly, since the project uses custom adapters (Neon/PG).
+
+### TypeScript Union Narrowing in Seed Data
+
+When adding optional fields to seed product objects, ensure ALL union members include the field (even as `undefined`) or TypeScript will error on property access. Example fix:
+
+```typescript
+// Merch product needs the field too (even if undefined)
+variety: undefined as string | undefined,
+```
+
+## Integration with Other Skills
+
+| Skill | Role in Loop |
+|-------|-------------|
+| `/ui-verify` | Called during Steps 2–4 for screenshot capture and AC verification |
+| `/release` | Called after review approval to tag and publish |
+
+## Quick Reference
 
 ```text
-## Verification Report
+# Full autonomous loop
+/verify-workflow
 
-### Code Quality
-- TypeScript: PASS
-- ESLint: FAIL (2 errors)
+# After code-only changes (no UI)
+/verify-workflow --skip-ui
 
-### Failures Found
-
-#### ESLint
-1. src/components/Button.tsx:45 - 'unused' is defined but never used
-2. src/components/Card.tsx:12 - Missing return type
-
-### Recommended Actions
-1. Remove unused variable 'unused' in Button.tsx
-2. Add return type to function in Card.tsx
-
-### Overall: FAIL - Fix issues before human review
+# Re-verify after manual fixes
+/verify-workflow --verify-only
 ```
-
-## Integration with Development Flow
-
-### Typical Feature Development
-
-```text
-1. Plan feature (plan mode)
-2. Implement changes
-3. /verify-workflow              # Automated verification
-4. If FAIL → fix issues → repeat step 3
-5. If PASS → create PR for human review
-```
-
-### Quick Iteration Loop
-
-```text
-1. Make code change
-2. /verify-workflow --skip-ui    # Quick check (no screenshots)
-3. Fix any failures
-4. /verify-workflow              # Full verification before PR
-```
-
-## Configuration
-
-### Default ACs (from feature docs)
-
-The skill automatically looks for ACs in:
-
-- `docs/feature/*/README.md` - Testing Checklist section
-- Current plan file (if in plan mode)
-
-### Custom ACs
-
-Pass specific ACs to verify:
-
-```text
-/verify-workflow --acs "Button shows correct label" "Price displays correctly"
-```
-
-## Prerequisites
-
-- Node.js and npm installed
-- Dev server running (for UI verification)
-- Puppeteer installed: `npm install -D puppeteer`
-
-## Error Handling
-
-### Dev Server Not Running
-
-```text
-WARNING: Dev server not detected on localhost:3000
-UI verification will be skipped.
-
-To enable UI verification:
-1. Open a new terminal
-2. Run: npm run dev
-3. Re-run: /verify-workflow
-```
-
-### Screenshot Failures
-
-If screenshots fail to capture:
-
-1. Check dev server is responding
-2. Increase wait times in screenshot script
-3. Check for hydration issues
-
-## Example Output
-
-### All Passing
-
-```text
-## Verification Report
-
-Ran verification workflow at 2026-02-05 10:30:00
-
-### Code Quality
-npm run precheck... PASS (12.3s)
-
-### Tests
-npm run test:ci... PASS (8.5s)
-- 45 tests passed
-
-### UI Verification
-Taking screenshots... done
-Verifying ACs...
-
-| AC | Mobile | Tablet | Desktop | Result |
-|----|--------|--------|---------|--------|
-| ProductCard: button left, price right | PASS | PASS | PASS | PASS |
-| ProductQuantityCart: +/- stepper | PASS | PASS | PASS | PASS |
-| Footer links visible | PASS | PASS | PASS | PASS |
-
-### Summary
-- Code Quality: PASS
-- Tests: PASS
-- UI: PASS (3/3 ACs)
-
-**OVERALL: PASS**
-
-Ready for human review. Create PR when ready.
-```
-
-### With Failures
-
-```text
-## Verification Report
-
-Ran verification workflow at 2026-02-05 10:30:00
-
-### Code Quality
-npm run precheck... FAIL (5.2s)
-
-Errors:
-1. app/(site)/_components/product/ProductCard.tsx:45:12
-   error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'
-
-### Summary
-- Code Quality: FAIL (1 error)
-- Tests: SKIPPED (blocked by precheck failure)
-- UI: SKIPPED (blocked by precheck failure)
-
-**OVERALL: FAIL**
-
-Fix the TypeScript error above before proceeding.
-```
-
-## Best Practices
-
-1. **Run early, run often** - Catch issues before they compound
-2. **Don't skip UI verification** - Visual regressions are easy to miss
-3. **Fix failures immediately** - Don't accumulate technical debt
-4. **Update ACs when requirements change** - Keep verification aligned with expectations
