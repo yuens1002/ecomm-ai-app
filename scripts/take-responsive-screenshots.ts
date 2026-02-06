@@ -1,6 +1,7 @@
 #!/usr/bin/env npx tsx
 /**
- * Takes responsive screenshots of the product menu at different breakpoints
+ * Takes responsive screenshots of key UI components at different breakpoints
+ * Captures: ProductCards, product detail page, footer, nav dropdown/mobile menu
  * Usage: npx tsx scripts/take-responsive-screenshots.ts [before|after]
  */
 
@@ -18,9 +19,10 @@ interface Breakpoint {
 }
 
 const BREAKPOINTS: Breakpoint[] = [
-  { name: "mobile", width: 375, height: 812 }, // iPhone X
-  { name: "tablet", width: 768, height: 1024 }, // iPad
-  { name: "desktop", width: 1440, height: 900 }, // Desktop
+  { name: "mobile", width: 375, height: 812 }, // iPhone X (xs)
+  { name: "sm", width: 640, height: 900 }, // Tailwind sm breakpoint
+  { name: "tablet", width: 768, height: 1024 }, // iPad (md)
+  { name: "desktop", width: 1440, height: 900 }, // Desktop (lg+)
 ];
 
 const BASE_URL = "http://localhost:3000";
@@ -50,7 +52,54 @@ async function takeScreenshots(prefix = "before") {
       await page.goto(BASE_URL, { waitUntil: "networkidle2", timeout: 30000 });
       await new Promise((r) => setTimeout(r, 1000)); // Let animations settle
 
-      // Screenshot 1: Footer (scroll to bottom)
+      // Screenshot 1: Homepage ProductCards (featured section)
+      console.log("  - ProductCards (homepage)...");
+      await page.evaluate(() => window.scrollTo(0, 400)); // Scroll to product section
+      await new Promise((r) => setTimeout(r, 500));
+      await page.screenshot({
+        path: path.join(OUTPUT_DIR, `${prefix}-${bp.name}-product-cards.png`),
+        fullPage: false,
+      });
+
+      // Screenshot 2: Product detail page (top)
+      console.log("  - Product page...");
+      await page.goto(`${BASE_URL}/products/ethiopian-yirgacheffe`, {
+        waitUntil: "networkidle2",
+        timeout: 30000,
+      });
+      await new Promise((r) => setTimeout(r, 1000));
+      await page.screenshot({
+        path: path.join(OUTPUT_DIR, `${prefix}-${bp.name}-product-page.png`),
+        fullPage: false,
+      });
+
+      // Screenshot 2b: Product page add-to-cart section (scroll down on mobile/tablet)
+      if (bp.width < 1024) {
+        console.log("  - Product page (add-to-cart)...");
+        await page.evaluate(() => window.scrollTo(0, 500)); // Scroll to add-to-cart section
+        await new Promise((r) => setTimeout(r, 500));
+        await page.screenshot({
+          path: path.join(OUTPUT_DIR, `${prefix}-${bp.name}-product-add-to-cart.png`),
+          fullPage: false,
+        });
+
+        // Screenshot 2c: Product page carousel section (mobile only)
+        if (bp.width < 768) {
+          console.log("  - Product page (carousel)...");
+          await page.evaluate(() => window.scrollTo(0, 1200)); // Scroll to carousel section
+          await new Promise((r) => setTimeout(r, 500));
+          await page.screenshot({
+            path: path.join(OUTPUT_DIR, `${prefix}-${bp.name}-product-carousel.png`),
+            fullPage: false,
+          });
+        }
+      }
+
+      // Go back to homepage for remaining screenshots
+      await page.goto(BASE_URL, { waitUntil: "networkidle2", timeout: 30000 });
+      await new Promise((r) => setTimeout(r, 500));
+
+      // Screenshot 3: Footer (scroll to bottom)
       console.log("  - Footer...");
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
       await new Promise((r) => setTimeout(r, 500));
@@ -59,7 +108,7 @@ async function takeScreenshots(prefix = "before") {
         fullPage: false,
       });
 
-      // Screenshot 2: Nav dropdown (desktop only - mobile uses sheet)
+      // Screenshot 4: Nav dropdown (desktop only - mobile uses sheet)
       if (bp.width >= 1024) {
         console.log("  - Nav dropdown...");
         await page.evaluate(() => window.scrollTo(0, 0));
@@ -83,7 +132,7 @@ async function takeScreenshots(prefix = "before") {
         });
       }
 
-      // Screenshot 3: Mobile menu (mobile and tablet)
+      // Screenshot 5: Mobile menu (mobile and tablet)
       if (bp.width < 1024) {
         console.log("  - Mobile menu...");
         await page.evaluate(() => window.scrollTo(0, 0));

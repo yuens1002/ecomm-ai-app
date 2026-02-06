@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, startTransition } from "react";
+import { useEffect, useState, startTransition, useRef } from "react";
 import Link from "next/link";
 import { Coffee, Flame, Leaf } from "lucide-react";
 import { ProductType, RoastLevel, PurchaseType } from "@prisma/client";
@@ -28,10 +28,12 @@ import { ImageCarousel } from "@/components/shared/media/ImageCarousel";
 import PageContainer from "@/components/shared/PageContainer";
 import { useCartStore, type CartItem } from "@/lib/store/cart-store";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
+import { useAddToCartWithFeedback } from "@/hooks/useAddToCartWithFeedback";
 import { AddOnItem } from "./actions";
 import { Badge } from "@/components/ui/badge";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 import { ProductSelectionsSection } from "@/app/(site)/_components/product/ProductSelectionsSection";
+import { FloatingAddToCartButton } from "@/app/(site)/_components/product/FloatingAddToCartButton";
 
 interface ProductClientPageProps {
   product: Product;
@@ -122,6 +124,15 @@ export default function ProductClientPage({
   const addItem = useCartStore((state) => state.addItem);
   const cartItems = useCartStore((state) => state.items);
   const { trackActivity } = useActivityTracking();
+  const {
+    buttonState,
+    isCheckingOut,
+    handleAddToCart: handleAddToCartWithFeedback,
+    handleActionClick,
+  } = useAddToCartWithFeedback();
+
+  // Ref for floating button visibility detection
+  const inlineButtonRef = useRef<HTMLDivElement>(null);
 
   const initialVariant = product.variants[0];
   const initialPurchaseOption = getPreferredPurchaseOption(
@@ -140,12 +151,29 @@ export default function ProductClientPage({
         : null
     );
 
+  // Fallback recommendations when relatedProducts is empty
+  const [fallbackProducts, setFallbackProducts] = useState<RelatedProduct[]>([]);
+
   useEffect(() => {
     trackActivity({
       activityType: "PRODUCT_VIEW",
       productId: product.id,
     });
   }, [product.id, trackActivity]);
+
+  // Fetch fallback recommendations when relatedProducts is empty
+  useEffect(() => {
+    if (relatedProducts.length === 0 && fallbackProducts.length === 0) {
+      fetch(`/api/recommendations?limit=4&exclude=${product.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.products?.length) {
+            setFallbackProducts(data.products);
+          }
+        })
+        .catch((err) => console.error("Failed to fetch recommendations:", err));
+    }
+  }, [relatedProducts.length, product.id, fallbackProducts.length]);
 
   // Auto-select subscription when it's the only option
   useEffect(() => {
@@ -234,22 +262,25 @@ export default function ProductClientPage({
     if (!selectedPurchaseOption) return;
     const isAddingSubscription = selectedPurchaseOption.type === "SUBSCRIPTION";
 
-    addItem({
-      productId: product.id,
-      productName: product.name,
-      productSlug: product.slug,
-      categorySlug: category.slug,
-      variantId: selectedVariant.id,
-      variantName: selectedVariant.name,
-      purchaseOptionId: selectedPurchaseOption.id,
-      purchaseType: selectedPurchaseOption.type,
-      priceInCents: selectedPurchaseOption.priceInCents,
-      imageUrl: displayImage,
-      quantity,
-      billingInterval: selectedPurchaseOption.billingInterval || undefined,
-      billingIntervalCount:
-        selectedPurchaseOption.billingIntervalCount || undefined,
-    });
+    // Use the hook for cart-aware feedback
+    handleAddToCartWithFeedback(
+      {
+        productId: product.id,
+        productName: product.name,
+        productSlug: product.slug,
+        categorySlug: category.slug,
+        variantId: selectedVariant.id,
+        variantName: selectedVariant.name,
+        purchaseOptionId: selectedPurchaseOption.id,
+        purchaseType: selectedPurchaseOption.type,
+        priceInCents: selectedPurchaseOption.priceInCents,
+        imageUrl: displayImage,
+        billingInterval: selectedPurchaseOption.billingInterval || undefined,
+        billingIntervalCount:
+          selectedPurchaseOption.billingIntervalCount || undefined,
+      },
+      quantity
+    );
 
     trackActivity({ activityType: "ADD_TO_CART", productId: product.id });
 
@@ -411,24 +442,29 @@ export default function ProductClientPage({
 
           <Separator />
 
-          <ProductSelectionsSection
-            product={product}
-            selectedVariant={selectedVariant}
-            selectedPurchaseOption={selectedPurchaseOption}
-            selectedSubscriptionOptionId={selectedSubscriptionOptionId}
-            quantity={quantity}
-            hasSubscriptionInCart={hasSubscriptionInCart}
-            oneTimeOption={oneTimeOption}
-            subscriptionOptions={subscriptionOptions}
-            subscriptionDisplayOption={subscriptionDisplayOption}
-            subscriptionDiscountMessage={subscriptionDiscountMessage}
-            onVariantChange={handleVariantChange}
-            onPurchaseTypeChange={handlePurchaseTypeChange}
-            onSubscriptionCadenceChange={handleSubscriptionCadenceChange}
-            onQuantityChange={setQuantity}
-            onAddToCart={handleAddToCart}
-            spacing="3"
-          />
+          <div ref={inlineButtonRef}>
+            <ProductSelectionsSection
+              product={product}
+              selectedVariant={selectedVariant}
+              selectedPurchaseOption={selectedPurchaseOption}
+              selectedSubscriptionOptionId={selectedSubscriptionOptionId}
+              quantity={quantity}
+              hasSubscriptionInCart={hasSubscriptionInCart}
+              oneTimeOption={oneTimeOption}
+              subscriptionOptions={subscriptionOptions}
+              subscriptionDisplayOption={subscriptionDisplayOption}
+              subscriptionDiscountMessage={subscriptionDiscountMessage}
+              onVariantChange={handleVariantChange}
+              onPurchaseTypeChange={handlePurchaseTypeChange}
+              onSubscriptionCadenceChange={handleSubscriptionCadenceChange}
+              onQuantityChange={setQuantity}
+              onAddToCart={handleAddToCart}
+              onActionClick={handleActionClick}
+              buttonState={buttonState}
+              isProcessing={isCheckingOut}
+              spacing="3"
+            />
+          </div>
 
           <div className="space-y-2">
             <p className="text-text-base leading-relaxed">
@@ -466,23 +502,40 @@ export default function ProductClientPage({
         </div>
       </div>
 
-      <div className="my-16">
-        <Separator className="my-12" />
-        <h2 className="text-3xl font-bold text-center text-text-base mb-12">
-          {settings.productRelatedHeading}
-        </h2>
-        <ScrollCarousel
-          slidesPerView={relatedSlidesPerView}
-          gap="gap-8"
-          noBorder
-        >
-          {relatedProducts.map((relatedProduct) => (
-            <div key={relatedProduct.id}>
-              <ProductCard product={relatedProduct} disableCardEffects />
-            </div>
-          ))}
-        </ScrollCarousel>
-      </div>
+      {/* Related products section - use fallback if relatedProducts empty */}
+      {(() => {
+        const displayProducts = relatedProducts.length > 0 ? relatedProducts : fallbackProducts;
+        if (displayProducts.length === 0) return null;
+        return (
+          <div className="my-16">
+            <Separator className="my-12" />
+            <h2 className="text-3xl font-bold text-center text-text-base mb-12">
+              {settings.productRelatedHeading}
+            </h2>
+            <ScrollCarousel
+              slidesPerView={relatedSlidesPerView}
+              gap="gap-8"
+              noBorder
+            >
+              {displayProducts.map((relatedProduct) => (
+                <div key={relatedProduct.id}>
+                  <ProductCard product={relatedProduct} disableCardEffects hidePriceOnMobile />
+                </div>
+              ))}
+            </ScrollCarousel>
+          </div>
+        );
+      })()}
+
+      {/* Floating add-to-cart button for mobile (visible when inline button scrolls out of view) */}
+      <FloatingAddToCartButton
+        inlineButtonRef={inlineButtonRef}
+        buttonState={buttonState}
+        onAddToCart={handleAddToCart}
+        onActionClick={handleActionClick}
+        disabled={!selectedPurchaseOption || selectedVariant.stockQuantity <= 0}
+        isProcessing={isCheckingOut}
+      />
     </PageContainer>
   );
 }

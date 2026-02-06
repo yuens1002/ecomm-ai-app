@@ -1,10 +1,6 @@
 ---
 name: release
 description: Git release workflow for creating patches and releases with proper versioning
-disable-model-invocation: true
-user-invocable: true
-allowed-tools: Bash, Read, Edit, Grep, Glob
-argument-hint: [patch|minor|major] [--github-release]
 ---
 
 # Release Workflow Skill
