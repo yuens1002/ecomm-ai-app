@@ -47,7 +47,7 @@ describe("AddToCartButton", () => {
     it("renders checkout-now state correctly", () => {
       render(<AddToCartButton {...defaultProps} buttonState="checkout-now" />);
 
-      expect(screen.getByRole("button")).toHaveTextContent("Checkout Now");
+      expect(screen.getByRole("button")).toHaveTextContent("View Cart");
       expect(screen.getByRole("button")).toHaveClass("bg-amber-500");
     });
   });

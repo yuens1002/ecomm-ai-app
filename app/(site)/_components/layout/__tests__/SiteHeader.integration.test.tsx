@@ -7,6 +7,7 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({
     push: jest.fn(),
   }),
+  usePathname: () => "/",
 }));
 
 // Mock components that have external dependencies

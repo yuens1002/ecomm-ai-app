@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ShoppingCart } from "@/app/(site)/_components/cart/ShoppingCart";
 import { UserMenu } from "@/app/(site)/_components/navigation/UserMenu";
@@ -124,6 +124,7 @@ export default function SiteHeader({
   productMenuText = "Shop",
 }: SiteHeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
@@ -321,7 +322,7 @@ export default function SiteHeader({
                 <UserMenu user={user} />
               ) : (
                 <Button asChild variant="ghost" size="sm">
-                  <Link href="/auth/signin">
+                  <Link href={`/auth/signin?callbackUrl=${encodeURIComponent(pathname)}`}>
                     <User className="w-4 h-4 lg:mr-2" />
                     <span className="hidden lg:inline">Sign In</span>
                   </Link>

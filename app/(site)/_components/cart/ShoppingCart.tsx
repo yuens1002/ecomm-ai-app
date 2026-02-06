@@ -3,32 +3,27 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type { Address } from "@prisma/client";
 import {
   ShoppingCart as ShoppingCartIcon,
-  Trash2,
+  X,
   Plus,
   Minus,
   Loader2,
-  Truck,
-  Store,
-  MapPin,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useCartStore, CartItem } from "@/lib/store/cart-store";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldLabel,
+  FieldTitle,
+} from "@/components/ui/field";
 import { useToast } from "@/hooks/use-toast";
 import { formatBillingInterval } from "@/lib/utils";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -38,6 +33,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { CartAddOnsSuggestions } from "./CartAddOnsSuggestions";
 
 /**
@@ -57,10 +53,6 @@ export function ShoppingCart() {
   const [deliveryMethod, setDeliveryMethod] = useState<"DELIVERY" | "PICKUP">(
     "DELIVERY"
   );
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-    null
-  );
-  const [addresses, setAddresses] = useState<Address[]>([]);
   const [loadingPreferences, setLoadingPreferences] = useState(true);
 
   const items = useCartStore((state) => state.items);
@@ -68,7 +60,6 @@ export function ShoppingCart() {
   const getTotalPrice = useCartStore((state) => state.getTotalPrice);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
-  const clearCart = useCartStore((state) => state.clearCart);
   const isOpen = useCartStore((state) => state.isCartOpen);
   const setIsOpen = useCartStore((state) => state.setCartOpen);
 
@@ -115,7 +106,7 @@ export function ShoppingCart() {
     return () => window.removeEventListener("cartError", handleCartError);
   }, [toast]);
 
-  // Fetch user's addresses and last order delivery preferences
+  // Fetch last order delivery preference
   useEffect(() => {
     const fetchDeliveryPreferences = async () => {
       if (!session?.user?.id) {
@@ -124,20 +115,6 @@ export function ShoppingCart() {
       }
 
       try {
-        // Fetch user's addresses
-        const addressResponse = await fetch("/api/user/addresses");
-        if (addressResponse.ok) {
-          const data = await addressResponse.json();
-          setAddresses(data.addresses || []);
-
-          // Set default address as selected
-          const defaultAddr = data.addresses?.find((a: Address) => a.isDefault);
-          if (defaultAddr) {
-            setSelectedAddressId(defaultAddr.id);
-          }
-        }
-
-        // Fetch last order to get preferred delivery method
         const ordersResponse = await fetch("/api/user/orders?limit=1");
         if (ordersResponse.ok) {
           const ordersData = await ordersResponse.json();
@@ -210,8 +187,6 @@ export function ShoppingCart() {
           items,
           userId: session?.user?.id,
           deliveryMethod,
-          selectedAddressId:
-            deliveryMethod === "DELIVERY" ? selectedAddressId : null,
         }),
       });
 
@@ -295,11 +270,6 @@ export function ShoppingCart() {
     }
   };
 
-  const handleClearCart = () => {
-    clearCart();
-    setIsCheckingOut(false); // Reset processing state when cart is cleared
-  };
-
   // Don't render count until mounted (avoid hydration mismatch)
   const displayCount = mounted ? cartItemCount : 0;
 
@@ -322,9 +292,9 @@ export function ShoppingCart() {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-full sm:w-[400px] flex flex-col p-0"
+        className="w-full sm:w-[500px] sm:max-w-[500px] flex flex-col p-0"
       >
-        <SheetHeader className="px-6 pt-6 pb-4 border-b">
+        <SheetHeader className="px-6 pt-6 pb-4">
           <SheetTitle className="text-2xl font-bold tracking-tight text-left">
             Shopping Cart
           </SheetTitle>
@@ -345,7 +315,7 @@ export function ShoppingCart() {
                 Add some delicious coffee to get started!
               </p>
               <Button asChild>
-                <Link href="/">Browse Products</Link>
+                <Link href="/" onClick={() => setIsOpen(false)}>Browse Products</Link>
               </Button>
             </div>
           ) : (
@@ -398,50 +368,70 @@ export function ShoppingCart() {
                             }`
                           : "One-time purchase"}
                       </p>
-                      <p className="font-semibold text-text-base">
-                        {formatPrice(item.priceInCents)}
-                      </p>
                     </div>
 
-                    {/* Quantity Controls */}
-                    <div className="flex items-center gap-3 mt-2">
+                    {/* Quantity Controls + Price */}
+                    <div className="flex items-center justify-between mt-2">
                       {item.purchaseType === "ONE_TIME" ? (
-                        <div className="flex items-center gap-2">
+                        <ButtonGroup>
                           <Button
                             variant="outline"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => handleQuantityChange(item, -1)}
-                            disabled={item.quantity <= 1}
+                            size="icon-sm"
+                            onClick={() =>
+                              item.quantity <= 1
+                                ? handleRemoveItem(item)
+                                : handleQuantityChange(item, -1)
+                            }
+                            aria-label={
+                              item.quantity <= 1
+                                ? "Remove item"
+                                : "Decrease quantity"
+                            }
                           >
-                            <Minus className="h-3 w-3" />
+                            {item.quantity <= 1 ? (
+                              <X className="h-3 w-3" />
+                            ) : (
+                              <Minus className="h-3 w-3" />
+                            )}
                           </Button>
-                          <span className="text-sm font-medium w-8 text-center">
-                            {item.quantity}
-                          </span>
+                          <input
+                            type="text"
+                            readOnly
+                            tabIndex={-1}
+                            value={item.quantity}
+                            className="h-8 w-10 min-w-0 text-center text-sm font-medium border border-border bg-transparent outline-none"
+                          />
                           <Button
                             variant="outline"
-                            size="icon"
-                            className="h-7 w-7"
+                            size="icon-sm"
                             onClick={() => handleQuantityChange(item, 1)}
+                            aria-label="Increase quantity"
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
-                        </div>
+                        </ButtonGroup>
                       ) : (
-                        <span className="text-sm font-medium">
-                          Qty: {item.quantity}
-                        </span>
+                        <ButtonGroup>
+                          <Button
+                            variant="outline"
+                            size="icon-sm"
+                            onClick={() => handleRemoveItem(item)}
+                            aria-label="Remove item"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                          <input
+                            type="text"
+                            readOnly
+                            tabIndex={-1}
+                            value={`Qty: ${item.quantity}`}
+                            className="h-8 w-14 min-w-0 text-center text-sm font-medium border border-border bg-transparent outline-none"
+                          />
+                        </ButtonGroup>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-                        onClick={() => handleRemoveItem(item)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Remove
-                      </Button>
+                      <span className="font-semibold text-text-base">
+                        {formatPrice(item.priceInCents)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -455,104 +445,77 @@ export function ShoppingCart() {
 
         {/* Cart Footer */}
         {items.length > 0 && (
-          <div className="border-t px-6 py-4 mt-auto">
+          <div className="px-6 py-4 mt-auto">
             <div className="space-y-4">
               {/* Delivery Method Selection */}
               {session?.user && !loadingPreferences && (
-                <div className="space-y-3 pb-4 border-b">
-                  <Label className="text-sm font-semibold">
-                    Delivery Method
-                  </Label>
+                <div className="pb-4">
                   <RadioGroup
                     value={deliveryMethod}
                     onValueChange={(value) =>
                       setDeliveryMethod(value as "DELIVERY" | "PICKUP")
                     }
                   >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="DELIVERY" id="delivery" />
-                      <Label
-                        htmlFor="delivery"
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <Truck className="w-4 h-4" />
-                        <span>Delivery</span>
-                      </Label>
+                    {/* Mobile: compact inline */}
+                    <div className="sm:hidden space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold">Shipping</span>
+                        <div className="flex items-center gap-4">
+                          <label
+                            htmlFor="delivery-mobile"
+                            className="flex items-center gap-1.5 text-sm cursor-pointer"
+                          >
+                            <RadioGroupItem
+                              value="DELIVERY"
+                              id="delivery-mobile"
+                            />
+                            Delivery
+                          </label>
+                          <label
+                            htmlFor="pickup-mobile"
+                            className="flex items-center gap-1.5 text-sm cursor-pointer"
+                          >
+                            <RadioGroupItem
+                              value="PICKUP"
+                              id="pickup-mobile"
+                            />
+                            Pickup
+                          </label>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {deliveryMethod === "DELIVERY"
+                          ? "Enter shipping address at checkout"
+                          : "123 Coffee Street, San Francisco, CA 94102"}
+                      </p>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="PICKUP" id="pickup" />
-                      <Label
-                        htmlFor="pickup"
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <Store className="w-4 h-4" />
-                        <span>Store Pickup</span>
-                      </Label>
+
+                    {/* Desktop: choice cards */}
+                    <div className="hidden sm:contents">
+                      <FieldLabel htmlFor="delivery">
+                        <Field orientation="horizontal">
+                          <FieldContent>
+                            <FieldTitle>Delivery</FieldTitle>
+                            <FieldDescription>
+                              Enter shipping address at checkout
+                            </FieldDescription>
+                          </FieldContent>
+                          <RadioGroupItem value="DELIVERY" id="delivery" />
+                        </Field>
+                      </FieldLabel>
+                      <FieldLabel htmlFor="pickup">
+                        <Field orientation="horizontal">
+                          <FieldContent>
+                            <FieldTitle>Store Pickup</FieldTitle>
+                            <FieldDescription>
+                              123 Coffee Street, San Francisco, CA 94102
+                            </FieldDescription>
+                          </FieldContent>
+                          <RadioGroupItem value="PICKUP" id="pickup" />
+                        </Field>
+                      </FieldLabel>
                     </div>
                   </RadioGroup>
-
-                  {/* Address Selection - Only show for Delivery */}
-                  {deliveryMethod === "DELIVERY" && (
-                    <div className="space-y-2 mt-3">
-                      {addresses.length > 0 ? (
-                        <>
-                          <Label className="text-sm">Shipping Address</Label>
-                          <div className="flex items-start gap-2">
-                            <MapPin className="w-5 h-5 mt-2 shrink-0 text-muted-foreground" />
-                            <Select
-                              value={selectedAddressId || "new"}
-                              onValueChange={(value) =>
-                                setSelectedAddressId(
-                                  value === "new" ? null : value
-                                )
-                              }
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select an address" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="new">
-                                  <span className="font-medium">
-                                    Enter new address at checkout
-                                  </span>
-                                </SelectItem>
-                                {addresses.map((address) => (
-                                  <SelectItem
-                                    key={address.id}
-                                    value={address.id}
-                                  >
-                                    {address.street}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded text-sm">
-                          <p className="text-blue-800 dark:text-blue-200">
-                            You&apos;ll be able to enter your shipping address
-                            during checkout.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Pickup Location Info */}
-                  {deliveryMethod === "PICKUP" && (
-                    <div className="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded text-sm">
-                      <p className="font-medium text-green-800 dark:text-green-200 mb-1">
-                        Pickup Location
-                      </p>
-                      <p className="text-green-700 dark:text-green-300 text-xs">
-                        123 Coffee Street, San Francisco, CA 94102
-                      </p>
-                      <p className="text-green-700 dark:text-green-300 text-xs mt-1">
-                        Mon-Fri: 8AM-6PM, Sat-Sun: 9AM-5PM
-                      </p>
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -596,14 +559,6 @@ export function ShoppingCart() {
                 );
               })()}
 
-              {/* Clear Cart */}
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleClearCart}
-              >
-                Clear Cart
-              </Button>
             </div>
           </div>
         )}

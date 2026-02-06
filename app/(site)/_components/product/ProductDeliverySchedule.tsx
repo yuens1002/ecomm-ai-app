@@ -28,7 +28,7 @@ export function ProductDeliverySchedule({
         align="inline-start"
         className="h-full px-4 text-sm font-semibold text-text-base"
       >
-        Delivery Schedule
+        Schedule
       </InputGroupAddon>
       <Select
         value={
