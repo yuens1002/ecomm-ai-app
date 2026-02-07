@@ -1275,12 +1275,16 @@ export async function seedProducts(prisma: PrismaClient) {
     const isMerch = categoryLinks.some((l) => l.categoryId === catMerch?.id);
     const productType = isMerch ? ProductType.MERCH : ProductType.COFFEE;
 
-    // Determine roast level (non-coffee merch stays MEDIUM default)
-    let roastLevel: RoastLevel = RoastLevel.MEDIUM;
-    if (categoryLinks.some((l) => l.categoryId === catDark?.id)) {
-      roastLevel = RoastLevel.DARK;
-    } else if (categoryLinks.some((l) => l.categoryId === catLight?.id)) {
-      roastLevel = RoastLevel.LIGHT;
+    // Determine roast level (null for non-coffee products)
+    let roastLevel: RoastLevel | null = null;
+    if (!isMerch) {
+      if (categoryLinks.some((l) => l.categoryId === catDark?.id)) {
+        roastLevel = RoastLevel.DARK;
+      } else if (categoryLinks.some((l) => l.categoryId === catLight?.id)) {
+        roastLevel = RoastLevel.LIGHT;
+      } else {
+        roastLevel = RoastLevel.MEDIUM;
+      }
     }
 
     // Determine categories based on origin; allow explicit categoryLinks for non-coffee
@@ -1382,4 +1386,96 @@ export async function seedProducts(prisma: PrismaClient) {
   console.log(
     `    ✓ Seeded ${productsToSeed.length} products (mode: ${productSeedMode})`
   );
+
+  // --- Coffee → Merch add-on links ---
+  if (isMinimal) return;
+
+  console.log("  🔗 Seeding coffee → merch add-on links...");
+
+  // Pairing rules:
+  //   Light roasts        → Origami Air Dripper + Origami Cone Filters
+  //   Dark roasts         → Cold Brew Bottle + Heritage Diner Mug
+  //   Premium mediums     → Cupping Spoon + Timemore Scale
+  //   Everyday mediums    → Airscape Canister + Barista Towel
+  const coffeeAddOnLinks: Array<{
+    coffeeSlugs: string[];
+    addOnSlugs: string[];
+  }> = [
+    {
+      coffeeSlugs: [
+        "ethiopian-sidamo",
+        "ethiopian-yirgacheffe",
+        "guatemala-huehuetenango",
+      ],
+      addOnSlugs: ["origami-air-dripper", "origami-cone-filters"],
+    },
+    {
+      coffeeSlugs: [
+        "decaf-colombian",
+        "french-roast",
+        "italian-roast",
+        "midnight-espresso-blend",
+        "sumatra-mandheling",
+      ],
+      addOnSlugs: ["cold-brew-bottle", "heritage-diner-mug"],
+    },
+    {
+      coffeeSlugs: [
+        "kenya-aa",
+        "panama-geisha",
+        "colombia-geisha",
+        "hawaiian-kona",
+      ],
+      addOnSlugs: ["cupping-spoon", "timemore-black-mirror-scale"],
+    },
+    {
+      coffeeSlugs: [
+        "breakfast-blend",
+        "brazil-santos",
+        "colombian-supremo",
+      ],
+      addOnSlugs: ["airscape-coffee-canister", "barista-towel-2-pack"],
+    },
+  ];
+
+  // Resolve slugs to product + first variant IDs
+  const resolveSlug = async (slug: string) => {
+    const product = await prisma.product.findUnique({
+      where: { slug },
+      include: { variants: { take: 1 } },
+    });
+    if (!product || product.variants.length === 0) return null;
+    return { productId: product.id, variantId: product.variants[0].id };
+  };
+
+  let coffeeAddOnCount = 0;
+
+  for (const group of coffeeAddOnLinks) {
+    for (const coffeeSlug of group.coffeeSlugs) {
+      const coffee = await resolveSlug(coffeeSlug);
+      if (!coffee) continue;
+
+      // Clean existing coffee add-on links for this product
+      await prisma.addOnLink.deleteMany({
+        where: { primaryProductId: coffee.productId },
+      });
+
+      for (const addOnSlug of group.addOnSlugs) {
+        const addOn = await resolveSlug(addOnSlug);
+        if (!addOn) continue;
+
+        await prisma.addOnLink.create({
+          data: {
+            primaryProductId: coffee.productId,
+            primaryVariantId: coffee.variantId,
+            addOnProductId: addOn.productId,
+            addOnVariantId: addOn.variantId,
+          },
+        });
+        coffeeAddOnCount++;
+      }
+    }
+  }
+
+  console.log(`    ✓ Seeded ${coffeeAddOnCount} coffee add-on links`);
 }

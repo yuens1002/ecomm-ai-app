@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { MultiImageUpload } from "@/components/ui/forms/MultiImageUpload";
 import { ProductCoffeeDetailsSection } from "./ProductCoffeeDetailsSection";
+import { ProductMerchDetailsSection, type MerchDetailRow } from "./ProductMerchDetailsSection";
 import { ProductCategoriesSection } from "./ProductCategoriesSection";
 import { ProductVariantsSection } from "./ProductVariantsSection";
 import { ProductAddOnsSection } from "./ProductAddOnsSection";
@@ -140,6 +141,9 @@ export default function ProductFormClient({
 
   // Name/Slug handled via NameSlugField; keep form values in sync
 
+  // Merch details (key-value pairs)
+  const [merchDetails, setMerchDetails] = useState<MerchDetailRow[]>([]);
+
   // Image upload handler
   const [existingImages, setExistingImages] = useState<
     Array<{ url: string; alt: string }>
@@ -182,6 +186,9 @@ export default function ProductFormClient({
             alt: img.altText || "",
           })) || []
         );
+        if (Array.isArray(p.details)) {
+          setMerchDetails(p.details as MerchDetailRow[]);
+        }
         form.reset({
           name: p.name,
           slug: p.slug,
@@ -242,6 +249,11 @@ export default function ProductFormClient({
       const isCoffee = data.productType === ProductType.COFFEE;
       const cleanImages = uploadedImages.filter((img) => img.url);
 
+      const isMerch = data.productType === ProductType.MERCH;
+      const filteredDetails = isMerch
+        ? merchDetails.filter((d) => d.label.trim() && d.value.trim())
+        : null;
+
       const payload = {
         ...data,
         images: cleanImages,
@@ -251,6 +263,7 @@ export default function ProductFormClient({
         altitude: isCoffee ? data.altitude : "",
         roastLevel: isCoffee ? data.roastLevel : null,
         isDisabled: data.isDisabled,
+        details: filteredDetails?.length ? filteredDetails : null,
       };
 
       const response = await fetch(url, {
@@ -458,6 +471,12 @@ export default function ProductFormClient({
             <ProductCoffeeDetailsSection
               control={form.control}
               show={productType === ProductType.COFFEE}
+            />
+
+            <ProductMerchDetailsSection
+              show={productType === ProductType.MERCH}
+              details={merchDetails}
+              onChange={setMerchDetails}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

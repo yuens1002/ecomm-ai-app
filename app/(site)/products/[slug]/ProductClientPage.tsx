@@ -513,17 +513,41 @@ export default function ProductClientPage({
             </div>
           )}
 
-          {/* ---- Story: full-width below ---- */}
+          {/* ---- Story / Description: full-width below ---- */}
           {product.description && (
             <div className="lg:mt-4">
               <h2 className="text-xs font-medium uppercase tracking-wide text-foreground/50 mb-1">
-                The Story
+                {isCoffee ? "The Story" : "Description"}
               </h2>
               <p className="text-sm text-text-base leading-relaxed">
                 {product.description}
               </p>
             </div>
           )}
+
+          {/* ---- Merch details key-value pairs ---- */}
+          {!isCoffee &&
+            Array.isArray(product.details) &&
+            product.details.length > 0 && (
+              <div className="lg:mt-2">
+                <h2 className="text-xs font-medium uppercase tracking-wide text-foreground/50 mb-2">
+                  Details
+                </h2>
+                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+                  {(
+                    product.details as Array<{
+                      label: string;
+                      value: string;
+                    }>
+                  ).map((detail, i) => (
+                    <div key={i} className="contents">
+                      <dt className="text-text-muted">{detail.label}</dt>
+                      <dd className="text-text-base">{detail.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
 
           {addOns.length > 0 && (
             <div className="mt-4">

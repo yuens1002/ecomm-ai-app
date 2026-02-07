@@ -43,6 +43,14 @@ const coffeeFieldsSchema = z.object({
   tastingNotes: z.array(z.string().min(1)).default([]),
 });
 
+// Schema for merch product detail key-value pairs
+const merchDetailSchema = z.object({
+  label: z.string().min(1, "Label is required"),
+  value: z.string().min(1, "Value is required"),
+});
+
+export type MerchDetail = z.infer<typeof merchDetailSchema>;
+
 // Merch product schema (base fields only, coffee fields null/empty)
 const merchProductSchema = baseProductSchema.extend({
   productType: z.literal(ProductType.MERCH),
@@ -51,12 +59,14 @@ const merchProductSchema = baseProductSchema.extend({
   variety: z.null().optional(),
   altitude: z.null().optional(),
   tastingNotes: z.array(z.never()).optional().default([]),
+  details: z.array(merchDetailSchema).optional().nullable(),
 });
 
 // Coffee product schema (base + coffee-specific fields)
 const coffeeProductSchema = baseProductSchema
   .extend({
     productType: z.literal(ProductType.COFFEE),
+    details: z.null().optional(),
   })
   .merge(coffeeFieldsSchema);
 
