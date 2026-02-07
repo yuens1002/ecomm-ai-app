@@ -26,6 +26,7 @@ model Product {
   altitude          String?
   variety           String?
   processing        String?
+  details           Json?
   categories        CategoriesOnProducts[]
   images            ProductImage[]
   tags              ProductTag[]

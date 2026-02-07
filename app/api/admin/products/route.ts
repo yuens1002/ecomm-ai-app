@@ -122,6 +122,7 @@ export async function POST(request: Request) {
       );
     }
 
+    const data = validation.data;
     const {
       name,
       slug,
@@ -137,9 +138,11 @@ export async function POST(request: Request) {
       variety,
       altitude,
       tastingNotes,
-    } = validation.data;
+    } = data;
 
     const isCoffee = productType === ProductType.COFFEE;
+    const isMerch = productType === ProductType.MERCH;
+    const rawDetails = isMerch && "details" in data ? data.details : undefined;
 
     // Transaction to create product and categories
     const product = await prisma.$transaction(async (tx) => {
@@ -157,6 +160,7 @@ export async function POST(request: Request) {
           variety: isCoffee ? variety || null : null,
           altitude: isCoffee ? altitude || null : null,
           tastingNotes: isCoffee ? tastingNotes : [],
+          details: rawDetails || undefined,
         },
       });
 

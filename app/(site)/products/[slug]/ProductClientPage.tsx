@@ -434,70 +434,76 @@ export default function ProductClientPage({
             </div>
           )}
 
-          {/* ---- Coffee: details (40%) + purchase controls (60%) at lg+; reversed stack on mobile so CTA stays above fold ---- */}
-          {isCoffee ? (
-            <div className="flex flex-col-reverse lg:flex-row gap-4 lg:gap-8 lg:mt-4">
-              <div className="lg:flex-[2] lg:min-w-0">
-                <CoffeeDetails
-                  roastLevel={product.roastLevel}
-                  variety={product.variety}
-                  altitude={product.altitude}
-                  isOrganic={product.isOrganic}
-                  processing={product.processing}
-                />
-              </div>
+          {/* ---- Details (40%) + purchase controls (60%) at lg+; reversed stack on mobile so CTA stays above fold ---- */}
+          {(() => {
+            const hasMerchDetails =
+              !isCoffee &&
+              Array.isArray(product.details) &&
+              product.details.length > 0;
+            const hasDetails = isCoffee || hasMerchDetails;
 
-              <div ref={inlineButtonRef} className="lg:flex-[3] lg:min-w-0">
-                <ProductSelectionsSection
-                  product={product}
-                  selectedVariant={selectedVariant}
-                  selectedPurchaseOption={selectedPurchaseOption}
-                  selectedSubscriptionOptionId={selectedSubscriptionOptionId}
-                  quantity={quantity}
-                  hasSubscriptionInCart={hasSubscriptionInCart}
-                  oneTimeOption={oneTimeOption}
-                  subscriptionOptions={subscriptionOptions}
-                  subscriptionDisplayOption={subscriptionDisplayOption}
-                  subscriptionDiscountMessage={subscriptionDiscountMessage}
-                  onVariantChange={handleVariantChange}
-                  onPurchaseTypeChange={handlePurchaseTypeChange}
-                  onSubscriptionCadenceChange={handleSubscriptionCadenceChange}
-                  onQuantityChange={setQuantity}
-                  onAddToCart={handleAddToCart}
-                  onActionClick={handleActionClick}
-                  buttonState={buttonState}
-                  isProcessing={isCheckingOut}
-                  spacing="3"
-                />
-              </div>
-            </div>
-          ) : (
-            <div ref={inlineButtonRef}>
-              <ProductSelectionsSection
-                product={product}
-                selectedVariant={selectedVariant}
-                selectedPurchaseOption={selectedPurchaseOption}
-                selectedSubscriptionOptionId={selectedSubscriptionOptionId}
-                quantity={quantity}
-                hasSubscriptionInCart={hasSubscriptionInCart}
-                oneTimeOption={oneTimeOption}
-                subscriptionOptions={subscriptionOptions}
-                subscriptionDisplayOption={subscriptionDisplayOption}
-                subscriptionDiscountMessage={subscriptionDiscountMessage}
-                onVariantChange={handleVariantChange}
-                onPurchaseTypeChange={handlePurchaseTypeChange}
-                onSubscriptionCadenceChange={handleSubscriptionCadenceChange}
-                onQuantityChange={setQuantity}
-                onAddToCart={handleAddToCart}
-                onActionClick={handleActionClick}
-                buttonState={buttonState}
-                isProcessing={isCheckingOut}
-                spacing="3"
-              />
-            </div>
-          )}
+            return (
+              <div className="flex flex-col-reverse lg:flex-row gap-4 lg:gap-8 lg:mt-4">
+                {hasDetails && (
+                  <div className="lg:flex-[2] lg:min-w-0">
+                    {isCoffee ? (
+                      <CoffeeDetails
+                        roastLevel={product.roastLevel}
+                        variety={product.variety}
+                        altitude={product.altitude}
+                        isOrganic={product.isOrganic}
+                        processing={product.processing}
+                      />
+                    ) : (
+                      <dl className="space-y-3">
+                        {(
+                          product.details as Array<{
+                            label: string;
+                            value: string;
+                          }>
+                        ).map((detail, i) => (
+                          <div key={i}>
+                            <dt className="text-xs font-medium uppercase tracking-wide text-foreground/50">
+                              {detail.label}
+                            </dt>
+                            <dd className="text-sm text-text-base">
+                              {detail.value}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    )}
+                  </div>
+                )}
 
-          {/* ---- Story: full-width below ---- */}
+                <div ref={inlineButtonRef} className={`${hasDetails ? "lg:flex-[3]" : ""} lg:min-w-0`}>
+                  <ProductSelectionsSection
+                    product={product}
+                    selectedVariant={selectedVariant}
+                    selectedPurchaseOption={selectedPurchaseOption}
+                    selectedSubscriptionOptionId={selectedSubscriptionOptionId}
+                    quantity={quantity}
+                    hasSubscriptionInCart={hasSubscriptionInCart}
+                    oneTimeOption={oneTimeOption}
+                    subscriptionOptions={subscriptionOptions}
+                    subscriptionDisplayOption={subscriptionDisplayOption}
+                    subscriptionDiscountMessage={subscriptionDiscountMessage}
+                    onVariantChange={handleVariantChange}
+                    onPurchaseTypeChange={handlePurchaseTypeChange}
+                    onSubscriptionCadenceChange={handleSubscriptionCadenceChange}
+                    onQuantityChange={setQuantity}
+                    onAddToCart={handleAddToCart}
+                    onActionClick={handleActionClick}
+                    buttonState={buttonState}
+                    isProcessing={isCheckingOut}
+                    spacing="3"
+                  />
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ---- Story / Description: full-width below ---- */}
           {product.description && (
             <div className="lg:mt-4">
               <h2 className="text-xs font-medium uppercase tracking-wide text-foreground/50 mb-1">

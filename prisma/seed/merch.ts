@@ -1,10 +1,15 @@
-import { PrismaClient, ProductType, RoastLevel } from "@prisma/client";
+import { Prisma, PrismaClient, ProductType } from "@prisma/client";
 
 interface MerchVariant {
   name: string;
   priceInCents: number;
   weight?: number;
   stockQuantity?: number;
+}
+
+interface MerchDetail {
+  label: string;
+  value: string;
 }
 
 interface MerchItem {
@@ -15,6 +20,7 @@ interface MerchItem {
   isFeatured?: boolean;
   featuredOrder?: number;
   variants: MerchVariant[];
+  details?: MerchDetail[];
 }
 const getMerchSeedMode = () => {
   const raw = (process.env.SEED_PRODUCT_MODE ?? "full").toLowerCase();
@@ -38,6 +44,12 @@ const merchItemsFull: MerchItem[] = [
         weight: 400,
         stockQuantity: 120,
       },
+    ],
+    details: [
+      { label: "Material", value: "Ceramic" },
+      { label: "Capacity", value: "12 oz (355 ml)" },
+      { label: "Dishwasher Safe", value: "Yes" },
+      { label: "Microwave Safe", value: "Yes" },
     ],
   },
   {
@@ -81,6 +93,11 @@ const merchItemsFull: MerchItem[] = [
         weight: 270,
         stockQuantity: 70,
       },
+    ],
+    details: [
+      { label: "Material", value: "100% Cotton" },
+      { label: "Fit", value: "Unisex, pre-shrunk" },
+      { label: "Care", value: "Machine wash cold, tumble dry low" },
     ],
   },
   {
@@ -130,6 +147,13 @@ const merchItemsFull: MerchItem[] = [
         weight: 1500,
         stockQuantity: 20,
       },
+    ],
+    details: [
+      { label: "Capacity", value: "0.9 L" },
+      { label: "Temperature Range", value: "135°F – 212°F" },
+      { label: "Material", value: "Stainless Steel" },
+      { label: "Power", value: "1200W" },
+      { label: "Cord Length", value: "2.6 ft" },
     ],
   },
   {
@@ -274,7 +298,10 @@ export async function seedMerch(prisma: PrismaClient) {
         isFeatured: item.isFeatured ?? false,
         featuredOrder: item.featuredOrder,
         type: ProductType.MERCH,
-        roastLevel: RoastLevel.MEDIUM,
+        roastLevel: null,
+        details: item.details
+          ? (item.details as unknown as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
         // Delete existing images so placeholders are used
         images: { deleteMany: {} },
         categories: { deleteMany: {}, create: [primaryCategory] },
@@ -291,16 +318,22 @@ export async function seedMerch(prisma: PrismaClient) {
         isFeatured: item.isFeatured ?? false,
         featuredOrder: item.featuredOrder,
         type: ProductType.MERCH,
-        roastLevel: RoastLevel.MEDIUM,
+        roastLevel: null,
+        details: item.details
+          ? (item.details as unknown as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
         categories: { create: [primaryCategory] },
         variants: { create: variants },
       },
       include: { variants: true },
     });
 
+    const productWithVariants = product as typeof product & {
+      variants: Array<{ id: string; name: string }>;
+    };
     productLookup[item.slug] = {
-      productId: product.id,
-      variants: product.variants.map((variant) => ({
+      productId: productWithVariants.id,
+      variants: productWithVariants.variants.map((variant) => ({
         id: variant.id,
         name: variant.name,
       })),

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ProductType } from "@prisma/client";
+import { Prisma, ProductType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
 import { getWeightUnit } from "@/lib/config/app-settings";
@@ -96,6 +96,7 @@ export async function PUT(
       );
     }
 
+    const data = validation.data;
     const {
       name,
       slug,
@@ -111,9 +112,16 @@ export async function PUT(
       variety,
       altitude,
       tastingNotes,
-    } = validation.data;
+    } = data;
 
     const isCoffee = productType === ProductType.COFFEE;
+    const isMerch = productType === ProductType.MERCH;
+    const rawDetails = isMerch && "details" in data ? data.details : undefined;
+    const details = rawDetails === undefined
+      ? undefined
+      : rawDetails
+        ? rawDetails
+        : Prisma.JsonNull;
 
     // Transaction to update product and categories
     const product = await prisma.$transaction(async (tx) => {
@@ -133,6 +141,7 @@ export async function PUT(
           tastingNotes: isCoffee ? tastingNotes : [],
           variety: isCoffee ? variety || null : null,
           altitude: isCoffee ? altitude || null : null,
+          details: isMerch ? (details ?? undefined) : undefined,
         },
       });
 
