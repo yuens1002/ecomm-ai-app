@@ -141,8 +141,11 @@ export default function ProductFormClient({
 
   // Name/Slug handled via NameSlugField; keep form values in sync
 
-  // Merch details (key-value pairs)
-  const [merchDetails, setMerchDetails] = useState<MerchDetailRow[]>([]);
+  // Merch details (label-description pairs)
+  const [merchDetails, setMerchDetails] = useState<MerchDetailRow[]>(
+    productType === ProductType.MERCH ? [{ label: "", value: "" }] : []
+  );
+  const [merchDetailsError, setMerchDetailsError] = useState(false);
 
   // Image upload handler
   const [existingImages, setExistingImages] = useState<
@@ -186,8 +189,10 @@ export default function ProductFormClient({
             alt: img.altText || "",
           })) || []
         );
-        if (Array.isArray(p.details)) {
+        if (Array.isArray(p.details) && p.details.length > 0) {
           setMerchDetails(p.details as MerchDetailRow[]);
+        } else if ((p.type || productType) === ProductType.MERCH) {
+          setMerchDetails([{ label: "", value: "" }]);
         }
         form.reset({
           name: p.name,
@@ -236,6 +241,25 @@ export default function ProductFormClient({
       : [];
 
   const onSubmit = async (data: ProductFormValues) => {
+    // Validate merch details: block if any row has one field filled but not the other
+    if (data.productType === ProductType.MERCH) {
+      const hasIncomplete = merchDetails.some((row) => {
+        const hasLabel = row.label.trim() !== "";
+        const hasValue = row.value.trim() !== "";
+        return (hasLabel && !hasValue) || (!hasLabel && hasValue);
+      });
+      if (hasIncomplete) {
+        setMerchDetailsError(true);
+        toast({
+          title: "Incomplete details",
+          description: "All details must have both a label and description.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setMerchDetailsError(false);
+    }
+
     try {
       // Upload any pending images first
       const uploadedImages = await uploadAllImages();
@@ -259,8 +283,8 @@ export default function ProductFormClient({
         images: cleanImages,
         origin: isCoffee ? toList(data.origin) : [],
         tastingNotes: isCoffee ? toList(data.tastingNotes) : [],
-        variety: isCoffee ? data.variety : "",
-        altitude: isCoffee ? data.altitude : "",
+        variety: isCoffee ? data.variety : null,
+        altitude: isCoffee ? data.altitude : null,
         roastLevel: isCoffee ? data.roastLevel : null,
         isDisabled: data.isDisabled,
         details: filteredDetails?.length ? filteredDetails : null,
@@ -477,6 +501,7 @@ export default function ProductFormClient({
               show={productType === ProductType.MERCH}
               details={merchDetails}
               onChange={setMerchDetails}
+              hasError={merchDetailsError}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

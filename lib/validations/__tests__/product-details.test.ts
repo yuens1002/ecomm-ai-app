@@ -76,6 +76,22 @@ describe("product details validation", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects merch product with empty-string variety or altitude", () => {
+    const withStringVariety = productCreateSchema.safeParse({
+      ...baseMerch,
+      variety: "",
+      altitude: null,
+    });
+    expect(withStringVariety.success).toBe(false);
+
+    const withStringAltitude = productCreateSchema.safeParse({
+      ...baseMerch,
+      variety: null,
+      altitude: "",
+    });
+    expect(withStringAltitude.success).toBe(false);
+  });
+
   it("accepts coffee product without details field", () => {
     const result = productCreateSchema.safeParse(baseCoffee);
     expect(result.success).toBe(true);
