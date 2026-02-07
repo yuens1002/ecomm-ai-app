@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.85.0 - 2026-02-07
+
+### Added
+
+- **Sale Pricing System**: Admin UI to set/clear sale prices, storefront display with strikethrough original price
+- **Cart Sale Display**: Shopping cart drawer shows original price (strikethrough) next to sale price for discounted items
+- **Merch Product Details**: Key-value details editor in admin for merch products, displayed as definition list on PDP
+- **Add-On Card Redesign**: Horizontal card layout with button state machine (+ Add → Added! → Checkout Now)
+- **Contextual PDP Labels**: Merch products show "Select Option" and "Description" instead of coffee-specific labels
+
+### Changed
+
+- Admin price inputs use InputGroup component for consistent alignment
+- Sale price helper text always rendered to prevent modal height shift
+- Add-on carousel shows 1.5-slide peek with dot indicators
+- Stripe checkout validates effective (sale) price server-side
+
+### Fixed
+
+- Cafe page seed data includes richText block content
+- Signed-in user menu uses CircleUserRound icon
+- Markdown lint pre-commit hook now verifies no errors remain after auto-fix
+
 ## 0.84.0 - 2026-02-06
 
 ### Added
