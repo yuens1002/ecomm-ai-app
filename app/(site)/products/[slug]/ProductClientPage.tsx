@@ -531,13 +531,13 @@ export default function ProductClientPage({
                 {settings.productAddOnsSectionTitle}
               </h2>
 
-              <ScrollCarousel slidesPerView={1} noBorder>
+              <ScrollCarousel slidesPerView={1.5} noBorder>
                 {addOns.map((addOn) => (
                   <AddOnCard
                     key={`${addOn.product.id}-${addOn.variant.id}`}
                     addOn={addOn}
                     weightUnit="g"
-                    buttonText="Add Bundle"
+                    buttonText="+ Add"
                     onAddToCart={() => handleAddOnToCart(addOn)}
                   />
                 ))}
