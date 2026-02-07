@@ -48,7 +48,16 @@ export function ProductPurchaseTypeSelector({
               </span>
             </div>
             <span className="ml-auto font-bold text-text-base text-lg">
-              ${formatPrice(oneTimeOption.priceInCents)}
+              {oneTimeOption.salePriceInCents ? (
+                <span className="flex items-center gap-2">
+                  <span className="line-through text-text-muted font-normal text-sm">
+                    ${formatPrice(oneTimeOption.priceInCents)}
+                  </span>
+                  ${formatPrice(oneTimeOption.salePriceInCents)}
+                </span>
+              ) : (
+                <>${formatPrice(oneTimeOption.priceInCents)}</>
+              )}
             </span>
           </Label>
         )}
@@ -75,7 +84,16 @@ export function ProductPurchaseTypeSelector({
               )}
             </div>
             <span className="ml-auto font-bold text-text-base text-lg">
-              ${formatPrice(subscriptionDisplayOption?.priceInCents || 0)}
+              {subscriptionDisplayOption?.salePriceInCents ? (
+                <span className="flex items-center gap-2">
+                  <span className="line-through text-text-muted font-normal text-sm">
+                    ${formatPrice(subscriptionDisplayOption.priceInCents)}
+                  </span>
+                  ${formatPrice(subscriptionDisplayOption.salePriceInCents)}
+                </span>
+              ) : (
+                <>${formatPrice(subscriptionDisplayOption?.priceInCents || 0)}</>
+              )}
             </span>
           </Label>
         )}

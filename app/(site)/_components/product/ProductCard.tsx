@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { ProductType } from "@prisma/client";
 import { ProductCardProps } from "@/lib/types";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
+import { formatPrice } from "@/lib/utils";
 import { useAddToCartWithFeedback } from "@/hooks/useAddToCartWithFeedback";
 import { AddToCartButton } from "./AddToCartButton";
 
@@ -43,8 +44,12 @@ export default function ProductCard({
   const oneTimePrice = displayVariant?.purchaseOptions.find(
     (p) => p.type === "ONE_TIME"
   );
-  const displayPrice = oneTimePrice
-    ? (oneTimePrice.priceInCents / 100).toFixed(2)
+  const effectivePrice = oneTimePrice
+    ? (oneTimePrice.salePriceInCents ?? oneTimePrice.priceInCents)
+    : null;
+  const hasSalePrice = oneTimePrice?.salePriceInCents != null;
+  const displayPrice = effectivePrice
+    ? (effectivePrice / 100).toFixed(2)
     : "N/A";
 
   // Use product name as seed for consistent placeholder image selection
@@ -71,7 +76,7 @@ export default function ProductCard({
         variantName: displayVariant.name,
         purchaseOptionId: oneTimePrice.id,
         purchaseType: "ONE_TIME",
-        priceInCents: oneTimePrice.priceInCents,
+        priceInCents: oneTimePrice.salePriceInCents ?? oneTimePrice.priceInCents,
         imageUrl: displayImage,
       });
     }
@@ -133,9 +138,20 @@ export default function ProductCard({
               />
               {!hidePrice && (
                 <div className={hidePriceOnMobile ? "hidden md:block" : ""}>
-                  <p className="text-lg font-bold text-primary">
-                    ${displayPrice}
-                  </p>
+                  {hasSalePrice && oneTimePrice ? (
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-text-muted line-through">
+                        ${formatPrice(oneTimePrice.priceInCents)}
+                      </p>
+                      <p className="text-lg font-bold text-primary">
+                        ${displayPrice}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-lg font-bold text-primary">
+                      ${displayPrice}
+                    </p>
+                  )}
                 </div>
               )}
             </CardFooter>

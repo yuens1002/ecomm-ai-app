@@ -373,7 +373,7 @@ export async function seedProducts(prisma: PrismaClient) {
               stockQuantity: 180,
               purchaseOptions: {
                 create: [
-                  { type: "ONE_TIME" as const, priceInCents: 1950 },
+                  { type: "ONE_TIME" as const, priceInCents: 1950, salePriceInCents: 1750 },
                   {
                     type: "SUBSCRIPTION" as const,
                     priceInCents: 1850,
@@ -435,7 +435,7 @@ export async function seedProducts(prisma: PrismaClient) {
               weight: 340,
               stockQuantity: 130,
               purchaseOptions: {
-                create: [{ type: "ONE_TIME" as const, priceInCents: 2100 }],
+                create: [{ type: "ONE_TIME" as const, priceInCents: 2100, salePriceInCents: 1800 }],
               },
             },
             {
@@ -775,7 +775,7 @@ export async function seedProducts(prisma: PrismaClient) {
               stockQuantity: 110,
               purchaseOptions: {
                 create: [
-                  { type: "ONE_TIME" as const, priceInCents: 2450 },
+                  { type: "ONE_TIME" as const, priceInCents: 2450, salePriceInCents: 2200 },
                   {
                     type: "SUBSCRIPTION" as const,
                     priceInCents: 2330,

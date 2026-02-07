@@ -107,7 +107,7 @@ export function ProductSelectionsSection({
                 quantity={quantity}
                 stockQuantity={selectedVariant.stockQuantity}
                 hasSelectedPurchaseOption={!!selectedPurchaseOption}
-                priceInCents={selectedPurchaseOption?.priceInCents}
+                priceInCents={selectedPurchaseOption?.salePriceInCents ?? selectedPurchaseOption?.priceInCents}
                 onQuantityChange={onQuantityChange}
                 onAddToCart={onAddToCart}
                 onActionClick={onActionClick}
@@ -124,7 +124,7 @@ export function ProductSelectionsSection({
             quantity={quantity}
             stockQuantity={selectedVariant.stockQuantity}
             hasSelectedPurchaseOption={!!selectedPurchaseOption}
-            priceInCents={selectedPurchaseOption?.priceInCents}
+            priceInCents={selectedPurchaseOption?.salePriceInCents ?? selectedPurchaseOption?.priceInCents}
             onQuantityChange={onQuantityChange}
             onAddToCart={onAddToCart}
             onActionClick={onActionClick}
