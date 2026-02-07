@@ -2,7 +2,7 @@
 
 import { signOut } from "next-auth/react";
 import Image from "next/image";
-import { User } from "lucide-react";
+import { CircleUserRound } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +40,7 @@ export function UserMenu({ user }: UserMenuProps) {
               className="w-8 h-8 rounded-full"
             />
           ) : (
-            <User className="w-6 h-6" />
+            <CircleUserRound className="w-6 h-6" />
           )}
         </Button>
       </DropdownMenuTrigger>
