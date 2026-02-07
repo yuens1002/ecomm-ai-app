@@ -517,7 +517,7 @@ export default function ProductClientPage({
           {product.description && (
             <div className="lg:mt-4">
               <h2 className="text-xs font-medium uppercase tracking-wide text-foreground/50 mb-1">
-                The Story
+                {isCoffee ? "The Story" : "Description"}
               </h2>
               <p className="text-sm text-text-base leading-relaxed">
                 {product.description}

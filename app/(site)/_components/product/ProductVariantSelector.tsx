@@ -7,6 +7,7 @@ interface ProductVariantSelectorProps {
   variants: ProductVariant[];
   selectedVariantId: string;
   onVariantChange: (variantId: string) => void;
+  productType?: string;
   spacing?: "2" | "3" | "4";
 }
 
@@ -14,11 +15,13 @@ export function ProductVariantSelector({
   variants,
   selectedVariantId,
   onVariantChange,
+  productType,
   spacing = "3",
 }: ProductVariantSelectorProps) {
+  const label = productType === "COFFEE" ? "Select Size" : "Select Option";
   return (
     <div className={cn("flex flex-col", `space-y-${spacing}`)}>
-      <Label className="text-sm font-semibold">Select Size</Label>
+      <Label className="text-sm font-semibold">{label}</Label>
       <div className={cn("flex flex-wrap", `gap-${spacing}`)}>
         {variants.map((variant) => (
           <ProdVarBtn

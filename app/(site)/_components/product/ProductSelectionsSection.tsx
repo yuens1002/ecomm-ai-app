@@ -69,6 +69,7 @@ export function ProductSelectionsSection({
         variants={product.variants}
         selectedVariantId={selectedVariant.id}
         onVariantChange={onVariantChange}
+        productType={product.type}
         spacing={spacing}
       />
 
