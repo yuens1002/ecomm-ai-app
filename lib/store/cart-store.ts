@@ -170,7 +170,6 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "artisan-roast-cart", // localStorage key
-      version: 1,
     }
   )
 );
