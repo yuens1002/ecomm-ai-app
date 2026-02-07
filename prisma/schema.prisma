@@ -141,6 +141,7 @@ model PurchaseOption {
   id                   String           @id @default(cuid())
   type                 PurchaseType     @default(ONE_TIME)
   priceInCents         Int
+  salePriceInCents     Int?
   variantId            String
   billingInterval      BillingInterval?
   billingIntervalCount Int?

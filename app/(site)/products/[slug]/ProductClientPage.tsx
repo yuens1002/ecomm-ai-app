@@ -110,11 +110,13 @@ const getDiscountMessage = (
   const oneTimeOption = getOneTimeOption(variant);
   if (!oneTimeOption) return null;
 
-  const savings = oneTimeOption.priceInCents - subscriptionOption.priceInCents;
+  const oneTimeEffective = oneTimeOption.salePriceInCents ?? oneTimeOption.priceInCents;
+  const subEffective = subscriptionOption.salePriceInCents ?? subscriptionOption.priceInCents;
+  const savings = oneTimeEffective - subEffective;
   if (savings <= 0) return null;
 
   const discountPercent = Math.round(
-    (savings / oneTimeOption.priceInCents) * 100
+    (savings / oneTimeEffective) * 100
   );
   if (discountPercent <= 0) return null;
 
@@ -280,7 +282,10 @@ export default function ProductClientPage({
         variantName: selectedVariant.name,
         purchaseOptionId: selectedPurchaseOption.id,
         purchaseType: selectedPurchaseOption.type,
-        priceInCents: selectedPurchaseOption.priceInCents,
+        priceInCents: selectedPurchaseOption.salePriceInCents ?? selectedPurchaseOption.priceInCents,
+        originalPriceInCents: selectedPurchaseOption.salePriceInCents
+          ? selectedPurchaseOption.priceInCents
+          : undefined,
         imageUrl: displayImage,
         billingInterval: selectedPurchaseOption.billingInterval || undefined,
         billingIntervalCount:
@@ -313,7 +318,10 @@ export default function ProductClientPage({
       categorySlug: category.slug,
       purchaseOptionId: selectedPurchaseOption.id,
       purchaseType: selectedPurchaseOption.type as PurchaseType,
-      priceInCents: selectedPurchaseOption.priceInCents,
+      priceInCents: selectedPurchaseOption.salePriceInCents ?? selectedPurchaseOption.priceInCents,
+      originalPriceInCents: selectedPurchaseOption.salePriceInCents
+        ? selectedPurchaseOption.priceInCents
+        : undefined,
       imageUrl: displayImage,
       quantity,
     });

@@ -3,6 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -34,6 +39,7 @@ interface PurchaseOption {
   id: string;
   type: "ONE_TIME" | "SUBSCRIPTION";
   priceInCents: number;
+  salePriceInCents: number | null;
   billingInterval: "DAY" | "WEEK" | "MONTH" | "YEAR" | null;
   billingIntervalCount: number | null;
 }
@@ -86,12 +92,14 @@ export default function ProductVariantsClient({
 
   // Option Dialog State
   const [isOptionDialogOpen, setIsOptionDialogOpen] = useState(false);
+  const [editingOptionId, setEditingOptionId] = useState<string | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     null
   );
   const [optionForm, setOptionForm] = useState({
     type: "ONE_TIME",
     priceInCents: "",
+    salePriceInCents: "",
     billingInterval: "MONTH",
     billingIntervalCount: "1",
   });
@@ -234,14 +242,27 @@ export default function ProductVariantsClient({
 
   // --- Option Handlers ---
 
-  const openOptionDialog = (variantId: string) => {
+  const openOptionDialog = (variantId: string, option?: PurchaseOption) => {
     setSelectedVariantId(variantId);
-    setOptionForm({
-      type: "ONE_TIME",
-      priceInCents: "",
-      billingInterval: "MONTH",
-      billingIntervalCount: "1",
-    });
+    if (option) {
+      setEditingOptionId(option.id);
+      setOptionForm({
+        type: option.type,
+        priceInCents: option.priceInCents.toString(),
+        salePriceInCents: option.salePriceInCents?.toString() ?? "",
+        billingInterval: option.billingInterval ?? "MONTH",
+        billingIntervalCount: (option.billingIntervalCount ?? 1).toString(),
+      });
+    } else {
+      setEditingOptionId(null);
+      setOptionForm({
+        type: "ONE_TIME",
+        priceInCents: "",
+        salePriceInCents: "",
+        billingInterval: "MONTH",
+        billingIntervalCount: "1",
+      });
+    }
     setIsOptionDialogOpen(true);
   };
 
@@ -249,25 +270,37 @@ export default function ProductVariantsClient({
     e.preventDefault();
     if (!selectedVariantId) return;
 
+    const payload = {
+      ...optionForm,
+      salePriceInCents: optionForm.salePriceInCents
+        ? optionForm.salePriceInCents
+        : null,
+    };
+
     try {
-      const res = await fetch(
-        `/api/admin/variants/${selectedVariantId}/options`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(optionForm),
-        }
-      );
+      const url = editingOptionId
+        ? `/api/admin/options/${editingOptionId}`
+        : `/api/admin/variants/${selectedVariantId}/options`;
+      const method = editingOptionId ? "PUT" : "POST";
 
-      if (!res.ok) throw new Error("Failed to add option");
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-      toast({ title: "Success", description: "Purchase option added" });
+      if (!res.ok) throw new Error("Failed to save option");
+
+      toast({
+        title: "Success",
+        description: `Purchase option ${editingOptionId ? "updated" : "added"}`,
+      });
       setIsOptionDialogOpen(false);
       fetchVariants();
     } catch {
       toast({
         title: "Error",
-        description: "Failed to add option",
+        description: "Failed to save option",
         variant: "destructive",
       });
     }
@@ -401,7 +434,18 @@ export default function ProductVariantsClient({
                             )}
                           </TableCell>
                           <TableCell className="py-2 text-sm font-medium">
-                            {formatPrice(option.priceInCents)}
+                            {option.salePriceInCents ? (
+                              <span className="flex items-center gap-2">
+                                <span className="line-through text-muted-foreground font-normal">
+                                  {formatPrice(option.priceInCents)}
+                                </span>
+                                <span className="text-red-600">
+                                  {formatPrice(option.salePriceInCents)}
+                                </span>
+                              </span>
+                            ) : (
+                              formatPrice(option.priceInCents)
+                            )}
                           </TableCell>
                           <TableCell className="py-2 text-xs text-muted-foreground">
                             {option.type === "SUBSCRIPTION"
@@ -409,6 +453,17 @@ export default function ProductVariantsClient({
                               : "-"}
                           </TableCell>
                           <TableCell className="py-2 text-right">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() =>
+                                openOptionDialog(variant.id, option)
+                              }
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
                             <Button
                               type="button"
                               variant="ghost"
@@ -498,7 +553,9 @@ export default function ProductVariantsClient({
       <Dialog open={isOptionDialogOpen} onOpenChange={setIsOptionDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Purchase Option</DialogTitle>
+            <DialogTitle>
+              {editingOptionId ? "Edit Purchase Option" : "Add Purchase Option"}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleOptionSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -521,13 +578,10 @@ export default function ProductVariantsClient({
 
             <div className="space-y-2">
               <Label>Price (Cents)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-muted-foreground">
-                  $
-                </span>
-                <Input
+              <InputGroup>
+                <InputGroupAddon align="inline-start">$</InputGroupAddon>
+                <InputGroupInput
                   type="number"
-                  className="pl-7"
                   value={
                     optionForm.priceInCents
                       ? (parseInt(optionForm.priceInCents) / 100).toString()
@@ -544,9 +598,40 @@ export default function ProductVariantsClient({
                   placeholder="0.00"
                   required
                 />
-              </div>
+              </InputGroup>
               <p className="text-xs text-muted-foreground">
                 Stored as cents: {optionForm.priceInCents || 0}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Sale Price (optional)</Label>
+              <InputGroup>
+                <InputGroupAddon align="inline-start">$</InputGroupAddon>
+                <InputGroupInput
+                  type="number"
+                  value={
+                    optionForm.salePriceInCents
+                      ? (
+                          parseInt(optionForm.salePriceInCents) / 100
+                        ).toString()
+                      : ""
+                  }
+                  onChange={(e) =>
+                    setOptionForm({
+                      ...optionForm,
+                      salePriceInCents: e.target.value
+                        ? (parseFloat(e.target.value) * 100).toString()
+                        : "",
+                    })
+                  }
+                  placeholder="Leave empty for no sale"
+                />
+              </InputGroup>
+              <p className="text-xs text-muted-foreground">
+                {optionForm.salePriceInCents
+                  ? `Sale price in cents: ${optionForm.salePriceInCents}`
+                  : "\u00A0"}
               </p>
             </div>
 
@@ -590,7 +675,9 @@ export default function ProductVariantsClient({
             )}
 
             <DialogFooter>
-              <Button type="submit">Add Option</Button>
+              <Button type="submit">
+                {editingOptionId ? "Save Option" : "Add Option"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

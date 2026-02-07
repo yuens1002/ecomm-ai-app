@@ -14,13 +14,14 @@ export async function POST(
 
     const { variantId } = await params;
     const body = await request.json();
-    const { type, priceInCents, billingInterval, billingIntervalCount } = body;
+    const { type, priceInCents, salePriceInCents, billingInterval, billingIntervalCount } = body;
 
     const option = await prisma.purchaseOption.create({
       data: {
         variantId,
         type,
         priceInCents: parseInt(priceInCents),
+        salePriceInCents: salePriceInCents ? parseInt(salePriceInCents) : null,
         billingInterval: billingInterval || null,
         billingIntervalCount: billingIntervalCount
           ? parseInt(billingIntervalCount)

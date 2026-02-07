@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
           throw new Error(`Invalid purchase option: ${item.purchaseOptionId}`);
         }
 
-        const actualPriceInCents = dbOption.priceInCents;
+        const actualPriceInCents = dbOption.salePriceInCents ?? dbOption.priceInCents;
         const productName = dbOption.variant.product.name;
         const variantName = dbOption.variant.name;
         const imageUrl = dbOption.variant.product.images[0]?.url;

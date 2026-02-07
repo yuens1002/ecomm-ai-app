@@ -429,8 +429,15 @@ export function ShoppingCart() {
                           />
                         </ButtonGroup>
                       )}
-                      <span className="font-semibold text-text-base">
-                        {formatPrice(item.priceInCents)}
+                      <span className="text-right">
+                        {item.originalPriceInCents && (
+                          <span className="text-sm text-muted-foreground line-through mr-1.5">
+                            {formatPrice(item.originalPriceInCents)}
+                          </span>
+                        )}
+                        <span className="font-semibold text-text-base">
+                          {formatPrice(item.priceInCents)}
+                        </span>
                       </span>
                     </div>
                   </div>
