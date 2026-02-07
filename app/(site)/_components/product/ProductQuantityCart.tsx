@@ -10,6 +10,7 @@ interface ProductQuantityCartProps {
   stockQuantity: number;
   hasSelectedPurchaseOption: boolean;
   priceInCents?: number | null;
+  originalPriceInCents?: number;
   onQuantityChange: (quantity: number) => void;
   onAddToCart: () => void;
   onActionClick?: () => void;
@@ -23,6 +24,7 @@ export function ProductQuantityCart({
   stockQuantity,
   hasSelectedPurchaseOption,
   priceInCents,
+  originalPriceInCents,
   onQuantityChange,
   onAddToCart,
   onActionClick,
@@ -88,6 +90,7 @@ export function ProductQuantityCart({
             size="lg"
             className="h-14 w-full text-lg"
             priceInCents={priceInCents}
+            originalPriceInCents={originalPriceInCents}
           />
         )}
       </div>

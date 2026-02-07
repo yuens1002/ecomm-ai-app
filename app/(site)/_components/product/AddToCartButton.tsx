@@ -20,6 +20,8 @@ interface AddToCartButtonProps {
   isProcessing?: boolean;
   /** Optional price to display inside button (only shown in idle state) */
   priceInCents?: number | null;
+  /** Original price before sale — shown with strikethrough when present */
+  originalPriceInCents?: number;
 }
 
 const stateConfig: Record<
@@ -66,6 +68,7 @@ export function AddToCartButton({
   size = "default",
   isProcessing = false,
   priceInCents,
+  originalPriceInCents,
 }: AddToCartButtonProps) {
   const config = stateConfig[buttonState];
   const Icon = config.Icon;
@@ -115,8 +118,15 @@ export function AddToCartButton({
           <span className="flex-1 flex justify-center">
             <span className="h-5 w-px bg-primary-foreground/30" />
           </span>
-          <span className="font-semibold shrink-0">
-            ${formatPrice(priceInCents)}
+          <span className="shrink-0 flex items-center gap-1.5">
+            {originalPriceInCents && (
+              <span className="line-through text-primary-foreground/60 font-normal text-sm">
+                ${formatPrice(originalPriceInCents)}
+              </span>
+            )}
+            <span className="font-semibold">
+              ${formatPrice(priceInCents)}
+            </span>
           </span>
         </>
       )}

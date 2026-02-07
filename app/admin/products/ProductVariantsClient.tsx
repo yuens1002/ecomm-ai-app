@@ -3,6 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -573,13 +578,10 @@ export default function ProductVariantsClient({
 
             <div className="space-y-2">
               <Label>Price (Cents)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-muted-foreground">
-                  $
-                </span>
-                <Input
+              <InputGroup>
+                <InputGroupAddon align="inline-start">$</InputGroupAddon>
+                <InputGroupInput
                   type="number"
-                  className="pl-7"
                   value={
                     optionForm.priceInCents
                       ? (parseInt(optionForm.priceInCents) / 100).toString()
@@ -596,7 +598,7 @@ export default function ProductVariantsClient({
                   placeholder="0.00"
                   required
                 />
-              </div>
+              </InputGroup>
               <p className="text-xs text-muted-foreground">
                 Stored as cents: {optionForm.priceInCents || 0}
               </p>
@@ -604,13 +606,10 @@ export default function ProductVariantsClient({
 
             <div className="space-y-2">
               <Label>Sale Price (optional)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-muted-foreground">
-                  $
-                </span>
-                <Input
+              <InputGroup>
+                <InputGroupAddon align="inline-start">$</InputGroupAddon>
+                <InputGroupInput
                   type="number"
-                  className="pl-7"
                   value={
                     optionForm.salePriceInCents
                       ? (
@@ -628,12 +627,12 @@ export default function ProductVariantsClient({
                   }
                   placeholder="Leave empty for no sale"
                 />
-              </div>
-              {optionForm.salePriceInCents && (
-                <p className="text-xs text-muted-foreground">
-                  Sale price in cents: {optionForm.salePriceInCents}
-                </p>
-              )}
+              </InputGroup>
+              <p className="text-xs text-muted-foreground">
+                {optionForm.salePriceInCents
+                  ? `Sale price in cents: ${optionForm.salePriceInCents}`
+                  : "\u00A0"}
+              </p>
             </div>
 
             {optionForm.type === "SUBSCRIPTION" && (

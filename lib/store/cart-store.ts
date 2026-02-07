@@ -12,6 +12,7 @@ export interface CartItem {
   purchaseOptionId: string;
   purchaseType: "ONE_TIME" | "SUBSCRIPTION";
   priceInCents: number;
+  originalPriceInCents?: number; // Original price before sale (for strikethrough display)
   quantity: number;
   imageUrl?: string;
   billingInterval?: string; // e.g., "WEEK", "MONTH"
@@ -169,7 +170,6 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "artisan-roast-cart", // localStorage key
-      // Optional: add version for migration if cart structure changes
       version: 1,
     }
   )

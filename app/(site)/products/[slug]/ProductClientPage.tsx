@@ -283,6 +283,9 @@ export default function ProductClientPage({
         purchaseOptionId: selectedPurchaseOption.id,
         purchaseType: selectedPurchaseOption.type,
         priceInCents: selectedPurchaseOption.salePriceInCents ?? selectedPurchaseOption.priceInCents,
+        originalPriceInCents: selectedPurchaseOption.salePriceInCents
+          ? selectedPurchaseOption.priceInCents
+          : undefined,
         imageUrl: displayImage,
         billingInterval: selectedPurchaseOption.billingInterval || undefined,
         billingIntervalCount:
@@ -316,6 +319,9 @@ export default function ProductClientPage({
       purchaseOptionId: selectedPurchaseOption.id,
       purchaseType: selectedPurchaseOption.type as PurchaseType,
       priceInCents: selectedPurchaseOption.salePriceInCents ?? selectedPurchaseOption.priceInCents,
+      originalPriceInCents: selectedPurchaseOption.salePriceInCents
+        ? selectedPurchaseOption.priceInCents
+        : undefined,
       imageUrl: displayImage,
       quantity,
     });
