@@ -121,6 +121,7 @@ export async function seedCafePage(
     where: { slug: "cafe" },
     update: {
       title: cafeTitle,
+      content: "",
       metaDescription:
         "Visit our café for freshly roasted specialty coffee. Find our location, hours, and what to expect.",
       showInFooter: true,
