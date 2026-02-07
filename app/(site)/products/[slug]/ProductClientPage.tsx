@@ -320,23 +320,7 @@ export default function ProductClientPage({
 
     trackActivity({ activityType: "ADD_TO_CART", productId: product.id });
 
-    addItem({
-      productId: addOn.product.id,
-      productName: addOn.product.name,
-      productSlug: addOn.product.slug,
-      variantId: addOn.variant.id,
-      variantName: addOn.variant.name,
-      categorySlug: addOn.categorySlug || "shop",
-      purchaseOptionId: addOn.variant.purchaseOptions[0].id,
-      purchaseType: "ONE_TIME",
-      priceInCents: addOn.discountedPriceInCents,
-      // Add-ons are merch products, use "culture" for coffee lifestyle images
-      imageUrl:
-        addOn.imageUrl ||
-        getPlaceholderImage(addOn.product.name, 400, "culture"),
-      quantity: 1,
-    });
-
+    // Add-on item is added by AddOnCard's useAddToCartWithFeedback hook
     trackActivity({ activityType: "ADD_TO_CART", productId: addOn.product.id });
   };
 

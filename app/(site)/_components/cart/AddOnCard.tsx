@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
-import { Check } from "lucide-react";
+import { Check, Zap, ShoppingCart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
-import { useCartStore } from "@/lib/store/cart-store";
-
-type CardButtonState = "idle" | "added" | "checkout";
+import {
+  useAddToCartWithFeedback,
+  type ButtonState,
+  type CartItemInput,
+} from "@/hooks/useAddToCartWithFeedback";
 
 interface AddOnCardProps {
   addOn: {
@@ -39,8 +40,28 @@ interface AddOnCardProps {
   onAddToCart: (addOn: AddOnCardProps["addOn"]) => void;
 }
 
-const ADDED_DURATION = 1200;
-const CHECKOUT_REVERT_DURATION = 8000;
+const btnConfig: Record<
+  ButtonState,
+  { text: string; Icon: typeof ShoppingCart; className: string }
+> = {
+  idle: { text: "+ Add", Icon: ShoppingCart, className: "" },
+  adding: { text: "Adding...", Icon: Loader2, className: "" },
+  added: {
+    text: "Added!",
+    Icon: Check,
+    className: "bg-green-600 hover:bg-green-600 text-white",
+  },
+  "buy-now": {
+    text: "Buy Now",
+    Icon: Zap,
+    className: "bg-amber-500 hover:bg-amber-600 text-white animate-pulse",
+  },
+  "checkout-now": {
+    text: "View Cart",
+    Icon: ShoppingCart,
+    className: "bg-amber-500 hover:bg-amber-600 text-white",
+  },
+};
 
 export function AddOnCard({
   addOn,
@@ -48,42 +69,39 @@ export function AddOnCard({
   onAddToCart,
 }: AddOnCardProps) {
   const { product, variant, discountedPriceInCents } = addOn;
-  const setCartOpen = useCartStore((state) => state.setCartOpen);
 
-  const [cardState, setCardState] = useState<CardButtonState>("idle");
-  const addedTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const revertTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const { buttonState, handleAddToCart, handleActionClick } =
+    useAddToCartWithFeedback();
 
-  const clearTimers = useCallback(() => {
-    if (addedTimerRef.current) {
-      clearTimeout(addedTimerRef.current);
-      addedTimerRef.current = null;
-    }
-    if (revertTimerRef.current) {
-      clearTimeout(revertTimerRef.current);
-      revertTimerRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => clearTimers, [clearTimers]);
+  const isActionState =
+    buttonState === "buy-now" || buttonState === "checkout-now";
 
   const handleClick = () => {
-    if (cardState === "idle") {
+    if (isActionState) {
+      handleActionClick();
+    } else if (buttonState === "idle") {
+      // Call parent handler (which adds to cart with proper item shape)
       onAddToCart(addOn);
-      clearTimers();
-      setCardState("added");
 
-      addedTimerRef.current = setTimeout(() => {
-        setCardState("checkout");
-
-        revertTimerRef.current = setTimeout(() => {
-          setCardState("idle");
-        }, CHECKOUT_REVERT_DURATION);
-      }, ADDED_DURATION);
-    } else if (cardState === "checkout") {
-      clearTimers();
-      setCartOpen(true);
-      setCardState("idle");
+      // Also drive the hook's state machine with a cart item
+      const purchaseOption = variant.purchaseOptions[0];
+      if (purchaseOption) {
+        const cartItem: CartItemInput = {
+          productId: product.id,
+          productName: product.name,
+          productSlug: product.slug,
+          categorySlug: addOn.categorySlug || "",
+          variantId: variant.id,
+          variantName: variant.name,
+          purchaseOptionId: purchaseOption.id,
+          purchaseType: purchaseOption.type as "ONE_TIME" | "SUBSCRIPTION",
+          priceInCents: discountedPriceInCents || purchaseOption.priceInCents,
+          imageUrl:
+            addOn.imageUrl ||
+            getPlaceholderImage(product.name, 400, "culture"),
+        };
+        handleAddToCart(cartItem);
+      }
     }
   };
 
@@ -94,6 +112,10 @@ export function AddOnCard({
 
   const imageUrl =
     addOn.imageUrl || getPlaceholderImage(addOn.product.name, 400, "culture");
+
+  const config = btnConfig[buttonState];
+  const displayText = buttonState === "idle" ? buttonText : config.text;
+  const { Icon } = config;
 
   return (
     <div className="flex flex-row gap-4 w-full">
@@ -118,22 +140,13 @@ export function AddOnCard({
           <Button
             onClick={handleClick}
             size="sm"
-            variant={cardState === "added" ? "default" : "default"}
-            className={
-              cardState === "added"
-                ? "bg-green-600 hover:bg-green-600 text-white whitespace-nowrap"
-                : "whitespace-nowrap"
-            }
-            disabled={cardState === "added"}
+            className={`whitespace-nowrap ${config.className}`}
+            disabled={buttonState === "added" || buttonState === "adding"}
           >
-            {cardState === "idle" && buttonText}
-            {cardState === "added" && (
-              <>
-                <Check className="w-4 h-4 mr-1" />
-                Added!
-              </>
-            )}
-            {cardState === "checkout" && "Checkout Now"}
+            <Icon
+              className={`w-4 h-4 mr-1 ${buttonState === "adding" ? "animate-spin" : ""}`}
+            />
+            {displayText}
           </Button>
 
           <div className="flex items-center gap-2 shrink-0">
