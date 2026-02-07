@@ -57,7 +57,6 @@ export function CartAddOnsSuggestions({
 }: CartAddOnsSuggestionsProps) {
   const { settings } = useSiteSettings();
   const cartItems = useCartStore((state) => state.items);
-  const addItem = useCartStore((state) => state.addItem);
   const [addOns, setAddOns] = useState<AddOnItem[]>([]);
   const [_isLoading, setIsLoading] = useState(false);
 
@@ -146,26 +145,8 @@ export function CartAddOnsSuggestions({
     return null;
   }
 
-  const handleAddToCart = (addOn: AddOnItem) => {
-    const purchaseOption = addOn.variant.purchaseOptions.find(
-      (opt) => opt.type === "ONE_TIME"
-    );
-    if (!purchaseOption) return;
-
-    addItem({
-      productId: addOn.product.id,
-      productName: addOn.product.name,
-      productSlug: addOn.product.slug,
-      variantId: addOn.variant.id,
-      variantName: addOn.variant.name,
-      categorySlug: addOn.categorySlug,
-      purchaseType: "ONE_TIME",
-      purchaseOptionId: purchaseOption.id,
-      priceInCents: purchaseOption.priceInCents,
-      imageUrl: addOn.imageUrl,
-      quantity: 1,
-    });
-  };
+  // Add-on item is added by AddOnCard's useAddToCartWithFeedback hook
+  const handleAddToCart = () => {};
 
   return (
     <>
@@ -175,7 +156,7 @@ export function CartAddOnsSuggestions({
           {settings.cartAddOnsSectionTitle || "You May Also Like"}
         </h3>
 
-        <ScrollCarousel slidesPerView={1} noBorder={true}>
+        <ScrollCarousel slidesPerView={1.5} noBorder={true}>
           {addOns.map((addOn) => (
             <AddOnCard
               key={`${addOn.product.id}-${addOn.variant.id}`}
