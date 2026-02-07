@@ -266,6 +266,30 @@ export async function seedCafePage(
     },
   });
 
+  await prisma.block.create({
+    data: {
+      pageId: cafePage.id,
+      type: "richText",
+      order: 1,
+      isDeleted: false,
+      content: {
+        html: `
+          <h2>What to Expect</h2>
+          <p>All of our locations feature freshly roasted beans from our local roastery, expert baristas, and a welcoming atmosphere. Whether you're grabbing a quick espresso or settling in for the afternoon, we're here to fuel your day with exceptional coffee.</p>
+
+          <h2>Ordering &amp; Amenities</h2>
+          <ul>
+            <li>Order at the counter or use our mobile app for pickup</li>
+            <li>Free WiFi at all locations</li>
+            <li>Oat, almond, and whole milk alternatives available</li>
+            <li>Loyalty rewards program – earn free drinks</li>
+            <li>Private event space available (Downtown location only)</li>
+          </ul>
+        `,
+      },
+    },
+  });
+
   const locations = [
     {
       name: "Market Street",
@@ -357,7 +381,7 @@ export async function seedCafePage(
       data: {
         pageId: cafePage.id,
         type: "location",
-        order: i + 1,
+        order: i + 2,
         isDeleted: false,
         content: {
           name: location.name,
