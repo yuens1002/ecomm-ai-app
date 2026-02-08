@@ -1,5 +1,10 @@
+import { redirect } from "next/navigation";
+import { ProductType } from "@prisma/client";
 import { requireAdmin } from "@/lib/admin";
-import ProductFormClient from "../product-form-client/ProductFormClient";
+import { listCategoriesAndLabels } from "@/app/admin/product-menu/data/categories";
+import { getProduct } from "../actions/products";
+import { CoffeeProductForm } from "../_components/CoffeeProductForm";
+import { MerchProductForm } from "../_components/MerchProductForm";
 
 export default async function ProductEditPage({
   params,
@@ -9,9 +14,33 @@ export default async function ProductEditPage({
   await requireAdmin();
   const { id } = await params;
 
+  const [productResult, { categories }] = await Promise.all([
+    getProduct(id),
+    listCategoriesAndLabels("name-asc"),
+  ]);
+
+  if (!productResult.ok) {
+    redirect("/admin/products");
+  }
+
+  const product = productResult.data as Record<string, unknown>;
+  const productType = product.type as ProductType;
+
+  if (productType === ProductType.MERCH) {
+    return (
+      <MerchProductForm
+        productId={id}
+        initialData={product as never}
+        categories={categories}
+      />
+    );
+  }
+
   return (
-    <div className="container mx-auto py-10">
-      <ProductFormClient productId={id} />
-    </div>
+    <CoffeeProductForm
+      productId={id}
+      initialData={product as never}
+      categories={categories}
+    />
   );
 }
