@@ -66,8 +66,10 @@ next-env.d.ts
 # Uploaded images (keep folder structure, ignore contents)
 /public/images/*
 !/public/images/.gitkeep
-# Claude Code - ignore local settings, allow shared skills
+# Claude Code - ignore local settings, allow shared config
 .claude/*
+!.claude/settings.json
+!.claude/hooks/
 !.claude/skills/
 nul
 .screenshots
