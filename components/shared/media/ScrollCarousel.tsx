@@ -17,6 +17,8 @@ interface ScrollCarouselProps {
   autoplay?: boolean;
   autoplayDelay?: number;
   wheelGestures?: boolean;
+  /** When provided, overrides inline slide sizing with responsive Tailwind classes */
+  slideClassName?: string;
 }
 
 export function ScrollCarousel({
@@ -29,8 +31,10 @@ export function ScrollCarousel({
   autoplay = false,
   autoplayDelay = 4000,
   wheelGestures = true,
+  slideClassName,
 }: ScrollCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   const [emblaRef, emblaApi] = useEmblaCarousel(
     {
@@ -62,6 +66,15 @@ export function ScrollCarousel({
     };
   }, [emblaApi, onSelect]);
 
+  // Reinit Embla when container resizes (responsive CSS variable slide widths)
+  const hasResponsiveSlides = !!slideClassName || (!!minWidth && minWidth.includes("var("));
+  useEffect(() => {
+    if (!emblaApi || !hasResponsiveSlides || !containerRef.current) return;
+    const ro = new ResizeObserver(() => emblaApi.reInit());
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [emblaApi, hasResponsiveSlides]);
+
   // Dot navigation handler
   const handleDotClick = useCallback(
     (index: number) => {
@@ -84,8 +97,9 @@ export function ScrollCarousel({
         !noBorder && "border border-border rounded-lg overflow-hidden"
       )}
     >
-      <div className="overflow-hidden touch-none" ref={emblaRef}>
+      <div className="overflow-hidden touch-pan-y" ref={emblaRef}>
         <div
+          ref={containerRef}
           className={cn("flex", gap)}
           style={{
             WebkitUserSelect: "none",
@@ -96,14 +110,21 @@ export function ScrollCarousel({
           {childArray.map((child, index) => (
             <div
               key={index}
-              className="shrink-0"
-              style={{
-                flex: `0 0 ${slideWidth}`,
-                minWidth: slideWidth,
-                maxWidth: slideWidth,
-                userSelect: "none",
-                WebkitUserSelect: "none",
-              }}
+              className={cn(
+                "shrink-0",
+                slideClassName
+              )}
+              style={
+                slideClassName
+                  ? undefined
+                  : {
+                      flex: `0 0 ${slideWidth}`,
+                      minWidth: slideWidth,
+                      maxWidth: slideWidth,
+                      userSelect: "none",
+                      WebkitUserSelect: "none",
+                    }
+              }
             >
               {child}
             </div>

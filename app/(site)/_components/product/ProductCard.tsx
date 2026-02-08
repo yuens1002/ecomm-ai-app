@@ -1,21 +1,22 @@
 "use client";
 
+import { useAddToCartWithFeedback } from "@/hooks/useAddToCartWithFeedback";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
+import { ProductCardProps } from "@/lib/types";
+import { cn, formatPrice } from "@/lib/utils";
+import { ProductType } from "@prisma/client";
+import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
-import clsx from "clsx";
-import { ProductType } from "@prisma/client";
-import { ProductCardProps } from "@/lib/types";
-import { getPlaceholderImage } from "@/lib/placeholder-images";
-import { formatPrice } from "@/lib/utils";
-import { useAddToCartWithFeedback } from "@/hooks/useAddToCartWithFeedback";
 import { AddToCartButton } from "./AddToCartButton";
+import { RoastLevelBar } from "./RoastLevelBar";
 
 import {
   Card,
-  CardHeader,
   CardContent,
   CardDescription,
   CardFooter,
+  CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 
@@ -29,12 +30,18 @@ export default function ProductCard({
   cardPaddingClass,
   hidePrice = false,
   hidePriceOnMobile = false,
+  hoverRevealFooter = false,
+  compactFooter = false,
 }: Omit<ProductCardProps, "onAddToCart"> & {
   categorySlug?: string;
   priority?: boolean;
   hidePrice?: boolean;
   /** Hide price on mobile/sm breakpoints only (for carousel context) */
   hidePriceOnMobile?: boolean;
+  /** On lg+, hide footer and reveal on card hover with slide-up fade-in */
+  hoverRevealFooter?: boolean;
+  /** Smaller button and price text for tight layouts (e.g., carousels) */
+  compactFooter?: boolean;
 }) {
   const { buttonState, isCheckingOut, handleAddToCart, handleActionClick } =
     useAddToCartWithFeedback();
@@ -96,7 +103,8 @@ export default function ProductCard({
         className={clsx(
           "w-full overflow-hidden rounded-none bg-card-bg flex flex-col justify-between border-0 shadow-none gap-0",
           cardPaddingClass ? cardPaddingClass : "p-0",
-          !disableCardEffects && "cursor-pointer"
+          !disableCardEffects && "cursor-pointer",
+          hoverRevealFooter && "group"
         )}
       >
         {/* 1. Image container. The parent <Card> clips its top corners. */}
@@ -113,10 +121,13 @@ export default function ProductCard({
 
         {/* 2. CardContent holds all text content. */}
         <div className="border-x border-b rounded-b-lg">
-          <CardContent className="grow py-4">
+          <CardContent className="grow py-4 min-h-28">
             <CardTitle className="text-xl overflow-hidden text-ellipsis whitespace-nowrap p-0">
               {product.name}
             </CardTitle>
+            {product.type === ProductType.COFFEE && product.roastLevel && (
+              <RoastLevelBar roastLevel={product.roastLevel} className="pt-1.5" />
+            )}
             {product.type === ProductType.COFFEE &&
               product.tastingNotes.length > 0 && (
                 <CardDescription className="text-sm italic pt-1 overflow-hidden text-ellipsis whitespace-nowrap">
@@ -127,28 +138,37 @@ export default function ProductCard({
 
           {/* 3. CardFooter (only shows if purchase options are enabled) */}
           {showPurchaseOptions && (
-            <CardFooter className="pb-8 flex items-center justify-between">
+            <CardFooter
+              className={clsx(
+                "pb-6 flex items-center justify-between",
+                hoverRevealFooter &&
+                  "hidden md:flex lg:opacity-0 lg:translate-y-2 lg:group-hover:opacity-100 lg:group-hover:translate-y-0 transition-all duration-300 ease-out"
+              )}
+            >
               <AddToCartButton
                 buttonState={buttonState}
                 onAddToCart={handleAdd}
                 onActionClick={handleAction}
                 disabled={!displayVariant || !oneTimePrice}
                 isProcessing={isCheckingOut}
-                className="cursor-pointer"
+                className={cn("cursor-pointer", compactFooter && "text-xs h-8 px-2.5")}
               />
               {!hidePrice && (
-                <div className={hidePriceOnMobile ? "hidden md:block" : ""}>
+                <div className={cn(
+                  hidePriceOnMobile ? "hidden md:block" : "",
+                  compactFooter && "text-right"
+                )}>
                   {hasSalePrice && oneTimePrice ? (
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm text-text-muted line-through">
+                    <div className={cn("flex items-center gap-2", compactFooter && "gap-1")}>
+                      <p className={cn("text-text-muted line-through", compactFooter ? "text-xs" : "text-sm")}>
                         ${formatPrice(oneTimePrice.priceInCents)}
                       </p>
-                      <p className="text-lg font-bold text-primary">
+                      <p className={cn("font-bold text-primary", compactFooter ? "text-sm" : "text-lg")}>
                         ${displayPrice}
                       </p>
                     </div>
                   ) : (
-                    <p className="text-lg font-bold text-primary">
+                    <p className={cn("font-bold text-primary", compactFooter ? "text-sm" : "text-lg")}>
                       ${displayPrice}
                     </p>
                   )}

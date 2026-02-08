@@ -11,7 +11,9 @@ interface RecommendedProduct {
   id: string;
   name: string;
   slug: string;
+  type: string;
   roastLevel: string;
+  isFeatured: boolean;
   tastingNotes: string[];
   images: Array<{
     id: string;
@@ -165,6 +167,8 @@ export default function RecommendationsSection() {
               key={product.id}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               product={product as any}
+              showPurchaseOptions={true}
+              hoverRevealFooter={true}
               priority={index === 0} // Load first image eagerly as it's likely LCP
             />
           ))}

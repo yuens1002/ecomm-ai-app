@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.86.0 - 2026-02-07
+
+### Added
+
+- **Roast Level Bar on Product Cards**: Reusable RoastLevelBar component displayed under product name on coffee cards
+- **Featured Products Carousel**: Replaced grid with responsive ScrollCarousel (1.5/2.5/3.5 slides per breakpoint)
+- **Hover-Reveal Footer**: Product card footer (button + price) hidden on lg+, revealed on card hover with slide-up animation
+- **Compact Footer Option**: Smaller button and price text for tight carousel layouts
+
+### Changed
+
+- Coffee detail values and description use default text size instead of `text-sm` on PDP
+- Altitude format standardized to MASL (e.g., "1200 - 1600 MASL")
+- ScrollCarousel supports responsive CSS variable slide widths with ResizeObserver reinit
+- Recommendations API returns `type`, `roastLevel`, and `isFeatured` for proper card rendering
+
+### Fixed
+
+- Mobile carousel blocking vertical page scroll (changed `touch-none` to `touch-pan-y`)
+- Varying product card heights normalized with `min-h` on card content area
+- Tasting notes truncated with ellipsis to prevent wrapping
+
 ## 0.85.0 - 2026-02-07
 
 ### Added
@@ -1106,7 +1128,7 @@
 - **Menu Builder Phase 1 Complete - Foundation & Integration**: Centralized state management with URL persistence and strategy pattern for actions
   - **Central state management hook** (`useMenuBuilder.ts`): Single source of truth for all menu builder state including view navigation, selection state, expand/collapse state, undo/redo history, and data fetching via SWR; 373 lines of clean, documented code
   - **URL state persistence**: View navigation state (currentView, labelId, categoryId) persists in URL params for bookmarking, sharing, and refresh safety; local transient state (selections, expand/collapse) intentionally cleared on refresh for clean UX
-  - **Action strategy pattern** (`actionStrategies.ts`): Declarative configuration object eliminates if/else chains; ACTION_STRATEGIES[view][action] lookup with execute function, refresh array, and custom error messages; reduced cyclomatic complexity from 5-6 to 1 per action
+  - **Action strategy pattern** (`actionStrategies.ts`): Declarative configuration object eliminates if/else chains; ACTION_STRATEGIES\[view\]\[action\] lookup with execute function, refresh array, and custom error messages; reduced cyclomatic complexity from 5-6 to 1 per action
   - **Integrated components**: MenuBuilder.tsx refactored to single useMenuBuilder() call; MenuNavBar.tsx refactored for URL-based navigation; MenuActionBar fully integrated with strategy-based actions
   - **Strategy executor** (`executeAction`): Generic action executor looks up strategy, executes logic, refreshes data (labels/categories/products), and handles errors gracefully with typed return values
   - **Navigation system**: navigateToView, navigateToLabel, navigateToCategory, navigateBack all update URL params via Next.js router; automatic selection clearing on navigation; browser back/forward buttons work naturally
