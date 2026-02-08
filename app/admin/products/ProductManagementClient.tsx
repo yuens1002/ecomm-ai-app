@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -14,7 +14,6 @@ import {
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Plus, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import ProductFormClient from "./product-form-client/ProductFormClient";
 import { ProductType } from "@prisma/client";
 
 interface PurchaseOption {
@@ -52,20 +51,11 @@ export default function ProductManagementClient({
   description: _description = "Manage products and inventory",
   productType = ProductType.COFFEE,
 }: ProductManagementClientProps) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const basePath =
     productType === ProductType.MERCH ? "/admin/merch" : "/admin/products";
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
-  // Get view and productId from URL params
-  const view =
-    searchParams.get("view") === "edit" || searchParams.get("view") === "new"
-      ? "form"
-      : "list";
-  const selectedProductId = searchParams.get("id") || undefined;
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -88,10 +78,8 @@ export default function ProductManagementClient({
   }, [productType, toast]);
 
   useEffect(() => {
-    if (view === "list") {
-      fetchProducts();
-    }
-  }, [view, fetchProducts]);
+    fetchProducts();
+  }, [fetchProducts]);
 
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -100,34 +88,17 @@ export default function ProductManagementClient({
     }).format(cents / 100);
   };
 
-  if (loading && view === "list") {
+  if (loading) {
     return <div>Loading products...</div>;
-  }
-
-  if (view === "form") {
-    return (
-      <ProductFormClient
-        productId={selectedProductId}
-        productType={productType}
-        onClose={() => {
-          router.push(basePath);
-        }}
-        onSaved={(id) => {
-          router.push(`${basePath}?view=edit&id=${id}`);
-        }}
-      />
-    );
   }
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-end">
-        <Button
-          onClick={() => {
-            router.push(`${basePath}?view=new`);
-          }}
-        >
-          <Plus className="mr-2 h-4 w-4" /> Add Product
+        <Button asChild>
+          <Link href={`${basePath}/new`}>
+            <Plus className="mr-2 h-4 w-4" /> Add Product
+          </Link>
         </Button>
       </CardHeader>
       <CardContent>
@@ -202,14 +173,10 @@ export default function ProductManagementClient({
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        router.push(`${basePath}?view=edit&id=${product.id}`);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link href={`${basePath}/${product.id}`}>
+                        <Pencil className="h-4 w-4" />
+                      </Link>
                     </Button>
                   </TableCell>
                 </TableRow>

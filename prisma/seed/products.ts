@@ -1267,7 +1267,7 @@ export async function seedProducts(prisma: PrismaClient) {
       product: {
         name: "Artisan Canvas Tote",
         slug: "artisan-canvas-tote",
-        heading: undefined as string | undefined,
+        heading: "Description" as string | undefined,
         processing: undefined as string | undefined,
         description:
           "Heavyweight canvas tote for bean runs and local deliveries. 16oz canvas, reinforced handles, fits two 2lb bags plus extras.",

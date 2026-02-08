@@ -1,11 +1,11 @@
 import { requireAdmin } from "@/lib/admin";
 import { listCategoriesAndLabels } from "@/app/admin/product-menu/data/categories";
-import { CoffeeProductForm } from "../_components/CoffeeProductForm";
+import { MerchProductForm } from "@/app/admin/products/_components/MerchProductForm";
 
-export default async function NewCoffeeProductPage() {
+export default async function NewMerchProductPage() {
   await requireAdmin();
 
   const { categories } = await listCategoriesAndLabels("name-asc");
 
-  return <CoffeeProductForm categories={categories} />;
+  return <MerchProductForm categories={categories} />;
 }

@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.87.0 - 2026-02-08
+
+### Added
+
+- **Product Add/Edit Rework**: Compositional admin product form with flat layout, dropdown variant/add-on selectors, and consistent shadcn Field patterns
+- **Server Actions for Products**: Replaced API route-based mutations with server actions for product, variant, and purchase option CRUD
+- **Merch Product Pages**: Dedicated create/edit pages for merch products at `/admin/merch/new` and `/admin/merch/[id]`
+- **Variant Reordering**: Chevron up/down reorder controls with persistent order field
+
+### Changed
+
+- Product list pages use Link-based routing to dedicated edit pages instead of query-param-based inline forms
+- Product form sections (info, variants, specs, categories, add-ons) are independent composable components
+
+### Removed
+
+- Old monolithic ProductFormClient and its section components
+
 ## 0.86.1 - 2026-02-08
 
 ### Added
