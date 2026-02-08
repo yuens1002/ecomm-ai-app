@@ -5,199 +5,157 @@ description: Full verification workflow automation - precheck, tests, UI verific
 
 # Verify Workflow Skill
 
-This skill orchestrates the full autonomous feature development loop — from implementation through verification — with human checkpoints, iterating until ready for review.
+Orchestrates the full autonomous feature development loop — from implementation through verification — with sub-agent delegation and human-in-the-loop review gates.
+
+See `docs/AGENTIC-WORKFLOW.md` for the complete architecture document.
 
 ## Purpose
 
-Drive a complete **implement → verify → iterate** loop so that:
-
-1. Code is implemented per plan
-2. UI is visually verified against ACs at all breakpoints
-3. Issues are fixed autonomously, re-verified
-4. Code quality passes (TypeScript, ESLint)
-5. Test suite passes
-6. A consolidated report confirms "ready for review"
-
-**Goal:** Autonomous completion with human-in-the-loop only for approval gates.
+Drive a complete **implement -> verify -> iterate -> review** loop using sub-agents for verification, keeping the main thread's context clean for implementation work.
 
 ## Usage
 
 ```text
-/verify-workflow                           # Run full loop (implement → verify → review-ready)
-/verify-workflow --verify-only             # Skip implementation, run verify + test only
+/verify-workflow                           # Full loop: implement -> verify -> review-ready
+/verify-workflow --verify-only             # Skip implementation, verify + test only
 /verify-workflow --skip-ui                 # Skip UI verification (code-only changes)
 /verify-workflow --acs "AC1" "AC2"         # Verify specific ACs only
 ```
 
+**Triggering:** This workflow is invoked explicitly by the user or the main thread when ready. It does NOT run automatically on every code change.
+
 ## The Loop
 
 ```text
-┌─────────────────────────────────────────────────┐
-│  1. IMPLEMENT                                   │
-│     - Write code per approved plan              │
-│     - Track progress with task list             │
-│     - Run precheck after implementation         │
-│     - Fix any TS/ESLint errors before moving on │
-│                                                 │
-│  2. UI VERIFY                                   │
-│     - Ensure dev server is running              │
-│     - Take screenshots at all breakpoints       │
-│     - Read screenshots, verify each AC          │
-│     - Generate AC verification table            │
-│                                                 │
-│  3. ITERATE (if issues found)                   │
-│     - Fix code based on screenshot findings     │
-│     - Re-take screenshots                       │
-│     - Re-verify failed ACs                      │
-│     - Repeat until all ACs pass                 │
-│                                                 │
-│  4. UI VERIFY (confirmation pass)               │
-│     - Final screenshot pass after fixes         │
-│     - Confirm all ACs pass                      │
-│                                                 │
-│  5. END-TO-END FUNCTIONAL CHECK                 │
-│     - Verify existing functionality preserved   │
-│     - Check interactive elements (buttons,      │
-│       forms, state transitions)                 │
-│     - Flag any regressions                      │
-│                                                 │
-│  6. PRECHECK + TESTS                            │
-│     - npm run precheck (TypeScript + ESLint)    │
-│     - npm run test:ci (full test suite)         │
-│     - If failures → fix → re-run               │
-│                                                 │
-│  7. READY FOR REVIEW                            │
-│     - All ACs pass                              │
-│     - All tests pass                            │
-│     - Consolidated report generated             │
-│     - Exit loop                                 │
-└─────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│  1. IMPLEMENT (main thread)                              │
+│     - Write code per approved plan                       │
+│     - Track progress with task list                      │
+│     - Run precheck after implementation                  │
+│                                                          │
+│  2. VERIFY (sub-agent)                                   │
+│     - Spawn general-purpose sub-agent with /ac-verify    │
+│     - Sub-agent: screenshots + code review + tests       │
+│     - Sub-agent returns: structured pass/fail report     │
+│                                                          │
+│  3. ITERATE (main thread, if issues found)               │
+│     - Read sub-agent report                              │
+│     - Fix code based on findings                         │
+│     - Re-spawn sub-agent for re-verification             │
+│     - Repeat until all ACs pass                          │
+│                                                          │
+│  4. READY FOR REVIEW (main thread)                       │
+│     - Update verification-status.json                    │
+│     - Present consolidated report to human               │
+│     - Human approves -> commit, PR, release              │
+│     - Human rejects -> back to step 3                    │
+└──────────────────────────────────────────────────────────┘
 ```
 
-## Detailed Steps
+## Step-by-Step
 
 ### Step 1: Implement
 
-Execute the approved plan. Track progress with task list (TaskCreate/TaskUpdate).
+Execute the approved plan. Track progress with TaskCreate/TaskUpdate.
 
-**After implementation:**
+**After implementation, run precheck:**
 
 ```bash
 npm run precheck
 ```
 
-**Pass criteria:** Exit code 0. Fix any errors before proceeding.
+Fix any TS/ESLint errors before proceeding to verification.
 
-### Step 2: UI Verify
+### Step 2: Verify (sub-agent delegation)
 
-**Prerequisites:**
-
-- Dev server running (check with `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000`)
-- If server restarted on a different port, update `BASE_URL` env var
-- Puppeteer installed (`npm install -D puppeteer`)
-
-**Process:**
-
-1. Clear stale cache if needed (`rm -rf .next` + restart dev server)
-2. Take screenshots:
-
-   ```bash
-   BASE_URL=http://localhost:3000 npx tsx scripts/take-responsive-screenshots.ts after
-   ```
-
-3. Read each product-page screenshot at every breakpoint
-4. Verify against ACs from the plan
-
-**Output:** AC verification table:
+Spawn a verification sub-agent using the `/ac-verify` skill template:
 
 ```text
-### AC 1 — Feature Name
-| Breakpoint | Status | Notes |
-|------------|--------|-------|
-| mobile     | PASS   | Description of what was verified |
-| sm         | PASS   | ... |
-| tablet     | PASS   | ... |
-| desktop    | PASS   | ... |
+Task(subagent_type="general-purpose", prompt="""
+Run the AC verification protocol from .claude/skills/ac-verify/SKILL.md.
+
+BRANCH: {current branch name}
+DEV_SERVER: http://localhost:3000
+
+ACS:
+{paste the AC list from the approved plan}
+
+PAGES_TO_SCREENSHOT:
+{list pages and interaction steps}
+
+CONTEXT:
+{relevant file paths and behavioral notes}
+""")
+```
+
+**Parallelism option:** For large features, spawn UI verification and test suite as separate sub-agents:
+
+```text
+# Parallel sub-agents
+Task("UI ACs", subagent_type="general-purpose", prompt="Verify UI ACs: ...")
+Task("Test suite", subagent_type="general-purpose", prompt="Run npm run test:ci and report results...")
 ```
 
 ### Step 3: Iterate (if needed)
 
-If any AC fails:
+Read the sub-agent's report. For each failed AC:
 
-1. Identify the root cause from the screenshot
-2. Fix the code
-3. Re-take screenshots (Step 2)
-4. Re-verify only the failed ACs
-5. Repeat until all pass
+1. Identify root cause from the report's evidence (screenshot, file:line)
+2. Fix the code in the main thread
+3. Re-spawn a **new** sub-agent to re-verify **ALL** ACs (not just failed ones)
+4. Repeat until all pass
 
-**Key:** Don't re-verify passing ACs unless the fix could affect them.
+**Key:** Always re-verify all ACs after fixes to catch regressions.
 
-### Step 4: UI Verify — Confirmation Pass
+### Step 4: Ready for Review
 
-After fixes, do a full screenshot pass to confirm:
+When all ACs pass:
 
-- Previously passing ACs still pass (no regressions)
-- Previously failing ACs now pass
+1. **Update verification status:**
 
-### Step 5: End-to-End Functional Check
+   ```jsonc
+   // .claude/verification-status.json
+   {
+     "branches": {
+       "{branch}": {
+         "status": "verified",
+         "acs_passed": 9,
+         "acs_total": 9,
+         "tasks": [],
+         "notes": "All ACs verified via sub-agent. {n} iterations."
+       }
+     }
+   }
+   ```
 
-Verify interactive behavior hasn't regressed. Check against functional ACs:
+2. **Present report to human:**
 
-- Buttons clickable, state transitions correct
-- Form inputs functional
-- Navigation works
-- No console errors
-- No layout overflow or broken elements
+   ```text
+   ## Ready for Review
 
-**Note:** This is a visual/manual check from screenshots + code review, not automated E2E tests.
+   - Branch: {branch}
+   - Files changed: {n}
+   - ACs: {passed}/{total} passed
+   - Tests: {passed}/{total} passed
+   - Iterations: {n}
 
-### Step 6: Precheck + Tests
+   [Full verification report from sub-agent]
 
-```bash
-npm run precheck    # TypeScript + ESLint
-npm run test:ci     # Full test suite
-```
+   Approve to commit and release, or provide feedback to iterate.
+   ```
 
-**On failure:**
+3. **On approval:** Commit -> PR -> merge -> `/release`
+4. **On rejection:** Fix -> re-verify (back to Step 2)
 
-- Report specific errors
-- Fix the issue
-- Re-run only the failing check
-- Do NOT skip to review
+## AC Categories
 
-### Step 7: Ready for Review
+Plans must include ACs in these categories:
 
-Generate consolidated report:
-
-```text
-## Verification Report
-
-### Implementation
-- Files modified: 4
-- Files created: 1
-- Task completion: 6/6
-
-### Code Quality
-- TypeScript: PASS
-- ESLint: PASS
-
-### Tests
-- Total: 694
-- Passed: 694
-- Failed: 0
-
-### UI Verification
-| AC | mobile | sm | tablet | desktop | Result |
-|----|--------|----|--------|---------|--------|
-| Header area | PASS | PASS | PASS | PASS | PASS |
-| Two-col layout | — | — | — | PASS | PASS |
-| Stacked layout | PASS | PASS | PASS | — | PASS |
-
-### Iterations
-- Iteration 1: All ACs passed (no fixes needed)
-
-### OVERALL: PASS — Ready for review
-```
+| Category | Prefix | Verified By | Example |
+|----------|--------|-------------|---------|
+| UI | AC-UI-{n} | Screenshots at 3 breakpoints | "Button visible at mobile width" |
+| Functional | AC-FN-{n} | Code review with file:line evidence | "Endpoint returns 403 for non-owner" |
+| Regression | AC-REG-{n} | Test suite + screenshot spot-check | "Existing columns unchanged" |
 
 ## Human Checkpoints
 
@@ -205,69 +163,50 @@ The loop is autonomous but pauses for human input at these gates:
 
 | Gate | When | Why |
 |------|------|-----|
+| **Plan approval** | Before implementation | Human approves ACs as verification contract |
 | **Dev server** | Server not running or wrong port | Need human to start/confirm |
-| **Cache stale** | Screenshots show old UI after code changes | Need `rm -rf .next` + server restart |
-| **Ambiguous AC** | Screenshot doesn't clearly pass or fail | Ask human to verify visually |
-| **Scope creep** | Fix for one AC breaks another | Ask human whether to accept tradeoff |
-
-## Gotchas & Lessons Learned
-
-### Next.js Cache
-
-After modifying client components, the dev server may serve stale builds. If screenshots don't reflect code changes:
-
-1. Stop dev server
-2. `rm -rf .next`
-3. Restart dev server
-4. Wait for compilation before taking screenshots
-
-### Screenshot Script Port
-
-The screenshot script defaults to `localhost:3000`. If the dev server runs on a different port:
-
-```bash
-BASE_URL=http://localhost:3001 npx tsx scripts/take-responsive-screenshots.ts after
-```
-
-The script reads `process.env.BASE_URL` with fallback to `http://localhost:3000`.
-
-### Puppeteer Not Installed
-
-The screenshot script requires puppeteer. Install as dev dependency:
-
-```bash
-npm install -D puppeteer
-```
-
-### Prisma Client in Scripts
-
-To run ad-hoc DB verification scripts, use the project's own prisma instance (`import { prisma } from "./lib/prisma"`) rather than `new PrismaClient()` directly, since the project uses custom adapters (Neon/PG).
-
-### TypeScript Union Narrowing in Seed Data
-
-When adding optional fields to seed product objects, ensure ALL union members include the field (even as `undefined`) or TypeScript will error on property access. Example fix:
-
-```typescript
-// Merch product needs the field too (even if undefined)
-variety: undefined as string | undefined,
-```
+| **Ambiguous AC** | Sub-agent can't clearly pass/fail | Escalate to human |
+| **Review gate** | All ACs pass | Human approves or rejects |
 
 ## Integration with Other Skills
 
 | Skill | Role in Loop |
 |-------|-------------|
-| `/ui-verify` | Called during Steps 2–4 for screenshot capture and AC verification |
-| `/release` | Called after review approval to tag and publish |
+| `/ac-verify` | Sub-agent prompt template (Step 2) |
+| `/ui-verify` | Screenshot capture and comparison (used by sub-agent) |
+| `/release` | Version bump + tag + PR (Step 4, after approval) |
+
+## Gotchas
+
+### Next.js Cache
+
+After modifying client components, dev server may serve stale builds:
+
+1. Stop dev server
+2. `rm -rf .next`
+3. Restart dev server
+4. Wait for compilation before spawning verification sub-agent
+
+### Screenshot Script Port
+
+Default is localhost:3000. If dev server runs on different port, pass it in the sub-agent prompt as `DEV_SERVER: http://localhost:{port}`.
+
+### Sub-Agent Context
+
+Each sub-agent starts fresh — it does not have the main thread's conversation history. Include all relevant context (file paths, component names, behavioral notes) in the sub-agent prompt.
 
 ## Quick Reference
 
 ```text
-# Full autonomous loop
+# Full loop (plan -> implement -> verify -> review)
 /verify-workflow
 
-# After code-only changes (no UI)
+# Verify only (skip implementation)
+/verify-workflow --verify-only
+
+# Code-only (no UI screenshots)
 /verify-workflow --skip-ui
 
-# Re-verify after manual fixes
-/verify-workflow --verify-only
+# Specific ACs
+/verify-workflow --acs "AC-UI-1" "AC-FN-2"
 ```
