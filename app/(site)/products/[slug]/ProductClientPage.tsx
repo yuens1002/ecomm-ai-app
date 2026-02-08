@@ -485,9 +485,11 @@ export default function ProductClientPage({
           {/* ---- Story / Description: full-width below ---- */}
           {product.description && (
             <div className="lg:mt-4">
-              <h2 className="text-xs font-medium uppercase tracking-wide text-foreground/50 mb-1">
-                {isCoffee ? "The Story" : "Description"}
-              </h2>
+              {product.heading && (
+                <h2 className="text-xs font-medium uppercase tracking-wide text-foreground/50 mb-1">
+                  {product.heading}
+                </h2>
+              )}
               <p className="text-text-base leading-relaxed">
                 {product.description}
               </p>

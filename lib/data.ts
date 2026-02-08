@@ -77,6 +77,7 @@ export async function getProductBySlug(productSlug?: string | null) {
           orderBy: { order: "asc" },
         },
         variants: {
+          orderBy: { order: "asc" },
           include: {
             purchaseOptions: true,
           },
