@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FeaturedProduct } from "@/lib/types"; // Import shared types
+import { FeaturedProduct } from "@/lib/types";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
-
+import { ScrollCarousel } from "@/components/shared/media/ScrollCarousel";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 // This component is now self-contained. It fetches its own data.
@@ -45,15 +45,23 @@ export default function FeaturedProducts() {
         {isLoading ? (
           <div className="text-center text-text-muted">Loading coffees...</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="[--slide-size:66.67%] md:[--slide-size:40%] lg:[--slide-size:28.57%]">
+          <ScrollCarousel
+            showDots={true}
+            noBorder={true}
+            minWidth="var(--slide-size)"
+          >
             {products.map((product, index) => (
               <ProductCard
                 key={product.id}
                 product={product}
-                showPurchaseOptions={false} // <-- Prop to hide price/button
-                priority={index < 4} // Load first 4 images eagerly (first row)
+                showPurchaseOptions={true}
+                hoverRevealFooter={true}
+                compactFooter={true}
+                priority={index < 4}
               />
             ))}
+          </ScrollCarousel>
           </div>
         )}
       </div>

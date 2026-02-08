@@ -2,7 +2,7 @@
 
 import { useEffect, useState, startTransition, useRef } from "react";
 import Link from "next/link";
-import { ProductType, RoastLevel, PurchaseType } from "@prisma/client";
+import { ProductType, PurchaseType } from "@prisma/client";
 import {
   Product,
   ProductVariant,
@@ -33,6 +33,7 @@ import { getPlaceholderImage } from "@/lib/placeholder-images";
 import { CoffeeDetails } from "@/app/(site)/_components/product/CoffeeDetails";
 import { ProductSelectionsSection } from "@/app/(site)/_components/product/ProductSelectionsSection";
 import { FloatingAddToCartButton } from "@/app/(site)/_components/product/FloatingAddToCartButton";
+import { RoastLevelBar } from "@/app/(site)/_components/product/RoastLevelBar";
 
 interface ProductClientPageProps {
   product: Product;
@@ -40,20 +41,6 @@ interface ProductClientPageProps {
   category: Pick<Category, "name" | "slug">;
   addOns: AddOnItem[];
 }
-
-const roastLabels: Record<RoastLevel, string> = {
-  LIGHT: "Light Roast",
-  MEDIUM: "Medium Roast",
-  DARK: "Dark Roast",
-};
-
-const roastSegments: RoastLevel[] = ["LIGHT", "MEDIUM", "DARK"];
-
-const roastActiveColor: Record<RoastLevel, string> = {
-  LIGHT: "bg-yellow-600",
-  MEDIUM: "bg-yellow-800",
-  DARK: "bg-yellow-950",
-};
 
 const getOneTimeOption = (variant: ProductVariant): PurchaseOption | null =>
   variant.purchaseOptions.find((p) => p.type === "ONE_TIME") ?? null;
@@ -415,23 +402,7 @@ export default function ProductClientPage({
           {isCoffee && (
             <div className="flex flex-col gap-2 -mt-1">
               {product.roastLevel && (
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-0.5">
-                    {roastSegments.map((level) => (
-                      <div
-                        key={level}
-                        className={`h-1.5 w-8 rounded-full ${
-                          level === product.roastLevel
-                            ? roastActiveColor[level]
-                            : "bg-border"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm text-text-muted">
-                    {roastLabels[product.roastLevel]}
-                  </span>
-                </div>
+                <RoastLevelBar roastLevel={product.roastLevel} />
               )}
 
               {product.tastingNotes.length > 0 && (
@@ -517,7 +488,7 @@ export default function ProductClientPage({
               <h2 className="text-xs font-medium uppercase tracking-wide text-foreground/50 mb-1">
                 {isCoffee ? "The Story" : "Description"}
               </h2>
-              <p className="text-sm text-text-base leading-relaxed">
+              <p className="text-text-base leading-relaxed">
                 {product.description}
               </p>
             </div>

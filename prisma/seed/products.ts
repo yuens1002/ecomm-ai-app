@@ -114,7 +114,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Brazil", "Colombia", "Indonesia"],
         tastingNotes: ["Dark Chocolate", "Toasted Hazelnut", "Caramel"],
         variety: "Bourbon, Castillo, Mandheling",
-        altitude: "900–1,600m",
+        altitude: "900 - 1600 MASL",
         isOrganic: false,
         isFeatured: true,
         featuredOrder: 1,
@@ -178,7 +178,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Brazil", "Guatemala"],
         tastingNotes: ["Bittersweet Chocolate", "Roasted Almond", "Smoky"],
         variety: "Bourbon, Catuai",
-        altitude: "800–1,400m",
+        altitude: "800 - 1400 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -211,7 +211,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Indonesia"],
         tastingNotes: ["Earthy", "Dark Chocolate", "Cedar"],
         variety: "Typica, Catimor",
-        altitude: "800–1,500m",
+        altitude: "800 - 1500 MASL",
         isOrganic: true,
         isFeatured: false,
         variants: {
@@ -244,7 +244,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Colombia", "Brazil"],
         tastingNotes: ["Dark Chocolate", "Charred Wood", "Smooth"],
         variety: "Bourbon, Catuai",
-        altitude: "1,000–1,400m",
+        altitude: "1000 - 1400 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -285,7 +285,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Papua New Guinea"],
         tastingNotes: ["Dark Berry", "Cocoa", "Earthy"],
         variety: "Typica, Arusha",
-        altitude: "1,500–1,800m",
+        altitude: "1500 - 1800 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -318,7 +318,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Colombia"],
         tastingNotes: ["Milk Chocolate", "Toasted Nuts", "Caramel"],
         variety: "Castillo, Caturra",
-        altitude: "1,400–1,800m",
+        altitude: "1400 - 1800 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -361,7 +361,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Colombia", "Guatemala", "Costa Rica"],
         tastingNotes: ["Honey", "Roasted Almond", "Citrus"],
         variety: "Caturra, Catuai",
-        altitude: "1,200–1,600m",
+        altitude: "1200 - 1600 MASL",
         isOrganic: false,
         isFeatured: true,
         featuredOrder: 2,
@@ -425,7 +425,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Colombia"],
         tastingNotes: ["Caramel", "Cocoa", "Sweet"],
         variety: "Castillo, Caturra",
-        altitude: "1,400–1,800m",
+        altitude: "1400 - 1800 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -466,7 +466,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Guatemala"],
         tastingNotes: ["Dark Fruit", "Milk Chocolate", "Smoky"],
         variety: "Bourbon, Caturra",
-        altitude: "1,500–1,700m",
+        altitude: "1500 - 1700 MASL",
         isOrganic: true,
         isFeatured: true,
         featuredOrder: 3,
@@ -514,7 +514,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Costa Rica"],
         tastingNotes: ["Brown Sugar", "Stone Fruit", "Crisp"],
         variety: "Caturra, Catuai",
-        altitude: "1,200–1,900m",
+        altitude: "1200 - 1900 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -547,7 +547,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Brazil"],
         tastingNotes: ["Nutty", "Chocolate", "Low Acidity"],
         variety: "Bourbon, Mundo Novo",
-        altitude: "800–1,200m",
+        altitude: "800 - 1200 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -588,7 +588,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Honduras"],
         tastingNotes: ["Toffee", "Red Apple", "Citrus Zest"],
         variety: "Catuai, Bourbon",
-        altitude: "1,300–1,700m",
+        altitude: "1300 - 1700 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -621,7 +621,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Mexico"],
         tastingNotes: ["Cocoa", "Roasted Nuts", "Spice"],
         variety: "Typica, Bourbon",
-        altitude: "1,200–1,700m",
+        altitude: "1200 - 1700 MASL",
         isOrganic: true,
         isFeatured: false,
         variants: {
@@ -654,7 +654,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Peru"],
         tastingNotes: ["Vanilla", "Caramel", "Floral"],
         variety: "Typica, Caturra",
-        altitude: "1,400–1,800m",
+        altitude: "1400 - 1800 MASL",
         isOrganic: true,
         isFeatured: false,
         variants: {
@@ -695,7 +695,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Nicaragua"],
         tastingNotes: ["Milk Chocolate", "Orange Marmalade", "Creamy"],
         variety: "Caturra, Bourbon",
-        altitude: "1,200–1,600m",
+        altitude: "1200 - 1600 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -728,7 +728,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["El Salvador"],
         tastingNotes: ["Tropical Fruit", "Honey", "Wine-like"],
         variety: "Pacamara",
-        altitude: "1,200–1,600m",
+        altitude: "1200 - 1600 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -763,7 +763,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Ethiopia"],
         tastingNotes: ["Floral", "Lemon", "Bergamot"],
         variety: "Heirloom",
-        altitude: "1,700–2,200m",
+        altitude: "1700 - 2200 MASL",
         isOrganic: true,
         isFeatured: true,
         featuredOrder: 4,
@@ -811,7 +811,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Kenya"],
         tastingNotes: ["Blackcurrant", "Grapefruit", "Tomato"],
         variety: "SL28, SL34",
-        altitude: "1,500–2,100m",
+        altitude: "1500 - 2100 MASL",
         isOrganic: false,
         isFeatured: true,
         featuredOrder: 5,
@@ -845,7 +845,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Ethiopia"],
         tastingNotes: ["Blueberry", "Jasmine", "Dark Chocolate"],
         variety: "Heirloom",
-        altitude: "1,500–2,200m",
+        altitude: "1500 - 2200 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -878,7 +878,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Rwanda"],
         tastingNotes: ["Red Fruit", "Caramel", "Floral"],
         variety: "Bourbon",
-        altitude: "1,500–2,000m",
+        altitude: "1500 - 2000 MASL",
         isOrganic: true,
         isFeatured: false,
         variants: {
@@ -911,7 +911,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Burundi"],
         tastingNotes: ["Cherry", "Cocoa Nibs", "Tangy"],
         variety: "Bourbon",
-        altitude: "1,700–2,000m",
+        altitude: "1700 - 2000 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -944,7 +944,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Tanzania"],
         tastingNotes: ["Black Currant", "Citrus", "Winey"],
         variety: "Bourbon, Kent",
-        altitude: "1,400–1,800m",
+        altitude: "1400 - 1800 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -977,7 +977,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Panama"],
         tastingNotes: ["Jasmine", "Tropical Fruit", "Honey"],
         variety: "Gesha",
-        altitude: "1,600–1,900m",
+        altitude: "1600 - 1900 MASL",
         isOrganic: true,
         isFeatured: false,
         variants: {
@@ -1010,7 +1010,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Colombia"],
         tastingNotes: ["Peach", "Lavender", "Brown Sugar"],
         variety: "Gesha",
-        altitude: "1,800–2,100m",
+        altitude: "1800 - 2100 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -1043,7 +1043,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Costa Rica"],
         tastingNotes: ["Apricot", "Honey", "Syrupy"],
         variety: "Caturra, Catuai",
-        altitude: "1,200–1,700m",
+        altitude: "1200 - 1700 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -1076,7 +1076,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Guatemala"],
         tastingNotes: ["Apple", "Almond", "Clean"],
         variety: "Bourbon, Caturra",
-        altitude: "1,500–2,000m",
+        altitude: "1500 - 2000 MASL",
         isOrganic: true,
         isFeatured: false,
         variants: {
@@ -1109,7 +1109,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Bolivia"],
         tastingNotes: ["Milk Chocolate", "Orange", "Silky"],
         variety: "Caturra, Catuai",
-        altitude: "1,400–1,800m",
+        altitude: "1400 - 1800 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -1142,7 +1142,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Yemen"],
         tastingNotes: ["Dried Fruit", "Chocolate", "Spice"],
         variety: "Typica (Yemeni landraces)",
-        altitude: "1,500–2,500m",
+        altitude: "1500 - 2500 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -1175,7 +1175,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["India"],
         tastingNotes: ["Earthy", "Tobacco", "Spice"],
         variety: "Robusta, Kent",
-        altitude: "900–1,200m",
+        altitude: "900 - 1200 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
@@ -1208,7 +1208,7 @@ export async function seedProducts(prisma: PrismaClient) {
         origin: ["Hawaii"],
         tastingNotes: ["Brown Sugar", "Macadamia Nut", "Clean"],
         variety: "Typica",
-        altitude: "150–900m",
+        altitude: "150 - 900 MASL",
         isOrganic: false,
         isFeatured: false,
         variants: {
