@@ -28,6 +28,7 @@ export async function GET(
           },
         },
         variants: {
+          orderBy: { order: "asc" },
           include: {
             purchaseOptions: true,
           },

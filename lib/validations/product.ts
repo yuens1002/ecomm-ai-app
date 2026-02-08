@@ -10,6 +10,7 @@ const baseProductSchema = z.object({
   name: z.string().min(1, "Name is required"),
   slug: z.string().min(1, "Slug is required"),
   description: z.string().optional().nullable(),
+  heading: z.string().optional().nullable(),
   images: z
     .array(
       z.object({
@@ -41,6 +42,7 @@ const coffeeFieldsSchema = z.object({
   variety: z.string().optional().nullable(),
   altitude: z.string().optional().nullable(),
   tastingNotes: z.array(z.string().min(1)).default([]),
+  processing: z.string().optional().nullable(),
 });
 
 // Schema for merch product detail key-value pairs

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.86.1 - 2026-02-08
+
+### Added
+
+- **Product Heading Field**: Customizable storefront heading (e.g., "The Story", "Description") replaces hardcoded labels on product detail page
+- **Variant Ordering**: Variants now have an `order` field for explicit sort control
+- **Processing Field Validation**: Coffee processing method now included in Zod validation schema
+
+### Changed
+
+- Storefront product page uses `product.heading` directly — null heading shows no label
+- Variant queries ordered by `order` field ascending
+
 ## 0.86.0 - 2026-02-07
 
 ### Added

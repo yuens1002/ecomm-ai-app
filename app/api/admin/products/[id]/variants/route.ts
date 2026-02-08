@@ -27,7 +27,7 @@ export async function GET(
       include: {
         purchaseOptions: true,
       },
-      orderBy: { name: "asc" },
+      orderBy: { order: "asc" },
     });
 
     const currentUnit = await getWeightUnit();
