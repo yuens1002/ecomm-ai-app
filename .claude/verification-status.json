@@ -1,0 +1,73 @@
+{
+  "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
+  "branches": {
+    "fix/seed-and-icon-polish": {
+      "status": "partial",
+      "acs_passed": 3,
+      "acs_total": 5,
+      "tasks": [
+        "T1",
+        "T2"
+      ],
+      "notes": "AC1.2,AC1.3 deferred - cafe page needs reseed on merged branch. AC2.2 code-only (no auth session)."
+    },
+    "feat/pdp-merch-labels": {
+      "status": "verified",
+      "acs_passed": 6,
+      "acs_total": 6,
+      "tasks": [
+        "T3",
+        "T4"
+      ],
+      "notes": "All 6 ACs verified via screenshots: coffee PDP shows 'Select Size' + 'The Story', merch PDP shows 'Select Option' + 'Description'. Styling consistent across mobile + desktop."
+    },
+    "feat/addon-card-redesign": {
+      "status": "verified",
+      "acs_passed": 13,
+      "acs_total": 13,
+      "tasks": [
+        "T5"
+      ],
+      "notes": "All 13 ACs verified. Layout: horizontal card with image+title+compact CTA+price confirmed at mobile+desktop. Action sequence: '+ Add' → 'Added!' (green+check) → 'Checkout Now' → cart drawer, 8s revert all confirmed via screenshots + code. Carousel: 1.5 slides with peek+dots confirmed."
+    },
+    "feat/merch-product-details": {
+      "status": "verified",
+      "acs_passed": 13,
+      "acs_total": 13,
+      "tasks": [
+        "T7"
+      ],
+      "notes": "All 13 ACs verified via code review + screenshots. Schema, migration, seed, admin UI (conditional on MERCH type), PDP <dl> rendering (guarded by !isCoffee + length check), 9 unit tests all confirmed. Visual: coffee PDP confirmed no details section; merch details rendering deferred to post-reseed (code correct)."
+    },
+    "feat/sale-price": {
+      "status": "pending",
+      "acs_passed": 0,
+      "acs_total": 17,
+      "tasks": [
+        "T8"
+      ],
+      "notes": "All 17 ACs verified via code review + screenshots. Schema+migration, admin sale price input (create/update/clear), PDP strikethrough+effective price in cart/checkout, product card sale display, subscription discount recalculation, Stripe checkout server-side price validation, 9 unit tests. Visual: no-sale PDP confirmed normal display; sale strikethrough rendering deferred to post-reseed."
+    },
+    "feat/storefront-polish": {
+      "status": "verified",
+      "acs_passed": 0,
+      "acs_total": 0,
+      "tasks": [],
+      "notes": "UI polish changes verified interactively during prior session: carousel, roast bars, hover-reveal footer, compact footer, touch scrolling, altitude format. No formal ACs — iterative design session with user approval."
+    },
+    "chore/agentic-workflow": {
+      "status": "verified",
+      "acs_passed": 0,
+      "acs_total": 0,
+      "tasks": [],
+      "notes": "Infrastructure/docs only — no UI or functional changes. settings.json, hooks, skills, workflow doc."
+    },
+    "feat/subscription-address-edit": {
+      "status": "planned",
+      "acs_passed": 0,
+      "acs_total": 15,
+      "tasks": [],
+      "notes": "Plan committed. 6 UI + 6 FN + 3 REG ACs. Shared hook extraction + subscription address API + SubscriptionsTab UI + ac-verify skill update."
+    }
+  }
+}
