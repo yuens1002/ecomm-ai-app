@@ -20,6 +20,7 @@ import {
   PauseCircle,
   PlayCircle,
   XCircle,
+  Pencil,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -32,6 +33,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
+import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
 
 type SubscriptionStatus = "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE";
 
@@ -79,6 +82,30 @@ export default function SubscriptionsTab({
   const [localSubscriptions, setLocalSubscriptions] =
     useState<Subscription[]>(subscriptions);
   const { toast } = useToast();
+  const editAddress = useEditAddress({
+    getEndpointUrl: (id) => `/api/user/subscriptions/${id}/address`,
+    successMessage: "Shipping address updated for this subscription.",
+    onSuccess: (id, form) => {
+      setLocalSubscriptions((prev) =>
+        prev.map((s) =>
+          s.id === id
+            ? {
+                ...s,
+                recipientName: form.recipientName,
+                shippingStreet: form.street,
+                shippingCity: form.city,
+                shippingState: form.state,
+                shippingPostalCode: form.postalCode,
+                shippingCountry: form.country,
+              }
+            : s
+        )
+      );
+    },
+  });
+
+  const canEditAddress = (sub: Subscription) =>
+    sub.status === "ACTIVE" || sub.status === "PAUSED";
 
   const handleAction = async (
     action: "skip" | "resume" | "cancel",
@@ -319,9 +346,22 @@ export default function SubscriptionsTab({
             {/* Shipping Address */}
             {subscription.shippingStreet && (
               <div>
-                <p className="text-sm text-muted-foreground mb-1">
-                  Shipping to
-                </p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm text-muted-foreground">
+                    Ship to
+                  </p>
+                  {canEditAddress(subscription) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => editAddress.openDialog(subscription)}
+                    >
+                      <Pencil className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
                 <div className="text-sm">
                   {subscription.recipientName && (
                     <p className="font-medium">{subscription.recipientName}</p>
@@ -502,6 +542,24 @@ export default function SubscriptionsTab({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Address Dialog */}
+      <EditAddressDialog
+        open={editAddress.dialogOpen}
+        onOpenChange={editAddress.setDialogOpen}
+        title="Edit Shipping Information"
+        description="Choose from address book or edit ship to information below."
+        savedAddresses={editAddress.savedAddresses}
+        addressForm={editAddress.addressForm}
+        formLoading={editAddress.formLoading}
+        formErrors={editAddress.formErrors}
+        onAddressSelect={editAddress.handleSelect}
+        onFieldChange={(field, value) => {
+          editAddress.setAddressForm((prev) => ({ ...prev, [field]: value }));
+          editAddress.setFormErrors((prev) => ({ ...prev, [field]: undefined }));
+        }}
+        onSubmit={editAddress.handleSubmit}
+      />
     </div>
   );
 }

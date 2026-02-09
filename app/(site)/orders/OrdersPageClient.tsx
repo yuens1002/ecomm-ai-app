@@ -7,8 +7,6 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Loader2, MoreHorizontal } from "lucide-react";
 import {
   Select,
@@ -28,33 +26,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
+import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
 import { PageContainer } from "@/components/shared/PageContainer";
-
-// --- Types ---
-
-interface SavedAddress {
-  id: string;
-  street: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  isDefault: boolean;
-}
 
 // --- Shared Helper Functions ---
 
@@ -197,17 +177,26 @@ export default function OrdersPageClient({
   );
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelOrder, setCancelOrder] = useState<OrderWithItems | null>(null);
-  const [editAddressDialogOpen, setEditAddressDialogOpen] = useState(false);
-  const [editingOrder, setEditingOrder] = useState<OrderWithItems | null>(null);
-  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
-  const [addressFormLoading, setAddressFormLoading] = useState(false);
-  const [addressForm, setAddressForm] = useState({
-    recipientName: "",
-    street: "",
-    city: "",
-    state: "",
-    postalCode: "",
-    country: "",
+  const editAddress = useEditAddress({
+    getEndpointUrl: (id) => `/api/user/orders/${id}/address`,
+    successMessage: "Shipping address updated.",
+    onSuccess: (id, form) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === id
+            ? {
+                ...o,
+                recipientName: form.recipientName,
+                shippingStreet: form.street,
+                shippingCity: form.city,
+                shippingState: form.state,
+                shippingPostalCode: form.postalCode,
+                shippingCountry: form.country,
+              }
+            : o
+        )
+      );
+    },
   });
   const activeTab = statusFilter || "all";
 
@@ -283,126 +272,6 @@ export default function OrdersPageClient({
       });
     } finally {
       setCancellingOrderId(null);
-    }
-  };
-
-  // --- Edit Address ---
-
-  const openEditAddressDialog = async (order: OrderWithItems) => {
-    setEditingOrder(order);
-    setAddressForm({
-      recipientName: order.recipientName || "",
-      street: order.shippingStreet || "",
-      city: order.shippingCity || "",
-      state: order.shippingState || "",
-      postalCode: order.shippingPostalCode || "",
-      country: order.shippingCountry || "",
-    });
-    setEditAddressDialogOpen(true);
-
-    // Fetch saved addresses
-    try {
-      const res = await fetch("/api/user/addresses");
-      if (res.ok) {
-        const data = await res.json();
-        setSavedAddresses(data.addresses || []);
-      }
-    } catch {
-      // Non-critical — selector just won't show saved addresses
-    }
-  };
-
-  const handleAddressSelect = (value: string) => {
-    if (value === "current") {
-      if (!editingOrder) return;
-      setAddressForm({
-        recipientName: editingOrder.recipientName || "",
-        street: editingOrder.shippingStreet || "",
-        city: editingOrder.shippingCity || "",
-        state: editingOrder.shippingState || "",
-        postalCode: editingOrder.shippingPostalCode || "",
-        country: editingOrder.shippingCountry || "",
-      });
-      return;
-    }
-    if (value === "custom") {
-      setAddressForm({
-        recipientName: "",
-        street: "",
-        city: "",
-        state: "",
-        postalCode: "",
-        country: "US",
-      });
-      return;
-    }
-    const addr = savedAddresses.find((a) => a.id === value);
-    if (addr) {
-      setAddressForm((prev) => ({
-        recipientName: prev.recipientName, // keep current recipient
-        street: addr.street,
-        city: addr.city,
-        state: addr.state,
-        postalCode: addr.postalCode,
-        country: addr.country,
-      }));
-    }
-  };
-
-  const handleAddressSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingOrder) return;
-
-    setAddressFormLoading(true);
-    try {
-      const res = await fetch(
-        `/api/user/orders/${editingOrder.id}/address`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(addressForm),
-        }
-      );
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to update address");
-      }
-
-      // Update local state with new address
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === editingOrder.id
-            ? {
-                ...o,
-                recipientName: addressForm.recipientName,
-                shippingStreet: addressForm.street,
-                shippingCity: addressForm.city,
-                shippingState: addressForm.state,
-                shippingPostalCode: addressForm.postalCode,
-                shippingCountry: addressForm.country,
-              }
-            : o
-        )
-      );
-
-      setEditAddressDialogOpen(false);
-      setEditingOrder(null);
-      toast({
-        title: "Address Updated",
-        description: `Shipping address for order #${editingOrder.id.slice(-8)} has been updated.`,
-        variant: undefined,
-        className: "!bg-foreground !text-background !border-foreground",
-      });
-    } catch (err: unknown) {
-      toast({
-        title: "Error",
-        description:
-          err instanceof Error ? err.message : "Failed to update address",
-        variant: "destructive",
-      });
-    } finally {
-      setAddressFormLoading(false);
     }
   };
 
@@ -553,7 +422,7 @@ export default function OrdersPageClient({
                           <DropdownMenuContent align="end">
                             {canEditAddress(order) && (
                               <DropdownMenuItem
-                                onClick={() => openEditAddressDialog(order)}
+                                onClick={() => editAddress.openDialog(order)}
                               >
                                 Edit Address
                               </DropdownMenuItem>
@@ -628,7 +497,7 @@ export default function OrdersPageClient({
                           <DropdownMenuContent align="end">
                             {canEditAddress(order) && (
                               <DropdownMenuItem
-                                onClick={() => openEditAddressDialog(order)}
+                                onClick={() => editAddress.openDialog(order)}
                               >
                                 Edit Address
                               </DropdownMenuItem>
@@ -678,153 +547,22 @@ export default function OrdersPageClient({
       </AlertDialog>
 
       {/* Edit Address Dialog */}
-      <Dialog
-        open={editAddressDialogOpen}
-        onOpenChange={setEditAddressDialogOpen}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              Edit Shipping Address
-            </DialogTitle>
-            <DialogDescription>
-              Update the shipping address for order #{editingOrder?.id.slice(-8)}.
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleAddressSubmit} className="space-y-4">
-            {/* Saved Address Selector */}
-            <div className="space-y-2">
-              <Label htmlFor="address-selector">Load Address</Label>
-              <Select
-                defaultValue="current"
-                onValueChange={handleAddressSelect}
-              >
-                <SelectTrigger id="address-selector">
-                  <SelectValue placeholder="Select an address" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="current">
-                    Current order address
-                  </SelectItem>
-                  {savedAddresses.map((addr) => (
-                    <SelectItem key={addr.id} value={addr.id}>
-                      {addr.street}, {addr.city}, {addr.state}{" "}
-                      {addr.postalCode}
-                      {addr.isDefault ? " (Default)" : ""}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="custom">Custom address</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Form Fields */}
-            <div className="space-y-2">
-              <Label htmlFor="recipientName">Recipient Name</Label>
-              <Input
-                id="recipientName"
-                value={addressForm.recipientName}
-                onChange={(e) =>
-                  setAddressForm({
-                    ...addressForm,
-                    recipientName: e.target.value,
-                  })
-                }
-                placeholder="John Doe"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="street">Street Address</Label>
-              <Input
-                id="street"
-                value={addressForm.street}
-                onChange={(e) =>
-                  setAddressForm({ ...addressForm, street: e.target.value })
-                }
-                placeholder="123 Main St"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  value={addressForm.city}
-                  onChange={(e) =>
-                    setAddressForm({ ...addressForm, city: e.target.value })
-                  }
-                  placeholder="San Francisco"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
-                <Input
-                  id="state"
-                  value={addressForm.state}
-                  onChange={(e) =>
-                    setAddressForm({ ...addressForm, state: e.target.value })
-                  }
-                  placeholder="CA"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="postalCode">Postal Code</Label>
-                <Input
-                  id="postalCode"
-                  value={addressForm.postalCode}
-                  onChange={(e) =>
-                    setAddressForm({
-                      ...addressForm,
-                      postalCode: e.target.value,
-                    })
-                  }
-                  placeholder="94102"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
-                <Input
-                  id="country"
-                  value={addressForm.country}
-                  onChange={(e) =>
-                    setAddressForm({ ...addressForm, country: e.target.value })
-                  }
-                  placeholder="US"
-                  required
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setEditAddressDialogOpen(false)}
-                disabled={addressFormLoading}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={addressFormLoading}>
-                {addressFormLoading && (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                )}
-                Save Address
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <EditAddressDialog
+        open={editAddress.dialogOpen}
+        onOpenChange={editAddress.setDialogOpen}
+        title="Edit Shipping Information"
+        description="Choose from address book or edit ship to information below."
+        savedAddresses={editAddress.savedAddresses}
+        addressForm={editAddress.addressForm}
+        formLoading={editAddress.formLoading}
+        formErrors={editAddress.formErrors}
+        onAddressSelect={editAddress.handleSelect}
+        onFieldChange={(field, value) => {
+          editAddress.setAddressForm((prev) => ({ ...prev, [field]: value }));
+          editAddress.setFormErrors((prev) => ({ ...prev, [field]: undefined }));
+        }}
+        onSubmit={editAddress.handleSubmit}
+      />
     </PageContainer>
   );
 }

@@ -122,6 +122,11 @@ Task("UI ACs", subagent_type="general-purpose", prompt="Verify UI ACs: ...")
 Task("Test suite", subagent_type="general-purpose", prompt="Run npm run test:ci and report results...")
 ```
 
+**Sub-agent monitoring:** Run sub-agents in the background (`run_in_background: true`). Check back after **5 minutes** using the Read tool on the output file. If the sub-agent is stuck (repeating the same action, retrying a failing step, or making no progress), stop it with TaskStop and either:
+
+- Re-spawn with corrected instructions (e.g., fix a selector, adjust navigation steps)
+- Take over the task in the main thread if the sub-agent lacks the context to recover
+
 ### Step 3: Iterate (if needed)
 
 Read the sub-agent's report. For each failed AC:
