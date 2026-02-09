@@ -264,12 +264,93 @@ Main thread reads both reports when complete                           ─┘
 - Commit → PR → merge → /release
 ```
 
+## Process Loop & State Machine
+
+The workflow is enforced by a state machine tracked in `verification-status.json`. Each state controls what hooks allow or block.
+
+```text
+  ┌─────────┐    plan      ┌──────────────┐   implement   ┌──────────────┐
+  │ (start) │──committed──>│   planned     │──────────────>│ implementing │
+  └─────────┘              └──────────────┘               └──────┬───────┘
+                                                                 │
+                              ┌───────────┐    all done    ┌─────v──────┐
+                              │  verified  │<──────────────│  pending   │
+                              └─────┬─────┘               └─────┬──────┘
+                                    │                           │
+                               commit/PR                  ┌────v─────┐
+                                                          │ partial  │──fix──> (back to pending)
+                                                          └──────────┘
+```
+
+| State | Intermediate commits | Final commit | Stop hook |
+|-------|---------------------|-------------|-----------|
+| `planned` | Allowed | Blocked | Allows (reminds to implement) |
+| `implementing` | Allowed | Blocked | Allows (reminds to verify) |
+| `pending` | Blocked | Blocked | **Blocks** — must verify |
+| `partial` | Blocked | Blocked | **Blocks** — must complete verification |
+| `verified` | Allowed | Allowed | Allows |
+
+### State Transitions
+
+| Transition | Who | When |
+|-----------|-----|------|
+| (none) → `planned` | Main thread | After plan approved + committed to branch |
+| `planned` → `implementing` | Main thread | When coding begins |
+| `implementing` → `pending` | Main thread | After all code written + precheck passes |
+| `pending` → `partial` | Sub-agent / verify-workflow | After partial AC verification |
+| `pending`/`partial` → `verified` | Sub-agent / verify-workflow | After all ACs pass |
+
+## Branch & Commit Protocol
+
+Full workflow for AC-driven features:
+
+1. **Create feature branch** from `main`
+2. **Plan** on the branch (explore codebase, produce plan with ACs)
+3. **Commit the plan**: `git commit -m "docs: add plan for {feature}"`
+4. **Register** `verification-status.json` entry with status `"planned"` and `acs_total` = AC count
+5. **Transition** to `"implementing"` when coding begins
+6. **Follow the commit schedule** defined in the plan (intermediate commits allowed)
+7. **Transition** to `"pending"` when implementation is complete
+8. **Run verification** → transitions to `"verified"`
+9. **Final commit** + PR
+
+### Commit Schedule Convention
+
+Plans must include a commit schedule section:
+
+```markdown
+## Commit Schedule
+1. Plan commit: `docs: add plan for {feature}` (after plan approval)
+2. API route: `feat: add PATCH endpoint` (after route + validation)
+3. Client UI: `feat: add dialog component` (after UI changes)
+4. Verification: `chore: update verification status` (after all ACs pass)
+```
+
+## Enforcement Hooks
+
+| Hook | Event | File | Purpose | Blocks? |
+|------|-------|------|---------|---------|
+| Session awareness | SessionStart | `session-start-loop-node.js` | Injects process loop context at session start | Context injection (exit 2) |
+| Stop gate | Stop | `verify-before-stop-node.js` | Prevents declaring done without verification | Yes (`pending`/`partial`) |
+| Commit gate | PreToolUse (Bash) | `verify-before-commit-node.js` | Prevents commits in unverified states | Yes (`pending`/`partial`) |
+
+### How They Work Together
+
+1. **Session starts** → SessionStart hook reads branch status, injects context message
+2. **During implementation** → Stop hook allows, commit gate allows intermediate commits
+3. **Implementation complete** → Main thread sets status to `"pending"`
+4. **Claude tries to stop** → Stop hook blocks, tells Claude to run verification
+5. **Claude tries to commit** → Commit gate blocks, tells Claude to verify first
+6. **Verification passes** → Status set to `"verified"`, all hooks allow
+
 ## Files
 
 | File | Shared | Purpose |
 |------|--------|---------|
-| `.claude/settings.json` | Yes | Hook registration (commit gate) |
+| `.claude/settings.json` | Yes | Hook registration (SessionStart, PreToolUse, Stop) |
 | `.claude/settings.local.json` | No | Personal bash allow-list |
+| `.claude/hooks/session-start-loop-node.js` | Yes | SessionStart workflow context injection |
+| `.claude/hooks/verify-before-stop-node.js` | Yes | Stop gate — blocks premature completion |
 | `.claude/hooks/verify-before-commit-node.js` | Yes | Pre-commit verification gate |
 | `.claude/verification-status.json` | No | Per-branch AC tracking |
 | `.claude/skills/ac-verify/SKILL.md` | Yes | Verification sub-agent prompt template |
