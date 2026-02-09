@@ -24,7 +24,7 @@ import type {
   AddressForm,
   AddressFormErrors,
   SavedAddress,
-} from "@/hooks/useEditAddress";
+} from "@/app/(site)/_hooks/useEditAddress";
 
 interface EditAddressDialogProps {
   open: boolean;
@@ -65,20 +65,29 @@ export function EditAddressDialog({
           {/* Address Book Selector */}
           <Field>
             <FormHeading htmlFor="address-selector" label="Address Book" />
-            <Select defaultValue="current" onValueChange={onAddressSelect}>
+            <Select
+              onValueChange={onAddressSelect}
+              disabled={savedAddresses.length === 0}
+            >
               <SelectTrigger id="address-selector">
-                <SelectValue placeholder="Select an address" />
+                <SelectValue
+                  placeholder={
+                    savedAddresses.length === 0
+                      ? "No saved address found"
+                      : "Select a saved address"
+                  }
+                />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="current">Current address</SelectItem>
-                {savedAddresses.map((addr) => (
-                  <SelectItem key={addr.id} value={addr.id}>
-                    {addr.street}, {addr.city}, {addr.state} {addr.postalCode}
-                    {addr.isDefault ? " (Default)" : ""}
-                  </SelectItem>
-                ))}
-                <SelectItem value="custom">Custom address</SelectItem>
-              </SelectContent>
+              {savedAddresses.length > 0 && (
+                <SelectContent>
+                  {savedAddresses.map((addr) => (
+                    <SelectItem key={addr.id} value={addr.id}>
+                      {addr.street}, {addr.city}, {addr.state} {addr.postalCode}
+                      {addr.isDefault ? " (Default)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              )}
             </Select>
           </Field>
 

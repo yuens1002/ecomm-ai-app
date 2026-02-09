@@ -60,19 +60,45 @@
 
 - App structure: Next.js App Router in `app/` directory
 - Key directories:
-  - `app/admin/(product-menu)/` - Menu Builder feature
+  - `app/admin/` - Admin pages and features (product-menu, etc.)
+  - `app/(site)/` - Customer-facing pages (account, orders, products, etc.)
   - `app/api/` - API routes
   - `prisma/` - Database schema and migrations
-  - `components/` - Shared UI components
+  - `components/` - App-wide shared UI primitives only (ui/, shared/, providers/)
+  - `hooks/` - App-wide shared hooks only (use-toast, etc.)
   - `lib/` - Utilities and helpers
   - `lib/navigation/` - Unified navigation system (route registry, hooks)
+
+**File placement rules (co-location):**
+
+This project uses a **co-located file structure**. New files MUST be placed according to their scope — never dump feature-specific files into top-level `components/` or `hooks/`.
+
+| Scope | Components | Hooks | Tests |
+|-------|-----------|-------|-------|
+| **Site-wide shared** (used across multiple `(site)` pages) | `app/(site)/_components/{feature}/` | `app/(site)/_hooks/` | `__tests__/` co-located next to source |
+| **Admin-wide shared** | `app/admin/{feature}/components/` | `app/admin/{feature}/hooks/` | `__tests__/` co-located next to source |
+| **Page-specific** (used by one page only) | Same directory as the page | Same directory as the page | `__tests__/` co-located next to source |
+| **App-wide primitives** (used across site + admin) | `components/ui/`, `components/shared/` | `hooks/` | `__tests__/` co-located next to source |
+| **API routes** | N/A | N/A | `__tests__/` co-located in the API route dir |
+
+**Decision guide for new files:**
+
+1. Is it used by only one page? → Put it in the same directory as that page
+2. Is it shared across multiple `(site)` pages? → `app/(site)/_components/{feature}/` or `app/(site)/_hooks/`
+3. Is it shared across site + admin? → `components/` or `hooks/` (root level)
+4. Is it a UI primitive (button, dialog, input)? → `components/ui/`
+5. Is it form-related (field wrapper, heading)? → `components/ui/forms/`
+
+**Existing `_components` feature folders:** `account/`, `ai/`, `cart/`, `category/`, `content/`, `layout/`, `navigation/`, `product/`
+
+**Reference:** See [`docs/architecture/FILE-RESTRUCTURE-CHECKLIST.md`](docs/architecture/FILE-RESTRUCTURE-CHECKLIST.md) for the canonical directory tree with expected file locations.
 
 **Search patterns:**
 
 - Server Actions: `app/**/actions/*.ts`
-- React Hooks: `app/**/hooks/*.ts`
+- React Hooks: `app/**/_hooks/*.ts`, `app/**/hooks/*.ts`, `hooks/*.ts`
 - Types: `app/**/types/*.ts`, `types/*.ts`
-- Components: `app/**/components/**/*.tsx`, `components/**/*.tsx`
+- Components: `app/**/_components/**/*.tsx`, `components/**/*.tsx`
 
 ### 2. Implementation Planning Agent
 
@@ -173,7 +199,7 @@ npm run precheck    # TypeScript + ESLint
 
 #### Commit Format
 
-```
+```text
 <type>: <brief description>
 ```
 
@@ -233,7 +259,7 @@ Use the `/release` skill (recommended) or follow manual steps:
 npm run release:patch -- -y --push --sync-package
 ```
 
-```
+```text
 1. In feature PR: Update CHANGELOG.md AND package.json version
 2. Merge PR to main
 3. Run: npm run release:patch -- -y --push --sync-package
@@ -569,7 +595,7 @@ Before creating pull request:
 
 ### When I Ask You To
 
-**"Add a new feature"**
+#### Add a new feature
 
 1. Use Planning Agent to design approach
 2. Review similar existing features
@@ -579,7 +605,7 @@ Before creating pull request:
 6. Run auto-review
 7. Create commit
 
-**"Fix a bug"**
+#### Fix a bug
 
 1. Reproduce the issue
 2. Identify root cause
@@ -589,7 +615,7 @@ Before creating pull request:
 6. Run auto-review
 7. Create commit
 
-**"Refactor code"**
+#### Refactor code
 
 1. Use Exploration Agent to understand current implementation
 2. Plan refactoring strategy
@@ -599,7 +625,7 @@ Before creating pull request:
 6. Run auto-review
 7. Create commit
 
-**"Review my code"**
+#### Review my code
 
 1. Use Review Agent with full checklist
 2. Check type safety
@@ -609,7 +635,7 @@ Before creating pull request:
 6. Security review
 7. Provide specific, actionable feedback
 
-**"Create a PR"**
+#### Create a PR
 
 1. Verify all commits follow convention
 2. Run full test suite

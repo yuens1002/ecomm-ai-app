@@ -49,6 +49,7 @@ When this skill is invoked, follow these steps exactly:
 ### Step 1: Parse Inputs
 
 Extract from the prompt:
+
 - **Branch name** (for the report header)
 - **Dev server URL**
 - **AC list** grouped by category (UI / Functional / Regression)
@@ -231,6 +232,17 @@ await page.click('button[type="submit"]');
 await page.waitForSelector('[data-sonner-toast]', { visible: true });
 await page.screenshot({ path: path.join(OUTPUT_DIR, "verify-after-submit.png") });
 ```
+
+## Early Exit
+
+Exit early and return a partial report when any of these conditions are met:
+
+- **Dev server not reachable** after 2 attempts (wait 10s between): Report as blocker, return what you have.
+- **Wrong page / element not found**: If navigation lands on the wrong page or a key element isn't found after 2 retries with different selectors, mark that AC as BLOCKED (not FAIL), explain what was tried, and move on to the next AC. Do NOT loop indefinitely.
+- **No-op scenario**: If the feature under test doesn't exist yet (e.g., no edit button rendered, no API route created), report all related ACs as NOT_IMPLEMENTED and exit immediately. Don't keep searching.
+- **Repeated failures**: If 3+ consecutive actions fail (clicks, navigations, screenshots), stop the Puppeteer session, report findings so far, and exit. The main thread will diagnose and re-spawn.
+
+**Key principle:** It's better to return a partial report quickly than to spin for 10+ minutes achieving nothing. The main thread can fix context issues and re-spawn.
 
 ## Error Handling
 

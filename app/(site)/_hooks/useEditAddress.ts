@@ -111,22 +111,6 @@ export function useEditAddress({
   };
 
   const handleSelect = (value: string) => {
-    if (value === "current") {
-      if (!editingEntity) return;
-      setAddressForm(entityToForm(editingEntity));
-      return;
-    }
-    if (value === "custom") {
-      setAddressForm({
-        recipientName: "",
-        street: "",
-        city: "",
-        state: "",
-        postalCode: "",
-        country: "US",
-      });
-      return;
-    }
     const addr = savedAddresses.find((a) => a.id === value);
     if (addr) {
       setAddressForm((prev) => ({

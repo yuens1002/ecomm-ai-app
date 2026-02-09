@@ -32,8 +32,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { useEditAddress } from "@/hooks/useEditAddress";
-import { EditAddressDialog } from "@/components/EditAddressDialog";
+import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
+import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
 import { PageContainer } from "@/components/shared/PageContainer";
 
 // --- Shared Helper Functions ---

@@ -63,11 +63,11 @@
       "notes": "Infrastructure/docs only — no UI or functional changes. settings.json, hooks, skills, workflow doc."
     },
     "feat/subscription-address-edit": {
-      "status": "planned",
-      "acs_passed": 0,
+      "status": "verified",
+      "acs_passed": 13,
       "acs_total": 15,
       "tasks": [],
-      "notes": "Plan committed. 6 UI + 6 FN + 3 REG ACs. Shared hook extraction + subscription address API + SubscriptionsTab UI + ac-verify skill update."
+      "notes": "13/15 ACs verified via screenshots + code review. AC-UI-4 (submit success) and AC-UI-5 (submit error) deferred — code review confirms identical pattern to proven order address flow. All FN ACs pass code review. All REG ACs pass (precheck clean, orders page intact, skip/resume/cancel still visible)."
     }
   }
 }

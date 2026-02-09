@@ -33,8 +33,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useEditAddress } from "@/hooks/useEditAddress";
-import { EditAddressDialog } from "@/components/EditAddressDialog";
+import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
+import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
 
 type SubscriptionStatus = "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE";
 

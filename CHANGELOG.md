@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.87.0 - 2026-02-09
+
+### Added
+
+- **Subscription Address Edit**: Customers can update shipping address on ACTIVE/PAUSED subscriptions from account page
+- **Shared Address Edit Hook**: Reusable `useEditAddress` hook and `EditAddressDialog` component shared between orders and subscriptions
+- **Address Book Selector**: Saved addresses from user's address book populate the edit dialog dropdown
+- **Client-Side Form Validation**: Field-level error messages with required-field checks before submission
+
+### Changed
+
+- Relocated `EditAddressDialog` and `useEditAddress` to co-located paths (`_components/account/`, `_hooks/`)
+- Address book dropdown shows only saved DB addresses (disabled state when none exist)
+- Documented co-location file placement rules in CLAUDE.md
+
 ## 0.86.1 - 2026-02-08
 
 ### Added

@@ -234,7 +234,7 @@ Add two new settings to `SiteSettings` table:
 - [x] 44x44px touch targets (WCAG compliance)
 - [x] 521+ tests passing
 
-**Follow-up (Jan 8, 2026): Pathway to a data-config-driven Menu Builder**
+#### Follow-up (Jan 8, 2026): Pathway to a data-config-driven Menu Builder
 
 The goal is to make the Menu Builder predictable and shippable by driving UI behavior from a small, typed configuration layer, without attempting a “single mega config file” all at once.
 
@@ -307,7 +307,7 @@ A **block-based, drag-and-drop interface** where admins build the menu structure
 
 **Building Blocks (Draggable Components)**:
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │ 🔧 Menu Settings                            │
 │ [Coffee Icon ▼] [Text: "Coffee"]           │
@@ -382,7 +382,7 @@ A **block-based, drag-and-drop interface** where admins build the menu structure
 
 **1. Route Structure**:
 
-```
+```text
 /admin/menu-builder                    # Main menu builder (feature-gated)
 /admin/labels/[id]                     # Edit label (optional, can be inline)
 /admin/categories/[id]                 # Edit category details
@@ -1523,48 +1523,22 @@ When user clicks "Migrate to Blocks":
 
 ### Customer Self-Service Shipping Address Update
 
-**Status**: Backlog
+**Status**: Complete ✅
 **Priority**: Medium
+**Completed**: February 9, 2026 (v0.87.0)
 **Description**: Allow customers to update their subscription shipping address from the account page. Stripe Customer Portal only supports billing address updates, not shipping.
 
-**Current State**:
+**Implemented**:
 
-- Stripe portal only allows billing address changes
-- No way for customers to update shipping address without contacting support
-- `customer.updated` webhook syncs billing address but not shipping
-
-**Proposed Solution**:
-
-- Add "Edit Shipping Address" button to SubscriptionsTab for each subscription
-- Open modal with address form pre-populated with current address
-- Create `/api/user/subscriptions/[id]/address` endpoint
-- Update: local Subscription record, pending Order records, Stripe subscription metadata
-
-**Tasks**:
-
-- [ ] Add EditAddressDialog component to SubscriptionsTab
-- [ ] Create PATCH `/api/user/subscriptions/[id]/address` endpoint
-- [ ] Update Subscription shipping fields in database
-- [ ] Update Stripe subscription metadata for future renewals
-- [ ] Update any PENDING orders linked to subscription
-- [ ] Add validation for required address fields
-
-**Acceptance Criteria**:
-
-- Customer can update shipping address from account page
-- Changes apply to subscription and all pending orders
-- Future renewal orders use updated address (via Stripe metadata)
-- Address validation prevents incomplete submissions
-
-**Test Flow Reference**:
-
-```
-6. Address Update Flow (Customer Self-Service)
-  Step: 6a - Customer clicks "Edit Address" on subscription
-  Step: 6b - Modal opens with current address pre-filled
-  Step: 6c - Customer submits updated address
-  Step: 6d - Subscription, pending orders, and Stripe metadata updated
-```
+- [x] Shared `useEditAddress` hook extracted for reuse across orders and subscriptions
+- [x] Shared `EditAddressDialog` component with form validation and saved address selector
+- [x] PATCH `/api/user/subscriptions/[id]/address` endpoint with auth, ownership, status gate, Zod validation
+- [x] Subscription address fields updated in DB
+- [x] Stripe subscription metadata updated for future renewals
+- [x] New address saved to user's address book (dedup built-in)
+- [x] Edit button visible for ACTIVE/PAUSED subscriptions only
+- [x] Client-side form validation with field-level error messages
+- [x] 17 unit tests (8 API endpoint + 9 hook)
 
 ---
 
@@ -1628,7 +1602,7 @@ When user clicks "Migrate to Blocks":
 
 **Proposed Refactor**:
 
-```
+```text
 app/api/webhooks/stripe/
 ├── route.ts                    # Main entry point, event routing
 ├── handlers/
@@ -1908,4 +1882,4 @@ Requires separate feature branch for proper design, implementation, and testing.
 
 ---
 
-_Last Updated: January 28, 2026_
+Last Updated: February 9, 2026
