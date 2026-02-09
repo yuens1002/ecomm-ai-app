@@ -20,7 +20,7 @@ import {
   PauseCircle,
   PlayCircle,
   XCircle,
-  MapPin,
+  Pencil,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -348,16 +348,16 @@ export default function SubscriptionsTab({
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <p className="text-sm text-muted-foreground">
-                    Shipping to
+                    Ship to
                   </p>
                   {canEditAddress(subscription) && (
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       className="h-6 px-2 text-xs"
                       onClick={() => editAddress.openDialog(subscription)}
                     >
-                      <MapPin className="h-3 w-3 mr-1" />
+                      <Pencil className="h-3 w-3 mr-1" />
                       Edit
                     </Button>
                   )}
@@ -547,15 +547,17 @@ export default function SubscriptionsTab({
       <EditAddressDialog
         open={editAddress.dialogOpen}
         onOpenChange={editAddress.setDialogOpen}
-        title="Edit Shipping Address"
-        description="Update the shipping address for this subscription. Changes apply to future renewals only."
+        title="Edit Shipping Information"
+        description="Choose from address book or edit ship to information below."
         savedAddresses={editAddress.savedAddresses}
         addressForm={editAddress.addressForm}
         formLoading={editAddress.formLoading}
+        formErrors={editAddress.formErrors}
         onAddressSelect={editAddress.handleSelect}
-        onFieldChange={(field, value) =>
-          editAddress.setAddressForm((prev) => ({ ...prev, [field]: value }))
-        }
+        onFieldChange={(field, value) => {
+          editAddress.setAddressForm((prev) => ({ ...prev, [field]: value }));
+          editAddress.setFormErrors((prev) => ({ ...prev, [field]: undefined }));
+        }}
         onSubmit={editAddress.handleSubmit}
       />
     </div>

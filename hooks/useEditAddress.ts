@@ -49,6 +49,27 @@ function entityToForm(entity: AddressEntity): AddressForm {
   };
 }
 
+export type AddressFormErrors = Partial<Record<keyof AddressForm, string>>;
+
+const FIELD_LABELS: Record<keyof AddressForm, string> = {
+  recipientName: "Recipient name",
+  street: "Street address",
+  city: "City",
+  state: "State",
+  postalCode: "Postal code",
+  country: "Country",
+};
+
+function validateForm(form: AddressForm): AddressFormErrors {
+  const errors: AddressFormErrors = {};
+  for (const key of Object.keys(form) as (keyof AddressForm)[]) {
+    if (!form[key].trim()) {
+      errors[key] = `${FIELD_LABELS[key]} is required`;
+    }
+  }
+  return errors;
+}
+
 export function useEditAddress({
   getEndpointUrl,
   successMessage,
@@ -61,6 +82,7 @@ export function useEditAddress({
   );
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [formLoading, setFormLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState<AddressFormErrors>({});
   const [addressForm, setAddressForm] = useState<AddressForm>({
     recipientName: "",
     street: "",
@@ -73,6 +95,7 @@ export function useEditAddress({
   const openDialog = async (entity: AddressEntity) => {
     setEditingEntity(entity);
     setAddressForm(entityToForm(entity));
+    setFormErrors({});
     setDialogOpen(true);
 
     // Fetch saved addresses (non-blocking)
@@ -121,6 +144,10 @@ export function useEditAddress({
     e.preventDefault();
     if (!editingEntity) return;
 
+    const errors = validateForm(addressForm);
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     setFormLoading(true);
     try {
       const res = await fetch(getEndpointUrl(editingEntity.id), {
@@ -163,6 +190,8 @@ export function useEditAddress({
     addressForm,
     setAddressForm,
     formLoading,
+    formErrors,
+    setFormErrors,
     openDialog,
     handleSelect,
     handleSubmit,

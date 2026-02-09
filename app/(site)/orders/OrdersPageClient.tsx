@@ -550,15 +550,17 @@ export default function OrdersPageClient({
       <EditAddressDialog
         open={editAddress.dialogOpen}
         onOpenChange={editAddress.setDialogOpen}
-        title="Edit Shipping Address"
-        description={`Update the shipping address for order #${editAddress.editingEntity?.id.slice(-8) ?? ""}.`}
+        title="Edit Shipping Information"
+        description="Choose from address book or edit ship to information below."
         savedAddresses={editAddress.savedAddresses}
         addressForm={editAddress.addressForm}
         formLoading={editAddress.formLoading}
+        formErrors={editAddress.formErrors}
         onAddressSelect={editAddress.handleSelect}
-        onFieldChange={(field, value) =>
-          editAddress.setAddressForm((prev) => ({ ...prev, [field]: value }))
-        }
+        onFieldChange={(field, value) => {
+          editAddress.setAddressForm((prev) => ({ ...prev, [field]: value }));
+          editAddress.setFormErrors((prev) => ({ ...prev, [field]: undefined }));
+        }}
         onSubmit={editAddress.handleSubmit}
       />
     </PageContainer>
