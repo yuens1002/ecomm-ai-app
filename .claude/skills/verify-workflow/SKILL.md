@@ -54,9 +54,35 @@ Drive a complete **implement -> verify -> iterate -> review** loop using sub-age
 
 ## Step-by-Step
 
+### Step 0: Register & Branch
+
+Before implementation, set up the workflow tracking:
+
+1. **Create feature branch:** `git checkout -b feat/{feature-name}`
+2. **Commit the approved plan** to the branch: `git commit -m "docs: add plan for {feature}"`
+3. **Register in verification-status.json:**
+
+   ```jsonc
+   // .claude/verification-status.json → branches["{branch}"]
+   {
+     "status": "planned",
+     "acs_passed": 0,
+     "acs_total": {count from plan},
+     "tasks": [],
+     "notes": "Plan approved and committed."
+   }
+   ```
+
+4. **When coding begins**, update status to `"implementing"`
+5. **When all code is written + precheck passes**, update status to `"pending"`
+
+This activates the enforcement hooks: SessionStart will inject workflow context, Stop will block premature completion, and the commit gate will allow intermediate commits.
+
 ### Step 1: Implement
 
 Execute the approved plan. Track progress with TaskCreate/TaskUpdate.
+
+Follow the **commit schedule** defined in the plan — commit logical chunks as you go (status must be `"planned"` or `"implementing"` for intermediate commits).
 
 **After implementation, run precheck:**
 
@@ -64,7 +90,7 @@ Execute the approved plan. Track progress with TaskCreate/TaskUpdate.
 npm run precheck
 ```
 
-Fix any TS/ESLint errors before proceeding to verification.
+Fix any TS/ESLint errors, then update verification-status to `"pending"` before proceeding to verification.
 
 ### Step 2: Verify (sub-agent delegation)
 
