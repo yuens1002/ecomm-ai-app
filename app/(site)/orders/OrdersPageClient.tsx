@@ -7,7 +7,9 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, MoreHorizontal } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -24,9 +26,35 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 import { PageContainer } from "@/components/shared/PageContainer";
+
+// --- Types ---
+
+interface SavedAddress {
+  id: string;
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  isDefault: boolean;
+}
 
 // --- Shared Helper Functions ---
 
@@ -151,48 +179,6 @@ function ShipToInfo({
   return <div className="text-sm">{content}</div>;
 }
 
-function CancelOrderDialog({
-  orderId,
-  isLoading,
-  onCancel,
-}: {
-  orderId: string;
-  isLoading: boolean;
-  onCancel: (orderId: string) => void;
-}) {
-  return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="outline" size="sm" disabled={isLoading}>
-          {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <span>Cancel Order</span>
-          )}
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Cancel Order #{orderId.slice(-8)}?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will immediately cancel your order and process a full refund to
-            your original payment method. This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Keep Order</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => onCancel(orderId)}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            Cancel Order & Refund
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
 // --- Main Component ---
 
 interface OrdersPageClientProps {
@@ -203,11 +189,26 @@ export default function OrdersPageClient({
   statusFilter,
 }: OrdersPageClientProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(
     null
   );
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelOrder, setCancelOrder] = useState<OrderWithItems | null>(null);
+  const [editAddressDialogOpen, setEditAddressDialogOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<OrderWithItems | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [addressFormLoading, setAddressFormLoading] = useState(false);
+  const [addressForm, setAddressForm] = useState({
+    recipientName: "",
+    street: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "",
+  });
   const activeTab = statusFilter || "all";
 
   const fetchOrders = useCallback(async () => {
@@ -239,7 +240,16 @@ export default function OrdersPageClient({
     }
   };
 
-  const handleCancelOrder = async (orderId: string) => {
+  // --- Cancel Order ---
+
+  const openCancelDialog = (order: OrderWithItems) => {
+    setCancelOrder(order);
+    setCancelDialogOpen(true);
+  };
+
+  const handleCancelOrder = async () => {
+    if (!cancelOrder) return;
+    const orderId = cancelOrder.id;
     setCancellingOrderId(orderId);
     try {
       const response = await fetch(`/api/user/orders/${orderId}/cancel`, {
@@ -251,18 +261,161 @@ export default function OrdersPageClient({
         throw new Error(data.error || "Failed to cancel order");
       }
 
-      // Update the order in the local state
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order.id === orderId ? { ...order, status: "CANCELLED" } : order
         )
       );
+      setCancelDialogOpen(false);
+      setCancelOrder(null);
+      toast({
+        title: "Order Canceled",
+        description: `Order #${orderId.slice(-8)} has been canceled and refunded.`,
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Failed to cancel order");
+      toast({
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Failed to cancel order",
+        variant: "destructive",
+      });
     } finally {
       setCancellingOrderId(null);
     }
   };
+
+  // --- Edit Address ---
+
+  const openEditAddressDialog = async (order: OrderWithItems) => {
+    setEditingOrder(order);
+    setAddressForm({
+      recipientName: order.recipientName || "",
+      street: order.shippingStreet || "",
+      city: order.shippingCity || "",
+      state: order.shippingState || "",
+      postalCode: order.shippingPostalCode || "",
+      country: order.shippingCountry || "",
+    });
+    setEditAddressDialogOpen(true);
+
+    // Fetch saved addresses
+    try {
+      const res = await fetch("/api/user/addresses");
+      if (res.ok) {
+        const data = await res.json();
+        setSavedAddresses(data.addresses || []);
+      }
+    } catch {
+      // Non-critical — selector just won't show saved addresses
+    }
+  };
+
+  const handleAddressSelect = (value: string) => {
+    if (value === "current") {
+      if (!editingOrder) return;
+      setAddressForm({
+        recipientName: editingOrder.recipientName || "",
+        street: editingOrder.shippingStreet || "",
+        city: editingOrder.shippingCity || "",
+        state: editingOrder.shippingState || "",
+        postalCode: editingOrder.shippingPostalCode || "",
+        country: editingOrder.shippingCountry || "",
+      });
+      return;
+    }
+    if (value === "custom") {
+      setAddressForm({
+        recipientName: "",
+        street: "",
+        city: "",
+        state: "",
+        postalCode: "",
+        country: "US",
+      });
+      return;
+    }
+    const addr = savedAddresses.find((a) => a.id === value);
+    if (addr) {
+      setAddressForm((prev) => ({
+        recipientName: prev.recipientName, // keep current recipient
+        street: addr.street,
+        city: addr.city,
+        state: addr.state,
+        postalCode: addr.postalCode,
+        country: addr.country,
+      }));
+    }
+  };
+
+  const handleAddressSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingOrder) return;
+
+    setAddressFormLoading(true);
+    try {
+      const res = await fetch(
+        `/api/user/orders/${editingOrder.id}/address`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(addressForm),
+        }
+      );
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update address");
+      }
+
+      // Update local state with new address
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === editingOrder.id
+            ? {
+                ...o,
+                recipientName: addressForm.recipientName,
+                shippingStreet: addressForm.street,
+                shippingCity: addressForm.city,
+                shippingState: addressForm.state,
+                shippingPostalCode: addressForm.postalCode,
+                shippingCountry: addressForm.country,
+              }
+            : o
+        )
+      );
+
+      setEditAddressDialogOpen(false);
+      setEditingOrder(null);
+      toast({
+        title: "Address Updated",
+        description: `Shipping address for order #${editingOrder.id.slice(-8)} has been updated.`,
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
+    } catch (err: unknown) {
+      toast({
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Failed to update address",
+        variant: "destructive",
+      });
+    } finally {
+      setAddressFormLoading(false);
+    }
+  };
+
+  // --- Helpers ---
+
+  const canEditAddress = (order: OrderWithItems) =>
+    order.status === "PENDING" && order.deliveryMethod === "DELIVERY";
+
+  const canCancelOrder = (order: OrderWithItems) =>
+    order.status === "PENDING";
+
+  const hasActions = (order: OrderWithItems) =>
+    canEditAddress(order) || canCancelOrder(order);
 
   const getOrderCount = (status?: string) => {
     if (!status || status === "all") return orders.length;
@@ -281,6 +434,8 @@ export default function OrdersPageClient({
     }
     return order.status === statusFilter.toUpperCase();
   });
+
+  // --- Render ---
 
   return (
     <PageContainer>
@@ -380,12 +535,39 @@ export default function OrdersPageClient({
                       <div className="font-semibold text-lg">
                         {formatPrice(order.totalInCents)}
                       </div>
-                      {order.status === "PENDING" && (
-                        <CancelOrderDialog
-                          orderId={order.id}
-                          isLoading={cancellingOrderId === order.id}
-                          onCancel={handleCancelOrder}
-                        />
+                      {hasActions(order) && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={cancellingOrderId === order.id}
+                            >
+                              {cancellingOrderId === order.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MoreHorizontal className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {canEditAddress(order) && (
+                              <DropdownMenuItem
+                                onClick={() => openEditAddressDialog(order)}
+                              >
+                                Edit Address
+                              </DropdownMenuItem>
+                            )}
+                            {canCancelOrder(order) && (
+                              <DropdownMenuItem
+                                onClick={() => openCancelDialog(order)}
+                                className="text-red-600"
+                              >
+                                Cancel Order
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                   </div>
@@ -428,12 +610,39 @@ export default function OrdersPageClient({
 
                     {/* Actions */}
                     <div className="flex justify-end">
-                      {order.status === "PENDING" && (
-                        <CancelOrderDialog
-                          orderId={order.id}
-                          isLoading={cancellingOrderId === order.id}
-                          onCancel={handleCancelOrder}
-                        />
+                      {hasActions(order) && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={cancellingOrderId === order.id}
+                            >
+                              {cancellingOrderId === order.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MoreHorizontal className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {canEditAddress(order) && (
+                              <DropdownMenuItem
+                                onClick={() => openEditAddressDialog(order)}
+                              >
+                                Edit Address
+                              </DropdownMenuItem>
+                            )}
+                            {canCancelOrder(order) && (
+                              <DropdownMenuItem
+                                onClick={() => openCancelDialog(order)}
+                                className="text-red-600"
+                              >
+                                Cancel Order
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                   </div>
@@ -443,6 +652,179 @@ export default function OrdersPageClient({
           </CardContent>
         </Card>
       )}
+
+      {/* Cancel Order Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Cancel Order #{cancelOrder?.id.slice(-8)}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will immediately cancel your order and process a full refund
+              to your original payment method. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Order</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelOrder}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Cancel Order & Refund
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Address Dialog */}
+      <Dialog
+        open={editAddressDialogOpen}
+        onOpenChange={setEditAddressDialogOpen}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Edit Shipping Address
+            </DialogTitle>
+            <DialogDescription>
+              Update the shipping address for order #{editingOrder?.id.slice(-8)}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleAddressSubmit} className="space-y-4">
+            {/* Saved Address Selector */}
+            <div className="space-y-2">
+              <Label htmlFor="address-selector">Load Address</Label>
+              <Select
+                defaultValue="current"
+                onValueChange={handleAddressSelect}
+              >
+                <SelectTrigger id="address-selector">
+                  <SelectValue placeholder="Select an address" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current">
+                    Current order address
+                  </SelectItem>
+                  {savedAddresses.map((addr) => (
+                    <SelectItem key={addr.id} value={addr.id}>
+                      {addr.street}, {addr.city}, {addr.state}{" "}
+                      {addr.postalCode}
+                      {addr.isDefault ? " (Default)" : ""}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="custom">Custom address</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Form Fields */}
+            <div className="space-y-2">
+              <Label htmlFor="recipientName">Recipient Name</Label>
+              <Input
+                id="recipientName"
+                value={addressForm.recipientName}
+                onChange={(e) =>
+                  setAddressForm({
+                    ...addressForm,
+                    recipientName: e.target.value,
+                  })
+                }
+                placeholder="John Doe"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="street">Street Address</Label>
+              <Input
+                id="street"
+                value={addressForm.street}
+                onChange={(e) =>
+                  setAddressForm({ ...addressForm, street: e.target.value })
+                }
+                placeholder="123 Main St"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  value={addressForm.city}
+                  onChange={(e) =>
+                    setAddressForm({ ...addressForm, city: e.target.value })
+                  }
+                  placeholder="San Francisco"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">State</Label>
+                <Input
+                  id="state"
+                  value={addressForm.state}
+                  onChange={(e) =>
+                    setAddressForm({ ...addressForm, state: e.target.value })
+                  }
+                  placeholder="CA"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="postalCode">Postal Code</Label>
+                <Input
+                  id="postalCode"
+                  value={addressForm.postalCode}
+                  onChange={(e) =>
+                    setAddressForm({
+                      ...addressForm,
+                      postalCode: e.target.value,
+                    })
+                  }
+                  placeholder="94102"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
+                <Input
+                  id="country"
+                  value={addressForm.country}
+                  onChange={(e) =>
+                    setAddressForm({ ...addressForm, country: e.target.value })
+                  }
+                  placeholder="US"
+                  required
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditAddressDialogOpen(false)}
+                disabled={addressFormLoading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={addressFormLoading}>
+                {addressFormLoading && (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                )}
+                Save Address
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }
