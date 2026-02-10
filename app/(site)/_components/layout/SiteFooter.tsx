@@ -269,7 +269,7 @@ export default async function SiteFooter() {
             <h3 className="text-lg font-semibold">
               {brandingSettings.footerQuickLinksHeading}
             </h3>
-            <ul className="space-y-2">
+            <ul className="mt-4 space-y-2">
               <li>
                 <Link
                   href="/"
