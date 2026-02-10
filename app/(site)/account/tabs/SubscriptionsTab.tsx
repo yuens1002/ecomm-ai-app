@@ -16,12 +16,6 @@ import {
   Loader2,
   ExternalLink,
   Package,
-  Calendar,
-  PauseCircle,
-  PlayCircle,
-  XCircle,
-  Pencil,
-  MoreVertical,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -34,12 +28,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
 import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
 import { MobileRecordCard } from "@/app/(site)/_components/account/MobileRecordCard";
@@ -233,21 +221,6 @@ export default function SubscriptionsTab({
     }
   };
 
-  const getStatusBadgeClass = (status: SubscriptionStatus) => {
-    switch (status) {
-      case "ACTIVE":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "PAUSED":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-      case "CANCELED":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-      case "PAST_DUE":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -280,293 +253,138 @@ export default function SubscriptionsTab({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {localSubscriptions.map((subscription) => (
-        <div key={subscription.id}>
-          {/* Mobile layout */}
-          <div className="lg:hidden">
-            <MobileRecordCard
-              type="subscription"
-              status={subscription.status}
-              date={subscription.createdAt}
-              displayId={`#${subscription.stripeSubscriptionId.replace("sub_", "").slice(-8)}`}
-              items={subscription.productNames.map((name, idx) => ({
-                id: `${subscription.id}-${idx}`,
-                name,
-                variant: "",
-                purchaseType: subscription.deliverySchedule || "Subscription",
-                quantity: subscription.quantities[idx] || 1,
-              }))}
-              shipping={
-                subscription.shippingStreet
-                  ? {
-                      recipientName: subscription.recipientName,
-                      street: subscription.shippingStreet,
-                      city: subscription.shippingCity,
-                      state: subscription.shippingState,
-                      postalCode: subscription.shippingPostalCode,
-                    }
-                  : undefined
-              }
-              actions={
-                subscription.status !== "CANCELED" &&
-                !subscription.cancelAtPeriodEnd
-                  ? [
-                      ...(canEditAddress(subscription)
-                        ? [
-                            {
-                              label: "Edit Shipping",
-                              onClick: () => editAddress.openDialog(subscription),
-                            },
-                          ]
-                        : []),
-                      ...(subscription.status === "ACTIVE"
-                        ? [
-                            {
-                              label: "Skip Next Delivery",
-                              onClick: () => openConfirmDialog("skip", subscription),
-                            },
-                          ]
-                        : []),
-                      ...(subscription.status === "PAUSED"
-                        ? [
-                            {
-                              label: "Resume Now",
-                              onClick: () => openConfirmDialog("resume", subscription),
-                            },
-                          ]
-                        : []),
-                      {
-                        label: "Cancel Subscription",
-                        onClick: () => openConfirmDialog("cancel", subscription),
-                        variant: "destructive" as const,
-                      },
-                    ]
-                  : undefined
-              }
-              actionsLoading={actionLoading === subscription.id}
-            />
-          </div>
+        <div key={subscription.id} className="space-y-2">
+          <MobileRecordCard
+            type="subscription"
+            status={subscription.status}
+            date={subscription.createdAt}
+            displayId={`#${subscription.stripeSubscriptionId.replace("sub_", "").slice(-8)}`}
+            items={subscription.productNames.map((name, idx) => ({
+              id: `${subscription.id}-${idx}`,
+              name,
+              variant: "",
+              purchaseType: subscription.deliverySchedule || "Subscription",
+              quantity: subscription.quantities[idx] || 1,
+            }))}
+            shipping={
+              subscription.shippingStreet
+                ? {
+                    recipientName: subscription.recipientName,
+                    street: subscription.shippingStreet,
+                    city: subscription.shippingCity,
+                    state: subscription.shippingState,
+                    postalCode: subscription.shippingPostalCode,
+                  }
+                : undefined
+            }
+            actions={
+              subscription.status !== "CANCELED" &&
+              !subscription.cancelAtPeriodEnd
+                ? [
+                    ...(canEditAddress(subscription)
+                      ? [
+                          {
+                            label: "Edit Shipping",
+                            onClick: () => editAddress.openDialog(subscription),
+                          },
+                        ]
+                      : []),
+                    ...(subscription.status === "ACTIVE"
+                      ? [
+                          {
+                            label: "Skip Next Delivery",
+                            onClick: () => openConfirmDialog("skip", subscription),
+                          },
+                        ]
+                      : []),
+                    ...(subscription.status === "PAUSED"
+                      ? [
+                          {
+                            label: "Resume Now",
+                            onClick: () => openConfirmDialog("resume", subscription),
+                          },
+                        ]
+                      : []),
+                    {
+                      label: "Cancel Subscription",
+                      onClick: () => openConfirmDialog("cancel", subscription),
+                      variant: "destructive" as const,
+                    },
+                  ]
+                : undefined
+            }
+            actionsLoading={actionLoading === subscription.id}
+            price={`${formatPrice(subscription.priceInCents)}${subscription.deliverySchedule ? ` / ${subscription.deliverySchedule.toLowerCase()}` : ""}`}
+            deliverySchedule={subscription.deliverySchedule || undefined}
+            currentPeriod={`${format(new Date(subscription.currentPeriodStart), "MMM d, yyyy")} – ${format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}`}
+          />
 
-          {/* Desktop layout */}
-          <Card className="hidden lg:block">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-xl">
-                  #{subscription.stripeSubscriptionId.replace("sub_", "").slice(-8)}
-                </CardTitle>
-                <CardDescription className="mt-1 space-y-0">
-                  {subscription.productNames.map((name, idx) => (
-                    <span key={idx} className="block">
-                      {name}
-                      {subscription.quantities[idx] > 1 &&
-                        ` × ${subscription.quantities[idx]}`}
-                    </span>
-                  ))}
-                </CardDescription>
-              </div>
-              <span
-                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusBadgeClass(
-                  subscription.status
-                )}`}
-              >
-                {subscription.status}
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Pricing & Schedule */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Price</p>
-                <p className="font-semibold">
-                  {formatPrice(subscription.priceInCents)}
-                  {subscription.deliverySchedule && (
-                    <span className="text-sm text-muted-foreground font-normal ml-1">
-                      / {subscription.deliverySchedule.toLowerCase()}
-                    </span>
-                  )}
-                </p>
-              </div>
-              {subscription.deliverySchedule && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Delivery</p>
-                  <p className="font-semibold">
-                    {subscription.deliverySchedule}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Billing Period */}
-            <div className="text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span>Current period</span>
-              </div>
-              <p className="text-foreground mt-0.5 ml-6">
-                {format(
-                  new Date(subscription.currentPeriodStart),
-                  "MMM d, yyyy"
-                )}
-                {" – "}
+          {/* Status notices */}
+          {subscription.cancelAtPeriodEnd && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
+              <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                This subscription will be canceled on{" "}
                 {format(
                   new Date(subscription.currentPeriodEnd),
                   "MMM d, yyyy"
                 )}
               </p>
             </div>
+          )}
 
-            {/* Shipping Address */}
-            {subscription.shippingStreet && (
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-sm text-muted-foreground">
-                    Ship to
-                  </p>
-                  {canEditAddress(subscription) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-6 px-2 text-xs"
-                      onClick={() => editAddress.openDialog(subscription)}
-                    >
-                      <Pencil className="h-3 w-3 mr-1" />
-                      Edit
-                    </Button>
-                  )}
-                </div>
-                <div className="text-sm">
-                  {subscription.recipientName && (
-                    <p className="font-medium">{subscription.recipientName}</p>
-                  )}
-                  <p>{subscription.shippingStreet}</p>
-                  <p>
-                    {subscription.shippingCity}, {subscription.shippingState}{" "}
-                    {subscription.shippingPostalCode}
-                  </p>
-                  {subscription.shippingCountry && (
-                    <p>{subscription.shippingCountry}</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Status Notices */}
-            {subscription.cancelAtPeriodEnd && (
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
-                <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                  ⚠️ This subscription will be canceled on{" "}
-                  {format(
-                    new Date(subscription.currentPeriodEnd),
-                    "MMM d, yyyy"
-                  )}
-                </p>
-              </div>
-            )}
-
-            {subscription.status === "PAUSED" && subscription.pausedUntil && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
-                <p className="text-sm text-blue-800 dark:text-blue-300">
-                  ⏸️ Next delivery skipped. Resumes{" "}
-                  {format(new Date(subscription.pausedUntil), "MMM d, yyyy")}
-                </p>
-              </div>
-            )}
-
-            {/* Action Dropdown */}
-            {subscription.status !== "CANCELED" &&
-              !subscription.cancelAtPeriodEnd && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={actionLoading === subscription.id}
-                    >
-                      {actionLoading === subscription.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          <MoreVertical className="h-4 w-4 mr-2" />
-                          Actions
-                        </>
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {subscription.status === "ACTIVE" && (
-                      <DropdownMenuItem
-                        onClick={() => openConfirmDialog("skip", subscription)}
-                      >
-                        <PauseCircle className="mr-2 h-4 w-4" />
-                        Skip Next Delivery
-                      </DropdownMenuItem>
-                    )}
-                    {subscription.status === "PAUSED" && (
-                      <DropdownMenuItem
-                        onClick={() => openConfirmDialog("resume", subscription)}
-                      >
-                        <PlayCircle className="mr-2 h-4 w-4" />
-                        Resume Now
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem
-                      onClick={() => openConfirmDialog("cancel", subscription)}
-                      className="text-red-600"
-                    >
-                      <XCircle className="mr-2 h-4 w-4" />
-                      Cancel Subscription
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-
-            {/* Manage Button or Info Message */}
-            {subscription.status !== "CANCELED" && (
-              <>
-                {invalidCustomerIds.has(subscription.stripeCustomerId) ? (
-                  <div className="bg-muted rounded-md p-3 text-sm text-muted-foreground text-center">
-                    <p>Subscription management is not available for demo accounts.</p>
-                    <p className="mt-1 text-xs">Create a real order to access the billing portal.</p>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={() =>
-                      handleManageSubscription(
-                        subscription.stripeCustomerId,
-                        subscription.id
-                      )
-                    }
-                    disabled={loadingId === subscription.id}
-                    className="w-full"
-                  >
-                    {loadingId === subscription.id ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Opening Portal...
-                      </>
-                    ) : (
-                      <>
-                        Manage Subscription
-                        <ExternalLink className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                )}
-              </>
-            )}
-
-            {/* Canceled Date */}
-            {subscription.canceledAt && (
-              <p className="text-sm text-muted-foreground text-center">
-                Canceled on{" "}
-                {format(new Date(subscription.canceledAt), "MMM d, yyyy")}
+          {subscription.status === "PAUSED" && subscription.pausedUntil && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                Next delivery skipped. Resumes{" "}
+                {format(new Date(subscription.pausedUntil), "MMM d, yyyy")}
               </p>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          )}
+
+          {/* Manage button */}
+          {subscription.status !== "CANCELED" && (
+            <>
+              {invalidCustomerIds.has(subscription.stripeCustomerId) ? (
+                <div className="bg-muted rounded-md p-3 text-sm text-muted-foreground text-center">
+                  <p>Subscription management is not available for demo accounts.</p>
+                  <p className="mt-1 text-xs">Create a real order to access the billing portal.</p>
+                </div>
+              ) : (
+                <Button
+                  onClick={() =>
+                    handleManageSubscription(
+                      subscription.stripeCustomerId,
+                      subscription.id
+                    )
+                  }
+                  disabled={loadingId === subscription.id}
+                  className="w-full"
+                >
+                  {loadingId === subscription.id ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Opening Portal...
+                    </>
+                  ) : (
+                    <>
+                      Manage Subscription
+                      <ExternalLink className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              )}
+            </>
+          )}
+
+          {/* Canceled date */}
+          {subscription.canceledAt && (
+            <p className="text-sm text-muted-foreground text-center">
+              Canceled on{" "}
+              {format(new Date(subscription.canceledAt), "MMM d, yyyy")}
+            </p>
+          )}
         </div>
       ))}
 
