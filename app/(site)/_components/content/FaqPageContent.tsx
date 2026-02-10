@@ -113,7 +113,7 @@ export function FaqPageContent({
   }, [filteredItems]);
 
   return (
-    <div className={`mx-auto ${className}`}>
+    <div className={`mx-auto px-4 sm:px-8 ${className}`}>
       {/* Search and Filter Bar */}
       <div className="pt-6 pb-4 space-y-4">
         {/* Search Input */}
