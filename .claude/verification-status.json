@@ -72,9 +72,9 @@
     "feat/mobile-audit": {
       "status": "planned",
       "acs_passed": 0,
-      "acs_total": 28,
+      "acs_total": 15,
       "tasks": [],
-      "notes": "Mobile audit fixes: 22 UI issues across 7 commits. Plan committed."
+      "notes": "Iter 2: 15 ACs from reviewer feedback. Plan at docs/plans/mobile-audit-iter2.md, ACs at docs/plans/mobile-audit-fixes-ACs-iter-2.md."
     }
   }
 }
