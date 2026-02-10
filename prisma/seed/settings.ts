@@ -120,7 +120,7 @@ export async function seedSettings(prisma: PrismaClient) {
     update: {},
     create: {
       key: "social_links_heading",
-      value: "Stay Connected",
+      value: "Follow Us",
     },
   });
 
@@ -216,7 +216,7 @@ export async function seedSettings(prisma: PrismaClient) {
     update: {},
     create: {
       key: "homepage_featured_heading",
-      value: "Our Small Batch Collection",
+      value: "Our Best Sellers",
     },
   });
 

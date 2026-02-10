@@ -192,7 +192,7 @@ async function getSocialLinksSettings() {
 
   return {
     enabled: map["social_links_enabled"] === "true",
-    heading: map["social_links_heading"] || "Stay Connected",
+    heading: map["social_links_heading"] || "Follow Us",
     description: map["social_links_description"] || undefined,
   };
 }
