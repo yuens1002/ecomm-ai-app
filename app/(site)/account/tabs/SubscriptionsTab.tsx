@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
 import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
+import { MobileRecordCard } from "@/app/(site)/_components/account/MobileRecordCard";
 
 type SubscriptionStatus = "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE";
 
@@ -281,7 +282,74 @@ export default function SubscriptionsTab({
   return (
     <div className="space-y-4">
       {localSubscriptions.map((subscription) => (
-        <Card key={subscription.id}>
+        <div key={subscription.id}>
+          {/* Mobile layout */}
+          <div className="lg:hidden">
+            <MobileRecordCard
+              type="subscription"
+              status={subscription.status}
+              date={subscription.createdAt}
+              displayId={`#${subscription.stripeSubscriptionId.replace("sub_", "").slice(-8)}`}
+              items={subscription.productNames.map((name, idx) => ({
+                id: `${subscription.id}-${idx}`,
+                name,
+                variant: "",
+                purchaseType: subscription.deliverySchedule || "Subscription",
+                quantity: subscription.quantities[idx] || 1,
+              }))}
+              shipping={
+                subscription.shippingStreet
+                  ? {
+                      recipientName: subscription.recipientName,
+                      street: subscription.shippingStreet,
+                      city: subscription.shippingCity,
+                      state: subscription.shippingState,
+                      postalCode: subscription.shippingPostalCode,
+                    }
+                  : undefined
+              }
+              actions={
+                subscription.status !== "CANCELED" &&
+                !subscription.cancelAtPeriodEnd
+                  ? [
+                      ...(canEditAddress(subscription)
+                        ? [
+                            {
+                              label: "Edit Shipping",
+                              onClick: () => editAddress.openDialog(subscription),
+                            },
+                          ]
+                        : []),
+                      ...(subscription.status === "ACTIVE"
+                        ? [
+                            {
+                              label: "Skip Next Delivery",
+                              onClick: () => openConfirmDialog("skip", subscription),
+                            },
+                          ]
+                        : []),
+                      ...(subscription.status === "PAUSED"
+                        ? [
+                            {
+                              label: "Resume Now",
+                              onClick: () => openConfirmDialog("resume", subscription),
+                            },
+                          ]
+                        : []),
+                      {
+                        label: "Cancel Subscription",
+                        onClick: () => openConfirmDialog("cancel", subscription),
+                        variant: "destructive" as const,
+                      },
+                    ]
+                  : undefined
+              }
+              actionsLoading={actionLoading === subscription.id}
+            />
+          </div>
+
+          {/* Desktop layout */}
+          <Card className="hidden lg:block">
           <CardHeader>
             <div className="flex items-start justify-between">
               <div>
@@ -499,6 +567,7 @@ export default function SubscriptionsTab({
             )}
           </CardContent>
         </Card>
+        </div>
       ))}
 
       {/* Confirmation Dialog */}

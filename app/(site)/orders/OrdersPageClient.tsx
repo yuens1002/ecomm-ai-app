@@ -8,6 +8,11 @@ import { format } from "date-fns";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, MoreHorizontal } from "lucide-react";
+import { MobileRecordCard } from "@/app/(site)/_components/account/MobileRecordCard";
+import {
+  getStatusColor as sharedGetStatusColor,
+  getStatusLabel as sharedGetStatusLabel,
+} from "@/app/(site)/_components/account/record-utils";
 import {
   Select,
   SelectContent,
@@ -38,34 +43,8 @@ import { PageContainer } from "@/components/shared/PageContainer";
 
 // --- Shared Helper Functions ---
 
-function getStatusColor(status: string) {
-  switch (status) {
-    case "PENDING":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
-    case "SHIPPED":
-    case "PICKED_UP":
-      return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-    case "CANCELLED":
-      return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
-    case "FAILED":
-      return "bg-red-200 text-red-900 dark:bg-red-900/50 dark:text-red-300";
-    default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
-  }
-}
-
-function getStatusLabel(status: string) {
-  switch (status) {
-    case "PICKED_UP":
-      return "Picked Up";
-    case "CANCELLED":
-      return "Canceled";
-    case "FAILED":
-      return "Failed";
-    default:
-      return status.charAt(0) + status.slice(1).toLowerCase();
-  }
-}
+const getStatusColor = sharedGetStatusColor;
+const getStatusLabel = sharedGetStatusLabel;
 
 function formatPrice(priceInCents: number) {
   return `$${(priceInCents / 100).toFixed(2)}`;
@@ -376,69 +355,59 @@ export default function OrdersPageClient({
               {filteredOrders.map((order) => (
                 <div key={order.id}>
                   {/* Mobile/Tablet Card Layout */}
-                  <div className="lg:hidden p-4 space-y-3">
-                    {/* Header Row: Status, Order #, Date */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <StatusBadge status={order.status} />
-                        <Link
-                          href={`/orders/${order.id}`}
-                          className="text-primary hover:underline font-semibold"
-                        >
-                          #{order.id.slice(-8)}
-                        </Link>
-                      </div>
-                      <div className="text-sm text-text-muted">
-                        {format(new Date(order.createdAt), "MMM d, yyyy")}
-                      </div>
-                    </div>
-
-                    {/* Items */}
-                    <OrderItemsList items={order.items} />
-
-                    {/* Ship To */}
-                    <ShipToInfo order={order} variant="card" />
-
-                    {/* Footer Row: Total and Actions */}
-                    <div className="flex items-center justify-between pt-2">
-                      <div className="font-semibold text-lg">
-                        {formatPrice(order.totalInCents)}
-                      </div>
-                      {hasActions(order) && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              disabled={cancellingOrderId === order.id}
-                            >
-                              {cancellingOrderId === order.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <MoreHorizontal className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {canEditAddress(order) && (
-                              <DropdownMenuItem
-                                onClick={() => editAddress.openDialog(order)}
-                              >
-                                Edit Address
-                              </DropdownMenuItem>
-                            )}
-                            {canCancelOrder(order) && (
-                              <DropdownMenuItem
-                                onClick={() => openCancelDialog(order)}
-                                className="text-red-600"
-                              >
-                                Cancel Order
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
+                  <div className="lg:hidden p-4">
+                    <MobileRecordCard
+                      type="order"
+                      status={order.status}
+                      date={order.createdAt}
+                      displayId={`#${order.id.slice(-8)}`}
+                      detailHref={`/orders/${order.id}`}
+                      items={order.items.map((item) => ({
+                        id: item.id,
+                        name: item.purchaseOption.variant.product.name,
+                        variant: item.purchaseOption.variant.name,
+                        purchaseType:
+                          item.purchaseOption.type === "SUBSCRIPTION"
+                            ? "Subscription"
+                            : "One-time",
+                        quantity: item.quantity,
+                      }))}
+                      shipping={
+                        order.deliveryMethod === "DELIVERY" && order.shippingStreet
+                          ? {
+                              recipientName: order.recipientName,
+                              street: order.shippingStreet,
+                              city: order.shippingCity,
+                              state: order.shippingState,
+                              postalCode: order.shippingPostalCode,
+                            }
+                          : undefined
+                      }
+                      actions={
+                        hasActions(order)
+                          ? [
+                              ...(canEditAddress(order)
+                                ? [
+                                    {
+                                      label: "Edit Address",
+                                      onClick: () => editAddress.openDialog(order),
+                                    },
+                                  ]
+                                : []),
+                              ...(canCancelOrder(order)
+                                ? [
+                                    {
+                                      label: "Cancel Order",
+                                      onClick: () => openCancelDialog(order),
+                                      variant: "destructive" as const,
+                                    },
+                                  ]
+                                : []),
+                            ]
+                          : undefined
+                      }
+                      actionsLoading={cancellingOrderId === order.id}
+                    />
                   </div>
 
                   {/* Desktop Table Row - only on lg screens */}
