@@ -347,7 +347,7 @@ export default function ProductClientPage({
       } else if (w >= 768) {
         setRelatedSlidesPerView(2.5);
       } else {
-        setRelatedSlidesPerView(1.5);
+        setRelatedSlidesPerView(1.2);
       }
     };
     calcSlides();
@@ -502,7 +502,7 @@ export default function ProductClientPage({
                 {settings.productAddOnsSectionTitle}
               </h2>
 
-              <ScrollCarousel slidesPerView={1.5} noBorder>
+              <ScrollCarousel slidesPerView={1.2} gap="gap-3" noBorder>
                 {addOns.map((addOn) => (
                   <AddOnCard
                     key={`${addOn.product.id}-${addOn.variant.id}`}
@@ -530,12 +530,12 @@ export default function ProductClientPage({
             </h2>
             <ScrollCarousel
               slidesPerView={relatedSlidesPerView}
-              gap="gap-8"
+              gap="gap-4"
               noBorder
             >
               {displayProducts.map((relatedProduct) => (
                 <div key={relatedProduct.id}>
-                  <ProductCard product={relatedProduct} disableCardEffects hidePriceOnMobile />
+                  <ProductCard product={relatedProduct} disableCardEffects hidePriceOnMobile compact compactFooter />
                 </div>
               ))}
             </ScrollCarousel>

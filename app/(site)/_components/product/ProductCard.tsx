@@ -32,6 +32,7 @@ export default function ProductCard({
   hidePriceOnMobile = false,
   hoverRevealFooter = false,
   compactFooter = false,
+  compact = false,
 }: Omit<ProductCardProps, "onAddToCart"> & {
   categorySlug?: string;
   priority?: boolean;
@@ -42,6 +43,8 @@ export default function ProductCard({
   hoverRevealFooter?: boolean;
   /** Smaller button and price text for tight layouts (e.g., carousels) */
   compactFooter?: boolean;
+  /** Smaller title and notes for carousel contexts */
+  compact?: boolean;
 }) {
   const { buttonState, isCheckingOut, handleAddToCart, handleActionClick } =
     useAddToCartWithFeedback();
@@ -122,7 +125,7 @@ export default function ProductCard({
         {/* 2. CardContent holds all text content. */}
         <div className="border-x border-b rounded-b-lg">
           <CardContent className="grow py-4 min-h-28">
-            <CardTitle className="text-xl overflow-hidden text-ellipsis whitespace-nowrap p-0">
+            <CardTitle className={cn("overflow-hidden text-ellipsis whitespace-nowrap p-0", compact ? "text-base" : "text-xl")}>
               {product.name}
             </CardTitle>
             {product.type === ProductType.COFFEE && product.roastLevel && (
@@ -130,17 +133,23 @@ export default function ProductCard({
             )}
             {product.type === ProductType.COFFEE &&
               product.tastingNotes.length > 0 && (
-                <CardDescription className="text-sm italic pt-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                <CardDescription className={cn("italic pt-1 overflow-hidden text-ellipsis whitespace-nowrap", compact ? "text-xs" : "text-sm")}>
                   {product.tastingNotes.join(", ")}
                 </CardDescription>
               )}
+            {product.type !== ProductType.COFFEE && product.description && (
+              <CardDescription className={cn("pt-1 line-clamp-2", compact ? "text-xs" : "text-sm")}>
+                {product.description}
+              </CardDescription>
+            )}
           </CardContent>
 
           {/* 3. CardFooter (only shows if purchase options are enabled) */}
           {showPurchaseOptions && (
             <CardFooter
               className={clsx(
-                "pb-6 flex items-center justify-between",
+                "pb-6 flex items-center",
+                compact && hidePrice ? "justify-center" : "justify-between",
                 hoverRevealFooter &&
                   "hidden md:flex lg:opacity-0 lg:translate-y-2 lg:group-hover:opacity-100 lg:group-hover:translate-y-0 transition-all duration-300 ease-out"
               )}
