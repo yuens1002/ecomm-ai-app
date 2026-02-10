@@ -122,11 +122,11 @@ export default function RecommendationsSection() {
       <div className="mx-auto max-w-screen-2xl px-4 md:px-8">
         {/* Section Header */}
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-3">
             {isPersonalized ? (
-              <Sparkles className="h-6 w-6" />
+              <div className="mt-1 shrink-0"><Sparkles className="h-6 w-6" /></div>
             ) : (
-              <TrendingUp className="h-6 w-6" />
+              <div className="mt-1 shrink-0"><TrendingUp className="h-6 w-6" /></div>
             )}
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-text-base">

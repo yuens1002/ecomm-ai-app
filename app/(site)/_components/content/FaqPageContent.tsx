@@ -11,6 +11,13 @@ import {
   FaqCategoryId,
 } from "@/lib/blocks/schemas";
 import { DynamicIcon } from "@/components/shared/icons/DynamicIcon";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FaqPageContentProps {
   faqItems: FaqItemBlock[];
@@ -107,8 +114,8 @@ export function FaqPageContent({
 
   return (
     <div className={`mx-auto ${className}`}>
-      {/* Search and Filter Bar - Sticky */}
-      <div className="sticky top-16 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 pt-6 pb-4 -mx-4 px-4 space-y-4">
+      {/* Search and Filter Bar */}
+      <div className="pt-6 pb-4 space-y-4">
         {/* Search Input */}
         <div className="relative max-w-md mx-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -121,29 +128,51 @@ export function FaqPageContent({
           />
         </div>
 
-        {/* Category Filter Tabs */}
+        {/* Category Filter - Dropdown on mobile, buttons on sm+ */}
         {categoriesWithItems.length > 1 && (
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button
-              variant={selectedCategory === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedCategory("all")}
-            >
-              All
-            </Button>
-            {categoriesWithItems.map((cat) => (
-              <Button
-                key={cat.id}
-                variant={selectedCategory === cat.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(cat.id)}
-                className="gap-2"
+          <>
+            {/* Mobile: dropdown */}
+            <div className="sm:hidden">
+              <Select
+                value={selectedCategory}
+                onValueChange={(value) => setSelectedCategory(value as FaqCategoryId | "all")}
               >
-                <DynamicIcon name={cat.icon} className="h-4 w-4" />
-                {cat.label}
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categoriesWithItems.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Desktop: buttons */}
+            <div className="hidden sm:flex flex-wrap justify-center gap-2">
+              <Button
+                variant={selectedCategory === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategory("all")}
+              >
+                All
               </Button>
-            ))}
-          </div>
+              {categoriesWithItems.map((cat) => (
+                <Button
+                  key={cat.id}
+                  variant={selectedCategory === cat.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className="gap-2"
+                >
+                  <DynamicIcon name={cat.icon} className="h-4 w-4" />
+                  {cat.label}
+                </Button>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
