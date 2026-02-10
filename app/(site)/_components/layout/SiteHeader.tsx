@@ -195,95 +195,131 @@ export default function SiteHeader({
           link={banner.link}
         />
       )}
-      <div className="mx-auto max-w-screen-2xl px-4 md:px-8 py-2 sm:py-4 flex items-center gap-3 sm:gap-6 md:gap-12">
-        {/* Mobile hamburger menu - before logo on mobile */}
-        {isClient && (
-          <Sheet>
-            <SheetTrigger asChild className="md:hidden">
-              <Button
-                variant="outline"
-                size="icon"
-                className="focus-visible:ring-2 focus-visible:ring-primary"
+      <div className="mx-auto max-w-screen-2xl px-4 md:px-8 py-2 sm:py-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6 md:gap-12">
+        {/* Left cell: hamburger (mobile) + nav links (desktop) */}
+        <div className="flex items-center gap-3 sm:gap-6">
+          {/* Mobile hamburger menu */}
+          {isClient && (
+            <Sheet>
+              <SheetTrigger asChild className="md:hidden">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <Menu className="w-6 h-6" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="left"
+                className="w-full sm:w-[320px] bg-background p-0 flex flex-col"
               >
-                <Menu className="w-6 h-6" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side="left"
-              className="w-full sm:w-[320px] bg-background p-0 flex flex-col"
-            >
-              <div className="px-6 pt-6 pb-4">
-                <div className="flex items-center justify-between mb-4">
-                  <SheetHeader>
-                    <SheetTitle className="text-2xl font-bold tracking-tight text-foreground text-left">
-                      Menu
-                    </SheetTitle>
-                    <SheetDescription className="sr-only">
-                      Navigate to different sections of the site including
-                      home and coffee categories
-                    </SheetDescription>
-                  </SheetHeader>
-                </div>
-                <div className="flex gap-2 w-full">
-                  <SheetClose asChild>
-                    <Link
-                      href="/"
-                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <Home className="w-5 h-5" />
-                      <span className="text-[10px] uppercase tracking-wide font-medium">
-                        Home
-                      </span>
-                    </Link>
-                  </SheetClose>
-                  <SheetClose asChild>
-                    <Link
-                      href="/search"
-                      className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <Search className="w-5 h-5" />
-                      <span className="text-[10px] uppercase tracking-wide font-medium">
-                        Search
-                      </span>
-                    </Link>
-                  </SheetClose>
-                </div>
-              </div>
-              <nav
-                aria-label="Mobile"
-                className="flex-1 overflow-y-auto px-6 py-4 border-t border-border"
-              >
-                {Object.entries(categoryGroups).map(
-                  ([label, categories]) => (
-                    <div key={label} className="mb-6">
-                      <div className="flex items-center gap-2 mb-2 px-4">
-                        {labelIcons?.[label] ? (
-                          <DynamicIcon
-                            name={labelIcons[label]}
-                            className="w-5 h-5"
-                          />
-                        ) : (
-                          <DynamicIcon
-                            name={productMenuIcon as IconName}
-                            className="w-5 h-5"
-                          />
-                        )}
-                        <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
-                          {label}
+                <div className="px-6 pt-6 pb-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <SheetHeader>
+                      <SheetTitle className="text-2xl font-bold tracking-tight text-foreground text-left">
+                        Menu
+                      </SheetTitle>
+                      <SheetDescription className="sr-only">
+                        Navigate to different sections of the site including
+                        home and coffee categories
+                      </SheetDescription>
+                    </SheetHeader>
+                  </div>
+                  <div className="flex gap-2 w-full">
+                    <SheetClose asChild>
+                      <Link
+                        href="/"
+                        className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <Home className="w-5 h-5" />
+                        <span className="text-[10px] uppercase tracking-wide font-medium">
+                          Home
                         </span>
+                      </Link>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <Link
+                        href="/search"
+                        className="inline-flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <Search className="w-5 h-5" />
+                        <span className="text-[10px] uppercase tracking-wide font-medium">
+                          Search
+                        </span>
+                      </Link>
+                    </SheetClose>
+                  </div>
+                </div>
+                <nav
+                  aria-label="Mobile"
+                  className="flex-1 overflow-y-auto px-6 py-4 border-t border-border"
+                >
+                  {Object.entries(categoryGroups).map(
+                    ([label, categories]) => (
+                      <div key={label} className="mb-6">
+                        <div className="flex items-center gap-2 mb-2 px-4">
+                          {labelIcons?.[label] ? (
+                            <DynamicIcon
+                              name={labelIcons[label]}
+                              className="w-5 h-5"
+                            />
+                          ) : (
+                            <DynamicIcon
+                              name={productMenuIcon as IconName}
+                              className="w-5 h-5"
+                            />
+                          )}
+                          <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
+                            {label}
+                          </span>
+                        </div>
+                        <ul className="space-y-1">
+                          {categories.map((category) => (
+                            <li key={category.slug}>
+                              <SheetClose asChild>
+                                <Button
+                                  variant="ghost"
+                                  asChild
+                                  className="w-full justify-start font-normal"
+                                >
+                                  <Link href={`/${category.slug}`}>
+                                    {category.name}
+                                  </Link>
+                                </Button>
+                              </SheetClose>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
+                    )
+                  )}
+
+                  {/* Dynamic Pages */}
+                  {pages.length > 0 && (
+                    <div className="mb-6 pt-4 border-t border-border">
                       <ul className="space-y-1">
-                        {categories.map((category) => (
-                          <li key={category.slug}>
+                        {pages.map((page) => (
+                          <li key={page.id}>
                             <SheetClose asChild>
                               <Button
                                 variant="ghost"
                                 asChild
                                 className="w-full justify-start font-normal"
                               >
-                                <Link href={`/${category.slug}`}>
-                                  {category.name}
+                                <Link
+                                  href={
+                                    page.type === "LINK" && page.url
+                                      ? page.url
+                                      : `/pages/${page.slug}`
+                                  }
+                                  className="flex items-center gap-2"
+                                >
+                                  {page.icon && (
+                                    <DynamicIcon name={page.icon} size={16} />
+                                  )}
+                                  {page.title}
                                 </Link>
                               </Button>
                             </SheetClose>
@@ -291,57 +327,91 @@ export default function SiteHeader({
                         ))}
                       </ul>
                     </div>
-                  )
-                )}
+                  )}
+                </nav>
+                <div className="px-6 pb-6 mt-auto">
+                  <SheetClose asChild>
+                    <Button className="w-full" variant="secondary">
+                      Close
+                    </Button>
+                  </SheetClose>
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
 
-                {/* Dynamic Pages */}
-                {pages.length > 0 && (
-                  <div className="mb-6 pt-4 border-t border-border">
-                    <ul className="space-y-1">
-                      {pages.map((page) => (
-                        <li key={page.id}>
-                          <SheetClose asChild>
-                            <Button
-                              variant="ghost"
-                              asChild
-                              className="w-full justify-start font-normal"
-                            >
-                              <Link
-                                href={
-                                  page.type === "LINK" && page.url
-                                    ? page.url
-                                    : `/pages/${page.slug}`
-                                }
-                                className="flex items-center gap-2"
-                              >
-                                {page.icon && (
-                                  <DynamicIcon name={page.icon} size={16} />
-                                )}
-                                {page.title}
-                              </Link>
-                            </Button>
-                          </SheetClose>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </nav>
-              <div className="px-6 pb-6 mt-auto">
-                <SheetClose asChild>
-                  <Button className="w-full" variant="secondary">
-                    Close
-                  </Button>
-                </SheetClose>
-              </div>
-            </SheetContent>
-          </Sheet>
-        )}
+          {/* Desktop Navigation - left-aligned */}
+          <div className="hidden md:flex items-center">
+            {isClient ? (
+              <NavigationMenu>
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden">
+                      <div className="flex flex-col items-center gap-1">
+                        <DynamicIcon
+                          name={productMenuIcon as IconName}
+                          className="w-5 h-5"
+                        />
+                        <div className="flex items-center gap-1">
+                          {/* Spacer to balance the chevron for centering */}
+                          <div className="w-3 h-3" aria-hidden="true" />
+                          <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
+                            {productMenuText}
+                          </span>
+                          <ChevronDown
+                            className="h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"
+                            aria-hidden="true"
+                          />
+                        </div>
+                      </div>
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <div className="w-[600px] p-6 h-[330px] overflow-y-auto">
+                        <CategoryMenuColumns
+                          categoryGroups={categoryGroups}
+                          labelIcons={labelIcons}
+                        />
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
 
-        {/* Logo/Title - Stacked on mobile/tablet, side-by-side on large desktop */}
+                  {/* Dynamic Pages from Database */}
+                  {pages.map((page) => (
+                    <NavigationMenuItem key={page.id}>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href={
+                            page.type === "LINK" && page.url
+                              ? page.url
+                              : `/pages/${page.slug}`
+                          }
+                          className={cn(
+                            navigationMenuTriggerStyle(),
+                            "h-auto flex-col gap-1 px-2 py-2 text-foreground hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
+                          )}
+                        >
+                          {page.icon ? (
+                            <DynamicIcon name={page.icon} className="w-5 h-5" />
+                          ) : (
+                            <FileText className="w-5 h-5" />
+                          )}
+                          <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
+                            {page.title}
+                          </span>
+                        </Link>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  ))}
+                </NavigationMenuList>
+              </NavigationMenu>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Center cell: Logo - always centered via grid */}
         <Link
           href="/"
-          className="flex flex-col lg:flex-row items-center gap-1 lg:gap-2 text-primary"
+          className="flex flex-col lg:flex-row items-center gap-1 lg:gap-2 text-primary justify-self-center"
         >
           <Image
             src={settings.storeLogoUrl}
@@ -355,84 +425,16 @@ export default function SiteHeader({
           </span>
         </Link>
 
-        {/* Desktop Navigation - centered in available space */}
-        <div className="hidden md:flex flex-1 items-center justify-center">
-          {isClient ? (
-            <NavigationMenu>
-              <NavigationMenuList>
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden">
-                    <div className="flex flex-col items-center gap-1">
-                      <DynamicIcon
-                        name={productMenuIcon as IconName}
-                        className="w-5 h-5"
-                      />
-                      <div className="flex items-center gap-1">
-                        {/* Spacer to balance the chevron for centering */}
-                        <div className="w-3 h-3" aria-hidden="true" />
-                        <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
-                          {productMenuText}
-                        </span>
-                        <ChevronDown
-                          className="h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"
-                          aria-hidden="true"
-                        />
-                      </div>
-                    </div>
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <div className="w-[600px] p-6 h-[330px] overflow-y-auto">
-                      <CategoryMenuColumns
-                        categoryGroups={categoryGroups}
-                        labelIcons={labelIcons}
-                      />
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-
-                {/* Dynamic Pages from Database */}
-                {pages.map((page) => (
-                  <NavigationMenuItem key={page.id}>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href={
-                          page.type === "LINK" && page.url
-                            ? page.url
-                            : `/pages/${page.slug}`
-                        }
-                        className={cn(
-                          navigationMenuTriggerStyle(),
-                          "h-auto flex-col gap-1 px-2 py-2 text-foreground hover:text-primary bg-transparent hover:bg-transparent focus:bg-transparent"
-                        )}
-                      >
-                        {page.icon ? (
-                          <DynamicIcon name={page.icon} className="w-5 h-5" />
-                        ) : (
-                          <FileText className="w-5 h-5" />
-                        )}
-                        <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
-                          {page.title}
-                        </span>
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                ))}
-              </NavigationMenuList>
-            </NavigationMenu>
-          ) : null}
-        </div>
-
-        {/* Right Side Controls */}
-        <div className="flex items-center gap-4 ml-auto">
+        {/* Right cell: Search, Account, Cart */}
+        <div className="flex items-center gap-4 justify-self-end">
           {isClient ? (
             <>
-              {/* Search Dialog */}
+              {/* Search Dialog - visible on all breakpoints */}
               <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
                 <DialogTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="hidden sm:flex"
                   >
                     <Search className="h-5 w-5" />
                     <span className="sr-only">Search products</span>
@@ -459,7 +461,7 @@ export default function SiteHeader({
                 </DialogContent>
               </Dialog>
 
-              <ShoppingCart />
+              {/* Account */}
               {user ? (
                 <UserMenu user={user} />
               ) : (
@@ -471,7 +473,8 @@ export default function SiteHeader({
                 </Button>
               )}
 
-              {/* Mobile menu is now rendered before the logo */}
+              {/* Cart - always last */}
+              <ShoppingCart />
             </>
           ) : null}
         </div>
