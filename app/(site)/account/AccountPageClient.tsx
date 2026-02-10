@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // Card components not used in this file
-import { User, Shield, Link2, MapPin, Trash2, Package } from "lucide-react";
+import { User, Shield, Link2, MapPin, Trash2, Repeat } from "lucide-react";
 import ProfileTab from "./tabs/ProfileTab";
 import SecurityTab from "./tabs/SecurityTab";
 import ConnectedAccountsTab from "./tabs/ConnectedAccountsTab";
@@ -91,33 +91,33 @@ export default function AccountPageClient({ user }: AccountPageClientProps) {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
-          <TabsTrigger value="profile" className="flex items-center gap-2">
+        <TabsList className="flex w-full overflow-x-auto [&::-webkit-scrollbar]:hidden">
+          <TabsTrigger value="profile" className="flex items-center gap-1.5 px-2 sm:px-3 shrink-0">
             <User className="w-4 h-4" />
             <span className="hidden sm:inline">Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
+          <TabsTrigger value="security" className="flex items-center gap-1.5 px-2 sm:px-3 shrink-0">
             <Shield className="w-4 h-4" />
             <span className="hidden sm:inline">Security</span>
           </TabsTrigger>
-          <TabsTrigger value="accounts" className="flex items-center gap-2">
+          <TabsTrigger value="accounts" className="flex items-center gap-1.5 px-2 sm:px-3 shrink-0">
             <Link2 className="w-4 h-4" />
             <span className="hidden sm:inline">Accounts</span>
           </TabsTrigger>
-          <TabsTrigger value="addresses" className="flex items-center gap-2">
+          <TabsTrigger value="addresses" className="flex items-center gap-1.5 px-2 sm:px-3 shrink-0">
             <MapPin className="w-4 h-4" />
             <span className="hidden sm:inline">Addresses</span>
           </TabsTrigger>
           <TabsTrigger
             value="subscriptions"
-            className="flex items-center gap-2"
+            className="flex items-center gap-1.5 px-2 sm:px-3 shrink-0"
           >
-            <Package className="w-4 h-4" />
+            <Repeat className="w-4 h-4" />
             <span className="hidden sm:inline">Subscriptions</span>
           </TabsTrigger>
           <TabsTrigger
             value="danger"
-            className="flex items-center gap-2 text-red-600"
+            className="flex items-center gap-1.5 px-2 sm:px-3 shrink-0 text-red-600"
           >
             <Trash2 className="w-4 h-4" />
             <span className="hidden sm:inline">Delete</span>

@@ -21,6 +21,7 @@ import {
   PlayCircle,
   XCircle,
   Pencil,
+  MoreVertical,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -33,6 +34,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
 import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
 
@@ -279,7 +286,7 @@ export default function SubscriptionsTab({
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-xl">
-                  {subscription.stripeSubscriptionId.replace("sub_", "")}
+                  #{subscription.stripeSubscriptionId.replace("sub_", "").slice(-8)}
                 </CardTitle>
                 <CardDescription className="mt-1 space-y-0">
                   {subscription.productNames.map((name, idx) => (
@@ -325,22 +332,22 @@ export default function SubscriptionsTab({
             </div>
 
             {/* Billing Period */}
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">
-                Current period:{" "}
-                <span className="text-foreground">
-                  {format(
-                    new Date(subscription.currentPeriodStart),
-                    "MMM d, yyyy"
-                  )}
-                  {" - "}
-                  {format(
-                    new Date(subscription.currentPeriodEnd),
-                    "MMM d, yyyy"
-                  )}
-                </span>
-              </span>
+            <div className="text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>Current period</span>
+              </div>
+              <p className="text-foreground mt-0.5 ml-6">
+                {format(
+                  new Date(subscription.currentPeriodStart),
+                  "MMM d, yyyy"
+                )}
+                {" – "}
+                {format(
+                  new Date(subscription.currentPeriodEnd),
+                  "MMM d, yyyy"
+                )}
+              </p>
             </div>
 
             {/* Shipping Address */}
@@ -400,43 +407,52 @@ export default function SubscriptionsTab({
               </div>
             )}
 
-            {/* Action Buttons */}
+            {/* Action Dropdown */}
             {subscription.status !== "CANCELED" &&
               !subscription.cancelAtPeriodEnd && (
-                <div className="flex flex-wrap gap-2">
-                  {subscription.status === "ACTIVE" && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => openConfirmDialog("skip", subscription)}
                       disabled={actionLoading === subscription.id}
                     >
-                      <PauseCircle className="mr-2 h-4 w-4" />
-                      Skip Next Delivery
+                      {actionLoading === subscription.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <MoreVertical className="h-4 w-4 mr-2" />
+                          Actions
+                        </>
+                      )}
                     </Button>
-                  )}
-                  {subscription.status === "PAUSED" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openConfirmDialog("resume", subscription)}
-                      disabled={actionLoading === subscription.id}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {subscription.status === "ACTIVE" && (
+                      <DropdownMenuItem
+                        onClick={() => openConfirmDialog("skip", subscription)}
+                      >
+                        <PauseCircle className="mr-2 h-4 w-4" />
+                        Skip Next Delivery
+                      </DropdownMenuItem>
+                    )}
+                    {subscription.status === "PAUSED" && (
+                      <DropdownMenuItem
+                        onClick={() => openConfirmDialog("resume", subscription)}
+                      >
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Resume Now
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem
+                      onClick={() => openConfirmDialog("cancel", subscription)}
+                      className="text-red-600"
                     >
-                      <PlayCircle className="mr-2 h-4 w-4" />
-                      Resume Now
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openConfirmDialog("cancel", subscription)}
-                    disabled={actionLoading === subscription.id}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Cancel Subscription
-                  </Button>
-                </div>
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Cancel Subscription
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
 
             {/* Manage Button or Info Message */}
