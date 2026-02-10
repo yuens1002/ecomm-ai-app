@@ -149,7 +149,11 @@ export default function ProductCard({
             <CardFooter
               className={clsx(
                 "pb-6 flex items-center",
-                compact && hidePrice ? "justify-center" : "justify-between",
+                compact && hidePrice
+                  ? "justify-center"
+                  : compact && hidePriceOnMobile
+                    ? "justify-center md:justify-between"
+                    : "justify-between",
                 hoverRevealFooter &&
                   "hidden md:flex lg:opacity-0 lg:translate-y-2 lg:group-hover:opacity-100 lg:group-hover:translate-y-0 transition-all duration-300 ease-out"
               )}
