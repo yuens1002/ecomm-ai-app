@@ -46,6 +46,9 @@ interface MobileRecordCardProps {
   shipping?: RecordShipping;
   actions?: RecordAction[];
   actionsLoading?: boolean;
+  price?: string;
+  deliverySchedule?: string;
+  currentPeriod?: string;
 }
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
@@ -66,51 +69,57 @@ export function MobileRecordCard({
   shipping,
   actions,
   actionsLoading,
+  price,
+  deliverySchedule,
+  currentPeriod,
 }: MobileRecordCardProps) {
   return (
     <Card>
-      <CardContent className="p-4 space-y-3">
-        {/* Header: Status — Date | ⋮ */}
+      <CardContent className="p-2 space-y-3">
+        {/* Header: Date ———— [Status | ⋮] */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">
+            {format(new Date(date), "MMM d, yyyy")}
+          </span>
+          <div className="flex items-center gap-1">
             <span
               className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(status)}`}
             >
               {getStatusLabel(status)}
             </span>
-            <span className="text-sm text-muted-foreground">
-              {format(new Date(date), "MMM d, yyyy")}
-            </span>
+            {actions && actions.length > 0 && (
+              <>
+                <span className="text-border">|</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" disabled={actionsLoading}>
+                      {actionsLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <MoreVertical className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {actions.map((action) => (
+                      <DropdownMenuItem
+                        key={action.label}
+                        onClick={action.onClick}
+                        className={action.variant === "destructive" ? "text-red-600" : ""}
+                      >
+                        {action.icon}
+                        {action.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
           </div>
-          {actions && actions.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" disabled={actionsLoading}>
-                  {actionsLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <MoreVertical className="h-4 w-4" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {actions.map((action) => (
-                  <DropdownMenuItem
-                    key={action.label}
-                    onClick={action.onClick}
-                    className={action.variant === "destructive" ? "text-red-600" : ""}
-                  >
-                    {action.icon}
-                    {action.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
         </div>
 
         {/* ID section */}
-        <div className="py-3 border-t border-border">
+        <div className="py-1.5">
           <SectionHeader>
             {type === "order" ? "Order" : "Subscription"}
           </SectionHeader>
@@ -124,7 +133,7 @@ export function MobileRecordCard({
         </div>
 
         {/* Items section */}
-        <div className="py-3 border-t border-border">
+        <div className="py-1.5">
           <SectionHeader>Items</SectionHeader>
           <div className="mt-1 space-y-0">
             {items.map((item, idx) => (
@@ -141,9 +150,21 @@ export function MobileRecordCard({
           </div>
         </div>
 
+        {/* Details section (subscription-specific) */}
+        {(price || deliverySchedule || currentPeriod) && (
+          <div className="py-1.5">
+            <SectionHeader>Details</SectionHeader>
+            <div className="mt-0.5 text-sm space-y-0.5">
+              {price && <p>{price}</p>}
+              {deliverySchedule && <p className="text-muted-foreground">{deliverySchedule}</p>}
+              {currentPeriod && <p className="text-muted-foreground">{currentPeriod}</p>}
+            </div>
+          </div>
+        )}
+
         {/* Ship To section */}
         {shipping && shipping.street && (
-          <div className="py-3 border-t border-border">
+          <div className="py-1.5">
             <SectionHeader>Ship To</SectionHeader>
             <div className="text-sm mt-0.5">
               {shipping.recipientName && (

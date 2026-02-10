@@ -351,7 +351,7 @@ export default function OrdersPageClient({
             </CardHeader>
           </div>
           <CardContent className="p-0">
-            <div className="divide-y">
+            <div className="lg:divide-y space-y-3 lg:space-y-0">
               {filteredOrders.map((order) => (
                 <div key={order.id}>
                   {/* Mobile/Tablet Card Layout */}
