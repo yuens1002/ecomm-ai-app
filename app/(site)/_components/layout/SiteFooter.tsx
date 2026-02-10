@@ -265,11 +265,11 @@ export default async function SiteFooter() {
           }`}
         >
           {/* Quick Links */}
-          <div className="">
+          <div className="space-y-4">
             <h3 className="text-lg font-semibold">
               {brandingSettings.footerQuickLinksHeading}
             </h3>
-            <ul className="mt-4 space-y-2">
+            <ul className="space-y-2">
               <li>
                 <Link
                   href="/"
