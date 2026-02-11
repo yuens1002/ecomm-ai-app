@@ -42,7 +42,7 @@ export default function ContactSettingsPage() {
       >
         <SettingsField<boolean>
           endpoint="/api/admin/settings/footer-contact"
-          field="showEmailInFooter"
+          field="showEmail"
           label="Show Email in Footer"
           description="Display your contact email in the site footer"
           autoSave
@@ -64,7 +64,7 @@ export default function ContactSettingsPage() {
 
         <SettingsField
           endpoint="/api/admin/settings/footer-contact"
-          field="businessHours"
+          field="hoursText"
           label="Business Hours"
           description="Your café's operating hours (displayed in footer)"
           saveButtonInInput
