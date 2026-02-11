@@ -265,7 +265,7 @@ export default async function SiteFooter() {
           }`}
         >
           {/* Quick Links */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <h3 className="text-lg font-semibold">
               {brandingSettings.footerQuickLinksHeading}
             </h3>

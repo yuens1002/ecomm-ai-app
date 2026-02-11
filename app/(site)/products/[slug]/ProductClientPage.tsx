@@ -339,10 +339,9 @@ export default function ProductClientPage({
   const relatedSlidesPerView = useResponsiveSlidesPerView(
     { 768: 2.5, 1024: 3, 1280: 4 }, 1.5
   );
-  // Bundle carousel is inside the right column (half-width at md+)
-  const bundleSlidesPerView = useResponsiveSlidesPerView(
-    { 768: 1.2, 1024: 2, 1280: 2.5 }, 1.5
-  );
+  // Bundle carousel: constant 1.5 slides at all breakpoints
+  // (rendered in half-width column at md+, full-width on mobile — similar effective width)
+  const bundleSlidesPerView = 1.5;
 
   return (
     <PageContainer>

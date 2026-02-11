@@ -48,7 +48,6 @@ interface MobileRecordCardProps {
   actions?: RecordAction[];
   actionsLoading?: boolean;
   price?: string;
-  deliverySchedule?: string;
   currentPeriod?: string;
   detailsSectionHeader?: string;
 }
@@ -73,54 +72,53 @@ export function MobileRecordCard({
   actions,
   actionsLoading,
   price,
-  deliverySchedule,
   currentPeriod,
   detailsSectionHeader,
 }: MobileRecordCardProps) {
   return (
-    <div className="px-4 py-3 space-y-3">
-      {/* Header: Date ———— [Status ⋮] */}
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-foreground">
-          {format(new Date(date), "MMM d, yyyy")}
+    <div className="flex flex-col gap-5 px-4 py-4">
+      {/* Status + actions row */}
+      <div className="flex items-center justify-end gap-3">
+        <span
+          className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(status)}`}
+        >
+          {getStatusLabel(status)}
         </span>
-        <div className="flex items-center gap-3">
-          <span
-            className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(status)}`}
-          >
-            {getStatusLabel(status)}
-          </span>
-          {actions && actions.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" disabled={actionsLoading}>
-                  {actionsLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <MoreVertical className="h-4 w-4" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {actions.map((action) => (
-                  <DropdownMenuItem
-                    key={action.label}
-                    onClick={action.onClick}
-                    disabled={action.disabled}
-                    className={action.variant === "destructive" ? "text-red-600" : ""}
-                  >
-                    {action.icon}
-                    {action.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
+        {actions && actions.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" disabled={actionsLoading}>
+                {actionsLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <MoreVertical className="h-4 w-4" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {actions.map((action) => (
+                <DropdownMenuItem
+                  key={action.label}
+                  onClick={action.onClick}
+                  disabled={action.disabled}
+                  className={action.variant === "destructive" ? "text-red-600" : ""}
+                >
+                  {action.icon}
+                  {action.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
-      {/* SUB section: ID + delivery schedule */}
-      <div className="py-1.5">
+      {/* Date */}
+      <span className="text-sm text-foreground">
+        {format(new Date(date), "MMM d, yyyy")}
+      </span>
+
+      {/* ID section */}
+      <div>
         <SectionHeader>
           {type === "order" ? "Order" : "Subscription"}
         </SectionHeader>
@@ -131,36 +129,33 @@ export function MobileRecordCard({
         ) : (
           <p className="text-sm font-medium mt-0.5">{displayId}</p>
         )}
-        {deliverySchedule && (
-          <p className="text-sm text-foreground mt-0.5">{deliverySchedule}</p>
-        )}
       </div>
 
-      {/* SCHEDULE section: price + current billing (before Items for subscriptions) */}
-      {(price || currentPeriod) && (
-        <div className="py-1.5">
+      {/* SCHEDULE section */}
+      {price && (
+        <div>
           <SectionHeader>{detailsSectionHeader || "Details"}</SectionHeader>
-          <div className="mt-0.5 text-sm space-y-0.5">
-            {price && <p className="text-foreground">{price}</p>}
-            {currentPeriod && (
-              <>
-                <SectionHeader>Current Billing</SectionHeader>
-                <p className="text-foreground">{currentPeriod}</p>
-              </>
-            )}
-          </div>
+          <p className="mt-0.5 text-sm text-foreground">{price}</p>
+        </div>
+      )}
+
+      {/* CURRENT BILLING section */}
+      {currentPeriod && (
+        <div>
+          <SectionHeader>Current Billing</SectionHeader>
+          <p className="mt-0.5 text-sm text-foreground">{currentPeriod}</p>
         </div>
       )}
 
       {/* Items section */}
-      <div className="py-1.5">
+      <div>
         <SectionHeader>Items</SectionHeader>
-        <div className="mt-1 space-y-0">
+        <div className="mt-1">
           {items.map((item) => (
             <div key={item.id}>
               <div className="text-sm">{item.name}</div>
               <div className="text-xs text-muted-foreground">
-                {item.variant} · {item.purchaseType} · Qty: {item.quantity}
+                {[item.variant, item.purchaseType, `Qty: ${item.quantity}`].filter(Boolean).join(" · ")}
               </div>
             </div>
           ))}
@@ -169,7 +164,7 @@ export function MobileRecordCard({
 
       {/* Ship To section */}
       {(shipping?.street || (deliveryMethod && deliveryMethod !== "DELIVERY")) && (
-        <div className="py-1.5">
+        <div>
           <SectionHeader>Ship To</SectionHeader>
           <div className="text-sm mt-0.5">
             {shipping?.street ? (

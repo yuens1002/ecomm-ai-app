@@ -117,7 +117,7 @@ export default function AccountPageClient({ user }: AccountPageClientProps) {
           </TabsTrigger>
           <TabsTrigger
             value="danger"
-            className="flex items-center gap-1.5 px-3 md:px-4 shrink-0 text-red-600"
+            className="flex items-center gap-1.5 px-3 md:px-4 shrink-0"
           >
             <Trash2 className="w-4 h-4" />
             <span className="hidden md:inline">Delete</span>

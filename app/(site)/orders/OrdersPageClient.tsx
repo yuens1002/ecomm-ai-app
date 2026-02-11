@@ -351,11 +351,11 @@ export default function OrdersPageClient({
             </CardHeader>
           </div>
           <div className="p-0">
-            <div className="divide-y divide-border">
+            <div className="space-y-4 lg:space-y-0 lg:divide-y lg:divide-border">
               {filteredOrders.map((order) => (
                 <div key={order.id}>
                   {/* Mobile/Tablet Card Layout */}
-                  <div className="lg:hidden">
+                  <Card className="py-0 gap-0 lg:hidden">
                     <MobileRecordCard
                       type="order"
                       status={order.status}
@@ -409,7 +409,7 @@ export default function OrdersPageClient({
                       }
                       actionsLoading={cancellingOrderId === order.id}
                     />
-                  </div>
+                  </Card>
 
                   {/* Desktop Table Row - only on lg screens */}
                   <div className="hidden lg:grid grid-cols-7 gap-x-[6em] p-4 hover:bg-muted/50 transition-colors items-center">

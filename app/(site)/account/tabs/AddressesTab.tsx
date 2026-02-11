@@ -296,41 +296,30 @@ export default function AddressesTab({
               <p className="text-sm">Add an address to speed up checkout.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {addresses.map((address) => (
                 <div
                   key={address.id}
                   className="p-4 border border-border rounded-lg"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    {address.isDefault ? (
-                      <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded inline-flex items-center gap-1">
-                        <MapPin className="w-3 h-3" /> Default
-                      </span>
-                    ) : (
-                      <MapPin className="w-4 h-4 text-text-muted" />
-                    )}
-                  </div>
-                  <p className="text-sm font-medium text-text-base">
-                    {address.street}
-                  </p>
-                  <p className="text-sm text-text-muted">
-                    {address.city}, {address.state} {address.postalCode}
-                  </p>
-                  <p className="text-sm text-text-muted">
-                    {address.country}
-                  </p>
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                    {!address.isDefault ? (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleSetDefault(address.id)}
-                        disabled={isLoading}
-                      >
-                        <MapPin className="w-4 h-4 mr-1" /> Set Default
-                      </Button>
-                    ) : <div />}
+                  {/* Actions row at top */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {address.isDefault ? (
+                        <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded inline-flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> Default
+                        </span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSetDefault(address.id)}
+                          disabled={isLoading}
+                        >
+                          <MapPin className="w-4 h-4 mr-1" /> Set Default
+                        </Button>
+                      )}
+                    </div>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -340,6 +329,16 @@ export default function AddressesTab({
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
+                  {/* Address content */}
+                  <p className="text-sm font-medium text-text-base">
+                    {address.street}
+                  </p>
+                  <p className="text-sm text-text-muted">
+                    {address.city}, {address.state} {address.postalCode}
+                  </p>
+                  <p className="text-sm text-text-muted">
+                    {address.country}
+                  </p>
                 </div>
               ))}
             </div>

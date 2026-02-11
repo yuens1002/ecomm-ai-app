@@ -256,81 +256,82 @@ export default function SubscriptionsTab({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {localSubscriptions.map((subscription) => (
         <div key={subscription.id} className="space-y-2">
-          <MobileRecordCard
-            type="subscription"
-            status={subscription.status}
-            date={subscription.createdAt}
-            displayId={`#${subscription.stripeSubscriptionId.replace("sub_", "").slice(-8)}`}
-            detailsSectionHeader="Schedule"
-            items={subscription.productNames.map((name, idx) => ({
-              id: `${subscription.id}-${idx}`,
-              name,
-              variant: "",
-              purchaseType: subscription.deliverySchedule || "Subscription",
-              quantity: subscription.quantities[idx] || 1,
-            }))}
-            shipping={
-              subscription.shippingStreet
-                ? {
-                    recipientName: subscription.recipientName,
-                    street: subscription.shippingStreet,
-                    city: subscription.shippingCity,
-                    state: subscription.shippingState,
-                    postalCode: subscription.shippingPostalCode,
-                  }
-                : undefined
-            }
-            actions={
-              subscription.status !== "CANCELED" &&
-              !subscription.cancelAtPeriodEnd
-                ? [
-                    // Manage Subscription (first, only if valid customer)
-                    ...(!invalidCustomerIds.has(subscription.stripeCustomerId)
-                      ? [{
-                          label: loadingId === subscription.id ? "Opening..." : "Manage Subscription",
-                          onClick: () => handleManageSubscription(subscription.stripeCustomerId, subscription.id),
-                          icon: loadingId === subscription.id
-                            ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            : <ExternalLink className="mr-2 h-4 w-4" />,
-                        }]
-                      : []),
-                    ...(canEditAddress(subscription)
-                      ? [
-                          {
-                            label: "Edit Shipping",
-                            onClick: () => editAddress.openDialog(subscription),
-                          },
-                        ]
-                      : []),
-                    ...(subscription.status === "ACTIVE"
-                      ? [
-                          {
-                            label: "Skip Next Delivery",
-                            onClick: () => openConfirmDialog("skip", subscription),
-                          },
-                        ]
-                      : []),
-                    ...(subscription.status === "PAUSED"
-                      ? [
-                          {
-                            label: "Resume Now",
-                            onClick: () => openConfirmDialog("resume", subscription),
-                          },
-                        ]
-                      : []),
-                    {
-                      label: "Cancel Subscription",
-                      onClick: () => openConfirmDialog("cancel", subscription),
-                      variant: "destructive" as const,
-                    },
-                  ]
-                : undefined
-            }
-            actionsLoading={actionLoading === subscription.id}
-            price={`${formatPrice(subscription.priceInCents)}${subscription.deliverySchedule ? ` / ${subscription.deliverySchedule.toLowerCase()}` : ""}`}
-            deliverySchedule={subscription.deliverySchedule || undefined}
-            currentPeriod={`${format(new Date(subscription.currentPeriodStart), "MMM d, yyyy")} – ${format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}`}
-          />
+          <Card className="py-0 gap-0">
+            <MobileRecordCard
+              type="subscription"
+              status={subscription.status}
+              date={subscription.createdAt}
+              displayId={`#${subscription.stripeSubscriptionId.replace("sub_", "").slice(-8)}`}
+              detailsSectionHeader="Schedule"
+              items={subscription.productNames.map((name, idx) => ({
+                id: `${subscription.id}-${idx}`,
+                name,
+                variant: "",
+                purchaseType: subscription.deliverySchedule || "Subscription",
+                quantity: subscription.quantities[idx] || 1,
+              }))}
+              shipping={
+                subscription.shippingStreet
+                  ? {
+                      recipientName: subscription.recipientName,
+                      street: subscription.shippingStreet,
+                      city: subscription.shippingCity,
+                      state: subscription.shippingState,
+                      postalCode: subscription.shippingPostalCode,
+                    }
+                  : undefined
+              }
+              actions={
+                subscription.status !== "CANCELED" &&
+                !subscription.cancelAtPeriodEnd
+                  ? [
+                      // Manage Subscription (first, only if valid customer)
+                      ...(!invalidCustomerIds.has(subscription.stripeCustomerId)
+                        ? [{
+                            label: loadingId === subscription.id ? "Opening..." : "Manage Subscription",
+                            onClick: () => handleManageSubscription(subscription.stripeCustomerId, subscription.id),
+                            icon: loadingId === subscription.id
+                              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              : <ExternalLink className="mr-2 h-4 w-4" />,
+                          }]
+                        : []),
+                      ...(canEditAddress(subscription)
+                        ? [
+                            {
+                              label: "Edit Shipping",
+                              onClick: () => editAddress.openDialog(subscription),
+                            },
+                          ]
+                        : []),
+                      ...(subscription.status === "ACTIVE"
+                        ? [
+                            {
+                              label: "Skip Next Delivery",
+                              onClick: () => openConfirmDialog("skip", subscription),
+                            },
+                          ]
+                        : []),
+                      ...(subscription.status === "PAUSED"
+                        ? [
+                            {
+                              label: "Resume Now",
+                              onClick: () => openConfirmDialog("resume", subscription),
+                            },
+                          ]
+                        : []),
+                      {
+                        label: "Cancel Subscription",
+                        onClick: () => openConfirmDialog("cancel", subscription),
+                        variant: "destructive" as const,
+                      },
+                    ]
+                  : undefined
+              }
+              actionsLoading={actionLoading === subscription.id}
+              price={`${formatPrice(subscription.priceInCents)}${subscription.deliverySchedule ? ` / ${subscription.deliverySchedule.toLowerCase()}` : ""}`}
+              currentPeriod={`${format(new Date(subscription.currentPeriodStart), "MMM d, yyyy")} – ${format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}`}
+            />
+          </Card>
 
           {/* Status notices */}
           {subscription.cancelAtPeriodEnd && (
