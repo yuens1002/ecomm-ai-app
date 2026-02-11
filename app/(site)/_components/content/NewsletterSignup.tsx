@@ -61,7 +61,7 @@ export default function NewsletterSignup({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full items-center">
+    <form onSubmit={handleSubmit} className="flex max-w-[40ch] items-center">
       <Input
         type="email"
         placeholder="Your email"
