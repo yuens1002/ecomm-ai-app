@@ -261,6 +261,7 @@ export default function SubscriptionsTab({
             status={subscription.status}
             date={subscription.createdAt}
             displayId={`#${subscription.stripeSubscriptionId.replace("sub_", "").slice(-8)}`}
+            detailsSectionHeader="Schedule"
             items={subscription.productNames.map((name, idx) => ({
               id: `${subscription.id}-${idx}`,
               name,
@@ -283,6 +284,16 @@ export default function SubscriptionsTab({
               subscription.status !== "CANCELED" &&
               !subscription.cancelAtPeriodEnd
                 ? [
+                    // Manage Subscription (first, only if valid customer)
+                    ...(!invalidCustomerIds.has(subscription.stripeCustomerId)
+                      ? [{
+                          label: loadingId === subscription.id ? "Opening..." : "Manage Subscription",
+                          onClick: () => handleManageSubscription(subscription.stripeCustomerId, subscription.id),
+                          icon: loadingId === subscription.id
+                            ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            : <ExternalLink className="mr-2 h-4 w-4" />,
+                        }]
+                      : []),
                     ...(canEditAddress(subscription)
                       ? [
                           {
@@ -341,41 +352,6 @@ export default function SubscriptionsTab({
                 {format(new Date(subscription.pausedUntil), "MMM d, yyyy")}
               </p>
             </div>
-          )}
-
-          {/* Manage button */}
-          {subscription.status !== "CANCELED" && (
-            <>
-              {invalidCustomerIds.has(subscription.stripeCustomerId) ? (
-                <div className="bg-muted rounded-md p-3 text-sm text-muted-foreground text-center">
-                  <p>Subscription management is not available for demo accounts.</p>
-                  <p className="mt-1 text-xs">Create a real order to access the billing portal.</p>
-                </div>
-              ) : (
-                <Button
-                  onClick={() =>
-                    handleManageSubscription(
-                      subscription.stripeCustomerId,
-                      subscription.id
-                    )
-                  }
-                  disabled={loadingId === subscription.id}
-                  className="w-full"
-                >
-                  {loadingId === subscription.id ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Opening Portal...
-                    </>
-                  ) : (
-                    <>
-                      Manage Subscription
-                      <ExternalLink className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              )}
-            </>
           )}
 
           {/* Canceled date */}
