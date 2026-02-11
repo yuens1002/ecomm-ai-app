@@ -12,6 +12,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   NavigationMenu,
@@ -31,9 +37,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useNavOverflow } from "@/hooks/useNavOverflow";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
-import { ChevronDown, FileText, Home, Menu, Search, User } from "lucide-react";
+import { ChevronDown, FileText, Home, Menu, MoreHorizontal, Search, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -129,6 +136,26 @@ export default function SiteHeader({
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
   const { settings } = useSiteSettings();
+  const { visible: visiblePages, overflow: overflowPages } = useNavOverflow(
+    pages,
+    { 768: 3, 1024: 5 },
+    pages.length
+  );
+
+  // Controlled NavigationMenu — debounce close to prevent hover/click race condition.
+  // When hover opens the menu, an immediate click tries to close it, but the mouse
+  // is still over the trigger so hover re-opens it → flicker. Debouncing the close
+  // by 300ms lets the hover "stick" and ignores the spurious click-to-close.
+  const [navValue, setNavValue] = useState("");
+  const navOpenedAt = useRef(0);
+  const handleNavValueChange = useCallback((val: string) => {
+    if (val) {
+      setNavValue(val);
+      navOpenedAt.current = Date.now();
+    } else if (Date.now() - navOpenedAt.current > 300) {
+      setNavValue(val);
+    }
+  }, []);
 
   const handleScroll = useCallback(() => {
     const currentScrollY = window.scrollY;
@@ -337,15 +364,14 @@ export default function SiteHeader({
               </Sheet>
 
               {/* Desktop nav */}
-              <div className="hidden md:flex">
-                <NavigationMenu>
+              <div className="hidden md:flex items-center">
+                <NavigationMenu value={navValue} onValueChange={handleNavValueChange} delayDuration={200}>
                   <NavigationMenuList>
-                    <NavigationMenuItem>
+                    <NavigationMenuItem value="shop">
                       <NavigationMenuTrigger className="h-auto px-2 py-2 text-foreground hover:text-primary data-[state=open]:text-primary bg-transparent hover:bg-transparent focus:bg-transparent [&>svg]:hidden">
                         <div className="flex flex-col items-center gap-1">
                           <DynamicIcon name={productMenuIcon as IconName} className="w-5 h-5" />
-                          <div className="flex items-center gap-1">
-                            <div className="w-3 h-3" aria-hidden="true" />
+                          <div className="flex items-center gap-0.5">
                             <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
                               {productMenuText}
                             </span>
@@ -366,7 +392,7 @@ export default function SiteHeader({
                       </NavigationMenuContent>
                     </NavigationMenuItem>
 
-                    {pages.map((page) => (
+                    {visiblePages.map((page) => (
                       <NavigationMenuItem key={page.id}>
                         <NavigationMenuLink asChild>
                           <Link
@@ -392,6 +418,45 @@ export default function SiteHeader({
                     ))}
                   </NavigationMenuList>
                 </NavigationMenu>
+
+                {/* "More" dropdown — outside NavigationMenu so it positions below its own trigger */}
+                {overflowPages.length > 0 && (
+                  <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="h-auto px-2 py-2 text-foreground hover:text-primary transition-colors bg-transparent border-none cursor-pointer inline-flex items-center outline-none"
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <MoreHorizontal className="w-5 h-5" />
+                          <span className="text-[10px] uppercase tracking-wide font-medium leading-3">
+                            More
+                          </span>
+                        </div>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {overflowPages.map((page) => (
+                        <DropdownMenuItem key={page.id} asChild>
+                          <Link
+                            href={
+                              page.type === "LINK" && page.url
+                                ? page.url
+                                : `/pages/${page.slug}`
+                            }
+                            className="flex items-center gap-2"
+                          >
+                            {page.icon ? (
+                              <DynamicIcon name={page.icon} size={16} />
+                            ) : (
+                              <FileText className="w-4 h-4" />
+                            )}
+                            {page.title}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </>
           )}

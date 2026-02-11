@@ -28,7 +28,7 @@ import PageContainer from "@/components/shared/PageContainer";
 import { useCartStore, type CartItem } from "@/lib/store/cart-store";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
 import { useAddToCartWithFeedback } from "@/hooks/useAddToCartWithFeedback";
-import { useResponsiveSlidesPerView } from "@/hooks/useResponsiveSlidesPerView";
+import { useResponsiveValue } from "@/hooks/useResponsiveValue";
 import { AddOnItem } from "./actions";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 import { CoffeeDetails } from "@/app/(site)/_components/product/CoffeeDetails";
@@ -336,12 +336,13 @@ export default function ProductClientPage({
     : null;
 
   // Responsive slides per view for carousels
-  const relatedSlidesPerView = useResponsiveSlidesPerView(
+  const relatedSlidesPerView = useResponsiveValue(
     { 768: 2.5, 1024: 3, 1280: 4 }, 1.5
   );
-  // Bundle carousel: constant 1.5 slides at all breakpoints
-  // (rendered in half-width column at md+, full-width on mobile — similar effective width)
-  const bundleSlidesPerView = 1.5;
+  // Bundle carousel: 1.3 on mobile (full-width), 1 at md (narrow 2-col), 1.3 at lg, 1.5 at xl
+  const bundleSlidesPerView = useResponsiveValue(
+    { 768: 1, 1024: 1.3, 1280: 1.5 }, 1.3
+  );
 
   return (
     <PageContainer>
@@ -366,7 +367,7 @@ export default function ProductClientPage({
       </Breadcrumb>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-x-10 md:gap-y-5 lg:gap-x-14 lg:gap-y-8">
-        <div className="w-full md:sticky md:top-6 md:self-start">
+        <div className="w-full min-w-0 md:sticky md:top-6 md:self-start">
           <ImageCarousel
             images={galleryImages}
             aspectRatio="square"
@@ -375,7 +376,7 @@ export default function ProductClientPage({
           />
         </div>
 
-        <div className="w-full flex flex-col gap-4">
+        <div className="w-full min-w-0 flex flex-col gap-4">
           {/* ---- Coffee header: origin, name, roast bar, tasting notes ---- */}
           {isCoffee && product.origin.length > 0 && (
             <p className="text-xs font-medium uppercase tracking-widest text-text-muted">
