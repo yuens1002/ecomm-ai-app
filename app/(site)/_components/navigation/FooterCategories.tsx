@@ -26,7 +26,7 @@ export default function FooterCategories({
   const title = productMenuText ?? heading ?? "Shop";
   const icon = productMenuIcon ?? "ShoppingBag";
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <h3 className="text-lg font-semibold flex items-center gap-2">
         <DynamicIcon name={icon} className="w-5 h-5" />
         {title}
