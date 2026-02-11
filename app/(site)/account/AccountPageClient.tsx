@@ -92,35 +92,35 @@ export default function AccountPageClient({ user }: AccountPageClientProps) {
 
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList className="flex w-full overflow-x-auto [&::-webkit-scrollbar]:hidden px-1">
-          <TabsTrigger value="profile" className="flex items-center gap-1.5 px-3 sm:px-4 shrink-0">
+          <TabsTrigger value="profile" className="flex items-center gap-1.5 px-3 md:px-4 shrink-0">
             <User className="w-4 h-4" />
-            <span className="hidden sm:inline">Profile</span>
+            <span className="hidden md:inline">Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-1.5 px-3 sm:px-4 shrink-0">
+          <TabsTrigger value="security" className="flex items-center gap-1.5 px-3 md:px-4 shrink-0">
             <Shield className="w-4 h-4" />
-            <span className="hidden sm:inline">Security</span>
+            <span className="hidden md:inline">Security</span>
           </TabsTrigger>
-          <TabsTrigger value="accounts" className="flex items-center gap-1.5 px-3 sm:px-4 shrink-0">
+          <TabsTrigger value="accounts" className="flex items-center gap-1.5 px-3 md:px-4 shrink-0">
             <Link2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Accounts</span>
+            <span className="hidden md:inline">Accounts</span>
           </TabsTrigger>
-          <TabsTrigger value="addresses" className="flex items-center gap-1.5 px-3 sm:px-4 shrink-0">
+          <TabsTrigger value="addresses" className="flex items-center gap-1.5 px-3 md:px-4 shrink-0">
             <MapPin className="w-4 h-4" />
-            <span className="hidden sm:inline">Addresses</span>
+            <span className="hidden md:inline">Addresses</span>
           </TabsTrigger>
           <TabsTrigger
             value="subscriptions"
-            className="flex items-center gap-1.5 px-3 sm:px-4 shrink-0"
+            className="flex items-center gap-1.5 px-3 md:px-4 shrink-0"
           >
             <Repeat className="w-4 h-4" />
-            <span className="hidden sm:inline">Subscriptions</span>
+            <span className="hidden md:inline">Subscriptions</span>
           </TabsTrigger>
           <TabsTrigger
             value="danger"
-            className="flex items-center gap-1.5 px-3 sm:px-4 shrink-0 text-red-600"
+            className="flex items-center gap-1.5 px-3 md:px-4 shrink-0 text-red-600"
           >
             <Trash2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Delete</span>
+            <span className="hidden md:inline">Delete</span>
           </TabsTrigger>
         </TabsList>
 
