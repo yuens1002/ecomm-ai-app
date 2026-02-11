@@ -335,7 +335,7 @@ export default function OrdersPageClient({
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <div className="lg:border lg:border-border lg:rounded-lg lg:bg-card">
           {/* Desktop Table Header - only on lg screens */}
           <div className="hidden lg:block">
             <CardHeader className="pb-3">
@@ -350,12 +350,12 @@ export default function OrdersPageClient({
               </div>
             </CardHeader>
           </div>
-          <CardContent className="p-0">
-            <div className="lg:divide-y space-y-3 lg:space-y-0">
+          <div className="p-0">
+            <div className="divide-y divide-border">
               {filteredOrders.map((order) => (
                 <div key={order.id}>
                   {/* Mobile/Tablet Card Layout */}
-                  <div className="lg:hidden p-4">
+                  <div className="lg:hidden">
                     <MobileRecordCard
                       type="order"
                       status={order.status}
@@ -373,7 +373,7 @@ export default function OrdersPageClient({
                         quantity: item.quantity,
                       }))}
                       shipping={
-                        order.deliveryMethod === "DELIVERY" && order.shippingStreet
+                        order.shippingStreet
                           ? {
                               recipientName: order.recipientName,
                               street: order.shippingStreet,
@@ -383,6 +383,7 @@ export default function OrdersPageClient({
                             }
                           : undefined
                       }
+                      deliveryMethod={order.deliveryMethod}
                       actions={
                         hasActions(order)
                           ? [
@@ -487,8 +488,8 @@ export default function OrdersPageClient({
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Cancel Order Dialog */}
