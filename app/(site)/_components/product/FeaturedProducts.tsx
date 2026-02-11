@@ -58,6 +58,7 @@ export default function FeaturedProducts() {
                 showPurchaseOptions={true}
                 hoverRevealFooter={true}
                 compactFooter={true}
+                compact={true}
                 priority={index < 4}
               />
             ))}

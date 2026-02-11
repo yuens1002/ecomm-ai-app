@@ -58,7 +58,7 @@ export default function UnsubscribeClient() {
   }, [token]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">
+    <div className="min-h-screen flex justify-center pt-12 sm:pt-20 p-4 bg-muted/30">
       <Card className="max-w-md w-full">
         <CardHeader className="text-center pb-4">
           <div className="flex justify-center mb-4">

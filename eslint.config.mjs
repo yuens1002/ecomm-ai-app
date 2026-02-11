@@ -1,6 +1,8 @@
 import { defineConfig } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import reactHooksPlugin from "eslint-plugin-react-hooks";
+import reactPlugin from "eslint-plugin-react";
 
 const eslintConfig = defineConfig([
   // Global ignores must be in a separate config object with ONLY ignores property
@@ -24,11 +26,18 @@ const eslintConfig = defineConfig([
       // Menu builder mock/prototype directories
       "app/admin/menu-builder-mock/**",
       "app/admin/menu-builder-mock2/**",
+      // Temporary scratchpad and screenshot scripts
+      ".scratchpad/**",
+      ".screenshots/**",
     ],
   },
   ...nextVitals,
   ...nextTs,
   {
+    plugins: {
+      "react-hooks": reactHooksPlugin,
+      react: reactPlugin,
+    },
     rules: {
       // STRICT: Prevent 'any' type - force proper typing
       "@typescript-eslint/no-explicit-any": "error",

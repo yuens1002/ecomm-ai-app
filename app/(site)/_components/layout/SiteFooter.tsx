@@ -192,7 +192,7 @@ async function getSocialLinksSettings() {
 
   return {
     enabled: map["social_links_enabled"] === "true",
-    heading: map["social_links_heading"] || "Stay Connected",
+    heading: map["social_links_heading"] || "Follow Us",
     description: map["social_links_description"] || undefined,
   };
 }
@@ -265,7 +265,7 @@ export default async function SiteFooter() {
           }`}
         >
           {/* Quick Links */}
-          <div className="">
+          <div className="space-y-2">
             <h3 className="text-lg font-semibold">
               {brandingSettings.footerQuickLinksHeading}
             </h3>

@@ -50,6 +50,7 @@ ACs are split into three categories. Each category maps to a verification method
 ```
 
 **Rules:**
+
 - Each AC is a single, testable statement
 - UI ACs reference specific visual elements and breakpoints
 - Functional ACs reference specific endpoints, validations, or behaviors
@@ -60,7 +61,28 @@ ACs are split into three categories. Each category maps to a verification method
 
 Human reviews the plan and ACs. On approval, ACs become the **verification contract** — the sub-agent will verify exactly these criteria, nothing more, nothing less.
 
+**After approval, the human can step away.** The implement → verify → iterate loop runs autonomously. The human is only needed again at the final review gate (Phase 5).
+
+### ACs Tracking Doc
+
+After plan approval, create the ACs tracking doc from the template (`docs/templates/acs-template.md`) → save as `docs/plans/{feature}-ACs.md`. This doc has three verification columns:
+
+| Column | Filled by | When |
+|--------|-----------|------|
+| **Agent** | Verification sub-agent | During `/ac-verify` — PASS/FAIL with brief evidence |
+| **QC** | Main thread agent | After reading sub-agent report — confirms or overrides |
+| **Reviewer** | Human (reviewer) | During manual review — final approval per AC |
+
 ## Phase 2: Implement (main thread)
+
+### Pre-Flight Checks
+
+Before starting implementation:
+
+1. **Dev server running?** Verify `http://localhost:3000` (or configured port) is reachable. If not, ask the human to start it — this is the only human checkpoint before the autonomous loop.
+2. **Verification status clean?** Confirm the current branch has no entry or is in `"planned"` state. If `"pending"` or `"partial"`, a previous iteration was interrupted — resume instead of restarting.
+
+### Implementation
 
 The main thread implements the approved plan:
 
@@ -108,45 +130,33 @@ Additional context:
 3. **Regression ACs**: Runs test suite, spot-checks screenshots for unchanged elements
 4. **Returns**: Structured verification report
 
-### Verification Report Format
+### ACs Doc Update
+
+The sub-agent fills the **Agent** column in the ACs tracking doc (`docs/plans/{feature}-ACs.md`). If no ACs doc exists, the sub-agent returns an inline report.
+
+Example ACs doc after sub-agent verification:
 
 ```markdown
-## Verification Report — feat/order-ship-to-edit
+## UI Acceptance Criteria
 
-### UI Verification
-| AC | mobile | tablet | desktop | Result |
-|----|--------|--------|---------|--------|
-| AC-UI-1: Ship To column visible | PASS | PASS | PASS | PASS |
-| AC-UI-2: Edit button for PENDING only | PASS | PASS | PASS | PASS |
-| AC-UI-3: Modal pre-populated | — | — | PASS | PASS |
-
-### Functional Verification
-| AC | Method | Result | Notes |
-|----|--------|--------|-------|
-| AC-FN-1: Zod validation | Code review | PASS | Schema validates all address fields |
-| AC-FN-2: Auth check | Code review | PASS | getServerSession + owner check |
-| AC-FN-3: Non-PENDING 403 | Code review | PASS | Status guard before update |
-
-### Regression
-| AC | Method | Result | Notes |
-|----|--------|--------|-------|
-| AC-REG-1: Existing columns | Screenshot | PASS | Order #, Date, Items, Status, Total unchanged |
-| AC-REG-2: Status badges | Screenshot | PASS | All badge colors render correctly |
-| AC-REG-3: Cancel button | Screenshot | PASS | Still shows for PENDING orders |
-
-### Test Suite
-- Total: 694 | Passed: 694 | Failed: 0
-
-### Overall: PASS
+| AC | Description | Agent | QC | Reviewer |
+|----|-------------|-------|-----|----------|
+| AC-UI-1 | Ship To column visible at all breakpoints | PASS | | |
+| AC-UI-2 | Edit button for PENDING only | FAIL (button shows for all) | | |
 ```
 
-## Phase 4: Main Thread Reads Report
+See `docs/templates/acs-template.md` for the full template format.
 
-The main thread receives the sub-agent's report:
+## Phase 4: Main Thread Reads Report (QC)
 
+The main thread receives the sub-agent's report (reads the **Agent** column in the ACs doc):
+
+- **For each AC:** Confirm or override the sub-agent's result in the **QC** column
 - **All ACs pass** → Update `verification-status.json` → Present report to human
-- **Any AC fails** → Fix code in main thread → Re-spawn sub-agent to re-verify ALL ACs
+- **Any AC fails** → Fix code in main thread, note fixes in QC Notes section → Re-spawn sub-agent to re-verify ALL ACs
 - **Repeat** until every AC passes
+
+**This loop is fully autonomous — the human does not need to be present during implement/verify/iterate cycles.**
 
 ### Updating Verification Status
 
@@ -169,7 +179,7 @@ The pre-commit hook reads this file and blocks commits unless `status === "verif
 
 ## Phase 5: Human Review
 
-The main thread presents the consolidated report to the human:
+The main thread presents the ACs tracking doc to the human. The **Agent** and **QC** columns are already filled. The human fills in the **Reviewer** column.
 
 ```text
 ## Ready for Review
@@ -181,8 +191,9 @@ The main thread presents the consolidated report to the human:
 - Tests: 694/694 passed
 - Iterations: 1
 
-### Verification Report
-[full report from sub-agent]
+### ACs Tracking Doc
+docs/plans/{feature}-ACs.md
+Please review and fill in the Reviewer column.
 
 ### Next Steps
 - Approve → I'll commit, create PR, and release
@@ -190,8 +201,21 @@ The main thread presents the consolidated report to the human:
 ```
 
 **Human decision:**
+
 - **Approve** → Main thread commits, creates PR, runs `/release`
 - **Reject with feedback** → Main thread fixes, re-verifies (back to Phase 3)
+
+### 3-Column Handoff
+
+The ACs doc serves as the single source of truth across all three participants:
+
+| Phase | Who fills | Column |
+|-------|-----------|--------|
+| Verification (Phase 3) | Sub-agent | **Agent** — PASS/FAIL with evidence |
+| QC (Phase 4) | Main thread | **QC** — confirms/overrides Agent, notes fixes |
+| Review (Phase 5) | Human | **Reviewer** — final sign-off per AC |
+
+Templates: `docs/templates/plan-template.md`, `docs/templates/acs-template.md`
 
 ## Phase 6: Release
 
@@ -217,6 +241,7 @@ On approval, the main thread runs the standard release workflow:
 ### Sub-Agent Boundaries
 
 The verification sub-agent:
+
 - **CAN**: Read files, take screenshots, run tests, read screenshots, produce reports
 - **CANNOT**: Edit files, write code, make commits, push branches
 - **RECEIVES**: AC list, pages to screenshot, dev server URL, additional context

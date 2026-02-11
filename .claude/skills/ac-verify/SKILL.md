@@ -115,9 +115,11 @@ For each functional AC:
 
 4. Record PASS/FAIL for each regression AC
 
-### Step 5: Produce Report
+### Step 5: Update ACs Doc + Produce Report
 
-Return a structured report in this exact format:
+If an ACs tracking doc exists at `docs/plans/{feature}-ACs.md`, **update the Agent column** in the AC tables with your results (PASS/FAIL with brief evidence). Use the 3-column template from `docs/templates/acs-template.md`. Also add notes to the **Agent Notes** section.
+
+If no ACs doc exists yet, produce the report inline in this format:
 
 ```markdown
 ## Verification Report — {BRANCH}
