@@ -258,10 +258,10 @@ export default async function SiteFooter() {
         </div>
 
         <div
-          className={`grid grid-cols-1 gap-8 items-start ${
+          className={`grid grid-cols-1 gap-8 items-start md:grid-cols-[30%_auto_1fr] ${
             showThirdColumn
-              ? "md:grid-cols-[30%_auto_1fr] lg:grid-cols-[1fr_auto_3fr_auto_2fr]"
-              : "md:grid-cols-[30%_auto_1fr] lg:grid-cols-[1fr_auto_3fr]"
+              ? "lg:grid-cols-[1fr_auto_3fr_auto_2fr]"
+              : "lg:grid-cols-[1fr_auto_3fr]"
           }`}
         >
           {/* Quick Links */}
@@ -320,7 +320,7 @@ export default async function SiteFooter() {
               {/* Horizontal Separator (sm only) */}
               <Separator className="md:hidden" />
 
-              {/* Horizontal Separator spanning full width at md (after row 1) */}
+              {/* Horizontal Separator spanning full width at md only (after row 1) */}
               <Separator className="hidden md:block lg:hidden md:col-span-3" />
 
               {/* Vertical Separator (lg+ only) */}
@@ -329,8 +329,8 @@ export default async function SiteFooter() {
                 className="hidden lg:block h-auto self-stretch"
               />
 
-              {/* Third Column: Stay Connected & Follow Us wrapper (lg+ only) */}
-              <div className="md:col-span-3 lg:col-span-1 space-y-8">
+              {/* Stay Connected & Follow Us wrapper — 2-col at md, stacked at lg+ */}
+              <div className="md:col-span-3 lg:col-span-1 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] lg:grid-cols-1 gap-8">
                 {/* Stay Connected (Newsletter) */}
                 {newsletterSettings.enabled && (
                   <div className="space-y-2">
@@ -344,14 +344,15 @@ export default async function SiteFooter() {
                   </div>
                 )}
 
-                {/* Horizontal Separator (sm & md only) - only show if both newsletter and social links are enabled */}
+                {/* Divider between sections: horizontal on sm & lg+, vertical at md */}
                 {newsletterSettings.enabled && socialLinksSettings.enabled && (
-                  <Separator className="lg:hidden" />
-                )}
-
-                {/* Horizontal Separator within third column at lg+ - only show if both newsletter and social links are enabled */}
-                {newsletterSettings.enabled && socialLinksSettings.enabled && (
-                  <Separator className="hidden lg:block" />
+                  <>
+                    <Separator className="md:hidden lg:block" />
+                    <Separator
+                      orientation="vertical"
+                      className="hidden md:block lg:hidden h-auto self-stretch"
+                    />
+                  </>
                 )}
 
                 {/* Follow Us (Social) */}
