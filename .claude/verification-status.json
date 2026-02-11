@@ -70,11 +70,11 @@
       "notes": "13/15 ACs verified via screenshots + code review. AC-UI-4 (submit success) and AC-UI-5 (submit error) deferred — code review confirms identical pattern to proven order address flow. All FN ACs pass code review. All REG ACs pass (precheck clean, orders page intact, skip/resume/cancel still visible)."
     },
     "feat/mobile-audit": {
-      "status": "planned",
+      "status": "implementing",
       "acs_passed": 0,
-      "acs_total": 15,
+      "acs_total": 29,
       "tasks": [],
-      "notes": "Iter 2: 15 ACs from reviewer feedback. Plan at docs/plans/mobile-audit-iter2.md, ACs at docs/plans/mobile-audit-fixes-ACs-iter-2.md."
+      "notes": "Iter 3: 29 ACs from reviewer feedback. Plan in user prompt, ACs at docs/plans/mobile-audit-fixes-ACs-iter-3.md."
     }
   }
 }
