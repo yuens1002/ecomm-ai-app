@@ -28,6 +28,7 @@ import PageContainer from "@/components/shared/PageContainer";
 import { useCartStore, type CartItem } from "@/lib/store/cart-store";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
 import { useAddToCartWithFeedback } from "@/hooks/useAddToCartWithFeedback";
+import { useResponsiveSlidesPerView } from "@/hooks/useResponsiveSlidesPerView";
 import { AddOnItem } from "./actions";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 import { CoffeeDetails } from "@/app/(site)/_components/product/CoffeeDetails";
@@ -334,26 +335,14 @@ export default function ProductClientPage({
     ? getDiscountMessage(selectedVariant, subscriptionDisplayOption)
     : null;
 
-  // Responsive slides per view for related products carousel
-  const [relatedSlidesPerView, setRelatedSlidesPerView] = useState(1);
-  useEffect(() => {
-    const calcSlides = () => {
-      const w = window.innerWidth;
-      // xs/s: 1, md: 2.5, lg: 3, xl+: 4
-      if (w >= 1280) {
-        setRelatedSlidesPerView(4);
-      } else if (w >= 1024) {
-        setRelatedSlidesPerView(3);
-      } else if (w >= 768) {
-        setRelatedSlidesPerView(2.5);
-      } else {
-        setRelatedSlidesPerView(1.5);
-      }
-    };
-    calcSlides();
-    window.addEventListener("resize", calcSlides);
-    return () => window.removeEventListener("resize", calcSlides);
-  }, []);
+  // Responsive slides per view for carousels
+  const relatedSlidesPerView = useResponsiveSlidesPerView(
+    { 768: 2.5, 1024: 3, 1280: 4 }, 1.5
+  );
+  // Bundle carousel is inside the right column (half-width at md+)
+  const bundleSlidesPerView = useResponsiveSlidesPerView(
+    { 768: 1.2, 1024: 2, 1280: 2.5 }, 1.5
+  );
 
   return (
     <PageContainer>
@@ -502,7 +491,7 @@ export default function ProductClientPage({
                 {settings.productAddOnsSectionTitle}
               </h2>
 
-              <ScrollCarousel slidesPerView={1.2} gap="gap-2" noBorder>
+              <ScrollCarousel slidesPerView={bundleSlidesPerView} gap="gap-2" noBorder>
                 {addOns.map((addOn) => (
                   <AddOnCard
                     key={`${addOn.product.id}-${addOn.variant.id}`}
