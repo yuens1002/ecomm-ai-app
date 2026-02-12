@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ShoppingCart as ShoppingCartIcon,
-  X,
+  Trash2,
   Plus,
   Minus,
   Loader2,
@@ -390,7 +390,7 @@ export function ShoppingCart() {
                             }
                           >
                             {item.quantity <= 1 ? (
-                              <X className="h-3 w-3" />
+                              <Trash2 className="h-3 w-3" />
                             ) : (
                               <Minus className="h-3 w-3" />
                             )}
@@ -421,7 +421,7 @@ export function ShoppingCart() {
                             onClick={() => handleRemoveItem(item)}
                             aria-label="Remove item"
                           >
-                            <X className="h-3 w-3" />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                           <input
                             type="text"
@@ -432,14 +432,21 @@ export function ShoppingCart() {
                           />
                         </ButtonGroup>
                       )}
-                      <span className="text-right">
-                        {item.originalPriceInCents && (
-                          <span className="text-sm text-muted-foreground line-through mr-1.5">
-                            {formatPrice(item.originalPriceInCents)}
+                      <span className="text-right flex items-center">
+                        {item.quantity > 1 && (
+                          <span className="text-sm font-medium text-muted-foreground pr-4">
+                            ×{item.quantity}
                           </span>
                         )}
-                        <span className="font-semibold text-text-base">
-                          {formatPrice(item.priceInCents)}
+                        <span>
+                          {item.originalPriceInCents && (
+                            <span className="text-sm text-muted-foreground line-through mr-1.5">
+                              {formatPrice(item.originalPriceInCents * item.quantity)}
+                            </span>
+                          )}
+                          <span className="font-semibold text-text-base">
+                            {formatPrice(item.priceInCents * item.quantity)}
+                          </span>
                         </span>
                       </span>
                     </div>
