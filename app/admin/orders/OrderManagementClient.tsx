@@ -21,7 +21,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
 
 type Order = {
   id: string;
@@ -49,6 +58,7 @@ type Order = {
     quantity: number;
     purchaseOption: {
       variant: {
+        name: string;
         product: {
           name: string;
         };
@@ -198,8 +208,8 @@ export default function OrderManagementClient() {
       if (!res.ok) throw new Error("Failed to mark as failed");
 
       toast({
-        title: "Order Failed",
-        description: `Order #${selectedOrder.orderNumber || selectedOrder.id.slice(-8)} marked as failed`,
+        title: "Order Unfulfilled",
+        description: `Order #${selectedOrder.orderNumber || selectedOrder.id.slice(-8)} marked as unfulfilled`,
         variant: undefined,
         className: "!bg-foreground !text-background !border-foreground",
       });
@@ -250,7 +260,7 @@ export default function OrderManagementClient() {
       SHIPPED: "Shipped",
       PICKED_UP: "Picked Up",
       CANCELLED: "Canceled",
-      FAILED: "Failed",
+      FAILED: "Unfulfilled",
     };
 
     return (
@@ -264,6 +274,33 @@ export default function OrderManagementClient() {
     );
   }
 
+  function getOrderActions(order: Order) {
+    const actions: import("@/components/shared/MobileRecordCard").RecordAction[] = [];
+
+    if (order.status === "PENDING") {
+      if (order.deliveryMethod === "DELIVERY") {
+        actions.push({ label: "Ship", onClick: () => openShipDialog(order) });
+      } else {
+        actions.push({
+          label: "Pickup Ready",
+          onClick: () => { setSelectedOrder(order); setPickupDialogOpen(true); },
+        });
+      }
+      actions.push({
+        label: "Unfulfill",
+        onClick: () => openFailDialog(order),
+        variant: "destructive",
+      });
+    } else if (order.status === "SHIPPED" && order.trackingNumber) {
+      actions.push({
+        label: "Track Package",
+        onClick: () => window.open(getTrackingUrl(order.carrier!, order.trackingNumber!), "_blank"),
+      });
+    }
+
+    return actions;
+  }
+
   if (loading) {
     return (
       <div className="p-6">
@@ -274,21 +311,16 @@ export default function OrderManagementClient() {
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex justify-between items-center">
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="FAILED">Failed</SelectItem>
-            <SelectItem value="CANCELLED">Canceled</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Status Filter Tabs */}
+      <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+        <TabsList>
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="PENDING">Pending</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="FAILED">Unfulfilled</TabsTrigger>
+          <TabsTrigger value="CANCELLED">Canceled</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Orders Table */}
       {filteredOrders.length === 0 ? (
@@ -298,180 +330,156 @@ export default function OrderManagementClient() {
           </CardContent>
         </Card>
       ) : (
-        <div className="border rounded-md">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Order #
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Date
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Customer
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Items
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Ship To
-                  </th>
-                  <th className="text-right py-3 px-4 font-semibold text-sm">
-                    Total
-                  </th>
-                  <th className="text-center py-3 px-4 font-semibold text-sm">
-                    Status
-                  </th>
-                  <th className="text-center py-3 px-4 font-semibold text-sm">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-muted/30">
-                    <td className="py-4 px-4">
-                      <div className="font-medium flex items-center gap-2">
-                        <span>{order.orderNumber || order.id.slice(-8)}</span>
+        <>
+          {/* Mobile/Tablet Card Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xl:hidden">
+            {filteredOrders.map((order) => (
+              <Card key={order.id} className="py-0 gap-0">
+                <MobileRecordCard
+                  type="order"
+                  status={order.status}
+                  date={new Date(order.createdAt)}
+                  displayId={`#${order.orderNumber || order.id.slice(-8)}`}
+                  badge={order.stripeSubscriptionId ? (
+                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Sub</span>
+                  ) : undefined}
+                  customer={{ name: order.user?.name || order.recipientName, email: order.customerEmail }}
+                  items={order.items.map((item, idx) => ({
+                    id: String(idx),
+                    name: item.purchaseOption.variant.product.name,
+                    variant: item.purchaseOption.variant.name,
+                    purchaseType: "",
+                    quantity: item.quantity,
+                  }))}
+                  price={`$${(order.totalInCents / 100).toFixed(2)}`}
+                  detailsSectionHeader="Total"
+                  shipping={
+                    order.shippingStreet
+                      ? {
+                          recipientName: order.recipientName,
+                          street: order.shippingStreet,
+                          city: order.shippingCity,
+                          state: order.shippingState,
+                          postalCode: order.shippingPostalCode,
+                        }
+                      : undefined
+                  }
+                  deliveryMethod={order.deliveryMethod}
+                  actions={getOrderActions(order)}
+                />
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden xl:block border rounded-md">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Order #</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Date</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Customer</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Items</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Ship To</th>
+                    <th className="text-right py-3 px-4 font-semibold text-sm">Total</th>
+                    <th className="text-center py-3 px-4 font-semibold text-sm">Status</th>
+                    <th className="text-center py-3 px-4 font-semibold text-sm"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filteredOrders.map((order) => (
+                    <tr key={order.id} className="hover:bg-muted/30">
+                      <td className="py-4 px-4">
                         {order.stripeSubscriptionId && (
-                          <span
-                            className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full"
-                            title="Subscription order"
-                          >
-                            🔄 Sub
+                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full inline-block mb-1">
+                            Sub
                           </span>
                         )}
-                      </div>
-                      {order.trackingNumber && (
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(
-                              order.trackingNumber!
-                            );
-                            toast({
-                              title: "Copied!",
-                              description: `Tracking #: ${order.trackingNumber}`,
-                            });
-                          }}
-                          className="text-xs text-muted-foreground hover:text-primary mt-1 flex items-center gap-1"
-                          title={`${order.carrier}: ${order.trackingNumber}`}
-                        >
-                          📋 {order.carrier} tracking
-                        </button>
-                      )}
-                    </td>
-                    <td className="py-4 px-4 text-sm text-muted-foreground">
-                      {format(new Date(order.createdAt), "MMM d, yyyy")}
-                      <br />
-                      <span className="text-xs">
-                        {format(new Date(order.createdAt), "h:mm a")}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="text-sm font-medium">
-                        {order.user?.name || order.recipientName || "Guest"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {order.customerEmail}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="text-sm space-y-1">
-                        {order.items.map((item, idx) => (
-                          <div key={idx}>
-                            {item.quantity}x{" "}
-                            {item.purchaseOption.variant.product.name}
-                          </div>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 text-sm max-w-xs">
-                      {order.deliveryMethod === "DELIVERY" &&
-                      order.shippingStreet ? (
-                        <div className="text-sm">
-                          {order.recipientName && (
-                            <div className="font-medium">
-                              {order.recipientName}
-                            </div>
-                          )}
-                          {order.customerPhone && (
-                            <div className="text-muted-foreground">
-                              {order.customerPhone}
-                            </div>
-                          )}
-                          <div>{order.shippingStreet}</div>
-                          <div>
-                            {order.shippingCity}, {order.shippingState}{" "}
-                            {order.shippingPostalCode}
-                          </div>
-                          <div className="text-muted-foreground">
-                            {order.shippingCountry}
-                          </div>
+                        <div className="font-medium">
+                          {order.orderNumber || order.id.slice(-8)}
                         </div>
-                      ) : (
-                        <span className="text-muted-foreground italic">
-                          Store Pickup
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-4 px-4 text-right font-semibold">
-                      ${(order.totalInCents / 100).toFixed(2)}
-                    </td>
-                    <td className="py-4 px-4 text-center">
-                      {getStatusBadge(order.status)}
-                    </td>
-                    <td className="py-4 px-4 text-center">
-                      {order.status === "PENDING" ? (
-                        <div className="flex gap-2 justify-center flex-wrap">
-                          {order.deliveryMethod === "DELIVERY" ? (
-                            <Button
-                              size="sm"
-                              onClick={() => openShipDialog(order)}
-                            >
-                              Ship
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                setSelectedOrder(order);
-                                setPickupDialogOpen(true);
-                              }}
-                            >
-                              Pickup Ready
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => openFailDialog(order)}
+                        {order.trackingNumber && (
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(order.trackingNumber!);
+                              toast({ title: "Copied!", description: `Tracking #: ${order.trackingNumber}` });
+                            }}
+                            className="text-xs text-muted-foreground hover:text-primary mt-1 flex items-center gap-1"
+                            title={`${order.carrier}: ${order.trackingNumber}`}
                           >
-                            Fail
-                          </Button>
+                            {order.carrier} tracking
+                          </button>
+                        )}
+                      </td>
+                      <td className="py-4 px-4 text-sm text-muted-foreground">
+                        {format(new Date(order.createdAt), "MMM d, yyyy")}
+                        <br />
+                        <span className="text-xs">{format(new Date(order.createdAt), "h:mm a")}</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-sm font-medium">{order.user?.name || order.recipientName || "Guest"}</div>
+                        <div className="text-xs text-muted-foreground">{order.customerEmail}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-sm space-y-2">
+                          {order.items.map((item, idx) => (
+                            <div key={idx}>
+                              <div>{item.purchaseOption.variant.product.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {item.purchaseOption.variant.name} • Qty: {item.quantity}
+                              </div>
+                              {idx < order.items.length - 1 && (
+                                <div className="border-t border-border mt-2" />
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      ) : order.status === "SHIPPED" && order.trackingNumber ? (
-                        <Button size="sm" variant="outline" asChild>
-                          <a
-                            href={getTrackingUrl(
-                              order.carrier!,
-                              order.trackingNumber
-                            )}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            Track
-                          </a>
-                        </Button>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                      <td className="py-4 px-4 text-sm max-w-xs">
+                        {order.deliveryMethod === "DELIVERY" && order.shippingStreet ? (
+                          <div className="text-sm">
+                            {order.recipientName && <div className="font-medium">{order.recipientName}</div>}
+                            {order.customerPhone && <div className="text-muted-foreground">{order.customerPhone}</div>}
+                            <div>{order.shippingStreet}</div>
+                            <div>{order.shippingCity}, {order.shippingState} {order.shippingPostalCode}</div>
+                            <div className="text-muted-foreground">{order.shippingCountry}</div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground italic">Store Pickup</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4 text-right font-semibold">${(order.totalInCents / 100).toFixed(2)}</td>
+                      <td className="py-4 px-4 text-center">{getStatusBadge(order.status)}</td>
+                      <td className="py-4 px-4 text-center">
+                        {getOrderActions(order).length > 0 && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {getOrderActions(order).map((action) => (
+                                <DropdownMenuItem
+                                  key={action.label}
+                                  onClick={action.onClick}
+                                  className={action.className || (action.variant === "destructive" ? "text-red-600" : "")}
+                                >
+                                  {action.label}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Ship Dialog */}
@@ -579,11 +587,11 @@ export default function OrderManagementClient() {
         </DialogContent>
       </Dialog>
 
-      {/* Fail Order Dialog */}
+      {/* Unfulfill Order Dialog */}
       <Dialog open={failDialogOpen} onOpenChange={setFailDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Mark Order as Failed</DialogTitle>
+            <DialogTitle>Unfulfill Order</DialogTitle>
             <DialogDescription>
               Provide a reason for failing order #
               {selectedOrder?.orderNumber || selectedOrder?.id.slice(-8)}. The
@@ -631,7 +639,7 @@ export default function OrderManagementClient() {
               onClick={handleMarkAsFailed}
               disabled={!failureReason.trim() || processing}
             >
-              {processing ? "Processing..." : "Mark as Failed"}
+              {processing ? "Processing..." : "Unfulfill Order"}
             </Button>
           </DialogFooter>
         </DialogContent>

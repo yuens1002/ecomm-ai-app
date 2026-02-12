@@ -34,11 +34,13 @@ export interface RecordAction {
   variant?: "default" | "destructive";
   icon?: React.ReactNode;
   disabled?: boolean;
+  className?: string;
 }
 
 interface MobileRecordCardProps {
   type: "order" | "subscription";
   status: string;
+  statusLabel?: string;
   date: Date;
   displayId: string;
   detailHref?: string;
@@ -50,6 +52,8 @@ interface MobileRecordCardProps {
   price?: string;
   currentPeriod?: string;
   detailsSectionHeader?: string;
+  customer?: { name?: string | null; email?: string | null };
+  badge?: React.ReactNode;
 }
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
@@ -63,6 +67,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 export function MobileRecordCard({
   type,
   status,
+  statusLabel,
   date,
   displayId,
   detailHref,
@@ -74,15 +79,18 @@ export function MobileRecordCard({
   price,
   currentPeriod,
   detailsSectionHeader,
+  customer,
+  badge,
 }: MobileRecordCardProps) {
   return (
     <div className="flex flex-col gap-5 px-4 py-4">
-      {/* Status + actions row */}
-      <div className="flex items-center justify-end gap-3">
+      {/* Status + badge + actions row */}
+      <div className="flex items-center justify-end gap-2">
+        {badge}
         <span
           className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(status)}`}
         >
-          {getStatusLabel(status)}
+          {statusLabel || getStatusLabel(status)}
         </span>
         {actions && actions.length > 0 && (
           <DropdownMenu>
@@ -101,7 +109,7 @@ export function MobileRecordCard({
                   key={action.label}
                   onClick={action.onClick}
                   disabled={action.disabled}
-                  className={action.variant === "destructive" ? "text-red-600" : ""}
+                  className={action.className || (action.variant === "destructive" ? "text-red-600" : "")}
                 >
                   {action.icon}
                   {action.label}
@@ -130,6 +138,17 @@ export function MobileRecordCard({
           <p className="text-sm font-medium mt-0.5">{displayId}</p>
         )}
       </div>
+
+      {/* Customer section (admin) */}
+      {customer && (
+        <div>
+          <SectionHeader>Customer</SectionHeader>
+          <p className="text-sm font-medium mt-0.5">{customer.name || "Guest"}</p>
+          {customer.email && (
+            <p className="text-xs text-muted-foreground">{customer.email}</p>
+          )}
+        </div>
+      )}
 
       {/* SCHEDULE section */}
       {price && (

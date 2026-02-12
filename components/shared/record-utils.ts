@@ -29,7 +29,7 @@ export function getStatusLabel(status: string) {
     case "PAST_DUE":
       return "Past Due";
     case "FAILED":
-      return "Failed";
+      return "Unfulfilled";
     default:
       return status.charAt(0) + status.slice(1).toLowerCase();
   }
