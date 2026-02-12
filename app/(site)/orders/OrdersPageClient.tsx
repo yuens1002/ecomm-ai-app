@@ -5,7 +5,7 @@ import { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, MoreHorizontal } from "lucide-react";
 import { MobileRecordCard } from "@/app/(site)/_components/account/MobileRecordCard";
