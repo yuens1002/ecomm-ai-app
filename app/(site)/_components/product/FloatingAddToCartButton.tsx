@@ -92,7 +92,7 @@ export function FloatingAddToCartButton({
       type="button"
       size="icon"
       className={cn(
-        "fixed bottom-4 right-4 z-40 md:hidden",
+        "fixed bottom-[60px] right-4 z-40 md:hidden",
         "h-14 w-14 rounded-full shadow-lg",
         "transition-all duration-200",
         stateStyles[buttonState]

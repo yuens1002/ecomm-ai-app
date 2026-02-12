@@ -46,7 +46,7 @@ export function ProductQuantityCart({
           type="button"
           variant="outline"
           size="icon"
-          className="h-14 w-14"
+          className="h-14 w-14 shadow-none"
           onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
           disabled={isDisabled}
         >
@@ -63,7 +63,7 @@ export function ProductQuantityCart({
           type="button"
           variant="outline"
           size="icon"
-          className="h-14 w-14"
+          className="h-14 w-14 shadow-none"
           onClick={() => onQuantityChange(quantity + 1)}
           disabled={isDisabled}
         >

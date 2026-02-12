@@ -31,7 +31,6 @@ export default function ProductCard({
   hidePrice = false,
   hidePriceOnMobile = false,
   hoverRevealFooter = false,
-  compactFooter = false,
   compact = false,
 }: Omit<ProductCardProps, "onAddToCart"> & {
   categorySlug?: string;
@@ -41,8 +40,6 @@ export default function ProductCard({
   hidePriceOnMobile?: boolean;
   /** On lg+, hide footer and reveal on card hover with slide-up fade-in */
   hoverRevealFooter?: boolean;
-  /** Smaller button and price text for tight layouts (e.g., carousels) */
-  compactFooter?: boolean;
   /** Smaller title and notes for carousel contexts */
   compact?: boolean;
 }) {
@@ -123,7 +120,7 @@ export default function ProductCard({
         </CardHeader>
 
         {/* 2. CardContent holds all text content. */}
-        <div className="border-x border-b rounded-b-lg">
+        <div className="@container/card border-x border-b rounded-b-lg">
           <CardContent className="grow py-4 min-h-28">
             <CardTitle className={cn("overflow-hidden text-ellipsis whitespace-nowrap p-0", compact ? "text-base" : "text-xl")}>
               {product.name}
@@ -164,24 +161,37 @@ export default function ProductCard({
                 onActionClick={handleAction}
                 disabled={!displayVariant || !oneTimePrice}
                 isProcessing={isCheckingOut}
-                className={cn("cursor-pointer", compactFooter && "text-xs h-8 px-2.5")}
+                containerAware
+                className="cursor-pointer @max-[300px]/card:text-xs @max-[300px]/card:h-8 @max-[300px]/card:px-2.5"
               />
               {!hidePrice && (
                 <div className={cn(
+                  "text-right",
                   hidePriceOnMobile ? "hidden md:block" : "",
-                  compactFooter && "text-right"
                 )}>
                   {hasSalePrice && oneTimePrice ? (
-                    <div className={cn("flex items-center gap-2", compactFooter && "gap-1")}>
-                      <p className={cn("text-text-muted line-through", compactFooter ? "text-xs" : "text-sm")}>
-                        ${formatPrice(oneTimePrice.priceInCents)}
-                      </p>
-                      <p className={cn("font-bold text-primary", compactFooter ? "text-sm" : "text-lg")}>
-                        ${displayPrice}
-                      </p>
+                    <div>
+                      {/* Vertical stack (compact, < 300px) */}
+                      <div className="@min-[300px]/card:hidden">
+                        <p className="text-xs text-text-muted line-through">
+                          ${formatPrice(oneTimePrice.priceInCents)}
+                        </p>
+                        <p className="text-sm font-bold text-primary">
+                          ${displayPrice}
+                        </p>
+                      </div>
+                      {/* Horizontal (>= 300px) */}
+                      <div className="hidden @min-[300px]/card:flex items-center gap-2">
+                        <p className="text-sm text-text-muted line-through">
+                          ${formatPrice(oneTimePrice.priceInCents)}
+                        </p>
+                        <p className="text-lg font-bold text-primary">
+                          ${displayPrice}
+                        </p>
+                      </div>
                     </div>
                   ) : (
-                    <p className={cn("font-bold text-primary", compactFooter ? "text-sm" : "text-lg")}>
+                    <p className="font-bold text-primary @max-[300px]/card:text-sm @min-[300px]/card:text-lg">
                       ${displayPrice}
                     </p>
                   )}

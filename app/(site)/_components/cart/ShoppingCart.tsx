@@ -377,6 +377,7 @@ export function ShoppingCart() {
                           <Button
                             variant="outline"
                             size="icon-sm"
+                            className="shadow-none"
                             onClick={() =>
                               item.quantity <= 1
                                 ? handleRemoveItem(item)
@@ -404,6 +405,7 @@ export function ShoppingCart() {
                           <Button
                             variant="outline"
                             size="icon-sm"
+                            className="shadow-none"
                             onClick={() => handleQuantityChange(item, 1)}
                             aria-label="Increase quantity"
                           >
@@ -415,6 +417,7 @@ export function ShoppingCart() {
                           <Button
                             variant="outline"
                             size="icon-sm"
+                            className="shadow-none"
                             onClick={() => handleRemoveItem(item)}
                             aria-label="Remove item"
                           >

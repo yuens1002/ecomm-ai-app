@@ -82,6 +82,13 @@
       "acs_total": 11,
       "tasks": [],
       "notes": "All 11 ACs verified. 6 FN ACs via code review + precheck. 5 REG ACs via Puppeteer screenshots at xl + md breakpoints. Screenshots at .screenshots/shared-table-verify/."
+    },
+    "feat/standardize-add-to-cart-cta": {
+      "status": "verified",
+      "acs_passed": 14,
+      "acs_total": 14,
+      "tasks": [],
+      "notes": "All 14 ACs verified via sub-agent screenshots + code review. QC confirmed. 0 iterations needed. Container queries working at 300px threshold for button text and sale price layout."
     }
   }
 }
