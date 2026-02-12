@@ -162,7 +162,6 @@ export function CartAddOnsSuggestions({
               key={`${addOn.product.id}-${addOn.variant.id}`}
               addOn={addOn}
               weightUnit="g"
-              buttonText="Add"
               onAddToCart={handleAddToCart}
             />
           ))}

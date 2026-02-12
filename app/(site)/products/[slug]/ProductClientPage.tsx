@@ -503,7 +503,6 @@ export default function ProductClientPage({
                     key={`${addOn.product.id}-${addOn.variant.id}`}
                     addOn={addOn}
                     weightUnit="g"
-                    buttonText="+ Add"
                     onAddToCart={() => handleAddOnToCart(addOn)}
                   />
                 ))}
@@ -530,7 +529,7 @@ export default function ProductClientPage({
             >
               {displayProducts.map((relatedProduct) => (
                 <div key={relatedProduct.id}>
-                  <ProductCard product={relatedProduct} disableCardEffects compact compactFooter />
+                  <ProductCard product={relatedProduct} disableCardEffects compact />
                 </div>
               ))}
             </ScrollCarousel>
