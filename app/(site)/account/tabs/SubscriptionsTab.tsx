@@ -30,7 +30,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
 import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
-import { MobileRecordCard } from "@/app/(site)/_components/account/MobileRecordCard";
+import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
 
 type SubscriptionStatus = "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE";
 
