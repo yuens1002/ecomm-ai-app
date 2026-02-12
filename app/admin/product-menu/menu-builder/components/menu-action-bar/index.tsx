@@ -1,8 +1,28 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { MoreHorizontal } from "lucide-react";
 import {
   ACTION_BAR_CONFIG,
   type ActionContext,
@@ -26,6 +46,8 @@ import { HelpPopoverButton } from "./HelpPopoverButton";
  */
 export function MenuActionBar() {
   const { toast } = useToast();
+  const [mobileDeleteOpen, setMobileDeleteOpen] = useState(false);
+  const [isMobileDeleting, setIsMobileDeleting] = useState(false);
 
   const {
     builder,
@@ -460,17 +482,131 @@ export function MenuActionBar() {
     return renderer(action, isDisabled);
   };
 
+  // Mobile: first action (New/Add) stays visible, rest collapse into dropdown
+  const firstActionCount = leftActions[0]?.type === "combo" ? 2 : 1;
+  const remainingLeft = leftActions.slice(firstActionCount);
+  const mobileOverflowActions = [...remainingLeft, ...rightActions];
+
+  const entityType = builder.currentView === "all-labels" ? "label" : "category";
+  const entityPlural =
+    builder.selectedIds.length === 1 ? entityType : `${entityType}s`;
+
+  const handleMobileDelete = async () => {
+    setIsMobileDeleting(true);
+    try {
+      await builderActions.deleteSelected();
+    } finally {
+      setIsMobileDeleting(false);
+      setMobileDeleteOpen(false);
+    }
+  };
+
+  // Render kbd shortcut matching context menu pattern
+  const renderKbd = (kbd: string[]) => {
+    if (kbd.length === 0) return null;
+    if (kbd.length === 1) return <Kbd className="ml-auto">{kbd[0]}</Kbd>;
+    return (
+      <KbdGroup className="ml-auto">
+        {kbd.map((key) => (
+          <Kbd key={key}>{key}</Kbd>
+        ))}
+      </KbdGroup>
+    );
+  };
+
   return (
     <TooltipProvider>
-      <div className="flex items-center justify-between gap-4 px-0">
-        {/* LEFT SIDE */}
+      <div className="flex items-center gap-4 px-0">
+        {/* First action (New/Add) — always visible */}
         <div className="flex items-center gap-2">
-          {leftActions.map((action, index) => renderAction(action, index))}
+          {leftActions.slice(0, firstActionCount).map((action, index) => renderAction(action, index))}
         </div>
 
-        {/* RIGHT SIDE */}
-        <div className="flex items-center gap-2">{rightActions.map(renderAction)}</div>
+        {/* Remaining left actions — md+ only */}
+        <div className="hidden md:flex items-center gap-2">
+          {remainingLeft.map((action, index) => renderAction(action, index + firstActionCount))}
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Right actions — md+ only */}
+        <div className="hidden md:flex items-center gap-2">
+          {rightActions.map(renderAction)}
+        </div>
+
+        {/* Mobile overflow dropdown — below md */}
+        {mobileOverflowActions.length > 0 && (
+          <div className="md:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="More actions">
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                {mobileOverflowActions.map((action, index) => {
+                  const Icon = action.icon;
+                  const isDisabled =
+                    action.disabled(state) ||
+                    (action.id === "remove" &&
+                      builder.currentView === "all-categories" &&
+                      disableRemoveInAllCategories);
+
+                  // Separator between left and right groups
+                  const isFirstRight = index === remainingLeft.length && remainingLeft.length > 0;
+
+                  return (
+                    <div key={action.id}>
+                      {isFirstRight && <DropdownMenuSeparator />}
+                      <DropdownMenuItem
+                        disabled={isDisabled}
+                        onClick={
+                          action.id === "delete"
+                            ? () => setMobileDeleteOpen(true)
+                            : () => action.onClick(state, builderActions)
+                        }
+                        className={action.id === "delete" ? "text-destructive focus:text-destructive" : ""}
+                      >
+                        <Icon className="size-4" />
+                        {action.label}
+                        {renderKbd(action.kbd)}
+                      </DropdownMenuItem>
+                    </div>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
+
+      {/* Mobile delete confirmation dialog */}
+      <AlertDialog open={mobileDeleteOpen} onOpenChange={setMobileDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              Delete {builder.selectedIds.length} {entityPlural}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The selected {entityPlural} will be
+              permanently deleted
+              {builder.currentView === "all-labels"
+                ? " and all category associations will be removed."
+                : " and all label and product associations will be removed."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isMobileDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={handleMobileDelete}
+              disabled={isMobileDeleting}
+            >
+              {isMobileDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TooltipProvider>
   );
 }

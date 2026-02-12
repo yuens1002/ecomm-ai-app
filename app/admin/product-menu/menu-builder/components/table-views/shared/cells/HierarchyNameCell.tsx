@@ -78,7 +78,7 @@ export function HierarchyCheckbox({ children, className }: SlotProps) {
     <div
       data-slot="hierarchy-checkbox"
       data-row-click-ignore
-      className={cn("flex-shrink-0 mr-4", className)}
+      className={cn("flex-shrink-0 mr-3", className)}
     >
       {children}
     </div>

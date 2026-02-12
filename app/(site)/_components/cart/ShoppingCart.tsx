@@ -284,7 +284,7 @@ export function ShoppingCart() {
         >
           <ShoppingCartIcon className="w-6 h-6" />
           {displayCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">
+            <span className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-red-600 text-white text-[10px] sm:text-xs w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center font-semibold">
               {displayCount}
             </span>
           )}

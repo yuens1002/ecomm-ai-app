@@ -335,9 +335,9 @@ export default function OrdersPageClient({
           </CardContent>
         </Card>
       ) : (
-        <div className="lg:border lg:border-border lg:rounded-lg lg:bg-card">
-          {/* Desktop Table Header - only on lg screens */}
-          <div className="hidden lg:block">
+        <div className="xl:border xl:border-border xl:rounded-lg xl:bg-card">
+          {/* Desktop Table Header - only on xl screens */}
+          <div className="hidden xl:block">
             <div className="bg-muted/50 rounded-t-lg px-4 py-3 border-b border-border">
               <div className="grid grid-cols-7 gap-x-[6em] font-semibold text-sm text-text-muted">
                 <div>Order</div>
@@ -351,11 +351,11 @@ export default function OrdersPageClient({
             </div>
           </div>
           <div className="p-0">
-            <div className="space-y-4 lg:space-y-0 lg:divide-y lg:divide-border">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xl:grid-cols-none xl:space-y-0 xl:divide-y xl:divide-border">
               {filteredOrders.map((order) => (
                 <div key={order.id}>
                   {/* Mobile/Tablet Card Layout */}
-                  <Card className="py-0 gap-0 lg:hidden">
+                  <Card className="py-0 gap-0 xl:hidden">
                     <MobileRecordCard
                       type="order"
                       status={order.status}
@@ -412,7 +412,7 @@ export default function OrdersPageClient({
                   </Card>
 
                   {/* Desktop Table Row - only on lg screens */}
-                  <div className="hidden lg:grid grid-cols-7 gap-x-[6em] p-4 hover:bg-muted/50 transition-colors items-center">
+                  <div className="hidden xl:grid grid-cols-7 gap-x-[6em] p-4 hover:bg-muted/50 transition-colors items-center">
                     {/* Order */}
                     <div>
                       <Button variant="outline" size="sm" asChild>
