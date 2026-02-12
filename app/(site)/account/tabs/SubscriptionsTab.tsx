@@ -31,6 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
 import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
+import { formatPrice } from "@/components/shared/record-utils";
 
 type SubscriptionStatus = "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE";
 
@@ -219,13 +220,6 @@ export default function SubscriptionsTab({
     } finally {
       setLoadingId(null);
     }
-  };
-
-  const formatPrice = (cents: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(cents / 100);
   };
 
   if (localSubscriptions.length === 0) {

@@ -75,6 +75,13 @@
       "acs_total": 29,
       "tasks": [],
       "notes": "Iter 3: 29 ACs from reviewer feedback. Plan in user prompt, ACs at docs/plans/mobile-audit-fixes-ACs-iter-3.md."
+    },
+    "feat/shared-table-components": {
+      "status": "verified",
+      "acs_passed": 11,
+      "acs_total": 11,
+      "tasks": [],
+      "notes": "All 11 ACs verified. 6 FN ACs via code review + precheck. 5 REG ACs via Puppeteer screenshots at xl + md breakpoints. Screenshots at .screenshots/shared-table-verify/."
     }
   }
 }

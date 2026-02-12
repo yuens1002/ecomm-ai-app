@@ -1,25 +1,20 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
+import { OrderWithItems } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, MoreHorizontal } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
-import {
-  getStatusColor as sharedGetStatusColor,
-  getStatusLabel as sharedGetStatusLabel,
-} from "@/components/shared/record-utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { formatPrice } from "@/components/shared/record-utils";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { RecordActionMenu } from "@/components/shared/RecordActionMenu";
+import { RecordItemsList } from "@/components/shared/RecordItemsList";
+import { ShippingAddressDisplay } from "@/components/shared/ShippingAddressDisplay";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,115 +25,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
 import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
 import { PageContainer } from "@/components/shared/PageContainer";
-
-// --- Shared Helper Functions ---
-
-const getStatusColor = sharedGetStatusColor;
-const getStatusLabel = sharedGetStatusLabel;
-
-function formatPrice(priceInCents: number) {
-  return `$${(priceInCents / 100).toFixed(2)}`;
-}
-
-// --- Shared Components ---
-
-function StatusBadge({ status }: { status: string }) {
-  return (
-    <span
-      className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(status)}`}
-    >
-      {getStatusLabel(status)}
-    </span>
-  );
-}
-
-function OrderItemsList({ items }: { items: OrderItemWithDetails[] }) {
-  return (
-    <div className="space-y-2">
-      {items.map((item, idx) => (
-        <div key={item.id}>
-          <div className="text-sm">
-            <Link
-              href={`/products/${item.purchaseOption.variant.product.slug}`}
-              className="text-text-base hover:text-primary"
-            >
-              {item.purchaseOption.variant.product.name}
-            </Link>
-          </div>
-          <div className="text-xs text-text-muted">
-            {item.purchaseOption.variant.name} •{" "}
-            {item.purchaseOption.type === "SUBSCRIPTION"
-              ? "Subscription"
-              : "One-time"}{" "}
-            • Qty: {item.quantity}
-          </div>
-          {idx < items.length - 1 && (
-            <div className="border-t border-border mt-2 pt-2" />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ShipToInfo({
-  order,
-  variant = "default",
-}: {
-  order: OrderWithItems;
-  variant?: "default" | "card";
-}) {
-  if (order.deliveryMethod !== "DELIVERY" || !order.shippingStreet) {
-    return (
-      <span className="text-text-muted italic text-sm">Store Pickup</span>
-    );
-  }
-
-  const content = (
-    <>
-      {order.recipientName && (
-        <div className="font-medium">{order.recipientName}</div>
-      )}
-      {order.customerPhone && (
-        <div className="text-text-muted">{order.customerPhone}</div>
-      )}
-      <div className="text-text-muted">
-        {order.shippingStreet}
-        {variant === "card" && `, ${order.shippingCity}, ${order.shippingState} ${order.shippingPostalCode}`}
-      </div>
-      {variant === "default" && (
-        <div className="text-text-muted">
-          {order.shippingCity}, {order.shippingState} {order.shippingPostalCode}
-        </div>
-      )}
-    </>
-  );
-
-  if (variant === "card") {
-    return (
-      <div className="text-sm bg-muted/30 rounded-md p-3">
-        <div className="text-xs text-text-muted uppercase tracking-wide mb-1">
-          Ship To
-        </div>
-        {content}
-      </div>
-    );
-  }
-
-  return <div className="text-sm">{content}</div>;
-}
-
-// --- Main Component ---
 
 interface OrdersPageClientProps {
   statusFilter?: string;
@@ -294,30 +184,16 @@ export default function OrdersPageClient({
         <p className="text-text-muted">View and manage your past orders</p>
       </div>
 
-      <div className="mb-6">
-        <Select value={activeTab} onValueChange={handleTabChange}>
-          <SelectTrigger className="w-full sm:w-[280px]">
-            <SelectValue placeholder="Filter orders" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">
-              All Orders ({getOrderCount("all")})
-            </SelectItem>
-            <SelectItem value="pending">
-              Pending ({getOrderCount("pending")})
-            </SelectItem>
-            <SelectItem value="completed">
-              Completed ({getOrderCount("completed")})
-            </SelectItem>
-            <SelectItem value="failed">
-              Unfulfilled ({getOrderCount("failed")})
-            </SelectItem>
-            <SelectItem value="cancelled">
-              Canceled ({getOrderCount("cancelled")})
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <div className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList>
+            <TabsTrigger value="all">All Orders ({getOrderCount("all")})</TabsTrigger>
+            <TabsTrigger value="pending">Pending ({getOrderCount("pending")})</TabsTrigger>
+            <TabsTrigger value="completed">Completed ({getOrderCount("completed")})</TabsTrigger>
+            <TabsTrigger value="failed">Unfulfilled ({getOrderCount("failed")})</TabsTrigger>
+            <TabsTrigger value="cancelled">Canceled ({getOrderCount("cancelled")})</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
       {isLoading ? (
         <Card>
@@ -335,21 +211,7 @@ export default function OrdersPageClient({
           </CardContent>
         </Card>
       ) : (
-        <div className="xl:border xl:border-border xl:rounded-lg xl:bg-card">
-          {/* Desktop Table Header - only on xl screens */}
-          <div className="hidden xl:block">
-            <div className="bg-muted/50 rounded-t-lg px-4 py-3 border-b border-border">
-              <div className="grid grid-cols-7 gap-x-[6em] font-semibold text-sm text-text-muted">
-                <div>Order</div>
-                <div>Date</div>
-                <div>Item(s)</div>
-                <div>Ship To</div>
-                <div className="text-right">Total</div>
-                <div className="text-center">Status</div>
-                <div className="text-right"></div>
-              </div>
-            </div>
-          </div>
+        <div>
           {/* Mobile/Tablet Card Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xl:hidden">
             {filteredOrders.map((order) => (
@@ -411,86 +273,91 @@ export default function OrdersPageClient({
             ))}
           </div>
 
-          {/* Desktop Table Rows */}
-          <div className="hidden xl:block xl:divide-y xl:divide-border">
-            {filteredOrders.map((order) => (
-              <div key={order.id} className="grid grid-cols-7 gap-x-[6em] p-4 hover:bg-muted/50 transition-colors items-center">
-                {/* Order */}
-                <div>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/orders/${order.id}`}>
-                      #{order.id.slice(-8)}
-                    </Link>
-                  </Button>
-                </div>
-
-                {/* Date */}
-                <div className="text-sm text-text-muted">
-                  {format(new Date(order.createdAt), "MMM d, yyyy")}
-                </div>
-
-                {/* Items */}
-                <div>
-                  <OrderItemsList items={order.items} />
-                </div>
-
-                {/* Ship To */}
-                <div>
-                  <ShipToInfo order={order} />
-                </div>
-
-                {/* Total */}
-                <div className="text-right font-semibold">
-                  {formatPrice(order.totalInCents)}
-                </div>
-
-                {/* Status */}
-                <div className="text-center">
-                  <StatusBadge status={order.status} />
-                </div>
-
-                {/* Actions */}
-                <div className="flex justify-end">
-                  {hasActions(order) && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={cancellingOrderId === order.id}
-                        >
-                          {cancellingOrderId === order.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <MoreHorizontal className="h-4 w-4" />
-                          )}
+          {/* Desktop Table */}
+          <div className="hidden xl:block border rounded-md">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Order</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Date</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Item(s)</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Ship To</th>
+                    <th className="text-right py-3 px-4 font-semibold text-sm">Total</th>
+                    <th className="text-center py-3 px-4 font-semibold text-sm">Status</th>
+                    <th className="text-center py-3 px-4 font-semibold text-sm"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filteredOrders.map((order) => (
+                    <tr key={order.id} className="hover:bg-muted/30">
+                      <td className="py-4 px-4">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/orders/${order.id}`}>
+                            #{order.id.slice(-8)}
+                          </Link>
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {canEditAddress(order) && (
-                          <DropdownMenuItem
-                            onClick={() => editAddress.openDialog(order)}
-                          >
-                            Edit Address
-                          </DropdownMenuItem>
+                      </td>
+                      <td className="py-4 px-4 text-sm text-foreground">
+                        {format(new Date(order.createdAt), "MMM d, yyyy")}
+                      </td>
+                      <td className="py-4 px-4">
+                        <RecordItemsList
+                          items={order.items.map((item) => ({
+                            id: item.id,
+                            name: item.purchaseOption.variant.product.name,
+                            variant: item.purchaseOption.variant.name,
+                            purchaseType:
+                              item.purchaseOption.type === "SUBSCRIPTION"
+                                ? "Subscription"
+                                : "One-time",
+                            quantity: item.quantity,
+                            href: `/products/${item.purchaseOption.variant.product.slug}`,
+                          }))}
+                        />
+                      </td>
+                      <td className="py-4 px-4">
+                        <ShippingAddressDisplay
+                          recipientName={order.recipientName}
+                          phone={order.customerPhone}
+                          street={order.deliveryMethod === "DELIVERY" ? order.shippingStreet : null}
+                          city={order.shippingCity}
+                          state={order.shippingState}
+                          postalCode={order.shippingPostalCode}
+                          mutedClassName="text-text-muted"
+                          muteAddressLines
+                        />
+                      </td>
+                      <td className="py-4 px-4 text-right font-semibold">
+                        {formatPrice(order.totalInCents)}
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <StatusBadge status={order.status} />
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        {hasActions(order) && (
+                          <RecordActionMenu
+                            actions={[
+                              ...(canEditAddress(order)
+                                ? [{ label: "Edit Address", onClick: () => editAddress.openDialog(order) }]
+                                : []),
+                              ...(canCancelOrder(order)
+                                ? [{ label: "Cancel Order", onClick: () => openCancelDialog(order), variant: "destructive" as const }]
+                                : []),
+                            ]}
+                            loading={cancellingOrderId === order.id}
+                          />
                         )}
-                        {canCancelOrder(order) && (
-                          <DropdownMenuItem
-                            onClick={() => openCancelDialog(order)}
-                            className="text-red-600"
-                          >
-                            Cancel Order
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </div>
-              </div>
-            ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
+      </div>
 
       {/* Cancel Order Dialog */}
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>

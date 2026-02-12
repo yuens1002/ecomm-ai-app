@@ -869,6 +869,33 @@ GITHUB_REPO_NAME="ecomm-ai-app"
 
 ---
 
+### TanStack Table — Sort, Search, Pagination
+
+**Status**: Backlog
+**Priority**: Medium
+**Description**: Convert the 3 desktop record tables (site orders, admin orders, admin subscriptions) to TanStack Table with column sorting, global search, and pagination.
+
+**Scope**:
+
+- Install `@tanstack/react-table`
+- Create shared `DataTable<T>` component wrapping `useReactTable` — column defs, sorting state, pagination state, global filter
+- Create shared `DataTablePagination` (page size selector, prev/next, page count)
+- Create shared `DataTableSearch` (debounced input for global filter)
+- Sortable column headers (click to toggle asc/desc/none, visual indicators)
+- Refactor each of the 3 pages to define column defs and use `<DataTable>`
+- Custom cell renderers for existing components (StatusBadge, RecordItemsList, ShippingAddressDisplay, RecordActionMenu)
+- Mobile card views unchanged — TanStack only drives the desktop `xl:` table
+- Client-side filtering sufficient for current data volume
+
+**Files**:
+
+- 3–4 new shared components in `components/shared/data-table/`
+- 3 modified page files (column defs + swap in `<DataTable>`)
+
+**Estimated LOE**: ~1 planning + 1–2 implementation sessions
+
+---
+
 ### Checkout Redirect After Sign-Up (Bug)
 
 **Status**: Complete ✅

@@ -1,7 +1,16 @@
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+
+export function formatPhoneNumber(phone: string): string {
+  const parsed = parsePhoneNumberFromString(phone, "US");
+  return parsed ? parsed.formatInternational() : phone;
+}
+
 export function getStatusColor(status: string) {
   switch (status) {
     case "PENDING":
       return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+    case "PROCESSING":
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
     case "SHIPPED":
     case "PICKED_UP":
       return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
@@ -24,6 +33,8 @@ export function getStatusLabel(status: string) {
   switch (status) {
     case "PICKED_UP":
       return "Picked Up";
+    case "PROCESSING":
+      return "Processing";
     case "CANCELLED":
       return "Canceled";
     case "PAST_DUE":
@@ -33,4 +44,11 @@ export function getStatusLabel(status: string) {
     default:
       return status.charAt(0) + status.slice(1).toLowerCase();
   }
+}
+
+export function formatPrice(priceInCents: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(priceInCents / 100);
 }

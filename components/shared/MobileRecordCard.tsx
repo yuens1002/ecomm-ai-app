@@ -12,15 +12,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getStatusColor, getStatusLabel } from "./record-utils";
 
-interface RecordItem {
+export interface RecordItem {
   id: string;
   name: string;
   variant: string;
   purchaseType: string;
   quantity: number;
+  href?: string;
 }
 
-interface RecordShipping {
+export interface RecordShipping {
   recipientName?: string | null;
   street?: string | null;
   city?: string | null;

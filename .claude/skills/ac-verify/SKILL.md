@@ -168,6 +168,39 @@ If no ACs doc exists yet, produce the report inline in this format:
 7. **Combine interaction + evidence.** When an AC requires UI interaction before verification, write a single Puppeteer flow that interacts and captures evidence in sequence. Do not split interaction and screenshot into separate scripts.
 8. **Exercise cautiously.** For ACs requiring form submission or data mutation, verify the UI response (toast, state change) — do not verify database state directly.
 
+## Puppeteer Hard Rules
+
+These are NON-NEGOTIABLE. Violating any of these produces unusable verification evidence.
+
+1. **NEVER use `fullPage: true`** — long pages produce unreadably compressed screenshots. Use viewport-only (`page.screenshot()` or `fullPage: false`) or element screenshots (`element.screenshot()`). The viewport captures the first screenful which is sufficient for table/card verification.
+2. **NEVER use `page.waitForTimeout()`** — removed in modern Puppeteer. Use `await new Promise(r => setTimeout(r, ms))`.
+3. **Always use element screenshots when verifying a specific component** — `const el = await page.$(selector); await el?.screenshot({ path })`. This gives crisp, focused evidence.
+4. **Always check the plan's verification section** for constraints (screenshot mode, breakpoints, login requirements) before writing any Puppeteer script.
+
+## Authentication
+
+Admin pages require login. Use this procedure:
+
+1. Navigate to `/auth/admin-signin` (NOT `/auth/signin`)
+2. Fill the form:
+   - Email: `admin@artisanroast.com`
+   - Password: `ivcF8ZV3FnGaBJ&#8j`
+3. Click submit
+4. Wait for redirect — the form uses a React 19 server action, so use `waitForFunction` instead of `waitForNavigation`:
+
+```typescript
+await page.click('button[type="submit"]');
+await page.waitForFunction(
+  () => !window.location.href.includes("/auth/"),
+  { timeout: 15000 }
+).catch(() => {});
+await new Promise(r => setTimeout(r, 2000));
+```
+
+5. Verify login succeeded: `page.url()` should NOT contain `/auth/`
+
+For site (non-admin) pages that require auth, use the same credentials at `/auth/signin`.
+
 ## Puppeteer Script Template
 
 Use this as the base for screenshot scripts:
@@ -202,9 +235,9 @@ async function main() {
     // await page.click('[data-tab="orders"]');
     // await new Promise((r) => setTimeout(r, 1000));
 
+    // HARD RULE: NEVER use fullPage: true — viewport-only or element screenshots only
     await page.screenshot({
       path: path.join(OUTPUT_DIR, `verify-${bp.name}-orders.png`),
-      fullPage: false,
     });
 
     await page.close();
