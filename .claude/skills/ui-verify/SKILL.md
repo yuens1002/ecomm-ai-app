@@ -187,6 +187,29 @@ await page.screenshot({
 });
 ```
 
+## Puppeteer Hard Rules
+
+These are NON-NEGOTIABLE. Violating any produces unusable evidence.
+
+1. **NEVER use `fullPage: true`** — viewport-only or element screenshots only.
+2. **NEVER use `page.waitForTimeout()`** — use `await new Promise(r => setTimeout(r, ms))`.
+3. **Prefer element screenshots** for targeted verification: `const el = await page.$(selector); await el?.screenshot({ path })`.
+
+## Authentication
+
+Admin pages require login at `/auth/admin-signin`:
+
+```typescript
+await page.goto(`${BASE_URL}/auth/admin-signin`, { waitUntil: "networkidle2" });
+await page.click('input[name="email"]', { clickCount: 3 });
+await page.keyboard.type("admin@artisanroast.com");
+await page.click('input[name="password"]', { clickCount: 3 });
+await page.keyboard.type("ivcF8ZV3FnGaBJ&#8j");
+await page.click('button[type="submit"]');
+await page.waitForFunction(() => !window.location.href.includes("/auth/"), { timeout: 15000 }).catch(() => {});
+await new Promise(r => setTimeout(r, 2000));
+```
+
 ## Prerequisites
 
 - Dev server running on localhost:3000
