@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
 import { Sparkles, TrendingUp } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -163,14 +164,21 @@ export default function RecommendationsSection() {
         {/* Product Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {products.map((product, index) => (
-            <ProductCard
+            <motion.div
               key={product.id}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              product={product as any}
-              showPurchaseOptions={true}
-              hoverRevealFooter={true}
-              priority={index === 0} // Load first image eagerly as it's likely LCP
-            />
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.08 }}
+            >
+              <ProductCard
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                product={product as any}
+                showPurchaseOptions={true}
+                hoverRevealFooter={true}
+                priority={index === 0} // Load first image eagerly as it's likely LCP
+              />
+            </motion.div>
           ))}
         </div>
 

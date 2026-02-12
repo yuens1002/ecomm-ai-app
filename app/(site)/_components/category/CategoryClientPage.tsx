@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "motion/react";
 import { CategoryProduct } from "@/lib/types";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
 import {
@@ -50,13 +51,20 @@ export default function CategoryClientPage({
         <p className="text-text-muted">No products found in this category.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {products.map((product) => (
-            <ProductCard
+          {products.map((product, index) => (
+            <motion.div
               key={product.id}
-              product={product}
-              showPurchaseOptions={showPurchaseOptions}
-              categorySlug={categorySlug}
-            />
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.08 }}
+            >
+              <ProductCard
+                product={product}
+                showPurchaseOptions={showPurchaseOptions}
+                categorySlug={categorySlug}
+              />
+            </motion.div>
           ))}
         </div>
       )}
