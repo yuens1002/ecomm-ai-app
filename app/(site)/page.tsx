@@ -40,14 +40,10 @@ export default function Home() {
       </motion.div>
 
       {/* Personalized Recommendations Section */}
-      <motion.div {...fadeInUp}>
-        <RecommendationsSection />
-      </motion.div>
+      <RecommendationsSection />
 
       {/* Product Grid Section */}
-      <motion.div {...fadeInUp}>
-        <FeaturedProducts />
-      </motion.div>
+      <FeaturedProducts />
     </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { motion } from "motion/react";
 import { FeaturedProduct } from "@/lib/types";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
 import { ScrollCarousel } from "@/components/shared/media/ScrollCarousel";
@@ -52,15 +53,22 @@ export default function FeaturedProducts() {
             minWidth="var(--slide-size)"
           >
             {products.map((product, index) => (
-              <ProductCard
+              <motion.div
                 key={product.id}
-                product={product}
-                showPurchaseOptions={true}
-                hoverRevealFooter={true}
-                compactFooter={true}
-                compact={true}
-                priority={index < 4}
-              />
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.08 }}
+              >
+                <ProductCard
+                  product={product}
+                  showPurchaseOptions={true}
+                  hoverRevealFooter={true}
+                  compactFooter={true}
+                  compact={true}
+                  priority={index < 4}
+                />
+              </motion.div>
             ))}
           </ScrollCarousel>
           </div>

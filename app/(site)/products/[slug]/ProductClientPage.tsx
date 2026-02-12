@@ -2,6 +2,7 @@
 
 import { useEffect, useState, startTransition, useRef } from "react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import { ProductType, PurchaseType } from "@prisma/client";
 import {
   Product,
@@ -367,14 +368,19 @@ export default function ProductClientPage({
       </Breadcrumb>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-x-10 md:gap-y-5 lg:gap-x-14 lg:gap-y-8">
-        <div className="w-full min-w-0 md:sticky md:top-6 md:self-start">
+        <motion.div
+          className="w-full min-w-0 md:sticky md:top-6 md:self-start"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
           <ImageCarousel
             images={galleryImages}
             aspectRatio="square"
             showThumbnails={showThumbs}
             showDots={true}
           />
-        </div>
+        </motion.div>
 
         <div className="w-full min-w-0 flex flex-col gap-4">
           {/* ---- Coffee header: origin, name, roast bar, tasting notes ---- */}
