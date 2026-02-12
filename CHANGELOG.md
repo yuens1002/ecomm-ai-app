@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.87.7 - 2026-02-11
+
+### Added
+
+- **Action Bar Mobile Dropdown**: Menu builder action bar collapses into overflow dropdown below md breakpoint with icons, labels, and keyboard shortcuts matching context menu pattern
+
+### Changed
+
+- Order history cards display in 2-column grid at lg breakpoint, stacked below
+- Cart item count badge smaller at xs-sm breakpoints
+- Menu view name column uses fixed width (w-72) with table-level min-width for horizontal scroll
+- Remove TouchTarget wrappers from inline checkbox/chevron in menu view (fixes inflated hit areas at sm)
+- Checkbox-to-chevron spacing tightened (mr-4 → mr-3) for better alignment
+
 ## 0.87.6 - 2026-02-11
 
 ### Added
