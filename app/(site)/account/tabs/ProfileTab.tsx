@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { FormField } from "@/components/ui/forms/FormField";
 
 interface UserData {
   id: string;
@@ -98,7 +99,7 @@ export default function ProfileTab({ user, onUpdate }: ProfileTabProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
+          <FormField>
             <Label htmlFor="name">Name</Label>
             <Input
               id="name"
@@ -111,9 +112,9 @@ export default function ProfileTab({ user, onUpdate }: ProfileTabProps) {
               Your name is displayed on orders and can be shared with delivery
               services.
             </p>
-          </div>
+          </FormField>
 
-          <div className="space-y-2">
+          <FormField>
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -127,7 +128,7 @@ export default function ProfileTab({ user, onUpdate }: ProfileTabProps) {
               Used for order confirmations and account notifications. Must be
               unique.
             </p>
-          </div>
+          </FormField>
 
           {message && (
             <div

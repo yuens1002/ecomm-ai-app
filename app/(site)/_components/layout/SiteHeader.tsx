@@ -40,7 +40,7 @@ import {
 import { useNavOverflow } from "@/hooks/useNavOverflow";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
-import { ChevronDown, FileText, Home, LogOut, Menu, MoreHorizontal, Search, User } from "lucide-react";
+import { ChevronDown, FileText, Home, LogOut, Menu, MoreHorizontal, PackageSearch, Search, User } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -241,7 +241,7 @@ export default function SiteHeader({
                   side="left"
                   className="w-full sm:w-[320px] bg-background p-0 flex flex-col"
                 >
-                  <div className="px-6 pt-6 pb-1">
+                  <div className="px-4 pt-6 pb-1">
                     <div className="flex items-center justify-between mb-1">
                       <SheetHeader>
                         <SheetTitle className="text-2xl font-bold tracking-tight text-foreground text-left">
@@ -257,7 +257,7 @@ export default function SiteHeader({
                       <SheetClose asChild>
                         <Link
                           href="/"
-                          className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         >
                           <Home className="w-5 h-5" />
                           <span className="text-[10px] uppercase tracking-wide font-medium">
@@ -268,7 +268,7 @@ export default function SiteHeader({
                       <SheetClose asChild>
                         <Link
                           href="/search"
-                          className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         >
                           <Search className="w-5 h-5" />
                           <span className="text-[10px] uppercase tracking-wide font-medium">
@@ -278,8 +278,19 @@ export default function SiteHeader({
                       </SheetClose>
                       <SheetClose asChild>
                         <Link
+                          href="/orders"
+                          className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                          <PackageSearch className="w-5 h-5" />
+                          <span className="text-[10px] uppercase tracking-wide font-medium">
+                            Orders
+                          </span>
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link
                           href="/account"
-                          className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-lg text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         >
                           <User className="w-5 h-5" />
                           <span className="text-[10px] uppercase tracking-wide font-medium">

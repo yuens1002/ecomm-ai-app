@@ -150,7 +150,7 @@ export function MobileRecordCard({
       {/* Items section */}
       <div>
         <SectionHeader>Items</SectionHeader>
-        <div className="mt-1">
+        <div className="mt-1 flex flex-col gap-2">
           {items.map((item) => (
             <div key={item.id}>
               <div className="text-sm">{item.name}</div>

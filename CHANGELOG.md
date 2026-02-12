@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.87.6 - 2026-02-11
+
+### Added
+
+- **Mobile Orders Button**: Orders quick-action in mobile menu nav bar (PackageSearch icon)
+- **FormField Component**: Constrained-width wrapper for form fields on wide viewports
+
+### Changed
+
+- Order history table header styled with background, padding, and border
+- Account tabs use FormField for consistent input widths
+- Subscriptions tab wrapped in Card with header and description
+- Addresses tab uses CardAction for header layout
+- Mobile menu quick-action buttons use tighter padding to fit 4 items
+
 ## 0.87.0 - 2026-02-09
 
 ### Added
