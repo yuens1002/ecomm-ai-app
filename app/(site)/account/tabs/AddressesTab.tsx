@@ -4,6 +4,7 @@ import { useState } from "react";
 import { getErrorMessage } from "@/lib/error-utils";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, MapPin, X, Loader2 } from "lucide-react";
+import { FormField } from "@/components/ui/forms/FormField";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -171,20 +173,18 @@ export default function AddressesTab({
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Shipping Addresses</CardTitle>
-              <CardDescription>
-                Manage your saved shipping addresses for faster checkout.
-              </CardDescription>
-            </div>
-            {!isAdding && (
+          <CardTitle>Shipping Addresses</CardTitle>
+          <CardDescription>
+            Manage your saved shipping addresses for faster checkout.
+          </CardDescription>
+          {!isAdding && (
+            <CardAction>
               <Button onClick={() => setIsAdding(true)} size="sm">
                 <Plus className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Add Address</span>
               </Button>
-            )}
-          </div>
+            </CardAction>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           {message && (
@@ -201,91 +201,93 @@ export default function AddressesTab({
 
           {/* Add Address Form */}
           {isAdding && (
-            <form
-              onSubmit={handleAdd}
-              className="p-4 border border-border rounded-lg space-y-4"
-            >
-              <h3 className="font-medium text-text-base">New Address</h3>
+            <FormField>
+              <form
+                onSubmit={handleAdd}
+                className="p-4 border border-border rounded-lg space-y-4"
+              >
+                <h3 className="font-medium text-text-base">New Address</h3>
 
-              <div className="space-y-2">
-                <Label htmlFor="street">Street Address</Label>
-                <Input
-                  id="street"
-                  value={formData.street}
-                  onChange={(e) =>
-                    setFormData({ ...formData, street: e.target.value })
-                  }
-                  placeholder="123 Main St"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
+                  <Label htmlFor="street">Street Address</Label>
                   <Input
-                    id="city"
-                    value={formData.city}
+                    id="street"
+                    value={formData.street}
                     onChange={(e) =>
-                      setFormData({ ...formData, city: e.target.value })
+                      setFormData({ ...formData, street: e.target.value })
                     }
-                    placeholder="San Francisco"
+                    placeholder="123 Main St"
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state">State</Label>
-                  <Input
-                    id="state"
-                    value={formData.state}
-                    onChange={(e) =>
-                      setFormData({ ...formData, state: e.target.value })
-                    }
-                    placeholder="CA"
-                    required
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="postalCode">Postal Code</Label>
-                  <Input
-                    id="postalCode"
-                    value={formData.postalCode}
-                    onChange={(e) =>
-                      setFormData({ ...formData, postalCode: e.target.value })
-                    }
-                    placeholder="94102"
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      value={formData.city}
+                      onChange={(e) =>
+                        setFormData({ ...formData, city: e.target.value })
+                      }
+                      placeholder="San Francisco"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State</Label>
+                    <Input
+                      id="state"
+                      value={formData.state}
+                      onChange={(e) =>
+                        setFormData({ ...formData, state: e.target.value })
+                      }
+                      placeholder="CA"
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    value={formData.country}
-                    onChange={(e) =>
-                      setFormData({ ...formData, country: e.target.value })
-                    }
-                    placeholder="USA"
-                    required
-                  />
-                </div>
-              </div>
 
-              <div className="flex gap-2">
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading && (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  )}
-                  Save Address
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="postalCode">Postal Code</Label>
+                    <Input
+                      id="postalCode"
+                      value={formData.postalCode}
+                      onChange={(e) =>
+                        setFormData({ ...formData, postalCode: e.target.value })
+                      }
+                      placeholder="94102"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={formData.country}
+                      onChange={(e) =>
+                        setFormData({ ...formData, country: e.target.value })
+                      }
+                      placeholder="USA"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading && (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    )}
+                    Save Address
+                  </Button>
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </FormField>
           )}
 
           {/* Address List */}

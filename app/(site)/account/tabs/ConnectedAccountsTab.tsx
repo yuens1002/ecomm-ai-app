@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Github, Mail } from "lucide-react";
 import { signIn } from "next-auth/react";
+import { FormField } from "@/components/ui/forms/FormField";
 
 // Custom Google icon since lucide-react doesn't have it
 function GoogleIcon({ className }: { className?: string }) {
@@ -76,78 +77,80 @@ export default function ConnectedAccountsTab({
           connected account.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Google Account */}
-        <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center">
-              <GoogleIcon className="w-6 h-6" />
+      <CardContent>
+        <FormField className="space-y-4">
+          {/* Google Account */}
+          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center">
+                <GoogleIcon className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="font-medium text-text-base">Google</p>
+                <p className="text-sm text-text-muted">
+                  {hasGoogle ? "Connected" : "Not connected"}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-text-base">Google</p>
-              <p className="text-sm text-text-muted">
-                {hasGoogle ? "Connected" : "Not connected"}
-              </p>
-            </div>
+            {hasGoogle ? (
+              <Button variant="outline" disabled>
+                Connected
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => handleConnect("google")}>
+                Connect
+              </Button>
+            )}
           </div>
-          {hasGoogle ? (
-            <Button variant="outline" disabled>
-              Connected
-            </Button>
-          ) : (
-            <Button variant="outline" onClick={() => handleConnect("google")}>
-              Connect
-            </Button>
-          )}
-        </div>
 
-        {/* GitHub Account */}
-        <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <Github className="w-6 h-6" />
+          {/* GitHub Account */}
+          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <Github className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="font-medium text-text-base">GitHub</p>
+                <p className="text-sm text-text-muted">
+                  {hasGithub ? "Connected" : "Not connected"}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-text-base">GitHub</p>
-              <p className="text-sm text-text-muted">
-                {hasGithub ? "Connected" : "Not connected"}
-              </p>
-            </div>
+            {hasGithub ? (
+              <Button variant="outline" disabled>
+                Connected
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => handleConnect("github")}>
+                Connect
+              </Button>
+            )}
           </div>
-          {hasGithub ? (
-            <Button variant="outline" disabled>
-              Connected
-            </Button>
-          ) : (
-            <Button variant="outline" onClick={() => handleConnect("github")}>
-              Connect
-            </Button>
-          )}
-        </div>
 
-        {/* Email/Password indicator */}
-        <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center">
-              <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          {/* Email/Password indicator */}
+          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center">
+                <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="font-medium text-text-base">Email & Password</p>
+                <p className="text-sm text-text-muted">Manage in Security tab</p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-text-base">Email & Password</p>
-              <p className="text-sm text-text-muted">Manage in Security tab</p>
-            </div>
+            <Button variant="ghost" asChild>
+              <a href="#security">Go to Security</a>
+            </Button>
           </div>
-          <Button variant="ghost" asChild>
-            <a href="#security">Go to Security</a>
-          </Button>
-        </div>
 
-        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            <strong>Note:</strong> When you connect a new account, Auth.js will
-            automatically link it to your existing account if the email
-            addresses match. You can sign in with any connected method.
-          </p>
-        </div>
+          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>Note:</strong> When you connect a new account, Auth.js will
+              automatically link it to your existing account if the email
+              addresses match. You can sign in with any connected method.
+            </p>
+          </div>
+        </FormField>
       </CardContent>
     </Card>
   );

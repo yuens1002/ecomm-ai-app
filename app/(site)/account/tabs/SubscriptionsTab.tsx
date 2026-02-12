@@ -253,7 +253,15 @@ export default function SubscriptionsTab({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <Card>
+      <CardHeader>
+        <CardTitle>Subscriptions</CardTitle>
+        <CardDescription>
+          Manage your coffee subscriptions, delivery schedules, and shipping details.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {localSubscriptions.map((subscription) => (
         <div key={subscription.id} className="space-y-2">
           <Card className="py-0 gap-0">
@@ -441,5 +449,7 @@ export default function SubscriptionsTab({
         onSubmit={editAddress.handleSubmit}
       />
     </div>
+      </CardContent>
+    </Card>
   );
 }

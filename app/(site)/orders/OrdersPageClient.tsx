@@ -5,7 +5,7 @@ import { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, MoreHorizontal } from "lucide-react";
 import { MobileRecordCard } from "@/app/(site)/_components/account/MobileRecordCard";
@@ -338,7 +338,7 @@ export default function OrdersPageClient({
         <div className="lg:border lg:border-border lg:rounded-lg lg:bg-card">
           {/* Desktop Table Header - only on lg screens */}
           <div className="hidden lg:block">
-            <CardHeader className="pb-3">
+            <div className="bg-muted/50 rounded-t-lg px-4 py-3 border-b border-border">
               <div className="grid grid-cols-7 gap-x-[6em] font-semibold text-sm text-text-muted">
                 <div>Order</div>
                 <div>Date</div>
@@ -348,7 +348,7 @@ export default function OrdersPageClient({
                 <div className="text-center">Status</div>
                 <div className="text-right"></div>
               </div>
-            </CardHeader>
+            </div>
           </div>
           <div className="p-0">
             <div className="space-y-4 lg:space-y-0 lg:divide-y lg:divide-border">

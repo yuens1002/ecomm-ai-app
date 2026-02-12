@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import { FormField } from "@/components/ui/forms/FormField";
 
 interface SecurityTabProps {
   hasPassword: boolean;
@@ -107,7 +108,7 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {hasPassword && (
-            <div className="space-y-2">
+            <FormField>
               <Label htmlFor="currentPassword">Current Password</Label>
               <div className="relative">
                 <Input
@@ -132,10 +133,10 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
                   )}
                 </button>
               </div>
-            </div>
+            </FormField>
           )}
 
-          <div className="space-y-2">
+          <FormField>
             <Label htmlFor="newPassword">
               {hasPassword ? "New Password" : "Password"}
             </Label>
@@ -165,9 +166,9 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
             <p className="text-xs text-text-muted">
               Must be at least 8 characters long
             </p>
-          </div>
+          </FormField>
 
-          <div className="space-y-2">
+          <FormField>
             <Label htmlFor="confirmPassword">Confirm Password</Label>
             <div className="relative">
               <Input
@@ -192,7 +193,7 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
                 )}
               </button>
             </div>
-          </div>
+          </FormField>
 
           {!hasPassword && (
             <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md">
