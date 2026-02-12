@@ -500,7 +500,7 @@ export function LabelTableView() {
 
   return (
     <>
-      <TableViewWrapper className="min-w-[724px]">
+      <TableViewWrapper className="min-w-[748px]">
         <TableHeader
           columns={LABEL_VIEW_HEADER_COLUMNS}
           preset={labelViewWidthPreset}
