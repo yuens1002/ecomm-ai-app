@@ -554,7 +554,7 @@ export function CategoryTableView() {
 
   return (
     <>
-      <TableViewWrapper>
+      <TableViewWrapper className="min-w-[628px]">
         <TableHeader
           columns={CATEGORY_VIEW_HEADER_COLUMNS}
           preset={categoryViewWidthPreset}

@@ -24,7 +24,8 @@ interface NavItemProps {
  *
  * Displays icon + text with optional dropdown.
  * Shows selected state with primary background.
- * Responsive: icon-only on mobile, icon + text on md+
+ * Responsive: selected item shows icon + text at all breakpoints,
+ * unselected items show icon-only on mobile, icon + text on md+.
  */
 export function NavItem({
   icon,
@@ -45,7 +46,7 @@ export function NavItem({
       onClick={!hasDropdown ? onClick : undefined}
     >
       {icon && <DynamicIcon name={icon} className="w-4 h-4" size={16} />}
-      <span className="hidden md:inline">{text}</span>
+      <span className={cn(!isSelected && "hidden md:inline")}>{text}</span>
       {hasDropdown && <ChevronDown className="w-4 h-4 ml-1" />}
     </Button>
   );

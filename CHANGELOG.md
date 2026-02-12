@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.87.8 - 2026-02-11
+
+### Changed
+
+- Menu builder nav shows selected item text on mobile, icon-only for unselected
+- All menu builder table views set table-level min-width to prevent column overlap before scroll
+
 ## 0.87.7 - 2026-02-11
 
 ### Added
