@@ -11,7 +11,7 @@ export function StatusBadge({
   status,
   label,
   colorClassName,
-  className = "font-medium",
+  className = "font-semibold",
 }: StatusBadgeProps) {
   return (
     <span

@@ -1,3 +1,5 @@
+import { formatPhoneNumber } from "./record-utils";
+
 interface ShippingAddressDisplayProps {
   recipientName?: string | null;
   phone?: string | null;
@@ -38,14 +40,17 @@ export function ShippingAddressDisplay({
   return (
     <div className="text-sm">
       {recipientName && <div className="font-medium">{recipientName}</div>}
-      {phone && <div className={mutedClassName}>{phone}</div>}
       <div className={addressLineClass}>{street}</div>
       <div className={addressLineClass}>
         {city}, {state} {postalCode}
       </div>
-      {showCountry && country && (
-        <div className={mutedClassName}>{country}</div>
-      )}
+      {(showCountry && country) || phone ? (
+        <div className="text-xs text-muted-foreground">
+          {showCountry && country ? country : ""}
+          {showCountry && country && phone ? " · " : ""}
+          {phone ? formatPhoneNumber(phone) : ""}
+        </div>
+      ) : null}
     </div>
   );
 }

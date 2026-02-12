@@ -1,3 +1,10 @@
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+
+export function formatPhoneNumber(phone: string): string {
+  const parsed = parsePhoneNumberFromString(phone, "US");
+  return parsed ? parsed.formatInternational() : phone;
+}
+
 export function getStatusColor(status: string) {
   switch (status) {
     case "PENDING":

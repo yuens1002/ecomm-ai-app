@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.87.13 - 2026-02-12
+
+### Fixed
+
+- Site orders desktop table uses HTML `<table>` instead of CSS Grid for proper column alignment
+- Site orders filter uses Tabs component instead of Select dropdown (matches admin pages)
+- StatusBadge default font weight consistent (`font-semibold`) across all pages
+- Phone number in shipping address moved to end, formatted with i18n (`libphonenumber-js`)
+- Admin orders date cell uses `text-foreground` instead of muted
+- Record items list divider vertically centered
+- Tabs component scrollable on mobile (xs-sm) instead of squishing
+
+### Added
+
+- `formatPhoneNumber()` utility with international formatting
+- TanStack Table backlog item for future sort/search/pagination
+
 ## 0.87.9 - 2026-02-11
 
 ### Fixed

@@ -14,13 +14,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { RecordActionMenu } from "@/components/shared/RecordActionMenu";
 import { RecordItemsList } from "@/components/shared/RecordItemsList";
 import { ShippingAddressDisplay } from "@/components/shared/ShippingAddressDisplay";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -190,30 +184,16 @@ export default function OrdersPageClient({
         <p className="text-text-muted">View and manage your past orders</p>
       </div>
 
-      <div className="mb-6">
-        <Select value={activeTab} onValueChange={handleTabChange}>
-          <SelectTrigger className="w-full sm:w-[280px]">
-            <SelectValue placeholder="Filter orders" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">
-              All Orders ({getOrderCount("all")})
-            </SelectItem>
-            <SelectItem value="pending">
-              Pending ({getOrderCount("pending")})
-            </SelectItem>
-            <SelectItem value="completed">
-              Completed ({getOrderCount("completed")})
-            </SelectItem>
-            <SelectItem value="failed">
-              Unfulfilled ({getOrderCount("failed")})
-            </SelectItem>
-            <SelectItem value="cancelled">
-              Canceled ({getOrderCount("cancelled")})
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <div className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList>
+            <TabsTrigger value="all">All Orders ({getOrderCount("all")})</TabsTrigger>
+            <TabsTrigger value="pending">Pending ({getOrderCount("pending")})</TabsTrigger>
+            <TabsTrigger value="completed">Completed ({getOrderCount("completed")})</TabsTrigger>
+            <TabsTrigger value="failed">Unfulfilled ({getOrderCount("failed")})</TabsTrigger>
+            <TabsTrigger value="cancelled">Canceled ({getOrderCount("cancelled")})</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
       {isLoading ? (
         <Card>
@@ -231,21 +211,7 @@ export default function OrdersPageClient({
           </CardContent>
         </Card>
       ) : (
-        <div className="xl:border xl:border-border xl:rounded-lg xl:bg-card">
-          {/* Desktop Table Header - only on xl screens */}
-          <div className="hidden xl:block">
-            <div className="bg-muted/50 rounded-t-lg px-4 py-3 border-b border-border">
-              <div className="grid grid-cols-7 gap-x-[6em] font-semibold text-sm text-text-muted">
-                <div>Order</div>
-                <div>Date</div>
-                <div>Item(s)</div>
-                <div>Ship To</div>
-                <div className="text-right">Total</div>
-                <div className="text-center">Status</div>
-                <div className="text-right"></div>
-              </div>
-            </div>
-          </div>
+        <div>
           {/* Mobile/Tablet Card Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xl:hidden">
             {filteredOrders.map((order) => (
@@ -307,86 +273,91 @@ export default function OrdersPageClient({
             ))}
           </div>
 
-          {/* Desktop Table Rows */}
-          <div className="hidden xl:block xl:divide-y xl:divide-border">
-            {filteredOrders.map((order) => (
-              <div key={order.id} className="grid grid-cols-7 gap-x-[6em] p-4 hover:bg-muted/50 transition-colors items-center">
-                {/* Order */}
-                <div>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/orders/${order.id}`}>
-                      #{order.id.slice(-8)}
-                    </Link>
-                  </Button>
-                </div>
-
-                {/* Date */}
-                <div className="text-sm text-text-muted">
-                  {format(new Date(order.createdAt), "MMM d, yyyy")}
-                </div>
-
-                {/* Items */}
-                <div>
-                  <RecordItemsList
-                    items={order.items.map((item) => ({
-                      id: item.id,
-                      name: item.purchaseOption.variant.product.name,
-                      variant: item.purchaseOption.variant.name,
-                      purchaseType:
-                        item.purchaseOption.type === "SUBSCRIPTION"
-                          ? "Subscription"
-                          : "One-time",
-                      quantity: item.quantity,
-                      href: `/products/${item.purchaseOption.variant.product.slug}`,
-                    }))}
-                  />
-                </div>
-
-                {/* Ship To */}
-                <div>
-                  <ShippingAddressDisplay
-                    recipientName={order.recipientName}
-                    phone={order.customerPhone}
-                    street={order.deliveryMethod === "DELIVERY" ? order.shippingStreet : null}
-                    city={order.shippingCity}
-                    state={order.shippingState}
-                    postalCode={order.shippingPostalCode}
-                    mutedClassName="text-text-muted"
-                    muteAddressLines
-                  />
-                </div>
-
-                {/* Total */}
-                <div className="text-right font-semibold">
-                  {formatPrice(order.totalInCents)}
-                </div>
-
-                {/* Status */}
-                <div className="text-center">
-                  <StatusBadge status={order.status} />
-                </div>
-
-                {/* Actions */}
-                <div className="flex justify-end">
-                  {hasActions(order) && (
-                    <RecordActionMenu
-                      actions={[
-                        ...(canEditAddress(order)
-                          ? [{ label: "Edit Address", onClick: () => editAddress.openDialog(order) }]
-                          : []),
-                        ...(canCancelOrder(order)
-                          ? [{ label: "Cancel Order", onClick: () => openCancelDialog(order), variant: "destructive" as const }]
-                          : []),
-                      ]}
-                      loading={cancellingOrderId === order.id}
-                    />
-                  )}
-                </div>
-              </div>
-            ))}
+          {/* Desktop Table */}
+          <div className="hidden xl:block border rounded-md">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Order</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Date</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Item(s)</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Ship To</th>
+                    <th className="text-right py-3 px-4 font-semibold text-sm">Total</th>
+                    <th className="text-center py-3 px-4 font-semibold text-sm">Status</th>
+                    <th className="text-center py-3 px-4 font-semibold text-sm"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filteredOrders.map((order) => (
+                    <tr key={order.id} className="hover:bg-muted/30">
+                      <td className="py-4 px-4">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/orders/${order.id}`}>
+                            #{order.id.slice(-8)}
+                          </Link>
+                        </Button>
+                      </td>
+                      <td className="py-4 px-4 text-sm text-foreground">
+                        {format(new Date(order.createdAt), "MMM d, yyyy")}
+                      </td>
+                      <td className="py-4 px-4">
+                        <RecordItemsList
+                          items={order.items.map((item) => ({
+                            id: item.id,
+                            name: item.purchaseOption.variant.product.name,
+                            variant: item.purchaseOption.variant.name,
+                            purchaseType:
+                              item.purchaseOption.type === "SUBSCRIPTION"
+                                ? "Subscription"
+                                : "One-time",
+                            quantity: item.quantity,
+                            href: `/products/${item.purchaseOption.variant.product.slug}`,
+                          }))}
+                        />
+                      </td>
+                      <td className="py-4 px-4">
+                        <ShippingAddressDisplay
+                          recipientName={order.recipientName}
+                          phone={order.customerPhone}
+                          street={order.deliveryMethod === "DELIVERY" ? order.shippingStreet : null}
+                          city={order.shippingCity}
+                          state={order.shippingState}
+                          postalCode={order.shippingPostalCode}
+                          mutedClassName="text-text-muted"
+                          muteAddressLines
+                        />
+                      </td>
+                      <td className="py-4 px-4 text-right font-semibold">
+                        {formatPrice(order.totalInCents)}
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <StatusBadge status={order.status} />
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        {hasActions(order) && (
+                          <RecordActionMenu
+                            actions={[
+                              ...(canEditAddress(order)
+                                ? [{ label: "Edit Address", onClick: () => editAddress.openDialog(order) }]
+                                : []),
+                              ...(canCancelOrder(order)
+                                ? [{ label: "Cancel Order", onClick: () => openCancelDialog(order), variant: "destructive" as const }]
+                                : []),
+                            ]}
+                            loading={cancellingOrderId === order.id}
+                          />
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
+      </div>
 
       {/* Cancel Order Dialog */}
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>

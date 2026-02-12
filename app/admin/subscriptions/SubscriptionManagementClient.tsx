@@ -383,7 +383,6 @@ export default function SubscriptionManagementClient({
                                 ? "bg-gray-100 text-gray-800"
                                 : undefined
                           }
-                          className="font-semibold"
                         />
                       </td>
                       <td className="py-4 px-4 text-center">

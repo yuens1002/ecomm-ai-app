@@ -380,7 +380,7 @@ export default function OrderManagementClient() {
                           </button>
                         )}
                       </td>
-                      <td className="py-4 px-4 text-sm text-muted-foreground">
+                      <td className="py-4 px-4 text-sm text-foreground">
                         {format(new Date(order.createdAt), "MMM d, yyyy")}
                         <br />
                         <span className="text-xs">{format(new Date(order.createdAt), "h:mm a")}</span>
@@ -417,7 +417,6 @@ export default function OrderManagementClient() {
                         <StatusBadge
                           status={order.status}
                           colorClassName={order.status === "PICKED_UP" ? "bg-purple-100 text-purple-800" : undefined}
-                          className="font-semibold"
                         />
                       </td>
                       <td className="py-4 px-4 text-center">

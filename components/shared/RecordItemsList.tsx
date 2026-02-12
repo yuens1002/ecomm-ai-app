@@ -28,7 +28,7 @@ export function RecordItemsList({ items }: RecordItemsListProps) {
               .join(" · ")}
           </div>
           {idx < items.length - 1 && (
-            <div className="border-t border-border mt-2 pt-2" />
+            <div className="border-t border-border mt-2" />
           )}
         </div>
       ))}
