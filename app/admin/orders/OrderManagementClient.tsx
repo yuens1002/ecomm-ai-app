@@ -23,14 +23,12 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { MoreHorizontal } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
+import { formatPrice } from "@/components/shared/record-utils";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { RecordActionMenu } from "@/components/shared/RecordActionMenu";
+import { RecordItemsList } from "@/components/shared/RecordItemsList";
+import { ShippingAddressDisplay } from "@/components/shared/ShippingAddressDisplay";
 
 type Order = {
   id: string;
@@ -244,36 +242,6 @@ export default function OrderManagementClient() {
     );
   }
 
-  function getStatusBadge(status: string) {
-    const colors: Record<string, string> = {
-      PENDING: "bg-yellow-100 text-yellow-800",
-      PROCESSING: "bg-blue-100 text-blue-800",
-      SHIPPED: "bg-green-100 text-green-800",
-      PICKED_UP: "bg-purple-100 text-purple-800",
-      CANCELLED: "bg-red-100 text-red-800",
-      FAILED: "bg-red-200 text-red-900",
-    };
-
-    const labels: Record<string, string> = {
-      PENDING: "Pending",
-      PROCESSING: "Processing",
-      SHIPPED: "Shipped",
-      PICKED_UP: "Picked Up",
-      CANCELLED: "Canceled",
-      FAILED: "Unfulfilled",
-    };
-
-    return (
-      <span
-        className={`px-2 py-1 text-xs font-semibold rounded-full ${
-          colors[status] || "bg-gray-100 text-gray-800"
-        }`}
-      >
-        {labels[status] || status}
-      </span>
-    );
-  }
-
   function getOrderActions(order: Order) {
     const actions: import("@/components/shared/MobileRecordCard").RecordAction[] = [];
 
@@ -422,56 +390,38 @@ export default function OrderManagementClient() {
                         <div className="text-xs text-muted-foreground">{order.customerEmail}</div>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="text-sm space-y-2">
-                          {order.items.map((item, idx) => (
-                            <div key={idx}>
-                              <div>{item.purchaseOption.variant.product.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {item.purchaseOption.variant.name} • Qty: {item.quantity}
-                              </div>
-                              {idx < order.items.length - 1 && (
-                                <div className="border-t border-border mt-2" />
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                        <RecordItemsList
+                          items={order.items.map((item, idx) => ({
+                            id: String(idx),
+                            name: item.purchaseOption.variant.product.name,
+                            variant: item.purchaseOption.variant.name,
+                            purchaseType: "",
+                            quantity: item.quantity,
+                          }))}
+                        />
                       </td>
                       <td className="py-4 px-4 text-sm max-w-xs">
-                        {order.deliveryMethod === "DELIVERY" && order.shippingStreet ? (
-                          <div className="text-sm">
-                            {order.recipientName && <div className="font-medium">{order.recipientName}</div>}
-                            {order.customerPhone && <div className="text-muted-foreground">{order.customerPhone}</div>}
-                            <div>{order.shippingStreet}</div>
-                            <div>{order.shippingCity}, {order.shippingState} {order.shippingPostalCode}</div>
-                            <div className="text-muted-foreground">{order.shippingCountry}</div>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground italic">Store Pickup</span>
-                        )}
+                        <ShippingAddressDisplay
+                          recipientName={order.recipientName}
+                          phone={order.customerPhone}
+                          street={order.deliveryMethod === "DELIVERY" ? order.shippingStreet : null}
+                          city={order.shippingCity}
+                          state={order.shippingState}
+                          postalCode={order.shippingPostalCode}
+                          country={order.shippingCountry}
+                          showCountry
+                        />
                       </td>
-                      <td className="py-4 px-4 text-right font-semibold">${(order.totalInCents / 100).toFixed(2)}</td>
-                      <td className="py-4 px-4 text-center">{getStatusBadge(order.status)}</td>
+                      <td className="py-4 px-4 text-right font-semibold">{formatPrice(order.totalInCents)}</td>
                       <td className="py-4 px-4 text-center">
-                        {getOrderActions(order).length > 0 && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {getOrderActions(order).map((action) => (
-                                <DropdownMenuItem
-                                  key={action.label}
-                                  onClick={action.onClick}
-                                  className={action.className || (action.variant === "destructive" ? "text-red-600" : "")}
-                                >
-                                  {action.label}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
+                        <StatusBadge
+                          status={order.status}
+                          colorClassName={order.status === "PICKED_UP" ? "bg-purple-100 text-purple-800" : undefined}
+                          className="font-semibold"
+                        />
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <RecordActionMenu actions={getOrderActions(order)} />
                       </td>
                     </tr>
                   ))}

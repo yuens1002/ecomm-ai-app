@@ -13,16 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { MoreHorizontal } from "lucide-react";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
+import { formatPrice } from "@/components/shared/record-utils";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { RecordActionMenu } from "@/components/shared/RecordActionMenu";
+import { ShippingAddressDisplay } from "@/components/shared/ShippingAddressDisplay";
 import {
   cancelSubscription,
   skipBillingPeriod,
@@ -64,13 +61,6 @@ const STATUS_TABS = [
   { value: "PAST_DUE", label: "Past Due" },
   { value: "CANCELED", label: "Canceled" },
 ] as const;
-
-const statusColors: Record<string, string> = {
-  ACTIVE: "bg-green-100 text-green-800",
-  PAUSED: "bg-yellow-100 text-yellow-800",
-  PAST_DUE: "bg-red-100 text-red-800",
-  CANCELED: "bg-gray-100 text-gray-800",
-};
 
 export default function SubscriptionManagementClient({
   initialSubscriptions,
@@ -214,25 +204,6 @@ export default function SubscriptionManagementClient({
     setResumeDialogOpen(true);
   }
 
-  function getStatusBadge(status: string, cancelAtPeriodEnd: boolean) {
-    const labels: Record<string, string> = {
-      ACTIVE: cancelAtPeriodEnd ? "Canceling" : "Active",
-      PAUSED: "Paused",
-      PAST_DUE: "Past Due",
-      CANCELED: "Canceled",
-    };
-
-    const color = cancelAtPeriodEnd
-      ? "bg-orange-100 text-orange-800"
-      : statusColors[status] || "bg-gray-100 text-gray-800";
-
-    return (
-      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${color}`}>
-        {labels[status] || status}
-      </span>
-    );
-  }
-
   function getNextDateDisplay(subscription: Subscription) {
     if (subscription.status === "CANCELED") {
       return <span className="text-muted-foreground">—</span>;
@@ -279,28 +250,6 @@ export default function SubscriptionManagementClient({
     }
 
     return actions;
-  }
-
-  function formatShippingAddress(subscription: Subscription) {
-    if (!subscription.shippingStreet) {
-      return <span className="text-muted-foreground italic">No address</span>;
-    }
-
-    return (
-      <div className="text-sm">
-        {subscription.recipientName && (
-          <div className="font-medium">{subscription.recipientName}</div>
-        )}
-        {subscription.recipientPhone && (
-          <div className="text-muted-foreground">{subscription.recipientPhone}</div>
-        )}
-        <div>{subscription.shippingStreet}</div>
-        <div>
-          {subscription.shippingCity}, {subscription.shippingState}{" "}
-          {subscription.shippingPostalCode}
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -411,30 +360,34 @@ export default function SubscriptionManagementClient({
                           {subscription.productNames.length > 0 ? subscription.productNames.join(", ") : "—"}
                         </div>
                       </td>
-                      <td className="py-4 px-4 max-w-xs">{formatShippingAddress(subscription)}</td>
-                      <td className="py-4 px-4 text-right font-semibold">${(subscription.priceInCents / 100).toFixed(2)}</td>
-                      <td className="py-4 px-4 text-center">{getStatusBadge(subscription.status, subscription.cancelAtPeriodEnd)}</td>
+                      <td className="py-4 px-4 max-w-xs">
+                        <ShippingAddressDisplay
+                          recipientName={subscription.recipientName}
+                          phone={subscription.recipientPhone}
+                          street={subscription.shippingStreet}
+                          city={subscription.shippingCity}
+                          state={subscription.shippingState}
+                          postalCode={subscription.shippingPostalCode}
+                          fallbackText="No address"
+                        />
+                      </td>
+                      <td className="py-4 px-4 text-right font-semibold">{formatPrice(subscription.priceInCents)}</td>
                       <td className="py-4 px-4 text-center">
-                        {getSubscriptionActions(subscription).length > 0 && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {getSubscriptionActions(subscription).map((action) => (
-                                <DropdownMenuItem
-                                  key={action.label}
-                                  onClick={action.onClick}
-                                  className={action.className || (action.variant === "destructive" ? "text-red-600" : "")}
-                                >
-                                  {action.label}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
+                        <StatusBadge
+                          status={subscription.status}
+                          label={subscription.cancelAtPeriodEnd ? "Canceling" : undefined}
+                          colorClassName={
+                            subscription.cancelAtPeriodEnd
+                              ? "bg-orange-100 text-orange-800"
+                              : subscription.status === "CANCELED"
+                                ? "bg-gray-100 text-gray-800"
+                                : undefined
+                          }
+                          className="font-semibold"
+                        />
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <RecordActionMenu actions={getSubscriptionActions(subscription)} />
                       </td>
                     </tr>
                   ))}

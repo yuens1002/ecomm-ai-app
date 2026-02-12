@@ -75,6 +75,13 @@
       "acs_total": 29,
       "tasks": [],
       "notes": "Iter 3: 29 ACs from reviewer feedback. Plan in user prompt, ACs at docs/plans/mobile-audit-fixes-ACs-iter-3.md."
+    },
+    "feat/shared-table-components": {
+      "status": "implementing",
+      "acs_passed": 0,
+      "acs_total": 11,
+      "tasks": [],
+      "notes": "Extract shared table-view components (StatusBadge, RecordActionMenu, RecordItemsList, ShippingAddressDisplay, formatPrice). ACs at docs/plans/shared-table-components-ACs.md."
     }
   }
 }
