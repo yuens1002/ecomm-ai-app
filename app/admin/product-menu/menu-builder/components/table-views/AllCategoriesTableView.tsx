@@ -452,7 +452,7 @@ export function AllCategoriesTableView() {
 
   return (
     <>
-      <TableViewWrapper>
+      <TableViewWrapper className="min-w-[692px]">
         <TableHeader
           columns={ALL_CATEGORIES_HEADER_COLUMNS}
           preset={allCategoriesConfig.widthPreset}
