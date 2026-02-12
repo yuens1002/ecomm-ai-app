@@ -20,14 +20,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import {
   ACTION_BAR_CONFIG,
   type ActionContext,
   type ActionId,
 } from "../../../constants/action-bar-config";
+import { HELP_CONTENT } from "../../../constants/help-content";
 import { getEntityIdFromKey, getActionableRoots } from "../../../types/identity-registry";
 import { getExpandableIds } from "../../../hooks/useFlattenedMenuRows";
 import { DROPDOWN_REGISTRY, type DropdownContext } from "../../../constants/dropdown-registry";
@@ -48,6 +54,8 @@ export function MenuActionBar() {
   const { toast } = useToast();
   const [mobileDeleteOpen, setMobileDeleteOpen] = useState(false);
   const [isMobileDeleting, setIsMobileDeleting] = useState(false);
+  const [mobileHelpOpen, setMobileHelpOpen] = useState(false);
+  const mobileHelpOpenedAt = useRef(0);
 
   const {
     builder,
@@ -536,47 +544,74 @@ export function MenuActionBar() {
 
         {/* Mobile overflow dropdown — below md */}
         {mobileOverflowActions.length > 0 && (
-          <div className="md:hidden">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="More actions">
-                  <MoreHorizontal className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                {mobileOverflowActions.map((action, index) => {
-                  const Icon = action.icon;
-                  const isDisabled =
-                    action.disabled(state) ||
-                    (action.id === "remove" &&
-                      builder.currentView === "all-categories" &&
-                      disableRemoveInAllCategories);
+          <Popover open={mobileHelpOpen} onOpenChange={(open) => {
+              // Debounce close: dropdown cleanup fires after setTimeout opens the popover,
+              // causing an immediate dismiss. Ignore close events within 300ms of open.
+              if (!open && Date.now() - mobileHelpOpenedAt.current < 300) return;
+              setMobileHelpOpen(open);
+            }}>
+            <PopoverAnchor asChild>
+              <div className="md:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" aria-label="More actions">
+                      <MoreHorizontal className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    {mobileOverflowActions.map((action, index) => {
+                      const Icon = action.icon;
+                      const isDisabled =
+                        action.disabled(state) ||
+                        (action.id === "remove" &&
+                          builder.currentView === "all-categories" &&
+                          disableRemoveInAllCategories);
 
-                  // Separator between left and right groups
-                  const isFirstRight = index === remainingLeft.length && remainingLeft.length > 0;
+                      // Separator between left and right groups
+                      const isFirstRight = index === remainingLeft.length && remainingLeft.length > 0;
 
-                  return (
-                    <div key={action.id}>
-                      {isFirstRight && <DropdownMenuSeparator />}
-                      <DropdownMenuItem
-                        disabled={isDisabled}
-                        onClick={
-                          action.id === "delete"
-                            ? () => setMobileDeleteOpen(true)
-                            : () => action.onClick(state, builderActions)
-                        }
-                        className={action.id === "delete" ? "text-destructive focus:text-destructive" : ""}
-                      >
-                        <Icon className="size-4" />
-                        {action.label}
-                        {renderKbd(action.kbd)}
-                      </DropdownMenuItem>
-                    </div>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                      return (
+                        <div key={action.id}>
+                          {isFirstRight && <DropdownMenuSeparator />}
+                          <DropdownMenuItem
+                            disabled={isDisabled}
+                            onClick={
+                              action.id === "delete"
+                                ? () => setMobileDeleteOpen(true)
+                                : action.id === "help"
+                                ? () => setTimeout(() => {
+                                    mobileHelpOpenedAt.current = Date.now();
+                                    setMobileHelpOpen(true);
+                                  }, 150)
+                                : () => action.onClick(state, builderActions)
+                            }
+                            className={action.id === "delete" ? "text-destructive focus:text-destructive" : ""}
+                          >
+                            <Icon className="size-4" />
+                            {action.label}
+                            {renderKbd(action.kbd)}
+                          </DropdownMenuItem>
+                        </div>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </PopoverAnchor>
+            <PopoverContent align="end" className="w-80">
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm">{HELP_CONTENT[builder.currentView].title}</h4>
+                <ul className="space-y-1.5 text-sm text-muted-foreground">
+                  {HELP_CONTENT[builder.currentView].items.map((item, index) => (
+                    <li key={index} className="flex gap-2">
+                      <span className="text-muted-foreground/60">•</span>
+                      <span>{item.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
       </div>
 
@@ -607,6 +642,7 @@ export function MenuActionBar() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
     </TooltipProvider>
   );
 }
