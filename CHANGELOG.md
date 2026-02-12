@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.87.9 - 2026-02-11
+
+### Fixed
+
+- Correct table min-widths for AllCategories, CategoryView, and LabelView (fixed columns exceeded previous min-width, hiding flex columns)
+
 ## 0.87.8 - 2026-02-11
 
 ### Changed
