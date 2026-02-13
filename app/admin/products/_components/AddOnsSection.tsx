@@ -2,7 +2,12 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -39,9 +44,16 @@ interface Product {
   type: string;
 }
 
+interface PurchaseOption {
+  id: string;
+  priceInCents: number;
+  type: string;
+}
+
 interface ProductVariant {
   id: string;
   name: string;
+  purchaseOptions?: PurchaseOption[];
 }
 
 interface AddOnLink {
@@ -63,7 +75,6 @@ export function AddOnsSection({ productId }: AddOnsSectionProps) {
   const [selectedVariant, setSelectedVariant] = useState("__none__");
   const [discountedPrice, setDiscountedPrice] = useState("");
   const [variants, setVariants] = useState<ProductVariant[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -144,85 +155,13 @@ export function AddOnsSection({ productId }: AddOnsSectionProps) {
     setLoading(false);
     if (res.ok) {
       toast({ title: "Add-on removed" });
-      const newAddOns = addOns.filter((a) => a.id !== addOnId);
-      setAddOns(newAddOns);
-      setSelectedIndex(Math.max(0, selectedIndex - 1));
+      setAddOns((prev) => prev.filter((a) => a.id !== addOnId));
     } else {
       toast({ title: "Failed to remove add-on", variant: "destructive" });
     }
   };
 
-  // Edit state for the selected add-on's detail panel
-  const [editVariants, setEditVariants] = useState<ProductVariant[]>([]);
-  const [editVariant, setEditVariant] = useState("__none__");
-  const [editDiscount, setEditDiscount] = useState("");
-  const editTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
-
-  const selectedAddOn = addOns[selectedIndex] ?? null;
-
-  // Sync edit fields when selected add-on changes
-  useEffect(() => {
-    if (!selectedAddOn) return;
-    setEditVariant(selectedAddOn.addOnVariant?.id ?? "__none__");
-    setEditDiscount(
-      selectedAddOn.discountedPriceInCents
-        ? (selectedAddOn.discountedPriceInCents / 100).toFixed(2)
-        : ""
-    );
-    // Fetch variants for the selected add-on's product
-    fetchVariantsForEdit(selectedAddOn.addOnProduct.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIndex, addOns]);
-
-  const fetchVariantsForEdit = async (prodId: string) => {
-    const res = await fetch(`/api/admin/products/${prodId}/variants`);
-    if (res.ok) {
-      const data = await res.json();
-      setEditVariants(data.variants || []);
-    }
-  };
-
-  const handleUpdate = useCallback(
-    async (fields: { addOnVariantId?: string | null; discountedPriceInCents?: number | null }) => {
-      if (!selectedAddOn || !productId) return;
-      const res = await fetch(
-        `/api/admin/products/${productId}/addons/${selectedAddOn.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(fields),
-        }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setAddOns((prev) =>
-          prev.map((a) => (a.id === data.addOn.id ? data.addOn : a))
-        );
-      } else {
-        const error = await res.json();
-        toast({ title: error.error || "Failed to update add-on", variant: "destructive" });
-      }
-    },
-    [selectedAddOn, productId, toast]
-  );
-
-  const handleEditVariantChange = (value: string) => {
-    setEditVariant(value);
-    handleUpdate({ addOnVariantId: value !== "__none__" ? value : null });
-  };
-
-  const handleEditDiscountChange = (value: string) => {
-    setEditDiscount(value);
-    // Debounce the save for price input
-    if (editTimeoutRef.current) clearTimeout(editTimeoutRef.current);
-    editTimeoutRef.current = setTimeout(() => {
-      const cents = value ? Math.round(parseFloat(value) * 100) : null;
-      if (value && (isNaN(parseFloat(value)) || (cents !== null && cents <= 0))) return;
-      handleUpdate({ discountedPriceInCents: cents });
-    }, 600);
-  };
 
   if (!productId) {
     return (
@@ -290,13 +229,18 @@ export function AddOnsSection({ productId }: AddOnsSectionProps) {
 
           <Field className="w-full sm:w-40">
             <FormHeading label="Discount" />
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="$0.00"
-              value={discountedPrice}
-              onChange={(e) => setDiscountedPrice(e.target.value)}
-            />
+            <InputGroup>
+              <InputGroupAddon>
+                <InputGroupText>$</InputGroupText>
+              </InputGroupAddon>
+              <InputGroupInput
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={discountedPrice}
+                onChange={(e) => setDiscountedPrice(e.target.value)}
+              />
+            </InputGroup>
           </Field>
 
           <Button
@@ -309,110 +253,206 @@ export function AddOnsSection({ productId }: AddOnsSectionProps) {
           </Button>
         </div>
 
-        {/* Existing add-ons — dropdown + detail pattern */}
+        {/* Existing add-ons — individual cards */}
         {addOns.length === 0 ? (
           <div className="text-center py-8 border border-dashed rounded-lg text-sm text-muted-foreground">
             No add-ons configured yet.
           </div>
         ) : (
-          <>
-            <div className="flex items-center gap-2">
-              <Select
-                value={String(selectedIndex)}
-                onValueChange={(val) => setSelectedIndex(Number(val))}
-              >
-                <SelectTrigger className="flex-1">
-                  <SelectValue>
-                    {selectedAddOn
-                      ? `${selectedAddOn.addOnProduct.name}${selectedAddOn.addOnVariant ? ` · ${selectedAddOn.addOnVariant.name}` : ""}${selectedAddOn.discountedPriceInCents ? ` · ${formatPrice(selectedAddOn.discountedPriceInCents)}` : ""}`
-                      : "Select add-on"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {addOns.map((a, i) => (
-                    <SelectItem key={a.id} value={String(i)}>
-                      {a.addOnProduct.name}
-                      {a.addOnVariant ? ` · ${a.addOnVariant.name}` : ""}
-                      {a.discountedPriceInCents ? ` · ${formatPrice(a.discountedPriceInCents)}` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Remove add-on?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will unlink &quot;{selectedAddOn?.addOnProduct.name}&quot; as an add-on.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => selectedAddOn && handleRemove(selectedAddOn.id)}
-                    >
-                      Remove
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-
-            {selectedAddOn && (
-              <div className="p-4 border rounded-lg space-y-3">
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Product: </span>
-                  <span className="font-medium">{selectedAddOn.addOnProduct.name}</span>
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    ({selectedAddOn.addOnProduct.type})
-                  </span>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Field className="flex-1">
-                    <FormHeading label="Variant" />
-                    <Select
-                      value={editVariant}
-                      onValueChange={handleEditVariantChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue>
-                          {editVariant === "__none__"
-                            ? "Any variant"
-                            : editVariants.find((v) => v.id === editVariant)?.name || "Any variant"}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">Any variant</SelectItem>
-                        {editVariants.map((v) => (
-                          <SelectItem key={v.id} value={v.id}>
-                            {v.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field className="w-full sm:w-40">
-                    <FormHeading label="Discount" />
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="$0.00"
-                      value={editDiscount}
-                      onChange={(e) => handleEditDiscountChange(e.target.value)}
-                    />
-                  </Field>
-                </div>
-              </div>
-            )}
-          </>
+          <div className="space-y-2">
+            {addOns.map((addOn) => (
+              <AddOnCard
+                key={addOn.id}
+                addOn={addOn}
+                productId={productId!}
+                onRemove={handleRemove}
+                onUpdate={(updated) =>
+                  setAddOns((prev) =>
+                    prev.map((a) => (a.id === updated.id ? updated : a))
+                  )
+                }
+                formatPrice={formatPrice}
+              />
+            ))}
+          </div>
         )}
       </FieldGroup>
     </FieldSet>
+  );
+}
+
+function AddOnCard({
+  addOn,
+  productId,
+  onRemove,
+  onUpdate,
+  formatPrice,
+}: {
+  addOn: AddOnLink;
+  productId: string;
+  onRemove: (id: string) => void;
+  onUpdate: (addOn: AddOnLink) => void;
+  formatPrice: (cents: number) => string;
+}) {
+  const { toast } = useToast();
+  const [editVariants, setEditVariants] = useState<ProductVariant[]>([]);
+  const [editVariant, setEditVariant] = useState(addOn.addOnVariant?.id ?? "__none__");
+  const [editDiscount, setEditDiscount] = useState(
+    addOn.discountedPriceInCents
+      ? (addOn.discountedPriceInCents / 100).toFixed(2)
+      : ""
+  );
+  const editTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevProductIdRef = useRef(addOn.addOnProduct.id);
+  const prevAddOnIdRef = useRef(addOn.id);
+
+  const fetchVariants = async (prodId: string) => {
+    const res = await fetch(`/api/admin/products/${prodId}/variants`);
+    if (res.ok) {
+      const data = await res.json();
+      setEditVariants(data.variants || []);
+    }
+  };
+
+  // Fetch variants on mount and when product changes
+  if (prevProductIdRef.current !== addOn.addOnProduct.id) {
+    prevProductIdRef.current = addOn.addOnProduct.id;
+    fetchVariants(addOn.addOnProduct.id);
+  }
+  useEffect(() => {
+    fetchVariants(addOn.addOnProduct.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync edit fields when addOn prop changes (e.g. after PATCH response)
+  if (prevAddOnIdRef.current !== addOn.id) {
+    prevAddOnIdRef.current = addOn.id;
+    setEditVariant(addOn.addOnVariant?.id ?? "__none__");
+    setEditDiscount(
+      addOn.discountedPriceInCents
+        ? (addOn.discountedPriceInCents / 100).toFixed(2)
+        : ""
+    );
+  }
+
+  const handleUpdate = useCallback(
+    async (fields: { addOnVariantId?: string | null; discountedPriceInCents?: number | null }) => {
+      const res = await fetch(
+        `/api/admin/products/${productId}/addons/${addOn.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(fields),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        onUpdate(data.addOn);
+      } else {
+        const error = await res.json();
+        toast({ title: error.error || "Failed to update add-on", variant: "destructive" });
+      }
+    },
+    [addOn.id, productId, onUpdate, toast]
+  );
+
+  const handleVariantChange = (value: string) => {
+    setEditVariant(value);
+    handleUpdate({ addOnVariantId: value !== "__none__" ? value : null });
+  };
+
+  const handleDiscountChange = (value: string) => {
+    setEditDiscount(value);
+    if (editTimeoutRef.current) clearTimeout(editTimeoutRef.current);
+    editTimeoutRef.current = setTimeout(() => {
+      const cents = value ? Math.round(parseFloat(value) * 100) : null;
+      if (value && (isNaN(parseFloat(value)) || (cents !== null && cents <= 0))) return;
+      handleUpdate({ discountedPriceInCents: cents });
+    }, 600);
+  };
+
+  // Get the one-time price from the selected variant for reference
+  const variantPrice = addOn.addOnVariant?.purchaseOptions?.find(
+    (o) => o.type === "ONE_TIME"
+  )?.priceInCents;
+
+  return (
+    <div className="p-4 border rounded-lg space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="text-sm">
+          <span className="font-medium">{addOn.addOnProduct.name}</span>
+          <span className="ml-2 text-xs text-muted-foreground">
+            {addOn.addOnProduct.type}
+          </span>
+        </div>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove add-on?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will unlink &quot;{addOn.addOnProduct.name}&quot; as an add-on.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onRemove(addOn.id)}>
+                Remove
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Field className="flex-1">
+          <FormHeading label="Variant" />
+          <Select value={editVariant} onValueChange={handleVariantChange}>
+            <SelectTrigger>
+              <SelectValue>
+                {editVariant === "__none__"
+                  ? "Any variant"
+                  : editVariants.find((v) => v.id === editVariant)?.name || "Any variant"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">Any variant</SelectItem>
+              {editVariants.map((v) => (
+                <SelectItem key={v.id} value={v.id}>
+                  {v.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        {variantPrice != null && (
+          <Field className="w-full sm:w-28">
+            <FormHeading label="Price" />
+            <div className="flex items-center h-9 px-3 text-sm text-muted-foreground bg-muted/50 border rounded-md">
+              {formatPrice(variantPrice)}
+            </div>
+          </Field>
+        )}
+        <Field className="w-full sm:w-40">
+          <FormHeading label="Discount" />
+          <InputGroup>
+            <InputGroupAddon>
+              <InputGroupText>$</InputGroupText>
+            </InputGroupAddon>
+            <InputGroupInput
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={editDiscount}
+              onChange={(e) => handleDiscountChange(e.target.value)}
+            />
+          </InputGroup>
+        </Field>
+      </div>
+    </div>
   );
 }

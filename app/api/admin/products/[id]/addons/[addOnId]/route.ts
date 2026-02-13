@@ -64,7 +64,13 @@ export async function PATCH(
           select: { id: true, name: true, type: true },
         },
         addOnVariant: {
-          select: { id: true, name: true },
+          select: {
+            id: true,
+            name: true,
+            purchaseOptions: {
+              select: { id: true, priceInCents: true, type: true },
+            },
+          },
         },
       },
     });
