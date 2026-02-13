@@ -10,17 +10,11 @@ import { PUT } from "../route";
 
 const requireAdminApiMock = jest.fn();
 const updateProductMock = jest.fn();
-const deleteImagesMock = jest.fn();
-const createManyImagesMock = jest.fn();
 const deleteCategoriesMock = jest.fn();
 const createCategoriesMock = jest.fn();
 
 type MockTx = {
   product: { update: typeof updateProductMock };
-  productImage: {
-    deleteMany: typeof deleteImagesMock;
-    createMany: typeof createManyImagesMock;
-  };
   categoriesOnProducts: {
     deleteMany: typeof deleteCategoriesMock;
     createMany: typeof createCategoriesMock;
@@ -36,10 +30,6 @@ jest.mock("@/lib/prisma", () => ({
     $transaction: (cb: (tx: MockTx) => Promise<unknown>) =>
       cb({
         product: { update: updateProductMock },
-        productImage: {
-          deleteMany: deleteImagesMock,
-          createMany: createManyImagesMock,
-        },
         categoriesOnProducts: {
           deleteMany: deleteCategoriesMock,
           createMany: createCategoriesMock,

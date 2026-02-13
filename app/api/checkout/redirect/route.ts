@@ -33,12 +33,15 @@ export async function POST(req: NextRequest) {
             id: true,
             name: true,
             stockQuantity: true,
+            images: {
+              orderBy: { order: "asc" as const },
+              take: 1,
+            },
             product: {
               select: {
                 id: true,
                 name: true,
                 isDisabled: true,
-                images: true,
               },
             },
           },
@@ -68,7 +71,7 @@ export async function POST(req: NextRequest) {
         const actualPriceInCents = dbOption.priceInCents;
         const productName = dbOption.variant.product.name;
         const variantName = dbOption.variant.name;
-        const imageUrl = dbOption.variant.product.images[0]?.url;
+        const imageUrl = dbOption.variant.images[0]?.url;
 
         const absoluteImageUrl =
           imageUrl && imageUrl.startsWith("/")

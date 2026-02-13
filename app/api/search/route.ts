@@ -87,6 +87,16 @@ export async function GET(request: NextRequest) {
         },
         variants: {
           include: {
+            images: {
+              select: {
+                url: true,
+                altText: true,
+              },
+              orderBy: {
+                order: "asc" as const,
+              },
+              take: 1,
+            },
             purchaseOptions: {
               select: {
                 id: true,
@@ -97,16 +107,6 @@ export async function GET(request: NextRequest) {
               },
             },
           },
-        },
-        images: {
-          select: {
-            url: true,
-            altText: true,
-          },
-          orderBy: {
-            order: "asc",
-          },
-          take: 1,
         },
       },
       take: 50,

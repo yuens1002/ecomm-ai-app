@@ -30,10 +30,10 @@ export async function GET(
         variants: {
           orderBy: { order: "asc" },
           include: {
+            images: { orderBy: { order: "asc" } },
             purchaseOptions: true,
           },
         },
-        images: true,
       },
     });
 
@@ -106,7 +106,6 @@ export async function PUT(
       isFeatured,
       isDisabled,
       categoryIds,
-      images,
       productType,
       roastLevel,
       origin,
@@ -146,27 +145,7 @@ export async function PUT(
         },
       });
 
-      // 2. Update Images (replace all images if provided, including empty array to delete all)
-      if (images !== undefined) {
-        // Delete existing images
-        await tx.productImage.deleteMany({
-          where: { productId: id },
-        });
-
-        // Create new images if any
-        if (images.length > 0) {
-          await tx.productImage.createMany({
-            data: images.map((img, index) => ({
-              productId: id,
-              url: img.url,
-              altText: img.alt || name,
-              order: index,
-            })),
-          });
-        }
-      }
-
-      // 3. Update categories
+      // 2. Update categories
       // First, remove all existing connections
       await tx.categoriesOnProducts.deleteMany({
         where: { productId: id },

@@ -1,12 +1,11 @@
 import { requireAdmin } from "@/lib/admin";
-import ProductFormClient from "../product-form-client/ProductFormClient";
+import { listCategoriesAndLabels } from "@/app/admin/product-menu/data/categories";
+import { CoffeeProductForm } from "../_components/CoffeeProductForm";
 
-export default async function NewProductPage() {
+export default async function NewCoffeeProductPage() {
   await requireAdmin();
 
-  return (
-    <div className="container mx-auto py-10">
-      <ProductFormClient />
-    </div>
-  );
+  const { categories } = await listCategoriesAndLabels("name-asc");
+
+  return <CoffeeProductForm categories={categories} />;
 }

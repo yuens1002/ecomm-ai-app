@@ -129,7 +129,6 @@ describe("getProductAddOns", () => {
           slug: "sample-mug",
           type: "MERCHANDISE",
           description: "A nice mug",
-          images: [{ url: "https://example.com/mug.jpg" }],
           categories: [{ category: { slug: "merchandise" } }],
         },
         addOnVariant: {
@@ -137,6 +136,7 @@ describe("getProductAddOns", () => {
           name: "Standard",
           weight: 500,
           stockQuantity: 10,
+          images: [{ url: "https://example.com/mug.jpg" }],
           purchaseOptions: [
             {
               id: "po-1",
@@ -161,7 +161,6 @@ describe("getProductAddOns", () => {
         slug: "sample-mug",
         type: "MERCHANDISE",
         description: "A nice mug",
-        images: [{ url: "https://example.com/mug.jpg" }],
         categories: [{ category: { slug: "merchandise" } }],
       },
       variant: {
@@ -197,7 +196,6 @@ describe("getProductAddOns", () => {
           slug: "sample-mug",
           type: "MERCHANDISE",
           description: "A nice mug",
-          images: [{ url: "https://example.com/mug.jpg" }],
           categories: [{ category: { slug: "merchandise" } }],
         },
         addOnVariant: {
@@ -205,6 +203,7 @@ describe("getProductAddOns", () => {
           name: "Standard",
           weight: 500,
           stockQuantity: 10,
+          images: [{ url: "https://example.com/mug.jpg" }],
           purchaseOptions: [
             {
               id: "po-1",
@@ -237,7 +236,6 @@ describe("getProductAddOns", () => {
           slug: "sample-mug",
           type: "MERCHANDISE",
           description: "A nice mug",
-          images: [{ url: "https://example.com/mug.jpg" }],
           categories: [{ category: { slug: "merchandise" } }],
         },
         addOnVariant: {
@@ -245,6 +243,7 @@ describe("getProductAddOns", () => {
           name: "Standard",
           weight: 500,
           stockQuantity: 10,
+          images: [{ url: "https://example.com/mug.jpg" }],
           purchaseOptions: [], // No purchase options
         },
       },
@@ -271,7 +270,6 @@ describe("getProductAddOns", () => {
           slug: "coffee-beans",
           type: "COFFEE",
           description: "Fresh beans",
-          images: [{ url: "https://example.com/coffee.jpg" }],
           categories: [{ category: { slug: "coffee" } }],
         },
         addOnVariant: {
@@ -279,6 +277,7 @@ describe("getProductAddOns", () => {
           name: "12oz",
           weight: 340,
           stockQuantity: 10,
+          images: [{ url: "https://example.com/coffee.jpg" }],
           purchaseOptions: [
             {
               id: "po-1",
@@ -312,7 +311,6 @@ describe("getProductAddOns", () => {
           slug: "mug",
           type: "MERCHANDISE",
           description: "A mug",
-          images: [{ url: "https://example.com/mug.jpg" }],
           categories: [{ category: { slug: "merchandise" } }],
         },
         addOnVariant: {
@@ -320,6 +318,7 @@ describe("getProductAddOns", () => {
           name: "Standard",
           weight: 500,
           stockQuantity: 10,
+          images: [{ url: "https://example.com/mug.jpg" }],
           purchaseOptions: [
             { id: "po-1", priceInCents: 1500, type: "ONE_TIME" },
           ],
@@ -337,7 +336,6 @@ describe("getProductAddOns", () => {
           slug: "sticker",
           type: "MERCHANDISE",
           description: "A sticker",
-          images: [{ url: "https://example.com/sticker.jpg" }],
           categories: [{ category: { slug: "merchandise" } }],
         },
         addOnVariant: {
@@ -345,6 +343,7 @@ describe("getProductAddOns", () => {
           name: "Small",
           weight: 10,
           stockQuantity: 10,
+          images: [{ url: "https://example.com/sticker.jpg" }],
           purchaseOptions: [
             { id: "po-2", priceInCents: 1000, type: "ONE_TIME" },
           ],

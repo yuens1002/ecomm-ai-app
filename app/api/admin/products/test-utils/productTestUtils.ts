@@ -8,7 +8,6 @@ export const baseProductPayload = {
   isFeatured: false,
   isDisabled: false,
   categoryIds: ["default-cat"],
-  images: [{ url: "https://placehold.co/600x400.png", alt: "Test Product" }],
 } as const;
 
 export const coffeeExtras = {

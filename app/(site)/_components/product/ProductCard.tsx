@@ -62,10 +62,11 @@ export default function ProductCard({
   // Use product name as seed for consistent placeholder image selection
   // Merch products use culture images (cups, equipment), coffee products use bean images
   const placeholderCategory = product.type === ProductType.MERCH ? "culture" : "beans";
+  const firstVariantImage = product.variants[0]?.images?.[0];
   const displayImage =
-    product.images[0]?.url || getPlaceholderImage(product.name, 800, placeholderCategory);
+    firstVariantImage?.url || getPlaceholderImage(product.name, 800, placeholderCategory);
   const altText =
-    product.images[0]?.altText || (product.type === ProductType.MERCH ? product.name : `A bag of ${product.name} coffee`);
+    firstVariantImage?.altText || (product.type === ProductType.MERCH ? product.name : `A bag of ${product.name} coffee`);
 
   // Canonical product URL with optional ?from= to preserve navigation context
   const productUrl = categorySlug

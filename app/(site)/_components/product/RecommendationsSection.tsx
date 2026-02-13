@@ -16,13 +16,6 @@ interface RecommendedProduct {
   roastLevel: string;
   isFeatured: boolean;
   tastingNotes: string[];
-  images: Array<{
-    id: string;
-    order: number;
-    url: string;
-    altText: string;
-    productId: string;
-  }>;
   variants: Array<{
     id: string;
     name: string;

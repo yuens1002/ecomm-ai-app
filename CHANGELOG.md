@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.88.0 - 2026-02-13
+
+### Added
+
+- **Auto-Save**: Product forms auto-save on change with 800ms debounce, replacing the manual save button
+- **Save Status Indicator**: Green (saved), amber pulse (saving), red (validation error) with inline error messages
+- **Undo/Redo**: Last 10 form states saved to localStorage with undo/redo buttons and `U`/`Shift+U` keyboard shortcuts
+- **Variant Images**: Images managed per-variant with drag-and-drop reordering and auto-generated alt text
+- **Image Actions Menu**: Per-image dropdown with replace, delete, move previous/next — works on desktop and mobile
+- **Product Add/Edit Rework**: Compositional admin product form with flat layout, dropdown variant/add-on selectors, and consistent shadcn Field patterns
+- **Server Actions for Products**: Replaced API route-based mutations with server actions for product, variant, and purchase option CRUD
+- **Merch Product Pages**: Dedicated create/edit pages for merch products at `/admin/merch/new` and `/admin/merch/[id]`
+- **Variant Reordering**: Chevron up/down reorder controls with persistent order field
+
+### Changed
+
+- Product list pages use Link-based routing to dedicated edit pages instead of query-param-based inline forms
+- Product form sections (info, variants, specs, categories, add-ons) are independent composable components
+- Images consolidated from product-level to variant-level storage
+- Product card uses first variant's first image as the display image
+
+### Fixed
+
+- Breadcrumb trail on product edit pages now shows full path (Products > Coffees > Product Name)
+
+### Removed
+
+- Old monolithic ProductFormClient and its section components
+- Product-level image model (replaced by VariantImage)
 ## 0.87.13 - 2026-02-12
 
 ### Fixed

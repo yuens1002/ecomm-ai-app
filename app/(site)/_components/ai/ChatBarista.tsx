@@ -284,7 +284,7 @@ export default function ChatBarista({
                 id: product.id,
                 name: product.name,
                 slug: product.slug,
-                images: product.images.map((img: { url: string }) => img.url),
+                images: product.variants?.[0]?.images?.map((img: { url: string }) => img.url) || [],
                 description: recommendData.text || product.description,
                 roastLevel: product.roastLevel,
                 variants: product.variants,

@@ -71,13 +71,10 @@ export async function getProductVariantForCart(variantId: string) {
     const variant = await prisma.productVariant.findUnique({
       where: { id: variantId },
       include: {
-        product: {
-          include: {
-            images: {
-              orderBy: { order: "asc" },
-              take: 1,
-            },
-          },
+        product: true,
+        images: {
+          orderBy: { order: "asc" },
+          take: 1,
         },
         purchaseOptions: {
           where: { type: "ONE_TIME" },
@@ -97,7 +94,7 @@ export async function getProductVariantForCart(variantId: string) {
         id: variant.product.id,
         name: variant.product.name,
         slug: variant.product.slug,
-        image: variant.product.images[0]?.url || "/placeholder.png",
+        image: variant.images[0]?.url || "/placeholder.png",
       },
     };
   } catch (error) {
