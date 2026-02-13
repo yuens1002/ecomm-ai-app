@@ -111,15 +111,16 @@ export const renderLocationInfoLayout: LayoutRenderer = (blocks, handlers) => {
           {renderBlock(carousel, handlers)}
         </div>
       )}
-      <div className="container mx-auto px-8 pt-12 max-w-5xl space-y-16">
-        {/* Slot: Rich Text Content */}
-        {content.length > 0 && (
-          <div className="space-y-8 border-l-5 pl-8">
+      {/* Slot: Rich Text Content - border hugs left edge, content stays contained */}
+      {content.length > 0 && (
+        <div className="border-l-[10px] border-foreground mt-12">
+          <div className="container mx-auto px-8 max-w-5xl space-y-8 py-8">
             {content.map((block) => renderBlock(block, handlers))}
           </div>
-        )}
-        {/* Slot: Location Sections & Content - Contained */}
+        </div>
+      )}
 
+      <div className="container mx-auto px-8 pt-12 max-w-5xl">
         {/* Slot: Location Sections (60/40 split) */}
         {locations.length > 0 && (
           <div className="space-y-20 pb-16">

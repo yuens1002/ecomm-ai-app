@@ -1,4 +1,3 @@
-import { Clock } from "lucide-react";
 import { ReactNode } from "react";
 
 interface ScheduleEntry {
@@ -49,7 +48,6 @@ export function HoursCard({
       onClick={onClick}
     >
       <div className="flex items-center gap-2 pb-2">
-        <Clock className="h-4 w-4 text-muted-foreground" />
         <h3 className="font-semibold">{title}</h3>
       </div>
       <div className="space-y-1">

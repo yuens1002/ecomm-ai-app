@@ -19,6 +19,8 @@ interface ScrollCarouselProps {
   wheelGestures?: boolean;
   /** When provided, overrides inline slide sizing with responsive Tailwind classes */
   slideClassName?: string;
+  /** Add horizontal padding to viewport so first/last slides are inset from edges */
+  padEdges?: boolean;
 }
 
 export function ScrollCarousel({
@@ -32,6 +34,7 @@ export function ScrollCarousel({
   autoplayDelay = 4000,
   wheelGestures = true,
   slideClassName,
+  padEdges = false,
 }: ScrollCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -45,7 +48,7 @@ export function ScrollCarousel({
     },
     [
       ...(autoplay
-        ? [Autoplay({ delay: autoplayDelay, stopOnInteraction: true })]
+        ? [Autoplay({ delay: autoplayDelay, stopOnInteraction: true, stopOnMouseEnter: true })]
         : []),
       ...(wheelGestures ? [WheelGesturesPlugin({ forceWheelAxis: "x" })] : []),
     ]
@@ -97,7 +100,7 @@ export function ScrollCarousel({
         !noBorder && "border border-border rounded-lg overflow-hidden"
       )}
     >
-      <div className="overflow-hidden touch-pan-y" ref={emblaRef}>
+      <div className={cn("overflow-hidden touch-pan-y", padEdges && "px-4")} ref={emblaRef}>
         <div
           ref={containerRef}
           className={cn("flex", gap)}
