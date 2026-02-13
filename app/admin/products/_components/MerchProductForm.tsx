@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ProductType } from "@prisma/client";
-import { useToast } from "@/hooks/use-toast";
 import { ProductPageLayout } from "./ProductPageLayout";
 import { ProductInfoSection, ProductInfoValues } from "./ProductInfoSection";
 import { VariantsSection, VariantData, VariantsSectionRef } from "./VariantsSection";
@@ -11,6 +10,7 @@ import { MerchDetailsSection, MerchDetailRow } from "./MerchDetailsSection";
 import { CategoriesSection } from "./CategoriesSection";
 import { AddOnsSection } from "./AddOnsSection";
 import { createProduct, updateProduct } from "../actions/products";
+import { useAutoSave } from "../_hooks/useAutoSave";
 
 interface CategoryLabel {
   id: string;
@@ -51,12 +51,10 @@ export function MerchProductForm({
   categories,
 }: MerchProductFormProps) {
   const router = useRouter();
-  const { toast } = useToast();
   const variantsSectionRef = useRef<VariantsSectionRef>(null);
   const [productId, setProductId] = useState<string | null>(
     initialProductId ?? null
   );
-  const [isSaving, setIsSaving] = useState(false);
   const [hasDetailError, setHasDetailError] = useState(false);
 
   // Product info state
@@ -87,74 +85,111 @@ export function MerchProductForm({
     initialData?.variants ?? []
   );
 
-  const handleSave = async () => {
-    // Validate merch details — no half-filled rows
-    const hasIncomplete = merchDetails.some((d) => {
-      const hasLabel = d.label.trim() !== "";
-      const hasValue = d.value.trim() !== "";
-      return (hasLabel && !hasValue) || (!hasLabel && hasValue);
-    });
+  const isValid = productInfo.name.trim().length > 0;
 
-    if (hasIncomplete) {
+  // Validate merch details — no half-filled rows
+  const hasIncompleteDetails = merchDetails.some((d) => {
+    const hasLabel = d.label.trim() !== "";
+    const hasValue = d.value.trim() !== "";
+    return (hasLabel && !hasValue) || (!hasLabel && hasValue);
+  });
+
+  const saveFn = useCallback(async () => {
+    if (hasIncompleteDetails) {
       setHasDetailError(true);
-      toast({
-        title: "All details must have both a label and description",
-        variant: "destructive",
-      });
-      return;
+      throw new Error("All details must have both a label and description");
     }
     setHasDetailError(false);
 
-    setIsSaving(true);
-    try {
-      await variantsSectionRef.current?.uploadAllVariantImages();
+    await variantsSectionRef.current?.uploadAllVariantImages();
 
-      // Filter out empty rows
-      const filteredDetails = merchDetails.filter(
-        (d) => d.label.trim() !== "" && d.value.trim() !== ""
-      );
+    // Filter out empty rows
+    const filteredDetails = merchDetails.filter(
+      (d) => d.label.trim() !== "" && d.value.trim() !== ""
+    );
 
-      const payload = {
-        productType: ProductType.MERCH,
-        name: productInfo.name,
-        slug: productInfo.slug,
-        heading: productInfo.heading || null,
-        description: productInfo.description || null,
-        isOrganic: productInfo.isOrganic,
-        isFeatured: productInfo.isFeatured,
-        isDisabled: productInfo.isDisabled,
-        details: filteredDetails.length > 0 ? filteredDetails : null,
-        categoryIds,
-      };
+    const payload = {
+      productType: ProductType.MERCH,
+      name: productInfo.name,
+      slug: productInfo.slug,
+      heading: productInfo.heading || null,
+      description: productInfo.description || null,
+      isOrganic: productInfo.isOrganic,
+      isFeatured: productInfo.isFeatured,
+      isDisabled: productInfo.isDisabled,
+      details: filteredDetails.length > 0 ? filteredDetails : null,
+      categoryIds,
+    };
 
-      const result = productId
-        ? await updateProduct(productId, payload)
-        : await createProduct(payload);
+    const result = productId
+      ? await updateProduct(productId, payload)
+      : await createProduct(payload);
 
-      if (result.ok) {
-        toast({ title: productId ? "Product updated" : "Product created" });
-        if (!productId && result.data) {
-          const newId = (result.data as { id: string }).id;
-          setProductId(newId);
-          router.replace(`/admin/merch/${newId}`);
-        }
-      } else {
-        toast({ title: result.error, variant: "destructive" });
+    if (result.ok) {
+      if (!productId && result.data) {
+        const newId = (result.data as { id: string }).id;
+        setProductId(newId);
+        router.replace(`/admin/merch/${newId}`);
       }
-    } catch (error) {
-      console.error("Save error:", error);
-      toast({ title: "Failed to save", variant: "destructive" });
-    } finally {
-      setIsSaving(false);
+    } else {
+      throw new Error(result.error);
     }
-  };
+  }, [productInfo, merchDetails, categoryIds, productId, hasIncompleteDetails, router]);
+
+  const formState = { productInfo, merchDetails, categoryIds };
+
+  const onRestore = useCallback(
+    (state: typeof formState) => {
+      setProductInfo(state.productInfo);
+      setMerchDetails(state.merchDetails);
+      setCategoryIds(state.categoryIds);
+    },
+    []
+  );
+
+  const { status, undo, redo, canUndo, canRedo } = useAutoSave({
+    saveFn,
+    isValid: isValid && !hasIncompleteDetails,
+    debounceMs: 800,
+    deps: [productInfo, merchDetails, categoryIds],
+    formState,
+    historyKey: productId ? `merch-${productId}` : "merch-new",
+    onRestore,
+  });
+
+  // Keyboard shortcuts: U = undo, Shift+U = redo (capture phase to beat Radix typeahead)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== "u" || e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+      if (document.querySelector('[data-state="open"][role="dialog"]')) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.shiftKey) {
+        redo();
+      } else {
+        undo();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
+  }, [undo, redo]);
 
   return (
     <ProductPageLayout
       title={productId ? "Edit Merch Product" : "New Merch Product"}
       description="Manage merchandise details, variants, and pricing"
-      isSaving={isSaving}
-      onSave={handleSave}
+      saveStatus={!isValid ? "error" : status}
+      saveErrorMessage={!isValid ? "Product name is required" : hasIncompleteDetails ? "Details need both label and value" : undefined}
+      canUndo={canUndo}
+      canRedo={canRedo}
+      onUndo={undo}
+      onRedo={redo}
       productInfo={
         <ProductInfoSection
           values={productInfo}
@@ -165,6 +200,7 @@ export function MerchProductForm({
         <VariantsSection
           ref={variantsSectionRef}
           productId={productId}
+          productName={productInfo.name}
           variants={variants}
           onVariantsChange={setVariants}
         />

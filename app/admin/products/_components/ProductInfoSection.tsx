@@ -37,100 +37,92 @@ export function ProductInfoSection({
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="hidden lg:block">
-        <p className="mb-3 font-medium text-base">Product Info</p>
-        <p className="text-sm text-muted-foreground -mt-1.5">Basic product information and settings</p>
-      </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16 gap-y-6">
+      {/* Left column: Name/Slug, Flags */}
+      <FieldGroup>
+        <NameSlugField
+          name={values.name}
+          slug={values.slug}
+          onChange={({ name, slug }) => update({ name, slug })}
+        />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-x-16 gap-y-6">
-        {/* Left column: Name, Heading, Images */}
-        <FieldGroup>
-          <NameSlugField
-            name={values.name}
-            slug={values.slug}
-            onChange={({ name, slug }) => update({ name, slug })}
+        <Field>
+          <FormHeading label="Flags" />
+          <div className="flex flex-col gap-3">
+            <Field orientation="horizontal">
+              <Checkbox
+                id="isOrganic"
+                checked={values.isOrganic}
+                onCheckedChange={(checked) =>
+                  update({ isOrganic: checked === true })
+                }
+              />
+              <FieldLabel htmlFor="isOrganic">
+                <FieldContent>
+                  <FieldTitle>Organic</FieldTitle>
+                  <FieldDescription>Mark as certified organic product</FieldDescription>
+                </FieldContent>
+              </FieldLabel>
+            </Field>
+
+            <Field orientation="horizontal">
+              <Checkbox
+                id="isFeatured"
+                checked={values.isFeatured}
+                onCheckedChange={(checked) =>
+                  update({ isFeatured: checked === true })
+                }
+              />
+              <FieldLabel htmlFor="isFeatured">
+                <FieldContent>
+                  <FieldTitle>Featured</FieldTitle>
+                  <FieldDescription>Show on homepage and featured sections</FieldDescription>
+                </FieldContent>
+              </FieldLabel>
+            </Field>
+
+            <Field orientation="horizontal">
+              <Checkbox
+                id="isDisabled"
+                checked={values.isDisabled}
+                onCheckedChange={(checked) =>
+                  update({ isDisabled: checked === true })
+                }
+              />
+              <FieldLabel htmlFor="isDisabled">
+                <FieldContent>
+                  <FieldTitle>Disabled</FieldTitle>
+                  <FieldDescription>Hide from storefront</FieldDescription>
+                </FieldContent>
+              </FieldLabel>
+            </Field>
+          </div>
+        </Field>
+      </FieldGroup>
+
+      {/* Right column: Heading, Description */}
+      <FieldGroup>
+        <Field>
+          <FormHeading htmlFor="heading" label="Heading" />
+          <Input
+            id="heading"
+            value={values.heading}
+            onChange={(e) => update({ heading: e.target.value })}
+            placeholder="e.g., The Story"
           />
+        </Field>
 
-          <Field>
-            <FormHeading htmlFor="heading" label="Heading" />
-            <Input
-              id="heading"
-              value={values.heading}
-              onChange={(e) => update({ heading: e.target.value })}
-              placeholder="e.g., The Story"
-            />
-          </Field>
-
-        </FieldGroup>
-
-        {/* Right column: Description, Flags */}
-        <FieldGroup>
-          <Field>
-            <FormHeading htmlFor="description" label="Description" />
-            <Textarea
-              id="description"
-              value={values.description}
-              onChange={(e) => update({ description: e.target.value })}
-              rows={4}
-              placeholder="Product description..."
-            />
-          </Field>
-
-          <Field>
-            <FormHeading label="Flags" />
-            <div className="flex flex-col gap-3">
-              <Field orientation="horizontal">
-                <Checkbox
-                  id="isOrganic"
-                  checked={values.isOrganic}
-                  onCheckedChange={(checked) =>
-                    update({ isOrganic: checked === true })
-                  }
-                />
-                <FieldLabel htmlFor="isOrganic">
-                  <FieldContent>
-                    <FieldTitle>Organic</FieldTitle>
-                    <FieldDescription>Mark as certified organic product</FieldDescription>
-                  </FieldContent>
-                </FieldLabel>
-              </Field>
-
-              <Field orientation="horizontal">
-                <Checkbox
-                  id="isFeatured"
-                  checked={values.isFeatured}
-                  onCheckedChange={(checked) =>
-                    update({ isFeatured: checked === true })
-                  }
-                />
-                <FieldLabel htmlFor="isFeatured">
-                  <FieldContent>
-                    <FieldTitle>Featured</FieldTitle>
-                    <FieldDescription>Show on homepage and featured sections</FieldDescription>
-                  </FieldContent>
-                </FieldLabel>
-              </Field>
-
-              <Field orientation="horizontal">
-                <Checkbox
-                  id="isDisabled"
-                  checked={values.isDisabled}
-                  onCheckedChange={(checked) =>
-                    update({ isDisabled: checked === true })
-                  }
-                />
-                <FieldLabel htmlFor="isDisabled">
-                  <FieldContent>
-                    <FieldTitle>Disabled</FieldTitle>
-                    <FieldDescription>Hide from storefront</FieldDescription>
-                  </FieldContent>
-                </FieldLabel>
-              </Field>
-            </div>
-          </Field>
-        </FieldGroup>
-      </div>
+        <Field>
+          <FormHeading htmlFor="description" label="Description" />
+          <Textarea
+            id="description"
+            value={values.description}
+            onChange={(e) => update({ description: e.target.value })}
+            rows={4}
+            placeholder="Product description..."
+          />
+        </Field>
+      </FieldGroup>
     </div>
   );
 }

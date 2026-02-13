@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ProductType, RoastLevel } from "@prisma/client";
-import { useToast } from "@/hooks/use-toast";
 import { ProductPageLayout } from "./ProductPageLayout";
 import { ProductInfoSection, ProductInfoValues } from "./ProductInfoSection";
 import { VariantsSection, VariantData, VariantsSectionRef } from "./VariantsSection";
@@ -11,6 +10,7 @@ import { CoffeeSpecsSection, CoffeeSpecsValues } from "./CoffeeSpecsSection";
 import { CategoriesSection } from "./CategoriesSection";
 import { AddOnsSection } from "./AddOnsSection";
 import { createProduct, updateProduct } from "../actions/products";
+import { useAutoSave } from "../_hooks/useAutoSave";
 
 interface CategoryLabel {
   id: string;
@@ -56,13 +56,10 @@ export function CoffeeProductForm({
   categories,
 }: CoffeeProductFormProps) {
   const router = useRouter();
-  const { toast } = useToast();
   const variantsSectionRef = useRef<VariantsSectionRef>(null);
   const [productId, setProductId] = useState<string | null>(
     initialProductId ?? null
   );
-  const [isSaving, setIsSaving] = useState(false);
-
   // Product info state
   const [productInfo, setProductInfo] = useState<ProductInfoValues>({
     name: initialData?.name ?? "",
@@ -94,63 +91,104 @@ export function CoffeeProductForm({
     initialData?.variants ?? []
   );
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await variantsSectionRef.current?.uploadAllVariantImages();
+  const isValid = productInfo.name.trim().length > 0;
 
-      const payload = {
-        productType: ProductType.COFFEE,
-        name: productInfo.name,
-        slug: productInfo.slug,
-        heading: productInfo.heading || null,
-        description: productInfo.description || null,
-        isOrganic: productInfo.isOrganic,
-        isFeatured: productInfo.isFeatured,
-        isDisabled: productInfo.isDisabled,
-        roastLevel: coffeeSpecs.roastLevel,
-        origin: coffeeSpecs.origin
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        variety: coffeeSpecs.variety || null,
-        altitude: coffeeSpecs.altitude || null,
-        tastingNotes: coffeeSpecs.tastingNotes
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        processing: coffeeSpecs.processing || null,
-        categoryIds,
-      };
+  const saveFn = useCallback(async () => {
+    await variantsSectionRef.current?.uploadAllVariantImages();
 
-      const result = productId
-        ? await updateProduct(productId, payload)
-        : await createProduct(payload);
+    const payload = {
+      productType: ProductType.COFFEE,
+      name: productInfo.name,
+      slug: productInfo.slug,
+      heading: productInfo.heading || null,
+      description: productInfo.description || null,
+      isOrganic: productInfo.isOrganic,
+      isFeatured: productInfo.isFeatured,
+      isDisabled: productInfo.isDisabled,
+      roastLevel: coffeeSpecs.roastLevel,
+      origin: coffeeSpecs.origin
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      variety: coffeeSpecs.variety || null,
+      altitude: coffeeSpecs.altitude || null,
+      tastingNotes: coffeeSpecs.tastingNotes
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      processing: coffeeSpecs.processing || null,
+      categoryIds,
+    };
 
-      if (result.ok) {
-        toast({ title: productId ? "Product updated" : "Product created" });
-        if (!productId && result.data) {
-          const newId = (result.data as { id: string }).id;
-          setProductId(newId);
-          router.replace(`/admin/products/${newId}`);
-        }
-      } else {
-        toast({ title: result.error, variant: "destructive" });
+    const result = productId
+      ? await updateProduct(productId, payload)
+      : await createProduct(payload);
+
+    if (result.ok) {
+      if (!productId && result.data) {
+        const newId = (result.data as { id: string }).id;
+        setProductId(newId);
+        router.replace(`/admin/products/${newId}`);
       }
-    } catch (error) {
-      console.error("Save error:", error);
-      toast({ title: "Failed to save", variant: "destructive" });
-    } finally {
-      setIsSaving(false);
+    } else {
+      throw new Error(result.error);
     }
-  };
+  }, [productInfo, coffeeSpecs, categoryIds, productId, router]);
+
+  const formState = { productInfo, coffeeSpecs, categoryIds };
+
+  const onRestore = useCallback(
+    (state: typeof formState) => {
+      setProductInfo(state.productInfo);
+      setCoffeeSpecs(state.coffeeSpecs);
+      setCategoryIds(state.categoryIds);
+    },
+    []
+  );
+
+  const { status, undo, redo, canUndo, canRedo } = useAutoSave({
+    saveFn,
+    isValid,
+    debounceMs: 800,
+    deps: [productInfo, coffeeSpecs, categoryIds],
+    formState,
+    historyKey: productId ? `coffee-${productId}` : "coffee-new",
+    onRestore,
+  });
+
+  // Keyboard shortcuts: U = undo, Shift+U = redo (capture phase to beat Radix typeahead)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== "u" || e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+      if (document.querySelector('[data-state="open"][role="dialog"]')) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.shiftKey) {
+        redo();
+      } else {
+        undo();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
+  }, [undo, redo]);
 
   return (
     <ProductPageLayout
       title={productId ? "Edit Coffee Product" : "New Coffee Product"}
       description="Manage product details, variants, and pricing"
-      isSaving={isSaving}
-      onSave={handleSave}
+      saveStatus={isValid ? status : "error"}
+      saveErrorMessage={!isValid ? "Product name is required" : undefined}
+      canUndo={canUndo}
+      canRedo={canRedo}
+      onUndo={undo}
+      onRedo={redo}
       productInfo={
         <ProductInfoSection
           values={productInfo}
@@ -161,6 +199,7 @@ export function CoffeeProductForm({
         <VariantsSection
           ref={variantsSectionRef}
           productId={productId}
+          productName={productInfo.name}
           variants={variants}
           onVariantsChange={setVariants}
         />

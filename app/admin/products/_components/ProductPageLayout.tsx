@@ -1,13 +1,17 @@
 "use client";
 
 import { ReactNode } from "react";
-import { SaveButton } from "@/app/admin/_components/forms/SaveButton";
+import { SaveStatus, SaveStatusState } from "@/app/admin/_components/forms/SaveStatus";
 
 interface ProductPageLayoutProps {
   title: string;
   description?: string;
-  isSaving?: boolean;
-  onSave?: () => void;
+  saveStatus?: SaveStatusState;
+  saveErrorMessage?: string;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
   /** Left column (50%) — product info */
   productInfo: ReactNode;
   /** Right column (50%) — variants & pricing */
@@ -23,8 +27,12 @@ interface ProductPageLayoutProps {
 export function ProductPageLayout({
   title,
   description,
-  isSaving = false,
-  onSave,
+  saveStatus = "saved",
+  saveErrorMessage,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
   productInfo,
   variants,
   specs,
@@ -34,23 +42,28 @@ export function ProductPageLayout({
   return (
     <div className="space-y-12">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        {description && (
-          <p className="text-sm text-muted-foreground mt-1">{description}</p>
-        )}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+          {description && (
+            <p className="text-sm text-muted-foreground mt-1">{description}</p>
+          )}
+        </div>
+        <SaveStatus
+          status={saveStatus}
+          errorMessage={saveErrorMessage}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={onUndo}
+          onRedo={onRedo}
+        />
       </div>
 
-      {/* Floating Save */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <SaveButton isSaving={isSaving} onClick={onSave} size="default" className="shadow-lg" />
-      </div>
+      {/* Product Info (2-col at lg via ProductInfoSection's own grid) */}
+      <div className="min-w-0">{productInfo}</div>
 
-      {/* Row 1: Product Info (50%) + Variants (50%) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-x-16">
-        <div className="min-w-0">{productInfo}</div>
-        <div className="min-w-0">{variants}</div>
-      </div>
+      {/* Variants — full width */}
+      <div className="min-w-0">{variants}</div>
 
       {/* Row 2: Specs (50%) + Categories (50%) */}
       {(specs || categories) && (

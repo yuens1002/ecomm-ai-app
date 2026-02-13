@@ -35,7 +35,7 @@ import {
   Field,
 } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/forms/FormHeading";
-import { ImageListField } from "@/app/admin/_components/cms/fields/ImageListField";
+import { MultiImageUpload } from "@/components/ui/forms/MultiImageUpload";
 import { StackedFieldPair } from "./shared/StackedFieldPair";
 import {
   Plus,
@@ -90,6 +90,7 @@ interface PendingFile {
 
 interface VariantsSectionProps {
   productId: string | null;
+  productName: string;
   variants: VariantData[];
   onVariantsChange: (variants: VariantData[]) => void;
 }
@@ -101,6 +102,7 @@ export interface VariantsSectionRef {
 export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionProps>(
   function VariantsSection({
     productId,
+    productName,
     variants,
     onVariantsChange,
   }, ref) {
@@ -213,13 +215,73 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
       [variants, onVariantsChange]
     );
 
+    // Reorder images — optimistic local update, persist to DB only if images are saved
+    const handleImageReorder = useCallback(
+      async (variantId: string, fromIndex: number, toIndex: number) => {
+        const variant = variants.find((v) => v.id === variantId);
+        if (!variant) return;
+
+        const reordered = [...variant.images];
+        const [moved] = reordered.splice(fromIndex, 1);
+        reordered.splice(toIndex, 0, moved);
+
+        // Reorder pending files map to match new image order
+        setPendingFilesPerVariant((prev) => {
+          const oldMap = prev.get(variantId);
+          if (!oldMap || oldMap.size === 0) return prev;
+
+          const newMap = new Map<number, PendingFile>();
+          // Build index mapping: old position → new position
+          const oldIndices = Array.from({ length: variant.images.length }, (_, i) => i);
+          const reorderedIndices = [...oldIndices];
+          const [movedIdx] = reorderedIndices.splice(fromIndex, 1);
+          reorderedIndices.splice(toIndex, 0, movedIdx);
+
+          reorderedIndices.forEach((oldIdx, newIdx) => {
+            const pending = oldMap.get(oldIdx);
+            if (pending) newMap.set(newIdx, pending);
+          });
+
+          const next = new Map(prev);
+          next.set(variantId, newMap);
+          return next;
+        });
+
+        // Optimistic update
+        const updated = variants.map((v) =>
+          v.id === variantId
+            ? { ...v, images: reordered.map((img, i) => ({ ...img, order: i })) }
+            : v
+        );
+        onVariantsChange(updated);
+
+        // Only persist if all images have real URLs (not pending uploads)
+        const allSaved = reordered.every((img) => img.url && !img.url.startsWith("blob:"));
+        if (allSaved && reordered.length > 0) {
+          await saveVariantImages({
+            variantId,
+            images: reordered.map((img) => ({ url: img.url, altText: img.altText })),
+          });
+        }
+      },
+      [variants, onVariantsChange]
+    );
+
     // Upload all pending variant images and save to DB
     const uploadAllVariantImages = useCallback(async () => {
-      for (const variant of variants) {
+      const updatedVariants = [...variants];
+
+      for (let vi = 0; vi < updatedVariants.length; vi++) {
+        const variant = updatedVariants[vi];
         const pending = pendingFilesPerVariant.get(variant.id);
         const hasPending = pending && pending.size > 0;
 
         if (!hasPending && variant.images.length === 0) continue;
+
+        // Auto-generate alt text from product + variant name
+        const altText = productName && variant.name
+          ? `${productName} - ${variant.name}`
+          : variant.name;
 
         // Build final images: upload pending files, keep existing URLs
         const finalImages = await Promise.all(
@@ -235,9 +297,9 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
               if (!response.ok) throw new Error("Upload failed");
               const data = await response.json();
               URL.revokeObjectURL(pendingFile.previewUrl);
-              return { url: data.path, altText: img.altText };
+              return { url: data.path, altText };
             }
-            return { url: img.url, altText: img.altText };
+            return { url: img.url, altText };
           })
         );
 
@@ -248,11 +310,23 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
           variantId: variant.id,
           images: validImages,
         });
+
+        // Update local state with real URLs so images stay visible
+        updatedVariants[vi] = {
+          ...variant,
+          images: validImages.map((img, i) => ({
+            id: variant.images[i]?.id ?? "",
+            url: img.url,
+            altText: img.altText,
+            order: i,
+          })),
+        };
       }
 
-      // Clear all pending files
+      // Update variants with real URLs, then clear pending files
+      onVariantsChange(updatedVariants);
       setPendingFilesPerVariant(new Map());
-    }, [variants, pendingFilesPerVariant]);
+    }, [variants, pendingFilesPerVariant, productName, onVariantsChange]);
 
     useImperativeHandle(ref, () => ({
       uploadAllVariantImages,
@@ -534,123 +608,152 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
                 <span className="text-sm text-muted-foreground">of</span>
                 <span className="text-sm text-muted-foreground tabular-nums">{variants.length}</span>
               </div>
-              <Field>
-                <FormHeading htmlFor={`variant-name-${selectedVariant.id}`} label="Variant Name" required />
-                <Input
-                  id={`variant-name-${selectedVariant.id}`}
-                  value={selectedVariant.name}
-                  onChange={(e) =>
-                    handleUpdateVariant(selectedVariant.id, "name", e.target.value)
-                  }
-                  onBlur={() => handleSaveVariant(selectedVariant)}
-                />
-              </Field>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-x-12">
+                {/* Left: Name, Weight/Stock, Purchase Options */}
+                <div className="space-y-6">
+                  <Field>
+                    <FormHeading htmlFor={`variant-name-${selectedVariant.id}`} label="Variant Name" required />
+                    <Input
+                      id={`variant-name-${selectedVariant.id}`}
+                      value={selectedVariant.name}
+                      onChange={(e) =>
+                        handleUpdateVariant(selectedVariant.id, "name", e.target.value)
+                      }
+                      onBlur={() => handleSaveVariant(selectedVariant)}
+                    />
+                  </Field>
 
-              <StackedFieldPair>
-                <Field className="flex-1">
-                  <FormHeading htmlFor={`variant-weight-${selectedVariant.id}`} label="Weight" />
-                  <Input
-                    id={`variant-weight-${selectedVariant.id}`}
-                    type="number"
-                    value={selectedVariant.weight}
-                    onChange={(e) =>
-                      handleUpdateVariant(
-                        selectedVariant.id,
-                        "weight",
-                        parseInt(e.target.value) || 0
-                      )
-                    }
-                    onBlur={() => handleSaveVariant(selectedVariant)}
-                  />
-                </Field>
-                <Field className="flex-1">
-                  <FormHeading htmlFor={`variant-stock-${selectedVariant.id}`} label="Stock Quantity" required />
-                  <Input
-                    id={`variant-stock-${selectedVariant.id}`}
-                    type="number"
-                    value={selectedVariant.stockQuantity}
-                    onChange={(e) =>
-                      handleUpdateVariant(
-                        selectedVariant.id,
-                        "stockQuantity",
-                        parseInt(e.target.value) || 0
-                      )
-                    }
-                    onBlur={() => handleSaveVariant(selectedVariant)}
-                  />
-                </Field>
-              </StackedFieldPair>
+                  <StackedFieldPair>
+                    <Field className="flex-1">
+                      <FormHeading htmlFor={`variant-weight-${selectedVariant.id}`} label="Weight" />
+                      <Input
+                        id={`variant-weight-${selectedVariant.id}`}
+                        type="number"
+                        value={selectedVariant.weight}
+                        onChange={(e) =>
+                          handleUpdateVariant(
+                            selectedVariant.id,
+                            "weight",
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                        onBlur={() => handleSaveVariant(selectedVariant)}
+                      />
+                    </Field>
+                    <Field className="flex-1">
+                      <FormHeading htmlFor={`variant-stock-${selectedVariant.id}`} label="Stock Quantity" required />
+                      <Input
+                        id={`variant-stock-${selectedVariant.id}`}
+                        type="number"
+                        value={selectedVariant.stockQuantity}
+                        onChange={(e) =>
+                          handleUpdateVariant(
+                            selectedVariant.id,
+                            "stockQuantity",
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                        onBlur={() => handleSaveVariant(selectedVariant)}
+                      />
+                    </Field>
+                  </StackedFieldPair>
 
-              {/* Variant Images */}
-              <ImageListField
-                label="Variant Images"
-                images={selectedVariant.images.map((img) => ({
-                  url: img.url,
-                  alt: img.altText,
-                }))}
-                onChange={(newImages) =>
-                  handleVariantImagesChange(selectedVariant.id, newImages)
-                }
-                pendingFiles={getPendingFilesForVariant(selectedVariant.id)}
-                onFileSelect={(index, file, previewUrl) =>
-                  handleVariantImageFileSelect(
-                    selectedVariant.id,
-                    index,
-                    file,
-                    previewUrl
-                  )
-                }
-                onPendingRemove={(index) =>
-                  handleVariantImagePendingRemove(selectedVariant.id, index)
-                }
-                maxImages={5}
-                previewHeight="h-24"
-              />
+                  {/* Purchase Options */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <FormHeading label="Purchase Options" />
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddOption(selectedVariant.id, PurchaseType.ONE_TIME)}
+                          disabled={isSaving}
+                        >
+                          + One-time
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddOption(selectedVariant.id, PurchaseType.SUBSCRIPTION)}
+                          disabled={isSaving}
+                        >
+                          + Subscription
+                        </Button>
+                      </div>
+                    </div>
 
-              {/* Purchase Options */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <FormHeading label="Purchase Options" />
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAddOption(selectedVariant.id, PurchaseType.ONE_TIME)}
-                      disabled={isSaving}
-                    >
-                      + One-time
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAddOption(selectedVariant.id, PurchaseType.SUBSCRIPTION)}
-                      disabled={isSaving}
-                    >
-                      + Subscription
-                    </Button>
+                    {selectedVariant.purchaseOptions.length === 0 ? (
+                      <div className="text-center py-4 border border-dashed rounded text-sm text-muted-foreground">
+                        No purchase options. Add a one-time or subscription option.
+                      </div>
+                    ) : (
+                      <div className="divide-y">
+                        {selectedVariant.purchaseOptions.map((opt) => (
+                          <PurchaseOptionRow
+                            key={opt.id}
+                            option={opt}
+                            variantId={selectedVariant.id}
+                            onUpdate={handleUpdateOption}
+                            onDelete={handleDeleteOption}
+                            isSaving={isSaving}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {selectedVariant.purchaseOptions.length === 0 ? (
-                  <div className="text-center py-4 border border-dashed rounded text-sm text-muted-foreground">
-                    No purchase options. Add a one-time or subscription option.
-                  </div>
-                ) : (
-                  <div className="divide-y">
-                    {selectedVariant.purchaseOptions.map((opt) => (
-                      <PurchaseOptionRow
-                        key={opt.id}
-                        option={opt}
-                        variantId={selectedVariant.id}
-                        onUpdate={handleUpdateOption}
-                        onDelete={handleDeleteOption}
-                        isSaving={isSaving}
-                      />
-                    ))}
-                  </div>
-                )}
+                {/* Right: Images (full 50%) */}
+                <div className="space-y-4">
+                  <FormHeading label="Product Images" />
+                  <MultiImageUpload
+                    images={selectedVariant.images.map((img, i) => {
+                      const pending = getPendingFilesForVariant(selectedVariant.id).get(i);
+                      const alt = productName && selectedVariant.name
+                        ? `${productName} - ${selectedVariant.name}`
+                        : img.altText;
+                      return {
+                        url: img.url,
+                        alt,
+                        previewUrl: pending?.previewUrl,
+                        pendingFile: pending?.file,
+                      };
+                    })}
+                    onImageSelect={(index, file) => {
+                      const previewUrl = URL.createObjectURL(file);
+                      handleVariantImageFileSelect(selectedVariant.id, index, file, previewUrl);
+                    }}
+                    onRemove={async (index) => {
+                      handleVariantImagePendingRemove(selectedVariant.id, index);
+                      const remaining = selectedVariant.images.filter((_, i) => i !== index);
+                      const newImages = remaining.map((img) => ({ url: img.url, alt: img.altText }));
+                      handleVariantImagesChange(selectedVariant.id, newImages);
+
+                      // Persist deletion to DB if images are saved
+                      const savedImages = remaining.filter((img) => img.url && !img.url.startsWith("blob:"));
+                      if (savedImages.length > 0 || remaining.length === 0) {
+                        await saveVariantImages({
+                          variantId: selectedVariant.id,
+                          images: savedImages.map((img) => ({ url: img.url, altText: img.altText })),
+                        });
+                      }
+                    }}
+                    onAdd={() => {
+                      const newImages = [
+                        ...selectedVariant.images.map((img) => ({ url: img.url, alt: img.altText })),
+                        { url: "", alt: "" },
+                      ];
+                      handleVariantImagesChange(selectedVariant.id, newImages);
+                    }}
+                    onReorder={(fromIndex, toIndex) => {
+                      handleImageReorder(selectedVariant.id, fromIndex, toIndex);
+                    }}
+                    maxImages={6}
+                    columns={3}
+                  />
+                </div>
               </div>
             </TabsContent>
           )}
