@@ -702,7 +702,6 @@ npm run seed                  # Seed database
 # Utilities
 npm run create-admin          # Create admin user
 npm run setup                 # Initial setup
-npm run dedupe:subs           # Deduplicate subscriptions
 ```
 
 ---
