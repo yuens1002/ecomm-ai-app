@@ -304,7 +304,7 @@ export function ShoppingCart() {
         </SheetHeader>
 
         {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-6 py-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
               <ShoppingCartIcon className="w-16 h-16 text-text-muted mb-4" />
@@ -432,7 +432,7 @@ export function ShoppingCart() {
                           />
                         </ButtonGroup>
                       )}
-                      <span className="text-right flex items-center">
+                      <span className="text-right flex items-center shrink-0 ml-auto whitespace-nowrap">
                         {item.quantity > 1 && (
                           <span className="text-sm font-medium text-muted-foreground pr-4">
                             ×{item.quantity}
