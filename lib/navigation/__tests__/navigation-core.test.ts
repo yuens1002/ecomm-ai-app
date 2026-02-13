@@ -291,16 +291,16 @@ describe("navigation-core", () => {
     describe("Product Edit - Dynamic productId", () => {
       it("should match product edit view regardless of product id value", () => {
         const result1 = resolveRoute(
-          "/admin/products",
-          new URLSearchParams("view=edit&id=prod_abc123")
+          "/admin/products/prod_abc123",
+          new URLSearchParams()
         );
         const result2 = resolveRoute(
-          "/admin/products",
-          new URLSearchParams("view=edit&id=prod_xyz789")
+          "/admin/products/prod_xyz789",
+          new URLSearchParams()
         );
         const result3 = resolveRoute(
-          "/admin/products",
-          new URLSearchParams("view=edit&id=cmkvd9abc0001jtxp1234abcd")
+          "/admin/products/cmkvd9abc0001jtxp1234abcd",
+          new URLSearchParams()
         );
 
         expect(result1?.route.id).toBe("admin.products.edit");
@@ -312,18 +312,18 @@ describe("navigation-core", () => {
         // Product edit has parentId: admin.products.coffees for proper breadcrumb
         // The actual product name is added via BreadcrumbContext
         const result = resolveRoute(
-          "/admin/products",
-          new URLSearchParams("view=edit&id=prod_abc123")
+          "/admin/products/prod_abc123",
+          new URLSearchParams()
         );
         expect(result?.route.id).toBe("admin.products.edit");
         expect(result?.route.parentId).toBe("admin.products.coffees");
       });
 
       it("should still be under admin.products prefix match for nav highlighting", () => {
-        // Even though parentId is null, prefix matching ensures Products group is highlighted
+        // prefix-nested matching ensures Products group is highlighted
         const result = resolveRoute(
-          "/admin/products",
-          new URLSearchParams("view=edit&id=prod_abc123")
+          "/admin/products/prod_abc123",
+          new URLSearchParams()
         );
         expect(result?.route.pathname).toBe("/admin/products");
         // The Products nav group uses prefix matching on /admin/products
