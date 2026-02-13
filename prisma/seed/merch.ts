@@ -302,8 +302,6 @@ export async function seedMerch(prisma: PrismaClient) {
         details: item.details
           ? (item.details as unknown as Prisma.InputJsonValue)
           : Prisma.JsonNull,
-        // Delete existing images so placeholders are used
-        images: { deleteMany: {} },
         categories: { deleteMany: {}, create: [primaryCategory] },
         // Do not delete/recreate variants on update to avoid breaking
         // existing OrderItem.purchaseOptionId foreign keys.

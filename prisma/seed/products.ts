@@ -1381,8 +1381,6 @@ export async function seedProducts(prisma: PrismaClient) {
           featuredOrder: productInput.featuredOrder,
           type: productType,
           roastLevel,
-          // Delete existing images so placeholders are used
-          images: { deleteMany: {} },
           categories: {
             deleteMany: {},
             create: newCategories,

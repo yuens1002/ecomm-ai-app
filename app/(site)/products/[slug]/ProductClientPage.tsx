@@ -201,13 +201,15 @@ export default function ProductClientPage({
 
   // Merch products use culture images (cups, equipment), coffee products use bean images
   const placeholderCategory = product.type === ProductType.MERCH ? "culture" : "beans";
+  const variantImages = selectedVariant.images ?? [];
+  const firstImage = variantImages[0];
   const displayImage =
-    product.images[0]?.url || getPlaceholderImage(product.name, 800, placeholderCategory);
+    firstImage?.url || getPlaceholderImage(product.name, 800, placeholderCategory);
   const altText =
-    product.images[0]?.altText || (product.type === ProductType.MERCH ? product.name : `A bag of ${product.name} coffee`);
+    firstImage?.altText || (product.type === ProductType.MERCH ? product.name : `A bag of ${product.name} coffee`);
   const galleryImages =
-    product.images.length > 0
-      ? product.images.map((img) => ({ url: img.url, alt: img.altText }))
+    variantImages.length > 0
+      ? variantImages.map((img) => ({ url: img.url, alt: img.altText }))
       : [{ url: displayImage, alt: altText }];
   const showThumbs = galleryImages.length > 1;
 

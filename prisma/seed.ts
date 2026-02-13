@@ -526,15 +526,6 @@ async function main() {
         isOrganic: false,
         isFeatured: true,
         featuredOrder: 1,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/1A1110/FFFFFF.png?text=Midnight+Espresso",
-              altText: "Midnight Espresso Blend bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -557,6 +548,15 @@ async function main() {
                     // // discountMessage: "Save 10%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
+                  },
+                ],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/1A1110/FFFFFF.png?text=Midnight+Espresso",
+                    altText: "Midnight Espresso Blend bag",
+                    order: 1,
                   },
                 ],
               },
@@ -601,15 +601,6 @@ async function main() {
         tastingNotes: ["Bittersweet Chocolate", "Roasted Almond", "Smoky"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/2B1810/FFFFFF.png?text=Italian+Roast",
-              altText: "Italian Roast bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -618,6 +609,15 @@ async function main() {
               stockQuantity: 120,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2100 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/2B1810/FFFFFF.png?text=Italian+Roast",
+                    altText: "Italian Roast bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -642,15 +642,6 @@ async function main() {
         tastingNotes: ["Earthy", "Dark Chocolate", "Cedar"],
         isOrganic: true,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/3A2416/FFFFFF.png?text=Sumatra",
-              altText: "Sumatra Mandheling bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -659,6 +650,15 @@ async function main() {
               stockQuantity: 85,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2400 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/3A2416/FFFFFF.png?text=Sumatra",
+                    altText: "Sumatra Mandheling bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -683,15 +683,6 @@ async function main() {
         tastingNotes: ["Dark Chocolate", "Charred Wood", "Smooth"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/1C1410/FFFFFF.png?text=French+Roast",
-              altText: "French Roast bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -700,6 +691,15 @@ async function main() {
               stockQuantity: 95,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2050 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/1C1410/FFFFFF.png?text=French+Roast",
+                    altText: "French Roast bag",
+                    order: 1,
+                  },
+                ],
               },
             },
             {
@@ -732,15 +732,6 @@ async function main() {
         tastingNotes: ["Dark Berry", "Cocoa", "Earthy"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/3D2820/FFFFFF.png?text=PNG+Sigri",
-              altText: "Papua New Guinea Sigri bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -749,6 +740,15 @@ async function main() {
               stockQuantity: 45,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2650 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/3D2820/FFFFFF.png?text=PNG+Sigri",
+                    altText: "Papua New Guinea Sigri bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -774,15 +774,6 @@ async function main() {
         tastingNotes: ["Milk Chocolate", "Toasted Nuts", "Caramel"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/4A3426/FFFFFF.png?text=Decaf+Colombian",
-              altText: "Decaf Colombian bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -798,6 +789,15 @@ async function main() {
                     // discountMessage: "Save 5%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
+                  },
+                ],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/4A3426/FFFFFF.png?text=Decaf+Colombian",
+                    altText: "Decaf Colombian bag",
+                    order: 1,
                   },
                 ],
               },
@@ -826,15 +826,6 @@ async function main() {
         isOrganic: false,
         isFeatured: true,
         featuredOrder: 2,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/8B5A3C/FFFFFF.png?text=Breakfast+Blend",
-              altText: "Breakfast Blend bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -857,6 +848,15 @@ async function main() {
                     // // discountMessage: "Save 10%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
+                  },
+                ],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/8B5A3C/FFFFFF.png?text=Breakfast+Blend",
+                    altText: "Breakfast Blend bag",
+                    order: 1,
                   },
                 ],
               },
@@ -902,15 +902,6 @@ async function main() {
         tastingNotes: ["Caramel", "Cocoa", "Sweet"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/7A5230/FFFFFF.png?text=Colombian",
-              altText: "Colombian Supremo bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -919,6 +910,15 @@ async function main() {
               stockQuantity: 130,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2100 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/7A5230/FFFFFF.png?text=Colombian",
+                    altText: "Colombian Supremo bag",
+                    order: 1,
+                  },
+                ],
               },
             },
             {
@@ -951,15 +951,6 @@ async function main() {
         isOrganic: true,
         isFeatured: true,
         featuredOrder: 3,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/6B4423/FFFFFF.png?text=Guatemala",
-              altText: "Guatemalan Antigua bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -982,6 +973,15 @@ async function main() {
                     // // discountMessage: "Save 10%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
+                  },
+                ],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/6B4423/FFFFFF.png?text=Guatemala",
+                    altText: "Guatemalan Antigua bag",
+                    order: 1,
                   },
                 ],
               },
@@ -1008,15 +1008,6 @@ async function main() {
         tastingNotes: ["Brown Sugar", "Stone Fruit", "Crisp"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/8A5C3A/FFFFFF.png?text=Costa+Rica",
-              altText: "Costa Rica Tarrazú bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1025,6 +1016,15 @@ async function main() {
               stockQuantity: 90,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2250 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/8A5C3A/FFFFFF.png?text=Costa+Rica",
+                    altText: "Costa Rica Tarrazú bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1048,15 +1048,6 @@ async function main() {
         tastingNotes: ["Nutty", "Chocolate", "Low Acidity"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/9B6B47/FFFFFF.png?text=Brazil+Santos",
-              altText: "Brazil Santos bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1065,6 +1056,15 @@ async function main() {
               stockQuantity: 140,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 1950 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/9B6B47/FFFFFF.png?text=Brazil+Santos",
+                    altText: "Brazil Santos bag",
+                    order: 1,
+                  },
+                ],
               },
             },
             {
@@ -1097,15 +1097,6 @@ async function main() {
         tastingNotes: ["Toffee", "Red Apple", "Citrus Zest"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/7E5835/FFFFFF.png?text=Honduras",
-              altText: "Honduras Marcala bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1114,6 +1105,15 @@ async function main() {
               stockQuantity: 70,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2150 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/7E5835/FFFFFF.png?text=Honduras",
+                    altText: "Honduras Marcala bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1137,15 +1137,6 @@ async function main() {
         tastingNotes: ["Cocoa", "Roasted Nuts", "Spice"],
         isOrganic: true,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/8E6240/FFFFFF.png?text=Mexican+Altura",
-              altText: "Mexican Altura bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1154,6 +1145,15 @@ async function main() {
               stockQuantity: 80,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2200 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/8E6240/FFFFFF.png?text=Mexican+Altura",
+                    altText: "Mexican Altura bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1177,15 +1177,6 @@ async function main() {
         tastingNotes: ["Vanilla", "Caramel", "Floral"],
         isOrganic: true,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/8A5E3C/FFFFFF.png?text=Peruvian+Organic",
-              altText: "Peruvian Organic bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1201,6 +1192,15 @@ async function main() {
                     // discountMessage: "Save 5%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
+                  },
+                ],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/8A5E3C/FFFFFF.png?text=Peruvian+Organic",
+                    altText: "Peruvian Organic bag",
+                    order: 1,
                   },
                 ],
               },
@@ -1226,15 +1226,6 @@ async function main() {
         tastingNotes: ["Milk Chocolate", "Orange Marmalade", "Creamy"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/7C5638/FFFFFF.png?text=Nicaragua",
-              altText: "Nicaraguan SHG bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1243,6 +1234,15 @@ async function main() {
               stockQuantity: 75,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2250 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/7C5638/FFFFFF.png?text=Nicaragua",
+                    altText: "Nicaraguan SHG bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1267,15 +1267,6 @@ async function main() {
         tastingNotes: ["Tropical Fruit", "Honey", "Wine-like"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/8D6142/FFFFFF.png?text=El+Salvador",
-              altText: "El Salvador Pacamara bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1284,6 +1275,15 @@ async function main() {
               stockQuantity: 50,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2550 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/8D6142/FFFFFF.png?text=El+Salvador",
+                    altText: "El Salvador Pacamara bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1310,15 +1310,6 @@ async function main() {
         isOrganic: true,
         isFeatured: true,
         featuredOrder: 4,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/B8956A/FFFFFF.png?text=Yirgacheffe",
-              altText: "Ethiopian Yirgacheffe bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1341,6 +1332,15 @@ async function main() {
                     // // discountMessage: "Save 10%",
                     billingInterval: BillingInterval.MONTH,
                     billingIntervalCount: 1,
+                  },
+                ],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/B8956A/FFFFFF.png?text=Yirgacheffe",
+                    altText: "Ethiopian Yirgacheffe bag",
+                    order: 1,
                   },
                 ],
               },
@@ -1367,15 +1367,6 @@ async function main() {
         isOrganic: false,
         isFeatured: true,
         featuredOrder: 5,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/A67C52/FFFFFF.png?text=Kenya+AA",
-              altText: "Kenya AA bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1384,6 +1375,15 @@ async function main() {
               stockQuantity: 85,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2650 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/A67C52/FFFFFF.png?text=Kenya+AA",
+                    altText: "Kenya AA bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1407,15 +1407,6 @@ async function main() {
         tastingNotes: ["Blueberry", "Jasmine", "Dark Chocolate"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/B89968/FFFFFF.png?text=Sidamo",
-              altText: "Ethiopian Sidamo bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1424,6 +1415,15 @@ async function main() {
               stockQuantity: 90,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2400 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/B89968/FFFFFF.png?text=Sidamo",
+                    altText: "Ethiopian Sidamo bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1448,15 +1448,6 @@ async function main() {
         tastingNotes: ["Red Fruit", "Caramel", "Floral"],
         isOrganic: true,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/AA7F5A/FFFFFF.png?text=Rwanda",
-              altText: "Rwanda Bourbon bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1465,6 +1456,15 @@ async function main() {
               stockQuantity: 60,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2500 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/AA7F5A/FFFFFF.png?text=Rwanda",
+                    altText: "Rwanda Bourbon bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1488,15 +1488,6 @@ async function main() {
         tastingNotes: ["Cherry", "Cocoa Nibs", "Tangy"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/A8825E/FFFFFF.png?text=Burundi",
-              altText: "Burundi Kayanza bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1505,6 +1496,15 @@ async function main() {
               stockQuantity: 55,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2450 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/A8825E/FFFFFF.png?text=Burundi",
+                    altText: "Burundi Kayanza bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1529,15 +1529,6 @@ async function main() {
         tastingNotes: ["Black Currant", "Citrus", "Winey"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/AF8660/FFFFFF.png?text=Tanzania",
-              altText: "Tanzania Peaberry bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1546,6 +1537,15 @@ async function main() {
               stockQuantity: 45,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2600 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/AF8660/FFFFFF.png?text=Tanzania",
+                    altText: "Tanzania Peaberry bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1569,15 +1569,6 @@ async function main() {
         tastingNotes: ["Jasmine", "Tropical Fruit", "Honey"],
         isOrganic: true,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/C9A676/FFFFFF.png?text=Panama+Geisha",
-              altText: "Panama Geisha bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1586,6 +1577,15 @@ async function main() {
               stockQuantity: 25,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 4500 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/C9A676/FFFFFF.png?text=Panama+Geisha",
+                    altText: "Panama Geisha bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1609,15 +1609,6 @@ async function main() {
         tastingNotes: ["Peach", "Lavender", "Brown Sugar"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/BDA279/FFFFFF.png?text=Colombia+Geisha",
-              altText: "Colombia Geisha bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1626,6 +1617,15 @@ async function main() {
               stockQuantity: 30,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 3800 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/BDA279/FFFFFF.png?text=Colombia+Geisha",
+                    altText: "Colombia Geisha bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1649,15 +1649,6 @@ async function main() {
         tastingNotes: ["Apricot", "Honey", "Syrupy"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/B8986E/FFFFFF.png?text=Honey+Process",
-              altText: "Costa Rica Honey Process bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1666,6 +1657,15 @@ async function main() {
               stockQuantity: 65,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2550 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/B8986E/FFFFFF.png?text=Honey+Process",
+                    altText: "Costa Rica Honey Process bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1689,15 +1689,6 @@ async function main() {
         tastingNotes: ["Apple", "Almond", "Clean"],
         isOrganic: true,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/B39471/FFFFFF.png?text=Huehuetenango",
-              altText: "Guatemala Huehuetenango bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1706,6 +1697,15 @@ async function main() {
               stockQuantity: 70,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2400 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/B39471/FFFFFF.png?text=Huehuetenango",
+                    altText: "Guatemala Huehuetenango bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1730,15 +1730,6 @@ async function main() {
         tastingNotes: ["Milk Chocolate", "Orange", "Silky"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/B5906C/FFFFFF.png?text=Bolivia",
-              altText: "Bolivia Caranavi bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1747,6 +1738,15 @@ async function main() {
               stockQuantity: 40,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2450 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/B5906C/FFFFFF.png?text=Bolivia",
+                    altText: "Bolivia Caranavi bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1772,15 +1772,6 @@ async function main() {
         tastingNotes: ["Dried Fruit", "Chocolate", "Spice"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/C0A078/FFFFFF.png?text=Yemen+Mocha",
-              altText: "Yemen Mocha bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1789,6 +1780,15 @@ async function main() {
               stockQuantity: 20,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 5200 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/C0A078/FFFFFF.png?text=Yemen+Mocha",
+                    altText: "Yemen Mocha bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1815,15 +1815,6 @@ async function main() {
         tastingNotes: ["Earthy", "Tobacco", "Spice"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/A88C67/FFFFFF.png?text=Monsooned+Malabar",
-              altText: "India Monsooned Malabar bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1832,6 +1823,15 @@ async function main() {
               stockQuantity: 50,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 2350 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/A88C67/FFFFFF.png?text=Monsooned+Malabar",
+                    altText: "India Monsooned Malabar bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],
@@ -1856,15 +1856,6 @@ async function main() {
         tastingNotes: ["Brown Sugar", "Macadamia Nut", "Clean"],
         isOrganic: false,
         isFeatured: false,
-        images: {
-          create: [
-            {
-              url: "https://placehold.co/600x400/D4AF7A/FFFFFF.png?text=Hawaiian+Kona",
-              altText: "Hawaiian Kona bag",
-              order: 1,
-            },
-          ],
-        },
         variants: {
           create: [
             {
@@ -1873,6 +1864,15 @@ async function main() {
               stockQuantity: 35,
               purchaseOptions: {
                 create: [{ type: PurchaseType.ONE_TIME, priceInCents: 4800 }],
+              },
+              images: {
+                create: [
+                  {
+                    url: "https://placehold.co/600x400/D4AF7A/FFFFFF.png?text=Hawaiian+Kona",
+                    altText: "Hawaiian Kona bag",
+                    order: 1,
+                  },
+                ],
               },
             },
           ],

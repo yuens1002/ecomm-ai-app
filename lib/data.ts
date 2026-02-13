@@ -5,17 +5,17 @@ import { prisma } from "./prisma";
 // --- COMMON INCLUDE OBJECT ---
 // We define this once to ensure all product cards get the same minimal data for rendering.
 const productCardIncludes = {
-  images: {
-    orderBy: { order: "asc" as const },
-    take: 1, // Only need the first image
-  },
   variants: {
-    orderBy: { name: "asc" as const },
+    orderBy: { order: "asc" as const },
     include: {
+      images: {
+        orderBy: { order: "asc" as const },
+        take: 1,
+      },
       purchaseOptions: {
         where: { type: "ONE_TIME" as const },
         orderBy: { priceInCents: "asc" as const },
-        take: 1, // Only need one price
+        take: 1,
       },
     },
   },
@@ -73,12 +73,10 @@ export async function getProductBySlug(productSlug?: string | null) {
         isDisabled: false,
       },
       include: {
-        images: {
-          orderBy: { order: "asc" },
-        },
         variants: {
           orderBy: { order: "asc" },
           include: {
+            images: { orderBy: { order: "asc" } },
             purchaseOptions: true,
           },
         },

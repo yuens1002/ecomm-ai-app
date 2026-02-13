@@ -57,12 +57,6 @@ export async function getProductAddOns(
             slug: true,
             type: true,
             description: true,
-            images: {
-              select: {
-                url: true,
-              },
-              take: 1,
-            },
             categories: {
               where: {
                 isPrimary: true,
@@ -84,6 +78,11 @@ export async function getProductAddOns(
             name: true,
             weight: true,
             stockQuantity: true,
+            images: {
+              select: { url: true },
+              orderBy: { order: "asc" as const },
+              take: 1,
+            },
             purchaseOptions: {
               where: {
                 type: "ONE_TIME",
@@ -143,7 +142,7 @@ export async function getProductAddOns(
           addOn.discountedPriceInCents ?? purchaseOption.priceInCents,
         // Add-ons are merch products, use "culture" category for coffee lifestyle images
         imageUrl:
-          addOn.addOnProduct.images[0]?.url ||
+          variant.images[0]?.url ||
           getPlaceholderImage(addOn.addOnProduct.name, 400, "culture"),
         categorySlug: addOn.addOnProduct.categories[0]?.category.slug || "shop",
       };

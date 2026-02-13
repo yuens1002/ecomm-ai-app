@@ -69,7 +69,10 @@ export async function createVariant(input: unknown): Promise<ActionResult> {
         stockQuantity,
         order: (maxOrder._max.order ?? -1) + 1,
       },
-      include: { purchaseOptions: true },
+      include: {
+        purchaseOptions: true,
+        images: { orderBy: { order: "asc" } },
+      },
     });
 
     const responseVariant = {
@@ -114,7 +117,10 @@ export async function updateVariant(
     const variant = await prisma.productVariant.update({
       where: { id: variantId },
       data: { name, weight: weightInGrams, stockQuantity },
-      include: { purchaseOptions: true },
+      include: {
+        purchaseOptions: true,
+        images: { orderBy: { order: "asc" } },
+      },
     });
 
     const responseVariant = {
@@ -176,5 +182,55 @@ export async function reorderVariants(input: unknown): Promise<ActionResult> {
   } catch (error) {
     console.error("Error reordering variants:", error);
     return { ok: false, error: "Failed to reorder variants" };
+  }
+}
+
+const saveVariantImagesSchema = z.object({
+  variantId: z.string().min(1),
+  images: z.array(
+    z.object({
+      url: z.string().min(1),
+      altText: z.string(),
+    })
+  ),
+});
+
+export async function saveVariantImages(
+  input: unknown
+): Promise<ActionResult> {
+  await requireAdmin();
+
+  const parsed = saveVariantImagesSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues
+        .map((i) => `${i.path.join(".")}: ${i.message}`)
+        .join("; "),
+    };
+  }
+
+  const { variantId, images } = parsed.data;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.variantImage.deleteMany({ where: { variantId } });
+      if (images.length > 0) {
+        await tx.variantImage.createMany({
+          data: images.map((img, index) => ({
+            variantId,
+            url: img.url,
+            altText: img.altText,
+            order: index,
+          })),
+        });
+      }
+    });
+
+    revalidatePath("/admin/products");
+    return { ok: true, data: null };
+  } catch (error) {
+    console.error("Error saving variant images:", error);
+    return { ok: false, error: "Failed to save variant images" };
   }
 }

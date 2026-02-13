@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle, useCallback } from "react";
 import { PurchaseType, BillingInterval } from "@prisma/client";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupText,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -21,22 +27,21 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   FieldSet,
   FieldLegend,
-  FieldGroup,
   FieldDescription,
   Field,
 } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/forms/FormHeading";
+import { ImageListField } from "@/app/admin/_components/cms/fields/ImageListField";
 import { StackedFieldPair } from "./shared/StackedFieldPair";
 import {
   Plus,
-  Trash2,
-  ChevronUp,
-  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -44,6 +49,7 @@ import {
   updateVariant,
   deleteVariant,
   reorderVariants,
+  saveVariantImages,
 } from "../actions/variants";
 import {
   createOption,
@@ -60,13 +66,26 @@ export interface PurchaseOptionData {
   billingIntervalCount: number | null;
 }
 
+export interface VariantImageData {
+  id: string;
+  url: string;
+  altText: string;
+  order: number;
+}
+
 export interface VariantData {
   id: string;
   name: string;
   weight: number;
   stockQuantity: number;
   order: number;
+  images: VariantImageData[];
   purchaseOptions: PurchaseOptionData[];
+}
+
+interface PendingFile {
+  file: File;
+  previewUrl: string;
 }
 
 interface VariantsSectionProps {
@@ -75,18 +94,171 @@ interface VariantsSectionProps {
   onVariantsChange: (variants: VariantData[]) => void;
 }
 
-export function VariantsSection({
-  productId,
-  variants,
-  onVariantsChange,
-}: VariantsSectionProps) {
-  const { toast } = useToast();
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
+export interface VariantsSectionRef {
+  uploadAllVariantImages: () => Promise<void>;
+}
 
-  const selectedVariant = variants[selectedIndex] ?? null;
+export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionProps>(
+  function VariantsSection({
+    productId,
+    variants,
+    onVariantsChange,
+  }, ref) {
+    const { toast } = useToast();
+    const [selectedIndex, setSelectedIndex] = useState(0);
+    const [isSaving, setIsSaving] = useState(false);
+    const tabsListRef = useRef<HTMLDivElement>(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+    const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  const handleAddVariant = async () => {
+    // Per-variant pending image files: variantId → (imageIndex → PendingFile)
+    const [pendingFilesPerVariant, setPendingFilesPerVariant] = useState<
+      Map<string, Map<number, PendingFile>>
+    >(new Map());
+
+    const selectedVariant = variants[selectedIndex] ?? null;
+    const pendingDeleteVariant = pendingDeleteId ? variants.find((v) => v.id === pendingDeleteId) : null;
+
+  const updateScrollState = () => {
+    const el = tabsListRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  };
+
+  useEffect(() => {
+    const el = tabsListRef.current;
+    if (!el) return;
+    updateScrollState();
+    el.addEventListener("scroll", updateScrollState);
+    return () => el.removeEventListener("scroll", updateScrollState);
+  }, [variants.length]);
+
+  // Auto-scroll active tab into view
+  useEffect(() => {
+    const list = tabsListRef.current;
+    if (!list) return;
+    const activeTab = list.querySelector<HTMLElement>("[data-state=active]");
+    if (activeTab) {
+      activeTab.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+    }
+  }, [selectedIndex]);
+
+    const scrollTabs = (direction: "left" | "right") => {
+      const el = tabsListRef.current;
+      if (!el) return;
+      el.scrollBy({ left: direction === "left" ? -120 : 120, behavior: "smooth" });
+    };
+
+    // --- Variant image handlers ---
+
+    const getPendingFilesForVariant = useCallback(
+      (variantId: string): Map<number, PendingFile> => {
+        return pendingFilesPerVariant.get(variantId) ?? new Map();
+      },
+      [pendingFilesPerVariant]
+    );
+
+    const handleVariantImageFileSelect = useCallback(
+      (variantId: string, index: number, file: File, previewUrl: string) => {
+        setPendingFilesPerVariant((prev) => {
+          const next = new Map(prev);
+          const variantFiles = new Map(next.get(variantId) ?? new Map());
+          // Clean up old preview URL
+          const old = variantFiles.get(index);
+          if (old && old.previewUrl !== previewUrl) {
+            URL.revokeObjectURL(old.previewUrl);
+          }
+          variantFiles.set(index, { file, previewUrl });
+          next.set(variantId, variantFiles);
+          return next;
+        });
+      },
+      []
+    );
+
+    const handleVariantImagePendingRemove = useCallback(
+      (variantId: string, index: number) => {
+        setPendingFilesPerVariant((prev) => {
+          const next = new Map(prev);
+          const variantFiles = new Map(next.get(variantId) ?? new Map());
+          const old = variantFiles.get(index);
+          if (old) URL.revokeObjectURL(old.previewUrl);
+          variantFiles.delete(index);
+          next.set(variantId, variantFiles);
+          return next;
+        });
+      },
+      []
+    );
+
+    const handleVariantImagesChange = useCallback(
+      (variantId: string, newImages: Array<{ url: string; alt: string }>) => {
+        const updated = variants.map((v) =>
+          v.id === variantId
+            ? {
+                ...v,
+                images: newImages.map((img, i) => ({
+                  id: v.images[i]?.id ?? "",
+                  url: img.url,
+                  altText: img.alt,
+                  order: i,
+                })),
+              }
+            : v
+        );
+        onVariantsChange(updated);
+      },
+      [variants, onVariantsChange]
+    );
+
+    // Upload all pending variant images and save to DB
+    const uploadAllVariantImages = useCallback(async () => {
+      for (const variant of variants) {
+        const pending = pendingFilesPerVariant.get(variant.id);
+        const hasPending = pending && pending.size > 0;
+
+        if (!hasPending && variant.images.length === 0) continue;
+
+        // Build final images: upload pending files, keep existing URLs
+        const finalImages = await Promise.all(
+          variant.images.map(async (img, index) => {
+            const pendingFile = pending?.get(index);
+            if (pendingFile) {
+              const formData = new FormData();
+              formData.append("file", pendingFile.file);
+              const response = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+              });
+              if (!response.ok) throw new Error("Upload failed");
+              const data = await response.json();
+              URL.revokeObjectURL(pendingFile.previewUrl);
+              return { url: data.path, altText: img.altText };
+            }
+            return { url: img.url, altText: img.altText };
+          })
+        );
+
+        // Filter out empty URLs (unfilled image slots)
+        const validImages = finalImages.filter((img) => img.url);
+
+        await saveVariantImages({
+          variantId: variant.id,
+          images: validImages,
+        });
+      }
+
+      // Clear all pending files
+      setPendingFilesPerVariant(new Map());
+    }, [variants, pendingFilesPerVariant]);
+
+    useImperativeHandle(ref, () => ({
+      uploadAllVariantImages,
+    }), [uploadAllVariantImages]);
+
+    const handleAddVariant = async () => {
     if (!productId) {
       toast({ title: "Save the product first", variant: "destructive" });
       return;
@@ -242,26 +414,14 @@ export function VariantsSection({
     }
   };
 
-  const formatPrice = (cents: number) =>
-    cents ? `$${(cents / 100).toFixed(2)}` : "$0.00";
 
   return (
-    <FieldSet>
-      <div className="flex items-center justify-between">
-        <div>
-          <FieldLegend>Variants &amp; Pricing</FieldLegend>
-          <FieldDescription>
-            Manage product variants with pricing and stock
-          </FieldDescription>
-        </div>
-        <Button
-          type="button"
-          size="sm"
-          onClick={handleAddVariant}
-          disabled={!productId || isSaving}
-        >
-          <Plus className="h-4 w-4 mr-1" /> Add Variant
-        </Button>
+    <FieldSet className="min-w-0">
+      <div>
+        <FieldLegend>Variants &amp; Pricing</FieldLegend>
+        <FieldDescription>
+          Manage product variants with pricing and stock
+        </FieldDescription>
       </div>
 
       {!productId ? (
@@ -273,83 +433,107 @@ export function VariantsSection({
           No variants yet. Add a variant to set up pricing.
         </div>
       ) : (
-        <FieldGroup>
-          {/* Dropdown + Actions Row */}
-          <div className="flex items-center gap-2">
-            <Select
-              value={String(selectedIndex)}
-              onValueChange={(val) => setSelectedIndex(Number(val))}
+        <Tabs
+          value={String(selectedIndex)}
+          onValueChange={(val) => setSelectedIndex(Number(val))}
+        >
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0 aria-disabled:opacity-50"
+              aria-disabled={!canScrollLeft}
+              onClick={() => canScrollLeft && scrollTabs("left")}
             >
-              <SelectTrigger className="flex-1">
-                <SelectValue>
-                  {selectedVariant
-                    ? `${selectedVariant.name}  ·  ${formatPrice(selectedVariant.purchaseOptions[0]?.priceInCents ?? 0)}  ·  ${selectedVariant.stockQuantity} in stock`
-                    : "Select variant"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {variants.map((v, i) => (
-                  <SelectItem key={v.id} value={String(i)}>
-                    {v.name} · {formatPrice(v.purchaseOptions[0]?.priceInCents ?? 0)} · {v.stockQuantity} in stock
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Per-item actions */}
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete variant?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete &quot;{selectedVariant?.name}&quot; and all its purchase options.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => selectedVariant && handleDeleteVariant(selectedVariant.id)}
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <TabsList
+              ref={tabsListRef}
+              className="flex flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {variants.map((v, i) => (
+                <TabsTrigger key={v.id} value={String(i)} className="shrink-0 gap-1.5 pr-1.5">
+                  {v.name}
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className={`rounded-sm p-0.5 hover:bg-foreground/10 ${i === 0 ? "opacity-30 pointer-events-none" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (i > 0) setPendingDeleteId(v.id);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && i > 0) {
+                        e.stopPropagation();
+                        setPendingDeleteId(v.id);
+                      }
+                    }}
                   >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
-            {variants.length > 1 && (
-              <ButtonGroup>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  disabled={selectedIndex === 0}
-                  onClick={() => handleReorder("up")}
-                >
-                  <ChevronUp className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  disabled={selectedIndex === variants.length - 1}
-                  onClick={() => handleReorder("down")}
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </ButtonGroup>
-            )}
+                    <X className="h-3 w-3" />
+                  </span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0"
+              onClick={handleAddVariant}
+              disabled={!productId || isSaving}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0 aria-disabled:opacity-50"
+              aria-disabled={!canScrollRight}
+              onClick={() => canScrollRight && scrollTabs("right")}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Selected variant detail fields */}
           {selectedVariant && (
-            <div className="space-y-6 border rounded-lg p-4">
+            <TabsContent value={String(selectedIndex)} className="space-y-6 border rounded-lg p-4">
+              {/* Actions row */}
+              <div className="flex items-center justify-end gap-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 aria-disabled:opacity-50 aria-disabled:pointer-events-none"
+                  aria-disabled={variants.length <= 1 || selectedIndex === 0}
+                  onClick={() => {
+                    if (variants.length <= 1 || selectedIndex === 0) return;
+                    handleReorder("up");
+                  }}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground tabular-nums">
+                  {selectedIndex + 1}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 aria-disabled:opacity-50 aria-disabled:pointer-events-none"
+                  aria-disabled={variants.length <= 1 || selectedIndex === variants.length - 1}
+                  onClick={() => {
+                    if (variants.length <= 1 || selectedIndex === variants.length - 1) return;
+                    handleReorder("down");
+                  }}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">of</span>
+                <span className="text-sm text-muted-foreground tabular-nums">{variants.length}</span>
+              </div>
               <Field>
                 <FormHeading htmlFor={`variant-name-${selectedVariant.id}`} label="Variant Name" required />
                 <Input
@@ -397,6 +581,32 @@ export function VariantsSection({
                 </Field>
               </StackedFieldPair>
 
+              {/* Variant Images */}
+              <ImageListField
+                label="Variant Images"
+                images={selectedVariant.images.map((img) => ({
+                  url: img.url,
+                  alt: img.altText,
+                }))}
+                onChange={(newImages) =>
+                  handleVariantImagesChange(selectedVariant.id, newImages)
+                }
+                pendingFiles={getPendingFilesForVariant(selectedVariant.id)}
+                onFileSelect={(index, file, previewUrl) =>
+                  handleVariantImageFileSelect(
+                    selectedVariant.id,
+                    index,
+                    file,
+                    previewUrl
+                  )
+                }
+                onPendingRemove={(index) =>
+                  handleVariantImagePendingRemove(selectedVariant.id, index)
+                }
+                maxImages={5}
+                previewHeight="h-24"
+              />
+
               {/* Purchase Options */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -428,7 +638,7 @@ export function VariantsSection({
                     No purchase options. Add a one-time or subscription option.
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="divide-y">
                     {selectedVariant.purchaseOptions.map((opt) => (
                       <PurchaseOptionRow
                         key={opt.id}
@@ -442,13 +652,35 @@ export function VariantsSection({
                   </div>
                 )}
               </div>
-            </div>
+            </TabsContent>
           )}
-        </FieldGroup>
+        </Tabs>
       )}
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete variant?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete &quot;{pendingDeleteVariant?.name}&quot; and all its purchase options.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDeleteId) handleDeleteVariant(pendingDeleteId);
+                setPendingDeleteId(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </FieldSet>
   );
-}
+  }
+);
 
 function PurchaseOptionRow({
   option,
@@ -466,32 +698,34 @@ function PurchaseOptionRow({
   const isSubscription = option.type === PurchaseType.SUBSCRIPTION;
 
   return (
-    <div className="flex items-center gap-3 p-3 border rounded">
+    <div className="flex items-center gap-3 py-3">
       <span className="text-xs font-medium uppercase text-muted-foreground w-16 shrink-0">
         {isSubscription ? "SUB" : "ONE-TIME"}
       </span>
 
       <div className="flex-1 flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-muted-foreground">$</span>
-          <Input
+        <InputGroup className="w-40 h-8">
+          <InputGroupAddon align="inline-start">
+            <InputGroupText>$</InputGroupText>
+          </InputGroupAddon>
+          <InputGroupInput
             type="number"
             step="0.01"
-            className="w-24 h-8"
             defaultValue={(option.priceInCents / 100).toFixed(2)}
             onBlur={(e) => {
               const cents = Math.round(parseFloat(e.target.value) * 100);
-              if (cents > 0) onUpdate(option.id, variantId, { priceInCents: cents });
+              if (cents >= 0) onUpdate(option.id, variantId, { priceInCents: cents });
             }}
           />
-        </div>
+        </InputGroup>
 
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-muted-foreground">Sale $</span>
-          <Input
+        <InputGroup className="w-40 h-8">
+          <InputGroupAddon align="inline-start">
+            <InputGroupText>Sale $</InputGroupText>
+          </InputGroupAddon>
+          <InputGroupInput
             type="number"
             step="0.01"
-            className="w-24 h-8"
             placeholder="—"
             defaultValue={
               option.salePriceInCents
@@ -504,7 +738,7 @@ function PurchaseOptionRow({
               onUpdate(option.id, variantId, { salePriceInCents: cents });
             }}
           />
-        </div>
+        </InputGroup>
 
         {isSubscription && (
           <div className="flex items-center gap-1">
@@ -540,30 +774,16 @@ function PurchaseOptionRow({
         )}
       </div>
 
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete purchase option?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently remove this {isSubscription ? "subscription" : "one-time"} purchase option.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => onDelete(option.id, variantId)}
-              disabled={isSaving}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 shrink-0"
+        onClick={() => onDelete(option.id, variantId)}
+        disabled={isSaving}
+      >
+        <X className="h-4 w-4" />
+      </Button>
     </div>
   );
 }

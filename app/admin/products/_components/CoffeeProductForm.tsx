@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ProductType, RoastLevel } from "@prisma/client";
 import { useToast } from "@/hooks/use-toast";
-import { useMultiImageUpload } from "@/app/admin/_hooks/useImageUpload";
 import { ProductPageLayout } from "./ProductPageLayout";
 import { ProductInfoSection, ProductInfoValues } from "./ProductInfoSection";
-import { VariantsSection, VariantData } from "./VariantsSection";
+import { VariantsSection, VariantData, VariantsSectionRef } from "./VariantsSection";
 import { CoffeeSpecsSection, CoffeeSpecsValues } from "./CoffeeSpecsSection";
 import { CategoriesSection } from "./CategoriesSection";
 import { AddOnsSection } from "./AddOnsSection";
@@ -41,7 +40,6 @@ interface InitialProductData {
   altitude: string | null;
   tastingNotes: string[];
   processing: string | null;
-  images: Array<{ url: string; altText: string; order: number }>;
   categoryIds: string[];
   variants: VariantData[];
 }
@@ -59,14 +57,11 @@ export function CoffeeProductForm({
 }: CoffeeProductFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const variantsSectionRef = useRef<VariantsSectionRef>(null);
   const [productId, setProductId] = useState<string | null>(
     initialProductId ?? null
   );
   const [isSaving, setIsSaving] = useState(false);
-
-  const initialImages =
-    initialData?.images.map((img) => ({ url: img.url, alt: img.altText })) ??
-    [];
 
   // Product info state
   const [productInfo, setProductInfo] = useState<ProductInfoValues>({
@@ -74,7 +69,6 @@ export function CoffeeProductForm({
     slug: initialData?.slug ?? "",
     heading: initialData?.heading ?? "",
     description: initialData?.description ?? "",
-    images: initialImages,
     isOrganic: initialData?.isOrganic ?? false,
     isFeatured: initialData?.isFeatured ?? false,
     isDisabled: initialData?.isDisabled ?? false,
@@ -100,16 +94,10 @@ export function CoffeeProductForm({
     initialData?.variants ?? []
   );
 
-  // Image upload hook
-  const imageUpload = useMultiImageUpload({
-    currentImages: initialImages,
-    maxImages: 5,
-  });
-
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const uploadedImages = await imageUpload.uploadAll();
+      await variantsSectionRef.current?.uploadAllVariantImages();
 
       const payload = {
         productType: ProductType.COFFEE,
@@ -117,7 +105,6 @@ export function CoffeeProductForm({
         slug: productInfo.slug,
         heading: productInfo.heading || null,
         description: productInfo.description || null,
-        images: uploadedImages,
         isOrganic: productInfo.isOrganic,
         isFeatured: productInfo.isFeatured,
         isDisabled: productInfo.isDisabled,
@@ -166,21 +153,13 @@ export function CoffeeProductForm({
       onSave={handleSave}
       productInfo={
         <ProductInfoSection
-          values={{
-            ...productInfo,
-            images: imageUpload.imageListFieldImages,
-          }}
-          onChange={(newValues) => {
-            const { images: _, ...rest } = newValues;
-            setProductInfo((prev) => ({ ...prev, ...rest }));
-          }}
-          pendingFilesMap={imageUpload.pendingFilesMap}
-          onImageFileSelect={imageUpload.handleImageListFieldFileSelect}
-          onImagesChange={imageUpload.handleImageListFieldChange}
+          values={productInfo}
+          onChange={setProductInfo}
         />
       }
       variants={
         <VariantsSection
+          ref={variantsSectionRef}
           productId={productId}
           variants={variants}
           onVariantsChange={setVariants}

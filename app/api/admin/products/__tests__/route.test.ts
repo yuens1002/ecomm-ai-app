@@ -11,13 +11,11 @@ import { GET, POST } from "../route";
 
 const requireAdminApiMock = jest.fn();
 const createProductMock = jest.fn();
-const createManyImagesMock = jest.fn();
 const createCategoriesMock = jest.fn();
 const findManyProductsMock = jest.fn();
 
 type MockTx = {
   product: { create: typeof createProductMock };
-  productImage: { createMany: typeof createManyImagesMock };
   categoriesOnProducts: { createMany: typeof createCategoriesMock };
 };
 
@@ -33,7 +31,6 @@ jest.mock("@/lib/prisma", () => ({
     $transaction: (cb: (tx: MockTx) => Promise<unknown>) =>
       cb({
         product: { create: createProductMock },
-        productImage: { createMany: createManyImagesMock },
         categoriesOnProducts: { createMany: createCategoriesMock },
       }),
   },
@@ -57,6 +54,7 @@ describe("GET /api/admin/products", () => {
           {
             name: "12oz",
             stockQuantity: 10,
+            images: [{ url: "https://example.com/image.jpg" }],
             purchaseOptions: [
               {
                 type: "ONE_TIME",
@@ -73,7 +71,6 @@ describe("GET /api/admin/products", () => {
             category: { id: "cat_1", name: "Blends" },
           },
         ],
-        images: [{ url: "https://example.com/image.jpg", order: 0 }],
       },
     ]);
 
@@ -129,7 +126,6 @@ describe("POST /api/admin/products", () => {
         }),
       })
     );
-    expect(createManyImagesMock).toHaveBeenCalled();
     expect(createCategoriesMock).toHaveBeenCalled();
   });
 

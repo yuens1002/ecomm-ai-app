@@ -13,7 +13,7 @@ type ActionResult<T = unknown> =
 const createOptionSchema = z.object({
   variantId: z.string().min(1),
   type: z.nativeEnum(PurchaseType),
-  priceInCents: z.number().int().positive("Price must be positive"),
+  priceInCents: z.number().int().nonnegative(),
   salePriceInCents: z.number().int().positive().nullable().optional(),
   billingInterval: z.nativeEnum(BillingInterval).nullable().optional(),
   billingIntervalCount: z.number().int().positive().nullable().optional(),
@@ -21,7 +21,7 @@ const createOptionSchema = z.object({
 
 const updateOptionSchema = z.object({
   type: z.nativeEnum(PurchaseType).optional(),
-  priceInCents: z.number().int().positive("Price must be positive").optional(),
+  priceInCents: z.number().int().nonnegative().optional(),
   salePriceInCents: z.number().int().positive().nullable().optional(),
   billingInterval: z.nativeEnum(BillingInterval).nullable().optional(),
   billingIntervalCount: z.number().int().positive().nullable().optional(),

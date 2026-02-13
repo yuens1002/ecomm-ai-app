@@ -32,12 +32,6 @@ export async function POST(request: Request) {
             name: true,
             slug: true,
             description: true,
-            images: {
-              select: {
-                url: true,
-              },
-              take: 1,
-            },
             categories: {
               where: {
                 isPrimary: true,
@@ -57,6 +51,11 @@ export async function POST(request: Request) {
           select: {
             id: true,
             name: true,
+            images: {
+              select: { url: true },
+              orderBy: { order: "asc" as const },
+              take: 1,
+            },
             purchaseOptions: {
               where: {
                 type: "ONE_TIME",
@@ -94,7 +93,7 @@ export async function POST(request: Request) {
             description: addOn.addOnProduct.description,
             // Add-ons are merch products, use "culture" for coffee lifestyle images
             imageUrl:
-              addOn.addOnProduct.images[0]?.url ||
+              addOn.addOnVariant!.images[0]?.url ||
               getPlaceholderImage(addOn.addOnProduct.name, 400, "culture"),
             categorySlug:
               addOn.addOnProduct.categories[0]?.category.slug || "shop",

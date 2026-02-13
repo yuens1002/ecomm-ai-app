@@ -41,7 +41,6 @@ export async function GET(request: Request) {
           roastLevel: p!.roastLevel,
           isFeatured: p!.isFeatured,
           tastingNotes: p!.tastingNotes,
-          images: p!.images,
           variants: p!.variants,
           categories: p!.categories,
         })),
@@ -68,7 +67,6 @@ export async function GET(request: Request) {
           roastLevel: p!.roastLevel,
           isFeatured: p!.isFeatured,
           tastingNotes: p!.tastingNotes,
-          images: p!.images,
           variants: p!.variants,
           categories: p!.categories,
         })),
@@ -95,7 +93,6 @@ export async function GET(request: Request) {
           roastLevel: p!.roastLevel,
           isFeatured: p!.isFeatured,
           tastingNotes: p!.tastingNotes,
-          images: p!.images,
           variants: p!.variants,
           categories: p!.categories,
         })),
@@ -118,12 +115,13 @@ export async function GET(request: Request) {
         ...(excludeId && { id: { not: excludeId } }),
       },
       include: {
-        images: {
-          orderBy: { order: "asc" },
-          take: 1,
-        },
         variants: {
+          orderBy: { order: "asc" },
           include: {
+            images: {
+              orderBy: { order: "asc" },
+              take: 1,
+            },
             purchaseOptions: {
               where: { type: "ONE_TIME" },
               take: 1,
@@ -181,7 +179,6 @@ export async function GET(request: Request) {
         roastLevel: product.roastLevel,
         isFeatured: product.isFeatured,
         tastingNotes: product.tastingNotes,
-        images: product.images,
         variants: product.variants,
         categories: product.categories,
       }));

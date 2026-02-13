@@ -31,6 +31,11 @@ export async function GET(request: Request) {
           select: {
             name: true,
             stockQuantity: true,
+            images: {
+              select: { url: true },
+              orderBy: { order: "asc" },
+              take: 1,
+            },
             purchaseOptions: {
               select: {
                 type: true,
@@ -48,10 +53,6 @@ export async function GET(request: Request) {
           include: {
             category: true,
           },
-        },
-        images: {
-          select: { url: true, order: true },
-          orderBy: { order: "asc" },
         },
       },
       orderBy: { name: "asc" },
@@ -72,7 +73,7 @@ export async function GET(request: Request) {
         isDisabled: p.isDisabled,
         stock: totalStock,
         price: basePrice,
-        thumbnailUrl: p.images[0]?.url || null,
+        thumbnailUrl: p.variants[0]?.images[0]?.url || null,
         variants: p.variants.map((v) => ({
           name: v.name,
           stock: v.stockQuantity,
@@ -131,7 +132,6 @@ export async function POST(request: Request) {
       isFeatured,
       isDisabled,
       categoryIds,
-      images,
       productType,
       roastLevel,
       origin,
@@ -163,17 +163,6 @@ export async function POST(request: Request) {
           details: rawDetails || undefined,
         },
       });
-
-      if (images && images.length > 0) {
-        await tx.productImage.createMany({
-          data: images.map((img, index) => ({
-            productId: newProduct.id,
-            url: img.url,
-            altText: img.alt || name,
-            order: index,
-          })),
-        });
-      }
 
       if (categoryIds && categoryIds.length > 0) {
         await tx.categoriesOnProducts.createMany({

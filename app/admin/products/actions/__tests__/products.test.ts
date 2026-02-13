@@ -19,10 +19,6 @@ jest.mock("@/lib/prisma", () => ({
       update: (...args: unknown[]) => mockUpdate(...args),
       delete: (...args: unknown[]) => mockDelete(...args),
     },
-    productImage: {
-      createMany: (...args: unknown[]) => mockCreateMany(...args),
-      deleteMany: (...args: unknown[]) => mockDeleteMany(...args),
-    },
     categoriesOnProducts: {
       createMany: (...args: unknown[]) => mockCreateMany(...args),
       deleteMany: (...args: unknown[]) => mockDeleteMany(...args),
@@ -33,10 +29,6 @@ jest.mock("@/lib/prisma", () => ({
           product: {
             create: mockCreate,
             update: mockUpdate,
-          },
-          productImage: {
-            createMany: mockCreateMany,
-            deleteMany: mockDeleteMany,
           },
           categoriesOnProducts: {
             createMany: mockCreateMany,
@@ -90,7 +82,6 @@ describe("getProduct", () => {
           purchaseOptions: [],
         },
       ],
-      images: [],
     };
 
     mockFindUnique.mockResolvedValue(mockProduct);
@@ -128,7 +119,6 @@ describe("createProduct", () => {
       slug: "midnight-blend",
       description: "A dark roast blend",
       heading: "The Story",
-      images: [{ url: "/images/midnight.jpg", alt: "Midnight Blend" }],
       isOrganic: false,
       isFeatured: true,
       isDisabled: false,
@@ -165,7 +155,6 @@ describe("createProduct", () => {
       slug: "heritage-mug",
       description: "A ceramic mug",
       heading: "Description",
-      images: [],
       isOrganic: false,
       isFeatured: true,
       isDisabled: false,
@@ -218,7 +207,6 @@ describe("updateProduct", () => {
       slug: "updated-blend",
       heading: null,
       description: null,
-      images: [],
       isOrganic: true,
       isFeatured: false,
       isDisabled: false,

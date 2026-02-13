@@ -103,7 +103,7 @@ export function CategoriesSection({
         Assign to categories for filtering and navigation
       </FieldDescription>
 
-      <FieldGroup>
+      <FieldGroup className="md:relative md:grid md:grid-cols-2 md:gap-x-16 lg:grid-cols-1 md:after:absolute md:after:left-1/2 md:after:-translate-x-1/2 md:after:top-0 md:after:h-full md:after:w-px md:after:bg-border lg:after:hidden">
         {sortedLabelGroups.map((group) => (
           <div key={group.labelName}>
             <h4 className="text-sm font-medium mb-3">{group.labelName}</h4>

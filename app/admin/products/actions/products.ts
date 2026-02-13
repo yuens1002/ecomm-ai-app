@@ -19,9 +19,11 @@ export async function getProduct(id: string): Promise<ActionResult> {
       categories: { include: { category: true } },
       variants: {
         orderBy: { order: "asc" },
-        include: { purchaseOptions: true },
+        include: {
+          purchaseOptions: true,
+          images: { orderBy: { order: "asc" } },
+        },
       },
-      images: { orderBy: { order: "asc" } },
     },
   });
 
@@ -57,7 +59,7 @@ export async function createProduct(input: unknown): Promise<ActionResult> {
   const data = parsed.data;
   const {
     name, slug, description, heading, isOrganic, isFeatured, isDisabled,
-    categoryIds, images, productType, roastLevel, origin, variety,
+    categoryIds, productType, roastLevel, origin, variety,
     altitude, tastingNotes,
   } = data;
 
@@ -87,17 +89,6 @@ export async function createProduct(input: unknown): Promise<ActionResult> {
           details: rawDetails || undefined,
         },
       });
-
-      if (images && images.length > 0) {
-        await tx.productImage.createMany({
-          data: images.map((img, index) => ({
-            productId: newProduct.id,
-            url: img.url,
-            altText: img.alt || name,
-            order: index,
-          })),
-        });
-      }
 
       if (categoryIds && categoryIds.length > 0) {
         await tx.categoriesOnProducts.createMany({
@@ -135,7 +126,7 @@ export async function updateProduct(id: string, input: unknown): Promise<ActionR
   const data = parsed.data;
   const {
     name, slug, description, heading, isOrganic, isFeatured, isDisabled,
-    categoryIds, images, productType, roastLevel, origin, variety,
+    categoryIds, productType, roastLevel, origin, variety,
     altitude, tastingNotes,
   } = data;
 
@@ -167,20 +158,6 @@ export async function updateProduct(id: string, input: unknown): Promise<ActionR
           details: isMerch ? (details ?? undefined) : undefined,
         },
       });
-
-      if (images !== undefined) {
-        await tx.productImage.deleteMany({ where: { productId: id } });
-        if (images.length > 0) {
-          await tx.productImage.createMany({
-            data: images.map((img, index) => ({
-              productId: id,
-              url: img.url,
-              altText: img.alt || name,
-              order: index,
-            })),
-          });
-        }
-      }
 
       await tx.categoriesOnProducts.deleteMany({ where: { productId: id } });
       if (categoryIds && categoryIds.length > 0) {

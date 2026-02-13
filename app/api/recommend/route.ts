@@ -198,12 +198,13 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
       productData = await prisma.product.findUnique({
         where: { slug: productSlug },
         include: {
-          images: {
-            orderBy: { order: "asc" },
-            take: 1,
-          },
           variants: {
+            orderBy: { order: "asc" },
             include: {
+              images: {
+                orderBy: { order: "asc" },
+                take: 1,
+              },
               purchaseOptions: true,
             },
           },
@@ -225,12 +226,13 @@ ${topSearches.length > 0 ? topSearches.map((q: string) => `  - "${q}"`).join("\n
         productData = await prisma.product.findUnique({
           where: { slug: productSlug },
           include: {
-            images: {
-              orderBy: { order: "asc" },
-              take: 1,
-            },
             variants: {
+              orderBy: { order: "asc" },
               include: {
+                images: {
+                  orderBy: { order: "asc" },
+                  take: 1,
+                },
                 purchaseOptions: true,
               },
             },

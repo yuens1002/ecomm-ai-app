@@ -29,7 +29,6 @@ model Product {
   processing        String?
   details           Json?
   categories        CategoriesOnProducts[]
-  images            ProductImage[]
   tags              ProductTag[]
   variants          ProductVariant[]
   addOnLinksPrimary AddOnLink[]            @relation("PrimaryProduct")
@@ -112,17 +111,6 @@ enum ProductMenuDraftStatus {
   DISCARDED
 }
 
-model ProductImage {
-  id        String  @id @default(cuid())
-  url       String
-  altText   String
-  order     Int     @default(0)
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([productId])
-}
-
 model ProductVariant {
   id                String           @id @default(cuid())
   name              String
@@ -132,11 +120,23 @@ model ProductVariant {
   stockQuantity     Int              @default(0)
   order             Int              @default(0)
   product           Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  images            VariantImage[]
   purchaseOptions   PurchaseOption[]
   addOnLinksPrimary AddOnLink[]      @relation("PrimaryVariant")
   addOnLinksAsAddon AddOnLink[]      @relation("AddOnVariant")
 
   @@index([productId])
+}
+
+model VariantImage {
+  id        String         @id @default(cuid())
+  url       String
+  altText   String
+  order     Int            @default(0)
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([variantId])
 }
 
 model PurchaseOption {
