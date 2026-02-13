@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ProductType } from "@prisma/client";
+import { useBreadcrumb } from "@/app/admin/_components/dashboard/BreadcrumbContext";
 import { ProductPageLayout } from "./ProductPageLayout";
 import { ProductInfoSection, ProductInfoValues } from "./ProductInfoSection";
 import { VariantsSection, VariantData, VariantsSectionRef } from "./VariantsSection";
@@ -56,6 +57,13 @@ export function MerchProductForm({
     initialProductId ?? null
   );
   const [hasDetailError, setHasDetailError] = useState(false);
+
+  // Dynamic breadcrumb: Home > Products > Merch > [product name]
+  const breadcrumbs = useMemo(
+    () => (initialData?.name ? [{ label: initialData.name }] : []),
+    [initialData]
+  );
+  useBreadcrumb(breadcrumbs);
 
   // Product info state
   const [productInfo, setProductInfo] = useState<ProductInfoValues>({

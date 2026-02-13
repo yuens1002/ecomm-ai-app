@@ -76,23 +76,20 @@ const routeEntries: RouteEntry[] = [
     parentId: "admin.products",
     isNavigable: true,
   },
-  // Products edit page - dynamic breadcrumb (coffee)
+  // Coffee edit page - dynamic breadcrumb via BreadcrumbContext
   {
     id: "admin.products.edit",
     pathname: "/admin/products",
-    queryParams: { view: "edit" },
-    matchMode: "param",
+    matchMode: "prefix-nested",
     label: null, // Resolved at runtime via BreadcrumbContext
     parentId: "admin.products.coffees",
-    breadcrumbResolver: "productEdit",
     isNavigable: true,
   },
-  // Products new page (coffee)
+  // Coffee new page
   {
     id: "admin.products.new",
-    pathname: "/admin/products",
-    queryParams: { view: "new" },
-    matchMode: "param",
+    pathname: "/admin/products/new",
+    matchMode: "exact",
     label: "New Product",
     parentId: "admin.products.coffees",
     isNavigable: true,
@@ -105,23 +102,20 @@ const routeEntries: RouteEntry[] = [
     parentId: "admin.products",
     isNavigable: true,
   },
-  // Merch edit page - dynamic breadcrumb
+  // Merch edit page - dynamic breadcrumb via BreadcrumbContext
   {
     id: "admin.products.merch.edit",
     pathname: "/admin/merch",
-    queryParams: { view: "edit" },
-    matchMode: "param",
+    matchMode: "prefix-nested",
     label: null, // Resolved at runtime via BreadcrumbContext
     parentId: "admin.products.merch",
-    breadcrumbResolver: "merchEdit",
     isNavigable: true,
   },
   // Merch new page
   {
     id: "admin.products.merch.new",
-    pathname: "/admin/merch",
-    queryParams: { view: "new" },
-    matchMode: "param",
+    pathname: "/admin/merch/new",
+    matchMode: "exact",
     label: "New Product",
     parentId: "admin.products.merch",
     isNavigable: true,

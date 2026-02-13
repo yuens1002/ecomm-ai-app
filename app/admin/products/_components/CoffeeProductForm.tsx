@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ProductType, RoastLevel } from "@prisma/client";
+import { useBreadcrumb } from "@/app/admin/_components/dashboard/BreadcrumbContext";
 import { ProductPageLayout } from "./ProductPageLayout";
 import { ProductInfoSection, ProductInfoValues } from "./ProductInfoSection";
 import { VariantsSection, VariantData, VariantsSectionRef } from "./VariantsSection";
@@ -60,6 +61,14 @@ export function CoffeeProductForm({
   const [productId, setProductId] = useState<string | null>(
     initialProductId ?? null
   );
+
+  // Dynamic breadcrumb: Home > Products > Coffees > [product name]
+  const breadcrumbs = useMemo(
+    () => (initialData?.name ? [{ label: initialData.name }] : []),
+    [initialData]
+  );
+  useBreadcrumb(breadcrumbs);
+
   // Product info state
   const [productInfo, setProductInfo] = useState<ProductInfoValues>({
     name: initialData?.name ?? "",
