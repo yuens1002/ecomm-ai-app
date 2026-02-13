@@ -418,14 +418,32 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
 
   // Purchase option handlers
   const handleAddOption = async (variantId: string, type: PurchaseType) => {
+    let billingInterval: BillingInterval | null = null;
+    let billingIntervalCount: number | null = null;
+
+    if (type === PurchaseType.SUBSCRIPTION) {
+      const variant = variants.find((v) => v.id === variantId);
+      const existingSubs = variant?.purchaseOptions.filter(
+        (o) => o.type === PurchaseType.SUBSCRIPTION
+      ) ?? [];
+      const usedIntervals = new Set(existingSubs.map((o) => o.billingInterval));
+      const preferred = [BillingInterval.MONTH, BillingInterval.YEAR, BillingInterval.WEEK, BillingInterval.DAY];
+      billingInterval = preferred.find((i) => !usedIntervals.has(i)) ?? null;
+      if (!billingInterval) {
+        toast({ title: "All billing intervals are already in use", variant: "destructive" });
+        return;
+      }
+      billingIntervalCount = 1;
+    }
+
     setIsSaving(true);
     const result = await createOption({
       variantId,
       type,
       priceInCents: 0,
       salePriceInCents: null,
-      billingInterval: type === PurchaseType.SUBSCRIPTION ? BillingInterval.MONTH : null,
-      billingIntervalCount: type === PurchaseType.SUBSCRIPTION ? 1 : null,
+      billingInterval,
+      billingIntervalCount,
     });
     setIsSaving(false);
     if (result.ok) {
