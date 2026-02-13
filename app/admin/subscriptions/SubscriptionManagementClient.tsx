@@ -13,15 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { MoreHorizontal } from "lucide-react";
+import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
+import { formatPrice } from "@/components/shared/record-utils";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { RecordActionMenu } from "@/components/shared/RecordActionMenu";
+import { ShippingAddressDisplay } from "@/components/shared/ShippingAddressDisplay";
 import {
   cancelSubscription,
   skipBillingPeriod,
@@ -63,13 +61,6 @@ const STATUS_TABS = [
   { value: "PAST_DUE", label: "Past Due" },
   { value: "CANCELED", label: "Canceled" },
 ] as const;
-
-const statusColors: Record<string, string> = {
-  ACTIVE: "bg-green-100 text-green-800",
-  PAUSED: "bg-yellow-100 text-yellow-800",
-  PAST_DUE: "bg-red-100 text-red-800",
-  CANCELED: "bg-gray-100 text-gray-800",
-};
 
 export default function SubscriptionManagementClient({
   initialSubscriptions,
@@ -213,25 +204,6 @@ export default function SubscriptionManagementClient({
     setResumeDialogOpen(true);
   }
 
-  function getStatusBadge(status: string, cancelAtPeriodEnd: boolean) {
-    const labels: Record<string, string> = {
-      ACTIVE: cancelAtPeriodEnd ? "Canceling" : "Active",
-      PAUSED: "Paused",
-      PAST_DUE: "Past Due",
-      CANCELED: "Canceled",
-    };
-
-    const color = cancelAtPeriodEnd
-      ? "bg-orange-100 text-orange-800"
-      : statusColors[status] || "bg-gray-100 text-gray-800";
-
-    return (
-      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${color}`}>
-        {labels[status] || status}
-      </span>
-    );
-  }
-
   function getNextDateDisplay(subscription: Subscription) {
     if (subscription.status === "CANCELED") {
       return <span className="text-muted-foreground">—</span>;
@@ -264,26 +236,20 @@ export default function SubscriptionManagementClient({
     return subscription.status === "PAUSED";
   }
 
-  function formatShippingAddress(subscription: Subscription) {
-    if (!subscription.shippingStreet) {
-      return <span className="text-muted-foreground italic">No address</span>;
+  function getSubscriptionActions(subscription: Subscription) {
+    const actions: import("@/components/shared/MobileRecordCard").RecordAction[] = [];
+
+    if (canSkip(subscription)) {
+      actions.push({ label: "Skip Next Billing", onClick: () => openSkipDialog(subscription) });
+    }
+    if (canResume(subscription)) {
+      actions.push({ label: "Resume Subscription", onClick: () => openResumeDialog(subscription), className: "text-green-600" });
+    }
+    if (canCancel(subscription)) {
+      actions.push({ label: "Cancel Subscription", onClick: () => openCancelDialog(subscription), variant: "destructive" });
     }
 
-    return (
-      <div className="text-sm">
-        {subscription.recipientName && (
-          <div className="font-medium">{subscription.recipientName}</div>
-        )}
-        {subscription.recipientPhone && (
-          <div className="text-muted-foreground">{subscription.recipientPhone}</div>
-        )}
-        <div>{subscription.shippingStreet}</div>
-        <div>
-          {subscription.shippingCity}, {subscription.shippingState}{" "}
-          {subscription.shippingPostalCode}
-        </div>
-      </div>
-    );
+    return actions;
   }
 
   return (
@@ -299,7 +265,7 @@ export default function SubscriptionManagementClient({
         </TabsList>
       </Tabs>
 
-      {/* Subscriptions Table */}
+      {/* Subscriptions */}
       {filteredSubscriptions.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
@@ -309,140 +275,126 @@ export default function SubscriptionManagementClient({
           </CardContent>
         </Card>
       ) : (
-        <div className="border rounded-md">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Order #
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Schedule
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Next / Resumes
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Customer
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Items
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-sm">
-                    Ship To
-                  </th>
-                  <th className="text-right py-3 px-4 font-semibold text-sm">
-                    Total
-                  </th>
-                  <th className="text-center py-3 px-4 font-semibold text-sm">
-                    Status
-                  </th>
-                  <th className="text-center py-3 px-4 font-semibold text-sm">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {filteredSubscriptions.map((subscription) => (
-                  <tr key={subscription.id} className="hover:bg-muted/30">
-                    <td className="py-4 px-4">
-                      <div className="font-medium">
-                        {subscription.id.slice(-8)}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 text-sm">
-                      {subscription.deliverySchedule || "—"}
-                    </td>
-                    <td className="py-4 px-4 text-sm">
-                      {getNextDateDisplay(subscription)}
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="text-sm font-medium">
-                        {subscription.user?.name ||
-                          subscription.recipientName ||
-                          "—"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {subscription.user?.email || "—"}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="text-sm">
-                        {subscription.productNames.length > 0
-                          ? subscription.productNames.join(", ")
-                          : "—"}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 max-w-xs">
-                      {formatShippingAddress(subscription)}
-                    </td>
-                    <td className="py-4 px-4 text-right font-semibold">
-                      ${(subscription.priceInCents / 100).toFixed(2)}
-                    </td>
-                    <td className="py-4 px-4 text-center">
-                      {getStatusBadge(
-                        subscription.status,
-                        subscription.cancelAtPeriodEnd
-                      )}
-                    </td>
-                    <td className="py-4 px-4 text-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={
-                              subscription.status === "CANCELED" ||
-                              subscription.cancelAtPeriodEnd
-                            }
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => openSkipDialog(subscription)}
-                            disabled={!canSkip(subscription)}
-                            className={
-                              !canSkip(subscription)
-                                ? "text-muted-foreground"
-                                : ""
-                            }
-                          >
-                            Skip Next Billing
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => openResumeDialog(subscription)}
-                            disabled={!canResume(subscription)}
-                            className={
-                              canResume(subscription)
-                                ? "text-green-600"
-                                : "text-muted-foreground"
-                            }
-                          >
-                            Resume Subscription
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => openCancelDialog(subscription)}
-                            disabled={!canCancel(subscription)}
-                            className={
-                              canCancel(subscription)
-                                ? "text-red-600"
-                                : "text-muted-foreground"
-                            }
-                          >
-                            Cancel Subscription
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* Mobile/Tablet Card Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xl:hidden">
+            {filteredSubscriptions.map((subscription) => (
+              <Card key={subscription.id} className="py-0 gap-0">
+                <MobileRecordCard
+                  type="subscription"
+                  status={subscription.status}
+                  statusLabel={
+                    subscription.cancelAtPeriodEnd
+                      ? "Canceling"
+                      : undefined
+                  }
+                  date={new Date(subscription.createdAt)}
+                  displayId={`#${subscription.id.slice(-8)}`}
+                  customer={{ name: subscription.user?.name || subscription.recipientName, email: subscription.user?.email }}
+                  price={`$${(subscription.priceInCents / 100).toFixed(2)}`}
+                  detailsSectionHeader="Total"
+                  currentPeriod={
+                    subscription.status !== "CANCELED"
+                      ? subscription.status === "PAUSED" && subscription.pausedUntil
+                        ? `Resumes ${format(new Date(subscription.pausedUntil), "MMM d, yyyy")}`
+                        : subscription.status !== "PAUSED"
+                          ? `Next: ${format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}`
+                          : undefined
+                      : undefined
+                  }
+                  items={subscription.productNames.map((name, idx) => ({
+                    id: String(idx),
+                    name,
+                    variant: subscription.deliverySchedule || "",
+                    purchaseType: "",
+                    quantity: 1,
+                  }))}
+                  shipping={
+                    subscription.shippingStreet
+                      ? {
+                          recipientName: subscription.recipientName,
+                          street: subscription.shippingStreet,
+                          city: subscription.shippingCity,
+                          state: subscription.shippingState,
+                          postalCode: subscription.shippingPostalCode,
+                        }
+                      : undefined
+                  }
+                  actions={getSubscriptionActions(subscription)}
+                />
+              </Card>
+            ))}
           </div>
-        </div>
+
+          {/* Desktop Table */}
+          <div className="hidden xl:block border rounded-md">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Order #</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Schedule</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Next / Resumes</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Customer</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Items</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm">Ship To</th>
+                    <th className="text-right py-3 px-4 font-semibold text-sm">Total</th>
+                    <th className="text-center py-3 px-4 font-semibold text-sm">Status</th>
+                    <th className="text-center py-3 px-4 font-semibold text-sm"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filteredSubscriptions.map((subscription) => (
+                    <tr key={subscription.id} className="hover:bg-muted/30">
+                      <td className="py-4 px-4">
+                        <div className="font-medium">{subscription.id.slice(-8)}</div>
+                      </td>
+                      <td className="py-4 px-4 text-sm">{subscription.deliverySchedule || "—"}</td>
+                      <td className="py-4 px-4 text-sm">{getNextDateDisplay(subscription)}</td>
+                      <td className="py-4 px-4">
+                        <div className="text-sm font-medium">{subscription.user?.name || subscription.recipientName || "—"}</div>
+                        <div className="text-xs text-muted-foreground">{subscription.user?.email || "—"}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-sm">
+                          {subscription.productNames.length > 0 ? subscription.productNames.join(", ") : "—"}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 max-w-xs">
+                        <ShippingAddressDisplay
+                          recipientName={subscription.recipientName}
+                          phone={subscription.recipientPhone}
+                          street={subscription.shippingStreet}
+                          city={subscription.shippingCity}
+                          state={subscription.shippingState}
+                          postalCode={subscription.shippingPostalCode}
+                          fallbackText="No address"
+                        />
+                      </td>
+                      <td className="py-4 px-4 text-right font-semibold">{formatPrice(subscription.priceInCents)}</td>
+                      <td className="py-4 px-4 text-center">
+                        <StatusBadge
+                          status={subscription.status}
+                          label={subscription.cancelAtPeriodEnd ? "Canceling" : undefined}
+                          colorClassName={
+                            subscription.cancelAtPeriodEnd
+                              ? "bg-orange-100 text-orange-800"
+                              : subscription.status === "CANCELED"
+                                ? "bg-gray-100 text-gray-800"
+                                : undefined
+                          }
+                        />
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <RecordActionMenu actions={getSubscriptionActions(subscription)} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Cancel Subscription Dialog */}

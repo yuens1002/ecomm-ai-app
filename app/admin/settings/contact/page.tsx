@@ -42,7 +42,7 @@ export default function ContactSettingsPage() {
       >
         <SettingsField<boolean>
           endpoint="/api/admin/settings/footer-contact"
-          field="showEmailInFooter"
+          field="showEmail"
           label="Show Email in Footer"
           description="Display your contact email in the site footer"
           autoSave
@@ -64,7 +64,45 @@ export default function ContactSettingsPage() {
 
         <SettingsField
           endpoint="/api/admin/settings/footer-contact"
-          field="businessHours"
+          field="email"
+          label="Footer Email Address"
+          description="Email address displayed in the site footer"
+          input={(value, onChange, isDirty) => (
+            <InputGroupInput
+              type="email"
+              value={value as string}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="hello@artisan-roast.com"
+              className={isDirty ? "border-amber-500" : ""}
+            />
+          )}
+        />
+
+        <SettingsField<boolean>
+          endpoint="/api/admin/settings/footer-contact"
+          field="showHours"
+          label="Show Hours in Footer"
+          description="Display your business hours in the site footer"
+          autoSave
+          defaultValue={false}
+          input={(value, onChange, _isDirty) => (
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={Boolean(value)}
+                onCheckedChange={(checked) => onChange(checked)}
+              />
+              <Label className="text-sm text-muted-foreground">
+                {value
+                  ? "Hours are shown in footer"
+                  : "Hours are hidden from footer"}
+              </Label>
+            </div>
+          )}
+        />
+
+        <SettingsField
+          endpoint="/api/admin/settings/footer-contact"
+          field="hoursText"
           label="Business Hours"
           description="Your café's operating hours (displayed in footer)"
           saveButtonInInput

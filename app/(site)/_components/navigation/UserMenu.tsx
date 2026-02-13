@@ -24,7 +24,7 @@ interface UserMenuProps {
 
 export function UserMenu({ user }: UserMenuProps) {
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"

@@ -49,11 +49,24 @@ When this skill is invoked, follow these steps exactly:
 ### Step 1: Parse Inputs
 
 Extract from the prompt:
+
 - **Branch name** (for the report header)
 - **Dev server URL**
 - **AC list** grouped by category (UI / Functional / Regression)
 - **Pages to screenshot** with any interaction instructions
 - **Additional context** (file paths, component names, behavioral notes)
+
+### Step 1.5: Categorize UI ACs by Verification Method
+
+For each UI AC, determine the verification method:
+
+| Method | When to use | Puppeteer pattern |
+|--------|-------------|-------------------|
+| **Static** | Element presence, layout, visibility | Navigate → wait → screenshot |
+| **Interactive** | State after UI interaction (open dialog, hover, click) | Navigate → click/hover → wait → screenshot |
+| **Exercise** | End-to-end flow with data mutation (form submit, state change) | Navigate → interact → fill form → submit → wait for result → screenshot |
+
+Record the method chosen per AC in the final report (e.g., `Interactive: clicked edit → dialog opened`).
 
 ### Step 2: Verify UI ACs (screenshots)
 
@@ -102,18 +115,20 @@ For each functional AC:
 
 4. Record PASS/FAIL for each regression AC
 
-### Step 5: Produce Report
+### Step 5: Update ACs Doc + Produce Report
 
-Return a structured report in this exact format:
+If an ACs tracking doc exists at `docs/plans/{feature}-ACs.md`, **update the Agent column** in the AC tables with your results (PASS/FAIL with brief evidence). Use the 3-column template from `docs/templates/acs-template.md`. Also add notes to the **Agent Notes** section.
+
+If no ACs doc exists yet, produce the report inline in this format:
 
 ```markdown
 ## Verification Report — {BRANCH}
 
 ### UI Verification
-| AC | mobile | tablet | desktop | Result |
-|----|--------|--------|---------|--------|
-| AC-UI-1: {description} | PASS/FAIL | PASS/FAIL | PASS/FAIL | PASS/FAIL |
-| AC-UI-2: {description} | PASS/FAIL | PASS/FAIL | PASS/FAIL | PASS/FAIL |
+| AC | Method | mobile | tablet | desktop | Result |
+|----|--------|--------|--------|---------|--------|
+| AC-UI-1: {description} | Static/Interactive/Exercise: {steps taken} | PASS/FAIL | PASS/FAIL | PASS/FAIL | PASS/FAIL |
+| AC-UI-2: {description} | Interactive: clicked edit → dialog opened | PASS/FAIL | PASS/FAIL | PASS/FAIL | PASS/FAIL |
 
 ### Functional Verification
 | AC | Method | Result | Notes |
@@ -150,6 +165,41 @@ Return a structured report in this exact format:
 4. **Screenshot every breakpoint.** Even if an AC seems desktop-only, capture all three.
 5. **Clean scratchpad.** Write Puppeteer scripts to the scratchpad, not `scripts/`.
 6. **Report everything.** Include test output, screenshot paths, and code references.
+7. **Combine interaction + evidence.** When an AC requires UI interaction before verification, write a single Puppeteer flow that interacts and captures evidence in sequence. Do not split interaction and screenshot into separate scripts.
+8. **Exercise cautiously.** For ACs requiring form submission or data mutation, verify the UI response (toast, state change) — do not verify database state directly.
+
+## Puppeteer Hard Rules
+
+These are NON-NEGOTIABLE. Violating any of these produces unusable verification evidence.
+
+1. **NEVER use `fullPage: true`** — long pages produce unreadably compressed screenshots. Use viewport-only (`page.screenshot()` or `fullPage: false`) or element screenshots (`element.screenshot()`). The viewport captures the first screenful which is sufficient for table/card verification.
+2. **NEVER use `page.waitForTimeout()`** — removed in modern Puppeteer. Use `await new Promise(r => setTimeout(r, ms))`.
+3. **Always use element screenshots when verifying a specific component** — `const el = await page.$(selector); await el?.screenshot({ path })`. This gives crisp, focused evidence.
+4. **Always check the plan's verification section** for constraints (screenshot mode, breakpoints, login requirements) before writing any Puppeteer script.
+
+## Authentication
+
+Admin pages require login. Use this procedure:
+
+1. Navigate to `/auth/admin-signin` (NOT `/auth/signin`)
+2. Fill the form:
+   - Email: `admin@artisanroast.com`
+   - Password: `ivcF8ZV3FnGaBJ&#8j`
+3. Click submit
+4. Wait for redirect — the form uses a React 19 server action, so use `waitForFunction` instead of `waitForNavigation`:
+
+```typescript
+await page.click('button[type="submit"]');
+await page.waitForFunction(
+  () => !window.location.href.includes("/auth/"),
+  { timeout: 15000 }
+).catch(() => {});
+await new Promise(r => setTimeout(r, 2000));
+```
+
+5. Verify login succeeded: `page.url()` should NOT contain `/auth/`
+
+For site (non-admin) pages that require auth, use the same credentials at `/auth/signin`.
 
 ## Puppeteer Script Template
 
@@ -185,9 +235,9 @@ async function main() {
     // await page.click('[data-tab="orders"]');
     // await new Promise((r) => setTimeout(r, 1000));
 
+    // HARD RULE: NEVER use fullPage: true — viewport-only or element screenshots only
     await page.screenshot({
       path: path.join(OUTPUT_DIR, `verify-${bp.name}-orders.png`),
-      fullPage: false,
     });
 
     await page.close();
@@ -199,6 +249,35 @@ async function main() {
 
 main().catch(console.error);
 ```
+
+### Interactive / Exercise Patterns
+
+For ACs that require interaction before screenshots, extend the template:
+
+```typescript
+// Interactive: click to open dialog, then screenshot
+await page.click('[data-testid="edit-address-btn"]');
+await page.waitForSelector('[role="dialog"]', { visible: true });
+await page.screenshot({ path: path.join(OUTPUT_DIR, "verify-dialog-open.png") });
+
+// Exercise: fill form and submit
+await page.type('#recipientName', 'Jane Doe');
+await page.type('#street', '456 Oak Ave');
+await page.click('button[type="submit"]');
+await page.waitForSelector('[data-sonner-toast]', { visible: true });
+await page.screenshot({ path: path.join(OUTPUT_DIR, "verify-after-submit.png") });
+```
+
+## Early Exit
+
+Exit early and return a partial report when any of these conditions are met:
+
+- **Dev server not reachable** after 2 attempts (wait 10s between): Report as blocker, return what you have.
+- **Wrong page / element not found**: If navigation lands on the wrong page or a key element isn't found after 2 retries with different selectors, mark that AC as BLOCKED (not FAIL), explain what was tried, and move on to the next AC. Do NOT loop indefinitely.
+- **No-op scenario**: If the feature under test doesn't exist yet (e.g., no edit button rendered, no API route created), report all related ACs as NOT_IMPLEMENTED and exit immediately. Don't keep searching.
+- **Repeated failures**: If 3+ consecutive actions fail (clicks, navigations, screenshots), stop the Puppeteer session, report findings so far, and exit. The main thread will diagnose and re-spawn.
+
+**Key principle:** It's better to return a partial report quickly than to spin for 10+ minutes achieving nothing. The main thread can fix context issues and re-spawn.
 
 ## Error Handling
 

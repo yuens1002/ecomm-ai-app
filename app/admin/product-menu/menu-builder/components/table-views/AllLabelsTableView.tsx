@@ -481,7 +481,7 @@ export function AllLabelsTableView() {
 
   return (
     <>
-      <TableViewWrapper>
+      <TableViewWrapper className="min-w-[676px]">
         <TableHeader
           columns={ALL_LABELS_HEADER_COLUMNS}
           preset={allLabelsWidthPreset}

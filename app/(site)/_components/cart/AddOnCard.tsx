@@ -44,7 +44,7 @@ const btnConfig: Record<
   ButtonState,
   { text: string; Icon: typeof ShoppingCart; className: string }
 > = {
-  idle: { text: "+ Add", Icon: ShoppingCart, className: "" },
+  idle: { text: "Add", Icon: ShoppingCart, className: "" },
   adding: { text: "Adding...", Icon: Loader2, className: "" },
   added: {
     text: "Added!",
@@ -65,7 +65,7 @@ const btnConfig: Record<
 
 export function AddOnCard({
   addOn,
-  buttonText = "+ Add",
+  buttonText = "Add",
   onAddToCart,
 }: AddOnCardProps) {
   const { product, variant, discountedPriceInCents } = addOn;
@@ -150,14 +150,20 @@ export function AddOnCard({
           </Button>
 
           <div className="flex items-center gap-2 shrink-0">
-            {hasDiscount && (
-              <span className="text-xs sm:text-sm text-muted-foreground line-through">
-                ${formatPrice(regularPrice)}
+            {hasDiscount ? (
+              <div className="text-right">
+                <span className="text-xs text-muted-foreground line-through block">
+                  ${formatPrice(regularPrice)}
+                </span>
+                <span className="font-bold text-sm text-text-base">
+                  ${formatPrice(displayPrice)}
+                </span>
+              </div>
+            ) : (
+              <span className="font-bold text-base sm:text-lg text-text-base">
+                ${formatPrice(displayPrice)}
               </span>
             )}
-            <span className="font-bold text-base sm:text-lg text-text-base">
-              ${formatPrice(displayPrice)}
-            </span>
           </div>
         </div>
       </div>

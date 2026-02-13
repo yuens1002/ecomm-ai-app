@@ -137,11 +137,11 @@ export const categoryViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
 export const menuViewWidthPreset: ColumnWidthPreset = extendWidthPreset(
   baseMenuBuilderWidthPreset,
   {
-    // Name column: takes remaining space (no fixed width)
+    // Name column: fixed width, never shrinks — table scrolls horizontally instead
     // Contains inline checkbox + hierarchical content with depth-based indentation
     name: {
-      head: "pl-2.5 pr-6",
-      cell: "pl-2.5 pr-6 min-w-48",
+      head: "pl-2.5 pr-6 w-72 min-w-72",
+      cell: "pl-2.5 pr-6 w-72 min-w-72",
     },
     // Categories count column: shown only for labels, centered
     categories: {

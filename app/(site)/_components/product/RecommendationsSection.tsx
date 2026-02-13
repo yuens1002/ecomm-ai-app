@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
 import { Sparkles, TrendingUp } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -121,56 +122,63 @@ export default function RecommendationsSection() {
     <section className="bg-secondary py-12">
       <div className="mx-auto max-w-screen-2xl px-4 md:px-8">
         {/* Section Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            {isPersonalized ? (
-              <Sparkles className="h-6 w-6" />
-            ) : (
-              <TrendingUp className="h-6 w-6" />
-            )}
-            <div>
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-start gap-3">
+              {isPersonalized ? (
+                <div className="mt-1 shrink-0"><Sparkles className="h-6 w-6" /></div>
+              ) : (
+                <div className="mt-1 shrink-0"><TrendingUp className="h-6 w-6" /></div>
+              )}
               <h2 className="text-2xl md:text-3xl font-bold text-text-base">
                 {isPersonalized
                   ? settings.homepageRecommendationsPersonalizedHeading
                   : settings.homepageRecommendationsTrendingHeading}
               </h2>
-              {isPersonalized && userPreferences && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Based on your love for{" "}
-                  {userPreferences.preferredRoastLevel?.toLowerCase() +
-                    " roasts with"}
-                  {userPreferences.topTastingNotes &&
-                    userPreferences.topTastingNotes.length > 0 && (
-                      <>
-                        {" "}
-                        {userPreferences.topTastingNotes
-                          .slice(0, 2)
-                          .join(" and ")}{" "}
-                        notes
-                      </>
-                    )}
-                </p>
-              )}
-              {!isPersonalized && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {settings.homepageRecommendationsTrendingDescription}
-                </p>
-              )}
             </div>
           </div>
+          {isPersonalized && userPreferences && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Based on your love for{" "}
+              {userPreferences.preferredRoastLevel?.toLowerCase() +
+                " roasts with"}
+              {userPreferences.topTastingNotes &&
+                userPreferences.topTastingNotes.length > 0 && (
+                  <>
+                    {" "}
+                    {userPreferences.topTastingNotes
+                      .slice(0, 2)
+                      .join(" and ")}{" "}
+                    notes
+                  </>
+                )}
+            </p>
+          )}
+          {!isPersonalized && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {settings.homepageRecommendationsTrendingDescription}
+            </p>
+          )}
         </div>
 
         {/* Product Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {products.map((product, index) => (
-            <ProductCard
+            <motion.div
               key={product.id}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              product={product as any}
-              showPurchaseOptions={true}
-              hoverRevealFooter={true}
-              priority={index === 0} // Load first image eagerly as it's likely LCP
-            />
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.08 }}
+            >
+              <ProductCard
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                product={product as any}
+                showPurchaseOptions={true}
+                hoverRevealFooter={true}
+                priority={index === 0} // Load first image eagerly as it's likely LCP
+              />
+            </motion.div>
           ))}
         </div>
 

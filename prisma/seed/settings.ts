@@ -117,10 +117,10 @@ export async function seedSettings(prisma: PrismaClient) {
 
   await prisma.siteSettings.upsert({
     where: { key: "social_links_heading" },
-    update: {},
+    update: { value: "Follow Us" },
     create: {
       key: "social_links_heading",
-      value: "Stay Connected",
+      value: "Follow Us",
     },
   });
 
@@ -213,10 +213,10 @@ export async function seedSettings(prisma: PrismaClient) {
   // Marketing content settings
   await prisma.siteSettings.upsert({
     where: { key: "homepage_featured_heading" },
-    update: {},
+    update: { value: "Our Best Sellers" },
     create: {
       key: "homepage_featured_heading",
-      value: "Our Small Batch Collection",
+      value: "Our Best Sellers",
     },
   });
 

@@ -40,7 +40,7 @@ export default async function AppFeaturesPage() {
       <div className="border-b bg-gradient-to-b from-muted/50 to-background">
         <div className="container mx-auto px-4 py-16">
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="mb-4 text-4xl font-bold md:text-5xl">
+            <h1 className="mb-4 text-2xl font-bold md:text-4xl">
               Pages CMS Feature
             </h1>
             <p className="mb-8 text-lg text-muted-foreground">
@@ -70,7 +70,7 @@ export default async function AppFeaturesPage() {
       {/* Features Overview */}
       <div className="container mx-auto px-4 py-16">
         <div className="mx-auto max-w-5xl">
-          <h2 className="mb-8 text-3xl font-bold">Key Features</h2>
+          <h2 className="mb-8 text-3xl font-bold text-center">Key Features</h2>
           <div className="grid gap-6 md:grid-cols-2">
             <div className="rounded-lg border border-border bg-card p-6">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
@@ -129,7 +129,7 @@ export default async function AppFeaturesPage() {
       <div className="border-t bg-muted/30">
         <div className="container mx-auto px-4 py-16">
           <div className="mx-auto max-w-5xl">
-            <h2 className="mb-8 text-3xl font-bold">Published Pages</h2>
+            <h2 className="mb-8 text-3xl font-bold text-center">Published Pages</h2>
             {pages.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border bg-card p-12 text-center">
                 <p className="text-muted-foreground">
@@ -179,7 +179,7 @@ export default async function AppFeaturesPage() {
       <div className="border-t">
         <div className="container mx-auto px-4 py-16">
           <div className="mx-auto max-w-5xl">
-            <h2 className="mb-8 text-3xl font-bold">Documentation</h2>
+            <h2 className="mb-8 text-3xl font-bold text-center">Documentation</h2>
             <div className="grid gap-6 md:grid-cols-3">
               <div className="rounded-lg border border-border bg-card p-6">
                 <h3 className="mb-2 font-semibold">Architecture</h3>

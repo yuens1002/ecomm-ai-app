@@ -17,6 +17,79 @@
 ### Removed
 
 - Old monolithic ProductFormClient and its section components
+## 0.87.13 - 2026-02-12
+
+### Fixed
+
+- Site orders desktop table uses HTML `<table>` instead of CSS Grid for proper column alignment
+- Site orders filter uses Tabs component instead of Select dropdown (matches admin pages)
+- StatusBadge default font weight consistent (`font-semibold`) across all pages
+- Phone number in shipping address moved to end, formatted with i18n (`libphonenumber-js`)
+- Admin orders date cell uses `text-foreground` instead of muted
+- Record items list divider vertically centered
+- Tabs component scrollable on mobile (xs-sm) instead of squishing
+
+### Added
+
+- `formatPhoneNumber()` utility with international formatting
+- TanStack Table backlog item for future sort/search/pagination
+
+## 0.87.9 - 2026-02-11
+
+### Fixed
+
+- Correct table min-widths for AllCategories, CategoryView, and LabelView (fixed columns exceeded previous min-width, hiding flex columns)
+
+## 0.87.8 - 2026-02-11
+
+### Changed
+
+- Menu builder nav shows selected item text on mobile, icon-only for unselected
+- All menu builder table views set table-level min-width to prevent column overlap before scroll
+
+## 0.87.7 - 2026-02-11
+
+### Added
+
+- **Action Bar Mobile Dropdown**: Menu builder action bar collapses into overflow dropdown below md breakpoint with icons, labels, and keyboard shortcuts matching context menu pattern
+
+### Changed
+
+- Order history cards display in 2-column grid at lg breakpoint, stacked below
+- Cart item count badge smaller at xs-sm breakpoints
+- Menu view name column uses fixed width (w-72) with table-level min-width for horizontal scroll
+- Remove TouchTarget wrappers from inline checkbox/chevron in menu view (fixes inflated hit areas at sm)
+- Checkbox-to-chevron spacing tightened (mr-4 → mr-3) for better alignment
+
+## 0.87.6 - 2026-02-11
+
+### Added
+
+- **Mobile Orders Button**: Orders quick-action in mobile menu nav bar (PackageSearch icon)
+- **FormField Component**: Constrained-width wrapper for form fields on wide viewports
+
+### Changed
+
+- Order history table header styled with background, padding, and border
+- Account tabs use FormField for consistent input widths
+- Subscriptions tab wrapped in Card with header and description
+- Addresses tab uses CardAction for header layout
+- Mobile menu quick-action buttons use tighter padding to fit 4 items
+
+## 0.87.0 - 2026-02-09
+
+### Added
+
+- **Subscription Address Edit**: Customers can update shipping address on ACTIVE/PAUSED subscriptions from account page
+- **Shared Address Edit Hook**: Reusable `useEditAddress` hook and `EditAddressDialog` component shared between orders and subscriptions
+- **Address Book Selector**: Saved addresses from user's address book populate the edit dialog dropdown
+- **Client-Side Form Validation**: Field-level error messages with required-field checks before submission
+
+### Changed
+
+- Relocated `EditAddressDialog` and `useEditAddress` to co-located paths (`_components/account/`, `_hooks/`)
+- Address book dropdown shows only saved DB addresses (disabled state when none exist)
+- Documented co-location file placement rules in CLAUDE.md
 
 ## 0.86.1 - 2026-02-08
 

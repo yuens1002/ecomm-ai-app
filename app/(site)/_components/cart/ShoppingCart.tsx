@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ShoppingCart as ShoppingCartIcon,
-  X,
+  Trash2,
   Plus,
   Minus,
   Loader2,
@@ -284,7 +284,7 @@ export function ShoppingCart() {
         >
           <ShoppingCartIcon className="w-6 h-6" />
           {displayCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">
+            <span className="absolute top-0 -right-1.5 md:-top-2 md:-right-2 bg-red-600 text-white text-[10px] md:text-xs w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center font-semibold">
               {displayCount}
             </span>
           )}
@@ -304,7 +304,7 @@ export function ShoppingCart() {
         </SheetHeader>
 
         {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-6 py-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
               <ShoppingCartIcon className="w-16 h-16 text-text-muted mb-4" />
@@ -377,6 +377,7 @@ export function ShoppingCart() {
                           <Button
                             variant="outline"
                             size="icon-sm"
+                            className="shadow-none"
                             onClick={() =>
                               item.quantity <= 1
                                 ? handleRemoveItem(item)
@@ -389,7 +390,7 @@ export function ShoppingCart() {
                             }
                           >
                             {item.quantity <= 1 ? (
-                              <X className="h-3 w-3" />
+                              <Trash2 className="h-3 w-3" />
                             ) : (
                               <Minus className="h-3 w-3" />
                             )}
@@ -404,6 +405,7 @@ export function ShoppingCart() {
                           <Button
                             variant="outline"
                             size="icon-sm"
+                            className="shadow-none"
                             onClick={() => handleQuantityChange(item, 1)}
                             aria-label="Increase quantity"
                           >
@@ -415,10 +417,11 @@ export function ShoppingCart() {
                           <Button
                             variant="outline"
                             size="icon-sm"
+                            className="shadow-none"
                             onClick={() => handleRemoveItem(item)}
                             aria-label="Remove item"
                           >
-                            <X className="h-3 w-3" />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                           <input
                             type="text"
@@ -429,14 +432,21 @@ export function ShoppingCart() {
                           />
                         </ButtonGroup>
                       )}
-                      <span className="text-right">
-                        {item.originalPriceInCents && (
-                          <span className="text-sm text-muted-foreground line-through mr-1.5">
-                            {formatPrice(item.originalPriceInCents)}
+                      <span className="text-right flex items-center shrink-0 ml-auto whitespace-nowrap">
+                        {item.quantity > 1 && (
+                          <span className="text-sm font-medium text-muted-foreground pr-4">
+                            ×{item.quantity}
                           </span>
                         )}
-                        <span className="font-semibold text-text-base">
-                          {formatPrice(item.priceInCents)}
+                        <span>
+                          {item.originalPriceInCents && (
+                            <span className="text-sm text-muted-foreground line-through mr-1.5">
+                              {formatPrice(item.originalPriceInCents * item.quantity)}
+                            </span>
+                          )}
+                          <span className="font-semibold text-text-base">
+                            {formatPrice(item.priceInCents * item.quantity)}
+                          </span>
                         </span>
                       </span>
                     </div>

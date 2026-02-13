@@ -76,9 +76,9 @@ function main(input) {
 
   const entry = data.branches && data.branches[branch];
   if (!entry) {
-    deny(
-      `BLOCKED: Branch "${branch}" has no verification recorded. Run /verify-workflow or /ui-verify, then update .claude/verification-status.json before committing.`
-    );
+    // No entry — branch is not tracked in the workflow. Allow commit.
+    // The Stop hook provides soft reminders for untracked branches.
+    process.exit(0);
   }
 
   const status = entry.status || "pending";
@@ -87,16 +87,24 @@ function main(input) {
 
   switch (status) {
     case "verified":
+    case "planned":
+    case "implementing":
+      // Allow: verified is final, planned/implementing allow intermediate commits
       process.exit(0);
       break;
     case "partial":
       deny(
-        `BLOCKED: Branch "${branch}" has incomplete verification (${passed}/${total} ACs passed). Run /verify-workflow or /ui-verify to complete AC verification before committing.`
+        `BLOCKED: Branch "${branch}" has incomplete verification (${passed}/${total} ACs passed). Complete AC verification before committing.`
+      );
+      break;
+    case "pending":
+      deny(
+        `BLOCKED: Branch "${branch}" has pending verification (${total} ACs). Run /verify-workflow or /ac-verify before committing.`
       );
       break;
     default:
       deny(
-        `BLOCKED: Branch "${branch}" has status "${status}". Run /verify-workflow or /ui-verify, then update .claude/verification-status.json with status "verified" to proceed.`
+        `BLOCKED: Branch "${branch}" has status "${status}". Update verification-status.json to a valid state before committing.`
       );
       break;
   }

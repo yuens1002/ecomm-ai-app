@@ -31,7 +31,6 @@ import { useInlineEditHandlers } from "../../../hooks/useInlineEditHandlers";
 import { useMenuBuilder } from "../../MenuBuilderProvider";
 import { CheckboxCell } from "./shared/cells/CheckboxCell";
 import { ChevronToggleCell } from "./shared/cells/ChevronToggleCell";
-import { TouchTarget } from "./shared/cells/TouchTarget";
 import { InlineIconCell } from "./shared/cells/InlineIconCell";
 import { InlineNameEditor } from "./shared/cells/InlineNameEditor";
 import { RowContextMenu } from "./shared/cells/RowContextMenu";
@@ -573,7 +572,6 @@ export function MenuTableView() {
         <TableCell config={menuViewWidthPreset.name}>
           <HierarchyNameCell depth={0}>
             <HierarchyCheckbox>
-              <TouchTarget>
                 <CheckboxCell
                   id={row.id}
                   checked={isSelected}
@@ -585,10 +583,8 @@ export function MenuTableView() {
                   anchorKey={anchorKey}
                   onRangeSelect={anchorKey && anchorKey !== labelKey ? () => rangeSelect(labelKey) : undefined}
                 />
-              </TouchTarget>
             </HierarchyCheckbox>
             <HierarchyChevron>
-              <TouchTarget>
                 <ChevronToggleCell
                   isExpanded={row.isExpanded}
                   isExpandable={row.isExpandable}
@@ -597,7 +593,6 @@ export function MenuTableView() {
                   disabled={dragState.isDraggingLabel}
                   showDisabledWhenEmpty
                 />
-              </TouchTarget>
             </HierarchyChevron>
             {/* Icon + Name as visual unit with tighter spacing */}
             <div className="flex items-center gap-1">
@@ -745,7 +740,6 @@ export function MenuTableView() {
         <TableCell config={menuViewWidthPreset.name}>
           <HierarchyNameCell depth={1}>
             <HierarchyCheckbox>
-              <TouchTarget>
                 <CheckboxCell
                   id={compositeId}
                   checked={isSelected}
@@ -756,7 +750,6 @@ export function MenuTableView() {
                   anchorKey={anchorKey}
                   onRangeSelect={anchorKey && anchorKey !== categoryKey ? () => rangeSelect(categoryKey) : undefined}
                 />
-              </TouchTarget>
             </HierarchyCheckbox>
             <HierarchyName>
               <span className="truncate">{row.name}</span>
@@ -858,7 +851,7 @@ export function MenuTableView() {
 
   return (
     <>
-      <TableViewWrapper>
+      <TableViewWrapper className="min-w-[672px]">
         <TableHeader
           columns={MENU_VIEW_HEADER_COLUMNS}
           preset={menuViewWidthPreset}

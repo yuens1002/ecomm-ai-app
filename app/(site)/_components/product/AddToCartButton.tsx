@@ -22,6 +22,8 @@ interface AddToCartButtonProps {
   priceInCents?: number | null;
   /** Original price before sale — shown with strikethrough when present */
   originalPriceInCents?: number;
+  /** When true, idle text responds to @container/card width: "Add" < 300px, "Add to Cart" >= 300px */
+  containerAware?: boolean;
 }
 
 const stateConfig: Record<
@@ -69,6 +71,7 @@ export function AddToCartButton({
   isProcessing = false,
   priceInCents,
   originalPriceInCents,
+  containerAware = false,
 }: AddToCartButtonProps) {
   const config = stateConfig[buttonState];
   const Icon = config.Icon;
@@ -111,7 +114,14 @@ export function AddToCartButton({
             buttonState === "adding" && "animate-spin"
           )}
         />
-        <span>{config.text}</span>
+        {buttonState === "idle" && containerAware ? (
+          <>
+            <span className="hidden @min-[300px]/card:inline">Add to Cart</span>
+            <span className="@min-[300px]/card:hidden">Add</span>
+          </>
+        ) : (
+          <span>{config.text}</span>
+        )}
       </span>
       {showPrice && (
         <>

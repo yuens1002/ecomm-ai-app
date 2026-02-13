@@ -73,7 +73,7 @@ function NavDropdown({ item }: { item: NavItem }) {
   const Icon = item.icon;
 
   return (
-    <NavigationMenuPrimitive.Item className="relative">
+    <NavigationMenuPrimitive.Item value={item.label} className="relative">
       <NavigationMenuPrimitive.Trigger
         className={cn(
           "group inline-flex h-auto items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
@@ -151,6 +151,19 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
     []
   );
 
+  // Debounce nav close to prevent click-to-close racing with hover-to-reopen.
+  // Same fix as SiteHeader — ignore close events within 300ms of open.
+  const [navValue, setNavValue] = React.useState("");
+  const navOpenedAt = React.useRef(0);
+  const handleNavValueChange = React.useCallback((val: string) => {
+    if (val) {
+      setNavValue(val);
+      navOpenedAt.current = Date.now();
+    } else if (Date.now() - navOpenedAt.current > 300) {
+      setNavValue(val);
+    }
+  }, []);
+
   const initials =
     user.name
       ?.split(" ")
@@ -195,7 +208,7 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
           </div>
 
           {/* Center: Navigation menu - desktop only */}
-          <NavigationMenuPrimitive.Root className="hidden lg:flex">
+          <NavigationMenuPrimitive.Root className="hidden lg:flex" value={navValue} onValueChange={handleNavValueChange} delayDuration={200}>
             <NavigationMenuPrimitive.List className="flex items-center gap-2">
               {visibleNavItems.map((item) => (
                 <NavDropdown key={item.label} item={item} />

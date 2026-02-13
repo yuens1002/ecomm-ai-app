@@ -2,6 +2,11 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import SiteHeader from "@/app/(site)/_components/layout/SiteHeader";
 
+// Mock next-auth/react
+jest.mock("next-auth/react", () => ({
+  signOut: jest.fn(),
+}));
+
 // Mock next/navigation
 jest.mock("next/navigation", () => ({
   useRouter: () => ({

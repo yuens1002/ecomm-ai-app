@@ -2,6 +2,7 @@
 
 import { useEffect, useState, startTransition, useRef } from "react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import { ProductType, PurchaseType } from "@prisma/client";
 import {
   Product,
@@ -28,6 +29,7 @@ import PageContainer from "@/components/shared/PageContainer";
 import { useCartStore, type CartItem } from "@/lib/store/cart-store";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
 import { useAddToCartWithFeedback } from "@/hooks/useAddToCartWithFeedback";
+import { useResponsiveValue } from "@/hooks/useResponsiveValue";
 import { AddOnItem } from "./actions";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 import { CoffeeDetails } from "@/app/(site)/_components/product/CoffeeDetails";
@@ -334,26 +336,14 @@ export default function ProductClientPage({
     ? getDiscountMessage(selectedVariant, subscriptionDisplayOption)
     : null;
 
-  // Responsive slides per view for related products carousel
-  const [relatedSlidesPerView, setRelatedSlidesPerView] = useState(1);
-  useEffect(() => {
-    const calcSlides = () => {
-      const w = window.innerWidth;
-      // xs/s: 1, md: 2.5, lg: 3, xl+: 4
-      if (w >= 1280) {
-        setRelatedSlidesPerView(4);
-      } else if (w >= 1024) {
-        setRelatedSlidesPerView(3);
-      } else if (w >= 768) {
-        setRelatedSlidesPerView(2.5);
-      } else {
-        setRelatedSlidesPerView(1.5);
-      }
-    };
-    calcSlides();
-    window.addEventListener("resize", calcSlides);
-    return () => window.removeEventListener("resize", calcSlides);
-  }, []);
+  // Responsive slides per view for carousels
+  const relatedSlidesPerView = useResponsiveValue(
+    { 768: 2.5, 1024: 3, 1280: 4 }, 1.5
+  );
+  // Bundle carousel: 1.3 on mobile (full-width), 1 at md (narrow 2-col), 1.3 at lg, 1.5 at xl
+  const bundleSlidesPerView = useResponsiveValue(
+    { 768: 1, 1024: 1.3, 1280: 1.5 }, 1.3
+  );
 
   return (
     <PageContainer>
@@ -378,16 +368,21 @@ export default function ProductClientPage({
       </Breadcrumb>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-x-10 md:gap-y-5 lg:gap-x-14 lg:gap-y-8">
-        <div className="w-full md:sticky md:top-6 md:self-start">
+        <motion.div
+          className="w-full min-w-0 md:sticky md:top-6 md:self-start"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
           <ImageCarousel
             images={galleryImages}
             aspectRatio="square"
             showThumbnails={showThumbs}
             showDots={true}
           />
-        </div>
+        </motion.div>
 
-        <div className="w-full flex flex-col gap-4">
+        <div className="w-full min-w-0 flex flex-col gap-4">
           {/* ---- Coffee header: origin, name, roast bar, tasting notes ---- */}
           {isCoffee && product.origin.length > 0 && (
             <p className="text-xs font-medium uppercase tracking-widest text-text-muted">
@@ -502,13 +497,12 @@ export default function ProductClientPage({
                 {settings.productAddOnsSectionTitle}
               </h2>
 
-              <ScrollCarousel slidesPerView={1.5} noBorder>
+              <ScrollCarousel slidesPerView={bundleSlidesPerView} gap="gap-2" noBorder>
                 {addOns.map((addOn) => (
                   <AddOnCard
                     key={`${addOn.product.id}-${addOn.variant.id}`}
                     addOn={addOn}
                     weightUnit="g"
-                    buttonText="+ Add"
                     onAddToCart={() => handleAddOnToCart(addOn)}
                   />
                 ))}
@@ -530,12 +524,12 @@ export default function ProductClientPage({
             </h2>
             <ScrollCarousel
               slidesPerView={relatedSlidesPerView}
-              gap="gap-8"
+              gap="gap-4"
               noBorder
             >
               {displayProducts.map((relatedProduct) => (
                 <div key={relatedProduct.id}>
-                  <ProductCard product={relatedProduct} disableCardEffects hidePriceOnMobile />
+                  <ProductCard product={relatedProduct} disableCardEffects compact />
                 </div>
               ))}
             </ScrollCarousel>
