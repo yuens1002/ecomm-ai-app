@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -152,9 +152,77 @@ export function AddOnsSection({ productId }: AddOnsSectionProps) {
     }
   };
 
+  // Edit state for the selected add-on's detail panel
+  const [editVariants, setEditVariants] = useState<ProductVariant[]>([]);
+  const [editVariant, setEditVariant] = useState("__none__");
+  const [editDiscount, setEditDiscount] = useState("");
+  const editTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
   const selectedAddOn = addOns[selectedIndex] ?? null;
+
+  // Sync edit fields when selected add-on changes
+  useEffect(() => {
+    if (!selectedAddOn) return;
+    setEditVariant(selectedAddOn.addOnVariant?.id ?? "__none__");
+    setEditDiscount(
+      selectedAddOn.discountedPriceInCents
+        ? (selectedAddOn.discountedPriceInCents / 100).toFixed(2)
+        : ""
+    );
+    // Fetch variants for the selected add-on's product
+    fetchVariantsForEdit(selectedAddOn.addOnProduct.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIndex, addOns]);
+
+  const fetchVariantsForEdit = async (prodId: string) => {
+    const res = await fetch(`/api/admin/products/${prodId}/variants`);
+    if (res.ok) {
+      const data = await res.json();
+      setEditVariants(data.variants || []);
+    }
+  };
+
+  const handleUpdate = useCallback(
+    async (fields: { addOnVariantId?: string | null; discountedPriceInCents?: number | null }) => {
+      if (!selectedAddOn || !productId) return;
+      const res = await fetch(
+        `/api/admin/products/${productId}/addons/${selectedAddOn.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(fields),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setAddOns((prev) =>
+          prev.map((a) => (a.id === data.addOn.id ? data.addOn : a))
+        );
+      } else {
+        const error = await res.json();
+        toast({ title: error.error || "Failed to update add-on", variant: "destructive" });
+      }
+    },
+    [selectedAddOn, productId, toast]
+  );
+
+  const handleEditVariantChange = (value: string) => {
+    setEditVariant(value);
+    handleUpdate({ addOnVariantId: value !== "__none__" ? value : null });
+  };
+
+  const handleEditDiscountChange = (value: string) => {
+    setEditDiscount(value);
+    // Debounce the save for price input
+    if (editTimeoutRef.current) clearTimeout(editTimeoutRef.current);
+    editTimeoutRef.current = setTimeout(() => {
+      const cents = value ? Math.round(parseFloat(value) * 100) : null;
+      if (value && (isNaN(parseFloat(value)) || (cents !== null && cents <= 0))) return;
+      handleUpdate({ discountedPriceInCents: cents });
+    }, 600);
+  };
 
   if (!productId) {
     return (
@@ -297,7 +365,7 @@ export function AddOnsSection({ productId }: AddOnsSectionProps) {
             </div>
 
             {selectedAddOn && (
-              <div className="p-4 border rounded-lg space-y-2">
+              <div className="p-4 border rounded-lg space-y-3">
                 <div className="text-sm">
                   <span className="text-muted-foreground">Product: </span>
                   <span className="font-medium">{selectedAddOn.addOnProduct.name}</span>
@@ -305,20 +373,41 @@ export function AddOnsSection({ productId }: AddOnsSectionProps) {
                     ({selectedAddOn.addOnProduct.type})
                   </span>
                 </div>
-                {selectedAddOn.addOnVariant && (
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Variant: </span>
-                    <span>{selectedAddOn.addOnVariant.name}</span>
-                  </div>
-                )}
-                {selectedAddOn.discountedPriceInCents && (
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Discounted: </span>
-                    <span className="text-green-600 font-medium">
-                      {formatPrice(selectedAddOn.discountedPriceInCents)}
-                    </span>
-                  </div>
-                )}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Field className="flex-1">
+                    <FormHeading label="Variant" />
+                    <Select
+                      value={editVariant}
+                      onValueChange={handleEditVariantChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue>
+                          {editVariant === "__none__"
+                            ? "Any variant"
+                            : editVariants.find((v) => v.id === editVariant)?.name || "Any variant"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Any variant</SelectItem>
+                        {editVariants.map((v) => (
+                          <SelectItem key={v.id} value={v.id}>
+                            {v.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field className="w-full sm:w-40">
+                    <FormHeading label="Discount" />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="$0.00"
+                      value={editDiscount}
+                      onChange={(e) => handleEditDiscountChange(e.target.value)}
+                    />
+                  </Field>
+                </div>
               </div>
             )}
           </>
