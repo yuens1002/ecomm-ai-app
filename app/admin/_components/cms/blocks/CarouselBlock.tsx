@@ -11,13 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { Switch } from "@/components/ui/switch";
-import { Plus, ArrowRight } from "lucide-react";
+import { Plus, ArrowDown } from "lucide-react";
 import Image from "next/image";
 import { ImageField } from "@/app/admin/_components/cms/fields/ImageField";
 import { ImageCard } from "../fields/ImageCard";
 import { ScrollCarousel } from "@/components/shared/media/ScrollCarousel";
 import { useMultiImageUpload } from "@/app/admin/_hooks/useImageUpload";
 import { useValidation } from "@/hooks/useFormDialog";
+import { useResponsiveValue } from "@/hooks/useResponsiveValue";
 
 type CarouselBlockType = ImageCarouselBlock | LocationCarouselBlock;
 
@@ -100,6 +101,10 @@ export function CarouselBlock({
  */
 function CarouselDisplay({ block }: { block: CarouselBlockType }) {
   const { slides, autoScroll, intervalSeconds } = block.content;
+  const slidesPerView = useResponsiveValue(
+    { 640: 1.5, 768: 2.2 },
+    1.2
+  );
 
   const handleSlideClick = (slide: {
     locationBlockId?: string;
@@ -133,10 +138,12 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
 
   return (
     <ScrollCarousel
-      slidesPerView={2.5}
+      slidesPerView={slidesPerView}
       autoplay={autoScroll}
       autoplayDelay={intervalSeconds * 1000}
       noBorder={true}
+      padEdges={block.type === "locationCarousel"}
+      showDots={false}
     >
       {slides.map(
         (
@@ -149,7 +156,10 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
           },
           index: number
         ) => (
-          <div key={index} className="relative group">
+          <div
+            key={index}
+            className="relative group"
+          >
             {/* Image */}
             <div className="relative aspect-4/3 rounded-lg overflow-hidden">
               <Image
@@ -168,10 +178,10 @@ function CarouselDisplay({ block }: { block: CarouselBlockType }) {
                     handleSlideClick(slide);
                   }}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-white/90 hover:bg-white text-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm z-10"
+                  className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm hover:bg-black/70 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors shadow-sm z-10"
                 >
-                  Hours & Location
-                  <ArrowRight className="w-4 h-4" />
+                  <span className="hidden md:inline">Hours & Location</span>
+                  <ArrowDown className="w-4 h-4" />
                 </button>
               )}
             </div>

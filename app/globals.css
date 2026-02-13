@@ -233,6 +233,30 @@ We define CSS variables for each theme.
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Scrollbar always present (no layout shift), thumb visible on hover — md+ only */
+  @media (min-width: 768px) {
+    .scroll-on-hover {
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
+    }
+    .scroll-on-hover:hover {
+      scrollbar-color: oklch(0.5 0 0 / 0.3) transparent;
+    }
+    .scroll-on-hover::-webkit-scrollbar {
+      width: 6px;
+    }
+    .scroll-on-hover::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .scroll-on-hover::-webkit-scrollbar-thumb {
+      background: transparent;
+      border-radius: 3px;
+    }
+    .scroll-on-hover:hover::-webkit-scrollbar-thumb {
+      background: oklch(0.5 0 0 / 0.3);
+    }
+  }
 }
 
 /* Highlight animation for newly added items */

@@ -1,13 +1,13 @@
 "use client";
 
 import { LocationBlock as LocationBlockType } from "@/lib/blocks/schemas";
-import { MapPinned, Plus, X, Phone } from "lucide-react";
+import { MapPinned, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { Button } from "@/components/ui/button";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ImageCarousel } from "@/components/shared/media/ImageCarousel";
 import { BlockDialog } from "./BlockDialog";
 import { ImageListField } from "@/app/admin/_components/cms/fields/ImageListField";
@@ -438,17 +438,31 @@ function LocationDisplay({
   // Create ID for anchor linking from carousel
   const locationId = `location-${block.content.name.toLowerCase().replace(/\s+/g, "-")}`;
 
+  // Detect overflow so overscroll-contain only applies when content actually scrolls
+  const infoRef = useRef<HTMLDivElement>(null);
+  const [hasOverflow, setHasOverflow] = useState(false);
+
+  useEffect(() => {
+    const el = infoRef.current;
+    if (!el) return;
+    const check = () => setHasOverflow(el.scrollHeight > el.clientHeight + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <div
       id={locationId}
       data-block-id={block.id}
       data-location-name={block.content.name}
-      className="relative w-full"
+      className="w-full"
     >
-      {/* 50/50 Split Layout - md, 60/40 Split Layout - lg+ */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-        {/* Photo Gallery */}
-        <div className="md:col-span-1 lg:col-span-3">
+      {/* Stack on mobile, side-by-side on md+ (image sets height) */}
+      <div className="relative">
+        {/* Photo Gallery — in flow, sets container height */}
+        <div className="md:w-1/2 lg:w-3/5 md:pr-8">
           <ImageCarousel
             images={block.content.images || []}
             aspectRatio="4/3"
@@ -459,9 +473,12 @@ function LocationDisplay({
           />
         </div>
 
-        {/* Location Info */}
-        <div className="md:col-span-1 lg:col-span-2 space-y-6">
-          <div className="space-y-2">
+        {/* Location Info — abs positioned on md+ to match image height, scrollbar on hover */}
+        <div
+          ref={infoRef}
+          className={`mt-8 md:mt-0 md:absolute md:top-0 md:right-0 md:bottom-0 md:w-1/2 lg:w-2/5 space-y-6 md:overflow-y-auto scroll-on-hover${hasOverflow ? " md:overscroll-contain" : ""}`}
+        >
+          <div className="flex flex-col items-start gap-2">
             <h2 className="text-3xl font-bold">{block.content.name}</h2>
 
             {/* Address with map link */}
@@ -478,8 +495,8 @@ function LocationDisplay({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => isEditing && e.stopPropagation()}
+                className="whitespace-pre-line"
               >
-                <MapPinned className="h-4 w-4 shrink-0" />
                 {block.content.address}
               </a>
             </Button>
@@ -492,7 +509,6 @@ function LocationDisplay({
                 className="p-0 h-auto text-lg text-muted-foreground justify-start has-[>svg]:px-0 whitespace-normal text-left"
               >
                 <a href={`tel:${block.content.phone}`}>
-                  <Phone className="h-4 w-4" />
                   {block.content.phone}
                 </a>
               </Button>
