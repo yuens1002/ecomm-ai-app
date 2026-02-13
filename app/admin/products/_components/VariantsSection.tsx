@@ -668,7 +668,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
                           variant="outline"
                           size="sm"
                           onClick={() => handleAddOption(selectedVariant.id, PurchaseType.ONE_TIME)}
-                          disabled={isSaving}
+                          disabled={isSaving || selectedVariant.purchaseOptions.some(o => o.type === PurchaseType.ONE_TIME)}
                         >
                           + One-time
                         </Button>

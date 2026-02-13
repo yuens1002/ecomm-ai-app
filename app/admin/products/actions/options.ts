@@ -50,6 +50,15 @@ export async function createOption(input: unknown): Promise<ActionResult> {
   } = parsed.data;
 
   try {
+    if (type === PurchaseType.ONE_TIME) {
+      const existing = await prisma.purchaseOption.findFirst({
+        where: { variantId, type: PurchaseType.ONE_TIME },
+      });
+      if (existing) {
+        return { ok: false, error: "This variant already has a one-time purchase option" };
+      }
+    }
+
     const option = await prisma.purchaseOption.create({
       data: {
         variantId,
