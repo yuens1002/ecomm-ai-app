@@ -427,7 +427,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
         (o) => o.type === PurchaseType.SUBSCRIPTION
       ) ?? [];
       const usedIntervals = new Set(existingSubs.map((o) => o.billingInterval));
-      const preferred = [BillingInterval.MONTH, BillingInterval.YEAR, BillingInterval.WEEK, BillingInterval.DAY];
+      const preferred = [BillingInterval.MONTH, BillingInterval.WEEK, BillingInterval.DAY];
       billingInterval = preferred.find((i) => !usedIntervals.has(i)) ?? null;
       if (!billingInterval) {
         toast({ title: "All billing intervals are already in use", variant: "destructive" });
@@ -888,7 +888,6 @@ function PurchaseOptionRow({
                 <SelectItem value="DAY">day(s)</SelectItem>
                 <SelectItem value="WEEK">week(s)</SelectItem>
                 <SelectItem value="MONTH">month(s)</SelectItem>
-                <SelectItem value="YEAR">year(s)</SelectItem>
               </SelectContent>
             </Select>
           </div>
