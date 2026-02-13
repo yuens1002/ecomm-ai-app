@@ -41,6 +41,7 @@ export async function GET(
               select: {
                 id: true,
                 priceInCents: true,
+                salePriceInCents: true,
                 type: true,
               },
             },
@@ -151,6 +152,7 @@ export async function POST(
               select: {
                 id: true,
                 priceInCents: true,
+                salePriceInCents: true,
                 type: true,
               },
             },

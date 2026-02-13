@@ -68,7 +68,7 @@ export async function PATCH(
             id: true,
             name: true,
             purchaseOptions: {
-              select: { id: true, priceInCents: true, type: true },
+              select: { id: true, priceInCents: true, salePriceInCents: true, type: true },
             },
           },
         },

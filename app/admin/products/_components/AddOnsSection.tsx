@@ -47,6 +47,7 @@ interface Product {
 interface PurchaseOption {
   id: string;
   priceInCents: number;
+  salePriceInCents: number | null;
   type: string;
 }
 
@@ -371,10 +372,13 @@ function AddOnCard({
     }, 600);
   };
 
-  // Get the one-time price from the selected variant for reference
-  const variantPrice = addOn.addOnVariant?.purchaseOptions?.find(
+  // Get the effective one-time price (sale price if set, otherwise regular)
+  const oneTimeOption = addOn.addOnVariant?.purchaseOptions?.find(
     (o) => o.type === "ONE_TIME"
-  )?.priceInCents;
+  );
+  const variantPrice = oneTimeOption
+    ? (oneTimeOption.salePriceInCents ?? oneTimeOption.priceInCents)
+    : undefined;
 
   return (
     <div className="p-4 border rounded-lg space-y-3">
