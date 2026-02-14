@@ -27,10 +27,10 @@ export async function getSiteMetadata() {
     storeName: settingsMap.store_name || "Artisan Roast",
     storeTagline:
       settingsMap.store_tagline ||
-      "Specialty coffee sourced from the world's finest origins.",
+      "Open-source specialty coffee e-commerce platform",
     storeDescription:
       settingsMap.store_description ||
-      "Premium specialty coffee, carefully roasted to perfection. From single-origin beans to signature blends, discover exceptional coffee delivered to your door.",
+      "A modern, open-source e-commerce platform built with Next.js, Stripe, and Prisma. Launch your specialty coffee business with subscriptions, AI recommendations, and a beautiful storefront.",
     storeLogoUrl: settingsMap.store_logo_url || "/logo.svg",
     storeFaviconUrl: settingsMap.store_favicon_url || "/favicon.ico",
   };

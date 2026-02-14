@@ -32,7 +32,16 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${storeName}`,
     },
     description: storeDescription,
-    keywords: ["coffee", "specialty coffee", "coffee roaster", "coffee shop", "online coffee store", "coffee subscriptions"],
+    keywords: [
+      "open source ecommerce",
+      "nextjs ecommerce",
+      "specialty coffee ecommerce",
+      "ecommerce platform",
+      "stripe ecommerce",
+      "react ecommerce",
+      "coffee shop website",
+      "ecommerce template",
+    ],
     authors: [{ name: storeName }],
     creator: storeName,
     icons: {
@@ -80,14 +89,38 @@ export async function generateMetadata(): Promise<Metadata> {
  * It provides global wrappers (theme, session, analytics) for all routes.
  * Individual route groups like (site) and admin have their own layouts.
  */
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { storeName, storeDescription } = await getSiteMetadata();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ecomm-ai-app.vercel.app";
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: storeName,
+    description: storeDescription,
+    url: appUrl,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Any",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+  };
+
   return (
     // We add 'suppressHydrationWarning' as required by next-themes
     <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="min-h-screen bg-background font-sans antialiased">
         <SessionProvider>
           <ThemeProvider

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProductBySlug, getRelatedProducts } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
@@ -9,6 +10,30 @@ export const revalidate = 3600; // Re-fetch this page in the background, at most
 interface ProductPageProps {
   params: { slug: string } | Promise<{ slug: string }>;
   searchParams: Promise<{ from?: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: ProductPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  if (!product) return {};
+
+  const title = product.name;
+  const description =
+    product.description ||
+    `Shop ${product.name} — specialty coffee from ${product.origin?.length ? product.origin.join(", ") : "select origins"}.`;
+  const image = product.variants[0]?.images[0]?.url;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      ...(image && { images: [{ url: image, alt: product.name }] }),
+    },
+  };
 }
 
 /**
