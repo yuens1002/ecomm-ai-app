@@ -3,6 +3,7 @@
 import { PurchaseType, BillingInterval } from "@prisma/client";
 
 // Mock Prisma
+const mockFindFirst = jest.fn();
 const mockCreate = jest.fn();
 const mockUpdate = jest.fn();
 const mockDelete = jest.fn();
@@ -10,6 +11,7 @@ const mockDelete = jest.fn();
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     purchaseOption: {
+      findFirst: (...args: unknown[]) => mockFindFirst(...args),
       create: (...args: unknown[]) => mockCreate(...args),
       update: (...args: unknown[]) => mockUpdate(...args),
       delete: (...args: unknown[]) => mockDelete(...args),

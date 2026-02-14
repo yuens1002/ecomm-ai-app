@@ -418,14 +418,32 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
 
   // Purchase option handlers
   const handleAddOption = async (variantId: string, type: PurchaseType) => {
+    let billingInterval: BillingInterval | null = null;
+    let billingIntervalCount: number | null = null;
+
+    if (type === PurchaseType.SUBSCRIPTION) {
+      const variant = variants.find((v) => v.id === variantId);
+      const existingSubs = variant?.purchaseOptions.filter(
+        (o) => o.type === PurchaseType.SUBSCRIPTION
+      ) ?? [];
+      const usedIntervals = new Set(existingSubs.map((o) => o.billingInterval));
+      const preferred = [BillingInterval.MONTH, BillingInterval.WEEK, BillingInterval.DAY];
+      billingInterval = preferred.find((i) => !usedIntervals.has(i)) ?? null;
+      if (!billingInterval) {
+        toast({ title: "All billing intervals are already in use", variant: "destructive" });
+        return;
+      }
+      billingIntervalCount = 1;
+    }
+
     setIsSaving(true);
     const result = await createOption({
       variantId,
       type,
       priceInCents: 0,
       salePriceInCents: null,
-      billingInterval: type === PurchaseType.SUBSCRIPTION ? BillingInterval.MONTH : null,
-      billingIntervalCount: type === PurchaseType.SUBSCRIPTION ? 1 : null,
+      billingInterval,
+      billingIntervalCount,
     });
     setIsSaving(false);
     if (result.ok) {
@@ -608,7 +626,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
                 <span className="text-sm text-muted-foreground">of</span>
                 <span className="text-sm text-muted-foreground tabular-nums">{variants.length}</span>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-x-12">
+              <div className="grid grid-cols-1 lg:grid-cols-[55fr_45fr] gap-6 lg:gap-x-12">
                 {/* Left: Name, Weight/Stock, Purchase Options */}
                 <div className="space-y-6">
                   <Field>
@@ -668,7 +686,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
                           variant="outline"
                           size="sm"
                           onClick={() => handleAddOption(selectedVariant.id, PurchaseType.ONE_TIME)}
-                          disabled={isSaving}
+                          disabled={isSaving || selectedVariant.purchaseOptions.some(o => o.type === PurchaseType.ONE_TIME)}
                         >
                           + One-time
                         </Button>
@@ -801,79 +819,83 @@ function PurchaseOptionRow({
   const isSubscription = option.type === PurchaseType.SUBSCRIPTION;
 
   return (
-    <div className="flex items-center gap-3 py-3">
+    <div className="flex items-center gap-3 py-3 text-sm">
       <span className="text-xs font-medium uppercase text-muted-foreground w-16 shrink-0">
         {isSubscription ? "SUB" : "ONE-TIME"}
       </span>
 
-      <div className="flex-1 flex flex-wrap items-center gap-3">
-        <InputGroup className="w-40 h-8">
-          <InputGroupAddon align="inline-start">
-            <InputGroupText>$</InputGroupText>
-          </InputGroupAddon>
-          <InputGroupInput
-            type="number"
-            step="0.01"
-            defaultValue={(option.priceInCents / 100).toFixed(2)}
-            onBlur={(e) => {
-              const cents = Math.round(parseFloat(e.target.value) * 100);
-              if (cents >= 0) onUpdate(option.id, variantId, { priceInCents: cents });
-            }}
-          />
-        </InputGroup>
+      <div className="flex-1 space-y-2 min-w-0 [&_input]:!text-sm">
+        <div className="flex gap-2">
+          <InputGroup className="flex-1 h-8">
+            <InputGroupAddon align="inline-start">
+              <InputGroupText>$</InputGroupText>
+            </InputGroupAddon>
+            <InputGroupInput
+              type="number"
+              step="0.01"
+              defaultValue={(option.priceInCents / 100).toFixed(2)}
+              onBlur={(e) => {
+                const cents = Math.round(parseFloat(e.target.value) * 100);
+                if (cents >= 0) onUpdate(option.id, variantId, { priceInCents: cents });
+              }}
+            />
+          </InputGroup>
 
-        <InputGroup className="w-40 h-8">
-          <InputGroupAddon align="inline-start">
-            <InputGroupText>Sale $</InputGroupText>
-          </InputGroupAddon>
-          <InputGroupInput
-            type="number"
-            step="0.01"
-            placeholder="—"
-            defaultValue={
-              option.salePriceInCents
-                ? (option.salePriceInCents / 100).toFixed(2)
-                : ""
-            }
-            onBlur={(e) => {
-              const val = e.target.value;
-              const cents = val ? Math.round(parseFloat(val) * 100) : null;
-              onUpdate(option.id, variantId, { salePriceInCents: cents });
-            }}
-          />
-        </InputGroup>
+          <InputGroup className="flex-1 h-8">
+            <InputGroupAddon align="inline-start">
+              <InputGroupText>Sale $</InputGroupText>
+            </InputGroupAddon>
+            <InputGroupInput
+              type="number"
+              step="0.01"
+              placeholder="—"
+              defaultValue={
+                option.salePriceInCents
+                  ? (option.salePriceInCents / 100).toFixed(2)
+                  : ""
+              }
+              onBlur={(e) => {
+                const val = e.target.value;
+                const cents = val ? Math.round(parseFloat(val) * 100) : null;
+                onUpdate(option.id, variantId, { salePriceInCents: cents });
+              }}
+            />
+          </InputGroup>
+        </div>
 
         {isSubscription && (
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground">every</span>
-            <Input
+          <InputGroup className="h-8">
+            <InputGroupAddon align="inline-start">
+              <InputGroupText>Every</InputGroupText>
+            </InputGroupAddon>
+            <InputGroupInput
               type="number"
-              className="w-14 h-8"
               defaultValue={option.billingIntervalCount ?? 1}
               onBlur={(e) => {
                 const count = parseInt(e.target.value) || 1;
                 onUpdate(option.id, variantId, { billingIntervalCount: count });
               }}
             />
-            <Select
-              defaultValue={option.billingInterval ?? BillingInterval.MONTH}
-              onValueChange={(val) =>
-                onUpdate(option.id, variantId, {
-                  billingInterval: val as BillingInterval,
-                })
-              }
-            >
-              <SelectTrigger className="w-24 h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="DAY">day(s)</SelectItem>
-                <SelectItem value="WEEK">week(s)</SelectItem>
-                <SelectItem value="MONTH">month(s)</SelectItem>
-                <SelectItem value="YEAR">year(s)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <InputGroupAddon align="inline-end">
+              <Select
+                defaultValue={option.billingInterval ?? BillingInterval.MONTH}
+                onValueChange={(val) =>
+                  onUpdate(option.id, variantId, {
+                    billingInterval: val as BillingInterval,
+                  })
+                }
+              >
+                <SelectTrigger className="h-7 border-0 shadow-none bg-transparent px-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DAY">day/s</SelectItem>
+                  <SelectItem value="WEEK">wk/s</SelectItem>
+                  <SelectItem value="MONTH">mo/s</SelectItem>
+                </SelectContent>
+              </Select>
+            </InputGroupAddon>
+          </InputGroup>
         )}
       </div>
 

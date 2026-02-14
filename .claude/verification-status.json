@@ -89,6 +89,13 @@
       "acs_total": 14,
       "tasks": [],
       "notes": "All 14 ACs verified via sub-agent screenshots + code review. QC confirmed. 0 iterations needed. Container queries working at 300px threshold for button text and sale price layout."
+    },
+    "feat/addon-edit": {
+      "status": "verified",
+      "acs_passed": 25,
+      "acs_total": 26,
+      "tasks": [],
+      "notes": "25/26 ACs verified. 12 UI ACs via Puppeteer screenshots, 10 FN ACs via code review, 3 REG ACs via precheck+tests+screenshot. AC-REG-2 (cart add-ons display) deferred — no cart add-ons configured during test. 0 iterations needed."
     }
   }
 }

@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getWeightUnit } from "@/lib/config/app-settings";
 import { fromGrams, roundToInt, WeightUnitOption } from "@/lib/weight-unit";
-import { WeightUnit } from "@prisma/client";
+import { WeightUnit, type DiscountType } from "@prisma/client";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 
 export interface AddOnItem {
@@ -30,6 +30,20 @@ export interface AddOnItem {
   categorySlug?: string;
 }
 
+const DISCOUNT_CALC: Record<DiscountType, (price: number, value: number) => number> = {
+  FIXED: (price, value) => Math.max(0, price - value),
+  PERCENTAGE: (price, value) => Math.round(price * (1 - value / 100)),
+};
+
+function computeEffectivePrice(
+  price: number,
+  discountType: DiscountType | null,
+  discountValue: number | null
+): number {
+  if (!discountType || discountValue == null) return price;
+  return DISCOUNT_CALC[discountType](price, discountValue);
+}
+
 /**
  * Fetch product add-ons for display on product pages
  */
@@ -43,11 +57,11 @@ export async function getProductAddOns(
         addOnProduct: {
           isDisabled: false,
         },
-        addOnVariant: {
-          stockQuantity: {
-            gt: 0,
-          },
-        },
+        // Allow both: specific variant links AND null-variant (all variants) links
+        OR: [
+          { addOnVariant: { stockQuantity: { gt: 0 } } },
+          { addOnVariantId: null },
+        ],
       },
       include: {
         addOnProduct: {
@@ -58,17 +72,35 @@ export async function getProductAddOns(
             type: true,
             description: true,
             categories: {
-              where: {
-                isPrimary: true,
-              },
+              where: { isPrimary: true },
               include: {
-                category: {
-                  select: {
-                    slug: true,
-                  },
-                },
+                category: { select: { slug: true } },
               },
               take: 1,
+            },
+            variants: {
+              select: {
+                id: true,
+                name: true,
+                weight: true,
+                stockQuantity: true,
+                images: {
+                  select: { url: true },
+                  orderBy: { order: "asc" as const },
+                  take: 1,
+                },
+                purchaseOptions: {
+                  where: { type: "ONE_TIME" },
+                  select: {
+                    id: true,
+                    priceInCents: true,
+                    salePriceInCents: true,
+                    type: true,
+                  },
+                  take: 1,
+                },
+              },
+              orderBy: { order: "asc" },
             },
           },
         },
@@ -84,12 +116,11 @@ export async function getProductAddOns(
               take: 1,
             },
             purchaseOptions: {
-              where: {
-                type: "ONE_TIME",
-              },
+              where: { type: "ONE_TIME" },
               select: {
                 id: true,
                 priceInCents: true,
+                salePriceInCents: true,
                 type: true,
               },
               take: 1,
@@ -99,54 +130,101 @@ export async function getProductAddOns(
       },
     });
 
-    // Filter out add-ons with no valid purchase options
-    // Note: Variants are guaranteed to exist (products must have at least one variant)
-    const validAddOns = addOns.filter(
-      (addOn) => addOn.addOnVariant!.purchaseOptions.length > 0
-    );
-
-    // Get current weight unit setting
     const currentUnit = await getWeightUnit();
     const isImperial = currentUnit === WeightUnit.IMPERIAL;
 
-    // Transform to response format with weight conversion
-    return validAddOns.map((addOn) => {
-      // Type assertion: variants are guaranteed to exist on products
-      const variant = addOn.addOnVariant!;
-      const purchaseOption = variant.purchaseOptions[0];
+    const results: AddOnItem[] = [];
+    const seen = new Set<string>();
 
-      // Convert weight to current site unit
-      let convertedWeight = variant.weight;
-      if (variant.weight && isImperial) {
-        convertedWeight = roundToInt(
-          fromGrams(variant.weight, WeightUnitOption.IMPERIAL)
+    for (const addOn of addOns) {
+      const categorySlug =
+        addOn.addOnProduct.categories[0]?.category.slug || "shop";
+
+      // Null-variant: expand to all in-stock variants of the add-on product
+      if (addOn.addOnVariantId === null) {
+        const inStockVariants = addOn.addOnProduct.variants.filter(
+          (v) => v.stockQuantity > 0 && v.purchaseOptions.length > 0
         );
-      }
 
-      return {
-        product: addOn.addOnProduct,
-        variant: {
-          id: variant.id,
-          name: variant.name,
-          weight: convertedWeight,
-          stockQuantity: variant.stockQuantity,
-          purchaseOptions: [
-            {
-              id: purchaseOption.id,
-              priceInCents: purchaseOption.priceInCents,
-              type: purchaseOption.type,
+        for (const variant of inStockVariants) {
+          const key = `${addOn.addOnProduct.id}-${variant.id}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+
+          const po = variant.purchaseOptions[0];
+          const basePrice = po.salePriceInCents ?? po.priceInCents;
+          const effectivePrice = computeEffectivePrice(
+            basePrice,
+            addOn.discountType,
+            addOn.discountValue
+          );
+
+          let weight = variant.weight;
+          if (weight && isImperial) {
+            weight = roundToInt(fromGrams(weight, WeightUnitOption.IMPERIAL));
+          }
+
+          results.push({
+            product: addOn.addOnProduct,
+            variant: {
+              id: variant.id,
+              name: variant.name,
+              weight,
+              stockQuantity: variant.stockQuantity,
+              purchaseOptions: [
+                { id: po.id, priceInCents: po.priceInCents, type: po.type },
+              ],
             },
-          ],
-        },
-        discountedPriceInCents:
-          addOn.discountedPriceInCents ?? purchaseOption.priceInCents,
-        // Add-ons are merch products, use "culture" category for coffee lifestyle images
-        imageUrl:
-          variant.images[0]?.url ||
-          getPlaceholderImage(addOn.addOnProduct.name, 400, "culture"),
-        categorySlug: addOn.addOnProduct.categories[0]?.category.slug || "shop",
-      };
-    });
+            discountedPriceInCents: effectivePrice,
+            imageUrl:
+              variant.images[0]?.url ||
+              getPlaceholderImage(addOn.addOnProduct.name, 400, "culture"),
+            categorySlug,
+          });
+        }
+      } else {
+        // Specific variant link
+        const variant = addOn.addOnVariant!;
+        if (variant.purchaseOptions.length === 0) continue;
+
+        const key = `${addOn.addOnProduct.id}-${variant.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        const po = variant.purchaseOptions[0];
+        const basePrice = po.salePriceInCents ?? po.priceInCents;
+        const effectivePrice = computeEffectivePrice(
+          basePrice,
+          addOn.discountType,
+          addOn.discountValue
+        );
+
+        let weight = variant.weight;
+        if (weight && isImperial) {
+          weight = roundToInt(fromGrams(weight, WeightUnitOption.IMPERIAL));
+        }
+
+        results.push({
+          product: addOn.addOnProduct,
+          variant: {
+            id: variant.id,
+            name: variant.name,
+            weight,
+            stockQuantity: variant.stockQuantity,
+            purchaseOptions: [
+              { id: po.id, priceInCents: po.priceInCents, type: po.type },
+            ],
+          },
+          discountedPriceInCents: effectivePrice,
+          imageUrl:
+            variant.images[0]?.url ||
+            getPlaceholderImage(addOn.addOnProduct.name, 400, "culture"),
+          categorySlug,
+        });
+      }
+    }
+
+    return results;
   } catch (error) {
     console.error("Failed to fetch add-ons:", error);
     return [];

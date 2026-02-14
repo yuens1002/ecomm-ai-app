@@ -50,6 +50,27 @@ export async function createOption(input: unknown): Promise<ActionResult> {
   } = parsed.data;
 
   try {
+    if (type === PurchaseType.ONE_TIME) {
+      const existing = await prisma.purchaseOption.findFirst({
+        where: { variantId, type: PurchaseType.ONE_TIME },
+      });
+      if (existing) {
+        return { ok: false, error: "This variant already has a one-time purchase option" };
+      }
+    } else {
+      const existing = await prisma.purchaseOption.findFirst({
+        where: {
+          variantId,
+          type: PurchaseType.SUBSCRIPTION,
+          billingInterval: billingInterval ?? null,
+          billingIntervalCount: billingIntervalCount ?? null,
+        },
+      });
+      if (existing) {
+        return { ok: false, error: "This variant already has a subscription with that billing interval" };
+      }
+    }
+
     const option = await prisma.purchaseOption.create({
       data: {
         variantId,

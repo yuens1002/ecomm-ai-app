@@ -406,15 +406,22 @@ model ProductTag {
 
 // Add-ons (single table across all products)
 
+enum DiscountType {
+  FIXED // Dollar amount off (value in cents)
+  PERCENTAGE // Percentage off (value = integer, e.g. 10 = 10%)
+}
+
 model AddOnLink {
-  id                     String   @id @default(cuid())
+  id                     String        @id @default(cuid())
   primaryProductId       String
   primaryVariantId       String?
   addOnProductId         String
   addOnVariantId         String?
-  discountedPriceInCents Int?
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  discountType           DiscountType?
+  discountValue          Int?
+  discountedPriceInCents Int? // Kept for backward compat during migration
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
 
   primaryProduct Product         @relation("PrimaryProduct", fields: [primaryProductId], references: [id], onDelete: Cascade)
   primaryVariant ProductVariant? @relation("PrimaryVariant", fields: [primaryVariantId], references: [id], onDelete: Cascade)
