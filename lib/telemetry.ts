@@ -14,7 +14,7 @@ import { APP_VERSION, EDITION } from "./version";
 // Can be overridden if someone wants to self-host their own telemetry
 const TELEMETRY_ENDPOINT =
   process.env.TELEMETRY_ENDPOINT ||
-  "https://ecomm-ai-app.vercel.app/api/telemetry/events";
+  "https://artisanroast.app/api/telemetry/events";
 
 export interface TelemetryEvent {
   event: "install" | "heartbeat" | "upgrade";

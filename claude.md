@@ -9,7 +9,7 @@
 **Name:** Artisan Roast
 **Type:** Full-stack E-commerce Coffee Store with AI Integration
 **Version:** 0.71.4
-**Live Demo:** <https://ecomm-ai-app.vercel.app/>
+**Live Demo:** <https://artisanroast.app/>
 
 ### Tech Stack
 

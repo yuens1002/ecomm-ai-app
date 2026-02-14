@@ -9,7 +9,7 @@ This document describes the staging environment configuration for testing change
 | GitHub Branch | `main` | `staging` |
 | Neon Database | Main branch | `staging` branch |
 | Vercel | Production deployment | Preview deployment |
-| URL | ecomm-ai-app.vercel.app | Auto-generated preview URL |
+| URL | artisanroast.app | Auto-generated preview URL |
 
 ## Setup Instructions
 
