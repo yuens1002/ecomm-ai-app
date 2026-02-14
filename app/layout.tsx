@@ -7,7 +7,9 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { EnvironmentIndicator } from "@/components/shared/EnvironmentIndicator";
+import { GoogleAnalytics } from "@/components/shared/GoogleAnalytics";
 import { getSiteMetadata } from "@/lib/site-metadata";
 
 // Setup the Inter font with a CSS variable
@@ -69,6 +71,9 @@ export async function generateMetadata(): Promise<Metadata> {
       title: storeName,
       description: storeTagline,
       images: [storeLogoUrl],
+    },
+    verification: {
+      google: process.env.NEXT_PUBLIC_GSC_VERIFICATION || undefined,
     },
     robots: {
       index: true,
@@ -135,6 +140,8 @@ export default async function RootLayout({
         </SessionProvider>
         <EnvironmentIndicator />
         <Analytics />
+        <SpeedInsights />
+        <GoogleAnalytics />
       </body>
     </html>
   );
