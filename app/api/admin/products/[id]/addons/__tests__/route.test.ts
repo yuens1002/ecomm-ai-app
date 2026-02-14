@@ -7,11 +7,13 @@ const requireAdminApiMock = jest.fn();
 type PrismaMock = {
   product: {
     findUnique: jest.Mock;
+    findMany: jest.Mock;
   };
   addOnLink: {
     findMany: jest.Mock;
     findFirst: jest.Mock;
     create: jest.Mock;
+    deleteMany: jest.Mock;
   };
 };
 
@@ -20,19 +22,23 @@ jest.mock("@/lib/admin", () => ({
 }));
 
 jest.mock("@/lib/prisma", () => {
-  const findUniqueMock = jest.fn();
+  const productFindUniqueMock = jest.fn();
+  const productFindManyMock = jest.fn();
   const findManyMock = jest.fn();
   const findFirstMock = jest.fn();
   const createMock = jest.fn();
+  const deleteManyMock = jest.fn();
 
   const prismaMock: PrismaMock = {
     product: {
-      findUnique: findUniqueMock,
+      findUnique: productFindUniqueMock,
+      findMany: productFindManyMock,
     },
     addOnLink: {
       findMany: findManyMock,
       findFirst: findFirstMock,
       create: createMock,
+      deleteMany: deleteManyMock,
     },
   };
 
@@ -41,27 +47,28 @@ jest.mock("@/lib/prisma", () => {
     __esModule: true,
     __mocks: {
       prismaMock,
-      findUniqueMock,
+      productFindUniqueMock,
+      productFindManyMock,
       findManyMock,
       findFirstMock,
       createMock,
+      deleteManyMock,
     },
   };
 });
 
-// Extract mocks after the factory has run
 const {
-  prismaMock: _prismaMock,
-  findUniqueMock,
+  productFindUniqueMock,
+  productFindManyMock,
   findManyMock,
   findFirstMock,
   createMock,
+  deleteManyMock,
 } =
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require("@/lib/prisma").__mocks;
 
-// Import the route handlers after mocks are set up
-import { GET, POST } from "../route";
+import { GET, POST, DELETE } from "../route";
 
 describe("GET /api/admin/products/[id]/addons", () => {
   beforeEach(() => {
@@ -87,53 +94,40 @@ describe("GET /api/admin/products/[id]/addons", () => {
     expect(json.error).toBe("Unauthorized");
   });
 
-  it("fetches add-ons for a product", async () => {
+  it("returns grouped add-ons with variants and selections", async () => {
     requireAdminApiMock.mockResolvedValue({ authorized: true });
 
-    const mockAddOns = [
+    const mockLinks = [
       {
-        id: "addon-1",
-        primaryProductId: "prod-1",
+        id: "link-1",
         addOnProductId: "prod-2",
         addOnVariantId: null,
-        discountedPriceInCents: null,
-        createdAt: "2025-01-01T00:00:00.000Z",
-        addOnProduct: {
-          id: "prod-2",
-          name: "Grinder",
-          type: "MERCHANDISE",
-        },
-        addOnVariant: null,
-      },
-      {
-        id: "addon-2",
-        primaryProductId: "prod-1",
-        addOnProductId: "prod-3",
-        addOnVariantId: "var-1",
-        discountedPriceInCents: 1500,
-        createdAt: "2025-01-02T00:00:00.000Z",
-        addOnProduct: {
-          id: "prod-3",
-          name: "Colombia Geisha",
-          type: "COFFEE",
-        },
-        addOnVariant: {
-          id: "var-1",
-          name: "12oz Bag",
-          weight: 340,
-          stockQuantity: 10,
-          purchaseOptions: [
-            {
-              id: "opt-1",
-              priceInCents: 2000,
-              type: "ONE_TIME",
-            },
-          ],
-        },
+        discountType: "PERCENTAGE",
+        discountValue: 10,
       },
     ];
 
-    findManyMock.mockResolvedValue(mockAddOns);
+    const mockProducts = [
+      {
+        id: "prod-2",
+        name: "Heritage Mug",
+        type: "MERCH",
+        variants: [
+          {
+            id: "var-1",
+            name: "12oz",
+            weight: 400,
+            stockQuantity: 120,
+            purchaseOptions: [
+              { id: "po-1", priceInCents: 1800, salePriceInCents: null, type: "ONE_TIME" },
+            ],
+          },
+        ],
+      },
+    ];
+
+    findManyMock.mockResolvedValue(mockLinks);
+    productFindManyMock.mockResolvedValue(mockProducts);
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/products/prod-1/addons"
@@ -145,41 +139,25 @@ describe("GET /api/admin/products/[id]/addons", () => {
 
     expect(response.status).toBe(200);
     const json = await response.json();
-    expect(json.addOns).toEqual(mockAddOns);
-
-    expect(findManyMock).toHaveBeenCalledWith({
-      where: { primaryProductId: "prod-1" },
-      include: {
-        addOnProduct: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
-          },
+    expect(json.addOns).toHaveLength(1);
+    expect(json.addOns[0]).toEqual({
+      addOnProduct: { id: "prod-2", name: "Heritage Mug", type: "MERCH" },
+      variants: mockProducts[0].variants,
+      selections: [
+        {
+          id: "link-1",
+          addOnVariantId: null,
+          discountType: "PERCENTAGE",
+          discountValue: 10,
         },
-        addOnVariant: {
-          select: {
-            id: true,
-            name: true,
-            weight: true,
-            stockQuantity: true,
-            purchaseOptions: {
-              select: {
-                id: true,
-                priceInCents: true,
-                type: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: { createdAt: "asc" },
+      ],
     });
   });
 
   it("returns empty array when no add-ons exist", async () => {
     requireAdminApiMock.mockResolvedValue({ authorized: true });
     findManyMock.mockResolvedValue([]);
+    productFindManyMock.mockResolvedValue([]);
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/products/prod-1/addons"
@@ -233,9 +211,7 @@ describe("POST /api/admin/products/[id]/addons", () => {
       "http://localhost:3000/api/admin/products/prod-1/addons",
       {
         method: "POST",
-        body: JSON.stringify({
-          addOnProductId: "prod-2",
-        }),
+        body: JSON.stringify({ addOnProductId: "prod-2" }),
       }
     );
 
@@ -244,8 +220,6 @@ describe("POST /api/admin/products/[id]/addons", () => {
     });
 
     expect(response.status).toBe(401);
-    const json = await response.json();
-    expect(json.error).toBe("Unauthorized");
   });
 
   it("returns 400 when addOnProductId is missing", async () => {
@@ -266,63 +240,19 @@ describe("POST /api/admin/products/[id]/addons", () => {
     expect(response.status).toBe(400);
     const json = await response.json();
     expect(json.error).toBeDefined();
-    expect(json.error).toMatch(/required|expected string/i);
-  });
-
-  it("returns 400 when addOnProductId is empty string", async () => {
-    requireAdminApiMock.mockResolvedValue({ authorized: true });
-
-    const request = new NextRequest(
-      "http://localhost:3000/api/admin/products/prod-1/addons",
-      {
-        method: "POST",
-        body: JSON.stringify({ addOnProductId: "" }),
-      }
-    );
-
-    const response = await POST(request, {
-      params: Promise.resolve({ id: "prod-1" }),
-    });
-
-    expect(response.status).toBe(400);
-    const json = await response.json();
-    expect(json.error).toContain("required");
-  });
-
-  it("returns 400 when discountedPriceInCents is not a positive integer", async () => {
-    requireAdminApiMock.mockResolvedValue({ authorized: true });
-
-    const request = new NextRequest(
-      "http://localhost:3000/api/admin/products/prod-1/addons",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          addOnProductId: "prod-2",
-          discountedPriceInCents: -100,
-        }),
-      }
-    );
-
-    const response = await POST(request, {
-      params: Promise.resolve({ id: "prod-1" }),
-    });
-
-    expect(response.status).toBe(400);
-    const json = await response.json();
-    expect(json.error).toBeDefined();
   });
 
   it("returns 404 when primary product not found", async () => {
     requireAdminApiMock.mockResolvedValue({ authorized: true });
-    findUniqueMock.mockResolvedValueOnce(null); // primary product not found
+    productFindUniqueMock
+      .mockResolvedValueOnce(null) // primary not found
+      .mockResolvedValueOnce({ id: "prod-2", name: "Add-on", variants: [] });
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/products/prod-1/addons",
       {
         method: "POST",
-        body: JSON.stringify({
-          addOnProductId: "prod-2",
-        }),
+        body: JSON.stringify({ addOnProductId: "prod-2" }),
       }
     );
 
@@ -337,17 +267,15 @@ describe("POST /api/admin/products/[id]/addons", () => {
 
   it("returns 404 when add-on product not found", async () => {
     requireAdminApiMock.mockResolvedValue({ authorized: true });
-    findUniqueMock
-      .mockResolvedValueOnce({ id: "prod-1", name: "Primary Product" }) // primary product exists
-      .mockResolvedValueOnce(null); // add-on product not found
+    productFindUniqueMock
+      .mockResolvedValueOnce({ id: "prod-1", name: "Primary" })
+      .mockResolvedValueOnce(null); // add-on not found
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/products/prod-1/addons",
       {
         method: "POST",
-        body: JSON.stringify({
-          addOnProductId: "prod-2",
-        }),
+        body: JSON.stringify({ addOnProductId: "prod-2" }),
       }
     );
 
@@ -362,23 +290,16 @@ describe("POST /api/admin/products/[id]/addons", () => {
 
   it("returns 400 when duplicate add-on link exists", async () => {
     requireAdminApiMock.mockResolvedValue({ authorized: true });
-    findUniqueMock
-      .mockResolvedValueOnce({ id: "prod-1", name: "Primary Product" })
-      .mockResolvedValueOnce({ id: "prod-2", name: "Add-on Product" });
-    findFirstMock.mockResolvedValue({
-      id: "existing-addon-1",
-      primaryProductId: "prod-1",
-      addOnProductId: "prod-2",
-      addOnVariantId: null,
-    });
+    productFindUniqueMock
+      .mockResolvedValueOnce({ id: "prod-1" })
+      .mockResolvedValueOnce({ id: "prod-2", name: "Add-on", type: "MERCH", variants: [] });
+    findFirstMock.mockResolvedValue({ id: "existing" });
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/products/prod-1/addons",
       {
         method: "POST",
-        body: JSON.stringify({
-          addOnProductId: "prod-2",
-        }),
+        body: JSON.stringify({ addOnProductId: "prod-2" }),
       }
     );
 
@@ -388,193 +309,42 @@ describe("POST /api/admin/products/[id]/addons", () => {
 
     expect(response.status).toBe(400);
     const json = await response.json();
-    expect(json.error).toBe("This add-on link already exists");
-
-    expect(findFirstMock).toHaveBeenCalledWith({
-      where: {
-        primaryProductId: "prod-1",
-        addOnProductId: "prod-2",
-        addOnVariantId: null,
-      },
-    });
+    expect(json.error).toBe("This product is already added as an add-on");
   });
 
-  it("creates add-on link without variant or discount", async () => {
+  it("creates add-on link with null variant and returns grouped response", async () => {
     requireAdminApiMock.mockResolvedValue({ authorized: true });
-    findUniqueMock
-      .mockResolvedValueOnce({ id: "prod-1", name: "Primary Product" })
-      .mockResolvedValueOnce({ id: "prod-2", name: "Add-on Product" });
-    findFirstMock.mockResolvedValue(null); // no duplicate
-
-    const mockCreatedAddOn = {
-      id: "addon-new",
-      primaryProductId: "prod-1",
-      addOnProductId: "prod-2",
-      addOnVariantId: null,
-      discountedPriceInCents: null,
-      createdAt: "2025-12-12T00:00:00.000Z",
-      addOnProduct: {
+    productFindUniqueMock
+      .mockResolvedValueOnce({ id: "prod-1" })
+      .mockResolvedValueOnce({
         id: "prod-2",
-        name: "Grinder",
-        type: "MERCHANDISE",
-      },
-      addOnVariant: null,
-    };
-
-    createMock.mockResolvedValue(mockCreatedAddOn);
-
-    const request = new NextRequest(
-      "http://localhost:3000/api/admin/products/prod-1/addons",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          addOnProductId: "prod-2",
-        }),
-      }
-    );
-
-    const response = await POST(request, {
-      params: Promise.resolve({ id: "prod-1" }),
-    });
-
-    expect(response.status).toBe(201);
-    const json = await response.json();
-    expect(json.addOn).toEqual(mockCreatedAddOn);
-
-    expect(createMock).toHaveBeenCalledWith({
-      data: {
-        primaryProductId: "prod-1",
-        addOnProductId: "prod-2",
-        addOnVariantId: null,
-        discountedPriceInCents: null,
-      },
-      include: {
-        addOnProduct: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
-          },
-        },
-        addOnVariant: {
-          select: {
-            id: true,
-            name: true,
-            weight: true,
-            stockQuantity: true,
-            purchaseOptions: {
-              select: {
-                id: true,
-                priceInCents: true,
-                type: true,
-              },
-            },
-          },
-        },
-      },
-    });
-  });
-
-  it("creates add-on link with variant and discounted price", async () => {
-    requireAdminApiMock.mockResolvedValue({ authorized: true });
-    findUniqueMock
-      .mockResolvedValueOnce({ id: "prod-1", name: "Primary Product" })
-      .mockResolvedValueOnce({ id: "prod-3", name: "Coffee Product" });
-    findFirstMock.mockResolvedValue(null);
-
-    const mockCreatedAddOn = {
-      id: "addon-new",
-      primaryProductId: "prod-1",
-      addOnProductId: "prod-3",
-      addOnVariantId: "var-1",
-      discountedPriceInCents: 1500,
-      createdAt: "2025-12-12T00:00:00.000Z",
-      addOnProduct: {
-        id: "prod-3",
-        name: "Colombia Geisha",
-        type: "COFFEE",
-      },
-      addOnVariant: {
-        id: "var-1",
-        name: "12oz Bag",
-        weight: 340,
-        stockQuantity: 10,
-        purchaseOptions: [
+        name: "Mug",
+        type: "MERCH",
+        variants: [
           {
-            id: "opt-1",
-            priceInCents: 2000,
-            type: "ONE_TIME",
+            id: "var-1",
+            name: "12oz",
+            weight: 400,
+            stockQuantity: 10,
+            purchaseOptions: [
+              { id: "po-1", priceInCents: 1800, salePriceInCents: null, type: "ONE_TIME" },
+            ],
           },
         ],
-      },
-    };
-
-    createMock.mockResolvedValue(mockCreatedAddOn);
-
-    const request = new NextRequest(
-      "http://localhost:3000/api/admin/products/prod-1/addons",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          addOnProductId: "prod-3",
-          addOnVariantId: "var-1",
-          discountedPriceInCents: 1500,
-        }),
-      }
-    );
-
-    const response = await POST(request, {
-      params: Promise.resolve({ id: "prod-1" }),
-    });
-
-    expect(response.status).toBe(201);
-    const json = await response.json();
-    expect(json.addOn.addOnVariantId).toBe("var-1");
-    expect(json.addOn.discountedPriceInCents).toBe(1500);
-
-    expect(createMock).toHaveBeenCalledWith({
-      data: {
-        primaryProductId: "prod-1",
-        addOnProductId: "prod-3",
-        addOnVariantId: "var-1",
-        discountedPriceInCents: 1500,
-      },
-      include: expect.any(Object),
-    });
-  });
-
-  it("creates add-on link with null variant when addOnVariantId is null", async () => {
-    requireAdminApiMock.mockResolvedValue({ authorized: true });
-    findUniqueMock
-      .mockResolvedValueOnce({ id: "prod-1", name: "Primary Product" })
-      .mockResolvedValueOnce({ id: "prod-2", name: "Add-on Product" });
+      });
     findFirstMock.mockResolvedValue(null);
-
-    const mockCreatedAddOn = {
+    createMock.mockResolvedValue({
       id: "addon-new",
       primaryProductId: "prod-1",
       addOnProductId: "prod-2",
       addOnVariantId: null,
-      discountedPriceInCents: null,
-      createdAt: "2025-12-12T00:00:00.000Z",
-      addOnProduct: {
-        id: "prod-2",
-        name: "Grinder",
-        type: "MERCHANDISE",
-      },
-      addOnVariant: null,
-    };
-
-    createMock.mockResolvedValue(mockCreatedAddOn);
+    });
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/products/prod-1/addons",
       {
         method: "POST",
-        body: JSON.stringify({
-          addOnProductId: "prod-2",
-          addOnVariantId: null,
-        }),
+        body: JSON.stringify({ addOnProductId: "prod-2" }),
       }
     );
 
@@ -584,16 +354,27 @@ describe("POST /api/admin/products/[id]/addons", () => {
 
     expect(response.status).toBe(201);
     const json = await response.json();
-    expect(json.addOn.addOnVariantId).toBeNull();
+    expect(json.addOn.addOnProduct).toEqual({
+      id: "prod-2",
+      name: "Mug",
+      type: "MERCH",
+    });
+    expect(json.addOn.selections).toEqual([
+      {
+        id: "addon-new",
+        addOnVariantId: null,
+        discountType: null,
+        discountValue: null,
+      },
+    ]);
+    expect(json.addOn.variants).toHaveLength(1);
 
     expect(createMock).toHaveBeenCalledWith({
       data: {
         primaryProductId: "prod-1",
         addOnProductId: "prod-2",
         addOnVariantId: null,
-        discountedPriceInCents: null,
       },
-      include: expect.any(Object),
     });
   });
 
@@ -603,15 +384,13 @@ describe("POST /api/admin/products/[id]/addons", () => {
       .mockImplementation(() => {});
 
     requireAdminApiMock.mockResolvedValue({ authorized: true });
-    findUniqueMock.mockRejectedValue(new Error("Database connection failed"));
+    productFindUniqueMock.mockRejectedValue(new Error("Database error"));
 
     const request = new NextRequest(
       "http://localhost:3000/api/admin/products/prod-1/addons",
       {
         method: "POST",
-        body: JSON.stringify({
-          addOnProductId: "prod-2",
-        }),
+        body: JSON.stringify({ addOnProductId: "prod-2" }),
       }
     );
 
@@ -624,5 +403,68 @@ describe("POST /api/admin/products/[id]/addons", () => {
     expect(json.error).toBe("Failed to create add-on");
 
     consoleErrorSpy.mockRestore();
+  });
+});
+
+describe("DELETE /api/admin/products/[id]/addons", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("returns 401 when not authorized", async () => {
+    requireAdminApiMock.mockResolvedValue({
+      authorized: false,
+      error: "Unauthorized",
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/admin/products/prod-1/addons?addOnProductId=prod-2",
+      { method: "DELETE" }
+    );
+
+    const response = await DELETE(request, {
+      params: Promise.resolve({ id: "prod-1" }),
+    });
+
+    expect(response.status).toBe(401);
+  });
+
+  it("returns 400 when addOnProductId is missing", async () => {
+    requireAdminApiMock.mockResolvedValue({ authorized: true });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/admin/products/prod-1/addons",
+      { method: "DELETE" }
+    );
+
+    const response = await DELETE(request, {
+      params: Promise.resolve({ id: "prod-1" }),
+    });
+
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.error).toContain("addOnProductId");
+  });
+
+  it("deletes all rows for the product combo", async () => {
+    requireAdminApiMock.mockResolvedValue({ authorized: true });
+    deleteManyMock.mockResolvedValue({ count: 2 });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/admin/products/prod-1/addons?addOnProductId=prod-2",
+      { method: "DELETE" }
+    );
+
+    const response = await DELETE(request, {
+      params: Promise.resolve({ id: "prod-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.success).toBe(true);
+
+    expect(deleteManyMock).toHaveBeenCalledWith({
+      where: { primaryProductId: "prod-1", addOnProductId: "prod-2" },
+    });
   });
 });

@@ -1,6 +1,21 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
+import { type DiscountType } from "@prisma/client";
+
+const DISCOUNT_CALC: Record<DiscountType, (price: number, value: number) => number> = {
+  FIXED: (price, value) => Math.max(0, price - value),
+  PERCENTAGE: (price, value) => Math.round(price * (1 - value / 100)),
+};
+
+function computeEffectivePrice(
+  price: number,
+  discountType: DiscountType | null,
+  discountValue: number | null
+): number {
+  if (!discountType || discountValue == null) return price;
+  return DISCOUNT_CALC[discountType](price, discountValue);
+}
 
 export async function POST(request: Request) {
   try {
@@ -10,20 +25,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ addOns: [] });
     }
 
-    // Fetch all add-ons for the products in the cart
     const addOns = await prisma.addOnLink.findMany({
       where: {
-        primaryProductId: {
-          in: productIds,
-        },
-        addOnProduct: {
-          isDisabled: false,
-        },
-        addOnVariant: {
-          stockQuantity: {
-            gt: 0,
-          },
-        },
+        primaryProductId: { in: productIds },
+        addOnProduct: { isDisabled: false },
+        OR: [
+          { addOnVariant: { stockQuantity: { gt: 0 } } },
+          { addOnVariantId: null },
+        ],
       },
       include: {
         addOnProduct: {
@@ -33,17 +42,33 @@ export async function POST(request: Request) {
             slug: true,
             description: true,
             categories: {
-              where: {
-                isPrimary: true,
-              },
+              where: { isPrimary: true },
               include: {
-                category: {
-                  select: {
-                    slug: true,
-                  },
-                },
+                category: { select: { slug: true } },
               },
               take: 1,
+            },
+            variants: {
+              select: {
+                id: true,
+                name: true,
+                stockQuantity: true,
+                images: {
+                  select: { url: true },
+                  orderBy: { order: "asc" as const },
+                  take: 1,
+                },
+                purchaseOptions: {
+                  where: { type: "ONE_TIME" },
+                  select: {
+                    id: true,
+                    priceInCents: true,
+                    salePriceInCents: true,
+                  },
+                  take: 1,
+                },
+              },
+              orderBy: { order: "asc" },
             },
           },
         },
@@ -57,12 +82,11 @@ export async function POST(request: Request) {
               take: 1,
             },
             purchaseOptions: {
-              where: {
-                type: "ONE_TIME",
-              },
+              where: { type: "ONE_TIME" },
               select: {
                 id: true,
                 priceInCents: true,
+                salePriceInCents: true,
               },
               take: 1,
             },
@@ -71,37 +95,96 @@ export async function POST(request: Request) {
       },
     });
 
-    // Filter out add-ons with no valid purchase options and deduplicate
-    const addOnMap = new Map();
+    const addOnMap = new Map<
+      string,
+      {
+        product: {
+          id: string;
+          name: string;
+          slug: string;
+          description: string | null;
+          imageUrl: string;
+          categorySlug: string;
+        };
+        variant: { id: string; name: string; priceInCents: number };
+      }
+    >();
 
     for (const addOn of addOns) {
-      if (
-        !addOn.addOnVariant ||
-        addOn.addOnVariant.purchaseOptions.length === 0
-      ) {
-        continue;
-      }
+      const categorySlug =
+        addOn.addOnProduct.categories[0]?.category.slug || "shop";
 
-      const key = `${addOn.addOnProduct.id}-${addOn.addOnVariant.id}`;
+      if (addOn.addOnVariantId === null) {
+        // Expand null-variant to all in-stock variants
+        const inStockVariants = addOn.addOnProduct.variants.filter(
+          (v) => v.stockQuantity > 0 && v.purchaseOptions.length > 0
+        );
 
-      if (!addOnMap.has(key)) {
+        for (const variant of inStockVariants) {
+          const key = `${addOn.addOnProduct.id}-${variant.id}`;
+          if (addOnMap.has(key)) continue;
+
+          const po = variant.purchaseOptions[0];
+          const basePrice = po.salePriceInCents ?? po.priceInCents;
+          const effectivePrice = computeEffectivePrice(
+            basePrice,
+            addOn.discountType,
+            addOn.discountValue
+          );
+
+          addOnMap.set(key, {
+            product: {
+              id: addOn.addOnProduct.id,
+              name: addOn.addOnProduct.name,
+              slug: addOn.addOnProduct.slug,
+              description: addOn.addOnProduct.description,
+              imageUrl:
+                variant.images[0]?.url ||
+                getPlaceholderImage(addOn.addOnProduct.name, 400, "culture"),
+              categorySlug,
+            },
+            variant: {
+              id: variant.id,
+              name: variant.name,
+              priceInCents: effectivePrice,
+            },
+          });
+        }
+      } else {
+        // Specific variant
+        if (
+          !addOn.addOnVariant ||
+          addOn.addOnVariant.purchaseOptions.length === 0
+        ) {
+          continue;
+        }
+
+        const key = `${addOn.addOnProduct.id}-${addOn.addOnVariant.id}`;
+        if (addOnMap.has(key)) continue;
+
+        const po = addOn.addOnVariant.purchaseOptions[0];
+        const basePrice = po.salePriceInCents ?? po.priceInCents;
+        const effectivePrice = computeEffectivePrice(
+          basePrice,
+          addOn.discountType,
+          addOn.discountValue
+        );
+
         addOnMap.set(key, {
           product: {
             id: addOn.addOnProduct.id,
             name: addOn.addOnProduct.name,
             slug: addOn.addOnProduct.slug,
             description: addOn.addOnProduct.description,
-            // Add-ons are merch products, use "culture" for coffee lifestyle images
             imageUrl:
-              addOn.addOnVariant!.images[0]?.url ||
+              addOn.addOnVariant.images[0]?.url ||
               getPlaceholderImage(addOn.addOnProduct.name, 400, "culture"),
-            categorySlug:
-              addOn.addOnProduct.categories[0]?.category.slug || "shop",
+            categorySlug,
           },
           variant: {
             id: addOn.addOnVariant.id,
             name: addOn.addOnVariant.name,
-            priceInCents: addOn.addOnVariant.purchaseOptions[0].priceInCents,
+            priceInCents: effectivePrice,
           },
         });
       }
