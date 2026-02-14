@@ -11,7 +11,7 @@ const selectionSchema = z.object({
 
 const syncSchema = z.object({
   addOnProductId: z.string().min(1),
-  selections: z.array(selectionSchema).min(1),
+  selections: z.array(selectionSchema),
 });
 
 export async function PUT(

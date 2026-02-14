@@ -4,15 +4,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   InputGroup,
+  InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Combobox, type ComboboxGroup } from "@/components/ui/combobox";
 import {
   AlertDialog,
@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/field";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2 } from "lucide-react";
+import { Check, EllipsisVertical, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // --- Types ---
@@ -396,7 +396,7 @@ function AddOnProductCard({
         {
           id: existing?.id ?? "",
           addOnVariantId: null,
-          discountType: existing?.discountType ?? null,
+          discountType: existing?.discountType ?? "FIXED",
           discountValue: existing?.discountValue ?? null,
         },
       ]);
@@ -410,7 +410,7 @@ function AddOnProductCard({
     const newSelections = checked
       ? [
           ...selections,
-          { id: "", addOnVariantId: variantId, discountType: null, discountValue: null },
+          { id: "", addOnVariantId: variantId, discountType: "FIXED" as const, discountValue: null },
         ]
       : selections.filter((s) => s.addOnVariantId !== variantId);
     syncSelections(newSelections);
@@ -428,7 +428,7 @@ function AddOnProductCard({
         return {
           ...s,
           discountType: (value || null) as DiscountType | null,
-          discountValue: value ? (s.discountValue ?? 0) : null,
+          discountValue: null,
         };
       }
       // discountValue
@@ -633,6 +633,11 @@ function VariantRow({
 
 // --- Discount control ($/% select + value input) ---
 
+const DISCOUNT_SYMBOL: Record<DiscountType, string> = {
+  FIXED: "$",
+  PERCENTAGE: "%",
+};
+
 function DiscountControl({
   discountType,
   discountValue,
@@ -644,48 +649,63 @@ function DiscountControl({
   disabled: boolean;
   onChange: (field: "discountType" | "discountValue", value: string) => void;
 }) {
+  const activeType = discountType ?? "FIXED";
   const displayValue =
-    discountValue != null
-      ? discountType === "FIXED"
+    discountValue != null && discountValue > 0
+      ? activeType === "FIXED"
         ? (discountValue / 100).toString()
         : discountValue.toString()
       : "";
 
   return (
-    <div className={`flex gap-1.5 items-center ${disabled ? "opacity-40 pointer-events-none" : ""}`}>
-      <Select
-        value={discountType ?? ""}
-        onValueChange={(val) => onChange("discountType", val)}
+    <InputGroup
+      className={`h-8 w-28 ${disabled ? "opacity-40 pointer-events-none" : ""}`}
+      data-disabled={disabled || undefined}
+    >
+      <InputGroupAddon>
+        <span className="text-xs">{DISCOUNT_SYMBOL[activeType]}</span>
+      </InputGroupAddon>
+      <InputGroupInput
+        type="number"
+        step={activeType === "FIXED" ? "0.01" : "1"}
+        min={activeType === "FIXED" ? "0.01" : "1"}
+        placeholder="0"
+        className="text-xs h-8"
+        value={displayValue}
         disabled={disabled}
-      >
-        <SelectTrigger className="w-14 h-8 text-xs px-2">
-          <SelectValue placeholder="—" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="FIXED">$</SelectItem>
-          <SelectItem value="PERCENTAGE">%</SelectItem>
-        </SelectContent>
-      </Select>
-      <InputGroup className="h-8 w-20">
-        <InputGroupInput
-          type="number"
-          step={discountType === "FIXED" ? "0.01" : "1"}
-          min="0"
-          placeholder="0"
-          className="text-xs h-8"
-          value={displayValue}
-          disabled={disabled || !discountType}
-          onChange={(e) => {
-            const raw = e.target.value;
-            if (discountType === "FIXED") {
-              const cents = raw === "" ? "" : Math.round(parseFloat(raw) * 100).toString();
-              onChange("discountValue", cents);
-            } else {
-              onChange("discountValue", raw);
-            }
-          }}
-        />
-      </InputGroup>
-    </div>
+        onChange={(e) => {
+          const raw = e.target.value;
+          if (activeType === "FIXED") {
+            const cents = raw === "" ? "" : Math.round(parseFloat(raw) * 100).toString();
+            onChange("discountValue", cents);
+          } else {
+            onChange("discountValue", raw);
+          }
+        }}
+      />
+      <InputGroupAddon align="inline-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              disabled={disabled}
+              className="text-muted-foreground hover:text-foreground transition-colors disabled:pointer-events-none"
+            >
+              <EllipsisVertical className="h-3.5 w-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-36">
+            <DropdownMenuItem onClick={() => onChange("discountType", "FIXED")}>
+              $ Amount
+              {activeType === "FIXED" && <Check className="ml-auto size-4" />}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onChange("discountType", "PERCENTAGE")}>
+              % Percentage
+              {activeType === "PERCENTAGE" && <Check className="ml-auto size-4" />}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </InputGroupAddon>
+    </InputGroup>
   );
 }
