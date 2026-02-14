@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const { storeName, storeTagline, storeDescription, storeLogoUrl, storeFaviconUrl } =
     await getSiteMetadata();
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ecomm-ai-app.vercel.app";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://artisanroast.app";
 
   return {
     metadataBase: new URL(appUrl),
@@ -95,7 +95,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const { storeName, storeDescription } = await getSiteMetadata();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ecomm-ai-app.vercel.app";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://artisanroast.app";
 
   const jsonLd = {
     "@context": "https://schema.org",

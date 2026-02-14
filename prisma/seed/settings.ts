@@ -70,10 +70,10 @@ export async function seedSettings(prisma: PrismaClient) {
   // Contact and communication settings
   await prisma.siteSettings.upsert({
     where: { key: "contactEmail" },
-    update: {},
+    update: { value: "hello@artisanroast.app" },
     create: {
       key: "contactEmail",
-      value: "onboarding@resend.dev",
+      value: "hello@artisanroast.app",
     },
   });
 

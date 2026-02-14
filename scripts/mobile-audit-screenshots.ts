@@ -23,6 +23,7 @@ const PAGES: { name: string; url: string; scroll?: boolean }[] = [
   // --- Static pages ---
   { name: "01-homepage", url: "/" },
   { name: "02-about", url: "/about" },
+  { name: "02b-features", url: "/features" },
   { name: "03-contact", url: "/contact" },
   { name: "04-app-features", url: "/app-features" },
   { name: "05-search", url: "/search" },

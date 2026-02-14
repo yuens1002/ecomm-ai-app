@@ -2,7 +2,7 @@ import { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ecomm-ai-app.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://artisanroast.app";
 
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
@@ -14,6 +14,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${baseUrl}/about`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/features`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8,

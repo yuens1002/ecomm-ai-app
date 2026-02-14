@@ -2,11 +2,11 @@
 
 # Artisan Roast
 
-### The open-source e-commerce platform built for specialty coffee
+## The open-source e-commerce platform built for specialty coffee
 
 **Your beans deserve better than Shopify.**
 
-[**Try the Live Demo**](https://ecomm-ai-app.vercel.app/) | [Self-Host Guide](#quick-start) | [Documentation](./docs/)
+[**Try the Live Demo**](https://artisanroast.app/) | [Self-Host Guide](#quick-start) | [Documentation](./docs/)
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app&env=DATABASE_URL,DIRECT_URL,AUTH_SECRET,STRIPE_SECRET_KEY,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,RESEND_API_KEY,RESEND_FROM_EMAIL,NEXT_PUBLIC_APP_URL,SEED_ON_BUILD&envDescription=Required%20environment%20variables%20for%20Artisan%20Roast.%20See%20.env.example%20for%20details.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fecomm-ai-app%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
 
@@ -20,7 +20,7 @@
 
 ## Try the Demo
 
-No signup required. Click **"Sign in as Admin"** or **"Sign in as Demo Customer"** on the [sign-in page](https://ecomm-ai-app.vercel.app/auth/signin) to explore instantly.
+No signup required. Click **"Sign in as Admin"** or **"Sign in as Demo Customer"** on the [sign-in page](https://artisanroast.app/auth/signin) to explore instantly.
 
 | Account | What You'll See |
 |---------|-----------------|
@@ -212,6 +212,6 @@ MIT License - Use it however you want. See [LICENSE](./LICENSE).
 
 **Built by a coffee nerd who codes.**
 
-[Demo](https://ecomm-ai-app.vercel.app/) · [GitHub](https://github.com/yuens1002/ecomm-ai-app) · [Setup Guide](./SETUP.md)
+[Demo](https://artisanroast.app/) · [GitHub](https://github.com/yuens1002/ecomm-ai-app) · [Setup Guide](./SETUP.md)
 
 </div>
