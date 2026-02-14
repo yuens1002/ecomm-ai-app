@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
   getCategoryBySlug,
@@ -13,6 +14,19 @@ export const revalidate = 3600;
 interface CategoryPageProps {
   // We allow params to be a Promise to satisfy the Next.js runtime warning
   params: { category: string } | Promise<{ category: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: CategoryPageProps): Promise<Metadata> {
+  const { category: categorySlug } = await params;
+  const category = await getCategoryBySlug(categorySlug);
+  if (!category) return {};
+
+  const title = category.name;
+  const description = `Browse our ${category.name.toLowerCase()} collection — specialty coffee curated for quality.`;
+
+  return { title, description, openGraph: { title, description } };
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {

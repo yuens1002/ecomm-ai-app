@@ -153,7 +153,7 @@ async function backupDatabase() {
 
 // Run the backup
 backupDatabase()
-  .then((backupPath) => {
+  .then((_backupPath) => {
     console.log("✅ Backup process completed");
     process.exit(0);
   })
