@@ -1,115 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
+import { FeaturedProduct } from "@/lib/types";
 import { Sparkles, TrendingUp } from "lucide-react";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
 
-interface RecommendedProduct {
-  id: string;
-  name: string;
-  slug: string;
-  type: string;
-  roastLevel: string;
-  isFeatured: boolean;
-  tastingNotes: string[];
-  variants: Array<{
-    id: string;
-    name: string;
-    purchaseOptions: Array<{
-      id: string;
-      type: string;
-      priceInCents: number;
-      discountMessage: string | null;
-      billingInterval: string | null;
-      billingIntervalCount: number | null;
-      variantId: string;
-    }>;
-  }>;
-  categories: Array<{
-    category: {
-      name: string;
-      slug: string;
-    };
-  }>;
-}
-
-interface RecommendationsResponse {
-  products: RecommendedProduct[];
+interface RecommendationsSectionProps {
+  products: FeaturedProduct[];
   isPersonalized: boolean;
   source: "behavioral" | "trending";
   userPreferences?: {
     preferredRoastLevel?: string;
     topTastingNotes?: string[];
   };
+  personalizedHeading: string;
+  trendingHeading: string;
+  trendingDescription: string;
+  exploreAllText: string;
 }
 
-export default function RecommendationsSection() {
-  const { settings } = useSiteSettings();
-  const { data: session, status } = useSession();
-  const [recommendations, setRecommendations] =
-    useState<RecommendationsResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchRecommendations() {
-      try {
-        setIsLoading(true);
-        const response = await fetch("/api/recommendations?limit=6");
-        if (!response.ok) {
-          throw new Error("Failed to fetch recommendations");
-        }
-        const data = await response.json();
-        setRecommendations(data);
-      } catch (err) {
-        console.error("Error fetching recommendations:", err);
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    // Only fetch when session status is determined
-    if (status !== "loading") {
-      fetchRecommendations();
-    }
-  }, [status, session]);
-
-  if (error) {
-    return null; // Silently fail - don't show section if there's an error
+export default function RecommendationsSection({
+  products,
+  isPersonalized,
+  userPreferences,
+  personalizedHeading,
+  trendingHeading,
+  trendingDescription,
+  exploreAllText,
+}: RecommendationsSectionProps) {
+  if (products.length === 0) {
+    return null;
   }
-
-  if (isLoading) {
-    return (
-      <section className="bg-secondary py-12">
-        <div className="mx-auto max-w-screen-2xl px-4 md:px-8">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="h-6 w-6 rounded-full bg-muted animate-pulse" />
-            <div className="h-8 w-64 bg-muted animate-pulse rounded" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="space-y-4">
-                <div className="h-48 w-full rounded-lg bg-muted animate-pulse" />
-                <div className="h-6 w-3/4 bg-muted animate-pulse rounded" />
-                <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (!recommendations || recommendations.products.length === 0) {
-    return null; // Don't show section if no recommendations
-  }
-
-  const { products, isPersonalized, userPreferences } = recommendations;
 
   return (
     <section className="bg-secondary py-12">
@@ -124,9 +46,7 @@ export default function RecommendationsSection() {
                 <div className="mt-1 shrink-0"><TrendingUp className="h-6 w-6" /></div>
               )}
               <h2 className="text-2xl md:text-3xl font-bold text-text-base">
-                {isPersonalized
-                  ? settings.homepageRecommendationsPersonalizedHeading
-                  : settings.homepageRecommendationsTrendingHeading}
+                {isPersonalized ? personalizedHeading : trendingHeading}
               </h2>
             </div>
           </div>
@@ -149,7 +69,7 @@ export default function RecommendationsSection() {
           )}
           {!isPersonalized && (
             <p className="text-sm text-muted-foreground mt-1">
-              {settings.homepageRecommendationsTrendingDescription}
+              {trendingDescription}
             </p>
           )}
         </div>
@@ -165,24 +85,23 @@ export default function RecommendationsSection() {
               transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.08 }}
             >
               <ProductCard
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                product={product as any}
+                product={product}
                 showPurchaseOptions={true}
                 hoverRevealFooter={true}
-                priority={index === 0} // Load first image eagerly as it's likely LCP
+                priority={index === 0}
               />
             </motion.div>
           ))}
         </div>
 
-        {/* View More Link (Optional) */}
+        {/* View More Link */}
         {products.length >= 6 && (
           <div className="text-center mt-8">
             <Link
               href="/products"
               className="text-accent hover:text-accent/80 font-medium inline-flex items-center gap-2"
             >
-              {settings.homepageRecommendationsExploreAllText}
+              {exploreAllText}
               <svg
                 className="h-4 w-4"
                 fill="none"
