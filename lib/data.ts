@@ -1,6 +1,10 @@
 import { ProductType } from "@prisma/client";
 import { prisma } from "./prisma";
-// import { OrderWithItems, OrderItemWithDetails } from "./types";
+import {
+  type SiteSettings,
+  defaultSettings,
+  mapSettingsRecord,
+} from "./site-settings";
 
 // --- COMMON INCLUDE OBJECT ---
 // We define this once to ensure all product cards get the same minimal data for rendering.
@@ -829,4 +833,151 @@ export async function getRoastLevels() {
  */
 export function getSpecialCategories() {
   return ["Micro Lot", "Blends"];
+}
+
+// --- SITE SETTINGS ---
+
+const publicSettingsKeys = [
+  "store_name",
+  "store_tagline",
+  "store_description",
+  "store_logo_url",
+  "store_favicon_url",
+  "contactEmail",
+  "homepage_featured_heading",
+  "homepage_recommendations_trending_heading",
+  "homepage_recommendations_trending_description",
+  "homepage_recommendations_personalized_heading",
+  "homepage_recommendations_explore_all_text",
+  "footer_categories_heading",
+  "footer_quick_links_heading",
+  "product_related_heading",
+  "product_addons_section_title",
+  "cart_addons_section_title",
+] as const;
+
+/**
+ * Fetches public site settings directly from the database.
+ * Server-side equivalent of the /api/settings/public endpoint.
+ */
+export async function getPublicSiteSettings(): Promise<SiteSettings> {
+  try {
+    const settings = await prisma.siteSettings.findMany({
+      where: { key: { in: [...publicSettingsKeys] } },
+      select: { key: true, value: true },
+    });
+
+    const record = settings.reduce(
+      (acc, { key, value }) => {
+        acc[key] = value;
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+
+    return mapSettingsRecord(record);
+  } catch (error) {
+    console.error("Database Error:", error);
+    return defaultSettings;
+  }
+}
+
+// --- HOME RECOMMENDATIONS ---
+
+export interface HomeRecommendationsResult {
+  products: Awaited<ReturnType<typeof getFeaturedProducts>>;
+  isPersonalized: boolean;
+  source: "behavioral" | "trending";
+  userPreferences?: {
+    preferredRoastLevel?: string;
+    topTastingNotes?: string[];
+  };
+}
+
+/**
+ * Fetches personalized or trending product recommendations.
+ * Server-side equivalent of the /api/recommendations endpoint.
+ */
+export async function getHomeRecommendations(
+  userId?: string,
+  limit = 6,
+  excludeId?: string
+): Promise<HomeRecommendationsResult> {
+  // Helper to format trending results
+  const trendingResult = async (): Promise<HomeRecommendationsResult> => {
+    const trending = await getTrendingProducts(limit + 1, 7);
+    const filtered = trending
+      .filter((p): p is NonNullable<typeof p> => p != null)
+      .filter((p) => !excludeId || p.id !== excludeId)
+      .slice(0, limit);
+    return { products: filtered, isPersonalized: false, source: "trending" };
+  };
+
+  if (!userId) return trendingResult();
+
+  // Authenticated user — try personalized recommendations
+  let userContext;
+  try {
+    userContext = await getUserRecommendationContext(userId);
+  } catch {
+    return trendingResult();
+  }
+
+  const hasHistory =
+    userContext.purchaseHistory.totalOrders > 0 ||
+    userContext.recentViews.length > 0;
+
+  if (!hasHistory) return trendingResult();
+
+  // Score products based on user preferences
+  const purchasedProductNames = userContext.purchaseHistory.products.map(
+    (p: { name: string }) => p.name
+  );
+  const recentlyViewedNames = userContext.recentViews.map((v) => v.name);
+
+  const allProducts = await prisma.product.findMany({
+    where: {
+      type: ProductType.COFFEE,
+      isDisabled: false,
+      ...(excludeId && { id: { not: excludeId } }),
+    },
+    include: productCardIncludes,
+  });
+
+  const scoredProducts = allProducts.map((product) => {
+    let score = 0;
+
+    const matchingNotes = product.tastingNotes.filter((note) =>
+      userContext.purchaseHistory.topTastingNotes.includes(note)
+    );
+    score += matchingNotes.length * 5;
+
+    if (
+      recentlyViewedNames.includes(product.name) &&
+      !purchasedProductNames.includes(product.name)
+    ) {
+      score += 3;
+    }
+
+    if (purchasedProductNames.slice(0, 3).includes(product.name)) {
+      score -= 20;
+    }
+
+    return { product, score };
+  });
+
+  const recommendations = scoredProducts
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(({ product }) => product);
+
+  return {
+    products: recommendations,
+    isPersonalized: true,
+    source: "behavioral",
+    userPreferences: {
+      preferredRoastLevel: userContext.purchaseHistory.preferredRoastLevel ?? undefined,
+      topTastingNotes: userContext.purchaseHistory.topTastingNotes.slice(0, 3),
+    },
+  };
 }

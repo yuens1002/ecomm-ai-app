@@ -1,57 +1,54 @@
-"use client";
-
-import dynamic from "next/dynamic";
-import { useSession } from "next-auth/react";
-import { motion } from "motion/react";
+import { auth } from "@/auth";
+import {
+  getFeaturedProducts,
+  getHomeRecommendations,
+  getPublicSiteSettings,
+} from "@/lib/data";
+import HomeAiSection from "@/app/(site)/_components/ai/HomeAiSection";
 import FeaturedProducts from "@/app/(site)/_components/product/FeaturedProducts";
 import RecommendationsSection from "@/app/(site)/_components/product/RecommendationsSection";
 
-const ChatBarista = dynamic(
-  () => import("@/app/(site)/_components/ai/ChatBarista"),
-  { ssr: false }
-);
-const VoiceBarista = dynamic(
-  () => import("@/app/(site)/_components/ai/VoiceBarista"),
-  { ssr: false }
-);
+export default async function Home() {
+  const [session, featuredProducts, settings] = await Promise.all([
+    auth(),
+    getFeaturedProducts(),
+    getPublicSiteSettings(),
+  ]);
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: "-60px" },
-  transition: { duration: 0.5, ease: "easeOut" as const },
-};
+  const userId = session?.user?.id;
 
-// --- Main Page Component ---
-export default function Home() {
-  const { data: session } = useSession();
+  // Fetch recommendations (depends on userId from auth)
+  const recommendations = await getHomeRecommendations(userId);
 
-  // Show VoiceBarista for demo user, ChatBarista for everyone else
-  // In demo mode, always show ChatBarista to avoid VAPI costs
+  // AI section logic
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
   const isDemoUser = session?.user?.email === "demo@artisanroast.com";
   const showVoiceBarista = isDemoUser && !isDemoMode;
-  const isAuthenticated = !!session?.user;
 
   return (
     <>
-      {/* Voice Barista for demo user (non-demo mode), Chat Barista for all others */}
-      <motion.div {...fadeInUp}>
-        {showVoiceBarista ? (
-          <VoiceBarista userEmail={session?.user?.email || undefined} />
-        ) : (
-          <ChatBarista
-            userName={session?.user?.name || undefined}
-            isAuthenticated={isAuthenticated}
-          />
-        )}
-      </motion.div>
+      <HomeAiSection
+        showVoiceBarista={showVoiceBarista}
+        userEmail={session?.user?.email || undefined}
+        userName={session?.user?.name || undefined}
+        isAuthenticated={!!session?.user}
+      />
 
-      {/* Personalized Recommendations Section */}
-      <RecommendationsSection />
+      <RecommendationsSection
+        products={recommendations.products}
+        isPersonalized={recommendations.isPersonalized}
+        source={recommendations.source}
+        userPreferences={recommendations.userPreferences}
+        personalizedHeading={settings.homepageRecommendationsPersonalizedHeading}
+        trendingHeading={settings.homepageRecommendationsTrendingHeading}
+        trendingDescription={settings.homepageRecommendationsTrendingDescription}
+        exploreAllText={settings.homepageRecommendationsExploreAllText}
+      />
 
-      {/* Product Grid Section */}
-      <FeaturedProducts />
+      <FeaturedProducts
+        products={featuredProducts}
+        heading={settings.homepageFeaturedHeading}
+      />
     </>
   );
 }
