@@ -283,11 +283,18 @@ Main thread reads both reports when complete                           ─┘
 - Same flow, but AC-UI section is empty
 - Sub-agent only runs code review + tests
 
-# Urgent fix (skip formal verification)
-- Implement fix
-- Manually set verification-status to "verified" with notes explaining why
-- Commit → PR → merge → /release
 ```
+
+## Emergency Override (Human Authorization Required)
+
+For critical hotfixes where the full verification loop would cause unacceptable delay:
+
+1. **Get explicit human approval** to skip verification
+2. Implement the fix
+3. Manually set verification-status to `"verified"` with notes: `"EMERGENCY: {reason}, authorized by {human}"`
+4. Commit → PR → merge → /release
+
+This is a last-resort escape hatch, NOT a convenience shortcut. If Claude suggests this path, the human must explicitly authorize it.
 
 ## Process Loop & State Machine
 
