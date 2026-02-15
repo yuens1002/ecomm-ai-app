@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.88.9 - 2026-02-15
+
+### Changed
+
+- **Skeleton loading for featured products**: Replace "Loading coffees..." text with skeleton cards matching carousel dimensions to eliminate CLS
+- **Lazy-load AI components**: Defer ChatBarista and VoiceBarista with `next/dynamic` to reduce initial JS by ~84 KiB
+- **Unify motion imports**: Consolidate `framer-motion` → `motion/react` to deduplicate bundle
+- **Add browserslist config**: Target modern browsers only, eliminating ~24 KiB of legacy polyfills
+- **GA4 scripts deferred to idle**: Switch from `afterInteractive` to `lazyOnload` to reduce TBT
+- **Accurate image sizes attributes**: Context-specific `sizes` prop on ProductCard for carousel and grid layouts, reducing downloaded image sizes by ~30-40%
+
 ## 0.88.7 - 2026-02-14
 
 ### Added

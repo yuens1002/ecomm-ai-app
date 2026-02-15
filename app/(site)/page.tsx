@@ -1,11 +1,19 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { motion } from "motion/react";
 import FeaturedProducts from "@/app/(site)/_components/product/FeaturedProducts";
 import RecommendationsSection from "@/app/(site)/_components/product/RecommendationsSection";
-import ChatBarista from "@/app/(site)/_components/ai/ChatBarista";
-import VoiceBarista from "@/app/(site)/_components/ai/VoiceBarista";
+
+const ChatBarista = dynamic(
+  () => import("@/app/(site)/_components/ai/ChatBarista"),
+  { ssr: false }
+);
+const VoiceBarista = dynamic(
+  () => import("@/app/(site)/_components/ai/VoiceBarista"),
+  { ssr: false }
+);
 
 const fadeInUp = {
   initial: { opacity: 0, y: 24 },

@@ -44,7 +44,24 @@ export default function FeaturedProducts() {
         </h2>
 
         {isLoading ? (
-          <div className="text-center text-text-muted">Loading coffees...</div>
+          <div className="[--slide-size:66.67%] md:[--slide-size:40%] lg:[--slide-size:28.57%]">
+            <div className="flex gap-4 overflow-hidden">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="shrink-0"
+                  style={{ minWidth: "var(--slide-size)" }}
+                >
+                  <div className="aspect-square bg-muted animate-pulse rounded-t-lg" />
+                  <div className="border-x border-b rounded-b-lg p-4 space-y-3">
+                    <div className="h-5 bg-muted animate-pulse rounded w-3/4" />
+                    <div className="h-3 bg-muted animate-pulse rounded w-1/2" />
+                    <div className="h-3 bg-muted animate-pulse rounded w-2/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         ) : (
           <div className="[--slide-size:66.67%] md:[--slide-size:40%] lg:[--slide-size:28.57%]">
           <ScrollCarousel
@@ -66,6 +83,7 @@ export default function FeaturedProducts() {
                   hoverRevealFooter={true}
                   compact={true}
                   priority={index < 4}
+                  sizes="(max-width: 768px) 67vw, (max-width: 1200px) 40vw, 29vw"
                 />
               </motion.div>
             ))}
