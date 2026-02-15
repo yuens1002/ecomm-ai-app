@@ -27,8 +27,6 @@ import { getSiteMetadata } from "@/lib/site-metadata";
 import type { Metadata } from "next";
 import {
   ScrollReveal,
-  StaggerContainer,
-  StaggerItem,
   AnimatedGradient,
 } from "@/app/(site)/_components/content/animated-sections";
 
@@ -48,7 +46,7 @@ export default async function AboutPage() {
         <div className="relative container mx-auto px-4 py-16 md:py-24">
           <ScrollReveal>
             <div className="mx-auto max-w-3xl text-center">
-              <h1 className="mb-4 text-3xl font-bold tracking-tight md:text-5xl">
+              <h1 className="mb-4 text-3xl font-bold tracking-tight text-black md:text-5xl">
                 About{" "}
 {storeName}
               </h1>
@@ -66,8 +64,8 @@ export default async function AboutPage() {
       <div className="bg-gradient-to-b from-stone-100/70 via-stone-100/40 to-stone-100/20 pb-24 dark:from-stone-800/20 dark:via-stone-800/10 dark:to-stone-800/5" />
       <div className="container mx-auto px-4 -mt-32 relative z-10 pb-16">
         <div className="mx-auto max-w-5xl">
-          <StaggerContainer className="grid gap-6 md:grid-cols-2" staggerDelay={0.2}>
-            <StaggerItem>
+          <div className="grid gap-6 md:grid-cols-2">
+            <ScrollReveal>
               <Card className="h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -140,9 +138,9 @@ export default async function AboutPage() {
                   </div>
                 </CardContent>
               </Card>
-            </StaggerItem>
+            </ScrollReveal>
 
-            <StaggerItem>
+            <ScrollReveal delay={0.1}>
               <Card className="h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -194,9 +192,9 @@ export default async function AboutPage() {
                   </div>
                 </CardContent>
               </Card>
-            </StaggerItem>
+            </ScrollReveal>
 
-            <StaggerItem className="md:col-span-2">
+            <ScrollReveal delay={0.15} className="md:col-span-2">
               <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -281,8 +279,8 @@ export default async function AboutPage() {
                   </div>
                 </CardContent>
               </Card>
-            </StaggerItem>
-          </StaggerContainer>
+            </ScrollReveal>
+          </div>
         </div>
       </div>
 

@@ -114,8 +114,8 @@ export function AnimatedGradient({
             hsl(${hue3}, 80%, 85%) 100%)`,
         }}
       />
-      {/* Floating light orbs */}
-      <div className="absolute inset-0 z-[1] overflow-hidden">
+      {/* Floating light orbs — no z-index so they sit between gradient and text */}
+      <div className="absolute inset-0 overflow-hidden">
         <motion.div
           className="absolute h-96 w-96 rounded-full blur-2xl"
           animate={{
@@ -124,9 +124,9 @@ export function AnimatedGradient({
           }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
           style={{
-            opacity: 0.7,
+            opacity: 0.35,
             background:
-              "radial-gradient(circle, rgba(255,255,255,0.9), transparent 70%)",
+              "radial-gradient(circle, rgba(255,255,255,0.6), transparent 70%)",
             top: "10%",
             left: "10%",
           }}
@@ -139,9 +139,9 @@ export function AnimatedGradient({
           }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
           style={{
-            opacity: 0.6,
+            opacity: 0.3,
             background:
-              "radial-gradient(circle, rgba(255,255,255,0.9), transparent 70%)",
+              "radial-gradient(circle, rgba(255,255,255,0.6), transparent 70%)",
             bottom: "10%",
             right: "15%",
           }}
@@ -154,9 +154,9 @@ export function AnimatedGradient({
           }}
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
           style={{
-            opacity: 0.5,
+            opacity: 0.25,
             background:
-              "radial-gradient(circle, rgba(255,255,255,0.9), transparent 70%)",
+              "radial-gradient(circle, rgba(255,255,255,0.6), transparent 70%)",
             top: "40%",
             left: "50%",
           }}

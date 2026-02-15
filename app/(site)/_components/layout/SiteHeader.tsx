@@ -40,7 +40,7 @@ import {
 import { useNavOverflow } from "@/hooks/useNavOverflow";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
-import { ChevronDown, FileText, Home, LogOut, Menu, MoreHorizontal, PackageSearch, Search, User } from "lucide-react";
+import { ChevronDown, FileText, Home, LogOut, Mail, Menu, MoreHorizontal, PackageSearch, Search, User } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -159,6 +159,9 @@ export default function SiteHeader({
   }, []);
 
   const handleScroll = useCallback(() => {
+    // Keep navbar always visible on mobile (< md breakpoint)
+    if (window.innerWidth < 768) return;
+
     const currentScrollY = window.scrollY;
     const threshold = 10;
 
@@ -295,6 +298,17 @@ export default function SiteHeader({
                           <User className="w-5 h-5" />
                           <span className="text-[10px] uppercase tracking-wide font-medium">
                             Account
+                          </span>
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link
+                          href="/contact"
+                          className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                          <Mail className="w-5 h-5" />
+                          <span className="text-[10px] uppercase tracking-wide font-medium">
+                            Contact
                           </span>
                         </Link>
                       </SheetClose>

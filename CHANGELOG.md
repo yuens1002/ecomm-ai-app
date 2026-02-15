@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.88.7 - 2026-02-14
+
+### Added
+
+- **Contact link in mobile menu**: Mail icon shortcut alongside Home, Search, Orders, Account
+
+### Changed
+
+- **Hero orbs toned down**: Reduced opacity and brightness so floating light orbs sit behind text
+- **Hero titles forced black**: Titles on features and about pages stay black in both light and dark modes
+- **Per-card scroll animation**: Feature and about cards now reveal individually on scroll (stacking feel) instead of all at once
+- **Mobile navbar always visible**: Header no longer auto-hides on scroll at small breakpoints
+
 ## 0.88.6 - 2026-02-14
 
 ### Added
