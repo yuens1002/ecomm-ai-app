@@ -7,6 +7,8 @@ description: Full verification workflow automation - precheck, tests, UI verific
 
 Orchestrates the full autonomous feature development loop — from implementation through verification — with sub-agent delegation and human-in-the-loop review gates.
 
+**IMPORTANT:** Verification is NOT optional for AC-driven features. Once implementation is complete and status is `pending`, you MUST run the verification loop. Do not ask the user "should I verify?" — just proceed with verification.
+
 See `docs/AGENTIC-WORKFLOW.md` for the complete architecture document.
 
 ## Purpose

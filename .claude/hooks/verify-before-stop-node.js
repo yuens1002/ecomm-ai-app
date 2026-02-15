@@ -90,7 +90,8 @@ function main(input) {
     block(
       `REMINDER: Branch '${branch}' has uncommitted source changes but no ` +
         `verification-status.json file. If this is an AC-driven feature, ` +
-        `create a verification-status entry and run /verify-workflow before finishing.`
+        `create a verification-status entry and run /verify-workflow before finishing.\n\n` +
+        `NOTE: For patch/hotfix branches without ACs, this reminder can be ignored.`
     );
   }
 
@@ -108,7 +109,8 @@ function main(input) {
     block(
       `REMINDER: Branch '${branch}' has uncommitted source changes but no ` +
         `workflow entry in verification-status.json. If this is an AC-driven ` +
-        `feature, register the branch and run /verify-workflow before finishing.`
+        `feature, register the branch and run /verify-workflow before finishing.\n\n` +
+        `NOTE: For patch/hotfix branches without ACs, this reminder can be ignored.`
     );
   }
 
