@@ -24,8 +24,6 @@ import {
 import type { Metadata } from "next";
 import {
   ScrollReveal,
-  StaggerContainer,
-  StaggerItem,
   AnimatedGradient,
 } from "@/app/(site)/_components/content/animated-sections";
 
@@ -230,7 +228,7 @@ export default function FeaturesPage() {
         <div className="relative container mx-auto px-4 py-16 md:py-24">
           <ScrollReveal>
             <div className="mx-auto max-w-3xl text-center">
-              <h1 className="mb-4 text-3xl font-bold tracking-tight md:text-5xl">
+              <h1 className="mb-4 text-3xl font-bold tracking-tight text-black md:text-5xl">
                 Built for Specialty Coffee.
                 <br />
                 Powered by Modern Tech.
@@ -263,12 +261,9 @@ export default function FeaturesPage() {
       <div className="bg-gradient-to-b from-muted/60 via-muted/40 to-muted/20 pb-24 dark:from-muted/30 dark:via-muted/15 dark:to-muted/10" />
       <div className="container mx-auto px-4 -mt-32 relative z-10 pb-16">
         <div className="mx-auto max-w-5xl">
-          <StaggerContainer
-            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
-            staggerDelay={0.15}
-          >
-            {features.map(({ icon: Icon, title, description, accent }) => (
-              <StaggerItem key={title}>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {features.map(({ icon: Icon, title, description, accent }, index) => (
+              <ScrollReveal key={title} delay={index * 0.08}>
                 <div className="group flex h-full flex-col rounded-lg border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                   <div
                     className={`mb-4 flex h-12 w-12 items-center justify-center rounded-lg ${accent}`}
@@ -280,9 +275,9 @@ export default function FeaturesPage() {
                     {description}
                   </p>
                 </div>
-              </StaggerItem>
+              </ScrollReveal>
             ))}
-          </StaggerContainer>
+          </div>
         </div>
       </div>
 
