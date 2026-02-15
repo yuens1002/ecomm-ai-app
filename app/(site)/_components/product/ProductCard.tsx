@@ -32,6 +32,7 @@ export default function ProductCard({
   hidePriceOnMobile = false,
   hoverRevealFooter = false,
   compact = false,
+  sizes = "(max-width: 768px) calc(100vw - 2rem), (max-width: 1200px) calc(50vw - 2rem), 400px",
 }: Omit<ProductCardProps, "onAddToCart"> & {
   categorySlug?: string;
   priority?: boolean;
@@ -42,6 +43,8 @@ export default function ProductCard({
   hoverRevealFooter?: boolean;
   /** Smaller title and notes for carousel contexts */
   compact?: boolean;
+  /** Custom sizes attribute for responsive image loading */
+  sizes?: string;
 }) {
   const { buttonState, isCheckingOut, handleAddToCart, handleActionClick } =
     useAddToCartWithFeedback();
@@ -115,7 +118,7 @@ export default function ProductCard({
             alt={altText}
             fill
             className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes={sizes}
             priority={priority || product.isFeatured}
           />
         </CardHeader>
