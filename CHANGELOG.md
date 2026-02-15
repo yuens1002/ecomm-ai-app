@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.88.12 - 2026-02-15
+
+### Added
+
+- **Demo data reset command**: `npm run reset:demo` wipes all orders, subscriptions, activities, and newsletter subscribers then reseeds with randomized synthetic data
+
+### Changed
+
+- **Randomized synthetic shipping data**: Orders use geographically consistent city/state/zip tuples, diverse fake names, and varied street names instead of hardcoded values
+
 ## 0.88.9 - 2026-02-15
 
 ### Changed

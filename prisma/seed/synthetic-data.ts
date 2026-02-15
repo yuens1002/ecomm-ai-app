@@ -50,6 +50,35 @@ const PERSONAS = {
   },
 };
 
+const FAKE_NAMES = [
+  "Alex Rivera", "Jordan Lee", "Morgan Patel", "Casey Kim",
+  "Taylor Brooks", "Quinn Nguyen", "Avery Santos", "Riley Cooper",
+  "Jamie Ortiz", "Drew Campbell", "Sam Nakamura", "Chris Delgado",
+  "Hayden Park", "Reese Johansen", "Dakota Tran", "Emery Washington",
+];
+
+const STREET_NAMES = [
+  "Main St", "Oak Ave", "Elm Dr", "Cedar Ln", "Pine Rd",
+  "Maple Way", "Birch Ct", "Walnut Blvd", "Spruce Pl", "Willow St",
+  "Highland Ave", "Lakeview Dr", "Sunset Blvd", "Park Pl", "River Rd",
+];
+
+// City/state/zip tuples so addresses are geographically consistent
+const CITY_STATE_ZIP = [
+  { city: "Seattle", state: "WA", zip: "98101" },
+  { city: "Tacoma", state: "WA", zip: "98402" },
+  { city: "Portland", state: "OR", zip: "97201" },
+  { city: "Eugene", state: "OR", zip: "97401" },
+  { city: "San Francisco", state: "CA", zip: "94102" },
+  { city: "Los Angeles", state: "CA", zip: "90001" },
+  { city: "San Diego", state: "CA", zip: "92101" },
+  { city: "Austin", state: "TX", zip: "73301" },
+  { city: "Denver", state: "CO", zip: "80201" },
+  { city: "Chicago", state: "IL", zip: "60601" },
+  { city: "Brooklyn", state: "NY", zip: "11201" },
+  { city: "Boston", state: "MA", zip: "02101" },
+];
+
 // --- Helper Functions ---
 function randomElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
@@ -221,22 +250,19 @@ export async function seedSyntheticData(prisma: PrismaClient) {
       const shippingAmount = randomInt(0, 1500); // $0-15 shipping
       const totalAmount = subtotal + taxAmount + shippingAmount;
 
+      const location = randomElement(CITY_STATE_ZIP);
+
       const _order = await prisma.order.create({
         data: {
           userId: user.id,
           status: "SHIPPED",
           totalInCents: totalAmount,
           deliveryMethod: "DELIVERY",
-          shippingStreet: `${randomInt(100, 9999)} Main St`,
-          shippingCity: randomElement([
-            "Seattle",
-            "Portland",
-            "San Francisco",
-            "Los Angeles",
-            "Austin",
-          ]),
-          shippingState: randomElement(["WA", "OR", "CA", "TX"]),
-          shippingPostalCode: `${randomInt(10000, 99999)}`,
+          recipientName: user.name || randomElement(FAKE_NAMES),
+          shippingStreet: `${randomInt(100, 9999)} ${randomElement(STREET_NAMES)}`,
+          shippingCity: location.city,
+          shippingState: location.state,
+          shippingPostalCode: location.zip,
           shippingCountry: "US",
           items: {
             create: orderProducts.map((item) => ({
