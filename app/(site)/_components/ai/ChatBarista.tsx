@@ -58,6 +58,8 @@ export default function ChatBarista({
   const [isRetrying, setIsRetrying] = useState(false);
   const [input, setInput] = useState("");
   const [gradientPosition, setGradientPosition] = useState(0);
+  const [viewport, setViewport] = useState<{ height: number; offsetTop: number } | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const messageCountRef = useRef(0);
@@ -65,11 +67,44 @@ export default function ChatBarista({
   const { addItem, setCartOpen } = useCartStore();
   const { toast } = useToast();
 
+  // Track visual viewport (shrinks + offsets when mobile keyboard opens)
+  useEffect(() => {
+    if (!isActive) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const onResize = () => {
+      setViewport({ height: vv.height, offsetTop: vv.offsetTop });
+      // Keep messages scrolled to bottom when keyboard opens/closes
+      requestAnimationFrame(() => {
+        const el = messagesContainerRef.current;
+        if (el) el.scrollTop = el.scrollHeight;
+      });
+    };
+    onResize();
+    vv.addEventListener("resize", onResize);
+    vv.addEventListener("scroll", onResize);
+    return () => {
+      vv.removeEventListener("resize", onResize);
+      vv.removeEventListener("scroll", onResize);
+    };
+  }, [isActive]);
+
+  // Lock page scroll when chat is open
+  useEffect(() => {
+    if (!isActive) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isActive]);
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    requestAnimationFrame(() => {
+      const el = messagesContainerRef.current;
+      if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    });
   }, [messages]);
 
   // Track message count for animations - update AFTER render
@@ -348,8 +383,6 @@ export default function ChatBarista({
     } finally {
       setIsLoading(false);
       setIsRetrying(false);
-      // Refocus the input field after sending
-      setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 
@@ -728,13 +761,6 @@ export default function ChatBarista({
     };
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
   const handleAddToCart = (product: ProductRecommendation) => {
     try {
       // Get first variant and ONE_TIME purchase option
@@ -914,276 +940,310 @@ export default function ChatBarista({
 
       {/* Chat Modal */}
       {isActive && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl h-[70vh] flex flex-col relative overflow-hidden">
-            {/* Animated background */}
-            <div
-              className="absolute inset-0 opacity-5 pointer-events-none"
-              style={{
-                background: `linear-gradient(135deg, 
-                  hsl(${gradientPosition}, 70%, 60%) 0%, 
-                  hsl(${(gradientPosition + 60) % 360}, 60%, 50%) 50%, 
-                  hsl(${(gradientPosition + 120) % 360}, 70%, 60%) 100%)`,
-              }}
-            />
-            <CardContent className="p-6 flex flex-col h-full relative z-10">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-4 shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-primary/10">
-                    <MessageCircle className="w-5 h-5 text-primary" />
+        <>
+          {/* Backdrop — always covers full screen */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            onClick={handleEndConversation}
+          />
+
+          {/* Chat card — sized to visual viewport so keyboard doesn't overlap */}
+          <div
+            className="fixed inset-x-0 z-50 flex md:items-center md:justify-center md:p-4"
+            style={{
+              top: viewport ? `${viewport.offsetTop}px` : 0,
+              height: viewport ? `${viewport.height}px` : '100dvh',
+            }}
+          >
+            <Card className="w-full md:max-w-2xl h-full md:h-[70vh] flex flex-col relative overflow-hidden rounded-none border-0 py-0 gap-0 shadow-none md:rounded-xl md:border md:py-6 md:gap-6 md:shadow-sm">
+              {/* Animated background */}
+              <div
+                className="absolute inset-0 opacity-5 pointer-events-none"
+                style={{
+                  background: `linear-gradient(135deg,
+                    hsl(${gradientPosition}, 70%, 60%) 0%,
+                    hsl(${(gradientPosition + 60) % 360}, 60%, 50%) 50%,
+                    hsl(${(gradientPosition + 120) % 360}, 70%, 60%) 100%)`,
+                }}
+              />
+              <CardContent className="p-4 md:p-6 flex flex-col h-full relative z-10">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-3 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-primary/10">
+                      <MessageCircle className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold">
+                        Coffee Barista Chat
+                      </h2>
+                      <p className="text-xs text-muted-foreground">
+                        Powered by AI ✨
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold">
-                      Coffee Barista Chat
-                    </h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleEndConversation}
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+
+                {/* Messages — bottom-anchored like iMessage */}
+                <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-2 overscroll-contain">
+                  <div className="flex flex-col justify-end min-h-full space-y-4">
+                    {messages.map((message, index) => {
+                      const isLastMessage = index === messages.length - 1;
+                      const shouldHideForRetry =
+                        isLastMessage &&
+                        message.role === "assistant" &&
+                        message.error &&
+                        isRetrying;
+                      const showRetry =
+                        message.role === "assistant" &&
+                        message.error &&
+                        !isRetrying;
+
+                      if (shouldHideForRetry) {
+                        return null;
+                      }
+
+                      // Only animate messages that are new (index >= previous count)
+                      const isNewMessage = index >= messageCountRef.current;
+
+                      // Calculate staggered delay: AI messages wait for user messages
+                      const animationDelay = isNewMessage
+                        ? message.role === "assistant"
+                          ? 0.4
+                          : 0.05
+                        : 0;
+
+                      return (
+                        <div key={message.id || index} className="space-y-2">
+                          <div
+                            className={`flex items-start gap-2 ${
+                              message.role === "user"
+                                ? "justify-end"
+                                : "justify-start"
+                            }`}
+                          >
+                            <motion.div
+                              initial={
+                                isNewMessage
+                                  ? {
+                                      opacity: 0,
+                                      x: message.role === "user" ? 30 : -30,
+                                      scale: 0.95,
+                                    }
+                                  : false
+                              }
+                              animate={{
+                                opacity: 1,
+                                x: 0,
+                                scale: 1,
+                              }}
+                              transition={{
+                                duration: 0.5,
+                                ease: [0.25, 0.1, 0.25, 1],
+                                delay: animationDelay,
+                              }}
+                              className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm ${
+                                message.role === "user"
+                                  ? "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground"
+                                  : "bg-gradient-to-br from-muted to-muted/80 text-foreground border border-border/50"
+                              }`}
+                            >
+                              <p className="text-sm whitespace-pre-wrap">
+                                {message.text}
+                              </p>
+                            </motion.div>
+                            {showRetry && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0 mt-1"
+                                onClick={handleRetry}
+                                title="Retry"
+                              >
+                                <RotateCw className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Product Recommendation Card */}
+                          {message.product && (
+                            <motion.div
+                              initial={
+                                isNewMessage
+                                  ? {
+                                      opacity: 0,
+                                      y: 20,
+                                      scale: 0.95,
+                                    }
+                                  : false
+                              }
+                              animate={{
+                                opacity: 1,
+                                y: 0,
+                                scale: 1,
+                              }}
+                              transition={{
+                                duration: 0.6,
+                                ease: [0.25, 0.1, 0.25, 1],
+                                delay: animationDelay + 0.3,
+                              }}
+                              className="flex justify-start"
+                            >
+                              <Card className="max-w-[80%] overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] border-2 border-primary/20">
+                                <CardContent className="p-0">
+                                  <div
+                                    onClick={() => {
+                                      handleEndConversation();
+                                      window.location.href = `/products/${message.product!.slug}`;
+                                    }}
+                                    className="cursor-pointer"
+                                  >
+                                    <div className="flex gap-3 p-3 hover:bg-muted/50 transition-colors">
+                                      {/* Product Image */}
+                                      <div className="relative w-24 h-24 flex-shrink-0 rounded-md overflow-hidden bg-muted">
+                                        {message.product.images[0] && (
+                                          <Image
+                                            src={message.product.images[0]}
+                                            alt={message.product.name}
+                                            fill
+                                            className="object-cover"
+                                          />
+                                        )}
+                                      </div>
+
+                                      {/* Product Details */}
+                                      <div className="flex-1 min-w-0">
+                                        <h3 className="font-semibold text-sm mb-1">
+                                          {message.product.name}
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground mb-2 line-clamp-3">
+                                          {message.product.description}
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs font-medium capitalize bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                            {message.product.roastLevel} Roast
+                                          </span>
+                                          <span className="text-sm font-semibold">
+                                            $
+                                            {(
+                                              message.product.variants[0]
+                                                ?.purchaseOptions?.[0]
+                                                ?.priceInCents / 100
+                                            ).toFixed(2)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="px-3 pb-3">
+                                    <Button
+                                      size="sm"
+                                      className="w-full gap-2"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAddToCart(message.product!);
+                                      }}
+                                    >
+                                      <ShoppingCart className="w-4 h-4" />
+                                      Add to Cart
+                                    </Button>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {isRetrying && (
+                      <div className="flex items-start gap-2 justify-start">
+                        <div className="bg-muted rounded-lg px-4 py-3">
+                          <p className="text-sm">Retrying...</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 mt-1"
+                          disabled
+                          title="Retrying..."
+                        >
+                          <RotateCw className="w-4 h-4 animate-spin" />
+                        </Button>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </div>
+
+                {/* Input — pinned to bottom */}
+                <div className="shrink-0 pt-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      ref={inputRef}
+                      type="text"
+                      enterKeyHint="send"
+                      placeholder="Type your message..."
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      className="flex-1"
+                      autoFocus
+                    />
+                    <div
+                      role="button"
+                      aria-label="Send message"
+                      tabIndex={-1}
+                      onClick={() => handleSendMessage()}
+                      className="hidden md:inline-flex items-center justify-center h-9 w-9 rounded-md bg-primary text-primary-foreground shrink-0 cursor-pointer active:opacity-80"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div
+                      role="button"
+                      aria-label="View Cart"
+                      tabIndex={-1}
+                      onTouchEnd={(e) => {
+                        e.preventDefault();
+                        handleEndConversation();
+                        setCartOpen(true);
+                      }}
+                      onClick={() => {
+                        handleEndConversation();
+                        setCartOpen(true);
+                      }}
+                      className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-input bg-background shrink-0 cursor-pointer active:opacity-80"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  {/* Status — hidden on mobile to save space */}
+                  <div className="mt-2 text-center hidden md:block">
                     <p className="text-xs text-muted-foreground">
-                      Powered by AI ✨
+                      Your conversation is private and secure
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleEndConversation}
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-
-              {/* Messages */}
-              <div className="flex-1 space-y-4 my-4 overflow-y-auto overflow-x-hidden min-h-0 px-2">
-                {messages.map((message, index) => {
-                  const isLastMessage = index === messages.length - 1;
-                  const shouldHideForRetry =
-                    isLastMessage &&
-                    message.role === "assistant" &&
-                    message.error &&
-                    isRetrying;
-                  const showRetry =
-                    message.role === "assistant" &&
-                    message.error &&
-                    !isRetrying;
-
-                  if (shouldHideForRetry) {
-                    return null;
-                  }
-
-                  // Only animate messages that are new (index >= previous count)
-                  const isNewMessage = index >= messageCountRef.current;
-
-                  // Calculate staggered delay: AI messages wait for user messages
-                  const animationDelay = isNewMessage
-                    ? message.role === "assistant"
-                      ? 0.4
-                      : 0.05
-                    : 0;
-
-                  return (
-                    <div key={message.id || index} className="space-y-2">
-                      <div
-                        className={`flex items-start gap-2 ${
-                          message.role === "user"
-                            ? "justify-end"
-                            : "justify-start"
-                        }`}
-                      >
-                        <motion.div
-                          initial={
-                            isNewMessage
-                              ? {
-                                  opacity: 0,
-                                  x: message.role === "user" ? 30 : -30,
-                                  scale: 0.95,
-                                }
-                              : false
-                          }
-                          animate={{
-                            opacity: 1,
-                            x: 0,
-                            scale: 1,
-                          }}
-                          transition={{
-                            duration: 0.5,
-                            ease: [0.25, 0.1, 0.25, 1],
-                            delay: animationDelay,
-                          }}
-                          className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm ${
-                            message.role === "user"
-                              ? "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground"
-                              : "bg-gradient-to-br from-muted to-muted/80 text-foreground border border-border/50"
-                          }`}
-                        >
-                          <p className="text-sm whitespace-pre-wrap">
-                            {message.text}
-                          </p>
-                        </motion.div>
-                        {showRetry && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 shrink-0 mt-1"
-                            onClick={handleRetry}
-                            title="Retry"
-                          >
-                            <RotateCw className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-
-                      {/* Product Recommendation Card */}
-                      {message.product && (
-                        <motion.div
-                          initial={
-                            isNewMessage
-                              ? {
-                                  opacity: 0,
-                                  y: 20,
-                                  scale: 0.95,
-                                }
-                              : false
-                          }
-                          animate={{
-                            opacity: 1,
-                            y: 0,
-                            scale: 1,
-                          }}
-                          transition={{
-                            duration: 0.6,
-                            ease: [0.25, 0.1, 0.25, 1],
-                            delay: animationDelay + 0.3,
-                          }}
-                          className="flex justify-start"
-                        >
-                          <Card className="max-w-[80%] overflow-hidden hover:shadow-lg transition-all hover:scale-[1.02] border-2 border-primary/20">
-                            <CardContent className="p-0">
-                              <div
-                                onClick={() => {
-                                  handleEndConversation();
-                                  window.location.href = `/products/${message.product!.slug}`;
-                                }}
-                                className="cursor-pointer"
-                              >
-                                <div className="flex gap-3 p-3 hover:bg-muted/50 transition-colors">
-                                  {/* Product Image */}
-                                  <div className="relative w-24 h-24 flex-shrink-0 rounded-md overflow-hidden bg-muted">
-                                    {message.product.images[0] && (
-                                      <Image
-                                        src={message.product.images[0]}
-                                        alt={message.product.name}
-                                        fill
-                                        className="object-cover"
-                                      />
-                                    )}
-                                  </div>
-
-                                  {/* Product Details */}
-                                  <div className="flex-1 min-w-0">
-                                    <h3 className="font-semibold text-sm mb-1">
-                                      {message.product.name}
-                                    </h3>
-                                    <p className="text-xs text-muted-foreground mb-2 line-clamp-3">
-                                      {message.product.description}
-                                    </p>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs font-medium capitalize bg-primary/10 text-primary px-2 py-0.5 rounded">
-                                        {message.product.roastLevel} Roast
-                                      </span>
-                                      <span className="text-sm font-semibold">
-                                        $
-                                        {(
-                                          message.product.variants[0]
-                                            ?.purchaseOptions?.[0]
-                                            ?.priceInCents / 100
-                                        ).toFixed(2)}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="px-3 pb-3">
-                                <Button
-                                  size="sm"
-                                  className="w-full gap-2"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleAddToCart(message.product!);
-                                  }}
-                                >
-                                  <ShoppingCart className="w-4 h-4" />
-                                  Add to Cart
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      )}
-                    </div>
-                  );
-                })}
-                {isRetrying && (
-                  <div className="flex items-start gap-2 justify-start">
-                    <div className="bg-muted rounded-lg px-4 py-3">
-                      <p className="text-sm">Retrying...</p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 mt-1"
-                      disabled
-                      title="Retrying..."
-                    >
-                      <RotateCw className="w-4 h-4 animate-spin" />
-                    </Button>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Input */}
-              <div className="shrink-0">
-                <div className="flex items-center gap-2 pt-4">
-                  <Input
-                    ref={inputRef}
-                    type="text"
-                    placeholder="Type your message..."
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    disabled={isLoading || isRetrying}
-                    className="flex-1"
-                    autoFocus
-                  />
-                  <Button size="icon" onClick={() => handleSendMessage()}>
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      handleEndConversation();
-                      setCartOpen(true);
-                    }}
-                    title="View Cart"
-                  >
-                    <ShoppingCart className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                {/* Status */}
-                <div className="mt-2 text-center">
-                  <p className="text-xs text-muted-foreground">
-                    Your conversation is private and secure
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
       )}
     </>
   );
