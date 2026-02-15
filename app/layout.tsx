@@ -22,7 +22,7 @@ const inter = Inter({
 
 // Generate metadata dynamically from database
 export async function generateMetadata(): Promise<Metadata> {
-  const { storeName, storeTagline, storeDescription, storeLogoUrl, storeFaviconUrl } =
+  const { storeName, storeTagline, storeDescription, storeFaviconUrl } =
     await getSiteMetadata();
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://artisanroast.app";
@@ -57,20 +57,11 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: storeName,
       title: storeName,
       description: storeTagline,
-      images: [
-        {
-          url: storeLogoUrl,
-          width: 512,
-          height: 512,
-          alt: storeName,
-        },
-      ],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: storeName,
       description: storeTagline,
-      images: [storeLogoUrl],
     },
     verification: {
       google: process.env.NEXT_PUBLIC_GSC_VERIFICATION || undefined,
