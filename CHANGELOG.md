@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.88.6 - 2026-02-14
+
+### Added
+
+- **Dynamic OG Images**: Auto-generated 1200x630 social sharing images for root, features, and about pages using Next.js ImageResponse
+- Dark coffee-themed gradient with adapted logo, title/subtitle text, and domain footer
+
+### Changed
+
+- Twitter card type updated from `summary` to `summary_large_image` for richer social previews
+- Removed hardcoded 512x512 logo from OG/Twitter metadata in favor of dynamic route-based images
+
 ## 0.88.0 - 2026-02-13
 
 ### Added
@@ -29,6 +41,7 @@
 
 - Old monolithic ProductFormClient and its section components
 - Product-level image model (replaced by VariantImage)
+
 ## 0.87.13 - 2026-02-12
 
 ### Fixed
