@@ -101,6 +101,8 @@ export interface OrderItemWithDetails {
 export interface OrderWithItems {
   id: string;
   totalInCents: number;
+  discountAmountInCents: number;
+  promoCode: string | null;
   status: string;
   deliveryMethod: string;
   stripeSessionId: string | null;
