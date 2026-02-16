@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { CategoryProduct } from "@/lib/types";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
 import {
@@ -11,6 +10,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { ScrollReveal } from "@/components/shared/ScrollReveal";
 import Link from "next/link";
 
 interface CategoryClientPageProps {
@@ -52,20 +52,14 @@ export default function CategoryClientPage({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {products.map((product, index) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.08 }}
-            >
+            <ScrollReveal key={product.id} delay={index * 0.08}>
               <ProductCard
                 product={product}
                 showPurchaseOptions={showPurchaseOptions}
                 categorySlug={categorySlug}
                 sizes="(max-width: 768px) calc(100vw - 2rem), (max-width: 1200px) calc(50vw - 2rem), 400px"
               />
-            </motion.div>
+            </ScrollReveal>
           ))}
         </div>
       )}

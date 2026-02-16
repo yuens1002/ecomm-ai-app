@@ -3,6 +3,7 @@
 import { FeaturedProduct } from "@/lib/types";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
 import { ScrollCarousel } from "@/components/shared/media/ScrollCarousel";
+import { ScrollReveal } from "@/components/shared/ScrollReveal";
 
 interface FeaturedProductsProps {
   products: FeaturedProduct[];
@@ -27,7 +28,7 @@ export default function FeaturedProducts({
             minWidth="var(--slide-size)"
           >
             {products.map((product, index) => (
-              <div key={product.id}>
+              <ScrollReveal key={product.id} delay={index * 0.08}>
                 <ProductCard
                   product={product}
                   showPurchaseOptions={true}
@@ -36,7 +37,7 @@ export default function FeaturedProducts({
                   priority={index === 0}
                   sizes="(max-width: 768px) 67vw, (max-width: 1200px) 40vw, 29vw"
                 />
-              </div>
+              </ScrollReveal>
             ))}
           </ScrollCarousel>
         </div>
