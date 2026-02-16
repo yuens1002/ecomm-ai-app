@@ -67,6 +67,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: "/auth/signin",
   },
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // Allow relative callback URLs (e.g. "/", "/products/foo")
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allow same-origin absolute URLs
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
     async jwt({ token, user }) {
       // Add user ID to JWT token on sign in
       if (user) {
