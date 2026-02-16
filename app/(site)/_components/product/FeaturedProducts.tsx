@@ -33,7 +33,7 @@ export default function FeaturedProducts({
                   showPurchaseOptions={true}
                   hoverRevealFooter={true}
                   compact={true}
-                  priority={index < 4}
+                  priority={index === 0}
                   sizes="(max-width: 768px) 67vw, (max-width: 1200px) 40vw, 29vw"
                 />
               </div>
