@@ -119,7 +119,8 @@ export default function ProductCard({
             fill
             className="object-cover"
             sizes={sizes}
-            priority={priority || product.isFeatured}
+            priority={priority}
+            fetchPriority={priority ? "high" : undefined}
           />
         </CardHeader>
 
