@@ -40,7 +40,7 @@ import {
 import { useNavOverflow } from "@/hooks/useNavOverflow";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
-import { ChevronDown, FileText, Home, LogOut, Mail, Menu, MoreHorizontal, PackageSearch, Search, User } from "lucide-react";
+import { ChevronDown, CircleUserRound, FileText, Home, LogIn, LogOut, Menu, MoreHorizontal, PackageSearch, Search, User } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -295,20 +295,9 @@ export default function SiteHeader({
                           href="/account"
                           className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         >
-                          <User className="w-5 h-5" />
+                          <CircleUserRound className="w-5 h-5" />
                           <span className="text-[10px] uppercase tracking-wide font-medium">
                             Account
-                          </span>
-                        </Link>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <Link
-                          href="/contact"
-                          className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        >
-                          <Mail className="w-5 h-5" />
-                          <span className="text-[10px] uppercase tracking-wide font-medium">
-                            Contact
                           </span>
                         </Link>
                       </SheetClose>
@@ -393,8 +382,11 @@ export default function SiteHeader({
                       </SheetClose>
                     ) : (
                       <SheetClose asChild>
-                        <Button className="w-full" variant="secondary">
-                          Close
+                        <Button className="w-full" variant="secondary" asChild>
+                          <Link href={`/auth/signin?callbackUrl=${encodeURIComponent(pathname)}`}>
+                            <LogIn className="w-4 h-4 mr-2" />
+                            Sign In
+                          </Link>
                         </Button>
                       </SheetClose>
                     )}
@@ -505,7 +497,7 @@ export default function SiteHeader({
         <div className="order-2 md:order-1 flex-1 md:flex-none flex justify-center md:justify-start">
           <Link
             href="/"
-            className="flex flex-col md:flex-row items-center gap-1 md:gap-2 text-primary"
+            className="flex flex-col md:flex-row items-center gap-1 md:gap-2 text-foreground"
           >
             <Image
               src={settings.storeLogoUrl}

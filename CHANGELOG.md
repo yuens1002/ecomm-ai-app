@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.88.13 - 2026-02-15
+
+### Added
+
+- **Demo banner ticker animation**: CTA cycles between "Try Admin Dashboard" and "See User Account" with a slide-up ticker effect
+- **Sign-in redirect**: Mobile menu sign-in button returns users to the page they were on after authentication
+
+### Changed
+
+- **Mobile menu**: Replace "Close" button with "Sign In" link for unauthenticated users; swap Account icon to CircleUserRound; remove Contact shortcut
+
+### Fixed
+
+- **Auth callback URL handling**: NextAuth redirect callback now properly honors relative and same-origin callback URLs
+
 ## 0.88.12 - 2026-02-15
 
 ### Added

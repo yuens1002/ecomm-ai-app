@@ -228,7 +228,7 @@ export default function FeaturesPage() {
         <div className="relative container mx-auto px-4 py-16 md:py-24">
           <ScrollReveal>
             <div className="mx-auto max-w-3xl text-center">
-              <h1 className="mb-4 text-3xl font-bold tracking-tight text-black md:text-5xl">
+              <h1 className="mb-4 text-3xl font-bold tracking-tight text-foreground md:text-5xl">
                 Built for Specialty Coffee.
                 <br />
                 Powered by Modern Tech.
