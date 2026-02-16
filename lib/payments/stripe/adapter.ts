@@ -148,6 +148,7 @@ export async function normalizeCheckoutSession(
     shippingName,
     paymentInfo: normalizeStripePaymentInfo(paymentInfo),
     totalInCents: session.amount_total || 0,
+    discountAmountInCents: session.total_details?.amount_discount || 0,
   };
 }
 

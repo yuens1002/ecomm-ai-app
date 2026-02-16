@@ -87,6 +87,7 @@ export async function handleCheckoutSessionCompleted(
     shippingName: normalizedCheckout.shippingName,
     paymentInfo: normalizedCheckout.paymentInfo,
     sessionAmountTotal: normalizedCheckout.totalInCents,
+    discountAmountInCents: normalizedCheckout.discountAmountInCents,
   });
 
   if (!result.success) {

@@ -62,6 +62,7 @@ export interface NormalizedCheckoutEvent {
   shippingName: string | null;
   paymentInfo: NormalizedPaymentInfo;
   totalInCents: number;
+  discountAmountInCents: number;
 }
 
 /**
