@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -11,10 +10,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Plus, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ProductType } from "@prisma/client";
+import { Pencil, Plus } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 
 interface PurchaseOption {
   type: "ONE_TIME" | "SUBSCRIPTION";
@@ -51,8 +51,7 @@ export default function ProductManagementClient({
   description: _description = "Manage products and inventory",
   productType = ProductType.COFFEE,
 }: ProductManagementClientProps) {
-  const basePath =
-    productType === ProductType.MERCH ? "/admin/merch" : "/admin/products";
+  const basePath = productType === ProductType.MERCH ? "/admin/merch" : "/admin/products";
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -106,7 +105,7 @@ export default function ProductManagementClient({
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Categories</TableHead>
+              <TableHead>Added Categories</TableHead>
               <TableHead>Variants</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -114,10 +113,7 @@ export default function ProductManagementClient({
           <TableBody>
             {products.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={4}
-                  className="text-center py-8 text-muted-foreground"
-                >
+                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                   No products found.
                 </TableCell>
               </TableRow>
@@ -140,11 +136,11 @@ export default function ProductManagementClient({
                       <div className="flex flex-col gap-3 py-1">
                         {product.variants.map((v, i) => (
                           <div key={i} className="flex flex-col gap-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-semibold text-sm">
+                            <div className="flex items-center justify-between gap-20">
+                              <span className="font-semibold text-sm truncate whitespace-nowrap overflow-hidden text-ellipsis">
                                 {v.name}
                               </span>
-                              <span className="text-xs text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
+                              <span className="text-xs text-muted-foreground bg-secondary px-1.5 py-0.5 rounded truncate whitespace-nowrap overflow-hidden text-ellipsis">
                                 Stock: {v.stock}
                               </span>
                             </div>
