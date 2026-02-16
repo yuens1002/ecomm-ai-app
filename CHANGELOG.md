@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.88.14 - 2026-02-15
+## 0.88.15 - 2026-02-15
 
 ### Changed
 
@@ -10,6 +10,7 @@
 
 ### Fixed
 
+- **AI section layout shift**: Add loading skeleton to reserve space for dynamically imported ChatBarista/VoiceBarista, preventing CLS from content popping in after hydration
 - **Carousel dot touch targets**: Increase tap area to 48px minimum for mobile accessibility while keeping dots visually small
 
 ## 0.88.13 - 2026-02-15
