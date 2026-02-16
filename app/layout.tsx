@@ -20,6 +20,9 @@ const inter = Inter({
   variable: "--font-inter", // We link this in tailwind.config.js
 });
 
+// Demo mode: OG positions the site as a platform demo, not a store
+const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
 // Generate metadata dynamically from database
 export async function generateMetadata(): Promise<Metadata> {
   const { storeName, storeTagline, storeDescription, storeFaviconUrl } =
@@ -27,13 +30,22 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://artisanroast.app";
 
+  const ogTitle = isDemoMode
+    ? "Artisan Roast — Open-Source E-Commerce for Specialty Coffee"
+    : storeName;
+  const ogDescription = isDemoMode
+    ? "A modern, full-stack e-commerce platform built with Next.js, Stripe, and AI. Subscriptions, voice ordering, drag-and-drop admin, and more. Try the live demo."
+    : storeTagline;
+
   return {
     metadataBase: new URL(appUrl),
     title: {
       default: storeName,
       template: `%s | ${storeName}`,
     },
-    description: storeDescription,
+    description: isDemoMode
+      ? "Open-source e-commerce platform for specialty coffee. Built with Next.js 16, Stripe, Prisma, and Google Gemini AI. Features subscriptions, voice ordering, and a drag-and-drop product menu builder."
+      : storeDescription,
     keywords: [
       "open source ecommerce",
       "nextjs ecommerce",
@@ -41,8 +53,9 @@ export async function generateMetadata(): Promise<Metadata> {
       "ecommerce platform",
       "stripe ecommerce",
       "react ecommerce",
-      "coffee shop website",
       "ecommerce template",
+      "nextjs starter",
+      "coffee shop platform",
     ],
     authors: [{ name: storeName }],
     creator: storeName,
@@ -55,13 +68,13 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: "en_US",
       url: appUrl,
       siteName: storeName,
-      title: storeName,
-      description: storeTagline,
+      title: ogTitle,
+      description: ogDescription,
     },
     twitter: {
       card: "summary_large_image",
-      title: storeName,
-      description: storeTagline,
+      title: ogTitle,
+      description: ogDescription,
     },
     verification: {
       google: process.env.NEXT_PUBLIC_GSC_VERIFICATION || undefined,
@@ -96,8 +109,10 @@ export default async function RootLayout({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: storeName,
-    description: storeDescription,
+    name: isDemoMode ? "Artisan Roast" : storeName,
+    description: isDemoMode
+      ? "Open-source e-commerce platform for specialty coffee, built with Next.js, Stripe, and AI."
+      : storeDescription,
     url: appUrl,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Any",
