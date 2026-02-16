@@ -4,20 +4,32 @@ import { join } from "node:path";
 interface OgLayoutProps {
   title: string;
   subtitle: string;
+  badge?: string;
+  siteUrl?: string;
 }
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
-export async function renderOgLayout({ title, subtitle }: OgLayoutProps) {
-  let logoSvg = await readFile(
+/** Load Inter font data for OG image rendering */
+export async function loadOgFonts() {
+  const [interBold, interRegular] = await Promise.all([
+    readFile(join(process.cwd(), "app/_og/Inter-Bold.ttf")),
+    readFile(join(process.cwd(), "app/_og/Inter-Regular.ttf")),
+  ]);
+
+  return [
+    { name: "Inter", data: interBold, style: "normal" as const, weight: 700 as const },
+    { name: "Inter", data: interRegular, style: "normal" as const, weight: 400 as const },
+  ];
+}
+
+export async function renderOgLayout({ title, subtitle, badge, siteUrl }: OgLayoutProps) {
+  const logoSvg = await readFile(
     join(process.cwd(), "public", "logo.svg"),
     "utf-8"
   );
 
-  // Adapt logo colors for dark background
-  logoSvg = logoSvg.replace(/#c7f1ff/g, "#3d2a1a"); // blue bg → dark brown
-  logoSvg = logoSvg.replace(/#000000/g, "#e8d5c0"); // black strokes → light tan
-
+  // Use original logo colors (designed for light backgrounds)
   const logoSrc = `data:image/svg+xml;base64,${Buffer.from(logoSvg).toString("base64")}`;
 
   return (
@@ -28,23 +40,40 @@ export async function renderOgLayout({ title, subtitle }: OgLayoutProps) {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
+        fontFamily: "Inter, sans-serif",
         background:
-          "linear-gradient(135deg, #1c0f06 0%, #2d1810 40%, #3d2317 100%)",
+          "linear-gradient(180deg, #fde8c8 0%, #f5c6d0 50%, #e8a8c8 100%)",
         padding: "60px 80px",
       }}
     >
-      {/* Logo */}
-      <div style={{ display: "flex" }}>
+      {/* Header: Logo + Badge */}
+      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={logoSrc} width={72} height={72} alt="" />
+        <img src={logoSrc} width={64} height={64} alt="" />
+        {badge && (
+          <div
+            style={{
+              display: "flex",
+              color: "#1a1a1a",
+              fontSize: 14,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              border: "2px solid rgba(0,0,0,0.3)",
+              borderRadius: 6,
+              padding: "4px 12px",
+            }}
+          >
+            {badge}
+          </div>
+        )}
       </div>
 
       {/* Content */}
       <div style={{ display: "flex", flexDirection: "column" }}>
         <div
           style={{
-            color: "#ffffff",
-            fontSize: 60,
+            color: "#1a1a1a",
+            fontSize: 56,
             fontWeight: 700,
             lineHeight: 1.15,
           }}
@@ -53,9 +82,10 @@ export async function renderOgLayout({ title, subtitle }: OgLayoutProps) {
         </div>
         <div
           style={{
-            color: "#c89b6e",
-            fontSize: 28,
-            marginTop: 20,
+            color: "rgba(0,0,0,0.55)",
+            fontSize: 26,
+            fontWeight: 400,
+            marginTop: 16,
           }}
         >
           {subtitle}
@@ -67,11 +97,12 @@ export async function renderOgLayout({ title, subtitle }: OgLayoutProps) {
         style={{
           display: "flex",
           justifyContent: "flex-end",
-          color: "#7a6148",
-          fontSize: 22,
+          color: "rgba(0,0,0,0.35)",
+          fontSize: 20,
+          fontWeight: 400,
         }}
       >
-        artisanroast.app
+        {siteUrl ? siteUrl.replace(/^https?:\/\//, "") : "artisanroast.app"}
       </div>
     </div>
   );
