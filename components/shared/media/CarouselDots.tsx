@@ -29,31 +29,32 @@ export function CarouselDots({
       )}
     >
       {Array.from({ length: total }).map((_, index) => (
-        <motion.button
+        <button
           key={index}
           onClick={() => onDotClick(index)}
-          animate={{
-            width: index === currentIndex ? "2rem" : "0.5rem",
-          }}
-          whileHover={{
-            opacity: 0.75,
-          }}
-          transition={{
-            duration: 0.3,
-            ease: "easeInOut",
-          }}
-          className={cn(
-            "h-2 rounded-full transition-colors",
-            noBorder
-              ? index === currentIndex
-                ? "bg-foreground"
-                : "bg-foreground/30"
-              : index === currentIndex
-                ? "bg-white"
-                : "bg-white/50"
-          )}
+          className="py-5 flex items-center"
           aria-label={`Go to slide ${index + 1}`}
-        />
+        >
+          <motion.span
+            animate={{
+              width: index === currentIndex ? "2rem" : "0.5rem",
+            }}
+            transition={{
+              duration: 0.3,
+              ease: "easeInOut",
+            }}
+            className={cn(
+              "h-2 rounded-full block transition-colors",
+              noBorder
+                ? index === currentIndex
+                  ? "bg-foreground"
+                  : "bg-foreground/30"
+                : index === currentIndex
+                  ? "bg-white"
+                  : "bg-white/50"
+            )}
+          />
+        </button>
       ))}
     </div>
   );

@@ -15,6 +15,16 @@ jest.mock("framer-motion", () => ({
         </button>
       );
     }),
+    span: React.forwardRef<
+      HTMLSpanElement,
+      React.ComponentPropsWithoutRef<"span">
+    >(function MotionSpan({ children, className, ...props }, ref) {
+      return (
+        <span ref={ref} className={className} {...props}>
+          {children}
+        </span>
+      );
+    }),
   },
 }));
 

@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { motion } from "motion/react";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
 import { FeaturedProduct } from "@/lib/types";
 import { Sparkles, TrendingUp } from "lucide-react";
@@ -77,20 +74,14 @@ export default function RecommendationsSection({
         {/* Product Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {products.map((product, index) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.08 }}
-            >
+            <div key={product.id}>
               <ProductCard
                 product={product}
                 showPurchaseOptions={true}
                 hoverRevealFooter={true}
                 priority={index === 0}
               />
-            </motion.div>
+            </div>
           ))}
         </div>
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.88.14 - 2026-02-15
+
+### Changed
+
+- **Remove homepage motion animations**: Products and AI section render instantly from server HTML, eliminating 2.5s render delay (LCP) and layout shifts (CLS)
+- **Optimize image sizes**: Add 480px image size step to close the 384→640 gap, saving ~97 KiB across homepage images
+- **Tighten browserslist**: Target last 2 versions of modern browsers, eliminating ~13.7 KiB of unnecessary polyfills
+
+### Fixed
+
+- **Carousel dot touch targets**: Increase tap area to 48px minimum for mobile accessibility while keeping dots visually small
+
 ## 0.88.13 - 2026-02-15
 
 ### Added
