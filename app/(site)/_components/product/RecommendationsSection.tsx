@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
+import { ScrollReveal } from "@/components/shared/ScrollReveal";
 import { FeaturedProduct } from "@/lib/types";
 import { Sparkles, TrendingUp } from "lucide-react";
 
@@ -74,14 +75,14 @@ export default function RecommendationsSection({
         {/* Product Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {products.map((product, index) => (
-            <div key={product.id}>
+            <ScrollReveal key={product.id} delay={index * 0.08}>
               <ProductCard
                 product={product}
                 showPurchaseOptions={true}
                 hoverRevealFooter={true}
                 priority={index === 0}
               />
-            </div>
+            </ScrollReveal>
           ))}
         </div>
 
