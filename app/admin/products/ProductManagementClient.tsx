@@ -1,7 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DataTableActionBar, type ActionBarConfig } from "@/app/admin/_components/data-table";
 import {
   Table,
   TableBody,
@@ -13,7 +12,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ProductType } from "@prisma/client";
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -120,26 +118,18 @@ export default function ProductManagementClient({
 
   const SortIcon = sortDirection === "asc" ? ArrowUp : sortDirection === "desc" ? ArrowDown : ArrowUpDown;
 
+  const actionBarConfig = useMemo<ActionBarConfig>(() => ({
+    left: [{ type: "search", value: searchQuery, onChange: setSearchQuery, placeholder: "Search products..." }],
+    right: [{ type: "button", label: "Add Product", icon: Plus, href: `${basePath}/new` }],
+  }), [searchQuery, basePath]);
+
   if (loading) {
     return <div>Loading products...</div>;
   }
 
   return (
     <div>
-      <div className="flex items-center gap-4 mb-4">
-        <Input
-          placeholder="Search products..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-sm"
-        />
-        <div className="flex-1" />
-        <Button asChild>
-          <Link href={`${basePath}/new`}>
-            <Plus className="mr-2 h-4 w-4" /> Add Product
-          </Link>
-        </Button>
-      </div>
+      <DataTableActionBar config={actionBarConfig} />
       <div className="overflow-x-auto">
         <Table className="table-fixed">
           <TableHeader>
@@ -155,8 +145,8 @@ export default function ProductManagementClient({
                 </button>
               </TableHead>
               <TableHead className="h-10 font-medium text-foreground w-[20%]">Added Categories</TableHead>
-              <TableHead className="h-10 font-medium text-foreground w-[30%]">Variants</TableHead>
               <TableHead className="h-10 font-medium text-foreground w-[20%]">Add-ons</TableHead>
+              <TableHead className="h-10 font-medium text-foreground w-[30%]">Variants</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -184,6 +174,11 @@ export default function ProductManagementClient({
                     </div>
                   </TableCell>
                   <TableCell>{product.categories || "-"}</TableCell>
+                  <TableCell>
+                    {product.addOns && product.addOns.length > 0
+                      ? product.addOns.join(", ")
+                      : "-"}
+                  </TableCell>
                   <TableCell>
                     {product.variants && product.variants.length > 0 ? (
                       <div className="flex flex-col gap-3 py-1">
@@ -220,11 +215,6 @@ export default function ProductManagementClient({
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
-                  </TableCell>
-                  <TableCell>
-                    {product.addOns && product.addOns.length > 0
-                      ? product.addOns.join(", ")
-                      : "-"}
                   </TableCell>
                 </TableRow>
               ))
