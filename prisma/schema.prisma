@@ -119,6 +119,7 @@ model ProductVariant {
   productId         String
   stockQuantity     Int              @default(0)
   order             Int              @default(0)
+  isDisabled        Boolean          @default(false)
   product           Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
   images            VariantImage[]
   purchaseOptions   PurchaseOption[]
