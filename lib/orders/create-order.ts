@@ -35,6 +35,7 @@ export async function createOrdersFromCheckout(
     shippingName,
     paymentInfo,
     sessionAmountTotal,
+    discountAmountInCents,
   } = params;
 
   // Fetch purchase options with full details
@@ -68,7 +69,10 @@ export async function createOrdersFromCheckout(
     purchaseOptions
   );
   const totalItemCost = oneTimeTotal + subscriptionTotal;
-  const shippingCostInCents = sessionAmountTotal - totalItemCost;
+  // sessionAmountTotal already has the discount subtracted by Stripe,
+  // so add it back to isolate shipping from the discount
+  const shippingCostInCents =
+    sessionAmountTotal + discountAmountInCents - totalItemCost;
 
   // Normalize address
   const addressData = normalizeAddress(shippingAddress, shippingName);
@@ -88,6 +92,7 @@ export async function createOrdersFromCheckout(
       userId,
       items: oneTimeItems,
       totalInCents: oneTimeTotal + shippingCostInCents, // One-time order includes shipping
+      discountAmountInCents,
       deliveryMethod,
       addressData,
       paymentInfo,
@@ -108,6 +113,9 @@ export async function createOrdersFromCheckout(
       ? subscriptionTotal + shippingCostInCents
       : subscriptionTotal;
 
+    // Apply discount to subscription order only when there's no one-time order
+    const subDiscount = oneTimeItems.length === 0 ? discountAmountInCents : 0;
+
     const subOrder = await createSingleOrder({
       sessionId,
       subscriptionId: subscriptionId || null,
@@ -117,6 +125,7 @@ export async function createOrdersFromCheckout(
       userId,
       items: subscriptionItems,
       totalInCents: orderTotal,
+      discountAmountInCents: subDiscount,
       deliveryMethod,
       addressData,
       paymentInfo,
@@ -150,6 +159,7 @@ async function createSingleOrder(params: {
   userId: string | null;
   items: Array<{ purchaseOptionId: string; quantity: number }>;
   totalInCents: number;
+  discountAmountInCents: number;
   deliveryMethod: "DELIVERY" | "PICKUP";
   addressData: ReturnType<typeof normalizeAddress>;
   paymentInfo: {
@@ -170,6 +180,7 @@ async function createSingleOrder(params: {
       customerEmail: params.customerEmail,
       customerPhone: params.customerPhone,
       totalInCents: params.totalInCents,
+      discountAmountInCents: params.discountAmountInCents,
       status: "PENDING",
       deliveryMethod: params.deliveryMethod,
       paymentCardLast4: params.paymentInfo.cardLast4,

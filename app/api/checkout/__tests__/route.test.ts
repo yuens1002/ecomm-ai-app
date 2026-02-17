@@ -3,7 +3,10 @@
 import { NextRequest } from "next/server";
 import { POST } from "../route";
 
-const purchaseOptionFindManyMock = jest.fn();
+// Mock app-settings before anything imports @/lib/prisma transitively
+jest.mock("@/lib/config/app-settings", () => ({
+  getAllowPromoCodes: jest.fn().mockResolvedValue(false),
+}));
 
 jest.mock("@/lib/services/stripe", () => {
   const createMock = jest.fn();
@@ -19,6 +22,8 @@ jest.mock("@/lib/services/stripe", () => {
     __mock: { createMock },
   };
 });
+
+const purchaseOptionFindManyMock = jest.fn();
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {

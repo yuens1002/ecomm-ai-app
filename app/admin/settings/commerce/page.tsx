@@ -1,9 +1,12 @@
 "use client";
 
+import { ExternalLink } from "lucide-react";
 import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
 import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { OptionCardGroup } from "@/app/admin/_components/forms/OptionCardGroup";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { WeightUnitOption } from "@/lib/weight-unit";
 
 export default function CommerceSettingsPage() {
@@ -13,6 +16,53 @@ export default function CommerceSettingsPage() {
         title="Commerce Settings"
         subtitle="Configure product display and commerce-related settings"
       />
+
+      <SettingsSection
+        title="Promotion Codes"
+        description="Allow customers to enter promotion codes during checkout"
+      >
+        <SettingsField<boolean>
+          endpoint="/api/admin/settings/promo-codes"
+          field="enabled"
+          label="Enable Promotion Codes"
+          autoSave
+          defaultValue={false}
+          input={(value, onChange) => (
+            <div className="space-y-6">
+              <div className="space-y-1.5">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={Boolean(value)}
+                    onCheckedChange={(checked) => onChange(checked)}
+                  />
+                  <Label className="text-sm text-muted-foreground">
+                    {value
+                      ? "Promotion codes are enabled"
+                      : "Promotion codes are disabled"}
+                  </Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Show a promotion code input field on the Stripe Checkout page
+                </p>
+              </div>
+              <div className="space-y-1">
+                <a
+                  href="https://dashboard.stripe.com/coupons"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                >
+                  Stripe Dashboard
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+                <p className="text-sm text-muted-foreground">
+                  Create and manage promotion codes
+                </p>
+              </div>
+            </div>
+          )}
+        />
+      </SettingsSection>
 
       <SettingsSection
         title="Weight Display Unit"

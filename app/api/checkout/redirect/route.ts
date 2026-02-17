@@ -3,6 +3,7 @@ import { stripe } from "@/lib/services/stripe";
 import Stripe from "stripe";
 import { CartItem } from "@/lib/store/cart-store";
 import { getErrorMessage } from "@/lib/error-utils";
+import { getAllowPromoCodes } from "@/lib/config/app-settings";
 
 export async function POST(req: NextRequest) {
   try {
@@ -166,11 +167,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Check if promotion codes are enabled
+    const allowPromoCodes = await getAllowPromoCodes();
+
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: checkoutMode,
+      ...(allowPromoCodes && { allow_promotion_codes: true }),
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/checkout/cancel`,
       phone_number_collection: {

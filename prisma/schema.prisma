@@ -260,6 +260,8 @@ model Address {
 model Order {
   id                    String         @id @default(cuid())
   totalInCents          Int
+  discountAmountInCents Int            @default(0)
+  promoCode             String?
   status                OrderStatus    @default(PENDING)
   deliveryMethod        DeliveryMethod @default(DELIVERY)
   userId                String?

@@ -20,6 +20,7 @@ interface CartAddOn {
     id: string;
     name: string;
     priceInCents: number;
+    purchaseOptionId: string;
   };
 }
 
@@ -116,7 +117,7 @@ export function CartAddOnsSuggestions({
               stockQuantity: 100,
               purchaseOptions: [
                 {
-                  id: `${addOn.variant.id}-one-time`,
+                  id: addOn.variant.purchaseOptionId,
                   priceInCents: addOn.variant.priceInCents,
                   type: "ONE_TIME",
                 },

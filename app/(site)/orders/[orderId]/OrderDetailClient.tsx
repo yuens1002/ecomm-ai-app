@@ -66,8 +66,11 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
     0
   );
 
-  // Calculate shipping (total - subtotal)
-  const shipping = order.totalInCents - subtotal;
+  // Discount applied via promo code (0 when no promo used)
+  const discount = order.discountAmountInCents ?? 0;
+
+  // Calculate shipping (add discount back since totalInCents already has it subtracted)
+  const shipping = order.totalInCents + discount - subtotal;
 
   return (
     <PageContainer>
@@ -168,6 +171,16 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                 <span className="text-text-muted">Subtotal</span>
                 <span className="font-medium">{formatPrice(subtotal)}</span>
               </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                  <span>
+                    Discount{order.promoCode ? ` (${order.promoCode})` : ""}
+                  </span>
+                  <span className="font-medium">
+                    -{formatPrice(discount)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-text-muted">
                   Shipping (

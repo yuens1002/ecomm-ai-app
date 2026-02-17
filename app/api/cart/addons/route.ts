@@ -106,7 +106,12 @@ export async function POST(request: Request) {
           imageUrl: string;
           categorySlug: string;
         };
-        variant: { id: string; name: string; priceInCents: number };
+        variant: {
+          id: string;
+          name: string;
+          priceInCents: number;
+          purchaseOptionId: string;
+        };
       }
     >();
 
@@ -147,6 +152,7 @@ export async function POST(request: Request) {
               id: variant.id,
               name: variant.name,
               priceInCents: effectivePrice,
+              purchaseOptionId: po.id,
             },
           });
         }
@@ -185,6 +191,7 @@ export async function POST(request: Request) {
             id: addOn.addOnVariant.id,
             name: addOn.addOnVariant.name,
             priceInCents: effectivePrice,
+            purchaseOptionId: po.id,
           },
         });
       }

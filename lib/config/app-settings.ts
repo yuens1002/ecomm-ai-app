@@ -10,6 +10,7 @@ import { LocationType } from "../location-type";
 const APP_SETTINGS_KEYS = {
   LOCATION_TYPE: "app.locationType",
   WEIGHT_UNIT: "app.weightUnit",
+  ALLOW_PROMO_CODES: "commerce.allowPromoCodes",
 } as const;
 
 /**
@@ -62,6 +63,31 @@ export async function setWeightUnit(value: WeightUnit): Promise<void> {
     create: {
       key: APP_SETTINGS_KEYS.WEIGHT_UNIT,
       value,
+    },
+  });
+}
+
+/**
+ * Get whether promotion codes are enabled at checkout
+ */
+export async function getAllowPromoCodes(): Promise<boolean> {
+  const setting = await prisma.siteSettings.findUnique({
+    where: { key: APP_SETTINGS_KEYS.ALLOW_PROMO_CODES },
+  });
+
+  return setting?.value === "true";
+}
+
+/**
+ * Set whether promotion codes are enabled at checkout
+ */
+export async function setAllowPromoCodes(value: boolean): Promise<void> {
+  await prisma.siteSettings.upsert({
+    where: { key: APP_SETTINGS_KEYS.ALLOW_PROMO_CODES },
+    update: { value: String(value) },
+    create: {
+      key: APP_SETTINGS_KEYS.ALLOW_PROMO_CODES,
+      value: String(value),
     },
   });
 }
