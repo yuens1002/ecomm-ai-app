@@ -16,6 +16,7 @@ export async function fetchPurchaseOptions(
         select: {
           id: true,
           name: true,
+          isDisabled: true,
           stockQuantity: true,
           product: {
             select: {
@@ -54,6 +55,13 @@ export function validateStockAndProducts(
       return {
         valid: false,
         error: `${option.variant.product.name} is unavailable and cannot be purchased.`,
+      };
+    }
+
+    if (option.variant.isDisabled) {
+      return {
+        valid: false,
+        error: `${option.variant.product.name} - ${option.variant.name} is unavailable and cannot be purchased.`,
       };
     }
 

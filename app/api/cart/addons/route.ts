@@ -49,6 +49,7 @@ export async function POST(request: Request) {
               take: 1,
             },
             variants: {
+              where: { isDisabled: false },
               select: {
                 id: true,
                 name: true,
@@ -76,6 +77,7 @@ export async function POST(request: Request) {
           select: {
             id: true,
             name: true,
+            isDisabled: true,
             images: {
               select: { url: true },
               orderBy: { order: "asc" as const },
@@ -160,6 +162,7 @@ export async function POST(request: Request) {
         // Specific variant
         if (
           !addOn.addOnVariant ||
+          addOn.addOnVariant.isDisabled ||
           addOn.addOnVariant.purchaseOptions.length === 0
         ) {
           continue;

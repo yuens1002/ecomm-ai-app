@@ -79,6 +79,7 @@ export async function getProductAddOns(
               take: 1,
             },
             variants: {
+              where: { isDisabled: false },
               select: {
                 id: true,
                 name: true,
@@ -108,6 +109,7 @@ export async function getProductAddOns(
           select: {
             id: true,
             name: true,
+            isDisabled: true,
             weight: true,
             stockQuantity: true,
             images: {
@@ -185,7 +187,7 @@ export async function getProductAddOns(
       } else {
         // Specific variant link
         const variant = addOn.addOnVariant!;
-        if (variant.purchaseOptions.length === 0) continue;
+        if (variant.isDisabled || variant.purchaseOptions.length === 0) continue;
 
         const key = `${addOn.addOnProduct.id}-${variant.id}`;
         if (seen.has(key)) continue;
