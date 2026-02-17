@@ -47,7 +47,7 @@ function buildStripeSession(
     },
     payment_intent: "pi_123",
     subscription: null,
-    shipping_details: null,
+    collected_information: null,
     total_details: null,
     ...overrides,
   } as unknown as Stripe.Checkout.Session;

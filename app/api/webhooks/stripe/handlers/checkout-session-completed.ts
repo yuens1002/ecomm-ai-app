@@ -36,15 +36,31 @@ export async function handleCheckoutSessionCompleted(
   }
 
   logger.debug("✅ Checkout completed:", session.id);
+  logger.debug("📍 Session shipping sources:", {
+    collected_information: session.collected_information?.shipping_details ? "present" : "null",
+    customer_details_address: session.customer_details?.address ? "present" : "null",
+  });
 
   // Normalize checkout session to common format
   const normalizedCheckout = await normalizeCheckoutSession(session);
 
-  // Find user by email (case-insensitive to handle Stripe Link email variations)
-  let userId: string | null = null;
+  // Find user — prefer metadata userId (set at checkout) over email lookup.
+  // Stripe Link can substitute a different email, so email alone is unreliable.
+  let userId: string | null = session.metadata?.userId || null;
   let existingUser: { id: string; name: string | null; phone: string | null } | null = null;
 
-  if (normalizedCheckout.customer.email) {
+  if (userId) {
+    existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, phone: true },
+    });
+    if (!existingUser) {
+      logger.warn("⚠️ userId from metadata not found in DB, falling back to email lookup");
+      userId = null;
+    }
+  }
+
+  if (!userId && normalizedCheckout.customer.email) {
     const user = await prisma.user.findFirst({
       where: {
         email: {
@@ -56,21 +72,21 @@ export async function handleCheckoutSessionCompleted(
     });
     existingUser = user;
     userId = user?.id || null;
+  }
 
-    // Update user contact info if needed
-    if (userId && existingUser) {
-      await updateUserContactInfo(
-        userId,
-        normalizedCheckout.shippingName,
-        normalizedCheckout.customer.phone,
-        existingUser
-      );
-    }
+  // Update user contact info if needed
+  if (userId && existingUser) {
+    await updateUserContactInfo(
+      userId,
+      normalizedCheckout.shippingName,
+      normalizedCheckout.customer.phone,
+      existingUser
+    );
+  }
 
-    // Save address for logged-in users
-    if (normalizedCheckout.shippingAddress && userId) {
-      await saveUserAddress(userId, normalizedCheckout.shippingAddress);
-    }
+  // Save address for logged-in users
+  if (normalizedCheckout.shippingAddress && userId) {
+    await saveUserAddress(userId, normalizedCheckout.shippingAddress);
   }
 
   // Create orders using normalized data

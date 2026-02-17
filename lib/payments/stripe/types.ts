@@ -63,16 +63,6 @@ export type InvoiceWithPayments = Stripe.Invoice & {
 };
 
 /**
- * Checkout session with optional shipping info
- */
-export type SessionWithShipping = Stripe.Checkout.Session & {
-  shipping?: {
-    address?: Stripe.Address;
-    name?: string;
-  };
-};
-
-/**
  * Invoice with subscription details (newer Stripe API)
  */
 export type InvoiceWithSubscriptionDetails = Stripe.Invoice & {
