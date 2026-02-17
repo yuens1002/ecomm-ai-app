@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.89.0 - 2026-02-17
+
+### Added
+
+- **Promotion codes at checkout**: Toggle in Commerce Settings enables a promotion code input on the Stripe Checkout page. Create and manage codes in Stripe Dashboard
+- **Discount breakdown on order detail**: Customer order page shows Subtotal, Discount (with promo code label), Shipping, and Total when a promotion code was used
+
+### Fixed
+
+- **Cart add-on checkout failure**: Add-on suggestions used a fabricated purchase option ID that didn't exist in the database, causing "Invalid purchase option" errors at checkout
+- **Shipping calculation with discounts**: Fixed order creation to correctly isolate shipping cost when a promo code discount is applied (was producing negative shipping)
+
 ## 0.88.16 - 2026-02-16
 
 ### Changed
