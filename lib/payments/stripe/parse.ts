@@ -3,7 +3,6 @@ import { logger } from "@/lib/logger";
 import type {
   WebhookCartItem,
   ShippingAddressData,
-  SessionWithShipping,
 } from "./types";
 
 /**
@@ -29,37 +28,36 @@ export function parseCartMetadata(
 }
 
 /**
- * Extracts shipping address from checkout session
- * Stripe can populate address in different places depending on checkout mode
+ * Extracts shipping address from checkout session.
+ *
+ * Stripe API >=2025-03-31 moved shipping to collected_information.shipping_details.
+ * We check that first, then fall back to the legacy session.shipping field.
+ * customer_details.address is NOT used — that's the billing/Link address.
  */
 export function parseShippingFromSession(
   session: Stripe.Checkout.Session
 ): { address: ShippingAddressData | null; name: string | null } {
-  const sessionWithShipping = session as SessionWithShipping;
-
-  // Try to get shipping info from explicit shipping field first,
-  // then fall back to customer_details
-  const address =
-    sessionWithShipping.shipping?.address || session.customer_details?.address;
-  const name =
-    sessionWithShipping.shipping?.name || session.customer_details?.name;
-
-  if (!address) {
-    return { address: null, name: name || null };
+  // 1. Current API: collected_information.shipping_details
+  const collected = session.collected_information?.shipping_details;
+  if (collected?.address) {
+    logger.debug("📍 Shipping from collected_information.shipping_details");
+    return {
+      address: {
+        name: collected.name || null,
+        line1: collected.address.line1 || null,
+        line2: collected.address.line2 || null,
+        city: collected.address.city || null,
+        state: collected.address.state || null,
+        postal_code: collected.address.postal_code || null,
+        country: collected.address.country || null,
+      },
+      name: collected.name || null,
+    };
   }
 
-  return {
-    address: {
-      name: name || null,
-      line1: address.line1 || null,
-      line2: address.line2 || null,
-      city: address.city || null,
-      state: address.state || null,
-      postal_code: address.postal_code || null,
-      country: address.country || null,
-    },
-    name: name || null,
-  };
+  // 2. No shipping collected (pickup orders)
+  logger.debug("📍 No shipping address found on session");
+  return { address: null, name: session.customer_details?.name || null };
 }
 
 /**

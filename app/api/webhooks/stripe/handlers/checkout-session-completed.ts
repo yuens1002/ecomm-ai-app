@@ -36,6 +36,10 @@ export async function handleCheckoutSessionCompleted(
   }
 
   logger.debug("✅ Checkout completed:", session.id);
+  logger.debug("📍 Session shipping sources:", {
+    collected_information: session.collected_information?.shipping_details ? "present" : "null",
+    customer_details_address: session.customer_details?.address ? "present" : "null",
+  });
 
   // Normalize checkout session to common format
   const normalizedCheckout = await normalizeCheckoutSession(session);
