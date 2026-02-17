@@ -25,34 +25,40 @@ export default function CommerceSettingsPage() {
           endpoint="/api/admin/settings/promo-codes"
           field="enabled"
           label="Enable Promotion Codes"
-          description="Show a promotion code input field on the Stripe Checkout page"
           autoSave
           defaultValue={false}
           input={(value, onChange) => (
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={Boolean(value)}
-                  onCheckedChange={(checked) => onChange(checked)}
-                />
-                <Label className="text-sm text-muted-foreground">
-                  {value
-                    ? "Promotion codes are enabled"
-                    : "Promotion codes are disabled"}
-                </Label>
+            <div className="space-y-6">
+              <div className="space-y-1.5">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={Boolean(value)}
+                    onCheckedChange={(checked) => onChange(checked)}
+                  />
+                  <Label className="text-sm text-muted-foreground">
+                    {value
+                      ? "Promotion codes are enabled"
+                      : "Promotion codes are disabled"}
+                  </Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Show a promotion code input field on the Stripe Checkout page
+                </p>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Create and manage promotion codes in your{" "}
+              <div className="space-y-1">
                 <a
                   href="https://dashboard.stripe.com/coupons"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-primary hover:underline"
+                  className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                 >
                   Stripe Dashboard
                   <ExternalLink className="h-3 w-3" />
                 </a>
-              </p>
+                <p className="text-sm text-muted-foreground">
+                  Create and manage promotion codes
+                </p>
+              </div>
             </div>
           )}
         />
