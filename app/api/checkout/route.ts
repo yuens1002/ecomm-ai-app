@@ -330,6 +330,7 @@ export async function POST(req: NextRequest) {
         ),
         deliveryMethod: deliveryMethod || "DELIVERY",
         selectedAddressId: selectedAddressId || "",
+        ...(userId && { userId }),
         // Deprecated; kept only for backward compatibility. New source of truth
         // is billingInterval + billingIntervalCount on PurchaseOption and Stripe price.
       },

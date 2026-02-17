@@ -195,6 +195,7 @@ export async function POST(req: NextRequest) {
         ),
         deliveryMethod: deliveryMethod,
         selectedAddressId: "",
+        ...(userId && { userId }),
       },
     });
 
