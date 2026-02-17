@@ -28,10 +28,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   FieldSet,
   FieldLegend,
   FieldDescription,
+  FieldContent,
+  FieldLabel,
+  FieldTitle,
   Field,
 } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/forms/FormHeading";
@@ -79,6 +83,7 @@ export interface VariantData {
   weight: number;
   stockQuantity: number;
   order: number;
+  isDisabled: boolean;
   images: VariantImageData[];
   purchaseOptions: PurchaseOptionData[];
 }
@@ -357,7 +362,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
   const handleUpdateVariant = async (
     variantId: string,
     field: string,
-    value: string | number
+    value: string | number | boolean
   ) => {
     const idx = variants.findIndex((v) => v.id === variantId);
     if (idx === -1) return;
@@ -376,6 +381,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
       name: variant.name,
       weight: variant.weight,
       stockQuantity: variant.stockQuantity,
+      isDisabled: variant.isDisabled,
     });
     setIsSaving(false);
     if (!result.ok) {
@@ -639,6 +645,23 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
                       }
                       onBlur={() => handleSaveVariant(selectedVariant)}
                     />
+                  </Field>
+
+                  <Field orientation="horizontal">
+                    <Checkbox
+                      id={`variant-disabled-${selectedVariant.id}`}
+                      checked={selectedVariant.isDisabled}
+                      onCheckedChange={(checked) => {
+                        handleUpdateVariant(selectedVariant.id, "isDisabled", checked === true);
+                        handleSaveVariant({ ...selectedVariant, isDisabled: checked === true });
+                      }}
+                    />
+                    <FieldLabel htmlFor={`variant-disabled-${selectedVariant.id}`}>
+                      <FieldContent>
+                        <FieldTitle>Disabled</FieldTitle>
+                        <FieldDescription>Hide variant from storefront</FieldDescription>
+                      </FieldContent>
+                    </FieldLabel>
                   </Field>
 
                   <StackedFieldPair>

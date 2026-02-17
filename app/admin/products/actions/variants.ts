@@ -21,12 +21,14 @@ const createVariantSchema = z.object({
   name: z.string().min(1, "Name is required"),
   weight: z.number().int().min(0),
   stockQuantity: z.number().int().min(0).default(0),
+  isDisabled: z.boolean().default(false),
 });
 
 const updateVariantSchema = z.object({
   name: z.string().min(1, "Name is required"),
   weight: z.number().int().min(0),
   stockQuantity: z.number().int().min(0),
+  isDisabled: z.boolean().optional(),
 });
 
 const reorderSchema = z.object({
@@ -47,7 +49,7 @@ export async function createVariant(input: unknown): Promise<ActionResult> {
     };
   }
 
-  const { productId, name, weight, stockQuantity } = parsed.data;
+  const { productId, name, weight, stockQuantity, isDisabled } = parsed.data;
 
   try {
     const currentUnit = await getWeightUnit();
@@ -67,6 +69,7 @@ export async function createVariant(input: unknown): Promise<ActionResult> {
         name,
         weight: weightInGrams,
         stockQuantity,
+        isDisabled,
         order: (maxOrder._max.order ?? -1) + 1,
       },
       include: {
@@ -106,7 +109,7 @@ export async function updateVariant(
     };
   }
 
-  const { name, weight, stockQuantity } = parsed.data;
+  const { name, weight, stockQuantity, isDisabled } = parsed.data;
 
   try {
     const currentUnit = await getWeightUnit();
@@ -116,7 +119,7 @@ export async function updateVariant(
 
     const variant = await prisma.productVariant.update({
       where: { id: variantId },
-      data: { name, weight: weightInGrams, stockQuantity },
+      data: { name, weight: weightInGrams, stockQuantity, ...(isDisabled !== undefined && { isDisabled }) },
       include: {
         purchaseOptions: true,
         images: { orderBy: { order: "asc" } },
