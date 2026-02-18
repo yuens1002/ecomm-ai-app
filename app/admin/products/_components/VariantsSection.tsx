@@ -28,10 +28,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   FieldSet,
   FieldLegend,
   FieldDescription,
+  FieldContent,
+  FieldLabel,
+  FieldTitle,
   Field,
 } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/forms/FormHeading";
@@ -79,6 +83,7 @@ export interface VariantData {
   weight: number;
   stockQuantity: number;
   order: number;
+  isDisabled: boolean;
   images: VariantImageData[];
   purchaseOptions: PurchaseOptionData[];
 }
@@ -120,7 +125,13 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
     >(new Map());
 
     const selectedVariant = variants[selectedIndex] ?? null;
+    const activeVariantCount = variants.filter((v) => !v.isDisabled).length;
+    const isLastActiveVariant = selectedVariant !== null && !selectedVariant.isDisabled && activeVariantCount <= 1;
     const pendingDeleteVariant = pendingDeleteId ? variants.find((v) => v.id === pendingDeleteId) : null;
+
+    // Ref for reading fresh variant state inside async handlers
+    const variantsRef = useRef(variants);
+    useEffect(() => { variantsRef.current = variants; }, [variants]);
 
   const updateScrollState = () => {
     const el = tabsListRef.current;
@@ -163,11 +174,11 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
     );
 
     const handleVariantImageFileSelect = useCallback(
-      (variantId: string, index: number, file: File, previewUrl: string) => {
+      async (variantId: string, index: number, file: File, previewUrl: string) => {
+        // Show preview immediately
         setPendingFilesPerVariant((prev) => {
           const next = new Map(prev);
           const variantFiles = new Map(next.get(variantId) ?? new Map());
-          // Clean up old preview URL
           const old = variantFiles.get(index);
           if (old && old.previewUrl !== previewUrl) {
             URL.revokeObjectURL(old.previewUrl);
@@ -176,8 +187,61 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
           next.set(variantId, variantFiles);
           return next;
         });
+
+        // Upload file
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await fetch("/api/upload", { method: "POST", body: formData });
+        if (!response.ok) {
+          toast({ title: "Image upload failed", variant: "destructive" });
+          return;
+        }
+        const { path } = await response.json();
+
+        // Read fresh state via ref (onAdd may have extended images after this handler started)
+        const currentVariants = variantsRef.current;
+        const variant = currentVariants.find((v) => v.id === variantId);
+        if (!variant) return;
+
+        const altText = productName && variant.name
+          ? `${productName} - ${variant.name}`
+          : variant.name;
+
+        // Build complete image list with real URL at the target index
+        const currentImages = [...variant.images];
+        if (index < currentImages.length) {
+          currentImages[index] = { ...currentImages[index], url: path, altText };
+        } else {
+          currentImages.push({ id: "", url: path, altText, order: index });
+        }
+
+        // Persist to DB
+        await saveVariantImages({
+          variantId,
+          images: currentImages
+            .filter((img) => img.url)
+            .map((img) => ({ url: img.url, altText: img.altText })),
+        });
+
+        // Update local state with real URL and clear pending
+        onVariantsChange(
+          currentVariants.map((v) =>
+            v.id === variantId
+              ? { ...variant, images: currentImages.map((img, i) => ({ ...img, order: i })) }
+              : v
+          )
+        );
+        URL.revokeObjectURL(previewUrl);
+        setPendingFilesPerVariant((prev) => {
+          const next = new Map(prev);
+          const variantFiles = new Map(next.get(variantId) ?? new Map());
+          variantFiles.delete(index);
+          if (variantFiles.size === 0) next.delete(variantId);
+          else next.set(variantId, variantFiles);
+          return next;
+        });
       },
-      []
+      [productName, onVariantsChange, toast]
     );
 
     const handleVariantImagePendingRemove = useCallback(
@@ -357,7 +421,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
   const handleUpdateVariant = async (
     variantId: string,
     field: string,
-    value: string | number
+    value: string | number | boolean
   ) => {
     const idx = variants.findIndex((v) => v.id === variantId);
     if (idx === -1) return;
@@ -376,6 +440,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
       name: variant.name,
       weight: variant.weight,
       stockQuantity: variant.stockQuantity,
+      isDisabled: variant.isDisabled,
     });
     setIsSaving(false);
     if (!result.ok) {
@@ -639,6 +704,30 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
                       }
                       onBlur={() => handleSaveVariant(selectedVariant)}
                     />
+                  </Field>
+
+                  <Field orientation="horizontal">
+                    <Checkbox
+                      id={`variant-disabled-${selectedVariant.id}`}
+                      checked={selectedVariant.isDisabled}
+                      aria-disabled={isLastActiveVariant}
+                      className={isLastActiveVariant ? "cursor-not-allowed opacity-50" : undefined}
+                      onCheckedChange={(checked) => {
+                        if (isLastActiveVariant) return;
+                        handleUpdateVariant(selectedVariant.id, "isDisabled", checked === true);
+                        handleSaveVariant({ ...selectedVariant, isDisabled: checked === true });
+                      }}
+                    />
+                    <FieldLabel htmlFor={`variant-disabled-${selectedVariant.id}`}>
+                      <FieldContent>
+                        <FieldTitle>Disabled</FieldTitle>
+                        <FieldDescription>
+                          {isLastActiveVariant
+                            ? "At least one variant must remain active"
+                            : "Hide variant from storefront"}
+                        </FieldDescription>
+                      </FieldContent>
+                    </FieldLabel>
                   </Field>
 
                   <StackedFieldPair>

@@ -1,7 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { DataTableActionBar, type ActionBarConfig } from "@/app/admin/_components/data-table";
 import {
   Table,
   TableBody,
@@ -12,9 +11,9 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { ProductType } from "@prisma/client";
-import { Pencil, Plus } from "lucide-react";
-import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface PurchaseOption {
   type: "ONE_TIME" | "SUBSCRIPTION";
@@ -38,6 +37,7 @@ interface Product {
   price: number;
   categories: string;
   variants: Variant[];
+  addOns: string[];
 }
 
 interface ProductManagementClientProps {
@@ -52,8 +52,11 @@ export default function ProductManagementClient({
   productType = ProductType.COFFEE,
 }: ProductManagementClientProps) {
   const basePath = productType === ProductType.MERCH ? "/admin/merch" : "/admin/products";
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null);
   const { toast } = useToast();
 
   const fetchProducts = useCallback(async () => {
@@ -80,6 +83,24 @@ export default function ProductManagementClient({
     fetchProducts();
   }, [fetchProducts]);
 
+  const filteredAndSortedProducts = useMemo(() => {
+    let result = products;
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter((p) => p.name.toLowerCase().includes(query));
+    }
+
+    if (sortDirection) {
+      result = [...result].sort((a, b) => {
+        const cmp = a.name.localeCompare(b.name);
+        return sortDirection === "asc" ? cmp : -cmp;
+      });
+    }
+
+    return result;
+  }, [products, searchQuery, sortDirection]);
+
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -87,39 +108,61 @@ export default function ProductManagementClient({
     }).format(cents / 100);
   };
 
+  const cycleSortDirection = () => {
+    setSortDirection((prev) => {
+      if (prev === null) return "asc";
+      if (prev === "asc") return "desc";
+      return null;
+    });
+  };
+
+  const SortIcon = sortDirection === "asc" ? ArrowUp : sortDirection === "desc" ? ArrowDown : ArrowUpDown;
+
+  const actionBarConfig = useMemo<ActionBarConfig>(() => ({
+    left: [{ type: "search", value: searchQuery, onChange: setSearchQuery, placeholder: "Search products..." }],
+    right: [{ type: "button", label: "Add Product", icon: Plus, href: `${basePath}/new` }],
+  }), [searchQuery, basePath]);
+
   if (loading) {
     return <div>Loading products...</div>;
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-end">
-        <Button asChild>
-          <Link href={`${basePath}/new`}>
-            <Plus className="mr-2 h-4 w-4" /> Add Product
-          </Link>
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <Table>
+    <div>
+      <DataTableActionBar config={actionBarConfig} />
+      <div className="overflow-x-auto">
+        <Table className="table-fixed">
           <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Added Categories</TableHead>
-              <TableHead>Variants</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="border-b-2">
+              <TableHead className="h-10 font-medium text-foreground w-[30%]">
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 hover:text-foreground/80"
+                  onClick={cycleSortDirection}
+                >
+                  Name
+                  <SortIcon className="h-4 w-4" />
+                </button>
+              </TableHead>
+              <TableHead className="h-10 font-medium text-foreground w-[20%]">Added Categories</TableHead>
+              <TableHead className="h-10 font-medium text-foreground w-[20%]">Add-ons</TableHead>
+              <TableHead className="h-10 font-medium text-foreground w-[30%]">Variants</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.length === 0 ? (
+            {filteredAndSortedProducts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                  No products found.
+                  {searchQuery ? "No products match your search." : "No products found."}
                 </TableCell>
               </TableRow>
             ) : (
-              products.map((product) => (
-                <TableRow key={product.id}>
+              filteredAndSortedProducts.map((product) => (
+                <TableRow
+                  key={product.id}
+                  className="hover:bg-muted/40 cursor-pointer border-b"
+                  onDoubleClick={() => router.push(`${basePath}/${product.id}`)}
+                >
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       <span>{product.name}</span>
@@ -131,6 +174,11 @@ export default function ProductManagementClient({
                     </div>
                   </TableCell>
                   <TableCell>{product.categories || "-"}</TableCell>
+                  <TableCell>
+                    {product.addOns && product.addOns.length > 0
+                      ? product.addOns.join(", ")
+                      : "-"}
+                  </TableCell>
                   <TableCell>
                     {product.variants && product.variants.length > 0 ? (
                       <div className="flex flex-col gap-3 py-1">
@@ -168,19 +216,12 @@ export default function ProductManagementClient({
                       <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`${basePath}/${product.id}`}>
-                        <Pencil className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

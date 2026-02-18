@@ -10,6 +10,7 @@ import {
 // We define this once to ensure all product cards get the same minimal data for rendering.
 const productCardIncludes = {
   variants: {
+    where: { isDisabled: false },
     orderBy: { order: "asc" as const },
     include: {
       images: {
@@ -78,6 +79,7 @@ export async function getProductBySlug(productSlug?: string | null) {
       },
       include: {
         variants: {
+          where: { isDisabled: false },
           orderBy: { order: "asc" },
           include: {
             images: { orderBy: { order: "asc" } },

@@ -86,6 +86,7 @@ export async function GET(request: NextRequest) {
           take: 1,
         },
         variants: {
+          where: { isDisabled: false },
           include: {
             images: {
               select: {

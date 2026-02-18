@@ -54,6 +54,9 @@ export async function GET(request: Request) {
             category: true,
           },
         },
+        addOnLinksPrimary: {
+          select: { addOnProduct: { select: { name: true } } },
+        },
       },
       orderBy: { name: "asc" },
     });
@@ -85,6 +88,7 @@ export async function GET(request: Request) {
           name: c.category.name,
           order: c.order,
         })),
+        addOns: [...new Set(p.addOnLinksPrimary.map((l) => l.addOnProduct.name))],
       };
     });
 

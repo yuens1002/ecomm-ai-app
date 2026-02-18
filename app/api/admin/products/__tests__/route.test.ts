@@ -71,6 +71,7 @@ describe("GET /api/admin/products", () => {
             category: { id: "cat_1", name: "Blends" },
           },
         ],
+        addOnLinksPrimary: [],
       },
     ]);
 

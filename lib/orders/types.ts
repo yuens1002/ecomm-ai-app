@@ -66,6 +66,7 @@ export interface PurchaseOptionWithDetails {
   variant: {
     id: string;
     name: string;
+    isDisabled: boolean;
     stockQuantity: number;
     product: {
       id: string;
