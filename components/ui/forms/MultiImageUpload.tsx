@@ -197,7 +197,7 @@ export function MultiImageUpload({
                     type="button"
                     size="icon"
                     variant="secondary"
-                    className="h-8 w-8 bg-white/90 hover:bg-white shadow-lg"
+                    className="h-8 w-8 bg-background/90 hover:bg-background shadow-lg"
                   >
                     <EllipsisVertical className="h-4 w-4" />
                   </Button>

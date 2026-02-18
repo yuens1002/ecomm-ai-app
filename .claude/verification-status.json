@@ -96,6 +96,13 @@
       "acs_total": 26,
       "tasks": [],
       "notes": "25/26 ACs verified. 12 UI ACs via Puppeteer screenshots, 10 FN ACs via code review, 3 REG ACs via precheck+tests+screenshot. AC-REG-2 (cart add-ons display) deferred — no cart add-ons configured during test. 0 iterations needed."
+    },
+    "feat/products-table-v1": {
+      "status": "implementing",
+      "acs_passed": 0,
+      "acs_total": 8,
+      "tasks": [],
+      "notes": "Iteration 2: DataTableActionBar config + renderer. 4 UI + 5 FN + 3 REG ACs. Implementation complete, pending verification."
     }
   }
 }

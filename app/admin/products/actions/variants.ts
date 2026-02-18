@@ -112,6 +112,19 @@ export async function updateVariant(
   const { name, weight, stockQuantity, isDisabled } = parsed.data;
 
   try {
+    if (isDisabled === true) {
+      const current = await prisma.productVariant.findUniqueOrThrow({
+        where: { id: variantId },
+        select: { productId: true },
+      });
+      const activeCount = await prisma.productVariant.count({
+        where: { productId: current.productId, isDisabled: false },
+      });
+      if (activeCount <= 1) {
+        return { ok: false, error: "At least one variant must remain active" };
+      }
+    }
+
     const currentUnit = await getWeightUnit();
     const weightInGrams = roundToInt(
       toGrams(weight, currentUnit as WeightUnitOption)

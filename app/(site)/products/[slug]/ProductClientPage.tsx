@@ -198,17 +198,19 @@ export default function ProductClientPage({
       item.purchaseType === "SUBSCRIPTION"
   );
 
-  // Merch products use culture images (cups, equipment), coffee products use bean images
+  // Use variant images, fall back to first variant's images, then placeholder
   const placeholderCategory = product.type === ProductType.MERCH ? "culture" : "beans";
   const variantImages = selectedVariant.images ?? [];
-  const firstImage = variantImages[0];
+  const fallbackImages = product.variants[0]?.images ?? [];
+  const resolvedImages = variantImages.length > 0 ? variantImages : fallbackImages;
+  const firstImage = resolvedImages[0];
   const displayImage =
     firstImage?.url || getPlaceholderImage(product.name, 800, placeholderCategory);
   const altText =
     firstImage?.altText || (product.type === ProductType.MERCH ? product.name : `A bag of ${product.name} coffee`);
   const galleryImages =
-    variantImages.length > 0
-      ? variantImages.map((img) => ({ url: img.url, alt: img.altText }))
+    resolvedImages.length > 0
+      ? resolvedImages.map((img) => ({ url: img.url, alt: img.altText }))
       : [{ url: displayImage, alt: altText }];
   const showThumbs = galleryImages.length > 1;
 
@@ -371,6 +373,7 @@ export default function ProductClientPage({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-x-10 md:gap-y-5 lg:gap-x-14 lg:gap-y-8">
         <div className="w-full min-w-0 md:sticky md:top-6 md:self-start animate-fade-in-up">
           <ImageCarousel
+            key={selectedVariant.id}
             images={galleryImages}
             aspectRatio="square"
             showThumbnails={showThumbs}
