@@ -88,7 +88,7 @@ export interface VariantData {
   purchaseOptions: PurchaseOptionData[];
 }
 
-interface PendingFile {
+export interface PendingFile {
   file: File;
   previewUrl: string;
 }
@@ -98,10 +98,12 @@ interface VariantsSectionProps {
   productName: string;
   variants: VariantData[];
   onVariantsChange: (variants: VariantData[]) => void;
+  isNewProduct?: boolean;
 }
 
 export interface VariantsSectionRef {
   uploadAllVariantImages: () => Promise<void>;
+  getPendingFiles: () => Map<string, Map<number, PendingFile>>;
 }
 
 export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionProps>(
@@ -110,6 +112,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
     productName,
     variants,
     onVariantsChange,
+    isNewProduct,
   }, ref) {
     const { toast } = useToast();
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -319,6 +322,8 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
         );
         onVariantsChange(updated);
 
+        if (isNewProduct) return;
+
         // Only persist if all images have real URLs (not pending uploads)
         const allSaved = reordered.every((img) => img.url && !img.url.startsWith("blob:"));
         if (allSaved && reordered.length > 0) {
@@ -328,7 +333,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
           });
         }
       },
-      [variants, onVariantsChange]
+      [variants, onVariantsChange, isNewProduct]
     );
 
     // Upload all pending variant images and save to DB
@@ -394,9 +399,25 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
 
     useImperativeHandle(ref, () => ({
       uploadAllVariantImages,
-    }), [uploadAllVariantImages]);
+      getPendingFiles: () => pendingFilesPerVariant,
+    }), [uploadAllVariantImages, pendingFilesPerVariant]);
 
     const handleAddVariant = async () => {
+    if (isNewProduct) {
+      const newVariant: VariantData = {
+        id: crypto.randomUUID(),
+        name: `Variant ${variants.length + 1}`,
+        weight: 0,
+        stockQuantity: 0,
+        order: variants.length,
+        images: [],
+        purchaseOptions: [],
+      };
+      const newVariants = [...variants, newVariant];
+      onVariantsChange(newVariants);
+      setSelectedIndex(newVariants.length - 1);
+      return;
+    }
     if (!productId) {
       toast({ title: "Save the product first", variant: "destructive" });
       return;
@@ -435,6 +456,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
   };
 
   const handleSaveVariant = async (variant: VariantData) => {
+    if (isNewProduct) return;
     setIsSaving(true);
     const result = await updateVariant(variant.id, {
       name: variant.name,
@@ -449,6 +471,12 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
   };
 
   const handleDeleteVariant = async (variantId: string) => {
+    if (isNewProduct) {
+      const newVariants = variants.filter((v) => v.id !== variantId);
+      onVariantsChange(newVariants);
+      setSelectedIndex(Math.max(0, selectedIndex - 1));
+      return;
+    }
     setIsSaving(true);
     const result = await deleteVariant(variantId);
     setIsSaving(false);
@@ -462,7 +490,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
   };
 
   const handleReorder = async (direction: "up" | "down") => {
-    if (!productId) return;
+    if (!productId && !isNewProduct) return;
     const newIndex =
       direction === "up" ? selectedIndex - 1 : selectedIndex + 1;
     if (newIndex < 0 || newIndex >= variants.length) return;
@@ -475,6 +503,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
     onVariantsChange(reordered);
     setSelectedIndex(newIndex);
 
+    if (isNewProduct || !productId) return;
     await reorderVariants({
       productId,
       variantIds: reordered.map((v) => v.id),
@@ -499,6 +528,24 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
         return;
       }
       billingIntervalCount = 1;
+    }
+
+    if (isNewProduct) {
+      const newOption: PurchaseOptionData = {
+        id: crypto.randomUUID(),
+        type,
+        priceInCents: 0,
+        salePriceInCents: null,
+        billingInterval,
+        billingIntervalCount,
+      };
+      const updated = variants.map((v) =>
+        v.id === variantId
+          ? { ...v, purchaseOptions: [...v.purchaseOptions, newOption] }
+          : v
+      );
+      onVariantsChange(updated);
+      return;
     }
 
     setIsSaving(true);
@@ -529,6 +576,20 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
     variantId: string,
     data: Partial<PurchaseOptionData>
   ) => {
+    if (isNewProduct) {
+      const updated = variants.map((v) =>
+        v.id === variantId
+          ? {
+              ...v,
+              purchaseOptions: v.purchaseOptions.map((o) =>
+                o.id === optionId ? { ...o, ...data } : o
+              ),
+            }
+          : v
+      );
+      onVariantsChange(updated);
+      return;
+    }
     setIsSaving(true);
     const result = await updateOption(optionId, data);
     setIsSaving(false);
@@ -551,6 +612,20 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
   };
 
   const handleDeleteOption = async (optionId: string, variantId: string) => {
+    if (isNewProduct) {
+      const updated = variants.map((v) =>
+        v.id === variantId
+          ? {
+              ...v,
+              purchaseOptions: v.purchaseOptions.filter(
+                (o) => o.id !== optionId
+              ),
+            }
+          : v
+      );
+      onVariantsChange(updated);
+      return;
+    }
     setIsSaving(true);
     const result = await deleteOption(optionId);
     setIsSaving(false);
@@ -581,13 +656,16 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
         </FieldDescription>
       </div>
 
-      {!productId ? (
+      {!productId && !isNewProduct ? (
         <div className="text-center py-8 border border-dashed rounded-lg text-sm text-muted-foreground">
           Save the product first to add variants.
         </div>
       ) : variants.length === 0 ? (
-        <div className="text-center py-8 border border-dashed rounded-lg text-sm text-muted-foreground">
-          No variants yet. Add a variant to set up pricing.
+        <div className="text-center py-8 border border-dashed rounded-lg text-sm text-muted-foreground space-y-3">
+          <p>No variants yet. Add a variant to set up pricing.</p>
+          <Button type="button" variant="outline" size="sm" onClick={handleAddVariant} disabled={isSaving}>
+            <Plus className="h-4 w-4 mr-1" /> Add Variant
+          </Button>
         </div>
       ) : (
         <Tabs
@@ -638,7 +716,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
               size="icon"
               className="h-8 w-8 shrink-0"
               onClick={handleAddVariant}
-              disabled={!productId || isSaving}
+              disabled={(!productId && !isNewProduct) || isSaving}
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -837,6 +915,8 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
                       const remaining = selectedVariant.images.filter((_, i) => i !== index);
                       const newImages = remaining.map((img) => ({ url: img.url, alt: img.altText }));
                       handleVariantImagesChange(selectedVariant.id, newImages);
+
+                      if (isNewProduct) return;
 
                       // Persist deletion to DB if images are saved
                       const savedImages = remaining.filter((img) => img.url && !img.url.startsWith("blob:"));

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import {
   InputGroup,
@@ -35,6 +35,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Check, EllipsisVertical, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getProduct } from "../actions/products";
 
 // --- Types ---
 
@@ -62,7 +63,7 @@ interface Selection {
   discountValue: number | null;
 }
 
-interface AddOnEntry {
+export interface AddOnEntry {
   addOnProduct: { id: string; name: string; type: string };
   variants: Variant[];
   selections: Selection[];
@@ -182,21 +183,35 @@ function getCheckboxState(selections: Selection[], variants: Variant[]): Checkbo
 
 interface AddOnsSectionProps {
   productId: string | null;
+  isNewProduct?: boolean;
 }
 
-export function AddOnsSection({ productId }: AddOnsSectionProps) {
+export interface AddOnsSectionRef {
+  getAddOns: () => AddOnEntry[];
+}
+
+export const AddOnsSection = forwardRef<AddOnsSectionRef, AddOnsSectionProps>(
+function AddOnsSection({ productId, isNewProduct }, ref) {
   const { toast } = useToast();
   const [addOns, setAddOns] = useState<AddOnEntry[]>([]);
   const [availableProducts, setAvailableProducts] = useState<AvailableProduct[]>([]);
   const [selectedProduct, setSelectedProduct] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useImperativeHandle(ref, () => ({
+    getAddOns: () => addOns,
+  }), [addOns]);
+
   useEffect(() => {
+    if (isNewProduct) {
+      fetchAvailableProducts();
+      return;
+    }
     if (!productId) return;
     fetchAddOns();
     fetchAvailableProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId]);
+  }, [productId, isNewProduct]);
 
   const fetchAddOns = async () => {
     const res = await fetch(`/api/admin/products/${productId}/addons`);
@@ -215,7 +230,48 @@ export function AddOnsSection({ productId }: AddOnsSectionProps) {
   };
 
   const handleAdd = async () => {
-    if (!selectedProduct || !productId) return;
+    if (!selectedProduct) return;
+
+    if (isNewProduct) {
+      setLoading(true);
+      const result = await getProduct(selectedProduct);
+      setLoading(false);
+      if (!result.ok) {
+        toast({ title: result.error ?? "Failed to fetch product", variant: "destructive" });
+        return;
+      }
+      const product = result.data as {
+        id: string;
+        name: string;
+        type: string;
+        variants: Array<{
+          id: string;
+          name: string;
+          weight: number;
+          stockQuantity: number;
+          purchaseOptions: PurchaseOption[];
+        }>;
+      };
+      const newEntry: AddOnEntry = {
+        addOnProduct: { id: product.id, name: product.name, type: product.type },
+        variants: product.variants.map((v) => ({
+          ...v,
+          purchaseOptions: v.purchaseOptions.filter((o) => o.type === "ONE_TIME"),
+        })),
+        selections: [{
+          id: "",
+          addOnVariantId: null,
+          discountType: null,
+          discountValue: null,
+        }],
+      };
+      setAddOns((prev) => [...prev, newEntry]);
+      toast({ title: "Add-on linked" });
+      setSelectedProduct("");
+      return;
+    }
+
+    if (!productId) return;
     setLoading(true);
     const res = await fetch(`/api/admin/products/${productId}/addons`, {
       method: "POST",
@@ -238,6 +294,11 @@ export function AddOnsSection({ productId }: AddOnsSectionProps) {
   };
 
   const handleRemove = async (addOnProductId: string) => {
+    if (isNewProduct) {
+      setAddOns((prev) => prev.filter((a) => a.addOnProduct.id !== addOnProductId));
+      toast({ title: "Add-on removed" });
+      return;
+    }
     const res = await fetch(
       `/api/admin/products/${productId}/addons?addOnProductId=${addOnProductId}`,
       { method: "DELETE" }
@@ -263,7 +324,7 @@ export function AddOnsSection({ productId }: AddOnsSectionProps) {
     []
   );
 
-  if (!productId) {
+  if (!productId && !isNewProduct) {
     return (
       <FieldSet>
         <FieldLegend>Add-Ons</FieldLegend>
@@ -276,7 +337,7 @@ export function AddOnsSection({ productId }: AddOnsSectionProps) {
   const comboboxGroups = buildComboboxGroups(
     availableProducts,
     addedProductIds,
-    productId
+    productId ?? ""
   );
 
   return (
@@ -321,7 +382,8 @@ export function AddOnsSection({ productId }: AddOnsSectionProps) {
               <AddOnProductCard
                 key={entry.addOnProduct.id}
                 entry={entry}
-                productId={productId!}
+                productId={productId ?? ""}
+                isNewProduct={isNewProduct}
                 onRemove={handleRemove}
                 onSelectionsChange={handleSelectionsChange}
               />
@@ -331,18 +393,20 @@ export function AddOnsSection({ productId }: AddOnsSectionProps) {
       </FieldGroup>
     </FieldSet>
   );
-}
+});
 
 // --- Per-product card ---
 
 function AddOnProductCard({
   entry,
   productId,
+  isNewProduct,
   onRemove,
   onSelectionsChange,
 }: {
   entry: AddOnEntry;
   productId: string;
+  isNewProduct?: boolean;
   onRemove: (addOnProductId: string) => void;
   onSelectionsChange: (addOnProductId: string, selections: Selection[]) => void;
 }) {
@@ -355,6 +419,8 @@ function AddOnProductCard({
   const syncSelections = useCallback(
     (newSelections: Selection[]) => {
       onSelectionsChange(addOnProduct.id, newSelections);
+
+      if (isNewProduct) return;
 
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
       syncTimeoutRef.current = setTimeout(async () => {
@@ -384,7 +450,7 @@ function AddOnProductCard({
         }
       }, 600);
     },
-    [addOnProduct.id, productId, onSelectionsChange, toast]
+    [addOnProduct.id, productId, onSelectionsChange, toast, isNewProduct]
   );
 
   // "All variants" checkbox toggled
