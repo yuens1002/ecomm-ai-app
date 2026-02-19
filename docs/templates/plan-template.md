@@ -27,18 +27,24 @@
 
 ### UI (verified by screenshots)
 
-- AC-UI-1: {single testable statement referencing visual element + breakpoint}
-- AC-UI-2: ...
+| AC | What | How | Pass |
+|----|------|-----|------|
+| AC-UI-1 | {element/state} | {Static/Interactive/Exercise: steps} | {pass condition} |
+| AC-UI-2 | {element/state} | {Static/Interactive/Exercise: steps} | {pass condition} |
 
 ### Functional (verified by code review)
 
-- AC-FN-1: {single testable statement referencing endpoint/validation/behavior}
-- AC-FN-2: ...
+| AC | What | How | Pass |
+|----|------|-----|------|
+| AC-FN-1 | {behavior} | {Code review: file + trace path} | {pass condition} |
+| AC-FN-2 | {behavior} | {Code review: file + trace path} | {pass condition} |
 
-### Regression (verified by screenshot + desktop spot-check)
+### Regression (verified by test suite + spot-check)
 
-- AC-REG-1: {single testable statement protecting existing functionality}
-- AC-REG-2: ...
+| AC | What | How | Pass |
+|----|------|-----|------|
+| AC-REG-1 | {existing behavior} | {Test run / Screenshot} | {pass condition} |
+| AC-REG-2 | {existing behavior} | {Test run / Screenshot} | {pass condition} |
 
 ---
 

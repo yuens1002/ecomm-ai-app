@@ -52,9 +52,20 @@ Extract from the prompt:
 
 - **Branch name** (for the report header)
 - **Dev server URL**
-- **AC list** grouped by category (UI / Functional / Regression)
+- **AC list** grouped by category (UI / Functional / Regression), each with **What**, **How**, and **Pass** columns
 - **Pages to screenshot** with any interaction instructions
 - **Additional context** (file paths, component names, behavioral notes)
+
+### Step 1.1: Pre-flight Checklist
+
+Before any screenshots, verify these in order. If any fail, report as BLOCKER and stop.
+
+1. **Dev server reachable**: `curl -s -o /dev/null -w "%{http_code}" {DEV_SERVER}` → expect 200
+2. **Admin login works**: Navigate to `/auth/admin-signin`, fill credentials from MEMORY.md, submit, verify redirect (URL no longer contains `/auth/`)
+3. **Target page loads**: Navigate to each page in PAGES_TO_SCREENSHOT, verify it's not a 404/error/blank page
+4. **First screenshot is not blank**: Take a test screenshot, read it, confirm it shows actual page content (not spinner/blank)
+
+If login fails or pages don't load, STOP and report. Do not proceed to AC verification with a broken environment.
 
 ### Step 1.5: Categorize UI ACs by Verification Method
 
@@ -69,6 +80,13 @@ For each UI AC, determine the verification method:
 Record the method chosen per AC in the final report (e.g., `Interactive: clicked edit → dialog opened`).
 
 ### Step 2: Verify UI ACs (screenshots)
+
+For each UI AC, read the **What**, **How**, and **Pass** columns:
+
+1. Execute the method described in **How** (navigate, interact, screenshot)
+2. Check the screenshot against the **Pass** criteria — this is a binary check, not interpretation
+3. Mark PASS only if the Pass condition is fully met
+4. Mark FAIL with evidence showing exactly what doesn't match the Pass criteria
 
 For each page in PAGES_TO_SCREENSHOT:
 
@@ -85,9 +103,9 @@ For each page in PAGES_TO_SCREENSHOT:
 
 3. Read each screenshot with the Read tool
 
-4. For each UI AC, check every screenshot and record:
-   - PASS: The element/layout/behavior matches the AC description
-   - FAIL: Describe exactly what's wrong and what was expected
+4. For each UI AC, check every screenshot against the **Pass** column and record:
+   - PASS: The Pass condition is fully met in the screenshot
+   - FAIL: Describe exactly what doesn't match the Pass criteria
    - N/A: AC doesn't apply at this breakpoint (e.g., mobile-only feature)
 
 ### Step 3: Verify Functional ACs (code review)
@@ -167,6 +185,7 @@ If no ACs doc exists yet, produce the report inline in this format:
 6. **Report everything.** Include test output, screenshot paths, and code references.
 7. **Combine interaction + evidence.** When an AC requires UI interaction before verification, write a single Puppeteer flow that interacts and captures evidence in sequence. Do not split interaction and screenshot into separate scripts.
 8. **Exercise cautiously.** For ACs requiring form submission or data mutation, verify the UI response (toast, state change) — do not verify database state directly.
+9. **Check Pass criteria literally.** Do not interpret — the Pass column is the contract. If it says "no red text visible" and you see red text, it's FAIL regardless of context.
 
 ## Puppeteer Hard Rules
 
@@ -179,24 +198,14 @@ These are NON-NEGOTIABLE. Violating any of these produces unusable verification 
 
 ## Authentication
 
-Admin pages require login. Use this procedure:
+Admin pages require login. Credentials are stored in Claude Code memory (not in this repo).
+Read the admin credentials from MEMORY.md before running Puppeteer scripts.
 
+Login procedure:
 1. Navigate to `/auth/admin-signin` (NOT `/auth/signin`)
-2. Fill the form:
-   - Email: `admin@artisanroast.com`
-   - Password: `ivcF8ZV3FnGaBJ&#8j`
+2. Fill email and password from memory
 3. Click submit
-4. Wait for redirect — the form uses a React 19 server action, so use `waitForFunction` instead of `waitForNavigation`:
-
-```typescript
-await page.click('button[type="submit"]');
-await page.waitForFunction(
-  () => !window.location.href.includes("/auth/"),
-  { timeout: 15000 }
-).catch(() => {});
-await new Promise(r => setTimeout(r, 2000));
-```
-
+4. Wait for redirect — the form uses a React 19 server action, so use `waitForFunction` instead of `waitForNavigation` (see code pattern in MEMORY.md)
 5. Verify login succeeded: `page.url()` should NOT contain `/auth/`
 
 For site (non-admin) pages that require auth, use the same credentials at `/auth/signin`.
