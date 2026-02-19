@@ -193,7 +193,7 @@ export function MerchProductForm({
       title={productId ? "Edit Merch Product" : "New Merch Product"}
       description="Manage merchandise details, variants, and pricing"
       saveStatus={!isValid ? "error" : status}
-      saveErrorMessage={!isValid ? "Product name is required" : hasIncompleteDetails ? "Details need both label and value" : undefined}
+      saveErrorMessage={!isValid ? "Enter required field(s)" : hasIncompleteDetails ? "Details need both label and value" : undefined}
       canUndo={canUndo}
       canRedo={canRedo}
       onUndo={undo}

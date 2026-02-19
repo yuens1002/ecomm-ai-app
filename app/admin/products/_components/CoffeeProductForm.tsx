@@ -168,7 +168,7 @@ export function CoffeeProductForm({
   // Keyboard shortcuts: U = undo, Shift+U = redo (capture phase to beat Radix typeahead)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== "u" || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (!e.key || e.key.toLowerCase() !== "u" || e.ctrlKey || e.metaKey || e.altKey) return;
 
       const target = e.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
@@ -193,7 +193,7 @@ export function CoffeeProductForm({
       title={productId ? "Edit Coffee Product" : "New Coffee Product"}
       description="Manage product details, variants, and pricing"
       saveStatus={isValid ? status : "error"}
-      saveErrorMessage={!isValid ? "Product name is required" : undefined}
+      saveErrorMessage={!isValid ? "Enter required field(s)" : undefined}
       canUndo={canUndo}
       canRedo={canRedo}
       onUndo={undo}

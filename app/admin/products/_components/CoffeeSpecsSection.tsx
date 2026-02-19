@@ -69,7 +69,7 @@ export function CoffeeSpecsSection({
 
           {/* Origin */}
           <Field>
-            <FormHeading htmlFor="origin" label="Origin" required />
+            <FormHeading htmlFor="origin" label="Origin" required validationType={!values.origin.trim() ? "required" : undefined} />
             <Input
               id="origin"
               value={values.origin}

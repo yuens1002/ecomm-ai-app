@@ -38,7 +38,7 @@ export function NameSlugField({
         htmlFor={id}
         label={label}
         required={required}
-        validationType={errorMessage ? "error" : undefined}
+        validationType={errorMessage ? "error" : (required && !name.trim()) ? "required" : undefined}
         errorMessage={errorMessage}
       />
       <InputGroup>
