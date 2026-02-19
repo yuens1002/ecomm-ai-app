@@ -190,7 +190,8 @@ export function CoffeeProductForm({
 
   const handleCreate = useCallback(async () => {
     setHasAttemptedSubmit(true);
-    if (!isValid || !coffeeSpecs.origin.trim()) {
+    const hasInvalidVariants = variants.some(v => !v.name.trim());
+    if (!isValid || !coffeeSpecs.origin.trim() || hasInvalidVariants) {
       toast({ title: "Please fill in required fields", variant: "destructive" });
       return;
     }
@@ -379,6 +380,7 @@ export function CoffeeProductForm({
           variants={variants}
           onVariantsChange={setVariants}
           isNewProduct={isNewProduct}
+          showValidation={!isNewProduct || hasAttemptedSubmit}
         />
       }
       specs={

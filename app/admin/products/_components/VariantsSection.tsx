@@ -99,6 +99,7 @@ interface VariantsSectionProps {
   variants: VariantData[];
   onVariantsChange: (variants: VariantData[]) => void;
   isNewProduct?: boolean;
+  showValidation?: boolean;
 }
 
 export interface VariantsSectionRef {
@@ -113,6 +114,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
     variants,
     onVariantsChange,
     isNewProduct,
+    showValidation = true,
   }, ref) {
     const { toast } = useToast();
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -410,6 +412,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
         weight: 0,
         stockQuantity: 0,
         order: variants.length,
+        isDisabled: false,
         images: [],
         purchaseOptions: [],
       };
@@ -773,7 +776,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
                 {/* Left: Name, Weight/Stock, Purchase Options */}
                 <div className="space-y-6">
                   <Field>
-                    <FormHeading htmlFor={`variant-name-${selectedVariant.id}`} label="Variant Name" required />
+                    <FormHeading htmlFor={`variant-name-${selectedVariant.id}`} label="Variant Name" required validationType={showValidation && !selectedVariant.name.trim() ? "required" : undefined} />
                     <Input
                       id={`variant-name-${selectedVariant.id}`}
                       value={selectedVariant.name}

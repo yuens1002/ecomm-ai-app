@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { SaveStatus, SaveStatusState } from "@/app/admin/_components/forms/SaveStatus";
@@ -47,6 +47,21 @@ export function ProductPageLayout({
   categories,
   addOns,
 }: ProductPageLayoutProps) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [isStuck, setIsStuck] = useState(false);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsStuck(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div>
       {/* Page Header */}
@@ -57,9 +72,18 @@ export function ProductPageLayout({
         )}
       </div>
 
+      {/* Sentinel for stuck detection */}
+      <div ref={sentinelRef} className="h-0" />
+
       {/* Sticky action bar */}
-      <div className="sticky top-16 z-40 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2 bg-background border-b mb-12">
-        <div className="flex justify-end">
+      <div
+        className={`sticky top-[calc(4rem-1px)] z-40 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-12 flex justify-end pointer-events-none ${
+          isStuck ? "pb-2" : "py-2"
+        }`}
+      >
+        <div className={`pointer-events-auto px-4 py-2 ${
+          isStuck ? "bg-background" : ""
+        }`}>
           {onManualSave ? (
             <Button
               type="button"
