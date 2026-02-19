@@ -103,6 +103,13 @@
       "acs_total": 8,
       "tasks": [],
       "notes": "Iteration 2: DataTableActionBar config + renderer. 4 UI + 5 FN + 3 REG ACs. Implementation complete, pending verification."
+    },
+    "feat/new-product-local-form": {
+      "status": "implementing",
+      "acs_passed": 0,
+      "acs_total": 25,
+      "tasks": [],
+      "notes": "Iteration 2: AC-UI-1 fails — required field indicators visible on initial page load. Resetting to implementing."
     }
   }
 }
