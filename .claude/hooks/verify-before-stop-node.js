@@ -122,6 +122,7 @@ function main(input) {
     case "verified":
     case "planned":
     case "implementing":
+    case "planning":
       // Allow stop during these states
       process.exit(0);
       break;

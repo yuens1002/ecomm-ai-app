@@ -89,7 +89,8 @@ function main(input) {
     case "verified":
     case "planned":
     case "implementing":
-      // Allow: verified is final, planned/implementing allow intermediate commits
+    case "planning":
+      // Allow: verified is final, planned/implementing/planning allow intermediate commits
       process.exit(0);
       break;
     case "partial":

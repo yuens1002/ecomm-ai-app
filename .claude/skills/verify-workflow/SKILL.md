@@ -56,21 +56,33 @@ Drive a complete **implement -> verify -> iterate -> review** loop using sub-age
 
 ## Step-by-Step
 
-### Step 0: Pre-Flight Checks & Registration
+### Step 0a: Workflow Initiation (before plan mode)
 
-Before implementation, verify prerequisites and set up the workflow tracking:
+**MANDATORY before entering plan mode.** Run these checks first. If any fail, fix before planning.
 
-**Pre-flight checks (autonomous — no human needed):**
+1. **Create feature branch**: `git checkout -b feat/{feature-name}` (skip if already on one)
+2. **Dev server verified**: `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000` → expect 200. If not reachable, ask human to start it.
+3. **Admin login verified**: Navigate to `/auth/admin-signin`, fill credentials from MEMORY.md, confirm login succeeds. If it fails, STOP.
+4. **Status registered**: Create entry in `verification-status.json` with `"planning"` status and `acs_total: 0`:
 
-1. **Dev server running?** Hit `http://localhost:3000` (or the configured port). If not reachable, ask the human to start it — this is the one human checkpoint before the autonomous loop begins.
-2. **Verification status clean?** Read `.claude/verification-status.json` and confirm the current branch either has no entry yet or is in `"planned"` state. If it's in `"pending"` or `"partial"`, a previous iteration was interrupted — resume from there instead of restarting.
+   ```jsonc
+   // .claude/verification-status.json → branches["{branch}"]
+   {
+     "status": "planning",
+     "acs_passed": 0,
+     "acs_total": 0,
+     "tasks": [],
+     "notes": "Workflow initiated. Entering plan mode."
+   }
+   ```
 
-**Registration:**
+Only after all 4 checks pass does planning begin.
 
-1. **Create feature branch:** `git checkout -b feat/{feature-name}`
-2. **Commit the approved plan** to the branch: `git commit -m "docs: add plan for {feature}"`
-3. **Create ACs tracking doc** from the template at `docs/templates/acs-template.md` → save as `docs/plans/{feature}-ACs.md` with all ACs listed and Agent/QC/Reviewer columns empty.
-4. **Register in verification-status.json:**
+### Step 0b: Post-Plan-Approval (after human approves plan)
+
+1. **Plan committed**: `git commit --no-verify -m "docs: add plan for {feature}"`
+2. **ACs doc created**: Extract ACs from plan into `docs/plans/{feature}-ACs.md` using the template at `docs/templates/acs-template.md`. All What/How/Pass columns filled, Agent/QC/Reviewer columns empty.
+3. **Status updated**: Update entry from `"planning"` → `"planned"` with `acs_total` set to actual AC count:
 
    ```jsonc
    // .claude/verification-status.json → branches["{branch}"]
@@ -83,6 +95,7 @@ Before implementation, verify prerequisites and set up the workflow tracking:
    }
    ```
 
+4. **Verify status clean**: Confirm the current branch is in `"planned"` state. If it's in `"pending"` or `"partial"`, a previous iteration was interrupted — resume from there instead of restarting.
 5. **When coding begins**, update status to `"implementing"`
 6. **When all code is written + precheck passes**, update status to `"pending"`
 
@@ -222,7 +235,7 @@ The human does NOT need to be present during autonomous iteration cycles (implem
 | Template | Path | Purpose |
 |----------|------|---------|
 | Plan template | `docs/templates/plan-template.md` | Structure for feature plans with ACs and commit schedule |
-| ACs template | `docs/templates/acs-template.md` | 3-column (Agent/QC/Reviewer) tracking doc for verification handoff |
+| ACs template | `docs/templates/acs-template.md` | Structured What/How/Pass + Agent/QC/Reviewer tracking doc for verification handoff |
 
 ## Integration with Other Skills
 
