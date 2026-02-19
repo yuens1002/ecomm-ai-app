@@ -64,6 +64,7 @@ export function MerchProductForm({
   );
   const [hasDetailError, setHasDetailError] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const isNewProduct = !initialProductId;
 
   // Dynamic breadcrumb: Home > Products > Merch > [product name]
@@ -188,6 +189,7 @@ export function MerchProductForm({
   // --- New product mode: batch create ---
 
   const handleCreate = useCallback(async () => {
+    setHasAttemptedSubmit(true);
     if (!isValid) {
       toast({ title: "Please fill in required fields", variant: "destructive" });
       return;
@@ -371,6 +373,7 @@ export function MerchProductForm({
         <ProductInfoSection
           values={productInfo}
           onChange={setProductInfo}
+          showValidation={!isNewProduct || hasAttemptedSubmit}
         />
       }
       variants={

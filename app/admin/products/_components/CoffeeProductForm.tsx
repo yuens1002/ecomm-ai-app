@@ -68,6 +68,7 @@ export function CoffeeProductForm({
     initialProductId ?? null
   );
   const [isCreating, setIsCreating] = useState(false);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const isNewProduct = !initialProductId;
 
   // Dynamic breadcrumb: Home > Products > Coffees > [product name]
@@ -188,6 +189,7 @@ export function CoffeeProductForm({
   // --- New product mode: batch create ---
 
   const handleCreate = useCallback(async () => {
+    setHasAttemptedSubmit(true);
     if (!isValid || !coffeeSpecs.origin.trim()) {
       toast({ title: "Please fill in required fields", variant: "destructive" });
       return;
@@ -366,6 +368,7 @@ export function CoffeeProductForm({
         <ProductInfoSection
           values={productInfo}
           onChange={setProductInfo}
+          showValidation={!isNewProduct || hasAttemptedSubmit}
         />
       }
       variants={
@@ -379,7 +382,7 @@ export function CoffeeProductForm({
         />
       }
       specs={
-        <CoffeeSpecsSection values={coffeeSpecs} onChange={setCoffeeSpecs} />
+        <CoffeeSpecsSection values={coffeeSpecs} onChange={setCoffeeSpecs} showValidation={!isNewProduct || hasAttemptedSubmit} />
       }
       categories={
         <CategoriesSection

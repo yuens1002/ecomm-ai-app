@@ -26,11 +26,13 @@ export interface ProductInfoValues {
 interface ProductInfoSectionProps {
   values: ProductInfoValues;
   onChange: (values: ProductInfoValues) => void;
+  showValidation?: boolean;
 }
 
 export function ProductInfoSection({
   values,
   onChange,
+  showValidation = true,
 }: ProductInfoSectionProps) {
   const update = (partial: Partial<ProductInfoValues>) => {
     onChange({ ...values, ...partial });
@@ -44,6 +46,7 @@ export function ProductInfoSection({
           name={values.name}
           slug={values.slug}
           onChange={({ name, slug }) => update({ name, slug })}
+          showValidation={showValidation}
         />
 
         <Field>

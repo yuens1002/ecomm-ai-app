@@ -30,11 +30,13 @@ export interface CoffeeSpecsValues {
 interface CoffeeSpecsSectionProps {
   values: CoffeeSpecsValues;
   onChange: (values: CoffeeSpecsValues) => void;
+  showValidation?: boolean;
 }
 
 export function CoffeeSpecsSection({
   values,
   onChange,
+  showValidation = true,
 }: CoffeeSpecsSectionProps) {
   const update = (partial: Partial<CoffeeSpecsValues>) => {
     onChange({ ...values, ...partial });
@@ -69,7 +71,7 @@ export function CoffeeSpecsSection({
 
           {/* Origin */}
           <Field>
-            <FormHeading htmlFor="origin" label="Origin" required validationType={!values.origin.trim() ? "required" : undefined} />
+            <FormHeading htmlFor="origin" label="Origin" required validationType={showValidation && !values.origin.trim() ? "required" : undefined} />
             <Input
               id="origin"
               value={values.origin}
