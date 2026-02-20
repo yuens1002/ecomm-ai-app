@@ -51,7 +51,7 @@ export function DataTableShell({ children, className }: DataTableShellProps) {
       ref={containerRef}
       className={cn(
         "relative w-full overflow-x-auto",
-        isDragging ? "cursor-grabbing select-none" : "cursor-grab",
+        isDragging && "select-none",
         className
       )}
       onMouseDown={handleMouseDown}
@@ -59,7 +59,10 @@ export function DataTableShell({ children, className }: DataTableShellProps) {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      <table className="w-full min-w-max table-fixed caption-bottom text-sm">
+      <table className={cn(
+        "w-full min-w-max table-fixed caption-bottom text-sm",
+        isDragging && "[&_td]:cursor-grabbing [&_th]:cursor-grabbing"
+      )}>
         {children}
       </table>
     </div>
