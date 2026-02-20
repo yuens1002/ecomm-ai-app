@@ -74,5 +74,6 @@ next-env.d.ts
 nul
 .screenshots
 .scratchpad/
+scratchpad/
 .archive/
 /scripts/backups/

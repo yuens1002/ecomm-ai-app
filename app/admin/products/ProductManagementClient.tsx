@@ -1,44 +1,41 @@
 "use client";
 
-import { DataTableActionBar, type ActionBarConfig } from "@/app/admin/_components/data-table";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  DataTable,
+  DataTableActionBar,
+  type ActionBarConfig,
+} from "@/app/admin/_components/data-table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { useToast } from "@/hooks/use-toast";
 import { ProductType } from "@prisma/client";
-import { ArrowDown, ArrowUp, ArrowUpDown, Plus } from "lucide-react";
+import { Filter, Package, Plus, Search } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-interface PurchaseOption {
-  type: "ONE_TIME" | "SUBSCRIPTION";
-  priceInCents: number;
-  billingInterval?: string | null;
-  billingIntervalCount?: number | null;
-}
-
-interface Variant {
-  name: string;
-  stock: number;
-  options: PurchaseOption[];
-}
-
-interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  isDisabled?: boolean;
-  stock: number;
-  price: number;
-  categories: string;
-  variants: Variant[];
-  addOns: string[];
-}
+import { updateOption, deleteOption } from "./actions/options";
+import { deleteProduct } from "./actions/products";
+import { updateVariant } from "./actions/variants";
+import { EditVariantDialog } from "./_components/EditVariantDialog";
+import { type Product, useProductsTable } from "./hooks/useProductsTable";
 
 interface ProductManagementClientProps {
   title?: string;
@@ -51,19 +48,24 @@ export default function ProductManagementClient({
   description: _description = "Manage products and inventory",
   productType = ProductType.COFFEE,
 }: ProductManagementClientProps) {
-  const basePath = productType === ProductType.MERCH ? "/admin/merch" : "/admin/products";
+  const basePath =
+    productType === ProductType.MERCH ? "/admin/merch" : "/admin/products";
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null);
   const { toast } = useToast();
+
+  // Dialog state
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
   const fetchProducts = useCallback(async () => {
     try {
       const search = new URLSearchParams();
       if (productType) search.set("type", productType);
-      const response = await fetch(`/api/admin/products?${search.toString()}`);
+      const response = await fetch(
+        `/api/admin/products?${search.toString()}`
+      );
       if (!response.ok) throw new Error("Failed to fetch products");
       const data = await response.json();
       setProducts(data.products);
@@ -83,145 +85,281 @@ export default function ProductManagementClient({
     fetchProducts();
   }, [fetchProducts]);
 
-  const filteredAndSortedProducts = useMemo(() => {
-    let result = products;
+  const handleStockUpdate = useCallback(
+    async (variantId: string, stock: number) => {
+      setProducts((prev) =>
+        prev.map((p) => ({
+          ...p,
+          variants: p.variants.map((v) =>
+            v.id === variantId ? { ...v, stock } : v
+          ),
+          stock: p.variants.reduce(
+            (acc, v) =>
+              acc + (v.id === variantId ? stock : v.stock),
+            0
+          ),
+        }))
+      );
+      const result = await updateVariant(variantId, {
+        stockQuantity: stock,
+      });
+      if (!result.ok) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        fetchProducts();
+      }
+    },
+    [toast, fetchProducts]
+  );
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter((p) => p.name.toLowerCase().includes(query));
-    }
+  const handlePriceUpdate = useCallback(
+    async (
+      optionId: string,
+      cents: number,
+      field: "priceInCents" | "salePriceInCents" = "priceInCents"
+    ) => {
+      setProducts((prev) =>
+        prev.map((p) => ({
+          ...p,
+          variants: p.variants.map((v) => ({
+            ...v,
+            options: v.options.map((o) =>
+              o.id === optionId ? { ...o, [field]: cents } : o
+            ),
+          })),
+        }))
+      );
+      const result = await updateOption(optionId, { [field]: cents });
+      if (!result.ok) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        fetchProducts();
+      }
+    },
+    [toast, fetchProducts]
+  );
 
-    if (sortDirection) {
-      result = [...result].sort((a, b) => {
-        const cmp = a.name.localeCompare(b.name);
-        return sortDirection === "asc" ? cmp : -cmp;
+  const handleOptionUpdate = useCallback(
+    async (
+      optionId: string,
+      data: {
+        priceInCents?: number;
+        salePriceInCents?: number | null;
+        billingIntervalCount?: number;
+        billingInterval?: string;
+      }
+    ) => {
+      setProducts((prev) =>
+        prev.map((p) => ({
+          ...p,
+          variants: p.variants.map((v) => ({
+            ...v,
+            options: v.options.map((o) =>
+              o.id === optionId ? { ...o, ...data } : o
+            ),
+          })),
+        }))
+      );
+      const result = await updateOption(optionId, data);
+      if (!result.ok) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        fetchProducts();
+      }
+    },
+    [toast, fetchProducts]
+  );
+
+  const handleOptionDelete = useCallback(
+    async (optionId: string, variantId: string) => {
+      setProducts((prev) =>
+        prev.map((p) => ({
+          ...p,
+          variants: p.variants.map((v) =>
+            v.id === variantId
+              ? { ...v, options: v.options.filter((o) => o.id !== optionId) }
+              : v
+          ),
+        }))
+      );
+      const result = await deleteOption(optionId);
+      if (!result.ok) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        fetchProducts();
+      }
+    },
+    [toast, fetchProducts]
+  );
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteTarget) return;
+    const result = await deleteProduct(deleteTarget.id);
+    if (result.ok) {
+      setProducts((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+      toast({ title: "Product deleted" });
+    } else {
+      toast({
+        title: "Error",
+        description: result.error,
+        variant: "destructive",
       });
     }
+    setDeleteTarget(null);
+  }, [deleteTarget, toast]);
 
-    return result;
-  }, [products, searchQuery, sortDirection]);
+  const handleEditVariants = useCallback((product: Product) => {
+    setEditProduct(product);
+  }, []);
 
-  const formatPrice = (cents: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(cents / 100);
-  };
+  const handleDeleteProduct = useCallback((product: Product) => {
+    setDeleteTarget(product);
+  }, []);
 
-  const cycleSortDirection = () => {
-    setSortDirection((prev) => {
-      if (prev === null) return "asc";
-      if (prev === "asc") return "desc";
-      return null;
-    });
-  };
+  const {
+    table,
+    searchQuery,
+    setSearchQuery,
+    activeFilter,
+    setActiveFilter,
+    filterConfigs,
+  } = useProductsTable({
+    products,
+    onStockUpdate: handleStockUpdate,
+    onPriceUpdate: handlePriceUpdate,
+    onEditVariants: handleEditVariants,
+    onDeleteProduct: handleDeleteProduct,
+  });
 
-  const SortIcon = sortDirection === "asc" ? ArrowUp : sortDirection === "desc" ? ArrowDown : ArrowUpDown;
-
-  const actionBarConfig = useMemo<ActionBarConfig>(() => ({
-    left: [{ type: "search", value: searchQuery, onChange: setSearchQuery, placeholder: "Search products..." }],
-    right: [{ type: "button", label: "Add Product", icon: Plus, href: `${basePath}/new` }],
-  }), [searchQuery, basePath]);
+  const actionBarConfig = useMemo<ActionBarConfig>(
+    () => ({
+      left: [
+        {
+          type: "button",
+          label: "Add Product",
+          icon: Plus,
+          href: `${basePath}/new`,
+          iconOnly: "below-lg",
+        },
+        {
+          type: "search",
+          value: searchQuery,
+          onChange: setSearchQuery,
+          placeholder: "Search products...",
+          collapse: { icon: Search },
+        },
+        {
+          type: "filter",
+          configs: filterConfigs,
+          activeFilter,
+          onFilterChange: setActiveFilter,
+          collapse: { icon: Filter },
+        },
+      ],
+      right: [
+        {
+          type: "pageSizeSelector",
+          table,
+        },
+        {
+          type: "pagination",
+          table,
+        },
+      ],
+    }),
+    [searchQuery, basePath, filterConfigs, activeFilter, setSearchQuery, setActiveFilter, table]
+  );
 
   if (loading) {
     return <div>Loading products...</div>;
   }
 
+  if (products.length === 0) {
+    return (
+      <div>
+        <DataTableActionBar config={actionBarConfig}  />
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Package />
+            </EmptyMedia>
+            <EmptyTitle>No products yet</EmptyTitle>
+            <EmptyDescription>
+              Get started by adding your first product.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button asChild>
+              <Link href={`${basePath}/new`}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Product
+              </Link>
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <DataTableActionBar config={actionBarConfig} />
-      <div className="overflow-x-auto">
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow className="border-b-2">
-              <TableHead className="h-10 font-medium text-foreground w-[30%]">
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 hover:text-foreground/80"
-                  onClick={cycleSortDirection}
-                >
-                  Name
-                  <SortIcon className="h-4 w-4" />
-                </button>
-              </TableHead>
-              <TableHead className="h-10 font-medium text-foreground w-[20%]">Added Categories</TableHead>
-              <TableHead className="h-10 font-medium text-foreground w-[20%]">Add-ons</TableHead>
-              <TableHead className="h-10 font-medium text-foreground w-[30%]">Variants</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredAndSortedProducts.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                  {searchQuery ? "No products match your search." : "No products found."}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredAndSortedProducts.map((product) => (
-                <TableRow
-                  key={product.id}
-                  className="hover:bg-muted/40 cursor-pointer border-b"
-                  onDoubleClick={() => router.push(`${basePath}/${product.id}`)}
-                >
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      <span>{product.name}</span>
-                      {product.isDisabled ? (
-                        <span className="text-xs rounded bg-destructive/10 text-destructive px-2 py-0.5">
-                          Disabled
-                        </span>
-                      ) : null}
-                    </div>
-                  </TableCell>
-                  <TableCell>{product.categories || "-"}</TableCell>
-                  <TableCell>
-                    {product.addOns && product.addOns.length > 0
-                      ? product.addOns.join(", ")
-                      : "-"}
-                  </TableCell>
-                  <TableCell>
-                    {product.variants && product.variants.length > 0 ? (
-                      <div className="flex flex-col gap-3 py-1">
-                        {product.variants.map((v, i) => (
-                          <div key={i} className="flex flex-col gap-1">
-                            <div className="flex items-center justify-between gap-20">
-                              <span className="font-semibold text-sm truncate whitespace-nowrap overflow-hidden text-ellipsis">
-                                {v.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground bg-secondary px-1.5 py-0.5 rounded truncate whitespace-nowrap overflow-hidden text-ellipsis">
-                                Stock: {v.stock}
-                              </span>
-                            </div>
-                            <div className="grid gap-1 pl-2 border-l-2 border-muted">
-                              {v.options.map((opt, j) => (
-                                <div
-                                  key={j}
-                                  className="text-xs flex justify-between items-center gap-4"
-                                >
-                                  <span className="text-muted-foreground">
-                                    {opt.type === "ONE_TIME"
-                                      ? "One-time"
-                                      : `Sub (${opt.billingIntervalCount} ${opt.billingInterval?.toLowerCase()})`}
-                                  </span>
-                                  <span className="font-mono font-medium">
-                                    {formatPrice(opt.priceInCents)}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTableActionBar config={actionBarConfig}  />
+      <DataTable
+        table={table}
+        onRowDoubleClick={(product) => router.push(`${basePath}/${product.id}`)}
+        emptyMessage="No products match your search."
+      />
+
+      {/* Edit Variant Dialog */}
+      {editProduct && (
+        <EditVariantDialog
+          open={!!editProduct}
+          onOpenChange={(open) => {
+            if (!open) setEditProduct(null);
+          }}
+          productName={editProduct.name}
+          variants={editProduct.variants}
+          onStockUpdate={handleStockUpdate}
+          onOptionUpdate={handleOptionUpdate}
+          onOptionDelete={handleOptionDelete}
+        />
+      )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Product</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{deleteTarget?.name}&quot;?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

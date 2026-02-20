@@ -1,5 +1,16 @@
+import type { Table } from "@tanstack/react-table";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+
+export interface DataTableColumnMeta {
+  responsive?: "desktop" | "mobile";
+  pin?: "left";
+  cellClassName?: string;
+}
+
+export interface CollapseConfig {
+  icon: LucideIcon;
+}
 
 export type SearchSlot = {
   type: "search";
@@ -7,6 +18,7 @@ export type SearchSlot = {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  collapse?: CollapseConfig;
 };
 
 export type ButtonSlot = {
@@ -17,6 +29,7 @@ export type ButtonSlot = {
   onClick?: () => void;
   variant?: "default" | "outline" | "ghost" | "secondary" | "destructive";
   disabled?: boolean;
+  iconOnly?: "below-lg";
 };
 
 export type CustomSlot = {
@@ -24,7 +37,49 @@ export type CustomSlot = {
   content: ReactNode;
 };
 
-export type DataTableSlot = SearchSlot | ButtonSlot | CustomSlot;
+export type FilterConfig = {
+  id: string;
+  label: string;
+  shellLabel?: string;
+  filterType: "comparison" | "multiSelect";
+  options?: { label: string; value: string }[];
+};
+
+export type ComparisonOperator = ">" | "<" | "\u2265" | "\u2264";
+
+export type ActiveFilter = {
+  configId: string;
+  operator?: ComparisonOperator;
+  value: unknown;
+};
+
+export type FilterSlot = {
+  type: "filter";
+  configs: FilterConfig[];
+  activeFilter: ActiveFilter | null;
+  onFilterChange: (filter: ActiveFilter | null) => void;
+  collapse?: CollapseConfig;
+};
+
+export type PaginationSlot = {
+  type: "pagination";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  table: Table<any>;
+};
+
+export type PageSizeSelectorSlot = {
+  type: "pageSizeSelector";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  table: Table<any>;
+};
+
+export type DataTableSlot =
+  | SearchSlot
+  | ButtonSlot
+  | CustomSlot
+  | FilterSlot
+  | PaginationSlot
+  | PageSizeSelectorSlot;
 
 export type ActionBarConfig = {
   left: DataTableSlot[];

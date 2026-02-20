@@ -39,7 +39,7 @@ export function AdminShell({
     <Suspense fallback={null}>
       <NavigationProvider>
         <BreadcrumbProvider>
-          <div className="min-h-dvh flex flex-col bg-muted/40">
+          <div className="min-h-dvh flex flex-col bg-admin-bg">
             <AdminTopNav
               user={user}
               storeName={storeName}

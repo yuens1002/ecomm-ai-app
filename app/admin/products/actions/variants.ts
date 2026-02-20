@@ -25,9 +25,9 @@ const createVariantSchema = z.object({
 });
 
 const updateVariantSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  weight: z.number().int().min(0),
-  stockQuantity: z.number().int().min(0),
+  name: z.string().min(1, "Name is required").optional(),
+  weight: z.number().int().min(0).optional(),
+  stockQuantity: z.number().int().min(0).optional(),
   isDisabled: z.boolean().optional(),
 });
 
@@ -126,13 +126,18 @@ export async function updateVariant(
     }
 
     const currentUnit = await getWeightUnit();
-    const weightInGrams = roundToInt(
-      toGrams(weight, currentUnit as WeightUnitOption)
-    );
+    const weightInGrams = weight !== undefined
+      ? roundToInt(toGrams(weight, currentUnit as WeightUnitOption))
+      : undefined;
 
     const variant = await prisma.productVariant.update({
       where: { id: variantId },
-      data: { name, weight: weightInGrams, stockQuantity, ...(isDisabled !== undefined && { isDisabled }) },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(weightInGrams !== undefined && { weight: weightInGrams }),
+        ...(stockQuantity !== undefined && { stockQuantity }),
+        ...(isDisabled !== undefined && { isDisabled }),
+      },
       include: {
         purchaseOptions: true,
         images: { orderBy: { order: "asc" } },
