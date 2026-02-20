@@ -12,8 +12,7 @@ import type {
   ColumnFiltersState,
   FilterFn,
 } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Pencil, Settings, Trash } from "lucide-react";
+import { Pencil, Settings, Trash } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 import { VariantCell } from "../_components/VariantCell";
@@ -292,15 +291,26 @@ export function useProductsTable({
         enableSorting: false,
         enableResizing: false,
         meta: { responsive: "mobile" } satisfies DataTableColumnMeta,
-        cell: ({ row }) => (
-          <Button
-            variant="outline"
-            size="icon-sm"
-            onClick={() => onEditVariants(row.original)}
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        ),
+        cell: ({ row }) => {
+          const product = row.original;
+          const items: RowActionItem[] = [
+            {
+              type: "item",
+              label: "Edit Variants",
+              icon: Pencil,
+              onClick: () => onEditVariants(product),
+            },
+            { type: "separator" },
+            {
+              type: "item",
+              label: "Delete",
+              icon: Trash,
+              variant: "destructive",
+              onClick: () => onDeleteProduct(product),
+            },
+          ];
+          return <RowActionMenu items={items} />;
+        },
       },
       // Row action column (desktop only)
       {
