@@ -48,6 +48,7 @@ export function useDataTable<TData>({
     [activeFilter, filterToColumnFilters]
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns unstable refs by design
   const table = useReactTable({
     data,
     columns,

@@ -29,6 +29,7 @@ const eslintConfig = defineConfig([
       // Temporary scratchpad and screenshot scripts
       ".scratchpad/**",
       ".screenshots/**",
+      "scratchpad/**",
     ],
   },
   ...nextVitals,
