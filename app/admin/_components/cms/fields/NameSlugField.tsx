@@ -18,6 +18,8 @@ export interface NameSlugFieldProps {
   required?: boolean;
   editableSlug?: boolean; // Defaults to false (inline preview only)
   errorMessage?: string;
+  /** When false, suppresses required/error indicators (e.g. before first submit attempt) */
+  showValidation?: boolean;
 }
 
 export function NameSlugField({
@@ -29,6 +31,7 @@ export function NameSlugField({
   required = true,
   editableSlug = false,
   errorMessage,
+  showValidation = true,
 }: NameSlugFieldProps) {
   const computedSlug = slug ?? generateSlug(name ?? "");
 
@@ -38,7 +41,7 @@ export function NameSlugField({
         htmlFor={id}
         label={label}
         required={required}
-        validationType={errorMessage ? "error" : undefined}
+        validationType={showValidation ? (errorMessage ? "error" : (required && !name.trim()) ? "required" : undefined) : undefined}
         errorMessage={errorMessage}
       />
       <InputGroup>

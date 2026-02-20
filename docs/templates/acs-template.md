@@ -18,24 +18,24 @@
 
 ## UI Acceptance Criteria
 
-| AC | Description | Agent | QC | Reviewer |
-|----|-------------|-------|-----|----------|
-| AC-UI-1 | {description} | | | |
-| AC-UI-2 | {description} | | | |
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-UI-1 | {element/state to verify} | {Static/Interactive/Exercise: steps} | {explicit pass condition} | | | |
+| AC-UI-2 | {element/state to verify} | {Static/Interactive/Exercise: steps} | {explicit pass condition} | | | |
 
 ## Functional Acceptance Criteria
 
-| AC | Description | Agent | QC | Reviewer |
-|----|-------------|-------|-----|----------|
-| AC-FN-1 | {description} | | | |
-| AC-FN-2 | {description} | | | |
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-FN-1 | {behavior to verify} | {Code review: file path + what to trace} | {explicit pass condition} | | | |
+| AC-FN-2 | {behavior to verify} | {Code review: file path + what to trace} | {explicit pass condition} | | | |
 
 ## Regression Acceptance Criteria
 
-| AC | Description | Agent | QC | Reviewer |
-|----|-------------|-------|-----|----------|
-| AC-REG-1 | {description} | | | |
-| AC-REG-2 | {description} | | | |
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-REG-1 | {existing behavior to protect} | {Test run / Screenshot / Code review} | {explicit pass condition} | | | |
+| AC-REG-2 | {existing behavior to protect} | {Test run / Screenshot / Code review} | {explicit pass condition} | | | |
 
 ---
 

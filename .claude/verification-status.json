@@ -103,6 +103,13 @@
       "acs_total": 8,
       "tasks": [],
       "notes": "Iteration 2: DataTableActionBar config + renderer. 4 UI + 5 FN + 3 REG ACs. Implementation complete, pending verification."
+    },
+    "feat/new-product-local-form": {
+      "status": "verified",
+      "acs_passed": 38,
+      "acs_total": 38,
+      "tasks": [],
+      "notes": "Iteration 3: All 38 ACs verified (25 iter1-2 + 13 iter3). Sticky bar polish: transparent inline, seamless docked, pointer-events passthrough. Variant name validation on Create Product. 1 sub-iteration to fix missing isDisabled in local variant."
     }
   }
 }
