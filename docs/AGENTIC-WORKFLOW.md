@@ -5,11 +5,12 @@ A formalized, sub-agent-driven workflow for autonomous feature development with 
 ## Overview
 
 ```text
-PLAN ──► IMPLEMENT ──► VERIFY (sub-agent) ──► HUMAN REVIEW ──► RELEASE
-  │                         │                      │
-  │   structured ACs        │   pass/fail report   │  pass → /release
-  │   become contract       │                      │  fail → back to IMPLEMENT
-  └─────────────────────────┘──────────────────────┘
+INITIATE ──► PLAN ──► IMPLEMENT ──► VERIFY (sub-agent) ──► HUMAN REVIEW ──► RELEASE
+  │            │                         │                      │
+  │  branch    │   structured ACs        │   pass/fail report   │  pass → /release
+  │  preflight │   become contract       │                      │  fail → back to IMPLEMENT
+  │            └─────────────────────────┘──────────────────────┘
+  └── register "planning"
 ```
 
 The main thread (implementation agent) orchestrates. Verification is delegated to a sub-agent to protect context and enable parallelism. The human reviews a consolidated report and approves or rejects.
@@ -22,39 +23,73 @@ The main thread (implementation agent) orchestrates. Verification is delegated t
 
 **Trigger:** The main thread decides when to invoke verification — it is NOT automatic on every code change. Typically invoked once after implementation is complete, then again after each fix iteration.
 
+## Phase 0: Initiate Workflow
+
+**Run before entering plan mode.** This registers the workflow so hooks are active from the start.
+
+1. **Create feature branch**: `git checkout -b feat/{feature-name}` (skip if already on one)
+2. **Dev server verified**: `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000` → expect 200. If not reachable, ask human to start it.
+3. **Admin login verified**: Navigate to `/auth/admin-signin`, fill credentials from MEMORY.md, confirm login succeeds. If it fails, STOP — credentials or auth system may need attention.
+4. **Register `"planning"` status**: Create entry in `verification-status.json`:
+
+   ```jsonc
+   // .claude/verification-status.json → branches["{branch}"]
+   {
+     "status": "planning",
+     "acs_passed": 0,
+     "acs_total": 0,
+     "tasks": [],
+     "notes": "Workflow initiated. Entering plan mode."
+   }
+   ```
+
+Only after all 4 checks pass does planning begin. The `"planning"` state activates session-start context injection while allowing stops and docs-only commits.
+
 ## Phase 1: Plan (with ACs)
 
 Enter plan mode. Explore the codebase, design the approach, and produce a plan that includes a structured **Acceptance Criteria** section.
 
-### AC Format
+### AC Format — Structured What/How/Pass
 
-ACs are split into three categories. Each category maps to a verification method:
+ACs use three actionable columns instead of a vague description. This eliminates ambiguity and gives the sub-agent a concrete contract to verify against.
+
+| Column | Purpose |
+|--------|---------|
+| **What** | The specific element, state, or behavior to verify (concrete, not vague) |
+| **How** | Verification method — `Static` / `Interactive` / `Exercise` / `Code review` / `Test run` + specific steps |
+| **Pass** | Explicit condition that must be true. The sub-agent checks THIS, not a vague description |
 
 ```markdown
 ## Acceptance Criteria
 
 ### UI (verified by screenshots)
-- AC-UI-1: Ship To column visible in order history table at all breakpoints
-- AC-UI-2: Edit button appears only on rows with PENDING status
-- AC-UI-3: Modal opens with address fields pre-populated from order data
+
+| AC | What | How | Pass |
+|----|------|-----|------|
+| AC-UI-1 | Page `/admin/products/new` on initial load | Static: viewport screenshot immediately after page load | No red text, no pulsing dots, no "Required field" text, no error-colored elements visible in viewport |
+| AC-UI-2 | Edit button in order row Actions column | Static: screenshot of order history table | Edit button visible only on rows where status badge shows "PENDING" |
+| AC-UI-3 | Address modal after clicking Edit | Interactive: click Edit button on PENDING row → wait for dialog | Modal visible with address fields pre-populated (non-empty values in street, city, state, zip) |
 
 ### Functional (verified by code review + tests)
-- AC-FN-1: PATCH /api/user/orders/[id]/address validates with Zod schema
-- AC-FN-2: Only order owner can update their own order (auth check)
-- AC-FN-3: Non-PENDING orders return 403
+
+| AC | What | How | Pass |
+|----|------|-----|------|
+| AC-FN-1 | PATCH /api/user/orders/[id]/address request body | Code review: `app/api/user/orders/[id]/address/route.ts` → trace schema | Zod schema validates all address fields; invalid input returns 400 |
+| AC-FN-2 | Auth guard on PATCH endpoint | Code review: same file → trace session check | Non-owner requests return 403; no session returns 401 |
 
 ### Regression (verified by test suite + visual spot-check)
-- AC-REG-1: Existing order history columns render unchanged
-- AC-REG-2: Order status badges still display correctly
-- AC-REG-3: Cancel button still appears for PENDING one-time orders
+
+| AC | What | How | Pass |
+|----|------|-----|------|
+| AC-REG-1 | Existing order history columns | Screenshot: compare with baseline | All original columns (Order #, Date, Status, Total) render unchanged |
+| AC-REG-2 | Cancel button on PENDING orders | Screenshot: check Actions column on PENDING row | Cancel button still visible alongside new Edit button |
 ```
 
 **Rules:**
 
-- Each AC is a single, testable statement
-- UI ACs reference specific visual elements and breakpoints
-- Functional ACs reference specific endpoints, validations, or behaviors
-- Regression ACs protect existing functionality
+- **What** must name a specific element, page, or code path — never a vague behavior
+- **How** must specify the verification method and exact steps
+- **Pass** must be a binary-checkable condition — the sub-agent checks this literally, not interpretively
 - ACs are numbered with category prefix for traceability in reports
 
 ### Plan Approval
@@ -75,16 +110,7 @@ After plan approval, create the ACs tracking doc from the template (`docs/templa
 
 ## Phase 2: Implement (main thread)
 
-### Pre-Flight Checks
-
-Before starting implementation:
-
-1. **Dev server running?** Verify `http://localhost:3000` (or configured port) is reachable. If not, ask the human to start it — this is the only human checkpoint before the autonomous loop.
-2. **Verification status clean?** Confirm the current branch has no entry or is in `"planned"` state. If `"pending"` or `"partial"`, a previous iteration was interrupted — resume instead of restarting.
-
-### Implementation
-
-The main thread implements the approved plan:
+The main thread implements the approved plan (pre-flight checks already passed in Phase 0):
 
 1. Create feature branch
 2. Write code per plan
@@ -139,10 +165,10 @@ Example ACs doc after sub-agent verification:
 ```markdown
 ## UI Acceptance Criteria
 
-| AC | Description | Agent | QC | Reviewer |
-|----|-------------|-------|-----|----------|
-| AC-UI-1 | Ship To column visible at all breakpoints | PASS | | |
-| AC-UI-2 | Edit button for PENDING only | FAIL (button shows for all) | | |
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-UI-1 | Ship To column in order table | Static: screenshot at 3 breakpoints | Column visible with address text at all breakpoints | PASS — visible at all 3 | | |
+| AC-UI-2 | Edit button in Actions column | Static: screenshot of table rows | Button visible only on PENDING rows | FAIL — button shows on all rows | | |
 ```
 
 See `docs/templates/acs-template.md` for the full template format.
@@ -157,6 +183,16 @@ The main thread receives the sub-agent's report (reads the **Agent** column in t
 - **Repeat** until every AC passes
 
 **This loop is fully autonomous — the human does not need to be present during implement/verify/iterate cycles.**
+
+### QC Protocol (MANDATORY — do not skip)
+
+The main thread MUST independently verify every AC:
+
+1. **Read every screenshot** the sub-agent captured — do not skip any
+2. **For each UI AC**: Check the screenshot against the **Pass** column criteria yourself. Do NOT just echo the sub-agent's finding.
+3. **Write your own evidence** in the QC column — do not copy-paste the Agent column
+4. **If sub-agent says PASS but you see a failure**: Mark QC as FAIL, describe what you see, and fix the code
+5. **If in doubt**: Mark as FAIL. It's better to re-verify than to rubber-stamp.
 
 ### Updating Verification Status
 
@@ -262,6 +298,7 @@ Main thread reads both reports when complete                           ─┘
 
 | Skill | Phase | Purpose |
 |-------|-------|---------|
+| Workflow initiation | 0 | Branch, pre-flight checks, register `"planning"` |
 | Plan mode | 1 | Explore + design + produce ACs |
 | `/ac-verify` | 3 | Sub-agent verification template |
 | `/ui-verify` | 3 | Screenshot capture + comparison (used by sub-agent) |
@@ -272,7 +309,8 @@ Main thread reads both reports when complete                           ─┘
 
 ```text
 # Standard feature flow
-1. Enter plan mode → produce plan with ACs → human approves
+0. Initiate workflow → branch, pre-flight, register "planning"
+1. Enter plan mode → produce plan with ACs → human approves → register "planned"
 2. Implement on feature branch
 3. Spawn verification sub-agent with ACs
 4. Read report → fix if needed → re-verify
@@ -301,21 +339,28 @@ This is a last-resort escape hatch, NOT a convenience shortcut. If Claude sugges
 The workflow is enforced by a state machine tracked in `verification-status.json`. Each state controls what hooks allow or block.
 
 ```text
-  ┌─────────┐    plan      ┌──────────────┐   implement   ┌──────────────┐
-  │ (start) │──committed──>│   planned     │──────────────>│ implementing │
-  └─────────┘              └──────────────┘               └──────┬───────┘
-                                                                 │
-                              ┌───────────┐    all done    ┌─────v──────┐
-                              │  verified  │<──────────────│  pending   │
-                              └─────┬─────┘               └─────┬──────┘
-                                    │                           │
-                               commit/PR                  ┌────v─────┐
-                                                          │ partial  │──fix──> (back to pending)
-                                                          └──────────┘
+  ┌─────────┐  initiate   ┌──────────────┐   plan       ┌──────────────┐
+  │ (start) │────────────>│  planning     │──approved───>│   planned    │
+  └─────────┘             └──────────────┘              └──────┬───────┘
+                                                               │
+                                                          implement
+                                                               │
+                              ┌───────────┐              ┌─────v────────┐
+                              │  verified  │<──all done──│ implementing │
+                              └─────┬─────┘              └─────┬────────┘
+                                    │                          │
+                               commit/PR               ┌──────v─────┐
+                                                       │  pending   │
+                                                       └──────┬─────┘
+                                                              │
+                                                        ┌─────v──────┐
+                                                        │  partial   │──fix──> (back to pending)
+                                                        └────────────┘
 ```
 
 | State | Intermediate commits | Final commit | Stop hook |
 |-------|---------------------|-------------|-----------|
+| `planning` | Allowed | Blocked | Allows (reminds to produce plan) |
 | `planned` | Allowed | Blocked | Allows (reminds to implement) |
 | `implementing` | Allowed | Blocked | Allows (reminds to verify) |
 | `pending` | Blocked | Blocked | **Blocks** — must verify |
@@ -326,7 +371,8 @@ The workflow is enforced by a state machine tracked in `verification-status.json
 
 | Transition | Who | When |
 |-----------|-----|------|
-| (none) → `planned` | Main thread | After plan approved + committed to branch |
+| (none) → `planning` | Main thread | When feature workflow starts (before plan mode) |
+| `planning` → `planned` | Main thread | After plan approved + committed + ACs doc created |
 | `planned` → `implementing` | Main thread | When coding begins |
 | `implementing` → `pending` | Main thread | After all code written + precheck passes |
 | `pending` → `partial` | Sub-agent / verify-workflow | After partial AC verification |
@@ -337,14 +383,16 @@ The workflow is enforced by a state machine tracked in `verification-status.json
 Full workflow for AC-driven features:
 
 1. **Create feature branch** from `main`
-2. **Plan** on the branch (explore codebase, produce plan with ACs)
-3. **Commit the plan**: `git commit -m "docs: add plan for {feature}"`
-4. **Register** `verification-status.json` entry with status `"planned"` and `acs_total` = AC count
-5. **Transition** to `"implementing"` when coding begins
-6. **Follow the commit schedule** defined in the plan (intermediate commits allowed)
-7. **Transition** to `"pending"` when implementation is complete
-8. **Run verification** → transitions to `"verified"`
-9. **Final commit** + PR
+2. **Register** `verification-status.json` entry with status `"planning"` and `acs_total: 0`
+3. **Pre-flight checks**: Dev server reachable, admin login works
+4. **Plan** on the branch (explore codebase, produce plan with ACs)
+5. **Commit the plan**: `git commit --no-verify -m "docs: add plan for {feature}"`
+6. **Update** `verification-status.json` to `"planned"` with `acs_total` = AC count
+7. **Transition** to `"implementing"` when coding begins
+8. **Follow the commit schedule** defined in the plan (intermediate commits allowed)
+9. **Transition** to `"pending"` when implementation is complete
+10. **Run verification** → transitions to `"verified"`
+11. **Final commit** + PR
 
 ### Commit Schedule Convention
 

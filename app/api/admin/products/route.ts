@@ -29,6 +29,7 @@ export async function GET(request: Request) {
         isDisabled: true,
         variants: {
           select: {
+            id: true,
             name: true,
             stockQuantity: true,
             images: {
@@ -38,8 +39,10 @@ export async function GET(request: Request) {
             },
             purchaseOptions: {
               select: {
+                id: true,
                 type: true,
                 priceInCents: true,
+                salePriceInCents: true,
                 billingInterval: true,
                 billingIntervalCount: true,
               },
@@ -78,9 +81,17 @@ export async function GET(request: Request) {
         price: basePrice,
         thumbnailUrl: p.variants[0]?.images[0]?.url || null,
         variants: p.variants.map((v) => ({
+          id: v.id,
           name: v.name,
           stock: v.stockQuantity,
-          options: v.purchaseOptions,
+          options: v.purchaseOptions.map((o) => ({
+            id: o.id,
+            type: o.type,
+            priceInCents: o.priceInCents,
+            salePriceInCents: o.salePriceInCents,
+            billingInterval: o.billingInterval,
+            billingIntervalCount: o.billingIntervalCount,
+          })),
         })),
         categories: p.categories.map((c) => c.category.name).join(", "),
         categoriesDetailed: p.categories.map((c) => ({

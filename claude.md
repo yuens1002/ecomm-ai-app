@@ -378,24 +378,25 @@ npm run release:minor -- -y --push --sync-package --github-release
 
 The agentic workflow is enforced by hooks that track the process loop state machine:
 
-**State machine:** `planned` → `implementing` → `pending` → [verify] → `verified`
+**State machine:** `planning` → `planned` → `implementing` → `pending` → [verify] → `verified`
 
 **SessionStart hook** (`session-start-loop-node.js`): On session start, reads `verification-status.json` for the current branch and injects workflow state context. Tells Claude where it is in the loop and what to do next.
 
-**Stop hook** (`verify-before-stop-node.js`): Blocks Claude from finishing a response when status is `pending` or `partial`. Only fires when source files have uncommitted changes. Allows stop during `planned`, `implementing`, and `verified`.
+**Stop hook** (`verify-before-stop-node.js`): Blocks Claude from finishing a response when status is `pending` or `partial`. Only fires when source files have uncommitted changes. Allows stop during `planning`, `planned`, `implementing`, and `verified`.
 
-**Commit gate** (`verify-before-commit-node.js`): Blocks `git commit` during `pending`/`partial` states. Allows intermediate commits during `planned`/`implementing` and final commits when `verified`.
+**Commit gate** (`verify-before-commit-node.js`): Blocks `git commit` during `pending`/`partial` states. Allows intermediate commits during `planning`, `planned`, `implementing` and final commits when `verified`.
 
 **State transitions** (managed by the main thread):
 
 | Transition | When |
 |-----------|------|
-| (none) → `planned` | After plan approved + committed to branch |
+| (none) → `planning` | When feature workflow starts (before plan mode) |
+| `planning` → `planned` | After plan approved + committed + ACs doc created |
 | `planned` → `implementing` | When coding begins |
 | `implementing` → `pending` | After all code written + precheck passes |
 | `pending`/`partial` → `verified` | After all ACs pass verification |
 
-**Plan phase requirement:** After plan approval, commit the plan to the feature branch and register a `"planned"` entry in `verification-status.json` with `acs_total` set to the AC count. This activates the entire enforcement chain.
+**Initiation requirement:** Before entering plan mode, register a `"planning"` entry in `verification-status.json` with `acs_total: 0`. After plan approval, commit the plan, create the ACs doc, and update the entry to `"planned"` with `acs_total` set to the AC count. This activates the entire enforcement chain from the start.
 
 ---
 

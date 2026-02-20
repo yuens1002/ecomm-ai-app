@@ -63,6 +63,15 @@ function main() {
   const total = entry.acs_total || 0;
 
   switch (status) {
+    case "planning":
+      inject(
+        `WORKFLOW ACTIVE: Branch '${branch}' is in planning phase (${total} ACs TBD). ` +
+          `Explore the codebase, design the approach, and produce a plan with structured ACs (What/How/Pass). ` +
+          `After plan approval, commit the plan and transition to "planned". ` +
+          `Status: PLANNING.`
+      );
+      break;
+
     case "planned":
       inject(
         `WORKFLOW ACTIVE: Branch '${branch}' has an approved plan with ${total} ACs. ` +

@@ -4,20 +4,8 @@ import { useState, useRef, useEffect, forwardRef, useImperativeHandle, useCallba
 import { PurchaseType, BillingInterval } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupText,
-  InputGroupInput,
-} from "@/components/ui/input-group";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +28,7 @@ import {
 } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { MultiImageUpload } from "@/components/ui/forms/MultiImageUpload";
+import { OneTimeOptionRow, SubscriptionOptionRow } from "./shared/PurchaseOptionRow";
 import { StackedFieldPair } from "./shared/StackedFieldPair";
 import {
   Plus,
@@ -905,99 +894,57 @@ function PurchaseOptionRow({
   onDelete: (optionId: string, variantId: string) => void;
   isSaving: boolean;
 }) {
-  const isSubscription = option.type === PurchaseType.SUBSCRIPTION;
+  const priceInputProps = {
+    defaultValue: (option.priceInCents / 100).toFixed(2),
+    onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+      const cents = Math.round(parseFloat(e.target.value) * 100);
+      if (cents >= 0) onUpdate(option.id, variantId, { priceInCents: cents });
+    },
+  };
+
+  const salePriceInputProps = {
+    defaultValue: option.salePriceInCents
+      ? (option.salePriceInCents / 100).toFixed(2)
+      : "",
+    onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+      const val = e.target.value;
+      const cents = val ? Math.round(parseFloat(val) * 100) : null;
+      onUpdate(option.id, variantId, { salePriceInCents: cents });
+    },
+  };
+
+  const handleDelete = () => onDelete(option.id, variantId);
+
+  if (option.type === PurchaseType.SUBSCRIPTION) {
+    return (
+      <SubscriptionOptionRow
+        priceInputProps={priceInputProps}
+        salePriceInputProps={salePriceInputProps}
+        cadenceCountInputProps={{
+          defaultValue: option.billingIntervalCount ?? 1,
+          onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+            const count = parseInt(e.target.value) || 1;
+            onUpdate(option.id, variantId, { billingIntervalCount: count });
+          },
+        }}
+        cadenceIntervalDefaultValue={option.billingInterval ?? BillingInterval.MONTH}
+        onCadenceIntervalChange={(val) =>
+          onUpdate(option.id, variantId, {
+            billingInterval: val as BillingInterval,
+          })
+        }
+        onDelete={handleDelete}
+        deleteDisabled={isSaving}
+      />
+    );
+  }
 
   return (
-    <div className="flex items-center gap-3 py-3 text-sm">
-      <span className="text-xs font-medium uppercase text-muted-foreground w-16 shrink-0">
-        {isSubscription ? "SUB" : "ONE-TIME"}
-      </span>
-
-      <div className="flex-1 space-y-2 min-w-0 [&_input]:!text-sm">
-        <div className="flex gap-2">
-          <InputGroup className="flex-1 h-8">
-            <InputGroupAddon align="inline-start">
-              <InputGroupText>$</InputGroupText>
-            </InputGroupAddon>
-            <InputGroupInput
-              type="number"
-              step="0.01"
-              defaultValue={(option.priceInCents / 100).toFixed(2)}
-              onBlur={(e) => {
-                const cents = Math.round(parseFloat(e.target.value) * 100);
-                if (cents >= 0) onUpdate(option.id, variantId, { priceInCents: cents });
-              }}
-            />
-          </InputGroup>
-
-          <InputGroup className="flex-1 h-8">
-            <InputGroupAddon align="inline-start">
-              <InputGroupText>Sale $</InputGroupText>
-            </InputGroupAddon>
-            <InputGroupInput
-              type="number"
-              step="0.01"
-              placeholder="—"
-              defaultValue={
-                option.salePriceInCents
-                  ? (option.salePriceInCents / 100).toFixed(2)
-                  : ""
-              }
-              onBlur={(e) => {
-                const val = e.target.value;
-                const cents = val ? Math.round(parseFloat(val) * 100) : null;
-                onUpdate(option.id, variantId, { salePriceInCents: cents });
-              }}
-            />
-          </InputGroup>
-        </div>
-
-        {isSubscription && (
-          <InputGroup className="h-8">
-            <InputGroupAddon align="inline-start">
-              <InputGroupText>Every</InputGroupText>
-            </InputGroupAddon>
-            <InputGroupInput
-              type="number"
-              defaultValue={option.billingIntervalCount ?? 1}
-              onBlur={(e) => {
-                const count = parseInt(e.target.value) || 1;
-                onUpdate(option.id, variantId, { billingIntervalCount: count });
-              }}
-            />
-            <InputGroupAddon align="inline-end">
-              <Select
-                defaultValue={option.billingInterval ?? BillingInterval.MONTH}
-                onValueChange={(val) =>
-                  onUpdate(option.id, variantId, {
-                    billingInterval: val as BillingInterval,
-                  })
-                }
-              >
-                <SelectTrigger className="h-7 border-0 shadow-none bg-transparent px-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="DAY">day/s</SelectItem>
-                  <SelectItem value="WEEK">wk/s</SelectItem>
-                  <SelectItem value="MONTH">mo/s</SelectItem>
-                </SelectContent>
-              </Select>
-            </InputGroupAddon>
-          </InputGroup>
-        )}
-      </div>
-
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 shrink-0"
-        onClick={() => onDelete(option.id, variantId)}
-        disabled={isSaving}
-      >
-        <X className="h-4 w-4" />
-      </Button>
-    </div>
+    <OneTimeOptionRow
+      priceInputProps={priceInputProps}
+      salePriceInputProps={salePriceInputProps}
+      onDelete={handleDelete}
+      deleteDisabled={isSaving}
+    />
   );
 }
