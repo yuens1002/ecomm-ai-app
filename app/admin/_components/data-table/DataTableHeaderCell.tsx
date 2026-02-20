@@ -48,7 +48,7 @@ export function DataTableHeaderCell<TData>({
           ? "border-b-foreground"
           : "border-b-border",
         meta?.pin === "left" &&
-          "sticky left-0 z-10 bg-admin-bg after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border",
+          "sticky left-0 z-30 bg-background after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border",
         className
       )}
       style={{ width: header.getSize() }}
