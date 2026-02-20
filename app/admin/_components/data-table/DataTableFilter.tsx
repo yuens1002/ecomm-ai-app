@@ -68,7 +68,7 @@ function ComparisonFilterContent({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <InputGroupButton size="xs" variant="secondary">
             {filter.operator || ">"}
@@ -192,7 +192,7 @@ export function DataTableFilter({
 
   const typeSelector = (
     <InputGroupAddon align="inline-end">
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <InputGroupButton size="icon-xs">
             <MoreHorizontal />
