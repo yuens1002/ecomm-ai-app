@@ -13,7 +13,7 @@ interface DataTableProps<TData> {
   emptyMessage?: string;
 }
 
-const PIN_LEFT_CLASS = "sticky left-0 z-10 bg-admin-bg after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border";
+const PIN_LEFT_CLASS = "sticky left-0 z-30 bg-background after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border";
 
 const RESPONSIVE_CLASSES: Record<string, string> = {
   desktop: "hidden sm:table-cell",

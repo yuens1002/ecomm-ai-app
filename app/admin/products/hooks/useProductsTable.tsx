@@ -207,6 +207,8 @@ export function useProductsTable({
       {
         id: "variants",
         header: "Variants",
+        size: 320,
+        minSize: 280,
         enableSorting: false,
         enableResizing: true,
         meta: { responsive: "desktop" } satisfies DataTableColumnMeta,
