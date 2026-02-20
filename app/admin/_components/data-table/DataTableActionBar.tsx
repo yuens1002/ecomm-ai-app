@@ -9,7 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Search } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { DataTableFilter } from "./DataTableFilter";
 import { DataTablePageSizeSelector } from "./DataTablePageSizeSelector";
@@ -169,31 +169,6 @@ function getCollapseConfig(slot: DataTableSlot): CollapseConfig | undefined {
   return undefined;
 }
 
-function ExpandedSlotOverlay({
-  slot,
-  onClose,
-  className,
-}: {
-  slot: DataTableSlot;
-  onClose: () => void;
-  className?: string;
-}) {
-  return (
-    <div className={cn("flex items-center gap-2 pb-4 border-b-2 lg:hidden", className)}>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        onClick={onClose}
-      >
-        <ArrowLeft className="h-4 w-4" />
-      </Button>
-      <div className="flex-1">
-        <SlotRenderer slot={slot} />
-      </div>
-    </div>
-  );
-}
-
 interface DataTableActionBarProps {
   config: ActionBarConfig;
   className?: string;
@@ -204,56 +179,82 @@ export function DataTableActionBar({
   className,
 }: DataTableActionBarProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [isStuck, setIsStuck] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // If a slot is expanded, show overlay
-  if (expandedIndex !== null) {
-    const slot = config.left[expandedIndex];
-    if (slot) {
-      return (
-        <ExpandedSlotOverlay
-          slot={slot}
-          onClose={() => setExpandedIndex(null)}
-          className={className}
-        />
-      );
-    }
-  }
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsStuck(!entry.isIntersecting),
+      { threshold: 0, rootMargin: "-64px 0px 0px 0px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
+  const expandedSlot = expandedIndex !== null ? config.left[expandedIndex] ?? null : null;
 
   return (
-    <div className={cn("sticky top-16 z-20 flex items-center gap-4 pb-8 bg-admin-bg", className)}>
-      {/* Left slots */}
-      <div className="flex items-center gap-2">
-        {config.left.map((slot, i) => {
-          const collapse = getCollapseConfig(slot);
-          if (collapse) {
-            const CollapseIcon = collapse.icon;
-            return (
-              <div key={i}>
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  className="lg:hidden"
-                  onClick={() => setExpandedIndex(i)}
-                >
-                  <CollapseIcon className="h-4 w-4" />
-                </Button>
-                <div className="hidden lg:block">
-                  <SlotRenderer slot={slot} />
-                </div>
-              </div>
-            );
-          }
-          return <SlotRenderer key={i} slot={slot} />;
-        })}
+    <>
+      <div ref={sentinelRef} className="h-0" />
+      <div className={cn(
+        "sticky top-[calc(4rem-1px)] z-50 flex items-center gap-4",
+        isStuck && "p-4 bg-background border border-t-0 border-border rounded-b-lg",
+        "mb-4",
+        className
+      )}>
+        {expandedSlot ? (
+          <>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setExpandedIndex(null)}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex-1">
+              <SlotRenderer slot={expandedSlot} />
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Left slots */}
+            <div className="flex items-center gap-2">
+              {config.left.map((slot, i) => {
+                const collapse = getCollapseConfig(slot);
+                if (collapse) {
+                  const CollapseIcon = collapse.icon;
+                  return (
+                    <div key={i}>
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        className="lg:hidden"
+                        onClick={() => setExpandedIndex(i)}
+                      >
+                        <CollapseIcon className="h-4 w-4" />
+                      </Button>
+                      <div className="hidden lg:block">
+                        <SlotRenderer slot={slot} />
+                      </div>
+                    </div>
+                  );
+                }
+                return <SlotRenderer key={i} slot={slot} />;
+              })}
+            </div>
+            {/* Spacer */}
+            <div className="flex-1" />
+            {/* Right slots */}
+            <div className="flex items-center gap-2">
+              {config.right.map((slot, i) => (
+                <SlotRenderer key={i} slot={slot} />
+              ))}
+            </div>
+          </>
+        )}
       </div>
-      {/* Spacer */}
-      <div className="flex-1" />
-      {/* Right slots */}
-      <div className="flex items-center gap-2">
-        {config.right.map((slot, i) => (
-          <SlotRenderer key={i} slot={slot} />
-        ))}
-      </div>
-    </div>
+    </>
   );
 }
