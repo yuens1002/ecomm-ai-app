@@ -329,6 +329,7 @@ export function ShoppingCart() {
                   <Link
                     href={`/products/${item.productSlug}`}
                     className="shrink-0"
+                    onClick={() => setIsOpen(false)}
                   >
                     <div className="relative w-20 h-20 rounded-md overflow-hidden bg-white dark:bg-gray-800">
                       {item.imageUrl ? (
@@ -351,6 +352,7 @@ export function ShoppingCart() {
                     <Link
                       href={`/products/${item.productSlug}`}
                       className="font-medium text-text-base hover:text-primary line-clamp-2 mb-1"
+                      onClick={() => setIsOpen(false)}
                     >
                       {item.productName}
                     </Link>
@@ -441,11 +443,11 @@ export function ShoppingCart() {
                         <span>
                           {item.originalPriceInCents && (
                             <span className="text-sm text-muted-foreground line-through mr-1.5">
-                              {formatPrice(item.originalPriceInCents * item.quantity)}
+                              {formatPrice(item.originalPriceInCents)}
                             </span>
                           )}
                           <span className="font-semibold text-text-base">
-                            {formatPrice(item.priceInCents * item.quantity)}
+                            {formatPrice(item.priceInCents)}
                           </span>
                         </span>
                       </span>

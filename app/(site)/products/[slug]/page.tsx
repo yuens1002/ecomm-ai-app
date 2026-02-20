@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getProductBySlug, getRelatedProducts } from "@/lib/data";
+import { getProductBySlug, getRelatedProducts, getProductsByCategorySlug } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import ProductClientPage from "./ProductClientPage";
 import { getProductAddOns } from "./actions";
@@ -97,11 +97,18 @@ export default async function ProductPage({
   // Fetch add-ons for this product
   const addOns = await getProductAddOns(product.id);
 
+  // Fetch sibling products in the same category (for breadcrumb dropdown)
+  const categoryProducts = await getProductsByCategorySlug(displayCategory.slug);
+  const siblingProducts = categoryProducts
+    .filter((p) => p.id !== product.id)
+    .map((p) => ({ name: p.name, slug: p.slug }));
+
   return (
     <ProductClientPage
       product={product}
       relatedProducts={relatedProducts}
       category={displayCategory}
+      categoryProducts={siblingProducts}
       addOns={addOns}
     />
   );
