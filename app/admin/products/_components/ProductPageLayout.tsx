@@ -56,7 +56,7 @@ export function ProductPageLayout({
 
     const observer = new IntersectionObserver(
       ([entry]) => setIsStuck(!entry.isIntersecting),
-      { threshold: 0 }
+      { threshold: 0, rootMargin: "-64px 0px 0px 0px" }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -65,7 +65,7 @@ export function ProductPageLayout({
   return (
     <div>
       {/* Page Header */}
-      <div className="mb-8">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
         {description && (
           <p className="text-sm text-muted-foreground mt-1">{description}</p>
@@ -77,12 +77,10 @@ export function ProductPageLayout({
 
       {/* Sticky action bar */}
       <div
-        className={`sticky top-[calc(4rem-1px)] z-40 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-12 flex justify-end pointer-events-none ${
-          isStuck ? "pb-2" : "py-2"
-        }`}
+        className="sticky top-[calc(4rem-1px)] z-50 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-4 pb-1 flex justify-end pointer-events-none"
       >
-        <div className={`pointer-events-auto px-4 py-2 ${
-          isStuck ? "bg-background" : ""
+        <div className={`pointer-events-auto px-3 pt-1 pb-3 ${
+          isStuck ? "bg-background rounded-b-lg" : ""
         }`}>
           {onManualSave ? (
             <Button

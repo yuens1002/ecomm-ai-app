@@ -2,17 +2,10 @@
 
 import { NameSlugField } from "@/app/admin/_components/cms/fields/NameSlugField";
 import { FormHeading } from "@/components/ui/forms/FormHeading";
-import {
-  FieldGroup,
-  FieldDescription,
-  Field,
-  FieldLabel,
-  FieldContent,
-  FieldTitle,
-} from "@/components/ui/field";
+import { FieldGroup, Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { FlagField } from "@/components/ui/forms/FlagField";
 export interface ProductInfoValues {
   name: string;
   slug: string;
@@ -39,7 +32,7 @@ export function ProductInfoSection({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16 gap-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-6">
       {/* Left column: Name/Slug, Flags */}
       <FieldGroup>
         <NameSlugField
@@ -51,54 +44,28 @@ export function ProductInfoSection({
 
         <Field>
           <FormHeading label="Flags" />
-          <div className="flex flex-col gap-3">
-            <Field orientation="horizontal">
-              <Checkbox
-                id="isOrganic"
-                checked={values.isOrganic}
-                onCheckedChange={(checked) =>
-                  update({ isOrganic: checked === true })
-                }
-              />
-              <FieldLabel htmlFor="isOrganic">
-                <FieldContent>
-                  <FieldTitle>Organic</FieldTitle>
-                  <FieldDescription>Mark as certified organic product</FieldDescription>
-                </FieldContent>
-              </FieldLabel>
-            </Field>
-
-            <Field orientation="horizontal">
-              <Checkbox
-                id="isFeatured"
-                checked={values.isFeatured}
-                onCheckedChange={(checked) =>
-                  update({ isFeatured: checked === true })
-                }
-              />
-              <FieldLabel htmlFor="isFeatured">
-                <FieldContent>
-                  <FieldTitle>Featured</FieldTitle>
-                  <FieldDescription>Show on homepage and featured sections</FieldDescription>
-                </FieldContent>
-              </FieldLabel>
-            </Field>
-
-            <Field orientation="horizontal">
-              <Checkbox
-                id="isDisabled"
-                checked={values.isDisabled}
-                onCheckedChange={(checked) =>
-                  update({ isDisabled: checked === true })
-                }
-              />
-              <FieldLabel htmlFor="isDisabled">
-                <FieldContent>
-                  <FieldTitle>Disabled</FieldTitle>
-                  <FieldDescription>Hide from storefront</FieldDescription>
-                </FieldContent>
-              </FieldLabel>
-            </Field>
+          <div className="flex flex-col">
+            <FlagField
+              id="isOrganic"
+              label="Organic"
+              description="Mark as certified organic product"
+              checked={values.isOrganic}
+              onCheckedChange={(checked) => update({ isOrganic: checked })}
+            />
+            <FlagField
+              id="isFeatured"
+              label="Featured"
+              description="Show on homepage and featured sections"
+              checked={values.isFeatured}
+              onCheckedChange={(checked) => update({ isFeatured: checked })}
+            />
+            <FlagField
+              id="isDisabled"
+              label="Disabled"
+              description="Hide from storefront"
+              checked={values.isDisabled}
+              onCheckedChange={(checked) => update({ isDisabled: checked })}
+            />
           </div>
         </Field>
       </FieldGroup>

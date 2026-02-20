@@ -16,16 +16,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   FieldSet,
   FieldLegend,
   FieldDescription,
-  FieldContent,
-  FieldLabel,
-  FieldTitle,
   Field,
 } from "@/components/ui/field";
+import { FlagField } from "@/components/ui/forms/FlagField";
 import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { MultiImageUpload } from "@/components/ui/forms/MultiImageUpload";
 import { OneTimeOptionRow, SubscriptionOptionRow } from "./shared/PurchaseOptionRow";
@@ -109,9 +106,10 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
     const tabsListRef = useRef<HTMLDivElement>(null);
-    const [canScrollLeft, setCanScrollLeft] = useState(false);
-    const [canScrollRight, setCanScrollRight] = useState(false);
     const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+    // Drag-to-scroll state for the tabs list
+    const dragState = useRef({ isDragging: false, startX: 0, startScroll: 0, moved: false });
 
     // Per-variant pending image files: variantId → (imageIndex → PendingFile)
     const [pendingFilesPerVariant, setPendingFilesPerVariant] = useState<
@@ -127,21 +125,6 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
     const variantsRef = useRef(variants);
     useEffect(() => { variantsRef.current = variants; }, [variants]);
 
-  const updateScrollState = () => {
-    const el = tabsListRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 0);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
-  };
-
-  useEffect(() => {
-    const el = tabsListRef.current;
-    if (!el) return;
-    updateScrollState();
-    el.addEventListener("scroll", updateScrollState);
-    return () => el.removeEventListener("scroll", updateScrollState);
-  }, [variants.length]);
-
   // Auto-scroll active tab into view
   useEffect(() => {
     const list = tabsListRef.current;
@@ -152,11 +135,58 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
     }
   }, [selectedIndex]);
 
-    const scrollTabs = (direction: "left" | "right") => {
-      const el = tabsListRef.current;
-      if (!el) return;
-      el.scrollBy({ left: direction === "left" ? -120 : 120, behavior: "smooth" });
+  // Drag-to-scroll handlers for the tabs list
+  useEffect(() => {
+    const el = tabsListRef.current;
+    if (!el) return;
+    const ds = dragState.current;
+
+    const onMouseDown = (e: MouseEvent) => {
+      // Only handle primary button clicks on the list background or tabs
+      if (e.button !== 0) return;
+      ds.isDragging = true;
+      ds.moved = false;
+      ds.startX = e.clientX;
+      ds.startScroll = el.scrollLeft;
+      el.style.cursor = "grabbing";
+      el.style.userSelect = "none";
     };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!ds.isDragging) return;
+      const dx = e.clientX - ds.startX;
+      if (Math.abs(dx) > 3) ds.moved = true;
+      el.scrollLeft = ds.startScroll - dx;
+    };
+
+    const onMouseUp = () => {
+      if (!ds.isDragging) return;
+      ds.isDragging = false;
+      el.style.cursor = "";
+      el.style.userSelect = "";
+    };
+
+    // Suppress click (tab switch) when the user was dragging, not clicking
+    const onClick = (e: MouseEvent) => {
+      if (ds.moved) {
+        e.stopPropagation();
+        e.preventDefault();
+        ds.moved = false;
+      }
+    };
+
+    el.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    el.addEventListener("click", onClick, { capture: true });
+
+    return () => {
+      el.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      el.removeEventListener("click", onClick, { capture: true });
+    };
+  }, []);
 
     // --- Variant image handlers ---
 
@@ -665,40 +695,32 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
           onValueChange={(val) => setSelectedIndex(Number(val))}
         >
           <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 shrink-0 aria-disabled:opacity-50"
-              aria-disabled={!canScrollLeft}
-              onClick={() => canScrollLeft && scrollTabs("left")}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
             <TabsList
               ref={tabsListRef}
-              className="flex flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden cursor-grab"
             >
               {variants.map((v, i) => (
-                <TabsTrigger key={v.id} value={String(i)} className="shrink-0 gap-1.5 pr-1.5">
+                <TabsTrigger key={v.id} value={String(i)} className={`shrink-0 ${variants.length > 1 ? "gap-1.5 pr-1.5" : ""}`}>
                   {v.name}
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    className={`rounded-sm p-0.5 hover:bg-foreground/10 ${i === 0 ? "opacity-30 pointer-events-none" : ""}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (i > 0) setPendingDeleteId(v.id);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && i > 0) {
+                  {variants.length > 1 && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className={`rounded-sm p-0.5 hover:bg-foreground/10 ${i === 0 ? "opacity-30 pointer-events-none" : ""}`}
+                      onClick={(e) => {
                         e.stopPropagation();
-                        setPendingDeleteId(v.id);
-                      }
-                    }}
-                  >
-                    <X className="h-3 w-3" />
-                  </span>
+                        if (i > 0) setPendingDeleteId(v.id);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && i > 0) {
+                          e.stopPropagation();
+                          setPendingDeleteId(v.id);
+                        }
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </span>
+                  )}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -711,16 +733,6 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
               disabled={(!productId && !isNewProduct) || isSaving}
             >
               <Plus className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 shrink-0 aria-disabled:opacity-50"
-              aria-disabled={!canScrollRight}
-              onClick={() => canScrollRight && scrollTabs("right")}
-            >
-              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
 
@@ -758,7 +770,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-                <span className="text-sm text-muted-foreground">of</span>
+                <span className="text-sm text-muted-foreground">in</span>
                 <span className="text-sm text-muted-foreground tabular-nums">{variants.length}</span>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-[55fr_45fr] gap-6 lg:gap-x-12">
@@ -776,29 +788,19 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
                     />
                   </Field>
 
-                  <Field orientation="horizontal">
-                    <Checkbox
-                      id={`variant-disabled-${selectedVariant.id}`}
-                      checked={selectedVariant.isDisabled}
-                      aria-disabled={isLastActiveVariant}
-                      className={isLastActiveVariant ? "cursor-not-allowed opacity-50" : undefined}
-                      onCheckedChange={(checked) => {
-                        if (isLastActiveVariant) return;
-                        handleUpdateVariant(selectedVariant.id, "isDisabled", checked === true);
-                        handleSaveVariant({ ...selectedVariant, isDisabled: checked === true });
-                      }}
-                    />
-                    <FieldLabel htmlFor={`variant-disabled-${selectedVariant.id}`}>
-                      <FieldContent>
-                        <FieldTitle>Disabled</FieldTitle>
-                        <FieldDescription>
-                          {isLastActiveVariant
-                            ? "At least one variant must remain active"
-                            : "Hide variant from storefront"}
-                        </FieldDescription>
-                      </FieldContent>
-                    </FieldLabel>
-                  </Field>
+                  <FlagField
+                    id={`variant-disabled-${selectedVariant.id}`}
+                    label="Disabled"
+                    description={isLastActiveVariant
+                      ? "At least one variant must remain active"
+                      : "Hide variant from storefront"}
+                    checked={selectedVariant.isDisabled}
+                    disabled={isLastActiveVariant}
+                    onCheckedChange={(checked) => {
+                      handleUpdateVariant(selectedVariant.id, "isDisabled", checked);
+                      handleSaveVariant({ ...selectedVariant, isDisabled: checked });
+                    }}
+                  />
 
                   <StackedFieldPair>
                     <Field className="flex-1">
@@ -806,12 +808,13 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
                       <Input
                         id={`variant-weight-${selectedVariant.id}`}
                         type="number"
+                        min={0}
                         value={selectedVariant.weight}
                         onChange={(e) =>
                           handleUpdateVariant(
                             selectedVariant.id,
                             "weight",
-                            parseInt(e.target.value) || 0
+                            Math.max(0, parseInt(e.target.value) || 0)
                           )
                         }
                         onBlur={() => handleSaveVariant(selectedVariant)}
@@ -822,12 +825,13 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
                       <Input
                         id={`variant-stock-${selectedVariant.id}`}
                         type="number"
+                        min={0}
                         value={selectedVariant.stockQuantity}
                         onChange={(e) =>
                           handleUpdateVariant(
                             selectedVariant.id,
                             "stockQuantity",
-                            parseInt(e.target.value) || 0
+                            Math.max(0, parseInt(e.target.value) || 0)
                           )
                         }
                         onBlur={() => handleSaveVariant(selectedVariant)}

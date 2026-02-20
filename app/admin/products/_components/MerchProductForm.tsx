@@ -15,7 +15,7 @@ import { createProduct, updateProduct } from "../actions/products";
 import { createVariant, saveVariantImages } from "../actions/variants";
 import { createOption } from "../actions/options";
 import { useAutoSave } from "../_hooks/useAutoSave";
-import { useUnsavedChanges } from "../_hooks/useUnsavedChanges";
+import { UnsavedChangesGuard } from "./UnsavedChangesGuard";
 
 interface CategoryLabel {
   id: string;
@@ -97,9 +97,18 @@ export function MerchProductForm({
     initialData?.categoryIds ?? []
   );
 
-  // Variants state
+  // Variants state — new products start with one default variant
   const [variants, setVariants] = useState<VariantData[]>(
-    initialData?.variants ?? []
+    initialData?.variants ?? (isNewProduct ? [{
+      id: crypto.randomUUID(),
+      name: "Variant 1",
+      weight: 0,
+      stockQuantity: 0,
+      order: 0,
+      isDisabled: false,
+      images: [],
+      purchaseOptions: [],
+    }] : [])
   );
 
   const isValid = productInfo.name.trim().length > 0;
@@ -117,9 +126,8 @@ export function MerchProductForm({
     productInfo.heading.trim() !== "" ||
     productInfo.description.trim() !== "" ||
     merchDetails.some((d) => d.label.trim() !== "" || d.value.trim() !== "") ||
-    variants.length > 0
+    variants.some(v => v.name !== "Variant 1" || v.weight !== 0 || v.stockQuantity !== 0 || v.purchaseOptions.length > 0 || v.images.length > 0)
   );
-  useUnsavedChanges(isDirty);
 
   // --- Edit mode: auto-save ---
 
@@ -353,6 +361,7 @@ export function MerchProductForm({
   }, [undo, redo, isNewProduct]);
 
   return (
+    <>
     <ProductPageLayout
       title={productId ? "Edit Merch Product" : "New Merch Product"}
       description="Manage merchandise details, variants, and pricing"
@@ -410,5 +419,7 @@ export function MerchProductForm({
         />
       }
     />
+    {isNewProduct && <UnsavedChangesGuard isDirty={isDirty} />}
+    </>
   );
 }
