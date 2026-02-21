@@ -10,7 +10,7 @@ import { ProductInfoSection, ProductInfoValues } from "./ProductInfoSection";
 import { VariantsSection, VariantData, VariantsSectionRef } from "./VariantsSection";
 import { MerchDetailsSection, MerchDetailRow } from "./MerchDetailsSection";
 import { CategoriesSection } from "./CategoriesSection";
-import { AddOnsSection, AddOnsSectionRef } from "./AddOnsSection";
+import { AddOnsSection, AddOnsSectionRef, AddOnEntry } from "./AddOnsSection";
 import { createProduct, updateProduct } from "../actions/products";
 import { createVariant, saveVariantImages } from "../actions/variants";
 import { createOption } from "../actions/options";
@@ -97,6 +97,10 @@ export function MerchProductForm({
     initialData?.categoryIds ?? []
   );
 
+  // Add-ons mirror state (for undo history — AddOnsSection owns the source of truth)
+  const [addOns, setAddOns] = useState<AddOnEntry[]>([]);
+  const addOnsInitializedRef = useRef(isNewProduct);
+
   // Variants state — new products start with one default variant
   const [variants, setVariants] = useState<VariantData[]>(
     initialData?.variants ?? (isNewProduct ? [{
@@ -173,18 +177,24 @@ export function MerchProductForm({
     }
   }, [productInfo, merchDetails, categoryIds, productId, hasIncompleteDetails, router]);
 
-  const formState = { productInfo, merchDetails, categoryIds };
+  const formState = { productInfo, merchDetails, categoryIds, addOns };
+  const formStateRef = useRef(formState);
+  formStateRef.current = formState;
 
   const onRestore = useCallback(
     (state: typeof formState) => {
       setProductInfo(state.productInfo);
       setMerchDetails(state.merchDetails);
       setCategoryIds(state.categoryIds);
+      if (state.addOns) {
+        setAddOns(state.addOns);
+        addOnsSectionRef.current?.restoreAddOns(state.addOns);
+      }
     },
     []
   );
 
-  const { status, undo, redo, canUndo, canRedo } = useAutoSave({
+  const { status, undo, redo, canUndo, canRedo, markExternalSave } = useAutoSave({
     saveFn,
     isValid: isValid && !hasIncompleteDetails,
     debounceMs: 800,
@@ -193,6 +203,17 @@ export function MerchProductForm({
     historyKey: productId ? `merch-${productId}` : "merch-new",
     onRestore,
   });
+
+  const handleAddOnsChange = useCallback((updated: AddOnEntry[]) => {
+    setAddOns(updated);
+    if (!addOnsInitializedRef.current) {
+      addOnsInitializedRef.current = true;
+      return;
+    }
+    if (!isNewProduct) {
+      markExternalSave({ ...formStateRef.current, addOns: updated });
+    }
+  }, [isNewProduct, markExternalSave]);
 
   // --- New product mode: batch create ---
 
@@ -416,6 +437,7 @@ export function MerchProductForm({
           ref={addOnsSectionRef}
           productId={productId}
           isNewProduct={isNewProduct}
+          onAddOnsChange={handleAddOnsChange}
         />
       }
     />

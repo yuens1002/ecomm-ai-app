@@ -152,6 +152,15 @@ export function useAutoSave<T = unknown>({
     }
   }, [historyRedo, refreshCounts]);
 
+  /** Record an external save (e.g. add-on API call) to undo history without triggering saveFn. */
+  const markExternalSave = useCallback((newFormState?: T) => {
+    if (lastSavedStateRef.current !== undefined && historyKey) {
+      pushSnapshot(lastSavedStateRef.current);
+      refreshCounts();
+    }
+    lastSavedStateRef.current = newFormState ?? formStateRef.current;
+  }, [pushSnapshot, historyKey, refreshCounts]);
+
   return {
     status,
     saveNow,
@@ -160,5 +169,6 @@ export function useAutoSave<T = unknown>({
     canUndo: historyCounts.undo > 0,
     canRedo: historyCounts.redo > 0,
     clearHistory: clear,
+    markExternalSave,
   };
 }
