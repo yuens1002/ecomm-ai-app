@@ -35,11 +35,16 @@ import { CoffeeDetails } from "@/app/(site)/_components/product/CoffeeDetails";
 import { ProductSelectionsSection } from "@/app/(site)/_components/product/ProductSelectionsSection";
 import { FloatingAddToCartButton } from "@/app/(site)/_components/product/FloatingAddToCartButton";
 import { RoastLevelBar } from "@/app/(site)/_components/product/RoastLevelBar";
+import {
+  BreadcrumbCategoryDropdown,
+  type BreadcrumbProduct,
+} from "@/app/(site)/_components/navigation/BreadcrumbCategoryDropdown";
 
 interface ProductClientPageProps {
   product: Product;
   relatedProducts: RelatedProduct[];
   category: Pick<Category, "name" | "slug">;
+  categoryProducts?: BreadcrumbProduct[];
   addOns: AddOnItem[];
 }
 
@@ -115,6 +120,7 @@ export default function ProductClientPage({
   product,
   relatedProducts,
   category,
+  categoryProducts = [],
   addOns,
 }: ProductClientPageProps) {
   const { settings } = useSiteSettings();
@@ -359,11 +365,12 @@ export default function ProductClientPage({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href={`/${category.slug}`}>{category.name}</Link>
-            </BreadcrumbLink>
+            <BreadcrumbCategoryDropdown
+              categoryName={category.name}
+              categorySlug={category.slug}
+              products={categoryProducts}
+            />
           </BreadcrumbItem>
-          <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbPage>{product.name}</BreadcrumbPage>
           </BreadcrumbItem>

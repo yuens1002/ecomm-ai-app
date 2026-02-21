@@ -28,7 +28,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Eye, Settings, X, Sparkles } from "lucide-react";
+import { Eye, Settings, X, Sparkles, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { IconPicker } from "@/app/admin/_components/cms/fields/IconPicker";
 import { AiAssistClient } from "@/components/ai-assist/AiAssistClient";
 import { WizardAnswers } from "@/lib/api-schemas/generate-about";
@@ -395,10 +401,12 @@ export function PageEditor({
     <>
       {/* Toolbar */}
       <div className="w-full sticky -top-50 z-10 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold">
-            {pageType.charAt(0).toUpperCase() + pageType.slice(1)} Page Editor
-          </h2>
+        <h2 className="text-lg font-semibold min-w-0 truncate">
+          {pageType.charAt(0).toUpperCase() + pageType.slice(1)} Page Editor
+        </h2>
+
+        {/* Desktop: inline buttons */}
+        <div className="hidden sm:flex items-center gap-2 shrink-0">
           <Button
             variant="outline"
             size="sm"
@@ -408,9 +416,6 @@ export function PageEditor({
             <Eye className="h-4 w-4 mr-2" />
             {savedPublished ? "Live Preview" : "Preview"}
           </Button>
-        </div>
-
-        <div className="flex items-center gap-2">
           {onMetadataUpdate && (
             <Button
               variant="outline"
@@ -422,7 +427,6 @@ export function PageEditor({
               Settings
             </Button>
           )}
-
           <Button
             variant="default"
             size="sm"
@@ -433,6 +437,40 @@ export function PageEditor({
             AI Assist
           </Button>
         </div>
+
+        {/* Mobile: 3-dot dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon-sm" className="sm:hidden">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={handleViewLive}
+              disabled={isEditingMetadata}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              {savedPublished ? "Live Preview" : "Preview"}
+            </DropdownMenuItem>
+            {onMetadataUpdate && (
+              <DropdownMenuItem
+                onClick={() => setIsEditingMetadata(!isEditingMetadata)}
+                disabled={isEditingMetadata}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              onClick={() => setAiDialogOpen(true)}
+              disabled={isEditingMetadata}
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              AI Assist
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <AiAssistClient
@@ -457,7 +495,7 @@ export function PageEditor({
 
       {/* SEO Metadata Panel */}
       {isEditingMetadata && onMetadataUpdate && (
-        <div className="container pt-6">
+        <div className="w-full pt-6">
           <Card className="relative">
             <Button
               variant="ghost"
@@ -655,7 +693,7 @@ export function PageEditor({
       )}
 
       {/* Blocks Container - WYSIWYG Layout */}
-      <div className="container pt-6">
+      <div className="w-full pt-6">
         {blocks.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <p className="text-lg mb-2">No blocks yet</p>

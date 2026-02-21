@@ -148,8 +148,13 @@ export function useAddToCartWithFeedback(
 
           // If cart was empty before (total now equals what we just added),
           // this is a first-time buyer - show "Buy Now"
+          // But never offer Buy Now for subscriptions (requires cart review)
           // Otherwise, show "Checkout Now"
-          if (totalBefore === 0 && totalAfter === quantity) {
+          if (
+            totalBefore === 0 &&
+            totalAfter === quantity &&
+            item.purchaseType !== "SUBSCRIPTION"
+          ) {
             setButtonState("buy-now");
           } else {
             setButtonState("checkout-now");

@@ -1,0 +1,86 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+export interface BreadcrumbProduct {
+  name: string;
+  slug: string;
+}
+
+interface BreadcrumbCategoryDropdownProps {
+  categoryName: string;
+  categorySlug: string;
+  products: BreadcrumbProduct[];
+  /** Whether this is the current page (non-navigable label) vs a link */
+  isCurrentPage?: boolean;
+}
+
+export function BreadcrumbCategoryDropdown({
+  categoryName,
+  categorySlug,
+  products,
+  isCurrentPage = false,
+}: BreadcrumbCategoryDropdownProps) {
+  const [open, setOpen] = useState(false);
+
+  if (products.length === 0) {
+    if (isCurrentPage) {
+      return (
+        <span className="font-normal text-foreground" aria-current="page">
+          {categoryName}
+        </span>
+      );
+    }
+    return (
+      <Link
+        href={`/${categorySlug}`}
+        className="transition-colors hover:text-foreground"
+      >
+        {categoryName}
+      </Link>
+    );
+  }
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 rounded-sm">
+        {isCurrentPage ? (
+          <span className="font-normal text-foreground">{categoryName}</span>
+        ) : (
+          <span>{categoryName}</span>
+        )}
+        <ChevronRight
+          className={cn(
+            "h-3.5 w-3.5 transition-[rotate] duration-200",
+            open && "rotate-90"
+          )}
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&_[data-slot=dropdown-menu-item]]:cursor-pointer">
+        <DropdownMenuItem asChild>
+          <Link href={`/${categorySlug}`} className="font-semibold">
+            {categoryName}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        {products.map((product) => (
+          <DropdownMenuItem key={product.slug} asChild>
+            <Link href={`/products/${product.slug}?from=${categorySlug}`}>
+              {product.name}
+            </Link>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

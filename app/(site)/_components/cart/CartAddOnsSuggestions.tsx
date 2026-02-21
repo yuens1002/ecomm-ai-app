@@ -20,6 +20,7 @@ interface CartAddOn {
     id: string;
     name: string;
     priceInCents: number;
+    originalPriceInCents: number;
     purchaseOptionId: string;
   };
 }
@@ -118,7 +119,7 @@ export function CartAddOnsSuggestions({
               purchaseOptions: [
                 {
                   id: addOn.variant.purchaseOptionId,
-                  priceInCents: addOn.variant.priceInCents,
+                  priceInCents: addOn.variant.originalPriceInCents,
                   type: "ONE_TIME",
                 },
               ],

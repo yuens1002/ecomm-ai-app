@@ -86,6 +86,7 @@ export function AddOnCard({
       // Also drive the hook's state machine with a cart item
       const purchaseOption = variant.purchaseOptions[0];
       if (purchaseOption) {
+        const effectivePrice = discountedPriceInCents || purchaseOption.priceInCents;
         const cartItem: CartItemInput = {
           productId: product.id,
           productName: product.name,
@@ -95,7 +96,10 @@ export function AddOnCard({
           variantName: variant.name,
           purchaseOptionId: purchaseOption.id,
           purchaseType: purchaseOption.type as "ONE_TIME" | "SUBSCRIPTION",
-          priceInCents: discountedPriceInCents || purchaseOption.priceInCents,
+          priceInCents: effectivePrice,
+          ...(effectivePrice < purchaseOption.priceInCents && {
+            originalPriceInCents: purchaseOption.priceInCents,
+          }),
           imageUrl:
             addOn.imageUrl ||
             getPlaceholderImage(product.name, 400, "culture"),

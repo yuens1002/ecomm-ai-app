@@ -7,10 +7,10 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { ScrollReveal } from "@/components/shared/ScrollReveal";
+import { BreadcrumbCategoryDropdown } from "@/app/(site)/_components/navigation/BreadcrumbCategoryDropdown";
 import Link from "next/link";
 
 interface CategoryClientPageProps {
@@ -38,7 +38,12 @@ export default function CategoryClientPage({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>{categoryName}</BreadcrumbPage>
+            <BreadcrumbCategoryDropdown
+              categoryName={categoryName}
+              categorySlug={categorySlug}
+              products={products.map((p) => ({ name: p.name, slug: p.slug }))}
+              isCurrentPage
+            />
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
