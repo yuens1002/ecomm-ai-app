@@ -177,7 +177,7 @@ export function MerchProductForm({
     }
   }, [productInfo, merchDetails, categoryIds, productId, hasIncompleteDetails, router]);
 
-  const formState = { productInfo, merchDetails, categoryIds, addOns };
+  const formState = { productInfo, merchDetails, categoryIds, addOns, variants };
   const formStateRef = useRef(formState);
   formStateRef.current = formState;
 
@@ -189,6 +189,10 @@ export function MerchProductForm({
       if (state.addOns) {
         setAddOns(state.addOns);
         addOnsSectionRef.current?.restoreAddOns(state.addOns);
+      }
+      if (state.variants) {
+        setVariants(state.variants);
+        variantsSectionRef.current?.restoreVariants(state.variants);
       }
     },
     []
@@ -212,6 +216,13 @@ export function MerchProductForm({
     }
     if (!isNewProduct) {
       markExternalSave({ ...formStateRef.current, addOns: updated });
+    }
+  }, [isNewProduct, markExternalSave]);
+
+  // Variants change callback — creates undo snapshots for variant mutations
+  const handleVariantsSaved = useCallback((updatedVariants: VariantData[]) => {
+    if (!isNewProduct) {
+      markExternalSave({ ...formStateRef.current, variants: updatedVariants });
     }
   }, [isNewProduct, markExternalSave]);
 
@@ -414,6 +425,7 @@ export function MerchProductForm({
           productName={productInfo.name}
           variants={variants}
           onVariantsChange={setVariants}
+          onVariantsSaved={handleVariantsSaved}
           isNewProduct={isNewProduct}
           showValidation={!isNewProduct || hasAttemptedSubmit}
         />

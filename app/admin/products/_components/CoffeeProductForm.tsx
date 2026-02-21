@@ -177,7 +177,7 @@ export function CoffeeProductForm({
     }
   }, [productInfo, coffeeSpecs, categoryIds, productId, router]);
 
-  const formState = { productInfo, coffeeSpecs, categoryIds, addOns };
+  const formState = { productInfo, coffeeSpecs, categoryIds, addOns, variants };
   const formStateRef = useRef(formState);
   formStateRef.current = formState;
 
@@ -190,6 +190,11 @@ export function CoffeeProductForm({
       if (state.addOns) {
         setAddOns(state.addOns);
         addOnsSectionRef.current?.restoreAddOns(state.addOns);
+      }
+      // Restore variants visual state + sync to DB
+      if (state.variants) {
+        setVariants(state.variants);
+        variantsSectionRef.current?.restoreVariants(state.variants);
       }
     },
     []
@@ -214,6 +219,13 @@ export function CoffeeProductForm({
     }
     if (!isNewProduct) {
       markExternalSave({ ...formStateRef.current, addOns: updated });
+    }
+  }, [isNewProduct, markExternalSave]);
+
+  // Variants change callback — creates undo snapshots for variant mutations
+  const handleVariantsSaved = useCallback((updatedVariants: VariantData[]) => {
+    if (!isNewProduct) {
+      markExternalSave({ ...formStateRef.current, variants: updatedVariants });
     }
   }, [isNewProduct, markExternalSave]);
 
@@ -411,6 +423,7 @@ export function CoffeeProductForm({
           productName={productInfo.name}
           variants={variants}
           onVariantsChange={setVariants}
+          onVariantsSaved={handleVariantsSaved}
           isNewProduct={isNewProduct}
           showValidation={!isNewProduct || hasAttemptedSubmit}
         />
