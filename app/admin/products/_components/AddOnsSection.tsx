@@ -184,23 +184,89 @@ function getCheckboxState(selections: Selection[], variants: Variant[]): Checkbo
 interface AddOnsSectionProps {
   productId: string | null;
   isNewProduct?: boolean;
+  onAddOnsChange?: (addOns: AddOnEntry[]) => void;
 }
 
 export interface AddOnsSectionRef {
   getAddOns: () => AddOnEntry[];
+  restoreAddOns: (addOns: AddOnEntry[]) => Promise<void>;
 }
 
 export const AddOnsSection = forwardRef<AddOnsSectionRef, AddOnsSectionProps>(
-function AddOnsSection({ productId, isNewProduct }, ref) {
+function AddOnsSection({ productId, isNewProduct, onAddOnsChange }, ref) {
   const { toast } = useToast();
   const [addOns, setAddOns] = useState<AddOnEntry[]>([]);
   const [availableProducts, setAvailableProducts] = useState<AvailableProduct[]>([]);
   const [selectedProduct, setSelectedProduct] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Track which state changes should notify the parent for undo history
+  const notifyParentRef = useRef(false);
+
+  useEffect(() => {
+    if (notifyParentRef.current) {
+      notifyParentRef.current = false;
+      onAddOnsChange?.(addOns);
+    }
+  }, [addOns, onAddOnsChange]);
+
   useImperativeHandle(ref, () => ({
     getAddOns: () => addOns,
-  }), [addOns]);
+    restoreAddOns: async (targetAddOns: AddOnEntry[]) => {
+      setAddOns(targetAddOns);
+      if (isNewProduct || !productId) return;
+
+      try {
+        // Fetch current server state and diff
+        const res = await fetch(`/api/admin/products/${productId}/addons`);
+        if (!res.ok) return;
+        const serverData = await res.json();
+        const serverAddOns: AddOnEntry[] = serverData.addOns || [];
+
+        const serverIds = new Set(serverAddOns.map((a) => a.addOnProduct.id));
+        const targetIds = new Set(targetAddOns.map((a) => a.addOnProduct.id));
+
+        // Delete removed add-ons
+        for (const id of serverIds) {
+          if (!targetIds.has(id)) {
+            await fetch(
+              `/api/admin/products/${productId}/addons?addOnProductId=${id}`,
+              { method: "DELETE" }
+            );
+          }
+        }
+
+        // Add new add-ons
+        for (const addOn of targetAddOns) {
+          if (!serverIds.has(addOn.addOnProduct.id)) {
+            await fetch(`/api/admin/products/${productId}/addons`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ addOnProductId: addOn.addOnProduct.id }),
+            });
+          }
+        }
+
+        // Sync all selections
+        for (const addOn of targetAddOns) {
+          await fetch(`/api/admin/products/${productId}/addons/sync`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              addOnProductId: addOn.addOnProduct.id,
+              selections: addOn.selections.map((s) => ({
+                addOnVariantId: s.addOnVariantId,
+                discountType: s.discountType,
+                discountValue: s.discountValue,
+              })),
+            }),
+          });
+        }
+      } catch {
+        // Silently fail — visual state is already correct
+      }
+    },
+  }), [addOns, productId, isNewProduct]);
 
   useEffect(() => {
     if (isNewProduct) {
@@ -217,7 +283,10 @@ function AddOnsSection({ productId, isNewProduct }, ref) {
     const res = await fetch(`/api/admin/products/${productId}/addons`);
     if (res.ok) {
       const data = await res.json();
-      setAddOns(data.addOns || []);
+      const loaded = data.addOns || [];
+      setAddOns(loaded);
+      // Notify parent to initialize mirror state (not a user action — parent skips snapshot)
+      notifyParentRef.current = true;
     }
   };
 
@@ -265,6 +334,7 @@ function AddOnsSection({ productId, isNewProduct }, ref) {
           discountValue: null,
         }],
       };
+      notifyParentRef.current = true;
       setAddOns((prev) => [...prev, newEntry]);
       toast({ title: "Add-on linked" });
       setSelectedProduct("");
@@ -281,6 +351,7 @@ function AddOnsSection({ productId, isNewProduct }, ref) {
     setLoading(false);
     if (res.ok) {
       const data = await res.json();
+      notifyParentRef.current = true;
       setAddOns((prev) => [...prev, data.addOn]);
       toast({ title: "Add-on linked" });
       setSelectedProduct("");
@@ -295,6 +366,7 @@ function AddOnsSection({ productId, isNewProduct }, ref) {
 
   const handleRemove = async (addOnProductId: string) => {
     if (isNewProduct) {
+      notifyParentRef.current = true;
       setAddOns((prev) => prev.filter((a) => a.addOnProduct.id !== addOnProductId));
       toast({ title: "Add-on removed" });
       return;
@@ -305,6 +377,7 @@ function AddOnsSection({ productId, isNewProduct }, ref) {
     );
     if (res.ok) {
       toast({ title: "Add-on removed" });
+      notifyParentRef.current = true;
       setAddOns((prev) => prev.filter((a) => a.addOnProduct.id !== addOnProductId));
     } else {
       toast({ title: "Failed to remove add-on", variant: "destructive" });
@@ -312,7 +385,8 @@ function AddOnsSection({ productId, isNewProduct }, ref) {
   };
 
   const handleSelectionsChange = useCallback(
-    (addOnProductId: string, newSelections: Selection[]) => {
+    (addOnProductId: string, newSelections: Selection[], isUserAction = true) => {
+      if (isUserAction) notifyParentRef.current = true;
       setAddOns((prev) =>
         prev.map((a) =>
           a.addOnProduct.id === addOnProductId
@@ -408,7 +482,7 @@ function AddOnProductCard({
   productId: string;
   isNewProduct?: boolean;
   onRemove: (addOnProductId: string) => void;
-  onSelectionsChange: (addOnProductId: string, selections: Selection[]) => void;
+  onSelectionsChange: (addOnProductId: string, selections: Selection[], isUserAction?: boolean) => void;
 }) {
   const { toast } = useToast();
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -444,7 +518,7 @@ function AddOnProductCard({
 
         if (res.ok) {
           const data = await res.json();
-          onSelectionsChange(addOnProduct.id, data.selections);
+          onSelectionsChange(addOnProduct.id, data.selections, false);
         } else {
           toast({ title: "Failed to sync", variant: "destructive" });
         }
