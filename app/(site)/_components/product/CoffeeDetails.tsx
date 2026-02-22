@@ -1,5 +1,9 @@
 import { Leaf } from "lucide-react";
 import { RoastLevel } from "@prisma/client";
+import {
+  type RoasterBrewGuide,
+  BREW_METHOD_LABELS,
+} from "@/lib/types/roaster-brew-guide";
 
 const brewMethodsByRoast: Record<RoastLevel, string[]> = {
   LIGHT: ["Pour-over (V60/Chemex)", "Aeropress", "Filter"],
@@ -13,6 +17,7 @@ interface CoffeeDetailsProps {
   altitude: string | null;
   isOrganic: boolean;
   processing?: string | null;
+  roasterBrewGuide?: RoasterBrewGuide | null;
 }
 
 function DetailItem({ label, value }: { label: string; value: string }) {
@@ -32,8 +37,16 @@ export function CoffeeDetails({
   altitude,
   isOrganic,
   processing,
+  roasterBrewGuide,
 }: CoffeeDetailsProps) {
-  const brewMethods = roastLevel ? brewMethodsByRoast[roastLevel] : null;
+  // Priority chain: roaster-curated methods → roast-level fallback
+  const brewMethods = roasterBrewGuide?.recommendedMethods?.length
+    ? roasterBrewGuide.recommendedMethods.map(
+        (key) => BREW_METHOD_LABELS[key] ?? key
+      )
+    : roastLevel
+      ? brewMethodsByRoast[roastLevel]
+      : null;
 
   return (
     <dl className="flex flex-col gap-4 pt-1 lg:pt-0">

@@ -35,6 +35,8 @@ import { ProductSelectionsSection } from "@/app/(site)/_components/product/Produ
 import { FloatingAddToCartButton } from "@/app/(site)/_components/product/FloatingAddToCartButton";
 import { RoastLevelBar } from "@/app/(site)/_components/product/RoastLevelBar";
 import { ProductDetailLayout } from "@/app/(site)/_components/product/ProductDetailLayout";
+import { RoasterBrewGuide } from "@/app/(site)/_components/product/RoasterBrewGuide";
+import type { RoasterBrewGuide as RoasterBrewGuideType } from "@/lib/types/roaster-brew-guide";
 import {
   BreadcrumbCategoryDropdown,
   type BreadcrumbProduct,
@@ -433,6 +435,7 @@ export default function ProductClientPage({
               altitude={product.altitude}
               isOrganic={product.isOrganic}
               processing={product.processing}
+              roasterBrewGuide={product.roasterBrewGuide as unknown as RoasterBrewGuideType | null}
             />
           ) : (
             <dl className="space-y-3">
@@ -491,6 +494,13 @@ export default function ProductClientPage({
               {product.description}
             </p>
           </div>
+        ) : undefined
+      }
+      brewGuide={
+        isCoffee && product.roasterBrewGuide ? (
+          <RoasterBrewGuide
+            guide={product.roasterBrewGuide as unknown as RoasterBrewGuideType}
+          />
         ) : undefined
       }
       addOns={
