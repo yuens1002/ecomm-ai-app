@@ -24,7 +24,6 @@ import ProductCard from "@/app/(site)/_components/product/ProductCard";
 import { AddOnCard } from "@/app/(site)/_components/cart/AddOnCard";
 import { ScrollCarousel } from "@/components/shared/media/ScrollCarousel";
 import { ImageCarousel } from "@/components/shared/media/ImageCarousel";
-import PageContainer from "@/components/shared/PageContainer";
 import { useCartStore, type CartItem } from "@/lib/store/cart-store";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
 import { useAddToCartWithFeedback } from "@/hooks/useAddToCartWithFeedback";
@@ -35,6 +34,7 @@ import { CoffeeDetails } from "@/app/(site)/_components/product/CoffeeDetails";
 import { ProductSelectionsSection } from "@/app/(site)/_components/product/ProductSelectionsSection";
 import { FloatingAddToCartButton } from "@/app/(site)/_components/product/FloatingAddToCartButton";
 import { RoastLevelBar } from "@/app/(site)/_components/product/RoastLevelBar";
+import { ProductDetailLayout } from "@/app/(site)/_components/product/ProductDetailLayout";
 import {
   BreadcrumbCategoryDropdown,
   type BreadcrumbProduct,
@@ -354,42 +354,50 @@ export default function ProductClientPage({
     { 768: 1, 1024: 1.3, 1280: 1.5 }, 1.3
   );
 
+  const hasMerchDetails =
+    !isCoffee &&
+    Array.isArray(product.details) &&
+    product.details.length > 0;
+  const hasDetails = isCoffee || hasMerchDetails;
+
+  // Build related products display
+  const displayProducts = relatedProducts.length > 0 ? relatedProducts : fallbackProducts;
+
   return (
-    <PageContainer>
-      <Breadcrumb className="mb-4 md:mb-5">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/">Home</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbCategoryDropdown
-              categoryName={category.name}
-              categorySlug={category.slug}
-              products={categoryProducts}
-            />
-          </BreadcrumbItem>
-          <BreadcrumbItem>
-            <BreadcrumbPage>{product.name}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-x-10 md:gap-y-5 lg:gap-x-14 lg:gap-y-8">
-        <div className="w-full min-w-0 md:sticky md:top-6 md:self-start animate-fade-in-up">
-          <ImageCarousel
-            key={selectedVariant.id}
-            images={galleryImages}
-            aspectRatio="square"
-            showThumbnails={showThumbs}
-            showDots={true}
-          />
-        </div>
-
-        <div className="w-full min-w-0 flex flex-col gap-4">
-          {/* ---- Coffee header: origin, name, roast bar, tasting notes ---- */}
+    <ProductDetailLayout
+      breadcrumb={
+        <Breadcrumb className="mb-4 md:mb-5">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/">Home</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbCategoryDropdown
+                categoryName={category.name}
+                categorySlug={category.slug}
+                products={categoryProducts}
+              />
+            </BreadcrumbItem>
+            <BreadcrumbItem>
+              <BreadcrumbPage>{product.name}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      }
+      gallery={
+        <ImageCarousel
+          key={selectedVariant.id}
+          images={galleryImages}
+          aspectRatio="square"
+          showThumbnails={showThumbs}
+          showDots={true}
+        />
+      }
+      header={
+        <>
           {isCoffee && product.origin.length > 0 && (
             <p className="text-xs font-medium uppercase tracking-widest text-text-muted">
               {product.origin.join(" + ")}
@@ -413,116 +421,100 @@ export default function ProductClientPage({
               )}
             </div>
           )}
-
-          {/* ---- Details (40%) + purchase controls (60%) at lg+; reversed stack on mobile so CTA stays above fold ---- */}
-          {(() => {
-            const hasMerchDetails =
-              !isCoffee &&
-              Array.isArray(product.details) &&
-              product.details.length > 0;
-            const hasDetails = isCoffee || hasMerchDetails;
-
-            return (
-              <div className="flex flex-col-reverse lg:flex-row gap-4 lg:gap-8 lg:mt-4">
-                {hasDetails && (
-                  <div className="lg:flex-[2] lg:min-w-0">
-                    {isCoffee ? (
-                      <CoffeeDetails
-                        roastLevel={product.roastLevel}
-                        variety={product.variety}
-                        altitude={product.altitude}
-                        isOrganic={product.isOrganic}
-                        processing={product.processing}
-                      />
-                    ) : (
-                      <dl className="space-y-3">
-                        {(
-                          product.details as Array<{
-                            label: string;
-                            value: string;
-                          }>
-                        ).map((detail, i) => (
-                          <div key={i}>
-                            <dt className="text-xs font-medium uppercase tracking-wide text-foreground/50">
-                              {detail.label}
-                            </dt>
-                            <dd className="text-sm text-text-base">
-                              {detail.value}
-                            </dd>
-                          </div>
-                        ))}
-                      </dl>
-                    )}
-                  </div>
-                )}
-
-                <div ref={inlineButtonRef} className={`${hasDetails ? "lg:flex-[3]" : ""} lg:min-w-0`}>
-                  <ProductSelectionsSection
-                    product={product}
-                    selectedVariant={selectedVariant}
-                    selectedPurchaseOption={selectedPurchaseOption}
-                    selectedSubscriptionOptionId={selectedSubscriptionOptionId}
-                    quantity={quantity}
-                    hasSubscriptionInCart={hasSubscriptionInCart}
-                    oneTimeOption={oneTimeOption}
-                    subscriptionOptions={subscriptionOptions}
-                    subscriptionDisplayOption={subscriptionDisplayOption}
-                    subscriptionDiscountMessage={subscriptionDiscountMessage}
-                    onVariantChange={handleVariantChange}
-                    onPurchaseTypeChange={handlePurchaseTypeChange}
-                    onSubscriptionCadenceChange={handleSubscriptionCadenceChange}
-                    onQuantityChange={setQuantity}
-                    onAddToCart={handleAddToCart}
-                    onActionClick={handleActionClick}
-                    buttonState={buttonState}
-                    isProcessing={isCheckingOut}
-                    spacing="3"
-                  />
+        </>
+      }
+      hasDetails={hasDetails}
+      details={
+        hasDetails ? (
+          isCoffee ? (
+            <CoffeeDetails
+              roastLevel={product.roastLevel}
+              variety={product.variety}
+              altitude={product.altitude}
+              isOrganic={product.isOrganic}
+              processing={product.processing}
+            />
+          ) : (
+            <dl className="space-y-3">
+              {(
+                product.details as Array<{
+                  label: string;
+                  value: string;
+                }>
+              ).map((detail, i) => (
+                <div key={i}>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-foreground/50">
+                    {detail.label}
+                  </dt>
+                  <dd className="text-sm text-text-base">
+                    {detail.value}
+                  </dd>
                 </div>
-              </div>
-            );
-          })()}
-
-          {/* ---- Story / Description: full-width below ---- */}
-          {product.description && (
-            <div className="lg:mt-4">
-              {product.heading && (
-                <h2 className="text-xs font-medium uppercase tracking-wide text-foreground/50 mb-1">
-                  {product.heading}
-                </h2>
-              )}
-              <p className="text-text-base leading-relaxed">
-                {product.description}
-              </p>
-            </div>
-          )}
-
-          {addOns.length > 0 && (
-            <div className="mt-4">
-              <h2 className="text-lg font-bold text-left text-text-base mb-6">
-                {settings.productAddOnsSectionTitle}
+              ))}
+            </dl>
+          )
+        ) : undefined
+      }
+      purchaseControlsRef={inlineButtonRef}
+      purchaseControls={
+        <ProductSelectionsSection
+          product={product}
+          selectedVariant={selectedVariant}
+          selectedPurchaseOption={selectedPurchaseOption}
+          selectedSubscriptionOptionId={selectedSubscriptionOptionId}
+          quantity={quantity}
+          hasSubscriptionInCart={hasSubscriptionInCart}
+          oneTimeOption={oneTimeOption}
+          subscriptionOptions={subscriptionOptions}
+          subscriptionDisplayOption={subscriptionDisplayOption}
+          subscriptionDiscountMessage={subscriptionDiscountMessage}
+          onVariantChange={handleVariantChange}
+          onPurchaseTypeChange={handlePurchaseTypeChange}
+          onSubscriptionCadenceChange={handleSubscriptionCadenceChange}
+          onQuantityChange={setQuantity}
+          onAddToCart={handleAddToCart}
+          onActionClick={handleActionClick}
+          buttonState={buttonState}
+          isProcessing={isCheckingOut}
+          spacing="3"
+        />
+      }
+      story={
+        product.description ? (
+          <div className="lg:mt-4">
+            {product.heading && (
+              <h2 className="text-xs font-medium uppercase tracking-wide text-foreground/50 mb-1">
+                {product.heading}
               </h2>
+            )}
+            <p className="text-text-base leading-relaxed">
+              {product.description}
+            </p>
+          </div>
+        ) : undefined
+      }
+      addOns={
+        addOns.length > 0 ? (
+          <div className="mt-4">
+            <h2 className="text-lg font-bold text-left text-text-base mb-6">
+              {settings.productAddOnsSectionTitle}
+            </h2>
 
-              <ScrollCarousel slidesPerView={bundleSlidesPerView} gap="gap-2" noBorder>
-                {addOns.map((addOn) => (
-                  <AddOnCard
-                    key={`${addOn.product.id}-${addOn.variant.id}`}
-                    addOn={addOn}
-                    weightUnit="g"
-                    onAddToCart={() => handleAddOnToCart(addOn)}
-                  />
-                ))}
-              </ScrollCarousel>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Related products section - use fallback if relatedProducts empty */}
-      {(() => {
-        const displayProducts = relatedProducts.length > 0 ? relatedProducts : fallbackProducts;
-        if (displayProducts.length === 0) return null;
-        return (
+            <ScrollCarousel slidesPerView={bundleSlidesPerView} gap="gap-2" noBorder>
+              {addOns.map((addOn) => (
+                <AddOnCard
+                  key={`${addOn.product.id}-${addOn.variant.id}`}
+                  addOn={addOn}
+                  weightUnit="g"
+                  onAddToCart={() => handleAddOnToCart(addOn)}
+                />
+              ))}
+            </ScrollCarousel>
+          </div>
+        ) : undefined
+      }
+      relatedProducts={
+        displayProducts.length > 0 ? (
           <div className="my-16">
             <Separator className="my-12" />
             <h2 className="text-3xl font-bold text-center text-text-base mb-12">
@@ -540,18 +532,18 @@ export default function ProductClientPage({
               ))}
             </ScrollCarousel>
           </div>
-        );
-      })()}
-
-      {/* Floating add-to-cart button for mobile (visible when inline button scrolls out of view) */}
-      <FloatingAddToCartButton
-        inlineButtonRef={inlineButtonRef}
-        buttonState={buttonState}
-        onAddToCart={handleAddToCart}
-        onActionClick={handleActionClick}
-        disabled={!selectedPurchaseOption || selectedVariant.stockQuantity <= 0}
-        isProcessing={isCheckingOut}
-      />
-    </PageContainer>
+        ) : undefined
+      }
+      floatingButton={
+        <FloatingAddToCartButton
+          inlineButtonRef={inlineButtonRef}
+          buttonState={buttonState}
+          onAddToCart={handleAddToCart}
+          onActionClick={handleActionClick}
+          disabled={!selectedPurchaseOption || selectedVariant.stockQuantity <= 0}
+          isProcessing={isCheckingOut}
+        />
+      }
+    />
   );
 }
