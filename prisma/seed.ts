@@ -774,6 +774,20 @@ async function main() {
         tastingNotes: ["Milk Chocolate", "Toasted Nuts", "Caramel"],
         isOrganic: false,
         isFeatured: false,
+        roasterBrewGuide: {
+          recommendedMethods: ["DRIP_MACHINE", "FRENCH_PRESS", "POUR_OVER_V60"],
+          recipes: [
+            {
+              method: "DRIP_MACHINE",
+              coffeeWeightG: 60,
+              waterWeightG: 1000,
+              ratio: "1:16.7",
+              grindSize: "Medium",
+              notes: "Works great in any drip brewer",
+            },
+          ],
+          roasterTastingNotes: "Swiss water process preserves the full flavor profile. Brew it any way you like \u2014 this decaf is indistinguishable from our regular Colombian in a blind taste test.",
+        },
         variants: {
           create: [
             {
@@ -826,6 +840,30 @@ async function main() {
         isOrganic: false,
         isFeatured: true,
         featuredOrder: 2,
+        roasterBrewGuide: {
+          recommendedMethods: ["DRIP_MACHINE", "FRENCH_PRESS"],
+          recipes: [
+            {
+              method: "DRIP_MACHINE",
+              coffeeWeightG: 60,
+              waterWeightG: 1000,
+              ratio: "1:16.7",
+              grindSize: "Medium",
+              notes: "Standard drip — just set it and enjoy",
+            },
+            {
+              method: "FRENCH_PRESS",
+              coffeeWeightG: 30,
+              waterWeightG: 450,
+              totalBrewTime: "4:00",
+              ratio: "1:15",
+              grindSize: "Coarse",
+              waterTempF: 200,
+              notes: "4-minute steep, gentle plunge",
+            },
+          ],
+          roasterTastingNotes: "Our go-to morning cup. Balanced, approachable, and forgiving across all brew methods. The honey sweetness and citrus lift are best enjoyed fresh.",
+        },
         variants: {
           create: [
             {
@@ -902,6 +940,30 @@ async function main() {
         tastingNotes: ["Caramel", "Cocoa", "Sweet"],
         isOrganic: false,
         isFeatured: false,
+        roasterBrewGuide: {
+          recommendedMethods: ["POUR_OVER_V60", "DRIP_MACHINE"],
+          recipes: [
+            {
+              method: "POUR_OVER_V60",
+              coffeeWeightG: 15,
+              waterWeightG: 250,
+              totalBrewTime: "3:00",
+              ratio: "1:16.7",
+              grindSize: "Medium",
+              waterTempF: 200,
+              notes: "Classic pour-over showcases the caramel sweetness",
+            },
+            {
+              method: "DRIP_MACHINE",
+              coffeeWeightG: 60,
+              waterWeightG: 1000,
+              ratio: "1:16.7",
+              grindSize: "Medium",
+              notes: "Reliable everyday cup in any drip machine",
+            },
+          ],
+          roasterTastingNotes: "The quintessential Colombian. We roast this to a sweet spot that balances caramel sweetness with just enough cocoa depth. A reliable daily driver.",
+        },
         variants: {
           create: [
             {
@@ -951,6 +1013,33 @@ async function main() {
         isOrganic: true,
         isFeatured: true,
         featuredOrder: 3,
+        roasterBrewGuide: {
+          recommendedMethods: ["ESPRESSO", "AEROPRESS"],
+          recipes: [
+            {
+              method: "ESPRESSO",
+              coffeeWeightG: 18,
+              waterWeightG: 40,
+              totalBrewTime: "0:30",
+              ratio: "1:2.2",
+              grindSize: "Fine",
+              waterTempF: 201,
+              notes: "Slightly longer pull to draw out the dark fruit sweetness",
+            },
+            {
+              method: "AEROPRESS",
+              coffeeWeightG: 17,
+              waterWeightG: 220,
+              totalBrewTime: "2:00",
+              ratio: "1:13",
+              grindSize: "Medium-fine",
+              waterTempF: 200,
+              notes: "Standard method, 1 min steep then press",
+            },
+          ],
+          accolades: ["Rainforest Alliance Certified"],
+          roasterTastingNotes: "Volcanic terroir gives this coffee its signature smoky depth. We roast it to the edge of medium-dark to amplify the dark fruit and chocolate layers.",
+        },
         variants: {
           create: [
             {
@@ -1048,6 +1137,29 @@ async function main() {
         tastingNotes: ["Nutty", "Chocolate", "Low Acidity"],
         isOrganic: false,
         isFeatured: false,
+        roasterBrewGuide: {
+          recommendedMethods: ["ESPRESSO", "MOKA_POT"],
+          recipes: [
+            {
+              method: "ESPRESSO",
+              coffeeWeightG: 18,
+              waterWeightG: 36,
+              totalBrewTime: "0:28",
+              ratio: "1:2",
+              grindSize: "Fine",
+              waterTempF: 200,
+              notes: "Pulls a thick, chocolaty shot with crema",
+            },
+            {
+              method: "MOKA_POT",
+              coffeeWeightG: 20,
+              grindSize: "Fine-medium",
+              waterTempF: 190,
+              notes: "Fill to the valve line, medium heat",
+            },
+          ],
+          roasterTastingNotes: "A crowd-pleaser that excels as espresso. We give it a full medium roast to bring out the natural chocolate and nut sweetness. Zero bitterness.",
+        },
         variants: {
           create: [
             {
@@ -1310,6 +1422,40 @@ async function main() {
         isOrganic: true,
         isFeatured: true,
         featuredOrder: 4,
+        roasterBrewGuide: {
+          recommendedMethods: ["POUR_OVER_V60", "CHEMEX"],
+          recipes: [
+            {
+              method: "POUR_OVER_V60",
+              coffeeWeightG: 15,
+              waterWeightG: 250,
+              totalBrewTime: "3:00",
+              ratio: "1:16.7",
+              grindSize: "Medium-fine",
+              waterTempF: 200,
+              notes: "Gentle pours to preserve floral delicacy",
+              steps: [
+                { label: "Bloom", waterG: 30, timeStamp: "0:00", notes: "Gentle circular pour" },
+                { label: "Pour 1", waterG: 100, timeStamp: "0:30", notes: "Slow spiral from center" },
+                { label: "Pour 2", waterG: 70, timeStamp: "1:15", notes: "Maintain water level" },
+                { label: "Pour 3", waterG: 50, timeStamp: "2:00", notes: "Final gentle pour" },
+              ],
+            },
+            {
+              method: "CHEMEX",
+              coffeeWeightG: 30,
+              waterWeightG: 500,
+              totalBrewTime: "4:30",
+              ratio: "1:16.7",
+              grindSize: "Medium-coarse",
+              waterTempF: 200,
+              notes: "Chemex filter preserves the clean, tea-like character",
+            },
+          ],
+          originNotes: "Sourced from smallholder farms in the Yirgacheffe woreda of southern Ethiopia, elevation 1,750\u20132,200m. Wet-processed and sun-dried on raised beds.",
+          accolades: ["SCA 88 pts"],
+          roasterTastingNotes: "We roast this coffee on the lighter side to let the jasmine and bergamot aromatics shine. Expect a tea-like body with bright lemon acidity that lingers into a sweet, floral finish.",
+        },
         variants: {
           create: [
             {
@@ -1367,6 +1513,38 @@ async function main() {
         isOrganic: false,
         isFeatured: true,
         featuredOrder: 5,
+        roasterBrewGuide: {
+          recommendedMethods: ["POUR_OVER_V60", "CHEMEX"],
+          recipes: [
+            {
+              method: "POUR_OVER_V60",
+              coffeeWeightG: 16,
+              waterWeightG: 256,
+              totalBrewTime: "3:15",
+              ratio: "1:16",
+              grindSize: "Medium-fine",
+              waterTempF: 203,
+              notes: "Higher temp to extract the bold fruit notes",
+              steps: [
+                { label: "Bloom", waterG: 40, timeStamp: "0:00", notes: "Aggressive swirl" },
+                { label: "Pour 1", waterG: 110, timeStamp: "0:35", notes: "Center pour" },
+                { label: "Pour 2", waterG: 106, timeStamp: "1:30", notes: "Pulse pour" },
+              ],
+            },
+            {
+              method: "CHEMEX",
+              coffeeWeightG: 32,
+              waterWeightG: 512,
+              totalBrewTime: "4:45",
+              ratio: "1:16",
+              grindSize: "Medium-coarse",
+              waterTempF: 203,
+            },
+          ],
+          originNotes: "Grade AA beans from the volcanic slopes of Mount Kenya, 1,600\u20131,900m elevation. Double-washed for exceptional clarity.",
+          accolades: ["SCA 90 pts"],
+          roasterTastingNotes: "A powerhouse of a coffee. We push the roast just past first crack to tame the acidity while preserving those explosive blackcurrant and grapefruit notes. Syrupy body with a long, sweet finish.",
+        },
         variants: {
           create: [
             {
@@ -1609,6 +1787,40 @@ async function main() {
         tastingNotes: ["Peach", "Lavender", "Brown Sugar"],
         isOrganic: false,
         isFeatured: false,
+        roasterBrewGuide: {
+          recommendedMethods: ["POUR_OVER_V60", "AEROPRESS"],
+          recipes: [
+            {
+              method: "POUR_OVER_V60",
+              coffeeWeightG: 15,
+              waterWeightG: 250,
+              totalBrewTime: "3:15",
+              ratio: "1:16.7",
+              grindSize: "Medium-fine",
+              waterTempF: 198,
+              notes: "Lower temp to bring out the delicate peach and lavender",
+              steps: [
+                { label: "Bloom", waterG: 30, timeStamp: "0:00", notes: "Gentle saturation" },
+                { label: "Pour 1", waterG: 90, timeStamp: "0:30", notes: "Slow center pour" },
+                { label: "Pour 2", waterG: 80, timeStamp: "1:20", notes: "Steady spiral" },
+                { label: "Pour 3", waterG: 50, timeStamp: "2:10", notes: "Final top-up" },
+              ],
+            },
+            {
+              method: "AEROPRESS",
+              coffeeWeightG: 15,
+              waterWeightG: 200,
+              totalBrewTime: "2:00",
+              ratio: "1:13.3",
+              grindSize: "Medium",
+              waterTempF: 195,
+              notes: "Inverted method, gentle press",
+            },
+          ],
+          originNotes: "Micro-lot from Huila, Colombia. Grown at 1,850m and honey-processed for enhanced sweetness. Limited availability.",
+          accolades: ["Cup of Excellence 2025 \u2014 89.5 pts"],
+          roasterTastingNotes: "This Geisha is a showstopper. Incredibly aromatic with layers of stone fruit and florals. We roast it exceptionally light to preserve every nuance of the cultivar.",
+        },
         variants: {
           create: [
             {
@@ -1730,6 +1942,33 @@ async function main() {
         tastingNotes: ["Milk Chocolate", "Orange", "Silky"],
         isOrganic: false,
         isFeatured: false,
+        roasterBrewGuide: {
+          recommendedMethods: ["CHEMEX", "FRENCH_PRESS"],
+          recipes: [
+            {
+              method: "CHEMEX",
+              coffeeWeightG: 30,
+              waterWeightG: 480,
+              totalBrewTime: "4:00",
+              ratio: "1:16",
+              grindSize: "Medium-coarse",
+              waterTempF: 200,
+              notes: "Clean cup that highlights the chocolate and orange",
+            },
+            {
+              method: "FRENCH_PRESS",
+              coffeeWeightG: 30,
+              waterWeightG: 450,
+              totalBrewTime: "4:00",
+              ratio: "1:15",
+              grindSize: "Coarse",
+              waterTempF: 200,
+              notes: "Full immersion brings out the silky body",
+            },
+          ],
+          originNotes: "From the Caranavi province in Bolivia\u2019s Yungas valleys. Small-scale production at 1,400\u20131,800m elevation.",
+          roasterTastingNotes: "A hidden gem. Incredibly smooth and sweet with a milk chocolate base and bright orange citrus. We roast it gently to preserve the delicate sweetness.",
+        },
         variants: {
           create: [
             {
@@ -1911,6 +2150,7 @@ async function main() {
         roastLevel: roastLevel,
         isFeatured: productData.isFeatured,
         featuredOrder: productData.featuredOrder,
+        roasterBrewGuide: productData.roasterBrewGuide ?? undefined,
       },
       create: {
         ...productData,
