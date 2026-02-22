@@ -11,6 +11,8 @@ const APP_SETTINGS_KEYS = {
   LOCATION_TYPE: "app.locationType",
   WEIGHT_UNIT: "app.weightUnit",
   ALLOW_PROMO_CODES: "commerce.allowPromoCodes",
+  REVIEWS_ENABLED: "commerce.reviewsEnabled",
+  REVIEW_EMAIL_DELAY_DAYS: "commerce.reviewEmailDelayDays",
 } as const;
 
 /**
@@ -87,6 +89,56 @@ export async function setAllowPromoCodes(value: boolean): Promise<void> {
     update: { value: String(value) },
     create: {
       key: APP_SETTINGS_KEYS.ALLOW_PROMO_CODES,
+      value: String(value),
+    },
+  });
+}
+
+/**
+ * Get whether product reviews are enabled
+ */
+export async function getReviewsEnabled(): Promise<boolean> {
+  const setting = await prisma.siteSettings.findUnique({
+    where: { key: APP_SETTINGS_KEYS.REVIEWS_ENABLED },
+  });
+
+  return setting?.value === "true";
+}
+
+/**
+ * Set whether product reviews are enabled
+ */
+export async function setReviewsEnabled(value: boolean): Promise<void> {
+  await prisma.siteSettings.upsert({
+    where: { key: APP_SETTINGS_KEYS.REVIEWS_ENABLED },
+    update: { value: String(value) },
+    create: {
+      key: APP_SETTINGS_KEYS.REVIEWS_ENABLED,
+      value: String(value),
+    },
+  });
+}
+
+/**
+ * Get the number of days to wait before sending a review request email
+ */
+export async function getReviewEmailDelayDays(): Promise<number> {
+  const setting = await prisma.siteSettings.findUnique({
+    where: { key: APP_SETTINGS_KEYS.REVIEW_EMAIL_DELAY_DAYS },
+  });
+
+  return setting?.value ? parseInt(setting.value, 10) : 7;
+}
+
+/**
+ * Set the number of days to wait before sending a review request email
+ */
+export async function setReviewEmailDelayDays(value: number): Promise<void> {
+  await prisma.siteSettings.upsert({
+    where: { key: APP_SETTINGS_KEYS.REVIEW_EMAIL_DELAY_DAYS },
+    update: { value: String(value) },
+    create: {
+      key: APP_SETTINGS_KEYS.REVIEW_EMAIL_DELAY_DAYS,
       value: String(value),
     },
   });
