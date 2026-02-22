@@ -20,7 +20,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ChevronDown, Filter, MoreHorizontal } from "lucide-react";
-import { useRef, useState, type ComponentType } from "react";
+import { useCallback, useRef, useState, type ComponentType } from "react";
 
 import type {
   ActiveFilter,
@@ -36,34 +36,41 @@ interface FilterRendererProps {
   onFilterChange: (filter: ActiveFilter | null) => void;
 }
 
-const OPERATORS: ComparisonOperator[] = [">", "<", "\u2265", "\u2264"];
+const OPERATORS: ComparisonOperator[] = ["=", "\u2265", "\u2264"];
 
 function ComparisonFilterContent({
   config: _config,
   filter,
   onFilterChange,
 }: FilterRendererProps) {
-  const [pendingValue, setPendingValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [localValue, setLocalValue] = useState(() =>
+    filter.value === "" || filter.value == null ? "" : String(filter.value)
+  );
 
   const handleOperatorSelect = (op: ComparisonOperator) => {
-    const newFilter = { ...filter, operator: op };
-    onFilterChange(newFilter);
-    if (pendingValue) {
-      const num = Number(pendingValue);
-      if (!isNaN(num)) {
-        onFilterChange({ ...newFilter, value: num });
-      }
-    }
+    onFilterChange({ ...filter, operator: op });
   };
 
-  const handleSubmit = (inputValue: string) => {
-    const num = Number(inputValue);
-    if (inputValue === "" || isNaN(num)) {
-      onFilterChange({ ...filter, value: "" });
-    } else {
-      onFilterChange({ ...filter, value: num });
-    }
+  const debouncedFilterChange = useCallback(
+    (inputValue: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        const num = Number(inputValue);
+        if (inputValue === "" || isNaN(num)) {
+          onFilterChange({ ...filter, value: "" });
+        } else {
+          onFilterChange({ ...filter, value: num });
+        }
+      }, 200);
+    },
+    [filter, onFilterChange]
+  );
+
+  const handleChange = (inputValue: string) => {
+    setLocalValue(inputValue);
+    debouncedFilterChange(inputValue);
   };
 
   return (
@@ -71,7 +78,7 @@ function ComparisonFilterContent({
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <InputGroupButton size="xs" variant="secondary">
-            {filter.operator || ">"}
+            {filter.operator || "="}
           </InputGroupButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
@@ -89,12 +96,8 @@ function ComparisonFilterContent({
         ref={inputRef}
         type="number"
         placeholder="value..."
-        value={pendingValue}
-        onChange={(e) => setPendingValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") handleSubmit(pendingValue);
-        }}
-        onBlur={() => handleSubmit(pendingValue)}
+        value={localValue}
+        onChange={(e) => handleChange(e.target.value)}
       />
     </>
   );
@@ -184,7 +187,7 @@ export function DataTableFilter({
     if (!config) return;
 
     if (config.filterType === "comparison") {
-      onFilterChange({ configId, operator: ">", value: "" });
+      onFilterChange({ configId, operator: "=", value: "" });
     } else {
       onFilterChange({ configId, value: [] });
     }

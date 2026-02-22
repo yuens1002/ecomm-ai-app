@@ -80,7 +80,7 @@ export function ProductPageLayout({
         className="sticky top-[calc(4rem-1px)] z-50 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-4 pb-1 flex justify-end pointer-events-none"
       >
         <div className={`pointer-events-auto px-3 pt-1 pb-3 ${
-          isStuck ? "bg-background rounded-b-lg" : ""
+          isStuck ? "bg-background rounded-b-lg border border-t-0 border-border" : ""
         }`}>
           {onManualSave ? (
             <Button

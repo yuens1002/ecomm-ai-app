@@ -1,5 +1,5 @@
 import type { RouteEntry, ResolvedRoute, BreadcrumbItem } from "./types";
-import { getAllRoutes, getRouteById } from "./route-registry";
+import { getAllRoutes, getRouteById, getChildRoutes } from "./route-registry";
 
 /**
  * Navigation Core - Pure Functions for Route Resolution
@@ -190,7 +190,7 @@ export function buildBreadcrumbChain(
 /**
  * Build href for a route entry.
  */
-function buildHref(route: RouteEntry): string {
+export function buildHref(route: RouteEntry): string {
   if (!route.isNavigable) return "#";
 
   let href = route.pathname;
@@ -284,4 +284,17 @@ export function findRouteByHref(href: string): RouteEntry | null {
   }
 
   return null;
+}
+
+/**
+ * Get navigable child routes with labels for a given route ID.
+ * Used by breadcrumb dropdowns to build menu items.
+ * Returns { label, href } pairs for children that are both navigable and have static labels.
+ */
+export function getNavigableChildren(
+  routeId: string
+): Array<{ label: string; href: string }> {
+  return getChildRoutes(routeId)
+    .filter((r) => r.isNavigable && r.label !== null)
+    .map((r) => ({ label: r.label!, href: buildHref(r) }));
 }

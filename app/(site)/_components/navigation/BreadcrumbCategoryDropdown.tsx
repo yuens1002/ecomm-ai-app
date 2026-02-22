@@ -53,7 +53,7 @@ export function BreadcrumbCategoryDropdown({
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 rounded-sm">
+      <DropdownMenuTrigger className="inline-flex items-center gap-1.5 sm:gap-2.5 transition-colors hover:text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 rounded-sm">
         {isCurrentPage ? (
           <span className="font-normal text-foreground">{categoryName}</span>
         ) : (
@@ -62,7 +62,7 @@ export function BreadcrumbCategoryDropdown({
         <ChevronRight
           className={cn(
             "h-3.5 w-3.5 transition-[rotate] duration-200",
-            open && "rotate-90"
+            open && "-rotate-90"
           )}
         />
       </DropdownMenuTrigger>
