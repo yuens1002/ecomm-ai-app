@@ -1,11 +1,14 @@
 import {
   resolveRoute,
   getAncestorIds,
+  buildHref,
+  getNavigableChildren,
   isRouteActive,
   hasActiveDescendant,
   getMenuBuilderView,
   findRouteByHref,
 } from "../navigation-core";
+import { getRouteById } from "../route-registry";
 import type { RouteEntry } from "../types";
 
 describe("navigation-core", () => {
@@ -499,6 +502,114 @@ describe("navigation-core", () => {
 
       const resolved = resolveRoute(pathname, searchParams);
       expect(resolved?.route.id).toBe("admin.menu-builder.menu");
+    });
+  });
+
+  describe("buildHref", () => {
+    it("should return pathname for exact route", () => {
+      const route = getRouteById("admin.products.coffees")!;
+      expect(buildHref(route)).toBe("/admin/products");
+    });
+
+    it("should append query params for param routes", () => {
+      const route = getRouteById("admin.menu-builder.all-categories")!;
+      expect(buildHref(route)).toBe("/admin/product-menu?view=all-categories");
+    });
+
+    it("should return '#' for non-navigable routes", () => {
+      const route = getRouteById("admin.products")!;
+      expect(route.isNavigable).toBe(false);
+      expect(buildHref(route)).toBe("#");
+    });
+
+    it("should handle routes without query params", () => {
+      const route = getRouteById("admin.settings.storefront")!;
+      expect(buildHref(route)).toBe("/admin/settings/storefront");
+    });
+
+    it("should handle menu view query param", () => {
+      const route = getRouteById("admin.menu-builder.menu")!;
+      expect(buildHref(route)).toBe("/admin/product-menu?view=menu");
+    });
+  });
+
+  describe("getNavigableChildren", () => {
+    it("should return 5 children for admin.products", () => {
+      const children = getNavigableChildren("admin.products");
+      const labels = children.map((c) => c.label);
+      expect(labels).toEqual(["Coffees", "Merch", "Categories", "Labels", "Menu"]);
+    });
+
+    it("should return 2 children for admin.orders", () => {
+      const children = getNavigableChildren("admin.orders");
+      const labels = children.map((c) => c.label);
+      expect(labels).toEqual(["All Orders", "Subscriptions"]);
+    });
+
+    it("should return 3 children for admin.pages", () => {
+      const children = getNavigableChildren("admin.pages");
+      const labels = children.map((c) => c.label);
+      expect(labels).toEqual(["About", "Cafe", "FAQ"]);
+    });
+
+    it("should return 7 children for admin.settings", () => {
+      const children = getNavigableChildren("admin.settings");
+      expect(children).toHaveLength(7);
+      expect(children[0].label).toBe("General");
+      expect(children[6].label).toBe("Social Links");
+    });
+
+    it("should exclude label:null children (e.g., admin.products.coffees has edit with null label)", () => {
+      const children = getNavigableChildren("admin.products.coffees");
+      const labels = children.map((c) => c.label);
+      expect(labels).toContain("New Product");
+      expect(labels).not.toContain(null);
+      // edit route has label: null and should be excluded
+      expect(children).toHaveLength(1);
+    });
+
+    it("should return empty array for route with no children", () => {
+      const children = getNavigableChildren("admin.profile");
+      expect(children).toEqual([]);
+    });
+
+    it("should return empty array for non-existent route", () => {
+      const children = getNavigableChildren("admin.nonexistent");
+      expect(children).toEqual([]);
+    });
+
+    it("should produce correct query string hrefs for param routes", () => {
+      const children = getNavigableChildren("admin.products");
+      const categoriesChild = children.find((c) => c.label === "Categories");
+      const labelsChild = children.find((c) => c.label === "Labels");
+      const menuChild = children.find((c) => c.label === "Menu");
+
+      expect(categoriesChild?.href).toBe("/admin/product-menu?view=all-categories");
+      expect(labelsChild?.href).toBe("/admin/product-menu?view=all-labels");
+      expect(menuChild?.href).toBe("/admin/product-menu?view=menu");
+    });
+
+    it("should produce non-empty href strings (not '#') for all items", () => {
+      const groups = [
+        "admin.products",
+        "admin.orders",
+        "admin.pages",
+        "admin.settings",
+        "admin.management",
+      ];
+      for (const groupId of groups) {
+        const children = getNavigableChildren(groupId);
+        for (const child of children) {
+          expect(child.href).not.toBe("#");
+          expect(child.href.length).toBeGreaterThan(0);
+        }
+      }
+    });
+
+    it("should return 3 children for admin.management", () => {
+      const children = getNavigableChildren("admin.management");
+      const labels = children.map((c) => c.label);
+      expect(labels).toEqual(["All Users", "Newsletter", "Support"]);
     });
   });
 });

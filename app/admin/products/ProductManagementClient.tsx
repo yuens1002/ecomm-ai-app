@@ -220,6 +220,10 @@ export default function ProductManagementClient({
     setDeleteTarget(null);
   }, [deleteTarget, toast]);
 
+  const handleEditProduct = useCallback((product: Product) => {
+    router.push(`${basePath}/${product.id}`);
+  }, [router, basePath]);
+
   const handleEditVariants = useCallback((product: Product) => {
     setEditProduct(product);
   }, []);
@@ -239,6 +243,7 @@ export default function ProductManagementClient({
     products,
     onStockUpdate: handleStockUpdate,
     onPriceUpdate: handlePriceUpdate,
+    onEditProduct: handleEditProduct,
     onEditVariants: handleEditVariants,
     onDeleteProduct: handleDeleteProduct,
   });
@@ -269,6 +274,11 @@ export default function ProductManagementClient({
         },
       ],
       right: [
+        {
+          type: "recordCount",
+          count: table.getFilteredRowModel().rows.length,
+          label: "products",
+        },
         {
           type: "pageSizeSelector",
           table,

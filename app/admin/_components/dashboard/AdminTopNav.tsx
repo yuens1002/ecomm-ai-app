@@ -174,7 +174,7 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
     "A";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
+    <header className="sticky top-0 z-[60] w-full border-b border-border bg-background">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="relative flex h-16 items-center justify-between">
           {/* Left section */}

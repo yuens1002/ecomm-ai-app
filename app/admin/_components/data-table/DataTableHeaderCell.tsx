@@ -96,8 +96,8 @@ export function DataTableHeaderCell<TData>({
               "absolute -right-2 top-0 h-full w-4 cursor-col-resize select-none touch-none z-20",
               "after:absolute after:left-1/2 after:-translate-x-1/2 after:top-0 after:h-full after:w-px",
               "after:bg-border after:opacity-0 sm:after:opacity-100 md:after:opacity-0 md:group-hover/hrow:after:opacity-100",
-              "hover:after:bg-primary hover:after:opacity-100 active:after:bg-primary",
-              header.column.getIsResizing() && "after:!bg-primary"
+              "hover:after:bg-border hover:after:opacity-100 active:after:bg-border",
+              header.column.getIsResizing() && "after:!bg-border after:!opacity-100"
             )}
           />
         )}

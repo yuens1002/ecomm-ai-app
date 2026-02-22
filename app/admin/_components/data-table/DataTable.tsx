@@ -38,7 +38,7 @@ export function DataTable<TData>({
     <DataTableShell>
       <thead>
         {table.getHeaderGroups().map((headerGroup) => (
-          <tr key={headerGroup.id} className="hover:bg-transparent group/hrow">
+          <tr key={headerGroup.id} className="hover:bg-transparent group/hrow border-b-2 border-border">
             {headerGroup.headers.map((header) => {
               if (!header.column.getIsVisible()) return null;
               const meta = header.column.columnDef.meta as
@@ -73,6 +73,7 @@ export function DataTable<TData>({
                 "hover:bg-muted/40 border-b last:border-b-0 group/row",
                 onRowDoubleClick && "cursor-pointer"
               )}
+              title={onRowDoubleClick ? "Double-click to edit" : undefined}
               onDoubleClick={
                 onRowDoubleClick
                   ? () => onRowDoubleClick(row.original)

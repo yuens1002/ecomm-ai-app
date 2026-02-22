@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.89.12 - 2026-02-21
+
+### Added
+
+- **Admin breadcrumb dropdown menus**: Breadcrumb segments with child routes (Products, Orders, Pages, Settings, Management) now show dropdown menus for quick navigation to sibling pages
+- **Admin products table UI fixes**: Data table improvements including action bar, filter, pagination, and header cell refinements
+
+### Fixed
+
+- **Breadcrumb category dropdown styling**: Minor styling fixes for storefront breadcrumb dropdown
+- **Button and pagination component refinements**: Small UI fixes to button variants and pagination controls
+
 ## 0.89.0 - 2026-02-17
 
 ### Added

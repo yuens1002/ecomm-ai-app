@@ -197,10 +197,10 @@ describe("AiAssistClient", () => {
     const regenerateButton = screen.getByRole("button", {
       name: /regenerating/i,
     });
-    expect(regenerateButton).toBeDisabled();
+    expect(regenerateButton).toHaveAttribute("aria-disabled", "true");
 
     const cancelButton = screen.getByRole("button", { name: /cancel/i });
-    expect(cancelButton).toBeDisabled();
+    expect(cancelButton).toHaveAttribute("aria-disabled", "true");
   });
 
   it("displays error toast on regeneration failure", async () => {

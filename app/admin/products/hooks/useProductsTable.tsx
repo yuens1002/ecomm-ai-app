@@ -12,7 +12,7 @@ import type {
   ColumnFiltersState,
   FilterFn,
 } from "@tanstack/react-table";
-import { Pencil, Settings, Trash } from "lucide-react";
+import { Pencil, Settings, SquarePen, Trash } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 import { VariantCell } from "../_components/VariantCell";
@@ -84,12 +84,12 @@ const TOGGLABLE_COLUMNS = [
   { id: "variants", label: "Variants" },
 ];
 
-function productFilterToColumnFilters(filter: ActiveFilter): ColumnFiltersState {
+export function productFilterToColumnFilters(filter: ActiveFilter): ColumnFiltersState {
   if (filter.configId === "price" && typeof filter.value === "number") {
     return [
       {
         id: "price",
-        value: { operator: filter.operator ?? ">", num: filter.value },
+        value: { operator: filter.operator ?? "=", num: filter.value * 100 },
       },
     ];
   }
@@ -97,7 +97,7 @@ function productFilterToColumnFilters(filter: ActiveFilter): ColumnFiltersState 
     return [
       {
         id: "stock",
-        value: { operator: filter.operator ?? ">", num: filter.value },
+        value: { operator: filter.operator ?? "=", num: filter.value },
       },
     ];
   }
@@ -109,10 +109,39 @@ function productFilterToColumnFilters(filter: ActiveFilter): ColumnFiltersState 
   return [];
 }
 
+/** Pure filter: comparison on a numeric value */
+export function comparisonFilter(
+  val: number,
+  filterValue: { operator: string; num: number } | null | undefined
+): boolean {
+  if (!filterValue || typeof filterValue.num !== "number") return true;
+  switch (filterValue.operator) {
+    case "=": return val === filterValue.num;
+    case "\u2265": return val >= filterValue.num;
+    case "\u2264": return val <= filterValue.num;
+    default: return true;
+  }
+}
+
+/** Pure filter: multi-select on categories */
+export function categoriesFilter(
+  categoriesDetailed: CategoryDetailed[],
+  filterValue: string[] | null | undefined
+): boolean {
+  if (!filterValue || filterValue.length === 0) return true;
+  const catIds = categoriesDetailed.map((c) => c.id);
+  const hasUncategorized = filterValue.includes("__uncategorized__");
+  const otherIds = filterValue.filter((v) => v !== "__uncategorized__");
+  if (hasUncategorized && categoriesDetailed.length === 0) return true;
+  if (otherIds.length > 0 && otherIds.some((id) => catIds.includes(id))) return true;
+  return false;
+}
+
 interface UseProductsTableOptions {
   products: Product[];
   onStockUpdate: (variantId: string, stock: number) => Promise<void>;
   onPriceUpdate: (optionId: string, cents: number, field?: "priceInCents" | "salePriceInCents") => Promise<void>;
+  onEditProduct: (product: Product) => void;
   onEditVariants: (product: Product) => void;
   onDeleteProduct: (product: Product) => void;
 }
@@ -121,6 +150,7 @@ export function useProductsTable({
   products,
   onStockUpdate,
   onPriceUpdate,
+  onEditProduct,
   onEditVariants,
   onDeleteProduct,
 }: UseProductsTableOptions) {
@@ -178,18 +208,8 @@ export function useProductsTable({
         enableResizing: true,
         meta: { responsive: "desktop" } satisfies DataTableColumnMeta,
         cell: ({ row }) => row.original.categories || "-",
-        filterFn: (row, _columnId, filterValue: string[]) => {
-          if (!filterValue || filterValue.length === 0) return true;
-          const cats = row.original.categoriesDetailed || [];
-          const catIds = cats.map((c) => c.id);
-          const hasUncategorized = filterValue.includes("__uncategorized__");
-          const otherIds = filterValue.filter((v) => v !== "__uncategorized__");
-
-          if (hasUncategorized && cats.length === 0) return true;
-          if (otherIds.length > 0 && otherIds.some((id) => catIds.includes(id)))
-            return true;
-          return false;
-        },
+        filterFn: (row, _columnId, filterValue: string[]) =>
+          categoriesFilter(row.original.categoriesDetailed || [], filterValue),
       },
       {
         id: "addOns",
@@ -207,8 +227,8 @@ export function useProductsTable({
       {
         id: "variants",
         header: "Variants",
-        size: 320,
-        minSize: 280,
+        size: 260,
+        minSize: 220,
         enableSorting: false,
         enableResizing: true,
         meta: { responsive: "desktop" } satisfies DataTableColumnMeta,
@@ -226,34 +246,14 @@ export function useProductsTable({
         accessorKey: "price",
         header: "Price",
         enableHiding: true,
-        filterFn: (row, _columnId, filterValue: { operator: string; num: number }) => {
-          if (!filterValue || typeof filterValue.num !== "number") return true;
-          const price = row.original.price;
-          switch (filterValue.operator) {
-            case ">": return price > filterValue.num;
-            case "<": return price < filterValue.num;
-            case "\u2265": return price >= filterValue.num;
-            case "\u2264": return price <= filterValue.num;
-            default: return true;
-          }
-        },
+        filterFn: (row, _columnId, filterValue) => comparisonFilter(row.original.price, filterValue),
       },
       {
         id: "stock",
         accessorKey: "stock",
         header: "Stock",
         enableHiding: true,
-        filterFn: (row, _columnId, filterValue: { operator: string; num: number }) => {
-          if (!filterValue || typeof filterValue.num !== "number") return true;
-          const stock = row.original.stock;
-          switch (filterValue.operator) {
-            case ">": return stock > filterValue.num;
-            case "<": return stock < filterValue.num;
-            case "\u2265": return stock >= filterValue.num;
-            case "\u2264": return stock <= filterValue.num;
-            default: return true;
-          }
-        },
+        filterFn: (row, _columnId, filterValue) => comparisonFilter(row.original.stock, filterValue),
       },
       // Mobile columns
       {
@@ -298,6 +298,12 @@ export function useProductsTable({
           const items: RowActionItem[] = [
             {
               type: "item",
+              label: "Edit Product",
+              icon: SquarePen,
+              onClick: () => onEditProduct(product),
+            },
+            {
+              type: "item",
               label: "Edit Variants",
               icon: Pencil,
               onClick: () => onEditVariants(product),
@@ -325,6 +331,12 @@ export function useProductsTable({
         cell: ({ row }) => {
           const product = row.original;
           const items: RowActionItem[] = [
+            {
+              type: "item",
+              label: "Edit Product",
+              icon: SquarePen,
+              onClick: () => onEditProduct(product),
+            },
             {
               type: "item",
               label: "Edit Variants",
@@ -355,12 +367,12 @@ export function useProductsTable({
         },
       },
     ],
-    [onStockUpdate, onPriceUpdate, onEditVariants, onDeleteProduct, columnVisibility, handleVisibilityChange]
+    [onStockUpdate, onPriceUpdate, onEditProduct, onEditVariants, onDeleteProduct, columnVisibility, handleVisibilityChange]
   );
 
   const filterConfigs = useMemo<FilterConfig[]>(
     () => [
-      { id: "price", label: "Price", filterType: "comparison" },
+      { id: "price", label: "Price", shellLabel: "price $", filterType: "comparison" },
       { id: "stock", label: "Stock", filterType: "comparison" },
       {
         id: "categories",

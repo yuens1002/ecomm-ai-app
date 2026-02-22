@@ -57,6 +57,8 @@ export {
   resolveRoute,
   getAncestorIds,
   buildBreadcrumbChain,
+  buildHref,
+  getNavigableChildren,
   isRouteActive,
   hasActiveDescendant,
   getMenuBuilderView,

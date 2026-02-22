@@ -81,6 +81,6 @@ describe("PageEditor AI Assist button", () => {
     const settingsButton = screen.getByRole("button", { name: /settings/i });
     fireEvent.click(settingsButton);
 
-    expect(screen.getByRole("button", { name: /ai assist/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /ai assist/i })).toHaveAttribute("aria-disabled", "true");
   });
 });

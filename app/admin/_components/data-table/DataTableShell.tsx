@@ -50,7 +50,7 @@ export function DataTableShell({ children, className }: DataTableShellProps) {
     <div
       ref={containerRef}
       className={cn(
-        "relative w-full overflow-x-auto",
+        "relative w-full overflow-x-auto rounded-l-lg",
         isDragging && "select-none",
         className
       )}

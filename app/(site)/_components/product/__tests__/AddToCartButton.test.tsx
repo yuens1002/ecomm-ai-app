@@ -26,7 +26,7 @@ describe("AddToCartButton", () => {
       render(<AddToCartButton {...defaultProps} buttonState="adding" />);
 
       expect(screen.getByRole("button")).toHaveTextContent("Adding...");
-      expect(screen.getByRole("button")).toBeDisabled();
+      expect(screen.getByRole("button")).toHaveAttribute("aria-disabled", "true");
     });
 
     it("renders added state correctly", () => {
@@ -130,13 +130,13 @@ describe("AddToCartButton", () => {
     it("respects disabled prop", () => {
       render(<AddToCartButton {...defaultProps} disabled />);
 
-      expect(screen.getByRole("button")).toBeDisabled();
+      expect(screen.getByRole("button")).toHaveAttribute("aria-disabled", "true");
     });
 
     it("is disabled when isProcessing is true", () => {
       render(<AddToCartButton {...defaultProps} isProcessing />);
 
-      expect(screen.getByRole("button")).toBeDisabled();
+      expect(screen.getByRole("button")).toHaveAttribute("aria-disabled", "true");
     });
   });
 

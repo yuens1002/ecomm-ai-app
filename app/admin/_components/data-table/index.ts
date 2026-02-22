@@ -22,5 +22,6 @@ export type {
   FilterSlot,
   PageSizeSelectorSlot,
   PaginationSlot,
+  RecordCountSlot,
   SearchSlot,
 } from "./types";

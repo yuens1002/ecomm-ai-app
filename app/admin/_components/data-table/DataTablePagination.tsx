@@ -52,9 +52,7 @@ export function DataTablePagination<TData>({
   const pageIndex = table.getState().pagination.pageIndex;
   const pageCount = table.getPageCount();
 
-  if (pageCount <= 1) return null;
-
-  const pages = getPageRange(pageIndex, pageCount);
+  const pages = pageCount <= 1 ? [0] : getPageRange(pageIndex, pageCount);
 
   return (
     <Pagination className="mx-0 w-auto">

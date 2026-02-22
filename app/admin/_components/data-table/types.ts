@@ -45,7 +45,7 @@ export type FilterConfig = {
   options?: { label: string; value: string }[];
 };
 
-export type ComparisonOperator = ">" | "<" | "\u2265" | "\u2264";
+export type ComparisonOperator = "=" | "\u2265" | "\u2264";
 
 export type ActiveFilter = {
   configId: string;
@@ -73,13 +73,20 @@ export type PageSizeSelectorSlot = {
   table: Table<any>;
 };
 
+export type RecordCountSlot = {
+  type: "recordCount";
+  count: number;
+  label?: string;
+};
+
 export type DataTableSlot =
   | SearchSlot
   | ButtonSlot
   | CustomSlot
   | FilterSlot
   | PaginationSlot
-  | PageSizeSelectorSlot;
+  | PageSizeSelectorSlot
+  | RecordCountSlot;
 
 export type ActionBarConfig = {
   left: DataTableSlot[];

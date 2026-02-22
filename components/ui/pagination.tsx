@@ -64,18 +64,22 @@ function PaginationLink({
 
 function PaginationPrevious({
   className,
+  disabled,
+  onClick,
   ...props
 }: React.ComponentProps<"button"> & { disabled?: boolean }) {
   return (
     <button
       type="button"
       aria-label="Go to previous page"
+      aria-disabled={disabled || undefined}
       data-slot="pagination-previous"
       className={cn(
         buttonVariants({ variant: "ghost", size: "icon-sm" }),
-        "text-muted-foreground no-underline hover:no-underline hover:text-foreground disabled:pointer-events-none disabled:opacity-50",
+        "text-muted-foreground no-underline hover:no-underline hover:text-foreground aria-disabled:pointer-events-none aria-disabled:opacity-50",
         className
       )}
+      onClick={disabled ? undefined : onClick}
       {...props}
     >
       <ChevronLeftIcon className="size-4" />
@@ -85,18 +89,22 @@ function PaginationPrevious({
 
 function PaginationNext({
   className,
+  disabled,
+  onClick,
   ...props
 }: React.ComponentProps<"button"> & { disabled?: boolean }) {
   return (
     <button
       type="button"
       aria-label="Go to next page"
+      aria-disabled={disabled || undefined}
       data-slot="pagination-next"
       className={cn(
         buttonVariants({ variant: "ghost", size: "icon-sm" }),
-        "text-muted-foreground no-underline hover:no-underline hover:text-foreground disabled:pointer-events-none disabled:opacity-50",
+        "text-muted-foreground no-underline hover:no-underline hover:text-foreground aria-disabled:pointer-events-none aria-disabled:opacity-50",
         className
       )}
+      onClick={disabled ? undefined : onClick}
       {...props}
     >
       <ChevronRightIcon className="size-4" />
