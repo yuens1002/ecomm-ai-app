@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ProductType, RoastLevel } from "@prisma/client";
 import { useBreadcrumb } from "@/app/admin/_components/dashboard/BreadcrumbContext";
@@ -10,11 +10,11 @@ import { ProductInfoSection, ProductInfoValues } from "./ProductInfoSection";
 import { VariantsSection, VariantData, VariantsSectionRef } from "./VariantsSection";
 import { CoffeeSpecsSection, CoffeeSpecsValues } from "./CoffeeSpecsSection";
 import { CategoriesSection } from "./CategoriesSection";
-import { AddOnsSection, AddOnsSectionRef, AddOnEntry } from "./AddOnsSection";
+import { AddOnsSection, AddOnsSectionRef } from "./AddOnsSection";
 import { createProduct, updateProduct } from "../actions/products";
 import { createVariant, saveVariantImages } from "../actions/variants";
 import { createOption } from "../actions/options";
-import { useAutoSave } from "../_hooks/useAutoSave";
+import { useProductFormUndoRedo } from "../_hooks/useProductFormUndoRedo";
 import { UnsavedChangesGuard } from "./UnsavedChangesGuard";
 
 interface CategoryLabel {
@@ -104,10 +104,6 @@ export function CoffeeProductForm({
     initialData?.categoryIds ?? []
   );
 
-  // Add-ons mirror state (for undo history — AddOnsSection owns the source of truth)
-  const [addOns, setAddOns] = useState<AddOnEntry[]>([]);
-  const addOnsInitializedRef = useRef(isNewProduct); // new products have no initial fetch
-
   // Variants state — new products start with one default variant
   const [variants, setVariants] = useState<VariantData[]>(
     initialData?.variants ?? (isNewProduct ? [{
@@ -177,45 +173,27 @@ export function CoffeeProductForm({
     }
   }, [productInfo, coffeeSpecs, categoryIds, productId, router]);
 
-  const formState = { productInfo, coffeeSpecs, categoryIds, addOns };
-  const formStateRef = useRef(formState);
-  formStateRef.current = formState;
-
-  const onRestore = useCallback(
-    (state: typeof formState) => {
-      setProductInfo(state.productInfo);
-      setCoffeeSpecs(state.coffeeSpecs);
-      setCategoryIds(state.categoryIds);
-      // Restore add-ons visual state + sync to API (handles old snapshots without addOns)
-      if (state.addOns) {
-        setAddOns(state.addOns);
-        addOnsSectionRef.current?.restoreAddOns(state.addOns);
-      }
-    },
-    []
-  );
-
-  const { status, undo, redo, canUndo, canRedo, markExternalSave } = useAutoSave({
+  const {
+    status, canUndo, canRedo, undo, redo,
+    handleAddOnsChange, handleVariantsSaved,
+  } = useProductFormUndoRedo({
+    isNewProduct,
+    productId,
+    historyKeyPrefix: "coffee",
+    setProductInfo,
+    setCategoryIds,
+    setVariants,
+    restoreSpecs: (state) => setCoffeeSpecs(state.coffeeSpecs),
+    productInfo,
+    specs: { coffeeSpecs },
+    categoryIds,
+    variants,
+    variantsSectionRef,
+    addOnsSectionRef,
     saveFn,
     isValid,
-    debounceMs: 800,
-    deps: isNewProduct ? [] : [productInfo, coffeeSpecs, categoryIds],
-    formState,
-    historyKey: productId ? `coffee-${productId}` : "coffee-new",
-    onRestore,
+    specsDeps: [coffeeSpecs],
   });
-
-  // Add-ons change callback — creates undo snapshots for add-on mutations
-  const handleAddOnsChange = useCallback((updated: AddOnEntry[]) => {
-    setAddOns(updated);
-    if (!addOnsInitializedRef.current) {
-      addOnsInitializedRef.current = true;
-      return; // Initial load — mirror state, no snapshot
-    }
-    if (!isNewProduct) {
-      markExternalSave({ ...formStateRef.current, addOns: updated });
-    }
-  }, [isNewProduct, markExternalSave]);
 
   // --- New product mode: batch create ---
 
@@ -316,8 +294,8 @@ export function CoffeeProductForm({
       }
 
       // 5. Create add-on links
-      const addOns = addOnsSectionRef.current?.getAddOns() ?? [];
-      for (const addOn of addOns) {
+      const currentAddOns = addOnsSectionRef.current?.getAddOns() ?? [];
+      for (const addOn of currentAddOns) {
         await fetch(`/api/admin/products/${newProductId}/addons`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -353,31 +331,6 @@ export function CoffeeProductForm({
     }
   }, [isValid, productInfo, coffeeSpecs, categoryIds, variants, router, toast]);
 
-  // Keyboard shortcuts: U = undo, Shift+U = redo (edit mode only)
-  useEffect(() => {
-    if (isNewProduct) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!e.key || e.key.toLowerCase() !== "u" || e.ctrlKey || e.metaKey || e.altKey) return;
-
-      const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
-      if (document.querySelector('[data-state="open"][role="dialog"]')) return;
-
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (e.shiftKey) {
-        redo();
-      } else {
-        undo();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown, { capture: true });
-    return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
-  }, [undo, redo, isNewProduct]);
-
   return (
     <>
     <ProductPageLayout
@@ -411,6 +364,7 @@ export function CoffeeProductForm({
           productName={productInfo.name}
           variants={variants}
           onVariantsChange={setVariants}
+          onVariantsSaved={handleVariantsSaved}
           isNewProduct={isNewProduct}
           showValidation={!isNewProduct || hasAttemptedSubmit}
         />

@@ -65,11 +65,9 @@ export function useAutoSave<T = unknown>({
   }, [getUndoCount, getRedoCount]);
 
   const doSave = useCallback(async () => {
-    // Skip save if this change came from an undo/redo restore
-    if (isRestoringRef.current) {
-      isRestoringRef.current = false;
-      return;
-    }
+    // Track whether this save was triggered by an undo/redo restore
+    const isRestore = isRestoringRef.current;
+    if (isRestore) isRestoringRef.current = false;
 
     if (isSavingRef.current) {
       pendingSaveRef.current = true;
@@ -88,7 +86,8 @@ export function useAutoSave<T = unknown>({
       setStatus("saved");
 
       // Snapshot the PREVIOUS saved state for undo (only after successful save)
-      if (lastSavedStateRef.current !== undefined && historyKey) {
+      // Skip snapshot push for restores to avoid circular undo entries
+      if (!isRestore && lastSavedStateRef.current !== undefined && historyKey) {
         pushSnapshot(lastSavedStateRef.current);
         refreshCounts();
       }

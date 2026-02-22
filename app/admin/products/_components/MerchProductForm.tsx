@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ProductType } from "@prisma/client";
 import { useBreadcrumb } from "@/app/admin/_components/dashboard/BreadcrumbContext";
@@ -10,11 +10,11 @@ import { ProductInfoSection, ProductInfoValues } from "./ProductInfoSection";
 import { VariantsSection, VariantData, VariantsSectionRef } from "./VariantsSection";
 import { MerchDetailsSection, MerchDetailRow } from "./MerchDetailsSection";
 import { CategoriesSection } from "./CategoriesSection";
-import { AddOnsSection, AddOnsSectionRef, AddOnEntry } from "./AddOnsSection";
+import { AddOnsSection, AddOnsSectionRef } from "./AddOnsSection";
 import { createProduct, updateProduct } from "../actions/products";
 import { createVariant, saveVariantImages } from "../actions/variants";
 import { createOption } from "../actions/options";
-import { useAutoSave } from "../_hooks/useAutoSave";
+import { useProductFormUndoRedo } from "../_hooks/useProductFormUndoRedo";
 import { UnsavedChangesGuard } from "./UnsavedChangesGuard";
 
 interface CategoryLabel {
@@ -97,10 +97,6 @@ export function MerchProductForm({
     initialData?.categoryIds ?? []
   );
 
-  // Add-ons mirror state (for undo history — AddOnsSection owns the source of truth)
-  const [addOns, setAddOns] = useState<AddOnEntry[]>([]);
-  const addOnsInitializedRef = useRef(isNewProduct);
-
   // Variants state — new products start with one default variant
   const [variants, setVariants] = useState<VariantData[]>(
     initialData?.variants ?? (isNewProduct ? [{
@@ -177,43 +173,27 @@ export function MerchProductForm({
     }
   }, [productInfo, merchDetails, categoryIds, productId, hasIncompleteDetails, router]);
 
-  const formState = { productInfo, merchDetails, categoryIds, addOns };
-  const formStateRef = useRef(formState);
-  formStateRef.current = formState;
-
-  const onRestore = useCallback(
-    (state: typeof formState) => {
-      setProductInfo(state.productInfo);
-      setMerchDetails(state.merchDetails);
-      setCategoryIds(state.categoryIds);
-      if (state.addOns) {
-        setAddOns(state.addOns);
-        addOnsSectionRef.current?.restoreAddOns(state.addOns);
-      }
-    },
-    []
-  );
-
-  const { status, undo, redo, canUndo, canRedo, markExternalSave } = useAutoSave({
+  const {
+    status, canUndo, canRedo, undo, redo,
+    handleAddOnsChange, handleVariantsSaved,
+  } = useProductFormUndoRedo({
+    isNewProduct,
+    productId,
+    historyKeyPrefix: "merch",
+    setProductInfo,
+    setCategoryIds,
+    setVariants,
+    restoreSpecs: (state) => setMerchDetails(state.merchDetails),
+    productInfo,
+    specs: { merchDetails },
+    categoryIds,
+    variants,
+    variantsSectionRef,
+    addOnsSectionRef,
     saveFn,
     isValid: isValid && !hasIncompleteDetails,
-    debounceMs: 800,
-    deps: isNewProduct ? [] : [productInfo, merchDetails, categoryIds],
-    formState,
-    historyKey: productId ? `merch-${productId}` : "merch-new",
-    onRestore,
+    specsDeps: [merchDetails],
   });
-
-  const handleAddOnsChange = useCallback((updated: AddOnEntry[]) => {
-    setAddOns(updated);
-    if (!addOnsInitializedRef.current) {
-      addOnsInitializedRef.current = true;
-      return;
-    }
-    if (!isNewProduct) {
-      markExternalSave({ ...formStateRef.current, addOns: updated });
-    }
-  }, [isNewProduct, markExternalSave]);
 
   // --- New product mode: batch create ---
 
@@ -319,8 +299,8 @@ export function MerchProductForm({
       }
 
       // 5. Create add-on links
-      const addOns = addOnsSectionRef.current?.getAddOns() ?? [];
-      for (const addOn of addOns) {
+      const currentAddOns = addOnsSectionRef.current?.getAddOns() ?? [];
+      for (const addOn of currentAddOns) {
         await fetch(`/api/admin/products/${newProductId}/addons`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -356,31 +336,6 @@ export function MerchProductForm({
     }
   }, [isValid, productInfo, merchDetails, categoryIds, variants, hasIncompleteDetails, router, toast]);
 
-  // Keyboard shortcuts: U = undo, Shift+U = redo (edit mode only)
-  useEffect(() => {
-    if (isNewProduct) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== "u" || e.ctrlKey || e.metaKey || e.altKey) return;
-
-      const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
-      if (document.querySelector('[data-state="open"][role="dialog"]')) return;
-
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (e.shiftKey) {
-        redo();
-      } else {
-        undo();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown, { capture: true });
-    return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
-  }, [undo, redo, isNewProduct]);
-
   return (
     <>
     <ProductPageLayout
@@ -414,6 +369,7 @@ export function MerchProductForm({
           productName={productInfo.name}
           variants={variants}
           onVariantsChange={setVariants}
+          onVariantsSaved={handleVariantsSaved}
           isNewProduct={isNewProduct}
           showValidation={!isNewProduct || hasAttemptedSubmit}
         />

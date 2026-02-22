@@ -84,6 +84,7 @@ interface VariantsSectionProps {
   productName: string;
   variants: VariantData[];
   onVariantsChange: (variants: VariantData[]) => void;
+  onVariantsSaved?: (variants: VariantData[]) => void;
   isNewProduct?: boolean;
   showValidation?: boolean;
 }
@@ -91,6 +92,7 @@ interface VariantsSectionProps {
 export interface VariantsSectionRef {
   uploadAllVariantImages: () => Promise<void>;
   getPendingFiles: () => Map<string, Map<number, PendingFile>>;
+  restoreVariants: (targetVariants: VariantData[]) => Promise<void>;
 }
 
 export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionProps>(
@@ -99,6 +101,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
     productName,
     variants,
     onVariantsChange,
+    onVariantsSaved,
     isNewProduct,
     showValidation = true,
   }, ref) {
@@ -248,13 +251,13 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
         });
 
         // Update local state with real URL and clear pending
-        onVariantsChange(
-          currentVariants.map((v) =>
-            v.id === variantId
-              ? { ...variant, images: currentImages.map((img, i) => ({ ...img, order: i })) }
-              : v
-          )
+        const updatedVariants = currentVariants.map((v) =>
+          v.id === variantId
+            ? { ...variant, images: currentImages.map((img, i) => ({ ...img, order: i })) }
+            : v
         );
+        onVariantsChange(updatedVariants);
+        onVariantsSaved?.(updatedVariants);
         URL.revokeObjectURL(previewUrl);
         setPendingFilesPerVariant((prev) => {
           const next = new Map(prev);
@@ -265,7 +268,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
           return next;
         });
       },
-      [productName, onVariantsChange, toast]
+      [productName, onVariantsChange, onVariantsSaved, toast]
     );
 
     const handleVariantImagePendingRemove = useCallback(
@@ -352,9 +355,10 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
             variantId,
             images: reordered.map((img) => ({ url: img.url, altText: img.altText })),
           });
+          onVariantsSaved?.(variantsRef.current);
         }
       },
-      [variants, onVariantsChange, isNewProduct]
+      [variants, onVariantsChange, onVariantsSaved, isNewProduct]
     );
 
     // Upload all pending variant images and save to DB
@@ -418,10 +422,114 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
       setPendingFilesPerVariant(new Map());
     }, [variants, pendingFilesPerVariant, productName, onVariantsChange]);
 
+    // Restore variants to a target state — diffs current vs target and syncs DB
+    const restoreVariants = useCallback(async (targetVariants: VariantData[]) => {
+      if (isNewProduct || !productId) return;
+
+      const currentVariants = variantsRef.current;
+      const currentMap = new Map(currentVariants.map(v => [v.id, v]));
+      const targetIds = new Set(targetVariants.map(v => v.id));
+
+      // 1. Delete variants not in target
+      for (const cv of currentVariants) {
+        if (!targetIds.has(cv.id)) {
+          await deleteVariant(cv.id);
+        }
+      }
+
+      // 2. Process target variants — update existing, recreate missing
+      for (const tv of targetVariants) {
+        if (currentMap.has(tv.id)) {
+          const cv = currentMap.get(tv.id)!;
+
+          // Update variant fields
+          await updateVariant(tv.id, {
+            name: tv.name,
+            weight: tv.weight,
+            stockQuantity: tv.stockQuantity,
+            isDisabled: tv.isDisabled,
+          });
+
+          // Sync purchase options
+          const currentOptIds = new Set(cv.purchaseOptions.map(o => o.id));
+          const targetOptIds = new Set(tv.purchaseOptions.map(o => o.id));
+
+          for (const co of cv.purchaseOptions) {
+            if (!targetOptIds.has(co.id)) await deleteOption(co.id);
+          }
+          for (const to of tv.purchaseOptions) {
+            if (currentOptIds.has(to.id)) {
+              await updateOption(to.id, {
+                priceInCents: to.priceInCents,
+                salePriceInCents: to.salePriceInCents,
+                billingInterval: to.billingInterval,
+                billingIntervalCount: to.billingIntervalCount,
+              });
+            } else {
+              await createOption({
+                variantId: tv.id,
+                type: to.type,
+                priceInCents: to.priceInCents,
+                salePriceInCents: to.salePriceInCents,
+                billingInterval: to.billingInterval,
+                billingIntervalCount: to.billingIntervalCount,
+              });
+            }
+          }
+
+          // Sync images
+          await saveVariantImages({
+            variantId: tv.id,
+            images: tv.images.filter(img => img.url).map(img => ({
+              url: img.url,
+              altText: img.altText,
+            })),
+          });
+        } else {
+          // Variant doesn't exist on server — recreate (undo of delete)
+          const result = await createVariant({
+            productId,
+            name: tv.name,
+            weight: tv.weight,
+            stockQuantity: tv.stockQuantity,
+            isDisabled: tv.isDisabled,
+          });
+          if (!result.ok) continue;
+
+          const newVariant = result.data as VariantData;
+          for (const to of tv.purchaseOptions) {
+            await createOption({
+              variantId: newVariant.id,
+              type: to.type,
+              priceInCents: to.priceInCents,
+              salePriceInCents: to.salePriceInCents,
+              billingInterval: to.billingInterval,
+              billingIntervalCount: to.billingIntervalCount,
+            });
+          }
+
+          const validImages = tv.images.filter(img => img.url);
+          if (validImages.length > 0) {
+            await saveVariantImages({
+              variantId: newVariant.id,
+              images: validImages.map(img => ({ url: img.url, altText: img.altText })),
+            });
+          }
+        }
+      }
+
+      // 3. Reorder to match target
+      const existingIds = targetVariants.map(v => v.id).filter(id => currentMap.has(id));
+      if (existingIds.length > 1) {
+        await reorderVariants({ productId, variantIds: existingIds });
+      }
+    }, [productId, isNewProduct]);
+
     useImperativeHandle(ref, () => ({
       uploadAllVariantImages,
       getPendingFiles: () => pendingFilesPerVariant,
-    }), [uploadAllVariantImages, pendingFilesPerVariant]);
+      restoreVariants,
+    }), [uploadAllVariantImages, pendingFilesPerVariant, restoreVariants]);
 
     const handleAddVariant = async () => {
     if (isNewProduct) {
@@ -455,6 +563,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
     if (result.ok) {
       const newVariants = [...variants, result.data as VariantData];
       onVariantsChange(newVariants);
+      onVariantsSaved?.(newVariants);
       setSelectedIndex(newVariants.length - 1);
     } else {
       toast({ title: result.error, variant: "destructive" });
@@ -489,6 +598,8 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
     setIsSaving(false);
     if (!result.ok) {
       toast({ title: result.error, variant: "destructive" });
+    } else {
+      onVariantsSaved?.(variantsRef.current);
     }
   };
 
@@ -505,6 +616,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
     if (result.ok) {
       const newVariants = variants.filter((v) => v.id !== variantId);
       onVariantsChange(newVariants);
+      onVariantsSaved?.(newVariants);
       setSelectedIndex(Math.max(0, selectedIndex - 1));
     } else {
       toast({ title: result.error, variant: "destructive" });
@@ -530,6 +642,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
       productId,
       variantIds: reordered.map((v) => v.id),
     });
+    onVariantsSaved?.(variantsRef.current);
   };
 
   // Purchase option handlers
@@ -588,6 +701,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
           : v
       );
       onVariantsChange(updated);
+      onVariantsSaved?.(updated);
     } else {
       toast({ title: result.error, variant: "destructive" });
     }
@@ -628,6 +742,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
           : v
       );
       onVariantsChange(updated);
+      onVariantsSaved?.(updated);
     } else {
       toast({ title: result.error, variant: "destructive" });
     }
@@ -663,6 +778,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
           : v
       );
       onVariantsChange(updated);
+      onVariantsSaved?.(updated);
     } else {
       toast({ title: result.error, variant: "destructive" });
     }
@@ -921,6 +1037,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
                           variantId: selectedVariant.id,
                           images: savedImages.map((img) => ({ url: img.url, altText: img.altText })),
                         });
+                        onVariantsSaved?.(variantsRef.current);
                       }
                     }}
                     onAdd={() => {
