@@ -55,13 +55,25 @@ export function ProductDetailLayout({
             </div>
           </div>
 
-          {story}
-
-          {brewGuide}
-
           {addOns}
+
+          {/* Story stays in right column when there's no brew guide */}
+          {story && !brewGuide && story}
         </div>
       </div>
+
+      {/* Side-by-side only when both story and brew guide exist */}
+      {story && brewGuide && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-14 mt-8">
+          <div>{story}</div>
+          <div>{brewGuide}</div>
+        </div>
+      )}
+
+      {/* Brew guide alone gets full width below */}
+      {brewGuide && !story && (
+        <div className="mt-8">{brewGuide}</div>
+      )}
 
       {relatedProducts}
 

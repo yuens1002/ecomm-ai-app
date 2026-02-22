@@ -83,7 +83,7 @@ export function RoasterBrewGuide({ guide }: RoasterBrewGuideProps) {
   }
 
   return (
-    <div className="mt-6 space-y-4">
+    <div className="space-y-4">
       <h3 className="text-xs font-medium uppercase tracking-wide text-foreground/50">
         {"Roaster\u2019s Brew Guide"}
       </h3>
@@ -109,7 +109,7 @@ export function RoasterBrewGuide({ guide }: RoasterBrewGuideProps) {
       )}
 
       {hasRecipes && (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3">
           {guide.recipes!.map((recipe, i) => (
             <RecipeCard key={i} recipe={recipe} />
           ))}
