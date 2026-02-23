@@ -182,6 +182,20 @@ export default function AppearanceSettingsPage() {
         icon={<Palette className="h-5 w-5" />}
         title="Storefront Theme"
         description="Choose a color theme for your customer-facing storefront. Admin pages always use the default neutral theme."
+        action={
+          <div className="flex items-center gap-3">
+            {isDirty && (
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                Unsaved changes
+              </span>
+            )}
+            <SaveButton
+              onClick={handleSave}
+              isSaving={isSaving}
+              disabled={!isDirty}
+            />
+          </div>
+        }
       >
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -318,24 +332,10 @@ export default function AppearanceSettingsPage() {
               </Card>
             </div>
 
-            {/* Save button */}
-            <div className="flex items-center gap-3 mt-4">
-              <SaveButton
-                onClick={handleSave}
-                isSaving={isSaving}
-                disabled={!isDirty}
-              />
-              {isDirty && (
-                <span className="text-sm text-muted-foreground">
-                  Unsaved changes
-                </span>
-              )}
-            </div>
-
             {/* Self-service info note */}
             <div className="flex items-start gap-2 rounded-md border border-dashed border-border bg-muted/50 px-4 py-3 mt-4">
-              <Terminal className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-              <p className="text-sm text-muted-foreground">
+              <Terminal className="h-4 w-4 mt-0.5 text-foreground/70 shrink-0" />
+              <p className="text-sm text-foreground/70">
                 Want more themes? Run{" "}
                 <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
                   npm run theme:add -- --name &lt;name&gt; --url &lt;url&gt;
