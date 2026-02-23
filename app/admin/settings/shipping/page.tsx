@@ -19,7 +19,7 @@ export default function ShippingSettingsPage() {
         <span>
           Carrier API keys enable automatic delivery status updates.
           Orders shipped with a configured carrier will have their tracking
-          status checked hourly and customers notified on delivery.
+          status checked daily and customers notified on delivery.
         </span>
       </div>
 
