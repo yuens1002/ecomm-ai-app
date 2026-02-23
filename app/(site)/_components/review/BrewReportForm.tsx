@@ -23,6 +23,7 @@ interface BrewReportFormProps {
   productName: string;
   productTastingNotes: string[];
   onSuccess?: () => void;
+  stickySubmit?: boolean;
 }
 
 export function BrewReportForm({
@@ -30,6 +31,7 @@ export function BrewReportForm({
   productName,
   productTastingNotes,
   onSuccess,
+  stickySubmit,
 }: BrewReportFormProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -338,20 +340,22 @@ export function BrewReportForm({
       )}
 
       {/* Submit */}
-      <Button
-        onClick={handleSubmit}
-        disabled={isPending || rating === 0}
-        className="w-full"
-      >
-        {isPending ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            Submitting...
-          </>
-        ) : (
-          "Submit Brew Report"
-        )}
-      </Button>
+      <div className={cn(stickySubmit && "sticky bottom-0 bg-background pt-3 pb-1 -mb-1 border-t border-border")}>
+        <Button
+          onClick={handleSubmit}
+          disabled={isPending || rating === 0}
+          className="w-full"
+        >
+          {isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Submitting...
+            </>
+          ) : (
+            "Submit Brew Report"
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

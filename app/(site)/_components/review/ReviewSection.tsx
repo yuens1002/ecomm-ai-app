@@ -18,7 +18,9 @@ export function ReviewSection({ productId, reviewCount }: ReviewSectionProps) {
       >
         Brew Reports {reviewCount > 0 && `(${reviewCount})`}
       </h2>
-      <ReviewList productId={productId} />
+      <div className="max-w-3xl">
+        <ReviewList productId={productId} />
+      </div>
     </section>
   );
 }

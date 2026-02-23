@@ -477,21 +477,24 @@ export default function OrdersPageClient({
         open={reviewFormTarget !== null}
         onOpenChange={(open) => !open && setReviewFormTarget(null)}
       >
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Write a Brew Report</DialogTitle>
             {reviewFormTarget && (
               <p className="text-sm text-text-muted">{reviewFormTarget.productName}</p>
             )}
           </DialogHeader>
-          {reviewFormTarget && (
-            <BrewReportForm
-              productId={reviewFormTarget.productId}
-              productName={reviewFormTarget.productName}
-              productTastingNotes={reviewFormTarget.productTastingNotes}
-              onSuccess={handleReviewSuccess}
-            />
-          )}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {reviewFormTarget && (
+              <BrewReportForm
+                productId={reviewFormTarget.productId}
+                productName={reviewFormTarget.productName}
+                productTastingNotes={reviewFormTarget.productTastingNotes}
+                onSuccess={handleReviewSuccess}
+                stickySubmit
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
