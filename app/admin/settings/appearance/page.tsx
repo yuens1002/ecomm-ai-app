@@ -21,10 +21,18 @@ interface ThemeColors {
   destructive: string;
 }
 
+interface ThemeFonts {
+  sans: string;
+  serif: string;
+  mono: string;
+  googleFontsUrl: string;
+}
+
 interface ThemeEntry {
   id: string;
   name: string;
   source: string;
+  fonts?: ThemeFonts;
   colors: {
     light: ThemeColors;
     dark: ThemeColors;
@@ -140,14 +148,40 @@ export default function AppearanceSettingsPage() {
     }
   }, [selectedTheme, toast]);
 
-  // Build the list with "Default" always first
-  const allThemes: { id: string; name: string; colors: ThemeEntry["colors"] }[] =
-    [
-      { id: "default", name: "Default", colors: DEFAULT_COLORS },
-      ...themes,
-    ];
+  // Dynamically load Google Fonts for the selected theme's preview
+  useEffect(() => {
+    const selectedEntry = themes.find((t) => t.id === selectedTheme);
+    const fontsUrl = selectedEntry?.fonts?.googleFontsUrl;
+    if (!fontsUrl) return;
 
-  // Get the selected theme's colors for the preview panel
+    const linkId = "theme-preview-fonts";
+    let link = document.getElementById(linkId) as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement("link");
+      link.id = linkId;
+      link.rel = "stylesheet";
+      document.head.appendChild(link);
+    }
+    link.href = fontsUrl;
+
+    return () => {
+      // Cleanup on unmount
+      link?.remove();
+    };
+  }, [selectedTheme, themes]);
+
+  // Build the list with "Default" always first
+  const allThemes: {
+    id: string;
+    name: string;
+    fonts?: ThemeFonts;
+    colors: ThemeEntry["colors"];
+  }[] = [
+    { id: "default", name: "Default", colors: DEFAULT_COLORS },
+    ...themes,
+  ];
+
+  // Get the selected theme's data for the preview panel
   const previewEntry = allThemes.find((t) => t.id === selectedTheme);
   const previewColors = previewEntry
     ? isDark
@@ -170,6 +204,10 @@ export default function AppearanceSettingsPage() {
   previewStyle["--border"] = isDark
     ? "oklch(1 0 0 / 10%)"
     : previewColors.muted;
+  // Apply theme font to the preview
+  if (previewEntry?.fonts) {
+    previewStyle["fontFamily"] = previewEntry.fonts.sans;
+  }
 
   return (
     <div className="space-y-8">
@@ -215,6 +253,10 @@ export default function AppearanceSettingsPage() {
                 const colors = isDark
                   ? theme.colors.dark
                   : theme.colors.light;
+                // Extract primary font name (e.g., "'Outfit', sans-serif" → "Outfit")
+                const fontLabel = theme.fonts
+                  ? theme.fonts.sans.split(",")[0].replace(/'/g, "").trim()
+                  : "Inter";
 
                 return (
                   <button
@@ -245,6 +287,9 @@ export default function AppearanceSettingsPage() {
                         />
                       ))}
                     </div>
+                    <span className="text-xs text-muted-foreground">
+                      {fontLabel}
+                    </span>
                   </button>
                 );
               })}

@@ -4,6 +4,12 @@
       "id": "astrovista",
       "name": "AstroVista",
       "source": "https://tweakcn.com/r/themes/cmlk6zefr000004lbe9jygsqc",
+      "fonts": {
+        "sans": "'Outfit', sans-serif",
+        "serif": "'Merriweather', serif",
+        "mono": "'Fira Code', monospace",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Merriweather:wght@400;700&family=Outfit:wght@400;500;600;700&display=swap"
+      },
       "colors": {
         "light": {
           "background": "oklch(0.9383 0.0042 236.4993)",
@@ -29,6 +35,12 @@
       "id": "warm",
       "name": "Warm",
       "source": "https://tweakcn.com/r/themes/cmkqudn9u000904l4h6ii267o",
+      "fonts": {
+        "sans": "'Inter', -apple-system, sans-serif",
+        "serif": "'Georgia', serif",
+        "mono": "'JetBrains Mono', monospace",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+      },
       "colors": {
         "light": {
           "background": "oklch(0.9755 0.0067 97.3510)",
@@ -54,6 +66,12 @@
       "id": "splashy",
       "name": "Splashy",
       "source": "https://tweakcn.com/r/themes/cmleckfgs000104js16vy8rxy",
+      "fonts": {
+        "sans": "'Montserrat', sans-serif",
+        "serif": "'Playfair Display', serif",
+        "mono": "'Fira Code', monospace",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@400;700&display=swap"
+      },
       "colors": {
         "light": {
           "background": "oklch(0.9761 0.0079 357.7954)",
@@ -79,6 +97,12 @@
       "id": "lush",
       "name": "Lush",
       "source": "https://tweakcn.com/r/themes/cmlxzdqhc000004js4867ch0s",
+      "fonts": {
+        "sans": "'Inter', sans-serif",
+        "serif": "'Georgia', serif",
+        "mono": "'JetBrains Mono', monospace",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+      },
       "colors": {
         "light": {
           "background": "oklch(0.9934 0.0017 174.5350)",
@@ -104,6 +128,12 @@
       "id": "orient",
       "name": "Orient",
       "source": "https://tweakcn.com/r/themes/cmlzh5zhg000004jmf4vmcx8c",
+      "fonts": {
+        "sans": "'Afacad', ui-sans-serif, sans-serif, system-ui",
+        "serif": "'Abyssinica SIL', ui-serif, serif",
+        "mono": "'Courier Prime', ui-monospace, monospace",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Afacad:wght@400;500;600;700&family=Abyssinica+SIL&family=Courier+Prime:wght@400;700&display=swap"
+      },
       "colors": {
         "light": {
           "background": "oklch(0.9761 0 0)",

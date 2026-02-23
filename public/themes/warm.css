@@ -1,4 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
 :root {
+  --font-sans: 'Inter', -apple-system, sans-serif;
+  --font-serif: 'Georgia', serif;
+  --font-mono: 'JetBrains Mono', monospace;
   --background: oklch(0.9755 0.0067 97.3510);
   --foreground: oklch(0.2178 0 0);
   --card: oklch(1.0000 0 0);

@@ -1,4 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@400;700&display=swap');
+
 :root {
+  --font-sans: 'Montserrat', sans-serif;
+  --font-serif: 'Playfair Display', serif;
+  --font-mono: 'Fira Code', monospace;
   --background: oklch(0.9761 0.0079 357.7954);
   --foreground: oklch(0.2151 0.0518 259.4035);
   --card: oklch(1.0000 0 0);
