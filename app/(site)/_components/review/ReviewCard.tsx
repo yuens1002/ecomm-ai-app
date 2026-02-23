@@ -1,0 +1,168 @@
+"use client";
+
+import { cn } from "@/lib/utils";
+import { StarRating } from "@/app/(site)/_components/product/StarRating";
+import { BrewMethodBadge } from "./BrewMethodBadge";
+import { ThumbsUp, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+export interface ReviewData {
+  id: string;
+  rating: number;
+  title: string | null;
+  content: string;
+  brewMethod: string | null;
+  grindSize: string | null;
+  waterTempF: number | null;
+  ratio: string | null;
+  tastingNotes: string[];
+  completenessScore: number;
+  helpfulCount: number;
+  createdAt: string;
+  isVerifiedPurchase: boolean;
+  user: {
+    name: string | null;
+    image: string | null;
+  };
+  userVoted: boolean;
+}
+
+interface ReviewCardProps {
+  review: ReviewData;
+  onVote: (reviewId: string) => void;
+  isVoting?: boolean;
+}
+
+function formatRelativeDate(dateStr: string): string {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7);
+    return `${weeks} ${weeks === 1 ? "week" : "weeks"} ago`;
+  }
+  if (diffDays < 365) {
+    const months = Math.floor(diffDays / 30);
+    return `${months} ${months === 1 ? "month" : "months"} ago`;
+  }
+  return date.toLocaleDateString();
+}
+
+function getInitial(name: string | null): string {
+  if (!name) return "?";
+  return name.charAt(0).toUpperCase();
+}
+
+function formatDisplayName(name: string | null): string {
+  if (!name) return "Anonymous";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  return `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
+}
+
+export function ReviewCard({ review, onVote, isVoting }: ReviewCardProps) {
+  const recipeItems: string[] = [];
+  if (review.grindSize) recipeItems.push(`Grind: ${review.grindSize}`);
+  if (review.waterTempF) recipeItems.push(`${review.waterTempF}°F`);
+  if (review.ratio) recipeItems.push(review.ratio);
+
+  return (
+    <article className="py-5 first:pt-0 border-b last:border-b-0 border-border/50">
+      {/* Top row: avatar, name, stars, date */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
+          {getInitial(review.user.name)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-text-base">
+              {formatDisplayName(review.user.name)}
+            </span>
+            <StarRating rating={review.rating} size="sm" />
+            <span className="text-xs text-text-muted">
+              {formatRelativeDate(review.createdAt)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Verified buyer badge */}
+      {review.isVerifiedPurchase && (
+        <div className="flex items-center gap-1 mb-2">
+          <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+            Verified Buyer
+          </span>
+        </div>
+      )}
+
+      {/* Title */}
+      {review.title && (
+        <h4 className="font-semibold text-text-base mb-1">{review.title}</h4>
+      )}
+
+      {/* Brew method badge */}
+      {review.brewMethod && (
+        <div className="mb-2">
+          <BrewMethodBadge method={review.brewMethod} />
+        </div>
+      )}
+
+      {/* Tasting notes chips */}
+      {review.tastingNotes.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {review.tastingNotes.map((note) => (
+            <span
+              key={note}
+              className="inline-flex items-center rounded-full px-2 py-0.5 text-xs bg-muted text-text-muted"
+            >
+              {note}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Recipe metadata strip */}
+      {recipeItems.length > 0 && (
+        <p className="text-xs text-text-muted mb-2">
+          {recipeItems.join(" · ")}
+        </p>
+      )}
+
+      {/* Content */}
+      <p className="text-sm text-text-base leading-relaxed mb-3">
+        {review.content}
+      </p>
+
+      {/* Footer: helpful button */}
+      <div className="flex items-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "h-7 px-2 text-xs gap-1",
+            review.userVoted
+              ? "text-primary"
+              : "text-text-muted hover:text-text-base"
+          )}
+          onClick={(e) => {
+            e.preventDefault();
+            onVote(review.id);
+          }}
+          disabled={isVoting}
+        >
+          <ThumbsUp className="h-3.5 w-3.5" />
+          Helpful
+          {review.helpfulCount > 0 && (
+            <span className="ml-0.5">({review.helpfulCount})</span>
+          )}
+        </Button>
+      </div>
+    </article>
+  );
+}
