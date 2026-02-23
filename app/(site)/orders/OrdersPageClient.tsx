@@ -28,6 +28,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
 import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
+import { ShipmentStatusDialog } from "@/app/(site)/_components/account/ShipmentStatusDialog";
 import { PageContainer } from "@/components/shared/PageContainer";
 
 interface OrdersPageClientProps {
@@ -46,6 +47,8 @@ export default function OrdersPageClient({
   );
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelOrder, setCancelOrder] = useState<OrderWithItems | null>(null);
+  const [shipmentStatusOrder, setShipmentStatusOrder] =
+    useState<OrderWithItems | null>(null);
   const editAddress = useEditAddress({
     getEndpointUrl: (id) => `/api/user/orders/${id}/address`,
     successMessage: "Shipping address updated.",
@@ -152,14 +155,17 @@ export default function OrdersPageClient({
   const canCancelOrder = (order: OrderWithItems) =>
     order.status === "PENDING";
 
+  const canTrackOrViewStatus = (order: OrderWithItems) =>
+    order.status === "SHIPPED" || order.status === "OUT_FOR_DELIVERY" || order.status === "DELIVERED";
+
   const hasActions = (order: OrderWithItems) =>
-    canEditAddress(order) || canCancelOrder(order);
+    canEditAddress(order) || canCancelOrder(order) || canTrackOrViewStatus(order);
 
   const getOrderCount = (status?: string) => {
     if (!status || status === "all") return orders.length;
     if (status === "completed") {
       return orders.filter(
-        (o) => o.status === "SHIPPED" || o.status === "PICKED_UP"
+        (o) => o.status === "SHIPPED" || o.status === "OUT_FOR_DELIVERY" || o.status === "DELIVERED" || o.status === "PICKED_UP"
       ).length;
     }
     return orders.filter((o) => o.status === status.toUpperCase()).length;
@@ -168,7 +174,7 @@ export default function OrdersPageClient({
   const filteredOrders = orders.filter((order) => {
     if (!statusFilter || statusFilter === "all") return true;
     if (statusFilter === "completed") {
-      return order.status === "SHIPPED" || order.status === "PICKED_UP";
+      return order.status === "SHIPPED" || order.status === "OUT_FOR_DELIVERY" || order.status === "DELIVERED" || order.status === "PICKED_UP";
     }
     return order.status === statusFilter.toUpperCase();
   });
@@ -247,6 +253,14 @@ export default function OrdersPageClient({
                   actions={
                     hasActions(order)
                       ? [
+                          ...(canTrackOrViewStatus(order)
+                            ? [
+                                {
+                                  label: "Shipment Status",
+                                  onClick: () => setShipmentStatusOrder(order),
+                                },
+                              ]
+                            : []),
                           ...(canEditAddress(order)
                             ? [
                                 {
@@ -338,6 +352,9 @@ export default function OrdersPageClient({
                         {hasActions(order) && (
                           <RecordActionMenu
                             actions={[
+                              ...(canTrackOrViewStatus(order)
+                                ? [{ label: "Shipment Status", onClick: () => setShipmentStatusOrder(order) }]
+                                : []),
                               ...(canEditAddress(order)
                                 ? [{ label: "Edit Address", onClick: () => editAddress.openDialog(order) }]
                                 : []),
@@ -382,6 +399,17 @@ export default function OrdersPageClient({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Shipment Status Dialog */}
+      {shipmentStatusOrder && (
+        <ShipmentStatusDialog
+          order={shipmentStatusOrder}
+          open={!!shipmentStatusOrder}
+          onOpenChange={(open) => {
+            if (!open) setShipmentStatusOrder(null);
+          }}
+        />
+      )}
 
       {/* Edit Address Dialog */}
       <EditAddressDialog

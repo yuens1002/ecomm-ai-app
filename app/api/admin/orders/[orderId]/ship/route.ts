@@ -26,14 +26,23 @@ export async function PATCH(
       );
     }
 
-    // Update order
+    // Check if this is an edit (order already shipped)
+    const existing = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { status: true },
+    });
+    const isEdit =
+      existing?.status === "SHIPPED" ||
+      existing?.status === "OUT_FOR_DELIVERY" ||
+      existing?.status === "DELIVERED";
+
+    // Update order — preserve status and shippedAt when editing
     const order = await prisma.order.update({
       where: { id: orderId },
       data: {
-        status: "SHIPPED",
+        ...(!isEdit && { status: "SHIPPED", shippedAt: new Date() }),
         trackingNumber,
         carrier,
-        shippedAt: new Date(),
       },
       include: {
         items: {
@@ -53,8 +62,8 @@ export async function PATCH(
       },
     });
 
-    // Send shipment confirmation email
-    try {
+    // Send shipment confirmation email (skip for edits)
+    if (!isEdit) try {
       if (!order.customerEmail) {
         console.warn("No customer email found for order", order.id);
         return NextResponse.json({

@@ -121,6 +121,7 @@ export interface OrderWithItems {
   trackingNumber: string | null;
   carrier: string | null;
   shippedAt: Date | null;
+  deliveredAt: Date | null;
   userId: string | null;
   createdAt: Date;
   updatedAt: Date;

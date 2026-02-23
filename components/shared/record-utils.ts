@@ -11,6 +11,10 @@ export function getStatusColor(status: string) {
       return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
     case "PROCESSING":
       return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+    case "DELIVERED":
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+    case "OUT_FOR_DELIVERY":
+      return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400";
     case "SHIPPED":
     case "PICKED_UP":
       return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
@@ -33,6 +37,10 @@ export function getStatusLabel(status: string) {
   switch (status) {
     case "PICKED_UP":
       return "Picked Up";
+    case "OUT_FOR_DELIVERY":
+      return "Out for Delivery";
+    case "DELIVERED":
+      return "Delivered";
     case "PROCESSING":
       return "Processing";
     case "CANCELLED":

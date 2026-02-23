@@ -552,11 +552,11 @@ describe("navigation-core", () => {
       expect(labels).toEqual(["About", "Cafe", "FAQ"]);
     });
 
-    it("should return 7 children for admin.settings", () => {
+    it("should return 8 children for admin.settings", () => {
       const children = getNavigableChildren("admin.settings");
-      expect(children).toHaveLength(7);
+      expect(children).toHaveLength(8);
       expect(children[0].label).toBe("General");
-      expect(children[6].label).toBe("Social Links");
+      expect(children[7].label).toBe("Social Links");
     });
 
     it("should exclude label:null children (e.g., admin.products.coffees has edit with null label)", () => {

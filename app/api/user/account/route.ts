@@ -30,6 +30,15 @@ export async function DELETE() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // Protect demo accounts on live site only
+    const protectedEmails = ["admin@artisanroast.com", "demo@artisanroast.com"];
+    if (process.env.NODE_ENV === "production" && user.email && protectedEmails.includes(user.email)) {
+      return NextResponse.json(
+        { error: "Demo accounts cannot be deleted" },
+        { status: 403 }
+      );
+    }
+
     // Delete user account
     // This will cascade delete:
     // - Sessions (via onDelete: Cascade in schema)

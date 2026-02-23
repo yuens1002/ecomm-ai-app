@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
@@ -73,6 +74,7 @@ export default function OrderManagementClient() {
   const [shipDialogOpen, setShipDialogOpen] = useState(false);
   const [pickupDialogOpen, setPickupDialogOpen] = useState(false);
   const [failDialogOpen, setFailDialogOpen] = useState(false);
+  const [deliverDialogOpen, setDeliverDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [trackingNumber, setTrackingNumber] = useState("");
   const [carrier, setCarrier] = useState("");
@@ -108,7 +110,7 @@ export default function OrderManagementClient() {
       setFilteredOrders(orders);
     } else if (statusFilter === "completed") {
       setFilteredOrders(
-        orders.filter((o) => o.status === "SHIPPED" || o.status === "PICKED_UP")
+        orders.filter((o) => o.status === "SHIPPED" || o.status === "OUT_FOR_DELIVERY" || o.status === "DELIVERED" || o.status === "PICKED_UP")
       );
     } else {
       setFilteredOrders(orders.filter((o) => o.status === statusFilter));
@@ -183,6 +185,8 @@ export default function OrderManagementClient() {
 
   function openShipDialog(order: Order) {
     setSelectedOrder(order);
+    setTrackingNumber(order.trackingNumber || "");
+    setCarrier(order.carrier || "");
     setShipDialogOpen(true);
   }
 
@@ -228,6 +232,39 @@ export default function OrderManagementClient() {
     }
   }
 
+  async function handleMarkAsDelivered() {
+    if (!selectedOrder) return;
+
+    setProcessing(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${selectedOrder.id}/deliver`, {
+        method: "PATCH",
+      });
+
+      if (!res.ok) throw new Error("Failed to mark as delivered");
+
+      toast({
+        title: "Order Delivered",
+        description: `Order #${selectedOrder.orderNumber || selectedOrder.id.slice(-8)} marked as delivered`,
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
+
+      setDeliverDialogOpen(false);
+      setSelectedOrder(null);
+      fetchOrders();
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to mark order as delivered",
+        variant: undefined,
+        className: "!bg-foreground !text-background !border-foreground",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  }
+
   function getTrackingUrl(carrier: string, trackingNumber: string): string {
     const carriers: Record<string, string> = {
       USPS: `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`,
@@ -259,7 +296,22 @@ export default function OrderManagementClient() {
         onClick: () => openFailDialog(order),
         variant: "destructive",
       });
-    } else if (order.status === "SHIPPED" && order.trackingNumber) {
+    } else if (order.status === "SHIPPED" || order.status === "OUT_FOR_DELIVERY") {
+      actions.push({
+        label: "Mark as Delivered",
+        onClick: () => { setSelectedOrder(order); setDeliverDialogOpen(true); },
+      });
+      actions.push({
+        label: "Edit Shipping",
+        onClick: () => openShipDialog(order),
+      });
+      if (order.trackingNumber) {
+        actions.push({
+          label: "Track Package",
+          onClick: () => window.open(getTrackingUrl(order.carrier!, order.trackingNumber!), "_blank"),
+        });
+      }
+    } else if (order.status === "DELIVERED" && order.trackingNumber) {
       actions.push({
         label: "Track Package",
         onClick: () => window.open(getTrackingUrl(order.carrier!, order.trackingNumber!), "_blank"),
@@ -333,6 +385,11 @@ export default function OrderManagementClient() {
                       : undefined
                   }
                   deliveryMethod={order.deliveryMethod}
+                  shipper={order.trackingNumber && order.carrier ? {
+                    carrier: order.carrier,
+                    trackingNumber: order.trackingNumber,
+                    trackingUrl: getTrackingUrl(order.carrier, order.trackingNumber),
+                  } : undefined}
                   actions={getOrderActions(order)}
                 />
               </Card>
@@ -367,18 +424,6 @@ export default function OrderManagementClient() {
                         <div className="font-medium">
                           {order.orderNumber || order.id.slice(-8)}
                         </div>
-                        {order.trackingNumber && (
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(order.trackingNumber!);
-                              toast({ title: "Copied!", description: `Tracking #: ${order.trackingNumber}` });
-                            }}
-                            className="text-xs text-muted-foreground hover:text-primary mt-1 flex items-center gap-1"
-                            title={`${order.carrier}: ${order.trackingNumber}`}
-                          >
-                            {order.carrier} tracking
-                          </button>
-                        )}
                       </td>
                       <td className="py-4 px-4 text-sm text-foreground">
                         {format(new Date(order.createdAt), "MMM d, yyyy")}
@@ -411,6 +456,19 @@ export default function OrderManagementClient() {
                           country={order.shippingCountry}
                           showCountry
                         />
+                        {order.trackingNumber && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {order.carrier}:{" "}
+                            <a
+                              href={getTrackingUrl(order.carrier!, order.trackingNumber!)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              {order.trackingNumber}
+                            </a>
+                          </p>
+                        )}
                       </td>
                       <td className="py-4 px-4 text-right font-semibold">{formatPrice(order.totalInCents)}</td>
                       <td className="py-4 px-4 text-center">
@@ -435,10 +493,13 @@ export default function OrderManagementClient() {
       <Dialog open={shipDialogOpen} onOpenChange={setShipDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Mark Order as Shipped</DialogTitle>
+            <DialogTitle>
+              {selectedOrder?.trackingNumber ? "Edit Shipping Details" : "Mark Order as Shipped"}
+            </DialogTitle>
             <DialogDescription>
-              Enter tracking information for order #
-              {selectedOrder?.orderNumber || selectedOrder?.id.slice(-8)}
+              {selectedOrder?.trackingNumber
+                ? `Update tracking information for order #${selectedOrder?.orderNumber || selectedOrder?.id.slice(-8)}`
+                : `Enter tracking information for order #${selectedOrder?.orderNumber || selectedOrder?.id.slice(-8)}`}
             </DialogDescription>
           </DialogHeader>
 
@@ -468,6 +529,14 @@ export default function OrderManagementClient() {
                 placeholder="Enter tracking number"
               />
             </div>
+
+            <p className="text-xs text-muted-foreground">
+              Configure carrier API keys in{" "}
+              <Link href="/admin/settings/shipping" className="text-primary hover:underline">
+                Settings &rarr; Shipping
+              </Link>
+              {" "}for automatic delivery status updates.
+            </p>
           </div>
 
           <DialogFooter>
@@ -482,7 +551,7 @@ export default function OrderManagementClient() {
               onClick={handleMarkAsShipped}
               disabled={!trackingNumber || !carrier || processing}
             >
-              {processing ? "Processing..." : "Mark as Shipped"}
+              {processing ? "Processing..." : selectedOrder?.trackingNumber ? "Update Shipping" : "Mark as Shipped"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -531,6 +600,49 @@ export default function OrderManagementClient() {
               disabled={processing}
             >
               {processing ? "Processing..." : "Confirm Pickup Ready"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mark as Delivered Dialog */}
+      <Dialog open={deliverDialogOpen} onOpenChange={setDeliverDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark Order as Delivered</DialogTitle>
+            <DialogDescription>
+              Confirm that order #
+              {selectedOrder?.orderNumber || selectedOrder?.id.slice(-8)} has
+              been delivered. The customer will receive a delivery confirmation
+              email.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Customer:{" "}
+              {selectedOrder?.user?.name ||
+                selectedOrder?.recipientName ||
+                "Guest"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Email: {selectedOrder?.customerEmail}
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeliverDialogOpen(false)}
+              disabled={processing}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleMarkAsDelivered}
+              disabled={processing}
+            >
+              {processing ? "Processing..." : "Confirm Delivered"}
             </Button>
           </DialogFooter>
         </DialogContent>
