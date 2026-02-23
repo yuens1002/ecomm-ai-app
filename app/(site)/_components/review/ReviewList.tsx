@@ -161,7 +161,7 @@ export function ReviewList({ productId }: ReviewListProps) {
                   handleFilterChange(brewMethodFilter === method ? null : method)
                 }
                 className={cn(
-                  "transition-opacity",
+                  "transition-opacity decoration-transparent",
                   brewMethodFilter === method ? "opacity-100" : "opacity-70 hover:opacity-100"
                 )}
               >

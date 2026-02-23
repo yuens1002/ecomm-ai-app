@@ -72,13 +72,13 @@ export function CoffeeDetails({
           <dt className="text-xs font-medium uppercase tracking-wide text-foreground/50">
             Community
           </dt>
-          <dd className="mt-0.5 flex items-center gap-1">
+          <dd className="mt-0.5">
             <StarRating rating={averageRating} size="sm" />
             <a
               href="#reviews"
-              className="text-sm text-text-muted hover:text-primary transition-colors"
+              className="block mt-0.5 text-sm text-text-muted hover:underline underline-offset-4 hover:text-primary transition-colors"
             >
-              ({reviewCount} Brew {reviewCount === 1 ? "Report" : "Reports"})
+              {reviewCount} Brew {reviewCount === 1 ? "Report" : "Reports"}
             </a>
           </dd>
         </div>
