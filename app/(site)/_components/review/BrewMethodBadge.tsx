@@ -14,7 +14,7 @@ export function BrewMethodBadge({ method, size = "sm", className }: BrewMethodBa
     <span
       className={cn(
         "inline-flex items-center rounded-full font-medium",
-        "bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200",
+        "bg-secondary text-secondary-foreground",
         size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-sm",
         className
       )}

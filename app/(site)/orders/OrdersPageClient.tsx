@@ -370,7 +370,7 @@ export default function OrdersPageClient({
                                     {product.name}
                                   </Link>
                                   {canReview && isReviewed && (
-                                    <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 flex-shrink-0">
+                                    <span className="inline-flex items-center gap-0.5 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-primary flex-shrink-0">
                                       <CheckCircle className="h-3 w-3" />
                                       Reported
                                     </span>

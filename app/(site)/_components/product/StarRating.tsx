@@ -60,15 +60,15 @@ export function StarRating({ rating, size = "md", className }: StarRatingProps) 
   for (let i = 1; i <= 5; i++) {
     if (rating >= i) {
       stars.push(
-        <FullStar key={i} className={cn(sizeClass, "text-amber-400")} />
+        <FullStar key={i} className={cn(sizeClass, "text-star")} />
       );
     } else if (rating >= i - 0.75 && rating < i) {
       stars.push(
-        <HalfStar key={i} className={cn(sizeClass, "text-amber-400")} />
+        <HalfStar key={i} className={cn(sizeClass, "text-star")} />
       );
     } else {
       stars.push(
-        <EmptyStar key={i} className={cn(sizeClass, "text-amber-200 dark:text-amber-800")} />
+        <EmptyStar key={i} className={cn(sizeClass, "text-star-muted")} />
       );
     }
   }

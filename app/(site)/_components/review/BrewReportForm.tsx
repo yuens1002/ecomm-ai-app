@@ -139,8 +139,8 @@ export function BrewReportForm({
                 className={cn(
                   "h-7 w-7 transition-colors",
                   star <= displayRating
-                    ? "fill-amber-400 text-amber-400"
-                    : "fill-none text-amber-200 dark:text-amber-800"
+                    ? "fill-star text-star"
+                    : "fill-none text-star-muted"
                 )}
               />
             </button>

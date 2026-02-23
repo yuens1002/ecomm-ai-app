@@ -94,8 +94,8 @@ export function ReviewCard({ review, onVote, isVoting }: ReviewCardProps) {
       {/* Verified buyer badge */}
       {review.isVerifiedPurchase && (
         <div className="flex items-center gap-1 mb-2">
-          <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+          <CheckCircle className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs font-medium text-primary">
             Verified Buyer
           </span>
         </div>
