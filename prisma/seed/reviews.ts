@@ -730,5 +730,12 @@ export async function seedReviews(prisma: PrismaClient) {
     });
   }
 
+  // Enable reviews in site settings
+  await prisma.siteSettings.upsert({
+    where: { key: "commerce.reviewsEnabled" },
+    update: { value: "true" },
+    create: { key: "commerce.reviewsEnabled", value: "true" },
+  });
+
   console.log("  ✅ Reviews seeding completed");
 }

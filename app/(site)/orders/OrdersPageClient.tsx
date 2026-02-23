@@ -1,18 +1,17 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { OrderWithItems } from "@/lib/types";
+import { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle, PenLine } from "lucide-react";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
 import { formatPrice } from "@/components/shared/record-utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { RecordActionMenu } from "@/components/shared/RecordActionMenu";
-import { RecordItemsList } from "@/components/shared/RecordItemsList";
 import { ShippingAddressDisplay } from "@/components/shared/ShippingAddressDisplay";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -25,13 +24,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
 import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
 import { PageContainer } from "@/components/shared/PageContainer";
+import { BrewReportForm } from "@/app/(site)/_components/review/BrewReportForm";
 
 interface OrdersPageClientProps {
   statusFilter?: string;
+}
+
+interface ReviewFormTarget {
+  productId: string;
+  productName: string;
+  productTastingNotes: string[];
 }
 
 export default function OrdersPageClient({
@@ -46,6 +58,8 @@ export default function OrdersPageClient({
   );
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelOrder, setCancelOrder] = useState<OrderWithItems | null>(null);
+  const [reviewedProductIds, setReviewedProductIds] = useState<Set<string>>(new Set());
+  const [reviewFormTarget, setReviewFormTarget] = useState<ReviewFormTarget | null>(null);
   const editAddress = useEditAddress({
     getEndpointUrl: (id) => `/api/user/orders/${id}/address`,
     successMessage: "Shipping address updated.",
@@ -75,10 +89,18 @@ export default function OrdersPageClient({
       const url = statusFilter
         ? `/api/user/orders?status=${statusFilter}`
         : "/api/user/orders";
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to fetch orders");
-      const data = await response.json();
+      const [ordersRes, reviewedRes] = await Promise.all([
+        fetch(url),
+        fetch("/api/user/reviewed-products"),
+      ]);
+      if (!ordersRes.ok) throw new Error("Failed to fetch orders");
+      const data = await ordersRes.json();
       setOrders(data.orders);
+
+      if (reviewedRes.ok) {
+        const reviewedData = await reviewedRes.json();
+        setReviewedProductIds(new Set(reviewedData.productIds));
+      }
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -152,8 +174,25 @@ export default function OrdersPageClient({
   const canCancelOrder = (order: OrderWithItems) =>
     order.status === "PENDING";
 
+  const isCompletedOrder = (status: string) =>
+    status === "SHIPPED" || status === "PICKED_UP";
+
+  const isCoffeeProduct = (item: OrderItemWithDetails) =>
+    item.purchaseOption.variant.product.type === "COFFEE";
+
   const hasActions = (order: OrderWithItems) =>
     canEditAddress(order) || canCancelOrder(order);
+
+  const hasBrewReportActions = (order: OrderWithItems) =>
+    isCompletedOrder(order.status) &&
+    order.items.some((item) => isCoffeeProduct(item) && !reviewedProductIds.has(item.purchaseOption.variant.product.id));
+
+  const handleReviewSuccess = () => {
+    if (reviewFormTarget) {
+      setReviewedProductIds((prev) => new Set([...prev, reviewFormTarget.productId]));
+    }
+    setReviewFormTarget(null);
+  };
 
   const getOrderCount = (status?: string) => {
     if (!status || status === "all") return orders.length;
@@ -245,7 +284,7 @@ export default function OrdersPageClient({
                   }
                   deliveryMethod={order.deliveryMethod}
                   actions={
-                    hasActions(order)
+                    hasActions(order) || hasBrewReportActions(order)
                       ? [
                           ...(canEditAddress(order)
                             ? [
@@ -263,6 +302,20 @@ export default function OrdersPageClient({
                                   variant: "destructive" as const,
                                 },
                               ]
+                            : []),
+                          ...(isCompletedOrder(order.status)
+                            ? order.items
+                                .filter((item) => isCoffeeProduct(item) && !reviewedProductIds.has(item.purchaseOption.variant.product.id))
+                                .map((item) => ({
+                                  label: `Write Brew Report: ${item.purchaseOption.variant.product.name}`,
+                                  onClick: () =>
+                                    setReviewFormTarget({
+                                      productId: item.purchaseOption.variant.product.id,
+                                      productName: item.purchaseOption.variant.product.name,
+                                      productTastingNotes: item.purchaseOption.variant.product.tastingNotes,
+                                    }),
+                                  icon: <PenLine className="h-4 w-4 mr-2" />,
+                                }))
                             : []),
                         ]
                       : undefined
@@ -302,19 +355,41 @@ export default function OrdersPageClient({
                         {format(new Date(order.createdAt), "MMM d, yyyy")}
                       </td>
                       <td className="py-4 px-4">
-                        <RecordItemsList
-                          items={order.items.map((item) => ({
-                            id: item.id,
-                            name: item.purchaseOption.variant.product.name,
-                            variant: item.purchaseOption.variant.name,
-                            purchaseType:
-                              item.purchaseOption.type === "SUBSCRIPTION"
-                                ? "Subscription"
-                                : "One-time",
-                            quantity: item.quantity,
-                            href: `/products/${item.purchaseOption.variant.product.slug}`,
-                          }))}
-                        />
+                        <div className="space-y-2">
+                          {order.items.map((item, idx) => {
+                            const product = item.purchaseOption.variant.product;
+                            const canReview = isCompletedOrder(order.status) && isCoffeeProduct(item);
+                            const isReviewed = reviewedProductIds.has(product.id);
+                            return (
+                              <div key={item.id}>
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Link
+                                    href={`/products/${product.slug}`}
+                                    className="text-text-base hover:text-primary"
+                                  >
+                                    {product.name}
+                                  </Link>
+                                  {canReview && isReviewed && (
+                                    <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 flex-shrink-0">
+                                      <CheckCircle className="h-3 w-3" />
+                                      Reported
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {[
+                                    item.purchaseOption.variant.name,
+                                    item.purchaseOption.type === "SUBSCRIPTION" ? "Subscription" : "One-time",
+                                    `Qty: ${item.quantity}`,
+                                  ].filter(Boolean).join(" · ")}
+                                </div>
+                                {idx < order.items.length - 1 && (
+                                  <div className="border-t border-border mt-2" />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </td>
                       <td className="py-4 px-4">
                         <ShippingAddressDisplay
@@ -335,7 +410,7 @@ export default function OrdersPageClient({
                         <StatusBadge status={order.status} />
                       </td>
                       <td className="py-4 px-4 text-center">
-                        {hasActions(order) && (
+                        {(hasActions(order) || hasBrewReportActions(order)) && (
                           <RecordActionMenu
                             actions={[
                               ...(canEditAddress(order)
@@ -343,6 +418,20 @@ export default function OrdersPageClient({
                                 : []),
                               ...(canCancelOrder(order)
                                 ? [{ label: "Cancel Order", onClick: () => openCancelDialog(order), variant: "destructive" as const }]
+                                : []),
+                              ...(isCompletedOrder(order.status)
+                                ? order.items
+                                    .filter((item) => isCoffeeProduct(item) && !reviewedProductIds.has(item.purchaseOption.variant.product.id))
+                                    .map((item) => ({
+                                      label: `Write Brew Report: ${item.purchaseOption.variant.product.name}`,
+                                      onClick: () =>
+                                        setReviewFormTarget({
+                                          productId: item.purchaseOption.variant.product.id,
+                                          productName: item.purchaseOption.variant.product.name,
+                                          productTastingNotes: item.purchaseOption.variant.product.tastingNotes,
+                                        }),
+                                      icon: <PenLine className="h-4 w-4 mr-2" />,
+                                    }))
                                 : []),
                             ]}
                             loading={cancellingOrderId === order.id}
@@ -382,6 +471,29 @@ export default function OrdersPageClient({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Brew Report Dialog */}
+      <Dialog
+        open={reviewFormTarget !== null}
+        onOpenChange={(open) => !open && setReviewFormTarget(null)}
+      >
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Write a Brew Report</DialogTitle>
+            {reviewFormTarget && (
+              <p className="text-sm text-text-muted">{reviewFormTarget.productName}</p>
+            )}
+          </DialogHeader>
+          {reviewFormTarget && (
+            <BrewReportForm
+              productId={reviewFormTarget.productId}
+              productName={reviewFormTarget.productName}
+              productTastingNotes={reviewFormTarget.productTastingNotes}
+              onSuccess={handleReviewSuccess}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Address Dialog */}
       <EditAddressDialog
