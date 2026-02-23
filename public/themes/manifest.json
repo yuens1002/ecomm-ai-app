@@ -1,0 +1,129 @@
+{
+  "themes": [
+    {
+      "id": "astrovista",
+      "name": "AstroVista",
+      "source": "https://tweakcn.com/r/themes/cmlk6zefr000004lbe9jygsqc",
+      "colors": {
+        "light": {
+          "background": "oklch(0.98 0.005 270)",
+          "foreground": "oklch(0.18 0.02 280)",
+          "primary": "oklch(0.45 0.18 270)",
+          "secondary": "oklch(0.94 0.02 270)",
+          "accent": "oklch(0.92 0.03 270)",
+          "muted": "oklch(0.94 0.015 270)",
+          "destructive": "oklch(0.577 0.245 27.325)"
+        },
+        "dark": {
+          "background": "oklch(0.16 0.02 275)",
+          "foreground": "oklch(0.93 0.01 270)",
+          "primary": "oklch(0.65 0.2 270)",
+          "secondary": "oklch(0.25 0.03 275)",
+          "accent": "oklch(0.28 0.035 275)",
+          "muted": "oklch(0.25 0.025 275)",
+          "destructive": "oklch(0.704 0.191 22.216)"
+        }
+      }
+    },
+    {
+      "id": "warm",
+      "name": "Warm",
+      "source": "https://tweakcn.com/r/themes/cmkqudn9u000904l4h6ii267o",
+      "colors": {
+        "light": {
+          "background": "oklch(0.98 0.008 75)",
+          "foreground": "oklch(0.2 0.04 55)",
+          "primary": "oklch(0.55 0.17 45)",
+          "secondary": "oklch(0.93 0.025 70)",
+          "accent": "oklch(0.91 0.035 70)",
+          "muted": "oklch(0.93 0.02 70)",
+          "destructive": "oklch(0.577 0.245 27.325)"
+        },
+        "dark": {
+          "background": "oklch(0.17 0.025 55)",
+          "foreground": "oklch(0.93 0.015 70)",
+          "primary": "oklch(0.7 0.16 50)",
+          "secondary": "oklch(0.26 0.035 55)",
+          "accent": "oklch(0.29 0.04 55)",
+          "muted": "oklch(0.26 0.03 55)",
+          "destructive": "oklch(0.704 0.191 22.216)"
+        }
+      }
+    },
+    {
+      "id": "splashy",
+      "name": "Splashy",
+      "source": "https://tweakcn.com/r/themes/cmleckfgs000104js16vy8rxy",
+      "colors": {
+        "light": {
+          "background": "oklch(0.98 0.005 310)",
+          "foreground": "oklch(0.18 0.03 290)",
+          "primary": "oklch(0.55 0.22 330)",
+          "secondary": "oklch(0.93 0.025 310)",
+          "accent": "oklch(0.91 0.04 310)",
+          "muted": "oklch(0.93 0.02 310)",
+          "destructive": "oklch(0.577 0.245 27.325)"
+        },
+        "dark": {
+          "background": "oklch(0.16 0.025 300)",
+          "foreground": "oklch(0.93 0.01 310)",
+          "primary": "oklch(0.7 0.2 330)",
+          "secondary": "oklch(0.25 0.035 300)",
+          "accent": "oklch(0.28 0.04 300)",
+          "muted": "oklch(0.25 0.03 300)",
+          "destructive": "oklch(0.704 0.191 22.216)"
+        }
+      }
+    },
+    {
+      "id": "lush",
+      "name": "Lush",
+      "source": "https://tweakcn.com/r/themes/cmlxzdqhc000004js4867ch0s",
+      "colors": {
+        "light": {
+          "background": "oklch(0.98 0.008 145)",
+          "foreground": "oklch(0.18 0.03 155)",
+          "primary": "oklch(0.5 0.16 155)",
+          "secondary": "oklch(0.93 0.025 150)",
+          "accent": "oklch(0.91 0.035 150)",
+          "muted": "oklch(0.93 0.02 150)",
+          "destructive": "oklch(0.577 0.245 27.325)"
+        },
+        "dark": {
+          "background": "oklch(0.16 0.025 155)",
+          "foreground": "oklch(0.93 0.015 148)",
+          "primary": "oklch(0.65 0.17 155)",
+          "secondary": "oklch(0.25 0.035 155)",
+          "accent": "oklch(0.28 0.04 155)",
+          "muted": "oklch(0.25 0.03 155)",
+          "destructive": "oklch(0.704 0.191 22.216)"
+        }
+      }
+    },
+    {
+      "id": "orient",
+      "name": "Orient",
+      "source": "https://tweakcn.com/r/themes/cmlzh5zhg000004jmf4vmcx8c",
+      "colors": {
+        "light": {
+          "background": "oklch(0.98 0.006 30)",
+          "foreground": "oklch(0.2 0.04 25)",
+          "primary": "oklch(0.5 0.2 25)",
+          "secondary": "oklch(0.93 0.02 30)",
+          "accent": "oklch(0.91 0.03 30)",
+          "muted": "oklch(0.93 0.015 30)",
+          "destructive": "oklch(0.577 0.245 27.325)"
+        },
+        "dark": {
+          "background": "oklch(0.16 0.025 20)",
+          "foreground": "oklch(0.93 0.012 30)",
+          "primary": "oklch(0.65 0.2 25)",
+          "secondary": "oklch(0.25 0.035 20)",
+          "accent": "oklch(0.28 0.04 20)",
+          "muted": "oklch(0.25 0.03 20)",
+          "destructive": "oklch(0.704 0.191 22.216)"
+        }
+      }
+    }
+  ]
+}

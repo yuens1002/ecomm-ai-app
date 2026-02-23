@@ -13,6 +13,7 @@ const APP_SETTINGS_KEYS = {
   ALLOW_PROMO_CODES: "commerce.allowPromoCodes",
   REVIEWS_ENABLED: "commerce.reviewsEnabled",
   REVIEW_EMAIL_DELAY_DAYS: "commerce.reviewEmailDelayDays",
+  STOREFRONT_THEME: "storefront.theme",
 } as const;
 
 /**
@@ -140,6 +141,42 @@ export async function setReviewEmailDelayDays(value: number): Promise<void> {
     create: {
       key: APP_SETTINGS_KEYS.REVIEW_EMAIL_DELAY_DAYS,
       value: String(value),
+    },
+  });
+}
+
+/**
+ * Get the active storefront theme ID
+ * @returns theme ID string or null (null = default built-in theme)
+ */
+export async function getStorefrontTheme(): Promise<string | null> {
+  const setting = await prisma.siteSettings.findUnique({
+    where: { key: APP_SETTINGS_KEYS.STOREFRONT_THEME },
+  });
+
+  return setting?.value || null;
+}
+
+/**
+ * Set the active storefront theme
+ * @param themeId theme ID string, or null/"default" to reset to built-in theme
+ */
+export async function setStorefrontTheme(
+  themeId: string | null
+): Promise<void> {
+  if (!themeId || themeId === "default") {
+    await prisma.siteSettings.deleteMany({
+      where: { key: APP_SETTINGS_KEYS.STOREFRONT_THEME },
+    });
+    return;
+  }
+
+  await prisma.siteSettings.upsert({
+    where: { key: APP_SETTINGS_KEYS.STOREFRONT_THEME },
+    update: { value: themeId },
+    create: {
+      key: APP_SETTINGS_KEYS.STOREFRONT_THEME,
+      value: themeId,
     },
   });
 }

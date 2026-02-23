@@ -30,7 +30,8 @@
     "upgrade": "tsx scripts/upgrade.ts",
     "release:patch": "tsx scripts/release.ts patch",
     "release:minor": "tsx scripts/release.ts minor",
-    "release:major": "tsx scripts/release.ts major"
+    "release:major": "tsx scripts/release.ts major",
+    "theme:add": "tsx scripts/add-theme.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
