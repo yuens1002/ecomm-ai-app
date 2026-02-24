@@ -6,9 +6,12 @@ import { ReviewList } from "./ReviewList";
 interface ReviewSectionProps {
   productId: string;
   reviewCount: number;
+  isCoffee?: boolean;
 }
 
-export function ReviewSection({ productId, reviewCount }: ReviewSectionProps) {
+export function ReviewSection({ productId, reviewCount, isCoffee = true }: ReviewSectionProps) {
+  const heading = isCoffee ? "Brew Reports" : "Reviews";
+
   return (
     <section className="mt-8">
       <Separator className="mb-8" />
@@ -16,7 +19,7 @@ export function ReviewSection({ productId, reviewCount }: ReviewSectionProps) {
         id="reviews"
         className="text-2xl font-bold text-text-base mb-6 scroll-mt-20"
       >
-        Brew Reports {reviewCount > 0 && `(${reviewCount})`}
+        {heading} {reviewCount > 0 && `(${reviewCount})`}
       </h2>
       <div className="max-w-3xl">
         <ReviewList productId={productId} />
