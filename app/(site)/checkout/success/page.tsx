@@ -33,7 +33,7 @@ function CheckoutSuccessContent() {
     return (
       <PageContainer className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="w-16 h-16 text-primary animate-spin mb-4" />
-        <p className="text-lg text-text-muted">Verifying your order...</p>
+        <p className="text-lg text-muted-foreground">Verifying your order...</p>
       </PageContainer>
     );
   }
@@ -42,18 +42,18 @@ function CheckoutSuccessContent() {
     <PageContainer className="py-16">
       <div className="max-w-2xl mx-auto text-center">
         <CheckCircle className="w-20 h-20 text-green-600 mx-auto mb-6" />
-        <h1 className="text-4xl font-bold text-text-base mb-4">
+        <h1 className="text-4xl font-bold text-foreground mb-4">
           Order Successful!
         </h1>
-        <p className="text-lg text-text-muted mb-8">
+        <p className="text-lg text-muted-foreground mb-8">
           Thank you for your purchase. Your order has been confirmed and you
           will receive a confirmation email shortly.
         </p>
 
         {sessionId && (
           <div className="bg-accent rounded-lg p-6 mb-8">
-            <p className="text-sm text-text-muted mb-2">Order ID</p>
-            <p className="font-mono text-sm text-text-base break-all">
+            <p className="text-sm text-muted-foreground mb-2">Order ID</p>
+            <p className="font-mono text-sm text-foreground break-all">
               {sessionId}
             </p>
           </div>
@@ -68,7 +68,7 @@ function CheckoutSuccessContent() {
           </Button>
         </div>
 
-        <p className="text-sm text-text-muted mt-8">
+        <p className="text-sm text-muted-foreground mt-8">
           Need help?{" "}
           <Link href="/contact" className="text-primary hover:underline">
             Contact support
@@ -85,7 +85,7 @@ export default function CheckoutSuccessPage() {
       fallback={
         <PageContainer className="py-16 flex flex-col items-center justify-center min-h-[60vh]">
           <Loader2 className="w-16 h-16 text-primary animate-spin mb-4" />
-          <p className="text-lg text-text-muted">Loading...</p>
+          <p className="text-lg text-muted-foreground">Loading...</p>
         </PageContainer>
       }
     >

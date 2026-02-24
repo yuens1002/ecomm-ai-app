@@ -5,9 +5,10 @@ import { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Package } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { PageContainer } from "@/components/shared/PageContainer";
+import { getTrackingUrl } from "@/app/(site)/_components/account/tracking-utils";
 
 interface OrderDetailClientProps {
   order: OrderWithItems;
@@ -20,24 +21,14 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
     return `$${(priceInCents / 100).toFixed(2)}`;
   };
 
-  const getTrackingUrl = (
-    carrier: string,
-    trackingNumber: string
-  ): string | null => {
-    const carriers: Record<string, string> = {
-      USPS: `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`,
-      UPS: `https://www.ups.com/track?tracknum=${trackingNumber}`,
-      FedEx: `https://www.fedex.com/fedextrack/?tracknumbers=${trackingNumber}`,
-      DHL: `https://www.dhl.com/en/express/tracking.html?AWB=${trackingNumber}`,
-    };
-
-    return carriers[carrier] || null;
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+      case "OUT_FOR_DELIVERY":
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400";
+      case "DELIVERED":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
       case "SHIPPED":
       case "PICKED_UP":
         return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
@@ -52,6 +43,10 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
     switch (status) {
       case "PICKED_UP":
         return "Picked Up";
+      case "OUT_FOR_DELIVERY":
+        return "Out for Delivery";
+      case "DELIVERED":
+        return "Delivered";
       case "CANCELLED":
         return "Canceled";
       default:
@@ -84,10 +79,10 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
         </Button>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-text-base">
+            <h1 className="text-3xl font-bold text-foreground">
               Order #{order.id.slice(-8)}
             </h1>
-            <p className="text-text-muted mt-1">
+            <p className="text-muted-foreground mt-1">
               Placed on{" "}
               {format(new Date(order.createdAt), "MMMM d, yyyy 'at' h:mm a")}
             </p>
@@ -113,16 +108,16 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-text-muted">
+                    <th className="text-left py-3 px-4 font-semibold text-sm text-muted-foreground">
                       Product
                     </th>
-                    <th className="text-right py-3 px-4 font-semibold text-sm text-text-muted">
+                    <th className="text-right py-3 px-4 font-semibold text-sm text-muted-foreground">
                       Price
                     </th>
-                    <th className="text-center py-3 px-4 font-semibold text-sm text-text-muted">
+                    <th className="text-center py-3 px-4 font-semibold text-sm text-muted-foreground">
                       Quantity
                     </th>
-                    <th className="text-right py-3 px-4 font-semibold text-sm text-text-muted">
+                    <th className="text-right py-3 px-4 font-semibold text-sm text-muted-foreground">
                       Total
                     </th>
                   </tr>
@@ -137,10 +132,10 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                         >
                           {item.purchaseOption.variant.product.name}
                         </Link>
-                        <div className="text-sm text-text-muted mt-1">
+                        <div className="text-sm text-muted-foreground mt-1">
                           {item.purchaseOption.variant.name}
                         </div>
-                        <div className="text-xs text-text-muted">
+                        <div className="text-xs text-muted-foreground">
                           {item.purchaseOption.type === "SUBSCRIPTION"
                             ? `Subscription${
                                 item.purchaseOption.billingInterval
@@ -168,7 +163,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
             {/* Totals */}
             <div className="mt-6 pt-6 border-t space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-text-muted">Subtotal</span>
+                <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-medium">{formatPrice(subtotal)}</span>
               </div>
               {discount > 0 && (
@@ -182,7 +177,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span className="text-text-muted">
+                <span className="text-muted-foreground">
                   Shipping (
                   {order.deliveryMethod === "DELIVERY"
                     ? "Standard"
@@ -208,7 +203,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-semibold text-sm text-text-muted mb-2">
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-2">
                     Shipping Address
                   </h3>
                   <address className="not-italic text-sm">
@@ -227,59 +222,134 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                   </address>
                 </div>
 
-                {/* Tracking information */}
-                {order.status === "SHIPPED" && order.trackingNumber && (
-                  <div>
-                    <h3 className="font-semibold text-sm text-text-muted mb-2">
-                      Tracking Information
-                    </h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Package className="w-4 h-4 text-text-muted" />
-                        <span className="text-sm">
-                          Shipped{" "}
-                          {order.shippedAt &&
-                            format(
-                              new Date(order.shippedAt),
-                              "MMMM d, yyyy 'at' h:mm a"
-                            )}
-                        </span>
+                {/* Tracking timeline */}
+                {(order.status === "SHIPPED" || order.status === "OUT_FOR_DELIVERY" || order.status === "DELIVERED") &&
+                  order.trackingNumber && (() => {
+                    const steps: Array<{
+                      label: string;
+                      detail?: string;
+                      timestamp: string | null;
+                      active: boolean;
+                      trackingInfo?: { carrier: string; trackingNumber: string; trackingUrl: string | null };
+                    }> = [
+                      {
+                        label: "Order Placed",
+                        timestamp: order.createdAt
+                          ? format(new Date(order.createdAt), "MMM d, yyyy 'at' h:mm a")
+                          : null,
+                        active: true,
+                      },
+                    ];
+
+                    if (order.shippedAt) {
+                      const trackingUrl = order.carrier && order.trackingNumber
+                        ? getTrackingUrl(order.carrier, order.trackingNumber)
+                        : null;
+
+                      steps.push({
+                        label: `Shipped via ${order.carrier || "carrier"}`,
+                        detail: order.trackingNumber ? `Tracking: ${order.trackingNumber}` : undefined,
+                        timestamp: format(new Date(order.shippedAt), "MMM d, yyyy 'at' h:mm a"),
+                        active: true,
+                        trackingInfo: order.carrier && order.trackingNumber
+                          ? { carrier: order.carrier, trackingNumber: order.trackingNumber, trackingUrl }
+                          : undefined,
+                      });
+                    }
+
+                    const isOfd = order.status === "OUT_FOR_DELIVERY";
+                    const isDelivered = order.status === "DELIVERED";
+
+                    steps.push({
+                      label: "Out for Delivery",
+                      timestamp: null,
+                      active: isOfd || isDelivered,
+                    });
+
+                    if (isDelivered && order.deliveredAt) {
+                      steps.push({
+                        label: "Delivered",
+                        timestamp: format(new Date(order.deliveredAt), "MMM d, yyyy 'at' h:mm a"),
+                        active: true,
+                      });
+                    } else {
+                      steps.push({
+                        label: "Delivered",
+                        timestamp: null,
+                        active: false,
+                      });
+                    }
+
+                    return (
+                      <div>
+                        <h3 className="font-semibold text-sm text-muted-foreground mb-2">
+                          Tracking Information
+                        </h3>
+                        <div className="relative pl-8">
+                          {steps.map((step, i) => (
+                            <div key={i} className="relative pb-8 last:pb-0">
+                              {i < steps.length - 1 && (
+                                <div
+                                  className={`absolute left-[-20px] top-3 w-0.5 h-full ${
+                                    step.active && steps[i + 1]?.active
+                                      ? "bg-primary"
+                                      : "bg-muted-foreground/20"
+                                  }`}
+                                />
+                              )}
+                              <div
+                                className={`absolute left-[-24px] top-1 w-2.5 h-2.5 rounded-full border-2 ${
+                                  step.active
+                                    ? "bg-primary border-primary"
+                                    : "bg-background border-muted-foreground/30"
+                                }`}
+                              />
+                              <div>
+                                <p
+                                  className={`text-sm font-medium ${
+                                    step.active ? "text-foreground" : "text-muted-foreground"
+                                  }`}
+                                >
+                                  {step.label}
+                                </p>
+                                {step.timestamp && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {step.timestamp}
+                                  </p>
+                                )}
+                                {step.detail && (
+                                  <p className="text-xs text-muted-foreground mt-1 font-mono">
+                                    {step.detail}
+                                  </p>
+                                )}
+                                {step.trackingInfo?.trackingUrl && (
+                                  <Button
+                                    variant="link"
+                                    size="sm"
+                                    className="h-auto p-0 mt-1 text-xs"
+                                    asChild
+                                  >
+                                    <a
+                                      href={step.trackingInfo.trackingUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      Track Package →
+                                    </a>
+                                  </Button>
+                                )}
+                                {!step.active && (
+                                  <p className="text-xs text-muted-foreground mt-0.5 italic">
+                                    Pending
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div className="bg-muted p-3 rounded-md">
-                        <p className="text-xs text-muted-foreground mb-1">
-                          Carrier
-                        </p>
-                        <p className="text-sm font-medium">{order.carrier}</p>
-                        <p className="text-xs text-muted-foreground mt-2 mb-1">
-                          Tracking Number
-                        </p>
-                        <p className="text-sm font-mono">
-                          {order.trackingNumber}
-                        </p>
-                      </div>
-                      {(() => {
-                        const trackingUrl =
-                          order.carrier && order.trackingNumber
-                            ? getTrackingUrl(
-                                order.carrier,
-                                order.trackingNumber
-                              )
-                            : null;
-                        return trackingUrl ? (
-                          <Button variant="outline" size="sm" asChild>
-                            <a
-                              href={trackingUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Track Shipment →
-                            </a>
-                          </Button>
-                        ) : null;
-                      })()}
-                    </div>
-                  </div>
-                )}
+                    );
+                  })()}
               </div>
             </CardContent>
           </Card>
@@ -293,7 +363,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <p className="text-sm text-text-muted">
+                <p className="text-sm text-muted-foreground">
                   Your order is ready for pickup at:
                 </p>
                 <address className="not-italic text-sm">
@@ -305,7 +375,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                   <br />
                   United States
                 </address>
-                <p className="text-sm text-text-muted mt-4">
+                <p className="text-sm text-muted-foreground mt-4">
                   Store hours: Monday - Friday, 8am - 6pm
                 </p>
               </div>
@@ -328,6 +398,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
           </Card>
         )}
       </div>
+
     </PageContainer>
   );
 }

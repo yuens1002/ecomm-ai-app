@@ -29,7 +29,7 @@ export function CheckoutResumeClient({ userId }: CheckoutResumeClientProps) {
   if (items.length === 0) {
     return (
       <PageContainer className="flex flex-col items-center justify-center min-h-[60vh]">
-        <p className="text-lg text-text-muted mb-4">Your cart is empty.</p>
+        <p className="text-lg text-muted-foreground mb-4">Your cart is empty.</p>
         <Link href="/" className="text-primary hover:underline">
           Continue shopping
         </Link>
@@ -41,7 +41,7 @@ export function CheckoutResumeClient({ userId }: CheckoutResumeClientProps) {
   return (
     <PageContainer className="flex flex-col items-center justify-center min-h-[60vh]">
       <Loader2 className="w-16 h-16 text-primary animate-spin mb-4" />
-      <p className="text-lg text-text-muted">Taking you to checkout...</p>
+      <p className="text-lg text-muted-foreground">Taking you to checkout...</p>
 
       <form
         ref={formRefCallback}

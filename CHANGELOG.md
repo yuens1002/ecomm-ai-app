@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.89.15 - 2026-02-24
+## 0.90.2 - 2026-02-24
 
 ### Added
 
@@ -14,6 +14,27 @@
 ### Fixed
 
 - **Orders page 401 for unauthenticated users**: Graceful handling when session is missing
+
+## 0.90.0 - 2026-02-24
+
+### Added
+
+- **Storefront theme switcher**: Choose from multiple color themes for the customer-facing storefront with live preview, Google Fonts support, and one-click activation from the admin Appearance settings page
+- **Light/dark preview toggle**: Preview how any theme looks in both light and dark mode directly from the Appearance page without switching the admin UI
+
+## 0.89.15 - 2026-02-23
+
+### Added
+
+- **Order delivery tracking**: Full delivery lifecycle with SHIPPED, OUT_FOR_DELIVERY, and DELIVERED statuses, carrier API integration (USPS, UPS, FedEx, DHL), tracking timeline on customer order detail, shipment status dialog on orders list, cron-based delivery status checks, and delivery confirmation emails
+- **Shipping settings page**: Admin page to configure carrier API keys with info callout explaining automatic tracking
+- **Edit shipping details**: Admin can update carrier and tracking number on already-shipped orders without re-sending confirmation email
+- **Demo account protection**: Prevent deletion of admin and demo accounts on the live site
+
+### Changed
+
+- **Order seed data**: Demo user gets one order per status for comprehensive demo coverage
+- **Admin orders table**: Tracking info moved under Ship To column for cleaner layout
 
 ## 0.89.12 - 2026-02-21
 

@@ -42,6 +42,18 @@ export interface RecordAction {
   subItems?: RecordAction[];
 }
 
+export interface RecordTracking {
+  carrier: string;
+  trackingNumber: string;
+  trackingUrl?: string | null;
+}
+
+export interface RecordShipper {
+  carrier: string;
+  trackingNumber: string;
+  trackingUrl: string;
+}
+
 interface MobileRecordCardProps {
   type: "order" | "subscription";
   status: string;
@@ -52,6 +64,7 @@ interface MobileRecordCardProps {
   items: RecordItem[];
   shipping?: RecordShipping;
   deliveryMethod?: string;
+  tracking?: RecordTracking;
   actions?: RecordAction[];
   actionsLoading?: boolean;
   price?: string;
@@ -59,6 +72,7 @@ interface MobileRecordCardProps {
   detailsSectionHeader?: string;
   customer?: { name?: string | null; email?: string | null };
   badge?: React.ReactNode;
+  shipper?: RecordShipper;
 }
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
@@ -79,6 +93,7 @@ export function MobileRecordCard({
   items,
   shipping,
   deliveryMethod,
+  tracking,
   actions,
   actionsLoading,
   price,
@@ -86,6 +101,7 @@ export function MobileRecordCard({
   detailsSectionHeader,
   customer,
   badge,
+  shipper,
 }: MobileRecordCardProps) {
   return (
     <div className="flex flex-col gap-5 px-4 py-4">
@@ -220,6 +236,46 @@ export function MobileRecordCard({
               </>
             ) : (
               <p className="text-foreground italic">Store Pickup</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Shipper section (admin) */}
+      {shipper && (
+        <div>
+          <SectionHeader>Shipper</SectionHeader>
+          <p className="text-sm font-medium mt-0.5">{shipper.carrier}</p>
+          <p className="text-xs text-muted-foreground">
+            <a
+              href={shipper.trackingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline"
+            >
+              {shipper.trackingNumber}
+            </a>
+          </p>
+        </div>
+      )}
+
+      {/* Tracking section */}
+      {tracking && (
+        <div>
+          <SectionHeader>Tracking</SectionHeader>
+          <div className="text-sm mt-0.5">
+            <p className="text-muted-foreground">{tracking.carrier}</p>
+            {tracking.trackingUrl ? (
+              <a
+                href={tracking.trackingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-xs text-primary hover:underline"
+              >
+                {tracking.trackingNumber}
+              </a>
+            ) : (
+              <p className="font-mono text-xs">{tracking.trackingNumber}</p>
             )}
           </div>
         </div>

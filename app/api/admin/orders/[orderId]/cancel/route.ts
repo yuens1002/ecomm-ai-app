@@ -50,7 +50,7 @@ export async function POST(
     }
 
     // Check if order has already been fulfilled
-    if (order.status === "SHIPPED" || order.status === "PICKED_UP") {
+    if (order.status === "SHIPPED" || order.status === "PICKED_UP" || order.status === "OUT_FOR_DELIVERY") {
       return NextResponse.json(
         { error: "Cannot cancel an order that has already been fulfilled" },
         { status: 400 }

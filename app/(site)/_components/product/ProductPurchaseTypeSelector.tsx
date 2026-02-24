@@ -43,14 +43,14 @@ export function ProductPurchaseTypeSelector({
           >
             <RadioGroupItem value="ONE_TIME" id="one-time" />
             <div className="ml-4 flex flex-col">
-              <span className="font-semibold text-text-base">
+              <span className="font-semibold text-foreground">
                 One-Time Purchase
               </span>
             </div>
-            <span className="ml-auto font-bold text-text-base text-lg">
+            <span className="ml-auto font-bold text-foreground text-lg">
               {oneTimeOption.salePriceInCents ? (
                 <span className="flex items-center gap-2">
-                  <span className="line-through text-text-muted font-normal text-sm">
+                  <span className="line-through text-muted-foreground font-normal text-sm">
                     ${formatPrice(oneTimeOption.priceInCents)}
                   </span>
                   ${formatPrice(oneTimeOption.salePriceInCents)}
@@ -74,19 +74,19 @@ export function ProductPurchaseTypeSelector({
           >
             <RadioGroupItem value="SUBSCRIPTION" id="subscription" />
             <div className="ml-4 flex flex-col">
-              <span className="font-semibold text-text-base">
+              <span className="font-semibold text-foreground">
                 Subscribe & Save
               </span>
               {subscriptionDiscountMessage && (
-                <span className="text-sm text-text-muted">
+                <span className="text-sm text-muted-foreground">
                   {subscriptionDiscountMessage}
                 </span>
               )}
             </div>
-            <span className="ml-auto font-bold text-text-base text-lg">
+            <span className="ml-auto font-bold text-foreground text-lg">
               {subscriptionDisplayOption?.salePriceInCents ? (
                 <span className="flex items-center gap-2">
-                  <span className="line-through text-text-muted font-normal text-sm">
+                  <span className="line-through text-muted-foreground font-normal text-sm">
                     ${formatPrice(subscriptionDisplayOption.priceInCents)}
                   </span>
                   ${formatPrice(subscriptionDisplayOption.salePriceInCents)}

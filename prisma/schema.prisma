@@ -290,6 +290,7 @@ model Order {
   shippingStreet        String?
   carrier               String?
   shippedAt             DateTime?
+  deliveredAt           DateTime?
   trackingNumber        String?
   failureReason         String?
   failedAt              DateTime?
@@ -560,6 +561,8 @@ enum ProductType {
 enum OrderStatus {
   PENDING
   SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
   PICKED_UP
   CANCELLED
   FAILED

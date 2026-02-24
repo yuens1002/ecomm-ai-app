@@ -40,7 +40,7 @@ export function RoastLevelBar({
         ))}
       </div>
       {showLabel && (
-        <span className="text-xs text-text-muted whitespace-nowrap overflow-hidden text-ellipsis">{roastLabels[roastLevel]}</span>
+        <span className="text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">{roastLabels[roastLevel]}</span>
       )}
     </div>
   );

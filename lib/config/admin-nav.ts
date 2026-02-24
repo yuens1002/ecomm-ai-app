@@ -79,8 +79,10 @@ export const adminNavConfig: NavItem[] = [
     children: [
       { label: "General", href: "/admin/settings" },
       { label: "Store Front", href: "/admin/settings/storefront" },
+      { label: "Appearance", href: "/admin/settings/appearance" },
       { label: "Location", href: "/admin/settings/location" },
       { label: "Commerce", href: "/admin/settings/commerce" },
+      { label: "Shipping", href: "/admin/settings/shipping" },
       { label: "Marketing", href: "/admin/settings/marketing" },
       { label: "Contact", href: "/admin/settings/contact" },
       { label: "Social Links", href: "/admin/social-links" },
@@ -322,8 +324,10 @@ export const mobileNavConfig: NavItem[] = [
     children: [
       { label: "General", href: "/admin/settings" },
       { label: "Store Front", href: "/admin/settings/storefront" },
+      { label: "Appearance", href: "/admin/settings/appearance" },
       { label: "Location", href: "/admin/settings/location" },
       { label: "Commerce", href: "/admin/settings/commerce" },
+      { label: "Shipping", href: "/admin/settings/shipping" },
       { label: "Marketing", href: "/admin/settings/marketing" },
       { label: "Contact", href: "/admin/settings/contact" },
       { label: "Social Links", href: "/admin/social-links" },

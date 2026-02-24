@@ -1,4 +1,4 @@
-import { PrismaClient, ActivityType, OrderStatus } from "@prisma/client";
+import { PrismaClient, ActivityType, OrderStatus, DeliveryMethod } from "@prisma/client";
 
 // --- User Personas for Realistic Behavior ---
 const PERSONAS = {
@@ -164,6 +164,93 @@ export async function seedSyntheticData(prisma: PrismaClient) {
 
   console.log(`    ✓ Seeded ${newsletterSeeds.length} newsletter subscribers`);
 
+  // --- Demo user: one order per status ---
+  const demoUser = users.find((u) => u.email === "demo@artisanroast.com");
+  if (demoUser) {
+    const demoProduct = products[0];
+    const demoVariant = demoProduct.variants.find(
+      (v) => v.purchaseOptions.length > 0
+    )!;
+    const demoPo = demoVariant.purchaseOptions[0];
+    const demoLocation = CITY_STATE_ZIP[0]; // Seattle
+
+    const demoStatuses: Array<{
+      status: OrderStatus;
+      deliveryMethod: DeliveryMethod;
+      daysAgoCreated: number;
+      carrier?: string;
+      trackingNumber?: string;
+      shippedAt?: Date;
+      deliveredAt?: Date;
+    }> = [
+      { status: "PENDING", deliveryMethod: "DELIVERY", daysAgoCreated: 0 },
+      {
+        status: "SHIPPED",
+        deliveryMethod: "DELIVERY",
+        daysAgoCreated: 2,
+        carrier: "USPS",
+        trackingNumber: "a-real-fake-tracking-#-from-glance",
+        shippedAt: daysAgo(1),
+      },
+      {
+        status: "OUT_FOR_DELIVERY",
+        deliveryMethod: "DELIVERY",
+        daysAgoCreated: 3,
+        carrier: "USPS",
+        trackingNumber: "a-real-fake-tracking-#-from-glance",
+        shippedAt: daysAgo(2),
+      },
+      {
+        status: "DELIVERED",
+        deliveryMethod: "DELIVERY",
+        daysAgoCreated: 7,
+        carrier: "USPS",
+        trackingNumber: "a-real-fake-tracking-#-from-glance",
+        shippedAt: daysAgo(5),
+        deliveredAt: daysAgo(3),
+      },
+      { status: "PICKED_UP", deliveryMethod: "PICKUP", daysAgoCreated: 10 },
+      { status: "CANCELLED", deliveryMethod: "DELIVERY", daysAgoCreated: 14 },
+      { status: "FAILED", deliveryMethod: "DELIVERY", daysAgoCreated: 21 },
+    ];
+
+    for (const ds of demoStatuses) {
+      await prisma.order.create({
+        data: {
+          userId: demoUser.id,
+          status: ds.status,
+          totalInCents: demoPo.priceInCents + 500,
+          deliveryMethod: ds.deliveryMethod,
+          recipientName: demoUser.name || "Demo User",
+          shippingStreet: `${randomInt(100, 9999)} ${randomElement(STREET_NAMES)}`,
+          shippingCity: demoLocation.city,
+          shippingState: demoLocation.state,
+          shippingPostalCode: demoLocation.zip,
+          shippingCountry: "US",
+          customerEmail: demoUser.email,
+          ...(ds.carrier && { carrier: ds.carrier }),
+          ...(ds.trackingNumber && { trackingNumber: ds.trackingNumber }),
+          ...(ds.shippedAt && { shippedAt: ds.shippedAt }),
+          ...(ds.deliveredAt && { deliveredAt: ds.deliveredAt }),
+          items: {
+            create: [
+              {
+                purchaseOptionId: demoPo.id,
+                quantity: 1,
+                priceInCents: demoPo.priceInCents,
+              },
+            ],
+          },
+          createdAt: daysAgo(ds.daysAgoCreated),
+        },
+      });
+    }
+
+    console.log(
+      `    ✓ Created ${demoStatuses.length} demo orders for ${demoUser.email}`
+    );
+  }
+
   // --- Generate User Activities and Orders ---
   let totalActivities = 0;
   let totalOrders = 0;
@@ -228,7 +315,8 @@ export async function seedSyntheticData(prisma: PrismaClient) {
     }
 
     // Generate some orders for active users
-    const orderCount = randomInt(0, 3); // 0-3 orders per user
+    // Guarantee at least 1 order for the first 2 users (for demo statuses)
+    const orderCount = totalOrders < 2 ? randomInt(1, 3) : randomInt(0, 3);
     for (let i = 0; i < orderCount; i++) {
       const orderProducts = [];
       const numItems = randomInt(1, 4); // 1-4 items per order
@@ -261,10 +349,30 @@ export async function seedSyntheticData(prisma: PrismaClient) {
 
       const location = randomElement(CITY_STATE_ZIP);
 
+      // First order: OUT_FOR_DELIVERY, second: SHIPPED, rest: DELIVERED
+      const orderStatus =
+        totalOrders === 0
+          ? "OUT_FOR_DELIVERY"
+          : totalOrders === 1
+            ? "SHIPPED"
+            : "DELIVERED";
+      const orderCreatedAt =
+        totalOrders === 0
+          ? daysAgo(1)
+          : totalOrders === 1
+            ? daysAgo(2)
+            : daysAgo(randomInt(5, 60));
+      const shippedAt =
+        totalOrders === 0
+          ? daysAgo(1)
+          : totalOrders === 1
+            ? daysAgo(1)
+            : daysAgo(randomInt(3, 55));
+
       const _order = await prisma.order.create({
         data: {
           userId: user.id,
-          status: randomElement(WEIGHTED_STATUSES),
+          status: orderStatus,
           totalInCents: totalAmount,
           deliveryMethod: "DELIVERY",
           recipientName: user.name || randomElement(FAKE_NAMES),
@@ -273,6 +381,10 @@ export async function seedSyntheticData(prisma: PrismaClient) {
           shippingState: location.state,
           shippingPostalCode: location.zip,
           shippingCountry: "US",
+          carrier: "USPS",
+          trackingNumber: "a-real-fake-tracking-#-from-glance",
+          shippedAt,
+          ...(orderStatus === "DELIVERED" && { deliveredAt: daysAgo(randomInt(1, 3)) }),
           items: {
             create: orderProducts.map((item) => ({
               purchaseOptionId: item.purchaseOptionId,
@@ -280,7 +392,7 @@ export async function seedSyntheticData(prisma: PrismaClient) {
               priceInCents: item.unitPrice,
             })),
           },
-          createdAt: daysAgo(randomInt(1, 60)),
+          createdAt: orderCreatedAt,
         },
       });
 

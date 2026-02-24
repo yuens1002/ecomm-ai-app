@@ -34,9 +34,9 @@ export async function GET(request: Request) {
     // Handle status filtering
     if (statusFilter) {
       if (statusFilter === "completed") {
-        // Completed = SHIPPED or PICKED_UP
+        // Completed = SHIPPED, OUT_FOR_DELIVERY, DELIVERED, or PICKED_UP
         where.status = {
-          in: [OrderStatus.SHIPPED, OrderStatus.PICKED_UP],
+          in: [OrderStatus.SHIPPED, OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED, OrderStatus.PICKED_UP],
         };
       } else {
         // Direct status match (PENDING, CANCELLED, etc.)
