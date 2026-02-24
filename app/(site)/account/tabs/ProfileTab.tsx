@@ -108,7 +108,7 @@ export default function ProfileTab({ user, onUpdate }: ProfileTabProps) {
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
             />
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-muted-foreground">
               Your name is displayed on orders and can be shared with delivery
               services.
             </p>
@@ -124,7 +124,7 @@ export default function ProfileTab({ user, onUpdate }: ProfileTabProps) {
               placeholder="your.email@example.com"
               required
             />
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-muted-foreground">
               Used for order confirmations and account notifications. Must be
               unique.
             </p>

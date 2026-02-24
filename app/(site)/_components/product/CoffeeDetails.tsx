@@ -26,7 +26,7 @@ function DetailItem({ label, value }: { label: string; value: string }) {
       <dt className="text-xs font-medium uppercase tracking-wide text-foreground/50">
         {label}
       </dt>
-      <dd className="mt-0.5 text-text-base">{value}</dd>
+      <dd className="mt-0.5 text-foreground">{value}</dd>
     </div>
   );
 }

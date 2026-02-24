@@ -17,7 +17,7 @@ export default function FeaturedProducts({
   return (
     <section className="py-16">
       <div className="mx-auto max-w-screen-2xl px-4 md:px-8">
-        <h2 className="text-3xl font-bold text-center text-text-base mb-12">
+        <h2 className="text-3xl font-bold text-center text-foreground mb-12">
           {heading}
         </h2>
 

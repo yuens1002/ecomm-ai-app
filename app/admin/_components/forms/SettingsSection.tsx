@@ -17,6 +17,8 @@ interface SettingsSectionProps {
   description: ReactNode;
   /** Settings fields to display */
   children: ReactNode;
+  /** Optional action element rendered in the top-right of the header */
+  action?: ReactNode;
 }
 
 /**
@@ -28,6 +30,7 @@ export function SettingsSection({
   title,
   description,
   children,
+  action,
 }: SettingsSectionProps) {
   const descriptionIsString = typeof description === "string";
   const descriptionClassName = cn(
@@ -39,19 +42,22 @@ export function SettingsSection({
   return (
     <Card>
       <CardHeader className="pb-8">
-        <Field orientation="vertical">
-          <FieldContent>
-            <FieldTitle className="text-base font-semibold flex items-center gap-2">
-              {icon}
-              {title}
-            </FieldTitle>
-            {descriptionIsString ? (
-              <FieldDescription>{description}</FieldDescription>
-            ) : (
-              <div className={descriptionClassName}>{description}</div>
-            )}
-          </FieldContent>
-        </Field>
+        <div className="flex items-start justify-between gap-4">
+          <Field orientation="vertical" className="min-w-0">
+            <FieldContent>
+              <FieldTitle className="text-base font-semibold flex items-center gap-2">
+                {icon}
+                {title}
+              </FieldTitle>
+              {descriptionIsString ? (
+                <FieldDescription>{description}</FieldDescription>
+              ) : (
+                <div className={descriptionClassName}>{description}</div>
+              )}
+            </FieldContent>
+          </Field>
+          {action && <div className="shrink-0">{action}</div>}
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">{children}</CardContent>
     </Card>

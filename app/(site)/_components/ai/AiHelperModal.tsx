@@ -190,7 +190,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
     >
       <DialogContent className="sm:max-w-md bg-background">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-text-base">
+          <DialogTitle className="text-2xl font-bold text-foreground">
             {step === 3 ? "Your Recommendation" : "Find Your Perfect Coffee"}
           </DialogTitle>
           {step !== 3 && (
@@ -209,7 +209,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
               value={taste}
               className="space-y-3"
             >
-              <Label className="text-sm font-medium text-text-base">
+              <Label className="text-sm font-medium text-foreground">
                 What flavors do you typically enjoy?
               </Label>
               {[
@@ -220,7 +220,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
               ].map((t) => (
                 <div key={t} className="flex items-center space-x-2">
                   <RadioGroupItem value={t} id={t} />
-                  <Label htmlFor={t} className="font-normal text-text-base">
+                  <Label htmlFor={t} className="font-normal text-foreground">
                     {t}
                   </Label>
                 </div>
@@ -246,14 +246,14 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
               value={brewMethod}
               className="space-y-3"
             >
-              <Label className="text-sm font-medium text-text-base">
+              <Label className="text-sm font-medium text-foreground">
                 How do you brew your coffee?
               </Label>
               {["Pour Over", "French Press", "Espresso", "Drip Machine"].map(
                 (b) => (
                   <div key={b} className="flex items-center space-x-2">
                     <RadioGroupItem value={b} id={b} />
-                    <Label htmlFor={b} className="font-normal text-text-base">
+                    <Label htmlFor={b} className="font-normal text-foreground">
                       {b}
                     </Label>
                   </div>
@@ -322,7 +322,7 @@ export default function AiHelperModal({ isOpen, onClose }: AiHelperModalProps) {
             )}
 
             {/* We use whitespace-pre-wrap to respect newlines from the AI */}
-            <p className="text-text-base whitespace-pre-wrap">
+            <p className="text-foreground whitespace-pre-wrap">
               {recommendation}
             </p>
 

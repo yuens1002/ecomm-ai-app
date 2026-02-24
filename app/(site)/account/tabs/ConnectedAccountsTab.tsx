@@ -86,8 +86,8 @@ export default function ConnectedAccountsTab({
                 <GoogleIcon className="w-6 h-6" />
               </div>
               <div>
-                <p className="font-medium text-text-base">Google</p>
-                <p className="text-sm text-text-muted">
+                <p className="font-medium text-foreground">Google</p>
+                <p className="text-sm text-muted-foreground">
                   {hasGoogle ? "Connected" : "Not connected"}
                 </p>
               </div>
@@ -106,12 +106,12 @@ export default function ConnectedAccountsTab({
           {/* GitHub Account */}
           <div className="flex items-center justify-between p-4 border border-border rounded-lg">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                 <Github className="w-6 h-6" />
               </div>
               <div>
-                <p className="font-medium text-text-base">GitHub</p>
-                <p className="text-sm text-text-muted">
+                <p className="font-medium text-foreground">GitHub</p>
+                <p className="text-sm text-muted-foreground">
                   {hasGithub ? "Connected" : "Not connected"}
                 </p>
               </div>
@@ -134,8 +134,8 @@ export default function ConnectedAccountsTab({
                 <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="font-medium text-text-base">Email & Password</p>
-                <p className="text-sm text-text-muted">Manage in Security tab</p>
+                <p className="font-medium text-foreground">Email & Password</p>
+                <p className="text-sm text-muted-foreground">Manage in Security tab</p>
               </div>
             </div>
             <Button variant="ghost" asChild>

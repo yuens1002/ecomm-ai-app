@@ -26,7 +26,7 @@ export function ProductDeliverySchedule({
     <InputGroup className="h-14 w-full rounded-md border border-border overflow-hidden">
       <InputGroupAddon
         align="inline-start"
-        className="h-full px-4 text-sm font-semibold text-text-base"
+        className="h-full px-4 text-sm font-semibold text-foreground"
       >
         Schedule
       </InputGroupAddon>
@@ -36,7 +36,7 @@ export function ProductDeliverySchedule({
         }
         onValueChange={onSubscriptionCadenceChange}
       >
-        <SelectTrigger className="h-full flex-1 border-0 bg-transparent shadow-none focus:ring-0 focus:ring-offset-0">
+        <SelectTrigger className="h-full flex-1 border-0 bg-transparent dark:bg-transparent shadow-none focus:ring-0 focus:ring-offset-0">
           <SelectValue placeholder="Choose delivery schedule" />
         </SelectTrigger>
         <SelectContent>

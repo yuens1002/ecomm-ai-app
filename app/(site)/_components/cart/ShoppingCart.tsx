@@ -279,12 +279,12 @@ export function ShoppingCart() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative text-text-muted hover:text-primary transition-colors"
+          className="relative"
           aria-label={`Open cart (${displayCount} items)`}
         >
           <ShoppingCartIcon className="w-6 h-6" />
           {displayCount > 0 && (
-            <span className="absolute top-0 -right-1.5 md:-top-2 md:-right-2 bg-red-600 text-white text-[10px] md:text-xs w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center font-semibold">
+            <span className="absolute top-0 -right-1.5 md:-top-2 md:-right-2 bg-primary text-primary-foreground text-[10px] md:text-xs w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center font-semibold">
               {displayCount}
             </span>
           )}
@@ -307,11 +307,11 @@ export function ShoppingCart() {
         <div className="flex-1 overflow-y-auto px-6 py-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
-              <ShoppingCartIcon className="w-16 h-16 text-text-muted mb-4" />
-              <p className="text-lg font-medium text-text-base mb-2">
+              <ShoppingCartIcon className="w-16 h-16 text-muted-foreground mb-4" />
+              <p className="text-lg font-medium text-foreground mb-2">
                 Your cart is empty
               </p>
-              <p className="text-sm text-text-muted mb-6">
+              <p className="text-sm text-muted-foreground mb-6">
                 Add some delicious coffee to get started!
               </p>
               <Button asChild>
@@ -331,7 +331,7 @@ export function ShoppingCart() {
                     className="shrink-0"
                     onClick={() => setIsOpen(false)}
                   >
-                    <div className="relative w-20 h-20 rounded-md overflow-hidden bg-white dark:bg-gray-800">
+                    <div className="relative w-20 h-20 rounded-md overflow-hidden bg-muted">
                       {item.imageUrl ? (
                         <Image
                           src={item.imageUrl}
@@ -340,7 +340,7 @@ export function ShoppingCart() {
                           className="object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                           No image
                         </div>
                       )}
@@ -351,12 +351,12 @@ export function ShoppingCart() {
                   <div className="flex-1 min-w-0">
                     <Link
                       href={`/products/${item.productSlug}`}
-                      className="font-medium text-text-base hover:text-primary line-clamp-2 mb-1"
+                      className="font-medium text-foreground hover:text-primary line-clamp-2 mb-1"
                       onClick={() => setIsOpen(false)}
                     >
                       {item.productName}
                     </Link>
-                    <div className="text-sm text-text-muted space-y-0.5">
+                    <div className="text-sm text-muted-foreground space-y-0.5">
                       <p>{item.variantName}</p>
                       <p className="capitalize">
                         {item.purchaseType === "SUBSCRIPTION"
@@ -446,7 +446,7 @@ export function ShoppingCart() {
                               {formatPrice(item.originalPriceInCents)}
                             </span>
                           )}
-                          <span className="font-semibold text-text-base">
+                          <span className="font-semibold text-foreground">
                             {formatPrice(item.priceInCents)}
                           </span>
                         </span>

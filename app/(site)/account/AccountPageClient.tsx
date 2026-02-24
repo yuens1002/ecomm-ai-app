@@ -82,10 +82,10 @@ export default function AccountPageClient({ user }: AccountPageClientProps) {
   return (
     <PageContainer>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-text-base mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Account Settings
         </h1>
-        <p className="text-text-muted">
+        <p className="text-muted-foreground">
           Manage your profile, security, and preferences
         </p>
       </div>

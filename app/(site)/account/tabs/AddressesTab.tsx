@@ -206,7 +206,7 @@ export default function AddressesTab({
                 onSubmit={handleAdd}
                 className="p-4 border border-border rounded-lg space-y-4"
               >
-                <h3 className="font-medium text-text-base">New Address</h3>
+                <h3 className="font-medium text-foreground">New Address</h3>
 
                 <div className="space-y-2">
                   <Label htmlFor="street">Street Address</Label>
@@ -292,7 +292,7 @@ export default function AddressesTab({
 
           {/* Address List */}
           {addresses.length === 0 && !isAdding ? (
-            <div className="text-center py-12 text-text-muted">
+            <div className="text-center py-12 text-muted-foreground">
               <MapPin className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>No addresses saved yet.</p>
               <p className="text-sm">Add an address to speed up checkout.</p>
@@ -332,13 +332,13 @@ export default function AddressesTab({
                     </Button>
                   </div>
                   {/* Address content */}
-                  <p className="text-sm font-medium text-text-base">
+                  <p className="text-sm font-medium text-foreground">
                     {address.street}
                   </p>
-                  <p className="text-sm text-text-muted">
+                  <p className="text-sm text-muted-foreground">
                     {address.city}, {address.state} {address.postalCode}
                   </p>
-                  <p className="text-sm text-text-muted">
+                  <p className="text-sm text-muted-foreground">
                     {address.country}
                   </p>
                 </div>

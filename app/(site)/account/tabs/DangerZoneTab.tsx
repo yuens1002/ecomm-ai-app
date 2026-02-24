@@ -116,8 +116,8 @@ export default function DangerZoneTab({
         {/* Delete Account Section */}
         <div className="space-y-4">
           <div>
-            <h3 className="font-medium text-text-base mb-2">Delete Account</h3>
-            <p className="text-sm text-text-muted">
+            <h3 className="font-medium text-foreground mb-2">Delete Account</h3>
+            <p className="text-sm text-muted-foreground">
               Once you delete your account, there is no going back. Please be
               certain.
             </p>
@@ -203,10 +203,10 @@ export default function DangerZoneTab({
 
         {/* Alternative: Export Data */}
         <div className="pt-4 border-t">
-          <h3 className="font-medium text-text-base mb-2">
+          <h3 className="font-medium text-foreground mb-2">
             Download Your Data
           </h3>
-          <p className="text-sm text-text-muted mb-3">
+          <p className="text-sm text-muted-foreground mb-3">
             Before deleting, you might want to download a copy of your data.
           </p>
           <Button variant="outline" disabled>

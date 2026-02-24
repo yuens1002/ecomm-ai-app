@@ -123,7 +123,7 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
                 <button
                   type="button"
                   onClick={() => setShowCurrent(!showCurrent)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-text-base transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
                   tabIndex={-1}
                 >
                   {showCurrent ? (
@@ -153,7 +153,7 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
               <button
                 type="button"
                 onClick={() => setShowNew(!showNew)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-text-base transition-colors"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
                 tabIndex={-1}
               >
                 {showNew ? (
@@ -163,7 +163,7 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
                 )}
               </button>
             </div>
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-muted-foreground">
               Must be at least 8 characters long
             </p>
           </FormField>
@@ -183,7 +183,7 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
               <button
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-muted hover:text-text-base transition-colors"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
                 tabIndex={-1}
               >
                 {showConfirm ? (

@@ -119,7 +119,7 @@ export default function OrdersTab({ userId }: OrdersTabProps) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-text-muted" />
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </CardContent>
       </Card>
     );
@@ -145,7 +145,7 @@ export default function OrdersTab({ userId }: OrdersTabProps) {
           <CardDescription>View and track your past orders.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12 text-text-muted">
+          <div className="text-center py-12 text-muted-foreground">
             <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p className="mb-2">No orders yet.</p>
             <p className="text-sm mb-6">
@@ -179,13 +179,13 @@ export default function OrdersTab({ userId }: OrdersTabProps) {
                 <CardTitle className="text-lg">
                   Order #{order.id.slice(-8)}
                 </CardTitle>
-                <p className="text-sm text-text-muted mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Placed on {format(new Date(order.createdAt), "PPP")}
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <div className="text-lg font-semibold text-text-base">
+                  <div className="text-lg font-semibold text-foreground">
                     {formatPrice(order.totalInCents)}
                   </div>
                   <span
@@ -251,11 +251,11 @@ export default function OrdersTab({ userId }: OrdersTabProps) {
                   <div className="flex-1">
                     <Link
                       href={`/products/${item.purchaseOption.variant.product.slug}`}
-                      className="font-medium text-text-base hover:text-primary"
+                      className="font-medium text-foreground hover:text-primary"
                     >
                       {item.purchaseOption.variant.product.name}
                     </Link>
-                    <p className="text-sm text-text-muted">
+                    <p className="text-sm text-muted-foreground">
                       {item.purchaseOption.variant.name} •{" "}
                       {item.purchaseOption.type === "SUBSCRIPTION"
                         ? "Subscription"
@@ -274,10 +274,10 @@ export default function OrdersTab({ userId }: OrdersTabProps) {
 
             <div className="mt-4 pt-4 border-t space-y-2">
               <div>
-                <p className="text-sm font-medium text-text-base">
+                <p className="text-sm font-medium text-foreground">
                   Delivery Method
                 </p>
-                <p className="text-sm text-text-muted">
+                <p className="text-sm text-muted-foreground">
                   {order.deliveryMethod === "DELIVERY"
                     ? "🚚 Shipping"
                     : "🏪 Store Pickup"}
@@ -285,10 +285,10 @@ export default function OrdersTab({ userId }: OrdersTabProps) {
               </div>
               {order.shippingStreet && order.deliveryMethod === "DELIVERY" && (
                 <div>
-                  <p className="text-sm font-medium text-text-base">
+                  <p className="text-sm font-medium text-foreground">
                     Shipping Address
                   </p>
-                  <p className="text-sm text-text-muted">
+                  <p className="text-sm text-muted-foreground">
                     {order.recipientName && (
                       <>
                         {order.recipientName}
@@ -306,10 +306,10 @@ export default function OrdersTab({ userId }: OrdersTabProps) {
               )}
               {order.paymentCardLast4 && (
                 <div>
-                  <p className="text-sm font-medium text-text-base">
+                  <p className="text-sm font-medium text-foreground">
                     Payment Method
                   </p>
-                  <p className="text-sm text-text-muted">
+                  <p className="text-sm text-muted-foreground">
                     💳 {order.paymentCardLast4}
                   </p>
                 </div>

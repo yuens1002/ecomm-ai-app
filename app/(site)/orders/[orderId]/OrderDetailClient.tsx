@@ -79,10 +79,10 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
         </Button>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-text-base">
+            <h1 className="text-3xl font-bold text-foreground">
               Order #{order.id.slice(-8)}
             </h1>
-            <p className="text-text-muted mt-1">
+            <p className="text-muted-foreground mt-1">
               Placed on{" "}
               {format(new Date(order.createdAt), "MMMM d, yyyy 'at' h:mm a")}
             </p>
@@ -108,16 +108,16 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-text-muted">
+                    <th className="text-left py-3 px-4 font-semibold text-sm text-muted-foreground">
                       Product
                     </th>
-                    <th className="text-right py-3 px-4 font-semibold text-sm text-text-muted">
+                    <th className="text-right py-3 px-4 font-semibold text-sm text-muted-foreground">
                       Price
                     </th>
-                    <th className="text-center py-3 px-4 font-semibold text-sm text-text-muted">
+                    <th className="text-center py-3 px-4 font-semibold text-sm text-muted-foreground">
                       Quantity
                     </th>
-                    <th className="text-right py-3 px-4 font-semibold text-sm text-text-muted">
+                    <th className="text-right py-3 px-4 font-semibold text-sm text-muted-foreground">
                       Total
                     </th>
                   </tr>
@@ -132,10 +132,10 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                         >
                           {item.purchaseOption.variant.product.name}
                         </Link>
-                        <div className="text-sm text-text-muted mt-1">
+                        <div className="text-sm text-muted-foreground mt-1">
                           {item.purchaseOption.variant.name}
                         </div>
-                        <div className="text-xs text-text-muted">
+                        <div className="text-xs text-muted-foreground">
                           {item.purchaseOption.type === "SUBSCRIPTION"
                             ? `Subscription${
                                 item.purchaseOption.billingInterval
@@ -163,7 +163,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
             {/* Totals */}
             <div className="mt-6 pt-6 border-t space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-text-muted">Subtotal</span>
+                <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-medium">{formatPrice(subtotal)}</span>
               </div>
               {discount > 0 && (
@@ -177,7 +177,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span className="text-text-muted">
+                <span className="text-muted-foreground">
                   Shipping (
                   {order.deliveryMethod === "DELIVERY"
                     ? "Standard"
@@ -203,7 +203,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-semibold text-sm text-text-muted mb-2">
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-2">
                     Shipping Address
                   </h3>
                   <address className="not-italic text-sm">
@@ -282,7 +282,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
 
                     return (
                       <div>
-                        <h3 className="font-semibold text-sm text-text-muted mb-2">
+                        <h3 className="font-semibold text-sm text-muted-foreground mb-2">
                           Tracking Information
                         </h3>
                         <div className="relative pl-8">
@@ -363,7 +363,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <p className="text-sm text-text-muted">
+                <p className="text-sm text-muted-foreground">
                   Your order is ready for pickup at:
                 </p>
                 <address className="not-italic text-sm">
@@ -375,7 +375,7 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                   <br />
                   United States
                 </address>
-                <p className="text-sm text-text-muted mt-4">
+                <p className="text-sm text-muted-foreground mt-4">
                   Store hours: Monday - Friday, 8am - 6pm
                 </p>
               </div>

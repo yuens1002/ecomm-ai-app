@@ -319,6 +319,14 @@ const routeEntries: RouteEntry[] = [
     isNavigable: true,
   },
   {
+    id: "admin.settings.appearance",
+    pathname: "/admin/settings/appearance",
+    matchMode: "exact",
+    label: "Appearance",
+    parentId: "admin.settings",
+    isNavigable: true,
+  },
+  {
     id: "admin.settings.location",
     pathname: "/admin/settings/location",
     matchMode: "exact",
