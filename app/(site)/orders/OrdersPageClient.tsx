@@ -187,6 +187,27 @@ export default function OrdersPageClient({
     isCompletedOrder(order.status) &&
     order.items.some((item) => isCoffeeProduct(item) && !reviewedProductIds.has(item.purchaseOption.variant.product.id));
 
+  const getBrewReportSubMenu = (order: OrderWithItems) => {
+    if (!hasBrewReportActions(order)) return [];
+    const subItems = order.items
+      .filter((item) => isCoffeeProduct(item) && !reviewedProductIds.has(item.purchaseOption.variant.product.id))
+      .map((item) => ({
+        label: item.purchaseOption.variant.product.name,
+        onClick: () =>
+          setReviewFormTarget({
+            productId: item.purchaseOption.variant.product.id,
+            productName: item.purchaseOption.variant.product.name,
+            productTastingNotes: item.purchaseOption.variant.product.tastingNotes,
+          }),
+      }));
+    if (subItems.length === 0) return [];
+    return [{
+      label: "Write Brew Report",
+      icon: <PenLine className="h-4 w-4 mr-2" />,
+      subItems,
+    }];
+  };
+
   const handleReviewSuccess = () => {
     if (reviewFormTarget) {
       setReviewedProductIds((prev) => new Set([...prev, reviewFormTarget.productId]));
@@ -303,20 +324,7 @@ export default function OrdersPageClient({
                                 },
                               ]
                             : []),
-                          ...(isCompletedOrder(order.status)
-                            ? order.items
-                                .filter((item) => isCoffeeProduct(item) && !reviewedProductIds.has(item.purchaseOption.variant.product.id))
-                                .map((item) => ({
-                                  label: `Write Brew Report: ${item.purchaseOption.variant.product.name}`,
-                                  onClick: () =>
-                                    setReviewFormTarget({
-                                      productId: item.purchaseOption.variant.product.id,
-                                      productName: item.purchaseOption.variant.product.name,
-                                      productTastingNotes: item.purchaseOption.variant.product.tastingNotes,
-                                    }),
-                                  icon: <PenLine className="h-4 w-4 mr-2" />,
-                                }))
-                            : []),
+                          ...getBrewReportSubMenu(order),
                         ]
                       : undefined
                   }
@@ -419,20 +427,7 @@ export default function OrdersPageClient({
                               ...(canCancelOrder(order)
                                 ? [{ label: "Cancel Order", onClick: () => openCancelDialog(order), variant: "destructive" as const }]
                                 : []),
-                              ...(isCompletedOrder(order.status)
-                                ? order.items
-                                    .filter((item) => isCoffeeProduct(item) && !reviewedProductIds.has(item.purchaseOption.variant.product.id))
-                                    .map((item) => ({
-                                      label: `Write Brew Report: ${item.purchaseOption.variant.product.name}`,
-                                      onClick: () =>
-                                        setReviewFormTarget({
-                                          productId: item.purchaseOption.variant.product.id,
-                                          productName: item.purchaseOption.variant.product.name,
-                                          productTastingNotes: item.purchaseOption.variant.product.tastingNotes,
-                                        }),
-                                      icon: <PenLine className="h-4 w-4 mr-2" />,
-                                    }))
-                                : []),
+                              ...getBrewReportSubMenu(order),
                             ]}
                             loading={cancellingOrderId === order.id}
                           />
