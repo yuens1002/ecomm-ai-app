@@ -560,6 +560,54 @@ const PRODUCT_REVIEWS: Record<string, ReviewSeed[]> = {
       brewMethod: "DRIP_MACHINE",
     },
   ],
+
+  // --- Merch products ---
+
+  "heritage-diner-mug": [
+    {
+      rating: 5, userIndex: 65, daysAgo: 45,
+      title: "Perfect everyday mug",
+      content: "This mug is exactly what I wanted — sturdy, great size, and the diner-style aesthetic is charming. It holds heat well and the handle is comfortable for long morning sessions. The glaze finish is smooth and it cleans up easily. Already bought two more as gifts.",
+    },
+    {
+      rating: 4, userIndex: 66, daysAgo: 30,
+      content: "Really nice mug. Feels solid in the hand with a good weight to it. The retro diner look is on point. Only minor gripe is I wish it was a touch larger, but the quality is excellent for the price.",
+    },
+    {
+      rating: 4, userIndex: 67, daysAgo: 18,
+      title: "Great build quality",
+      content: "Heavy-duty ceramic that feels like it'll last forever. The thick walls keep my coffee hot longer than my thin porcelain mugs. Love the classic look — it sits perfectly on my desk.",
+    },
+    {
+      rating: 5, userIndex: 68, daysAgo: 5,
+      content: "Absolutely love this mug. The size is perfect for a pour-over, the walls are thick, and it just feels right. The heritage diner style brings a smile every morning. Highly recommended.",
+    },
+  ],
+
+  "fellow-stagg-ekg-kettle": [
+    {
+      rating: 5, userIndex: 69, daysAgo: 55,
+      title: "Game changer for pour-over",
+      content: "The precision temperature control on this kettle is incredible. I set it to 200°F for my V60 and it holds steady. The gooseneck spout gives perfect flow control — my pours have never been more consistent. The build quality is premium and it looks stunning on the counter. Worth every penny if you're serious about pour-over.",
+    },
+    {
+      rating: 5, userIndex: 70, daysAgo: 38,
+      content: "Best kettle I've ever owned. The temperature hold feature means I can take my time setting up my brew without the water cooling off. The pour from the gooseneck is incredibly precise. Feels like a professional tool.",
+    },
+    {
+      rating: 4, userIndex: 71, daysAgo: 25,
+      title: "Beautiful design, excellent function",
+      content: "This kettle is as much a design piece as it is functional. The matte black finish is gorgeous and the LCD display is easy to read. Temperature accuracy is spot on. The only reason I'm not giving 5 stars is the price, but you do get what you pay for.",
+    },
+    {
+      rating: 5, userIndex: 72, daysAgo: 12,
+      content: "Upgraded from a standard kettle and the difference is night and day. The precision pour spout makes all the difference for Chemex and V60 brewing. Temperature holds perfectly. My coffee has genuinely improved since getting this.",
+    },
+    {
+      rating: 4, userIndex: 73, daysAgo: 3,
+      content: "Excellent build quality and beautiful design. Heats up quickly and maintains temperature well. The gooseneck gives great control. A luxury item but one that earns its place in a coffee enthusiast's kitchen.",
+    },
+  ],
 };
 
 // Helpful vote distribution: which review indices (within a product) get how many votes
@@ -580,6 +628,8 @@ const VOTE_DISTRIBUTION: Record<string, number[]> = {
   "decaf-colombian": [4, 1],
   "honduras-marcala": [3, 2],
   "peruvian-organic": [4, 1],
+  "heritage-diner-mug": [6, 2, 3, 4],
+  "fellow-stagg-ekg-kettle": [9, 5, 3, 6, 2],
 };
 
 export async function seedReviews(prisma: PrismaClient) {
