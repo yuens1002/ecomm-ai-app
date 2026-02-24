@@ -35,9 +35,9 @@ export function OrdersClient({ orders }: OrdersClientProps) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-2xl mx-auto text-center">
-          <Package className="w-16 h-16 text-text-muted mx-auto mb-4" />
+          <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <h1 className="text-3xl font-bold mb-4">No Orders Yet</h1>
-          <p className="text-text-muted mb-8">
+          <p className="text-muted-foreground mb-8">
             You haven&apos;t placed any orders. Start shopping to see your order
             history here!
           </p>
@@ -51,7 +51,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-text-base mb-8">Order History</h1>
+      <h1 className="text-4xl font-bold text-foreground mb-8">Order History</h1>
 
       <div className="space-y-6">
         {orders.map((order) => (
@@ -62,12 +62,12 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                   <CardTitle className="text-lg">
                     Order #{order.id.slice(-8)}
                   </CardTitle>
-                  <p className="text-sm text-text-muted mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Placed on {format(new Date(order.createdAt), "PPP")}
                   </p>
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-semibold text-text-base">
+                  <div className="text-lg font-semibold text-foreground">
                     {formatPrice(order.totalInCents)}
                   </div>
                   <span
@@ -90,11 +90,11 @@ export function OrdersClient({ orders }: OrdersClientProps) {
                     <div className="flex-1">
                       <Link
                         href={`/products/${item.purchaseOption.variant.product.slug}`}
-                        className="font-medium text-text-base hover:text-primary"
+                        className="font-medium text-foreground hover:text-primary"
                       >
                         {item.purchaseOption.variant.product.name}
                       </Link>
-                      <p className="text-sm text-text-muted">
+                      <p className="text-sm text-muted-foreground">
                         {item.purchaseOption.variant.name} •{" "}
                         {item.purchaseOption.type === "SUBSCRIPTION"
                           ? "Subscription"
@@ -113,7 +113,7 @@ export function OrdersClient({ orders }: OrdersClientProps) {
 
               {order.stripeSessionId && (
                 <div className="mt-4 pt-4 border-t">
-                  <p className="text-xs text-text-muted">
+                  <p className="text-xs text-muted-foreground">
                     Order ID: {order.stripeSessionId}
                   </p>
                 </div>

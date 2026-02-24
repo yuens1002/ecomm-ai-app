@@ -401,12 +401,12 @@ export default function ProductClientPage({
       header={
         <>
           {isCoffee && product.origin.length > 0 && (
-            <p className="text-xs font-medium uppercase tracking-widest text-text-muted">
+            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
               {product.origin.join(" + ")}
             </p>
           )}
 
-          <h1 className={`text-4xl font-bold text-text-base ${isCoffee && product.origin.length > 0 ? "-mt-2" : ""}`}>
+          <h1 className={`text-4xl font-bold text-foreground ${isCoffee && product.origin.length > 0 ? "-mt-2" : ""}`}>
             {product.name}
           </h1>
 
@@ -417,7 +417,7 @@ export default function ProductClientPage({
               )}
 
               {product.tastingNotes.length > 0 && (
-                <span className="text-lg text-text-muted italic">
+                <span className="text-lg text-muted-foreground italic">
                   {product.tastingNotes.join(", ")}
                 </span>
               )}
@@ -449,7 +449,7 @@ export default function ProductClientPage({
                   <dt className="text-xs font-medium uppercase tracking-wide text-foreground/50">
                     {detail.label}
                   </dt>
-                  <dd className="text-sm text-text-base">
+                  <dd className="text-sm text-foreground">
                     {detail.value}
                   </dd>
                 </div>
@@ -490,7 +490,7 @@ export default function ProductClientPage({
                 {product.heading}
               </h2>
             )}
-            <p className="text-text-base leading-relaxed">
+            <p className="text-foreground leading-relaxed">
               {product.description}
             </p>
           </div>
@@ -506,7 +506,7 @@ export default function ProductClientPage({
       addOns={
         addOns.length > 0 ? (
           <div className="mt-4">
-            <h2 className="text-lg font-bold text-left text-text-base mb-6">
+            <h2 className="text-lg font-bold text-left text-foreground mb-6">
               {settings.productAddOnsSectionTitle}
             </h2>
 
@@ -527,7 +527,7 @@ export default function ProductClientPage({
         displayProducts.length > 0 ? (
           <div className="my-16">
             <Separator className="my-12" />
-            <h2 className="text-3xl font-bold text-center text-text-base mb-12">
+            <h2 className="text-3xl font-bold text-center text-foreground mb-12">
               {settings.productRelatedHeading}
             </h2>
             <ScrollCarousel

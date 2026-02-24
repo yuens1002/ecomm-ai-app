@@ -214,7 +214,7 @@ export default function SetupPage() {
                 type="text"
                 placeholder="John Doe"
                 required
-                className="w-full px-3 py-2 border border-border rounded-md bg-background text-text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={isLoading}
               />
             </div>
@@ -227,7 +227,7 @@ export default function SetupPage() {
                 type="email"
                 placeholder="admin@artisan-roast.com"
                 required
-                className="w-full px-3 py-2 border border-border rounded-md bg-background text-text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={isLoading}
               />
             </div>
@@ -244,13 +244,13 @@ export default function SetupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setShowValidation(true)}
-                  className="w-full px-3 py-2 pr-10 border border-border rounded-md bg-background text-text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 pr-10 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-base"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   disabled={isLoading}
                 >
                   {showPassword ? (
@@ -323,7 +323,7 @@ export default function SetupPage() {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-md bg-background text-text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={isLoading}
               />
               {confirmPassword.length > 0 && password !== confirmPassword && (

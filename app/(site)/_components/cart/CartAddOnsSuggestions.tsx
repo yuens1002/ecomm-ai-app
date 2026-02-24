@@ -154,7 +154,7 @@ export function CartAddOnsSuggestions({
     <>
       <Separator className="my-4" />
       <div className={className}>
-        <h3 className="text-sm font-semibold text-text-base mb-4">
+        <h3 className="text-sm font-semibold text-foreground mb-4">
           {settings.cartAddOnsSectionTitle || "You May Also Like"}
         </h3>
 

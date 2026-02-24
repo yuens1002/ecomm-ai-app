@@ -14,7 +14,7 @@ export function RecordItemsList({ items }: RecordItemsListProps) {
             {item.href ? (
               <Link
                 href={item.href}
-                className="text-text-base hover:text-primary"
+                className="text-foreground hover:text-primary"
               >
                 {item.name}
               </Link>

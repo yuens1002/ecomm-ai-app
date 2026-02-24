@@ -23,16 +23,16 @@ export default function CheckoutCancelPage() {
     <PageContainer className="py-16">
       <div className="max-w-2xl mx-auto text-center">
         <XCircle className="w-20 h-20 text-orange-500 mx-auto mb-6" />
-        <h1 className="text-4xl font-bold text-text-base mb-4">
+        <h1 className="text-4xl font-bold text-foreground mb-4">
           Checkout Cancelled
         </h1>
-        <p className="text-lg text-text-muted mb-8">
+        <p className="text-lg text-muted-foreground mb-8">
           Your checkout was cancelled. No charges were made. Your cart items are
           still saved.
         </p>
 
         <div className="bg-accent rounded-lg p-6 mb-8">
-          <p className="text-sm text-text-base">
+          <p className="text-sm text-foreground">
             Don&apos;t worry! Your cart items are still there. You can continue
             shopping or try checking out again when you&apos;re ready.
           </p>
@@ -47,7 +47,7 @@ export default function CheckoutCancelPage() {
           </Button>
         </div>
 
-        <p className="text-sm text-text-muted mt-8">
+        <p className="text-sm text-muted-foreground mt-8">
           Need help?{" "}
           <Link href="/contact" className="text-primary hover:underline">
             Contact support

@@ -184,10 +184,10 @@ export default function OrdersPageClient({
   return (
     <PageContainer>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-text-base mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Order History
         </h1>
-        <p className="text-text-muted">View and manage your past orders</p>
+        <p className="text-muted-foreground">View and manage your past orders</p>
       </div>
 
       <div className="space-y-6">
@@ -204,13 +204,13 @@ export default function OrdersPageClient({
       {isLoading ? (
         <Card>
           <CardContent className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-text-muted" />
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </CardContent>
         </Card>
       ) : filteredOrders.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-text-muted mb-4">No orders found</p>
+            <p className="text-muted-foreground mb-4">No orders found</p>
             <Button asChild>
               <Link href="/products">Start Shopping</Link>
             </Button>
@@ -338,7 +338,7 @@ export default function OrdersPageClient({
                           city={order.shippingCity}
                           state={order.shippingState}
                           postalCode={order.shippingPostalCode}
-                          mutedClassName="text-text-muted"
+                          mutedClassName="text-muted-foreground"
                           muteAddressLines
                         />
                       </td>

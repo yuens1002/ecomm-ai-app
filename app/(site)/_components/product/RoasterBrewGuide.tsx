@@ -22,7 +22,7 @@ function RecipeSummary({ recipe }: { recipe: BrewRecipe }) {
   if (parts.length === 0) return null;
 
   return (
-    <p className="text-sm text-text-muted">
+    <p className="text-sm text-muted-foreground">
       {parts.join(" \u00B7 ")}
     </p>
   );
@@ -45,10 +45,10 @@ function RecipeStepsTable({ recipe }: { recipe: BrewRecipe }) {
         <tbody>
           {recipe.steps.map((step, i) => (
             <tr key={i} className="border-b border-border/30 last:border-0">
-              <td className="py-1.5 pr-3 font-medium text-text-base">{step.label}</td>
-              <td className="py-1.5 pr-3 text-text-muted">{step.waterG ? `${step.waterG}g` : "\u2014"}</td>
-              <td className="py-1.5 pr-3 text-text-muted">{step.timeStamp ?? "\u2014"}</td>
-              <td className="py-1.5 text-text-muted">{step.notes ?? "\u2014"}</td>
+              <td className="py-1.5 pr-3 font-medium text-foreground">{step.label}</td>
+              <td className="py-1.5 pr-3 text-muted-foreground">{step.waterG ? `${step.waterG}g` : "\u2014"}</td>
+              <td className="py-1.5 pr-3 text-muted-foreground">{step.timeStamp ?? "\u2014"}</td>
+              <td className="py-1.5 text-muted-foreground">{step.notes ?? "\u2014"}</td>
             </tr>
           ))}
         </tbody>
@@ -62,10 +62,10 @@ function RecipeCard({ recipe }: { recipe: BrewRecipe }) {
 
   return (
     <div className="rounded-lg border border-border/50 bg-card/50 p-4">
-      <h4 className="text-sm font-semibold text-text-base">{methodLabel}</h4>
+      <h4 className="text-sm font-semibold text-foreground">{methodLabel}</h4>
       <RecipeSummary recipe={recipe} />
       {recipe.notes && (
-        <p className="mt-1 text-sm text-text-muted italic">{recipe.notes}</p>
+        <p className="mt-1 text-sm text-muted-foreground italic">{recipe.notes}</p>
       )}
       <RecipeStepsTable recipe={recipe} />
     </div>
@@ -103,7 +103,7 @@ export function RoasterBrewGuide({ guide }: RoasterBrewGuideProps) {
       )}
 
       {hasOriginNotes && (
-        <p className="text-sm text-text-muted leading-relaxed">
+        <p className="text-sm text-muted-foreground leading-relaxed">
           {guide.originNotes}
         </p>
       )}
@@ -117,7 +117,7 @@ export function RoasterBrewGuide({ guide }: RoasterBrewGuideProps) {
       )}
 
       {hasTastingNotes && (
-        <blockquote className="border-l-2 border-foreground/20 pl-4 text-sm text-text-muted italic leading-relaxed">
+        <blockquote className="border-l-2 border-foreground/20 pl-4 text-sm text-muted-foreground italic leading-relaxed">
           {guide.roasterTastingNotes}
         </blockquote>
       )}

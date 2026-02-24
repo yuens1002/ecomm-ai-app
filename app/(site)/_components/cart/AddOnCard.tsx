@@ -136,7 +136,7 @@ export function AddOnCard({
 
       {/* Title and Button/Pricing — bottom-aligned with image */}
       <div className="flex-1 flex flex-col justify-end min-w-0">
-        <h3 className="font-normal text-sm sm:text-base text-text-base mb-2 line-clamp-2">
+        <h3 className="font-normal text-sm sm:text-base text-foreground mb-2 line-clamp-2">
           {product.name}
         </h3>
 
@@ -159,12 +159,12 @@ export function AddOnCard({
                 <span className="text-xs text-muted-foreground line-through block">
                   ${formatPrice(regularPrice)}
                 </span>
-                <span className="font-bold text-sm text-text-base">
+                <span className="font-bold text-sm text-foreground">
                   ${formatPrice(displayPrice)}
                 </span>
               </div>
             ) : (
-              <span className="font-bold text-base sm:text-lg text-text-base">
+              <span className="font-bold text-base sm:text-lg text-foreground">
                 ${formatPrice(displayPrice)}
               </span>
             )}

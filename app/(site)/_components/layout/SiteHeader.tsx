@@ -315,7 +315,7 @@ export default function SiteHeader({
                           ) : (
                             <DynamicIcon name={productMenuIcon as IconName} className="w-5 h-5" />
                           )}
-                          <span className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
+                          <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                             {label}
                           </span>
                         </div>

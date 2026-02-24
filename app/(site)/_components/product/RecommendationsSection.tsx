@@ -43,7 +43,7 @@ export default function RecommendationsSection({
               ) : (
                 <div className="mt-1 shrink-0"><TrendingUp className="h-6 w-6" /></div>
               )}
-              <h2 className="text-2xl md:text-3xl font-bold text-text-base">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
                 {isPersonalized ? personalizedHeading : trendingHeading}
               </h2>
             </div>
