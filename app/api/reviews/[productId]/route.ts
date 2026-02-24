@@ -57,8 +57,8 @@ export async function GET(
     const session = await auth();
     const userId = session?.user?.id;
 
-    // Fetch reviews + total count
-    const [reviews, total] = await Promise.all([
+    // Fetch reviews + total count + brew method counts + rating distribution
+    const [reviews, total, brewMethodGroups, ratingGroups] = await Promise.all([
       prisma.review.findMany({
         where,
         orderBy,
@@ -78,6 +78,27 @@ export async function GET(
           helpfulCount: true,
           createdAt: true,
           orderId: true,
+          order: {
+            select: {
+              items: {
+                where: {
+                  purchaseOption: {
+                    variant: { productId },
+                  },
+                },
+                take: 1,
+                select: {
+                  purchaseOption: {
+                    select: {
+                      variant: {
+                        select: { name: true },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
           user: {
             select: {
               id: true,
@@ -96,39 +117,69 @@ export async function GET(
         },
       }),
       prisma.review.count({ where }),
+      prisma.review.groupBy({
+        by: ["brewMethod"],
+        where: { productId, status: "PUBLISHED", brewMethod: { not: null } },
+        _count: true,
+      }),
+      prisma.review.groupBy({
+        by: ["rating"],
+        where: { productId, status: "PUBLISHED" },
+        _count: true,
+      }),
     ]);
 
-    // Map results — add userVoted boolean and isVerifiedPurchase
-    const mapped = reviews.map((review) => ({
-      id: review.id,
-      rating: review.rating,
-      title: review.title,
-      content: review.content,
-      brewMethod: review.brewMethod,
-      grindSize: review.grindSize,
-      waterTempF: review.waterTempF,
-      ratio: review.ratio,
-      tastingNotes: review.tastingNotes,
-      completenessScore: review.completenessScore,
-      helpfulCount: review.helpfulCount,
-      createdAt: review.createdAt,
-      isVerifiedPurchase: review.orderId !== null,
-      user: {
-        name: review.user.name,
-        image: review.user.image,
-      },
-      userVoted: userId
-        ? (review as Record<string, unknown>).votes
-          ? ((review as Record<string, unknown>).votes as unknown[]).length > 0
-          : false
-        : false,
-    }));
+    // Build brew method counts map
+    const brewMethodCounts: Record<string, number> = {};
+    for (const group of brewMethodGroups) {
+      if (group.brewMethod) {
+        brewMethodCounts[group.brewMethod] = group._count;
+      }
+    }
+
+    // Build rating distribution: { 1: count, 2: count, ..., 5: count }
+    const ratingDistribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (const group of ratingGroups) {
+      ratingDistribution[group.rating] = group._count;
+    }
+
+    // Map results — add userVoted boolean, isVerifiedPurchase, and variantName
+    const mapped = reviews.map((review) => {
+      const variantName = review.order?.items?.[0]?.purchaseOption?.variant?.name ?? null;
+      return {
+        id: review.id,
+        rating: review.rating,
+        title: review.title,
+        content: review.content,
+        brewMethod: review.brewMethod,
+        grindSize: review.grindSize,
+        waterTempF: review.waterTempF,
+        ratio: review.ratio,
+        tastingNotes: review.tastingNotes,
+        completenessScore: review.completenessScore,
+        helpfulCount: review.helpfulCount,
+        createdAt: review.createdAt,
+        isVerifiedPurchase: review.orderId !== null,
+        variantName,
+        user: {
+          name: review.user.name,
+          image: review.user.image,
+        },
+        userVoted: userId
+          ? (review as Record<string, unknown>).votes
+            ? ((review as Record<string, unknown>).votes as unknown[]).length > 0
+            : false
+          : false,
+      };
+    });
 
     return NextResponse.json({
       reviews: mapped,
       total,
       page,
       pageSize: PAGE_SIZE,
+      brewMethodCounts,
+      ratingDistribution,
     });
   } catch (error) {
     console.error("Error fetching reviews:", error);

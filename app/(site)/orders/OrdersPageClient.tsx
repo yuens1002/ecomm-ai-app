@@ -7,12 +7,11 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle, PenLine } from "lucide-react";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
 import { formatPrice } from "@/components/shared/record-utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { RecordActionMenu } from "@/components/shared/RecordActionMenu";
-import { RecordItemsList } from "@/components/shared/RecordItemsList";
 import { ShippingAddressDisplay } from "@/components/shared/ShippingAddressDisplay";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -25,14 +24,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
 import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
 import { ShipmentStatusDialog } from "@/app/(site)/_components/account/ShipmentStatusDialog";
 import { PageContainer } from "@/components/shared/PageContainer";
+import { BrewReportForm } from "@/app/(site)/_components/review/BrewReportForm";
 
 interface OrdersPageClientProps {
   statusFilter?: string;
+}
+
+interface ReviewFormTarget {
+  productId: string;
+  productName: string;
+  productTastingNotes: string[];
+  productType: string;
 }
 
 export default function OrdersPageClient({
@@ -47,6 +60,8 @@ export default function OrdersPageClient({
   );
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelOrder, setCancelOrder] = useState<OrderWithItems | null>(null);
+  const [reviewedProductIds, setReviewedProductIds] = useState<Set<string>>(new Set());
+  const [reviewFormTarget, setReviewFormTarget] = useState<ReviewFormTarget | null>(null);
   const [shipmentStatusOrder, setShipmentStatusOrder] =
     useState<OrderWithItems | null>(null);
   const editAddress = useEditAddress({
@@ -78,10 +93,26 @@ export default function OrdersPageClient({
       const url = statusFilter
         ? `/api/user/orders?status=${statusFilter}`
         : "/api/user/orders";
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to fetch orders");
-      const data = await response.json();
+      const ordersRes = await fetch(url);
+      if (!ordersRes.ok) {
+        if (ordersRes.status === 401) {
+          setOrders([]);
+          setIsLoading(false);
+          return;
+        }
+        throw new Error("Failed to fetch orders");
+      }
+      const data = await ordersRes.json();
       setOrders(data.orders);
+
+      // Fetch reviewed products separately (non-blocking)
+      try {
+        const reviewedRes = await fetch("/api/user/reviewed-products");
+        if (reviewedRes.ok) {
+          const reviewedData = await reviewedRes.json();
+          setReviewedProductIds(new Set(reviewedData.productIds));
+        }
+      } catch { /* silent — reviewed products are supplemental */ }
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -155,11 +186,47 @@ export default function OrdersPageClient({
   const canCancelOrder = (order: OrderWithItems) =>
     order.status === "PENDING";
 
+  const isCompletedOrder = (status: string) =>
+    status === "SHIPPED" || status === "PICKED_UP";
+
   const canTrackOrViewStatus = (order: OrderWithItems) =>
     order.status === "SHIPPED" || order.status === "OUT_FOR_DELIVERY" || order.status === "DELIVERED";
 
   const hasActions = (order: OrderWithItems) =>
     canEditAddress(order) || canCancelOrder(order) || canTrackOrViewStatus(order);
+
+  const hasReviewActions = (order: OrderWithItems) =>
+    isCompletedOrder(order.status) &&
+    order.items.some((item) => !reviewedProductIds.has(item.purchaseOption.variant.product.id));
+
+  const getReviewSubMenu = (order: OrderWithItems) => {
+    if (!hasReviewActions(order)) return [];
+    const subItems = order.items
+      .filter((item) => !reviewedProductIds.has(item.purchaseOption.variant.product.id))
+      .map((item) => ({
+        label: item.purchaseOption.variant.product.name,
+        onClick: () =>
+          setReviewFormTarget({
+            productId: item.purchaseOption.variant.product.id,
+            productName: item.purchaseOption.variant.product.name,
+            productTastingNotes: item.purchaseOption.variant.product.tastingNotes,
+            productType: item.purchaseOption.variant.product.type,
+          }),
+      }));
+    if (subItems.length === 0) return [];
+    return [{
+      label: "Write a Review",
+      icon: <PenLine className="h-4 w-4 mr-2" />,
+      subItems,
+    }];
+  };
+
+  const handleReviewSuccess = () => {
+    if (reviewFormTarget) {
+      setReviewedProductIds((prev) => new Set([...prev, reviewFormTarget.productId]));
+    }
+    setReviewFormTarget(null);
+  };
 
   const getOrderCount = (status?: string) => {
     if (!status || status === "all") return orders.length;
@@ -251,7 +318,7 @@ export default function OrdersPageClient({
                   }
                   deliveryMethod={order.deliveryMethod}
                   actions={
-                    hasActions(order)
+                    hasActions(order) || hasReviewActions(order)
                       ? [
                           ...(canTrackOrViewStatus(order)
                             ? [
@@ -278,6 +345,7 @@ export default function OrdersPageClient({
                                 },
                               ]
                             : []),
+                          ...getReviewSubMenu(order),
                         ]
                       : undefined
                   }
@@ -316,19 +384,41 @@ export default function OrdersPageClient({
                         {format(new Date(order.createdAt), "MMM d, yyyy")}
                       </td>
                       <td className="py-4 px-4">
-                        <RecordItemsList
-                          items={order.items.map((item) => ({
-                            id: item.id,
-                            name: item.purchaseOption.variant.product.name,
-                            variant: item.purchaseOption.variant.name,
-                            purchaseType:
-                              item.purchaseOption.type === "SUBSCRIPTION"
-                                ? "Subscription"
-                                : "One-time",
-                            quantity: item.quantity,
-                            href: `/products/${item.purchaseOption.variant.product.slug}`,
-                          }))}
-                        />
+                        <div className="space-y-2">
+                          {order.items.map((item, idx) => {
+                            const product = item.purchaseOption.variant.product;
+                            const canReview = isCompletedOrder(order.status);
+                            const isReviewed = reviewedProductIds.has(product.id);
+                            return (
+                              <div key={item.id}>
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Link
+                                    href={`/products/${product.slug}`}
+                                    className="text-text-base hover:text-primary"
+                                  >
+                                    {product.name}
+                                  </Link>
+                                  {canReview && isReviewed && (
+                                    <span className="inline-flex items-center gap-0.5 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-primary flex-shrink-0">
+                                      <CheckCircle className="h-3 w-3" />
+                                      Reported
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {[
+                                    item.purchaseOption.variant.name,
+                                    item.purchaseOption.type === "SUBSCRIPTION" ? "Subscription" : "One-time",
+                                    `Qty: ${item.quantity}`,
+                                  ].filter(Boolean).join(" · ")}
+                                </div>
+                                {idx < order.items.length - 1 && (
+                                  <div className="border-t border-border mt-2" />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </td>
                       <td className="py-4 px-4">
                         <ShippingAddressDisplay
@@ -349,7 +439,7 @@ export default function OrdersPageClient({
                         <StatusBadge status={order.status} />
                       </td>
                       <td className="py-4 px-4 text-center">
-                        {hasActions(order) && (
+                        {(hasActions(order) || hasReviewActions(order)) && (
                           <RecordActionMenu
                             actions={[
                               ...(canTrackOrViewStatus(order)
@@ -361,6 +451,7 @@ export default function OrdersPageClient({
                               ...(canCancelOrder(order)
                                 ? [{ label: "Cancel Order", onClick: () => openCancelDialog(order), variant: "destructive" as const }]
                                 : []),
+                              ...getReviewSubMenu(order),
                             ]}
                             loading={cancellingOrderId === order.id}
                           />
@@ -399,6 +490,33 @@ export default function OrdersPageClient({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Brew Report Dialog */}
+      <Dialog
+        open={reviewFormTarget !== null}
+        onOpenChange={(open) => !open && setReviewFormTarget(null)}
+      >
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>Write a Review</DialogTitle>
+            {reviewFormTarget && (
+              <p className="text-sm text-text-muted">{reviewFormTarget.productName}</p>
+            )}
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {reviewFormTarget && (
+              <BrewReportForm
+                productId={reviewFormTarget.productId}
+                productName={reviewFormTarget.productName}
+                productTastingNotes={reviewFormTarget.productTastingNotes}
+                isCoffee={reviewFormTarget.productType === "COFFEE"}
+                onSuccess={handleReviewSuccess}
+                stickySubmit
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Shipment Status Dialog */}
       {shipmentStatusOrder && (

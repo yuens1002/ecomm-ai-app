@@ -10,7 +10,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { AddToCartButton } from "./AddToCartButton";
 import { RoastLevelBar } from "./RoastLevelBar";
-
 import {
   Card,
   CardContent,

@@ -6,6 +6,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { RecordAction } from "./MobileRecordCard";
@@ -35,20 +38,37 @@ export function RecordActionMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align}>
-        {actions.map((action) => (
-          <DropdownMenuItem
-            key={action.label}
-            onClick={action.onClick}
-            disabled={action.disabled}
-            className={
-              action.className ||
-              (action.variant === "destructive" ? "text-red-600" : "")
-            }
-          >
-            {action.icon}
-            {action.label}
-          </DropdownMenuItem>
-        ))}
+        {actions.map((action) =>
+          action.subItems && action.subItems.length > 0 ? (
+            <DropdownMenuSub key={action.label}>
+              <DropdownMenuSubTrigger>
+                {action.icon}
+                {action.label}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {action.subItems.map((sub) => (
+                  <DropdownMenuItem key={sub.label} onClick={sub.onClick}>
+                    {sub.icon}
+                    {sub.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ) : (
+            <DropdownMenuItem
+              key={action.label}
+              onClick={action.onClick}
+              disabled={action.disabled}
+              className={
+                action.className ||
+                (action.variant === "destructive" ? "text-red-600" : "")
+              }
+            >
+              {action.icon}
+              {action.label}
+            </DropdownMenuItem>
+          )
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

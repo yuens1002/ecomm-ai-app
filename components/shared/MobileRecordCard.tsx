@@ -8,6 +8,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getStatusColor, getStatusLabel } from "./record-utils";
@@ -31,11 +34,12 @@ export interface RecordShipping {
 
 export interface RecordAction {
   label: string;
-  onClick: () => void;
+  onClick?: () => void;
   variant?: "default" | "destructive";
   icon?: React.ReactNode;
   disabled?: boolean;
   className?: string;
+  subItems?: RecordAction[];
 }
 
 export interface RecordTracking {
@@ -121,17 +125,34 @@ export function MobileRecordCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {actions.map((action) => (
-                <DropdownMenuItem
-                  key={action.label}
-                  onClick={action.onClick}
-                  disabled={action.disabled}
-                  className={action.className || (action.variant === "destructive" ? "text-red-600" : "")}
-                >
-                  {action.icon}
-                  {action.label}
-                </DropdownMenuItem>
-              ))}
+              {actions.map((action) =>
+                action.subItems && action.subItems.length > 0 ? (
+                  <DropdownMenuSub key={action.label}>
+                    <DropdownMenuSubTrigger>
+                      {action.icon}
+                      {action.label}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {action.subItems.map((sub) => (
+                        <DropdownMenuItem key={sub.label} onClick={sub.onClick}>
+                          {sub.icon}
+                          {sub.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                ) : (
+                  <DropdownMenuItem
+                    key={action.label}
+                    onClick={action.onClick}
+                    disabled={action.disabled}
+                    className={action.className || (action.variant === "destructive" ? "text-red-600" : "")}
+                  >
+                    {action.icon}
+                    {action.label}
+                  </DropdownMenuItem>
+                )
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}

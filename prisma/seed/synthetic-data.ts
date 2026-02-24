@@ -98,6 +98,15 @@ function daysAgo(days: number): Date {
   return date;
 }
 
+// Weighted status distribution: 60% SHIPPED, 15% PENDING, 10% PICKED_UP, 10% CANCELLED, 5% FAILED
+const WEIGHTED_STATUSES: OrderStatus[] = [
+  ...Array(12).fill(OrderStatus.SHIPPED),
+  ...Array(3).fill(OrderStatus.PENDING),
+  ...Array(2).fill(OrderStatus.PICKED_UP),
+  ...Array(2).fill(OrderStatus.CANCELLED),
+  ...Array(1).fill(OrderStatus.FAILED),
+];
+
 export async function seedSyntheticData(prisma: PrismaClient) {
   console.log("  🎭 Creating synthetic user behavior data...");
 

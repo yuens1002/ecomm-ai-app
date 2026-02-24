@@ -87,8 +87,11 @@ export interface OrderItemWithDetails {
       name: string;
       productId: string;
       product: {
+        id: string;
         name: string;
         slug: string;
+        type: string;
+        tastingNotes: string[];
       };
     };
   };

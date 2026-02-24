@@ -41,6 +41,8 @@ import {
   BreadcrumbCategoryDropdown,
   type BreadcrumbProduct,
 } from "@/app/(site)/_components/navigation/BreadcrumbCategoryDropdown";
+import { ReviewSection } from "@/app/(site)/_components/review/ReviewSection";
+import { StarRating } from "@/app/(site)/_components/product/StarRating";
 
 interface ProductClientPageProps {
   product: Product;
@@ -436,6 +438,8 @@ export default function ProductClientPage({
               isOrganic={product.isOrganic}
               processing={product.processing}
               roasterBrewGuide={product.roasterBrewGuide as unknown as RoasterBrewGuideType | null}
+              averageRating={product.averageRating}
+              reviewCount={product.reviewCount}
             />
           ) : (
             <dl className="space-y-3">
@@ -454,6 +458,22 @@ export default function ProductClientPage({
                   </dd>
                 </div>
               ))}
+              {product.reviewCount > 0 && product.averageRating != null && (
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-foreground/50">
+                    Review
+                  </dt>
+                  <dd className="mt-0.5">
+                    <StarRating rating={product.averageRating} size="sm" />
+                    <a
+                      href="#reviews"
+                      className="block mt-0.5 text-sm text-text-muted hover:underline underline-offset-4 hover:text-primary transition-colors"
+                    >
+                      {product.reviewCount} {product.reviewCount === 1 ? "Review" : "Reviews"}
+                    </a>
+                  </dd>
+                </div>
+              )}
             </dl>
           )
         ) : undefined
@@ -521,6 +541,11 @@ export default function ProductClientPage({
               ))}
             </ScrollCarousel>
           </div>
+        ) : undefined
+      }
+      reviews={
+        product.reviewCount > 0 ? (
+          <ReviewSection productId={product.id} reviewCount={product.reviewCount} averageRating={product.averageRating ?? 0} isCoffee={isCoffee} />
         ) : undefined
       }
       relatedProducts={
