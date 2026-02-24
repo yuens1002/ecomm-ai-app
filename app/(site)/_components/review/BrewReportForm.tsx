@@ -24,6 +24,7 @@ interface BrewReportFormProps {
   productTastingNotes: string[];
   onSuccess?: () => void;
   stickySubmit?: boolean;
+  isCoffee?: boolean;
 }
 
 export function BrewReportForm({
@@ -32,6 +33,7 @@ export function BrewReportForm({
   productTastingNotes,
   onSuccess,
   stickySubmit,
+  isCoffee = true,
 }: BrewReportFormProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -105,7 +107,7 @@ export function BrewReportForm({
 
       if (result.success) {
         toast({
-          title: "Brew Report submitted!",
+          title: isCoffee ? "Brew Report submitted!" : "Review submitted!",
           description: `Your review for ${productName} has been published.`,
         });
         onSuccess?.();
@@ -181,144 +183,150 @@ export function BrewReportForm({
         </p>
       </div>
 
-      {/* Brew method */}
-      <div>
-        <label className="text-sm font-medium text-text-base block mb-1.5">
-          Brew Method <span className="text-text-muted text-xs">(optional)</span>
-        </label>
-        <Select value={brewMethod} onValueChange={setBrewMethod}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select brew method" />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(BREW_METHOD_LABELS).map(([key, label]) => (
-              <SelectItem key={key} value={key}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Brew method (coffee only) */}
+      {isCoffee && (
+        <div>
+          <label className="text-sm font-medium text-text-base block mb-1.5">
+            Brew Method <span className="text-text-muted text-xs">(optional)</span>
+          </label>
+          <Select value={brewMethod} onValueChange={setBrewMethod}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select brew method" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(BREW_METHOD_LABELS).map(([key, label]) => (
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
-      {/* Tasting notes */}
-      <div>
-        <label className="text-sm font-medium text-text-base block mb-1.5">
-          Tasting Notes <span className="text-text-muted text-xs">(optional)</span>
-        </label>
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {productTastingNotes.map((note) => (
-            <button
-              key={note}
-              type="button"
-              onClick={() => toggleNote(note)}
-              className={cn(
-                "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
-                selectedNotes.includes(note)
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-text-muted hover:bg-muted/80"
-              )}
-            >
-              {note}
-            </button>
-          ))}
-          {selectedNotes
-            .filter((n) => !productTastingNotes.includes(n))
-            .map((note) => (
+      {/* Tasting notes (coffee only) */}
+      {isCoffee && (
+        <div>
+          <label className="text-sm font-medium text-text-base block mb-1.5">
+            Tasting Notes <span className="text-text-muted text-xs">(optional)</span>
+          </label>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {productTastingNotes.map((note) => (
               <button
                 key={note}
                 type="button"
                 onClick={() => toggleNote(note)}
-                className="rounded-full px-2.5 py-1 text-xs font-medium bg-primary text-primary-foreground"
+                className={cn(
+                  "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                  selectedNotes.includes(note)
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-text-muted hover:bg-muted/80"
+                )}
               >
-                {note} &times;
+                {note}
               </button>
             ))}
-        </div>
-        <div className="flex gap-2">
-          <Input
-            value={customNote}
-            onChange={(e) => setCustomNote(e.target.value)}
-            placeholder="Add your own"
-            className="flex-1"
-            maxLength={50}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addCustomNote();
-              }
-            }}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addCustomNote}
-            disabled={!customNote.trim() || selectedNotes.length >= 10}
-          >
-            Add
-          </Button>
-        </div>
-      </div>
-
-      {/* Recipe details (collapsible) */}
-      <div>
-        <button
-          type="button"
-          onClick={() => setShowRecipeDetails(!showRecipeDetails)}
-          className="flex items-center gap-1 text-sm font-medium text-text-muted hover:text-text-base transition-colors"
-        >
-          <ChevronDown
-            className={cn(
-              "h-4 w-4 transition-transform",
-              showRecipeDetails && "rotate-180"
-            )}
-          />
-          Recipe Details
-          <span className="text-xs">(optional)</span>
-        </button>
-        {showRecipeDetails && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-            <div>
-              <label htmlFor="grind-size" className="text-xs text-text-muted block mb-1">
-                Grind Size
-              </label>
-              <Input
-                id="grind-size"
-                value={grindSize}
-                onChange={(e) => setGrindSize(e.target.value)}
-                placeholder="e.g., Medium-fine"
-                maxLength={100}
-              />
-            </div>
-            <div>
-              <label htmlFor="water-temp" className="text-xs text-text-muted block mb-1">
-                Water Temp (°F)
-              </label>
-              <Input
-                id="water-temp"
-                type="number"
-                value={waterTempF}
-                onChange={(e) => setWaterTempF(e.target.value)}
-                placeholder="e.g., 200"
-                min={100}
-                max={220}
-              />
-            </div>
-            <div>
-              <label htmlFor="ratio" className="text-xs text-text-muted block mb-1">
-                Ratio
-              </label>
-              <Input
-                id="ratio"
-                value={ratio}
-                onChange={(e) => setRatio(e.target.value)}
-                placeholder="e.g., 1:16"
-                maxLength={50}
-              />
-            </div>
+            {selectedNotes
+              .filter((n) => !productTastingNotes.includes(n))
+              .map((note) => (
+                <button
+                  key={note}
+                  type="button"
+                  onClick={() => toggleNote(note)}
+                  className="rounded-full px-2.5 py-1 text-xs font-medium bg-primary text-primary-foreground"
+                >
+                  {note} &times;
+                </button>
+              ))}
           </div>
-        )}
-      </div>
+          <div className="flex gap-2">
+            <Input
+              value={customNote}
+              onChange={(e) => setCustomNote(e.target.value)}
+              placeholder="Add your own"
+              className="flex-1"
+              maxLength={50}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addCustomNote();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addCustomNote}
+              disabled={!customNote.trim() || selectedNotes.length >= 10}
+            >
+              Add
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Recipe details (coffee only, collapsible) */}
+      {isCoffee && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowRecipeDetails(!showRecipeDetails)}
+            className="flex items-center gap-1 text-sm font-medium text-text-muted hover:text-text-base transition-colors"
+          >
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform",
+                showRecipeDetails && "rotate-180"
+              )}
+            />
+            Recipe Details
+            <span className="text-xs">(optional)</span>
+          </button>
+          {showRecipeDetails && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+              <div>
+                <label htmlFor="grind-size" className="text-xs text-text-muted block mb-1">
+                  Grind Size
+                </label>
+                <Input
+                  id="grind-size"
+                  value={grindSize}
+                  onChange={(e) => setGrindSize(e.target.value)}
+                  placeholder="e.g., Medium-fine"
+                  maxLength={100}
+                />
+              </div>
+              <div>
+                <label htmlFor="water-temp" className="text-xs text-text-muted block mb-1">
+                  Water Temp (°F)
+                </label>
+                <Input
+                  id="water-temp"
+                  type="number"
+                  value={waterTempF}
+                  onChange={(e) => setWaterTempF(e.target.value)}
+                  placeholder="e.g., 200"
+                  min={100}
+                  max={220}
+                />
+              </div>
+              <div>
+                <label htmlFor="ratio" className="text-xs text-text-muted block mb-1">
+                  Ratio
+                </label>
+                <Input
+                  id="ratio"
+                  value={ratio}
+                  onChange={(e) => setRatio(e.target.value)}
+                  placeholder="e.g., 1:16"
+                  maxLength={50}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Completeness indicator */}
       <div>
@@ -352,7 +360,7 @@ export function BrewReportForm({
               Submitting...
             </>
           ) : (
-            "Submit Brew Report"
+            isCoffee ? "Submit Brew Report" : "Submit Review"
           )}
         </Button>
       </div>
