@@ -810,7 +810,80 @@ export async function seedReviews(prisma: PrismaClient) {
     });
   }
 
-  // 6. Link reviews to orders for verified purchase badges
+  // 6. Create orders for review users so most reviews are "verified purchases"
+  console.log("  🛒 Creating orders for review users...");
+  let ordersCreated = 0;
+
+  // Fetch products with variants and purchase options
+  const productsWithVariants = await prisma.product.findMany({
+    where: { slug: { in: productSlugs } },
+    select: {
+      id: true,
+      slug: true,
+      variants: {
+        where: { isDisabled: false },
+        select: {
+          id: true,
+          purchaseOptions: {
+            where: { type: "ONE_TIME" },
+            take: 1,
+            select: { id: true, priceInCents: true },
+          },
+        },
+      },
+    },
+  });
+  const slugToProduct = new Map(productsWithVariants.map((p) => [p.slug, p]));
+
+  for (const [slug, reviews] of Object.entries(PRODUCT_REVIEWS)) {
+    const product = slugToProduct.get(slug);
+    if (!product) continue;
+
+    // Pick the first variant with a purchase option
+    const variant = product.variants.find((v) => v.purchaseOptions.length > 0);
+    if (!variant) continue;
+    const purchaseOption = variant.purchaseOptions[0];
+
+    // Create orders for all but the last reviewer per product (keeps some unverified)
+    const verifiedCount = Math.max(1, reviews.length - 1);
+    for (let i = 0; i < verifiedCount; i++) {
+      const userId = userIds[reviews[i].userIndex];
+      if (!userId) continue;
+
+      // Skip if user already has an order for this product
+      const existing = await prisma.order.findFirst({
+        where: {
+          userId,
+          status: { in: ["SHIPPED", "PICKED_UP"] },
+          items: { some: { purchaseOption: { variant: { productId: product.id } } } },
+        },
+        select: { id: true },
+      });
+      if (existing) continue;
+
+      await prisma.order.create({
+        data: {
+          userId,
+          status: "SHIPPED",
+          totalInCents: purchaseOption.priceInCents,
+          deliveryMethod: "DELIVERY",
+          shippingCountry: "US",
+          createdAt: daysAgoDate(reviews[i].daysAgo + 14), // ordered 2 weeks before review
+          items: {
+            create: {
+              purchaseOptionId: purchaseOption.id,
+              quantity: 1,
+              priceInCents: purchaseOption.priceInCents,
+            },
+          },
+        },
+      });
+      ordersCreated++;
+    }
+  }
+  console.log(`    ✓ ${ordersCreated} orders created for review users`);
+
+  // 7. Link reviews to orders for verified purchase badges
   console.log("  🔗 Linking reviews to orders for verified purchases...");
   let linkedCount = 0;
 
@@ -851,7 +924,7 @@ export async function seedReviews(prisma: PrismaClient) {
     }
   }
 
-  // 7. Create admin user brew report for order history "Reported" badge
+  // 8. Create admin user brew report for order history "Reported" badge
   console.log("  📝 Creating admin brew report...");
   const adminUser = await prisma.user.findFirst({
     where: { email: "admin@artisanroast.com" },
