@@ -10,9 +10,9 @@
     "feat/product-reviews-ph4-5": {
       "status": "implementing",
       "acs_passed": 0,
-      "acs_total": 19,
+      "acs_total": 18,
       "tasks": [],
-      "notes": "Phase 4-5: UI components + product integration. 19 ACs."
+      "notes": "Reviewer feedback fixes (13 items). 7 commits: smooth scroll, filter underline, community link, review width cap, sticky dialog, theme tokens, submenu, fetch resilience, seed improvements, docs."
     }
   }
 }
