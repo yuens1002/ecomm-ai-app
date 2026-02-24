@@ -1,4 +1,4 @@
-import { PrismaClient, ActivityType } from "@prisma/client";
+import { PrismaClient, ActivityType, OrderStatus } from "@prisma/client";
 
 // --- User Personas for Realistic Behavior ---
 const PERSONAS = {
@@ -97,6 +97,15 @@ function daysAgo(days: number): Date {
   date.setDate(date.getDate() - days);
   return date;
 }
+
+// Weighted status distribution: 60% SHIPPED, 15% PENDING, 10% PICKED_UP, 10% CANCELLED, 5% FAILED
+const WEIGHTED_STATUSES: OrderStatus[] = [
+  ...Array(12).fill(OrderStatus.SHIPPED),
+  ...Array(3).fill(OrderStatus.PENDING),
+  ...Array(2).fill(OrderStatus.PICKED_UP),
+  ...Array(2).fill(OrderStatus.CANCELLED),
+  ...Array(1).fill(OrderStatus.FAILED),
+];
 
 export async function seedSyntheticData(prisma: PrismaClient) {
   console.log("  🎭 Creating synthetic user behavior data...");
@@ -255,7 +264,7 @@ export async function seedSyntheticData(prisma: PrismaClient) {
       const _order = await prisma.order.create({
         data: {
           userId: user.id,
-          status: "SHIPPED",
+          status: randomElement(WEIGHTED_STATUSES),
           totalInCents: totalAmount,
           deliveryMethod: "DELIVERY",
           recipientName: user.name || randomElement(FAKE_NAMES),

@@ -192,6 +192,36 @@ const PRODUCT_REVIEWS: Record<string, ReviewSeed[]> = {
       rating: 3, userIndex: 7, daysAgo: 5,
       content: "Good coffee but maybe a bit too light for my taste. The floral notes are nice if you're into that sort of thing. I might try a longer extraction next time.",
     },
+    {
+      rating: 5, userIndex: 60, daysAgo: 48,
+      title: "Phenomenal light roast",
+      content: "I've been on a light roast kick and this Yirgacheffe is the highlight. Brewed on my V60 at 200°F with a 1:15.5 ratio. The blueberry note is front and center but there's also a lovely jasmine tea quality in the finish. Incredibly clean cup.",
+      brewMethod: "POUR_OVER_V60", waterTempF: 200, ratio: "1:15.5",
+      tastingNotes: ["Blueberry", "Jasmine"],
+    },
+    {
+      rating: 4, userIndex: 61, daysAgo: 38,
+      content: "Really nice Ethiopian. AeroPress inverted method brings out more body while keeping the fruity sweetness. I do 16g coffee, 200g water at 195°F for 90 seconds.",
+      brewMethod: "AEROPRESS", waterTempF: 195, ratio: "1:12.5",
+    },
+    {
+      rating: 5, userIndex: 62, daysAgo: 25,
+      title: "Best Ethiopian I've had",
+      content: "Every cup is a revelation. The bergamot note is so distinctive — it's like nothing else in my coffee rotation. I grind at 15 clicks on my Timemore and do a slow V60 pour. Absolute perfection.",
+      brewMethod: "POUR_OVER_V60", grindSize: "15 clicks Timemore",
+      tastingNotes: ["Bergamot", "Floral"],
+    },
+    {
+      rating: 4, userIndex: 63, daysAgo: 16,
+      content: "Solid light roast. Very clean and fruity. Works great on Chemex with a medium-coarse grind.",
+      brewMethod: "CHEMEX", grindSize: "Medium-coarse",
+    },
+    {
+      rating: 5, userIndex: 64, daysAgo: 2,
+      title: "Subscribed after first bag",
+      content: "Ordered this on a whim and immediately set up a subscription. The fruit-forward profile is addictive. Every morning I look forward to brewing this. Exceptional quality for the price point.",
+      tastingNotes: ["Blueberry", "Bergamot"],
+    },
   ],
 
   "kenya-aa": [
@@ -535,7 +565,7 @@ const PRODUCT_REVIEWS: Record<string, ReviewSeed[]> = {
 // Helpful vote distribution: which review indices (within a product) get how many votes
 // We'll distribute votes across reviews by cycling through users
 const VOTE_DISTRIBUTION: Record<string, number[]> = {
-  "ethiopian-yirgacheffe": [12, 5, 4, 2, 1, 8, 3, 0],
+  "ethiopian-yirgacheffe": [12, 5, 4, 2, 1, 8, 3, 0, 6, 2, 4, 1, 3],
   "kenya-aa": [10, 7, 2, 1, 4, 2],
   "colombian-supremo": [8, 2, 5, 3, 1, 2],
   "guatemalan-antigua": [9, 3, 2, 4, 1],
@@ -729,6 +759,141 @@ export async function seedReviews(prisma: PrismaClient) {
       },
     });
   }
+
+  // 6. Link reviews to orders for verified purchase badges
+  console.log("  🔗 Linking reviews to orders for verified purchases...");
+  let linkedCount = 0;
+
+  // For each reviewed product, find reviews where the reviewer also has an order
+  // containing that product with a completed status (SHIPPED or PICKED_UP)
+  for (const [slug, reviews] of Object.entries(PRODUCT_REVIEWS)) {
+    const productId = slugToId.get(slug);
+    const reviewIds = reviewIdsByProduct.get(slug);
+    if (!productId || !reviewIds) continue;
+
+    for (let i = 0; i < reviews.length && i < reviewIds.length; i++) {
+      const userId = userIds[reviews[i].userIndex];
+      if (!userId) continue;
+
+      // Find a completed order by this user that contains this product
+      const matchingOrder = await prisma.order.findFirst({
+        where: {
+          userId,
+          status: { in: ["SHIPPED", "PICKED_UP"] },
+          items: {
+            some: {
+              purchaseOption: {
+                variant: { productId },
+              },
+            },
+          },
+        },
+        select: { id: true },
+      });
+
+      if (matchingOrder) {
+        await prisma.review.update({
+          where: { id: reviewIds[i] },
+          data: { orderId: matchingOrder.id },
+        });
+        linkedCount++;
+      }
+    }
+  }
+
+  // 7. Create admin user brew report for order history "Reported" badge
+  console.log("  📝 Creating admin brew report...");
+  const adminUser = await prisma.user.findFirst({
+    where: { email: "admin@artisanroast.com" },
+  });
+
+  if (adminUser) {
+    // Find a completed order by admin with a coffee product
+    const adminOrder = await prisma.order.findFirst({
+      where: {
+        userId: adminUser.id,
+        status: { in: ["SHIPPED", "PICKED_UP"] },
+        items: {
+          some: {
+            purchaseOption: {
+              variant: { product: { type: "COFFEE" } },
+            },
+          },
+        },
+      },
+      include: {
+        items: {
+          include: {
+            purchaseOption: {
+              include: { variant: { include: { product: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    if (adminOrder) {
+      const coffeeItem = adminOrder.items.find(
+        (item) => item.purchaseOption.variant.product.type === "COFFEE"
+      );
+      if (coffeeItem) {
+        const product = coffeeItem.purchaseOption.variant.product;
+        // Check if admin already has a review for this product
+        const existing = await prisma.review.findFirst({
+          where: { userId: adminUser.id, productId: product.id },
+        });
+
+        if (!existing) {
+          const score = calculateCompletenessScore({
+            content: "This is my go-to morning coffee. Brewed on my AeroPress with a 1:15 ratio at 200°F. Smooth, balanced, and incredibly satisfying. The tasting notes are spot on — I get the chocolate and caramel every time. Highly recommend for AeroPress fans.",
+            title: "My morning staple",
+            rating: 5,
+            brewMethod: "AEROPRESS",
+            waterTempF: 200,
+            ratio: "1:15",
+            tastingNotes: (product.tastingNotes as string[]).slice(0, 2),
+          });
+
+          await prisma.review.create({
+            data: {
+              rating: 5,
+              title: "My morning staple",
+              content: "This is my go-to morning coffee. Brewed on my AeroPress with a 1:15 ratio at 200°F. Smooth, balanced, and incredibly satisfying. The tasting notes are spot on — I get the chocolate and caramel every time. Highly recommend for AeroPress fans.",
+              brewMethod: "AEROPRESS",
+              waterTempF: 200,
+              ratio: "1:15",
+              tastingNotes: (product.tastingNotes as string[]).slice(0, 2),
+              completenessScore: score,
+              productId: product.id,
+              userId: adminUser.id,
+              orderId: adminOrder.id,
+              createdAt: daysAgoDate(4),
+            },
+          });
+
+          // Update product aggregates
+          const agg = await prisma.review.aggregate({
+            where: { productId: product.id, status: "PUBLISHED" },
+            _avg: { rating: true },
+            _count: { id: true },
+          });
+          await prisma.product.update({
+            where: { id: product.id },
+            data: {
+              averageRating: agg._avg.rating ? Math.round(agg._avg.rating * 10) / 10 : null,
+              reviewCount: agg._count.id,
+            },
+          });
+
+          console.log(`    ✓ Admin brew report created for ${product.name}`);
+        }
+      }
+    } else {
+      console.log("    ⚠ No completed admin order with coffee found — skipping admin brew report");
+    }
+  }
+
+  console.log(`    ✓ ${linkedCount} reviews linked to orders (verified purchases)`);
 
   // Enable reviews in site settings
   await prisma.siteSettings.upsert({
