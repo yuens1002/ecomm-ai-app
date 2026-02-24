@@ -20,6 +20,7 @@ export interface ReviewData {
   helpfulCount: number;
   createdAt: string;
   isVerifiedPurchase: boolean;
+  variantName: string | null;
   user: {
     name: string | null;
     image: string | null;
@@ -74,7 +75,7 @@ export function ReviewCard({ review, onVote, isVoting }: ReviewCardProps) {
   return (
     <article className="py-5 first:pt-0 border-b last:border-b-0 border-border/50">
       {/* Top row: avatar, name, stars, date */}
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-start gap-3 mb-2">
         <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
           {getInitial(review.user.name)}
         </div>
@@ -83,17 +84,26 @@ export function ReviewCard({ review, onVote, isVoting }: ReviewCardProps) {
             <span className="text-sm font-medium text-text-base">
               {formatDisplayName(review.user.name)}
             </span>
-            {review.isVerifiedPurchase && (
-              <span className="inline-flex items-center gap-0.5 text-xs font-medium text-primary">
-                <CheckCircle className="h-3 w-3" />
-                Verified Buyer
-              </span>
-            )}
             <StarRating rating={review.rating} size="sm" />
             <span className="text-xs text-text-muted">
               {formatRelativeDate(review.createdAt)}
             </span>
           </div>
+          {/* Second line: variant name + verified purchase */}
+          {(review.variantName || review.isVerifiedPurchase) && (
+            <div className="flex items-center gap-1 mt-0.5 text-xs text-text-muted">
+              {review.variantName && <span>{review.variantName}</span>}
+              {review.variantName && review.isVerifiedPurchase && (
+                <span aria-hidden="true">·</span>
+              )}
+              {review.isVerifiedPurchase && (
+                <span className="inline-flex items-center gap-0.5 font-medium text-primary">
+                  <CheckCircle className="h-3 w-3" />
+                  Verified Purchase
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -115,7 +125,7 @@ export function ReviewCard({ review, onVote, isVoting }: ReviewCardProps) {
           {review.tastingNotes.map((note) => (
             <span
               key={note}
-              className="inline-flex items-center rounded-full px-2 py-0.5 text-xs bg-muted text-text-muted"
+              className="inline-flex items-center rounded-full px-2 py-0.5 text-xs border border-border text-text-muted"
             >
               {note}
             </span>
