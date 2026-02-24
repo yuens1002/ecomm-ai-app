@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { OrderWithItems, OrderItemWithDetails } from "@/lib/types";
+import { OrderWithItems } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -44,6 +44,7 @@ interface ReviewFormTarget {
   productId: string;
   productName: string;
   productTastingNotes: string[];
+  productType: string;
 }
 
 export default function OrdersPageClient({
@@ -185,20 +186,17 @@ export default function OrdersPageClient({
   const isCompletedOrder = (status: string) =>
     status === "SHIPPED" || status === "PICKED_UP";
 
-  const isCoffeeProduct = (item: OrderItemWithDetails) =>
-    item.purchaseOption.variant.product.type === "COFFEE";
-
   const hasActions = (order: OrderWithItems) =>
     canEditAddress(order) || canCancelOrder(order);
 
-  const hasBrewReportActions = (order: OrderWithItems) =>
+  const hasReviewActions = (order: OrderWithItems) =>
     isCompletedOrder(order.status) &&
-    order.items.some((item) => isCoffeeProduct(item) && !reviewedProductIds.has(item.purchaseOption.variant.product.id));
+    order.items.some((item) => !reviewedProductIds.has(item.purchaseOption.variant.product.id));
 
-  const getBrewReportSubMenu = (order: OrderWithItems) => {
-    if (!hasBrewReportActions(order)) return [];
+  const getReviewSubMenu = (order: OrderWithItems) => {
+    if (!hasReviewActions(order)) return [];
     const subItems = order.items
-      .filter((item) => isCoffeeProduct(item) && !reviewedProductIds.has(item.purchaseOption.variant.product.id))
+      .filter((item) => !reviewedProductIds.has(item.purchaseOption.variant.product.id))
       .map((item) => ({
         label: item.purchaseOption.variant.product.name,
         onClick: () =>
@@ -206,11 +204,12 @@ export default function OrdersPageClient({
             productId: item.purchaseOption.variant.product.id,
             productName: item.purchaseOption.variant.product.name,
             productTastingNotes: item.purchaseOption.variant.product.tastingNotes,
+            productType: item.purchaseOption.variant.product.type,
           }),
       }));
     if (subItems.length === 0) return [];
     return [{
-      label: "Write Brew Report",
+      label: "Write a Review",
       icon: <PenLine className="h-4 w-4 mr-2" />,
       subItems,
     }];
@@ -313,7 +312,7 @@ export default function OrdersPageClient({
                   }
                   deliveryMethod={order.deliveryMethod}
                   actions={
-                    hasActions(order) || hasBrewReportActions(order)
+                    hasActions(order) || hasReviewActions(order)
                       ? [
                           ...(canEditAddress(order)
                             ? [
@@ -332,7 +331,7 @@ export default function OrdersPageClient({
                                 },
                               ]
                             : []),
-                          ...getBrewReportSubMenu(order),
+                          ...getReviewSubMenu(order),
                         ]
                       : undefined
                   }
@@ -374,7 +373,7 @@ export default function OrdersPageClient({
                         <div className="space-y-2">
                           {order.items.map((item, idx) => {
                             const product = item.purchaseOption.variant.product;
-                            const canReview = isCompletedOrder(order.status) && isCoffeeProduct(item);
+                            const canReview = isCompletedOrder(order.status);
                             const isReviewed = reviewedProductIds.has(product.id);
                             return (
                               <div key={item.id}>
@@ -426,7 +425,7 @@ export default function OrdersPageClient({
                         <StatusBadge status={order.status} />
                       </td>
                       <td className="py-4 px-4 text-center">
-                        {(hasActions(order) || hasBrewReportActions(order)) && (
+                        {(hasActions(order) || hasReviewActions(order)) && (
                           <RecordActionMenu
                             actions={[
                               ...(canEditAddress(order)
@@ -435,7 +434,7 @@ export default function OrdersPageClient({
                               ...(canCancelOrder(order)
                                 ? [{ label: "Cancel Order", onClick: () => openCancelDialog(order), variant: "destructive" as const }]
                                 : []),
-                              ...getBrewReportSubMenu(order),
+                              ...getReviewSubMenu(order),
                             ]}
                             loading={cancellingOrderId === order.id}
                           />
@@ -482,7 +481,7 @@ export default function OrdersPageClient({
       >
         <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle>Write a Brew Report</DialogTitle>
+            <DialogTitle>Write a Review</DialogTitle>
             {reviewFormTarget && (
               <p className="text-sm text-text-muted">{reviewFormTarget.productName}</p>
             )}
@@ -493,6 +492,7 @@ export default function OrdersPageClient({
                 productId={reviewFormTarget.productId}
                 productName={reviewFormTarget.productName}
                 productTastingNotes={reviewFormTarget.productTastingNotes}
+                isCoffee={reviewFormTarget.productType === "COFFEE"}
                 onSuccess={handleReviewSuccess}
                 stickySubmit
               />
