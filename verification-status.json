@@ -15,11 +15,11 @@
       "notes": "All ACs verified. 10/10 pass. 1 iteration, 0 fixes. 881 tests pass."
     },
     "feat/reviews-ph6-7": {
-      "status": "implementing",
+      "status": "planned",
       "acs_passed": 0,
-      "acs_total": 32,
+      "acs_total": 27,
       "tasks": [],
-      "notes": "Plan approved. ACs doc created. Ready for implementation."
+      "notes": "Revision iteration: 10 UI + 13 FN + 4 REG = 27 ACs. Revise status model (add PENDING, remove REMOVED), storefront flag display, admin response, spam detector, notifications. Previous: 32/32 verified."
     }
   }
 }
