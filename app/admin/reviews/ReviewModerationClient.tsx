@@ -26,6 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   DataTable,
   DataTableActionBar,
+  DataTablePageSizeSelector,
+  DataTablePagination,
 } from "@/app/admin/_components/data-table";
 import type { ActionBarConfig } from "@/app/admin/_components/data-table/types";
 import { Search, Filter } from "lucide-react";
@@ -221,12 +223,20 @@ export default function ReviewModerationClient() {
         label: "Reviews",
       },
       {
-        type: "pageSizeSelector",
-        table,
+        type: "custom",
+        content: (
+          <div className="hidden lg:block">
+            <DataTablePageSizeSelector table={table} />
+          </div>
+        ),
       },
       {
-        type: "pagination",
-        table,
+        type: "custom",
+        content: (
+          <div className="hidden md:block">
+            <DataTablePagination table={table} />
+          </div>
+        ),
       },
     ],
   };
