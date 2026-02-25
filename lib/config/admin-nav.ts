@@ -18,6 +18,7 @@ export type NavChild = {
   disabledLabel?: string; // e.g., "coming soon"
   section?: string; // Section header for grouping
   sectionIcon?: LucideIcon; // Icon for section header
+  badgeId?: string; // ID for dynamic badge rendering (e.g., "unread-reviews")
 };
 
 export type NavItem = {
@@ -70,7 +71,7 @@ export const adminNavConfig: NavItem[] = [
     children: [
       { label: "All Users", href: "/admin/users" },
       { label: "Newsletter", href: "/admin/newsletter" },
-      { label: "Reviews", href: "/admin/reviews" },
+      { label: "Reviews", href: "/admin/reviews", badgeId: "unread-reviews" },
       { label: "Support", href: "/admin/support", icon: LifeBuoy },
     ],
   },
@@ -316,7 +317,7 @@ export const mobileNavConfig: NavItem[] = [
     children: [
       { label: "All Users", href: "/admin/users" },
       { label: "Newsletter", href: "/admin/newsletter" },
-      { label: "Reviews", href: "/admin/reviews" },
+      { label: "Reviews", href: "/admin/reviews", badgeId: "unread-reviews" },
       { label: "Support", href: "/admin/support", icon: LifeBuoy },
     ],
   },

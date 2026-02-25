@@ -12,7 +12,11 @@ import {
   updateProductRatingSummary,
   updateReviewHelpfulCount,
 } from "@/lib/reviews/review-helpers";
-import { getReviewsEnabled } from "@/lib/config/app-settings";
+import {
+  getReviewsEnabled,
+  getNotifyOnNewReview,
+} from "@/lib/config/app-settings";
+import { sendNewReviewNotification } from "@/lib/email/send-new-review-notification";
 
 const submitReviewSchema = z.object({
   productId: z.string().min(1),
@@ -131,6 +135,18 @@ export async function submitReview(
 
   // Revalidate product page
   revalidatePath(`/products/${review.product.slug}`);
+
+  // Fire-and-forget admin notification email
+  getNotifyOnNewReview().then((notify) => {
+    if (notify) {
+      sendNewReviewNotification({
+        productName: review.product.slug,
+        reviewerName: session.user?.name ?? "Anonymous",
+        rating: data.rating,
+        isPending,
+      }).catch(() => {});
+    }
+  });
 
   return { success: true, reviewId: review.id };
 }

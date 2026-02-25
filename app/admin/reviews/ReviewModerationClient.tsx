@@ -75,6 +75,8 @@ export default function ReviewModerationClient() {
 
   useEffect(() => {
     fetchReviews();
+    // Mark reviews as read on mount
+    fetch("/api/admin/reviews/mark-read", { method: "POST" }).catch(() => {});
   }, [fetchReviews]);
 
   const filteredReviews = useMemo(

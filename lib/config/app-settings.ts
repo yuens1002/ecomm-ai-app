@@ -13,6 +13,7 @@ const APP_SETTINGS_KEYS = {
   ALLOW_PROMO_CODES: "commerce.allowPromoCodes",
   REVIEWS_ENABLED: "commerce.reviewsEnabled",
   REVIEW_EMAIL_DELAY_DAYS: "commerce.reviewEmailDelayDays",
+  NOTIFY_ON_NEW_REVIEW: "commerce.notifyOnNewReview",
   STOREFRONT_THEME: "storefront.theme",
 } as const;
 
@@ -140,6 +141,31 @@ export async function setReviewEmailDelayDays(value: number): Promise<void> {
     update: { value: String(value) },
     create: {
       key: APP_SETTINGS_KEYS.REVIEW_EMAIL_DELAY_DAYS,
+      value: String(value),
+    },
+  });
+}
+
+/**
+ * Get whether admin should be notified on new reviews
+ */
+export async function getNotifyOnNewReview(): Promise<boolean> {
+  const setting = await prisma.siteSettings.findUnique({
+    where: { key: APP_SETTINGS_KEYS.NOTIFY_ON_NEW_REVIEW },
+  });
+
+  return setting?.value === "true";
+}
+
+/**
+ * Set whether admin should be notified on new reviews
+ */
+export async function setNotifyOnNewReview(value: boolean): Promise<void> {
+  await prisma.siteSettings.upsert({
+    where: { key: APP_SETTINGS_KEYS.NOTIFY_ON_NEW_REVIEW },
+    update: { value: String(value) },
+    create: {
+      key: APP_SETTINGS_KEYS.NOTIFY_ON_NEW_REVIEW,
       value: String(value),
     },
   });

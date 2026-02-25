@@ -42,6 +42,10 @@ jest.mock("@/lib/reviews/review-helpers", () => ({
 }));
 jest.mock("@/lib/config/app-settings", () => ({
   getReviewsEnabled: jest.fn(),
+  getNotifyOnNewReview: jest.fn().mockResolvedValue(false),
+}));
+jest.mock("@/lib/email/send-new-review-notification", () => ({
+  sendNewReviewNotification: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
