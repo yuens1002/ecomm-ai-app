@@ -21,15 +21,16 @@ import { ReviewDetailCard } from "../_components/ReviewDetailCard";
 import type { ColumnDef, ColumnFiltersState, FilterFn } from "@tanstack/react-table";
 import { formatDistanceToNow, isWithinInterval } from "date-fns";
 import { useCallback, useMemo } from "react";
-import { Flag, RotateCcw, Trash2, XCircle } from "lucide-react";
+import { Flag, CheckCircle, Trash2, MessageSquare } from "lucide-react";
 
 export interface AdminReview {
   id: string;
   rating: number;
   title: string | null;
   content: string;
-  status: "PUBLISHED" | "FLAGGED" | "REMOVED";
+  status: "PUBLISHED" | "FLAGGED" | "PENDING";
   flagReason: string | null;
+  adminResponse: string | null;
   brewMethod: string | null;
   grindSize: string | null;
   waterTempF: number | null;
@@ -43,7 +44,7 @@ export interface AdminReview {
 const STATUS_BADGE_CLASSES: Record<string, string> = {
   PUBLISHED: "bg-emerald-50 text-emerald-700 border-emerald-200",
   FLAGGED: "bg-amber-50 text-amber-700 border-amber-200",
-  REMOVED: "bg-red-50 text-red-700 border-red-200",
+  PENDING: "bg-blue-50 text-blue-700 border-blue-200",
 };
 
 const multiFieldFilter: FilterFn<AdminReview> = (
@@ -69,16 +70,16 @@ const multiFieldFilter: FilterFn<AdminReview> = (
 interface UseReviewsTableOptions {
   reviews: AdminReview[];
   onFlag: (review: AdminReview) => void;
-  onRestore: (review: AdminReview) => void;
-  onRemove: (review: AdminReview) => void;
+  onApprove: (review: AdminReview) => void;
+  onReply: (review: AdminReview) => void;
   onDelete: (review: AdminReview) => void;
 }
 
 function getActionItems(
   review: AdminReview,
   onFlag: (r: AdminReview) => void,
-  onRestore: (r: AdminReview) => void,
-  onRemove: (r: AdminReview) => void,
+  onApprove: (r: AdminReview) => void,
+  onReply: (r: AdminReview) => void,
   onDelete: (r: AdminReview) => void
 ): RowActionItem[] {
   switch (review.status) {
@@ -90,44 +91,62 @@ function getActionItems(
           icon: Flag,
           onClick: () => onFlag(review),
         },
+        {
+          type: "item",
+          label: "Reply",
+          icon: MessageSquare,
+          onClick: () => onReply(review),
+        },
         { type: "separator" },
         {
           type: "item",
-          label: "Remove",
-          icon: XCircle,
+          label: "Delete",
+          icon: Trash2,
           variant: "destructive",
-          onClick: () => onRemove(review),
+          onClick: () => onDelete(review),
         },
       ];
     case "FLAGGED":
       return [
         {
           type: "item",
-          label: "Restore",
-          icon: RotateCcw,
-          onClick: () => onRestore(review),
+          label: "Approve",
+          icon: CheckCircle,
+          onClick: () => onApprove(review),
+        },
+        {
+          type: "item",
+          label: "Reply",
+          icon: MessageSquare,
+          onClick: () => onReply(review),
         },
         { type: "separator" },
         {
           type: "item",
-          label: "Remove",
-          icon: XCircle,
+          label: "Delete",
+          icon: Trash2,
           variant: "destructive",
-          onClick: () => onRemove(review),
+          onClick: () => onDelete(review),
         },
       ];
-    case "REMOVED":
+    case "PENDING":
       return [
         {
           type: "item",
-          label: "Restore",
-          icon: RotateCcw,
-          onClick: () => onRestore(review),
+          label: "Approve",
+          icon: CheckCircle,
+          onClick: () => onApprove(review),
+        },
+        {
+          type: "item",
+          label: "Flag",
+          icon: Flag,
+          onClick: () => onFlag(review),
         },
         { type: "separator" },
         {
           type: "item",
-          label: "Permanently Delete",
+          label: "Delete",
           icon: Trash2,
           variant: "destructive",
           onClick: () => onDelete(review),
@@ -141,8 +160,8 @@ function getActionItems(
 export function useReviewsTable({
   reviews,
   onFlag,
-  onRestore,
-  onRemove,
+  onApprove,
+  onReply,
   onDelete,
 }: UseReviewsTableOptions) {
   const columns = useMemo<ColumnDef<AdminReview, unknown>[]>(
@@ -258,15 +277,15 @@ export function useReviewsTable({
           const items = getActionItems(
             row.original,
             onFlag,
-            onRestore,
-            onRemove,
+            onApprove,
+            onReply,
             onDelete
           );
           return <RowActionMenu items={items} />;
         },
       },
     ],
-    [onFlag, onRestore, onRemove, onDelete]
+    [onFlag, onApprove, onReply, onDelete]
   );
 
   const filterConfigs = useMemo<FilterConfig[]>(
@@ -321,6 +340,6 @@ export function useReviewsTable({
   return {
     ...tableResult,
     getActionItems: (review: AdminReview) =>
-      getActionItems(review, onFlag, onRestore, onRemove, onDelete),
+      getActionItems(review, onFlag, onApprove, onReply, onDelete),
   };
 }

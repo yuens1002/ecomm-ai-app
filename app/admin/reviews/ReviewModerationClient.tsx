@@ -35,7 +35,7 @@ import { useReviewsTable, type AdminReview } from "./hooks/useReviewsTable";
 import { ReviewCard } from "./_components/ReviewCard";
 import { useRef } from "react";
 
-type StatusFilter = "all" | "PUBLISHED" | "FLAGGED" | "REMOVED";
+type StatusFilter = "all" | "PUBLISHED" | "FLAGGED" | "PENDING";
 
 export default function ReviewModerationClient() {
   const [allReviews, setAllReviews] = useState<AdminReview[]>([]);
@@ -45,12 +45,13 @@ export default function ReviewModerationClient() {
 
   // Dialogs
   const [flagDialogOpen, setFlagDialogOpen] = useState(false);
-  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState<AdminReview | null>(
     null
   );
   const [flagReason, setFlagReason] = useState("");
+  const [replyText, setReplyText] = useState("");
 
   // Scrollable tabs
   const tabsListRef = useRef<HTMLDivElement>(null);
@@ -90,21 +91,21 @@ export default function ReviewModerationClient() {
     setFlagDialogOpen(true);
   }, []);
 
-  const handleRestore = useCallback(
+  const handleApprove = useCallback(
     async (review: AdminReview) => {
       try {
         const res = await fetch(`/api/admin/reviews/${review.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "restore" }),
+          body: JSON.stringify({ action: "approve" }),
         });
         if (!res.ok) throw new Error();
-        toast({ title: "Review restored" });
+        toast({ title: "Review approved" });
         fetchReviews();
       } catch {
         toast({
           title: "Error",
-          description: "Failed to restore review",
+          description: "Failed to approve review",
           variant: "destructive",
         });
       }
@@ -112,9 +113,10 @@ export default function ReviewModerationClient() {
     [fetchReviews, toast]
   );
 
-  const handleRemove = useCallback((review: AdminReview) => {
+  const handleReply = useCallback((review: AdminReview) => {
     setSelectedReview(review);
-    setRemoveDialogOpen(true);
+    setReplyText(review.adminResponse ?? "");
+    setReplyDialogOpen(true);
   }, []);
 
   const handleDelete = useCallback((review: AdminReview) => {
@@ -143,22 +145,22 @@ export default function ReviewModerationClient() {
     }
   };
 
-  const confirmRemove = async () => {
+  const confirmReply = async () => {
     if (!selectedReview) return;
     try {
       const res = await fetch(`/api/admin/reviews/${selectedReview.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "remove" }),
+        body: JSON.stringify({ action: "reply", response: replyText }),
       });
       if (!res.ok) throw new Error();
-      toast({ title: "Review removed" });
-      setRemoveDialogOpen(false);
+      toast({ title: "Reply saved" });
+      setReplyDialogOpen(false);
       fetchReviews();
     } catch {
       toast({
         title: "Error",
-        description: "Failed to remove review",
+        description: "Failed to save reply",
         variant: "destructive",
       });
     }
@@ -171,7 +173,7 @@ export default function ReviewModerationClient() {
         method: "DELETE",
       });
       if (!res.ok) throw new Error();
-      toast({ title: "Review permanently deleted" });
+      toast({ title: "Review deleted" });
       setDeleteDialogOpen(false);
       fetchReviews();
     } catch {
@@ -194,8 +196,8 @@ export default function ReviewModerationClient() {
   } = useReviewsTable({
     reviews: filteredReviews,
     onFlag: handleFlag,
-    onRestore: handleRestore,
-    onRemove: handleRemove,
+    onApprove: handleApprove,
+    onReply: handleReply,
     onDelete: handleDelete,
   });
 
@@ -268,8 +270,8 @@ export default function ReviewModerationClient() {
           <TabsTrigger value="FLAGGED" className="shrink-0">
             Flagged
           </TabsTrigger>
-          <TabsTrigger value="REMOVED" className="shrink-0">
-            Removed
+          <TabsTrigger value="PENDING" className="shrink-0">
+            Pending
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -307,8 +309,8 @@ export default function ReviewModerationClient() {
           <DialogHeader>
             <DialogTitle>Flag Review</DialogTitle>
             <DialogDescription>
-              This review will be hidden from the storefront. Please provide a
-              reason.
+              This review will be shown on the storefront with a warning banner.
+              Please provide a reason.
             </DialogDescription>
           </DialogHeader>
           <Textarea
@@ -335,36 +337,44 @@ export default function ReviewModerationClient() {
         </DialogContent>
       </Dialog>
 
-      {/* Remove AlertDialog */}
-      <AlertDialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Review</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will remove the review from the storefront. The review can be
-              restored later.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={confirmRemove}
+      {/* Reply Dialog */}
+      <Dialog open={replyDialogOpen} onOpenChange={setReplyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reply to Review</DialogTitle>
+            <DialogDescription>
+              Your response will be displayed publicly on the storefront below
+              the review.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder="Write your response..."
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            rows={4}
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReplyDialogOpen(false)}
             >
-              Remove
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              Cancel
+            </Button>
+            <Button onClick={confirmReply} disabled={!replyText.trim()}>
+              Save Reply
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Permanent Delete AlertDialog */}
+      {/* Delete AlertDialog */}
       <AlertDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Permanently Delete Review</AlertDialogTitle>
+            <AlertDialogTitle>Delete Review</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete this review. This action cannot be
               undone.
@@ -376,7 +386,7 @@ export default function ReviewModerationClient() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={confirmDelete}
             >
-              Delete Forever
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

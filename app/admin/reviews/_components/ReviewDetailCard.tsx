@@ -63,9 +63,24 @@ export function ReviewDetailCard({
             .join(" \u00B7 ")}
         </p>
       )}
-      {review.status === "FLAGGED" && review.flagReason && (
-        <p className="text-amber-600 text-xs font-medium">
-          Flagged: {review.flagReason}
+      {(review.status === "FLAGGED" || review.status === "PENDING") &&
+        review.flagReason && (
+          <p
+            className={cn(
+              "text-xs font-medium",
+              review.status === "FLAGGED"
+                ? "text-amber-600"
+                : "text-blue-600"
+            )}
+          >
+            {review.status === "PENDING" ? "Pending:" : "Flagged:"}{" "}
+            {review.flagReason}
+          </p>
+        )}
+      {review.adminResponse && (
+        <p className="text-xs text-muted-foreground border-l-2 border-border pl-2">
+          <span className="font-medium">Store Reply:</span>{" "}
+          {review.adminResponse}
         </p>
       )}
     </div>
