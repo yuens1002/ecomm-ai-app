@@ -27,31 +27,29 @@ export function ReviewCard({ review, actionItems }: ReviewCardProps) {
 
   return (
     <Card>
-      <CardContent className="p-4 space-y-2">
+      <CardContent className="px-4 py-2 space-y-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <StarRating rating={review.rating} size="sm" />
             <span
               className={`text-xs px-1.5 py-0.5 rounded border ${STATUS_BADGE_CLASSES[review.status] ?? ""}`}
             >
               {review.status.charAt(0) + review.status.slice(1).toLowerCase()}
             </span>
+            <span className="text-xs text-muted-foreground">
+              {formatDistanceToNow(new Date(review.createdAt), {
+                addSuffix: true,
+              })}
+            </span>
           </div>
-          <span className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(review.createdAt), {
-              addSuffix: true,
-            })}
-          </span>
+          <RowActionMenu items={actionItems} />
         </div>
+        <StarRating rating={review.rating} size="sm" />
         <p className="font-medium text-sm">{review.product.name}</p>
         <p className="text-xs text-muted-foreground">
           {customerDisplay}
           {review.user.email ? ` \u00B7 ${review.user.email}` : ""}
         </p>
         <ReviewDetailCard review={review} compact />
-        <div className="flex justify-end">
-          <RowActionMenu items={actionItems} />
-        </div>
       </CardContent>
     </Card>
   );

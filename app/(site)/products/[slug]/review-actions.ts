@@ -127,7 +127,7 @@ export async function submitReview(
       userId,
       orderId,
     },
-    select: { id: true, product: { select: { slug: true } } },
+    select: { id: true, product: { select: { name: true, slug: true } } },
   });
 
   // Update product rating summary
@@ -140,11 +140,11 @@ export async function submitReview(
   getNotifyOnNewReview().then((notify) => {
     if (notify) {
       sendNewReviewNotification({
-        productName: review.product.slug,
+        productName: review.product.name,
         reviewerName: session.user?.name ?? "Anonymous",
         rating: data.rating,
         isPending,
-      }).catch(() => {});
+      }).catch((err) => console.error("Review notification email failed:", err));
     }
   });
 

@@ -1,5 +1,7 @@
 import { resend } from "@/lib/services/resend";
-import { prisma } from "@/lib/prisma";
+import { render } from "@react-email/render";
+import { getEmailBranding } from "@/lib/config/app-settings";
+import NewReviewNotification from "@/emails/NewReviewNotification";
 
 interface NewReviewNotificationData {
   productName: string;
@@ -11,29 +13,29 @@ interface NewReviewNotificationData {
 export async function sendNewReviewNotification(
   data: NewReviewNotificationData
 ): Promise<void> {
-  // Find all admin emails
-  const admins = await prisma.user.findMany({
-    where: { isAdmin: true },
-    select: { email: true },
-  });
+  const merchantEmail =
+    process.env.RESEND_MERCHANT_EMAIL ||
+    process.env.MERCHANT_EMAIL;
 
-  const adminEmails = admins
-    .map((a) => a.email)
-    .filter((e): e is string => !!e);
+  if (!merchantEmail) return;
 
-  if (adminEmails.length === 0) return;
+  const { logoUrl } = await getEmailBranding();
 
-  const stars = "\u2605".repeat(data.rating) + "\u2606".repeat(5 - data.rating);
-  const statusNote = data.isPending
-    ? "\n\nThis review was auto-flagged and is awaiting moderation."
-    : "";
+  const html = await render(
+    NewReviewNotification({
+      productName: data.productName,
+      reviewerName: data.reviewerName,
+      rating: data.rating,
+      isPending: data.isPending,
+      logoUrl,
+    })
+  );
 
   await resend.emails.send({
     from:
-      process.env.RESEND_FROM_EMAIL ??
-      "Artisan Roast <noreply@artisanroast.app>",
-    to: adminEmails,
+      process.env.RESEND_FROM_EMAIL ?? "noreply@example.com",
+    to: merchantEmail,
     subject: `New review: ${data.productName} (${data.rating}/5)`,
-    text: `A new review was submitted for ${data.productName}.\n\nReviewer: ${data.reviewerName}\nRating: ${stars}${statusNote}\n\nView in admin: ${process.env.NEXT_PUBLIC_SITE_URL ?? "https://artisanroast.app"}/admin/reviews`,
+    html,
   });
 }

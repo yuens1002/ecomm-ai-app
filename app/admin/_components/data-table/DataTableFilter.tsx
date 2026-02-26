@@ -174,7 +174,6 @@ export interface DateRangeFilterValue {
 }
 
 const DATE_PRESETS = [
-  { label: "Pick a range", value: "custom" },
   { label: "Last 7 days", value: "last7" },
   { label: "Current month", value: "currentMonth" },
   { label: "Last 90 days", value: "last90" },
@@ -204,12 +203,22 @@ function DateRangeFilterContent({
 }: FilterRendererProps) {
   const currentValue = filter.value as DateRangeFilterValue | null;
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [pendingRange, setPendingRange] = useState<DateRange | undefined>(
+    undefined
+  );
+  const handleOpenChange = (open: boolean) => {
+    setCalendarOpen(open);
+    if (open) {
+      // Restore previous range on reopen
+      if (currentValue) {
+        setPendingRange({ from: currentValue.from, to: currentValue.to });
+      } else {
+        setPendingRange(undefined);
+      }
+    }
+  };
 
   const handlePresetSelect = (preset: string) => {
-    if (preset === "custom") {
-      setCalendarOpen(true);
-      return;
-    }
     const range = computePresetRange(preset);
     if (range) {
       onFilterChange({ ...filter, value: { preset, ...range } });
@@ -217,14 +226,13 @@ function DateRangeFilterContent({
   };
 
   const handleCalendarSelect = (range: DateRange | undefined) => {
-    if (range?.from && range?.to) {
+    setPendingRange(range);
+    if (range?.from && range?.to && range.from.getTime() !== range.to.getTime()) {
       onFilterChange({
         ...filter,
         value: { preset: "custom", from: range.from, to: range.to },
       });
-      setCalendarOpen(false);
-    } else if (range?.from) {
-      // Partial selection — keep popover open
+      // Calendar stays open — user closes manually or clicks to start new range
     }
   };
 
@@ -234,56 +242,58 @@ function DateRangeFilterContent({
       : DATE_PRESETS.find((p) => p.value === currentValue.preset)?.label ?? "Select range"
     : "Select range";
 
+  const customRangeLabel = currentValue?.preset === "custom"
+    ? `${format(currentValue.from, "MMM d")} – ${format(currentValue.to, "MMM d")}`
+    : null;
+
   return (
     <>
-      <InputGroupButton
-        size="xs"
-        variant="ghost"
-        className="px-1 text-muted-foreground"
-        onClick={() => {}}
-      >
-        <CalendarDays className="h-4 w-4" />
-      </InputGroupButton>
-      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex-1 flex items-center justify-between gap-1 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground truncate"
-            >
-              <span className="truncate">{displayLabel}</span>
-              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {DATE_PRESETS.map((preset) => (
-              <DropdownMenuItem
-                key={preset.value}
-                onClick={() => handlePresetSelect(preset.value)}
-              >
-                {preset.label}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <Popover open={calendarOpen} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
-          <span />
+          <InputGroupButton
+            size="xs"
+            variant="ghost"
+            className="px-1 text-muted-foreground"
+          >
+            <CalendarDays className="h-4 w-4" />
+          </InputGroupButton>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             mode="range"
-            defaultMonth={currentValue?.from}
-            selected={
-              currentValue
-                ? { from: currentValue.from, to: currentValue.to }
-                : undefined
-            }
+            selected={pendingRange}
             onSelect={handleCalendarSelect}
             numberOfMonths={2}
             disabled={{ after: new Date() }}
           />
         </PopoverContent>
       </Popover>
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="flex-1 flex items-center justify-between gap-1 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground truncate"
+          >
+            <span className="truncate">{displayLabel}</span>
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {customRangeLabel && (
+            <DropdownMenuItem disabled className="text-muted-foreground">
+              {customRangeLabel}
+            </DropdownMenuItem>
+          )}
+          {DATE_PRESETS.map((preset) => (
+            <DropdownMenuItem
+              key={preset.value}
+              onClick={() => handlePresetSelect(preset.value)}
+            >
+              {preset.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </>
   );
 }

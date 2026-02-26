@@ -375,6 +375,14 @@ const routeEntries: RouteEntry[] = [
     isNavigable: true,
   },
   {
+    id: "admin.settings.scheduled-jobs",
+    pathname: "/admin/settings/scheduled-jobs",
+    matchMode: "exact",
+    label: "Scheduled Jobs",
+    parentId: "admin.settings",
+    isNavigable: true,
+  },
+  {
     id: "admin.settings.social-links",
     pathname: "/admin/social-links",
     matchMode: "exact",

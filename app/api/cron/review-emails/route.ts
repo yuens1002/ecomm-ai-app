@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendReviewRequest } from "@/lib/email/send-review-request";
+import { getCronSecret } from "@/lib/config/app-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,8 @@ const DEFAULT_DELAY_DAYS = 5;
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
+  const dbSecret = await getCronSecret();
+  const cronSecret = dbSecret || process.env.CRON_SECRET;
 
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

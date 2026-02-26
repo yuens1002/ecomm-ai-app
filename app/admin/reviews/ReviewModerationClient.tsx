@@ -22,6 +22,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import {
   DataTable,
@@ -33,9 +41,16 @@ import type { ActionBarConfig } from "@/app/admin/_components/data-table/types";
 import { Search, Filter } from "lucide-react";
 import { useReviewsTable, type AdminReview } from "./hooks/useReviewsTable";
 import { ReviewCard } from "./_components/ReviewCard";
-import { useRef } from "react";
 
 type StatusFilter = "all" | "PUBLISHED" | "FLAGGED" | "PENDING";
+
+const FLAG_REASONS = [
+  "Inappropriate content",
+  "Spam",
+  "Off-topic",
+  "Misleading",
+  "Suspected fake review",
+] as const;
 
 export default function ReviewModerationClient() {
   const [allReviews, setAllReviews] = useState<AdminReview[]>([]);
@@ -50,11 +65,9 @@ export default function ReviewModerationClient() {
   const [selectedReview, setSelectedReview] = useState<AdminReview | null>(
     null
   );
-  const [flagReason, setFlagReason] = useState("");
+  const [flagCategory, setFlagCategory] = useState("");
+  const [flagDetails, setFlagDetails] = useState("");
   const [replyText, setReplyText] = useState("");
-
-  // Scrollable tabs
-  const tabsListRef = useRef<HTMLDivElement>(null);
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -89,7 +102,20 @@ export default function ReviewModerationClient() {
 
   const handleFlag = useCallback((review: AdminReview) => {
     setSelectedReview(review);
-    setFlagReason("");
+    // Pre-populate when editing an existing flag
+    if (review.status === "FLAGGED" && review.flagReason) {
+      const emDashIdx = review.flagReason.indexOf(" — ");
+      if (emDashIdx !== -1) {
+        setFlagCategory(review.flagReason.slice(0, emDashIdx));
+        setFlagDetails(review.flagReason.slice(emDashIdx + 3));
+      } else {
+        setFlagCategory(review.flagReason);
+        setFlagDetails("");
+      }
+    } else {
+      setFlagCategory("");
+      setFlagDetails("");
+    }
     setFlagDialogOpen(true);
   }, []);
 
@@ -127,12 +153,15 @@ export default function ReviewModerationClient() {
   }, []);
 
   const confirmFlag = async () => {
-    if (!selectedReview) return;
+    if (!selectedReview || !flagCategory) return;
+    const reason = flagDetails.trim()
+      ? `${flagCategory} — ${flagDetails.trim()}`
+      : flagCategory;
     try {
       const res = await fetch(`/api/admin/reviews/${selectedReview.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "flag", reason: flagReason }),
+        body: JSON.stringify({ action: "flag", reason }),
       });
       if (!res.ok) throw new Error();
       toast({ title: "Review flagged" });
@@ -206,6 +235,22 @@ export default function ReviewModerationClient() {
   const actionBarConfig: ActionBarConfig = {
     left: [
       {
+        type: "custom",
+        content: (
+          <Tabs
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+          >
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="PUBLISHED">Published</TabsTrigger>
+              <TabsTrigger value="FLAGGED">Flagged</TabsTrigger>
+              <TabsTrigger value="PENDING">Pending</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        ),
+      },
+      {
         type: "search",
         value: searchQuery,
         onChange: setSearchQuery,
@@ -255,29 +300,6 @@ export default function ReviewModerationClient() {
 
   return (
     <div>
-      <Tabs
-        value={statusFilter}
-        onValueChange={(v) => setStatusFilter(v as StatusFilter)}
-      >
-        <TabsList
-          ref={tabsListRef}
-          className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden cursor-grab mb-4"
-        >
-          <TabsTrigger value="all" className="shrink-0">
-            All
-          </TabsTrigger>
-          <TabsTrigger value="PUBLISHED" className="shrink-0">
-            Published
-          </TabsTrigger>
-          <TabsTrigger value="FLAGGED" className="shrink-0">
-            Flagged
-          </TabsTrigger>
-          <TabsTrigger value="PENDING" className="shrink-0">
-            Pending
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-
       <DataTableActionBar config={actionBarConfig} />
 
       {/* Desktop table */}
@@ -315,11 +337,37 @@ export default function ReviewModerationClient() {
               Please provide a reason.
             </DialogDescription>
           </DialogHeader>
-          <Textarea
-            placeholder="Reason for flagging..."
-            value={flagReason}
-            onChange={(e) => setFlagReason(e.target.value)}
-          />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="flag-reason">Reason</Label>
+              <Select value={flagCategory} onValueChange={setFlagCategory}>
+                <SelectTrigger id="flag-reason">
+                  <SelectValue placeholder="Select a reason..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {FLAG_REASONS.map((reason) => (
+                    <SelectItem key={reason} value={reason}>
+                      {reason}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="flag-details">
+                Details{" "}
+                <span className="text-muted-foreground font-normal">
+                  (optional)
+                </span>
+              </Label>
+              <Textarea
+                id="flag-details"
+                placeholder="Additional details..."
+                value={flagDetails}
+                onChange={(e) => setFlagDetails(e.target.value)}
+              />
+            </div>
+          </div>
           <DialogFooter>
             <Button
               variant="outline"
@@ -331,7 +379,7 @@ export default function ReviewModerationClient() {
               variant="default"
               className="bg-amber-600 hover:bg-amber-700"
               onClick={confirmFlag}
-              disabled={!flagReason.trim()}
+              disabled={!flagCategory}
             >
               Flag Review
             </Button>

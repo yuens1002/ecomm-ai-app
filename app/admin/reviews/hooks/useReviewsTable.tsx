@@ -21,7 +21,7 @@ import { ReviewDetailCard } from "../_components/ReviewDetailCard";
 import type { ColumnDef, ColumnFiltersState, FilterFn } from "@tanstack/react-table";
 import { formatDistanceToNow, isWithinInterval } from "date-fns";
 import { useCallback, useMemo } from "react";
-import { Flag, CheckCircle, Trash2, MessageSquare } from "lucide-react";
+import { Flag, CheckCircle, Trash2, MessageSquare, Pencil } from "lucide-react";
 
 export interface AdminReview {
   id: string;
@@ -93,7 +93,7 @@ function getActionItems(
         },
         {
           type: "item",
-          label: "Reply",
+          label: review.adminResponse ? "Edit Reply" : "Reply",
           icon: MessageSquare,
           onClick: () => onReply(review),
         },
@@ -116,7 +116,13 @@ function getActionItems(
         },
         {
           type: "item",
-          label: "Reply",
+          label: "Edit Flag",
+          icon: Pencil,
+          onClick: () => onFlag(review),
+        },
+        {
+          type: "item",
+          label: review.adminResponse ? "Edit Reply" : "Reply",
           icon: MessageSquare,
           onClick: () => onReply(review),
         },
@@ -215,7 +221,7 @@ export function useReviewsTable({
           return (
             <HoverCard>
               <HoverCardTrigger asChild>
-                <div className="line-clamp-2 cursor-default">
+                <div className="line-clamp-2 cursor-pointer">
                   {review.title && (
                     <span className="font-medium">{review.title} </span>
                   )}

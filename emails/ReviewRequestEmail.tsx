@@ -1,16 +1,8 @@
-import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Img,
-  Preview,
-  Section,
-  Text,
-} from "@react-email/components";
+import { Heading, Img, Link, Section, Text } from "@react-email/components";
+import { Fragment } from "react";
+import type { EmailBranding } from "./_components";
+import { APP_URL, Divider, EmailLayout, ItemDivider } from "./_components";
+import * as s from "./_styles";
 
 interface ReviewRequestProduct {
   name: string;
@@ -18,102 +10,63 @@ interface ReviewRequestProduct {
   imageUrl: string | null;
 }
 
-interface ReviewRequestEmailProps {
+interface ReviewRequestEmailProps extends EmailBranding {
   customerName: string;
   products: ReviewRequestProduct[];
-  storeName?: string;
-  appUrl?: string;
 }
 
 export default function ReviewRequestEmail({
   customerName,
   products,
-  storeName = "Artisan Roast",
-  appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://artisanroast.app",
+  storeName,
+  ...branding
 }: ReviewRequestEmailProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>
-        How was your coffee? Share a Brew Report! - {storeName}
-      </Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Heading style={h1}>How was your coffee?</Heading>
+    <EmailLayout
+      preview={`How was your coffee? Share a Brew Report! - ${storeName ?? ""}`}
+      storeName={storeName}
+      {...branding}
+    >
+      <Heading style={s.h1}>How was your coffee?</Heading>
 
-          <Text style={text}>Hi {customerName},</Text>
+      <Text style={s.text}>Hi {customerName},</Text>
 
-          <Text style={text}>
-            We hope you&apos;re enjoying your recent order! Help fellow coffee
-            lovers find their perfect cup by sharing a Brew Report.
-          </Text>
+      <Text style={s.text}>
+        We hope you&apos;re enjoying your recent order! Help fellow coffee
+        lovers find their perfect cup by sharing a Brew Report.
+      </Text>
 
-          {products.map((product) => (
-            <Section key={product.slug} style={productRow}>
-              {product.imageUrl && (
-                <Img
-                  src={product.imageUrl}
-                  alt={product.name}
-                  width={64}
-                  height={64}
-                  style={productImage}
-                />
-              )}
-              <div>
-                <Text style={productName}>{product.name}</Text>
-                <Button
-                  href={`${appUrl}/products/${product.slug}#reviews`}
-                  style={ctaButton}
-                >
-                  Write a Brew Report &rarr;
-                </Button>
-              </div>
-            </Section>
-          ))}
+      {products.map((product, index) => (
+        <Fragment key={product.slug}>
+          {index > 0 && <ItemDivider />}
+          <Section style={productRow}>
+            {product.imageUrl && (
+              <Img
+                src={product.imageUrl}
+                alt={product.name}
+                width={64}
+                height={64}
+                style={productImage}
+              />
+            )}
+            <Text style={productName}>{product.name}</Text>
+            <Link
+              href={`${APP_URL}/products/${product.slug}#reviews`}
+              style={ctaButton}
+            >
+              Write a Brew Report &rarr;
+            </Link>
+          </Section>
+        </Fragment>
+      ))}
 
-          <Hr style={hr} />
-
-          <Text style={footerText}>
-            {storeName} &middot; artisanroast.app
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+      <Divider />
+    </EmailLayout>
   );
 }
 
-const main = {
-  backgroundColor: "#f6f9fc",
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
-
-const container = {
-  backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  marginBottom: "64px",
-  maxWidth: "600px",
-};
-
-const h1 = {
-  color: "#333",
-  fontSize: "28px",
-  fontWeight: "bold",
-  margin: "40px 0 24px",
-  padding: "0 40px",
-};
-
-const text = {
-  color: "#333",
-  fontSize: "16px",
-  lineHeight: "26px",
-  padding: "0 40px",
-};
-
 const productRow = {
   padding: "16px 40px",
-  borderBottom: "1px solid #e6ebf1",
 };
 
 const productImage = {
@@ -134,21 +87,8 @@ const ctaButton = {
   borderRadius: "5px",
   color: "#fff",
   fontSize: "14px",
-  fontWeight: "bold",
+  fontWeight: "bold" as const,
   textDecoration: "none",
   padding: "10px 20px",
   display: "inline-block" as const,
-};
-
-const hr = {
-  borderColor: "#e6ebf1",
-  margin: "32px 40px",
-};
-
-const footerText = {
-  color: "#8898aa",
-  fontSize: "12px",
-  lineHeight: "16px",
-  padding: "0 40px",
-  textAlign: "center" as const,
 };
