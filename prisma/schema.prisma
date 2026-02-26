@@ -269,6 +269,8 @@ model Order {
   id                    String         @id @default(cuid())
   totalInCents          Int
   discountAmountInCents Int            @default(0)
+  taxAmountInCents      Int            @default(0)
+  shippingAmountInCents Int            @default(0)
   promoCode             String?
   status                OrderStatus    @default(PENDING)
   deliveryMethod        DeliveryMethod @default(DELIVERY)
@@ -295,9 +297,9 @@ model Order {
   trackingNumber        String?
   failureReason         String?
   failedAt              DateTime?
-  refundReason          String?
-  refundedAmountInCents Int?
+  refundedAmountInCents Int            @default(0)
   refundedAt            DateTime?
+  refundReason          String?
   stripeSubscriptionId  String?
   user                  User?          @relation(fields: [userId], references: [id], onDelete: Restrict)
   items                 OrderItem[]
@@ -313,6 +315,7 @@ model OrderItem {
   id               String         @id @default(cuid())
   quantity         Int
   priceInCents     Int
+  refundedQuantity Int            @default(0)
   orderId          String
   purchaseOptionId String
   order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
