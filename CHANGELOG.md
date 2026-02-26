@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.92.1 - 2026-02-26
+
+### Fixed
+
+- **Theme preview card**: Use default shadcn Badge for proper contrast, replace "Add to Cart" with icon + "Add" to prevent wrapping, add type scale preview (2xl–xs), remove misleading accent area
+- **Storefront button text alignment**: Normalize vertical centering for custom theme fonts (Outfit, Noto Serif SC) via scoped `leading-none` on site layout
+- **Recommended For You images**: Show immediately on page load when above the fold instead of waiting for scroll
+- **Product image height on mobile**: Cut image height in half on xs–sm breakpoints (cropped, not stretched) for better mobile UX
+
+### Changed
+
+- **Theme save button**: Moved below title with amber/green status dot indicating save state
+
+## 0.92.0 - 2026-02-26
+
+### Added
+
+- **Admin reviews moderation page**: Full moderation dashboard with tabs (Published, Pending, Flagged), bulk actions, date/rating filters, sortable columns, hover-card preview, and mobile-responsive card layout
+- **Review flagging & admin responses**: Flag reviews with reason, publish admin responses visible on storefront, restore flagged reviews
+- **Profanity filter**: Automatic censoring of profane words in review content on the storefront
+- **Review request emails**: Automated cron job sends review request emails to customers after order delivery
+- **Admin review notifications**: Unread review badge in admin nav, mark-as-read tracking, new review notification emails with flagged review alerts
+- **Scheduled jobs settings page**: Generate and manage cron authentication secret from admin UI, view all scheduled tasks
+- **Email template architecture**: Shared `EmailLayout` and `EmailBranding` system eliminating store name/URL duplication across all 12 email templates
+
+### Changed
+
+- **DataTable**: Extended with dateRange filter type for flexible date-based filtering
+- **Email templates**: Refactored all templates to use shared layout component with consistent branding
+- **Completeness score**: Improved scoring algorithm with weighted field contributions
+
+### Fixed
+
+- **Admin reviews pagination**: Hidden on mobile where card layout is used instead
+- **FileUpload component**: Removed redundant "Icon" label and constrained width to match other form fields
+
 ## 0.91.0 - 2026-02-26
 
 ### Added
