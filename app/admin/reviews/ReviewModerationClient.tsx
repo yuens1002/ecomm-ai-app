@@ -300,7 +300,7 @@ export default function ReviewModerationClient() {
 
   return (
     <div>
-      <DataTableActionBar config={actionBarConfig} />
+      <DataTableActionBar config={actionBarConfig} className="flex-col-reverse items-start gap-4 md:flex-row md:items-center" />
 
       {/* Desktop table */}
       <div className="hidden md:block">
