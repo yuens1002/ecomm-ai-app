@@ -193,7 +193,18 @@ export default function SiteHeader({
     setIsClient(true);
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    // Re-show header when resizing into mobile (scroll hide is desktop-only)
+    const mql = window.matchMedia("(max-width: 767px)");
+    const onBreakpoint = (e: MediaQueryListEvent) => {
+      if (e.matches) setIsHeaderVisible(true);
+    };
+    mql.addEventListener("change", onBreakpoint);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      mql.removeEventListener("change", onBreakpoint);
+    };
   }, [handleScroll]);
 
   function handleSearch(e: React.FormEvent) {
