@@ -31,6 +31,7 @@ Edit `.env.local`:
 - OAuth (optional): `AUTH_GOOGLE_ID/SECRET`, `AUTH_GITHUB_ID/SECRET`
 - Email: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
 - AI: `GEMINI_API_KEY`
+- Image storage: `BLOB_READ_WRITE_TOKEN` (Vercel Blob — see [Image Storage](#image-storage) below)
 
 ## 3) Run one-command setup
 
@@ -65,8 +66,27 @@ Visit `http://localhost:3000` and sign in with the admin you created.
 - Migrations: run `npx prisma migrate deploy` on deploy.
 - Backups: `npm run db:backup` writes JSON under `dev-tools/backups/`.
 - Adapter auto-detect: Neon vs Postgres is automatic; `DATABASE_ADAPTER=postgres|neon|standard` can force behavior.
-- Images: add hosts in `next.config.ts` if serving media from your CDN/S3.
 - Docker/compose smoke: see `docs/docker-smoke-test.md` for expected build logs, health check (`/api/health`), and persistence checks after `docker compose up --build -d`.
+
+### Image Storage
+
+Admin-uploaded images (product photos, page heroes, category icons) are stored in **Vercel Blob** by default. This keeps uploads persistent across deployments and served via a CDN.
+
+**Setup (Vercel Blob):**
+
+1. Vercel Dashboard → your project → **Storage** → **Create Database** → **Blob** (public access)
+2. Copy the generated `BLOB_READ_WRITE_TOKEN` into `.env.local`
+3. The same token works for both local development and production
+
+**Using a different provider (S3, Cloudinary, etc.):**
+
+All upload logic is centralized in a single file: `lib/blob.ts`. It exports three functions:
+
+- `uploadToBlob()` — uploads a file and returns a public URL
+- `deleteFromBlob()` — deletes a file by URL
+- `isBlobUrl()` — checks if a URL belongs to the storage provider
+
+To swap providers, replace the implementation in `lib/blob.ts` with your preferred SDK (e.g., `@aws-sdk/client-s3`, `cloudinary`). The rest of the app only depends on these three functions. You will also need to add your storage hostname to the `remotePatterns` array in `next.config.ts` so the Next.js `<Image>` component can optimize the URLs.
 
 ### Switching between Neon and local Postgres
 
