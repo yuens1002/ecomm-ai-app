@@ -275,8 +275,6 @@ export default function ProductManagementClient({
           onFilterChange: setActiveFilter,
           collapse: { icon: Filter },
         },
-      ],
-      right: [
         {
           type: "custom",
           content: (
@@ -287,6 +285,8 @@ export default function ProductManagementClient({
             />
           ),
         },
+      ],
+      right: [
         {
           type: "recordCount",
           count: table.getFilteredRowModel().rows.length,
