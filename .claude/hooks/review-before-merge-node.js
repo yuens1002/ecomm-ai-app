@@ -115,13 +115,12 @@ function main(input) {
   // Check if Copilot has submitted any review
   let copilotHasReviewed = false;
   try {
-    const reviewLogins = exec(
-      `gh api --paginate repos/${repo}/pulls/${prNumber}/reviews --jq '[.[].user.login] | unique | .[]'`,
+    const rawReviews = exec(
+      `gh api --paginate repos/${repo}/pulls/${prNumber}/reviews`,
       projectDir
     );
-    copilotHasReviewed = reviewLogins
-      .split("\n")
-      .some((login) => /copilot/i.test(login));
+    const reviews = rawReviews ? JSON.parse(rawReviews) : [];
+    copilotHasReviewed = reviews.some((r) => /copilot/i.test(r.user?.login || ""));
   } catch {
     // API failure — block (fail-closed)
     deny(
@@ -134,14 +133,12 @@ function main(input) {
     // Check if the PR has code file changes (not just docs)
     let hasCodeChanges = false;
     try {
-      const files = exec(
-        `gh api --paginate repos/${repo}/pulls/${prNumber}/files --jq '.[].filename'`,
+      const rawFiles = exec(
+        `gh api --paginate repos/${repo}/pulls/${prNumber}/files`,
         projectDir
       );
-      hasCodeChanges = files
-        .split("\n")
-        .filter(Boolean)
-        .some((f) => !isDocsFile(f));
+      const prFiles = rawFiles ? JSON.parse(rawFiles) : [];
+      hasCodeChanges = prFiles.some((f) => !isDocsFile(f.filename || ""));
     } catch {
       // Can't determine files — assume code changes exist (fail-closed)
       hasCodeChanges = true;
@@ -174,17 +171,19 @@ function main(input) {
   // Fetch Copilot inline comments
   let comments = [];
   try {
-    const raw = exec(
-      `gh api --paginate repos/${repo}/pulls/${prNumber}/comments ` +
-        `--jq '.[] | select(.user.login == "${COPILOT_LOGIN}") | {id: .id, path: .path, line: (.line // .original_line), body: .body}'`,
+    const rawComments = exec(
+      `gh api --paginate repos/${repo}/pulls/${prNumber}/comments`,
       projectDir
     );
-    if (raw) {
-      comments = raw
-        .split("\n")
-        .filter((l) => l.startsWith("{"))
-        .map((l) => JSON.parse(l));
-    }
+    const allComments = rawComments ? JSON.parse(rawComments) : [];
+    comments = allComments
+      .filter((c) => c.user?.login === COPILOT_LOGIN)
+      .map((c) => ({
+        id: c.id,
+        path: c.path,
+        line: c.line || c.original_line,
+        body: c.body,
+      }));
   } catch {
     // API failure — block (fail-closed)
     deny(
@@ -199,15 +198,25 @@ function main(input) {
 
   // Check if commits were pushed after the Copilot review (feedback addressed)
   try {
-    const reviewTime = exec(
-      `gh api --paginate repos/${repo}/pulls/${prNumber}/reviews ` +
-        `--jq '[.[] | select(.user.login | test("copilot";"i")) | .submitted_at] | sort | last'`,
+    const rawReviewsForTime = exec(
+      `gh api --paginate repos/${repo}/pulls/${prNumber}/reviews`,
       projectDir
     );
-    const lastCommitTime = exec(
-      `gh api --paginate repos/${repo}/pulls/${prNumber}/commits --jq 'last | .commit.committer.date'`,
+    const reviewsForTime = rawReviewsForTime ? JSON.parse(rawReviewsForTime) : [];
+    const copilotTimes = reviewsForTime
+      .filter((r) => /copilot/i.test(r.user?.login || ""))
+      .map((r) => r.submitted_at)
+      .sort();
+    const reviewTime = copilotTimes[copilotTimes.length - 1];
+
+    const rawCommits = exec(
+      `gh api --paginate repos/${repo}/pulls/${prNumber}/commits`,
       projectDir
     );
+    const commits = rawCommits ? JSON.parse(rawCommits) : [];
+    const lastCommitTime = commits.length > 0
+      ? commits[commits.length - 1].commit?.committer?.date
+      : null;
 
     if (
       reviewTime &&
