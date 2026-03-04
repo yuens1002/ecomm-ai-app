@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import type { Header } from "@tanstack/react-table";
+import { flexRender, type Header } from "@tanstack/react-table";
 
 import type { DataTableColumnMeta } from "./types";
 
@@ -44,7 +44,8 @@ export function DataTableHeaderCell<TData>({
   return (
     <th
       className={cn(
-        "h-10 px-3 font-medium text-foreground border-b-2 text-left align-middle",
+        "h-10 px-3 font-medium text-foreground border-b-2 align-middle",
+        meta?.align === "center" ? "text-center" : meta?.align === "right" ? "text-right" : "text-left",
         "group/header relative select-none",
         // no static border-r — resize handle provides the visual separator
         sortState
@@ -56,7 +57,11 @@ export function DataTableHeaderCell<TData>({
       )}
       style={{ width: header.getSize() }}
     >
-      <div className="flex items-center">
+      <div className={cn(
+        "flex items-center",
+        meta?.align === "center" && "justify-center",
+        meta?.align === "right" && "justify-end"
+      )}>
         {canSort ? (
           <button
             type="button"
@@ -69,9 +74,7 @@ export function DataTableHeaderCell<TData>({
             <span className="min-w-0 truncate">
               {header.isPlaceholder
                 ? null
-                : typeof header.column.columnDef.header === "string"
-                  ? header.column.columnDef.header
-                  : null}
+                : flexRender(header.column.columnDef.header, header.getContext())}
             </span>
             <ArrowUpDown
               className={cn(
@@ -84,9 +87,7 @@ export function DataTableHeaderCell<TData>({
           <span className="min-w-0 truncate">
             {header.isPlaceholder
               ? null
-              : typeof header.column.columnDef.header === "string"
-                ? header.column.columnDef.header
-                : null}
+              : flexRender(header.column.columnDef.header, header.getContext())}
           </span>
         )}
 

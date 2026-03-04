@@ -22,6 +22,9 @@ export interface OrderFilterParams {
   productId?: string;
   /** Filter by category ID (via order items → product → categories) */
   categoryId?: string;
+  /** Comparison filter on totalInCents */
+  amountOp?: "=" | ">=" | "<=";
+  amountCents?: number;
 }
 
 /**
@@ -87,6 +90,12 @@ export function buildOrderWhere(
           : undefined,
       },
     };
+  }
+
+  if (params.amountOp && params.amountCents !== undefined) {
+    const ops = { "=": undefined, ">=": "gte", "<=": "lte" } as const;
+    const op = ops[params.amountOp];
+    where.totalInCents = op ? { [op]: params.amountCents } : params.amountCents;
   }
 
   return where;

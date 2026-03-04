@@ -1,28 +1,33 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useCallback } from "react";
+import Link from "next/link";
 import {
+  ArrowRight,
   DollarSign,
   ShoppingCart,
   Users,
   Star,
   Package,
-  TrendingUp,
+  Mail,
 } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import {
-  PeriodSelector,
+  DashboardTabNav,
+  DashboardToolbar,
+  DateRangePicker,
   KpiCard,
   KpiChipBar,
   AlertStrip,
-  StatGrid,
+  ChartCard,
+  RankedList,
 } from "@/app/admin/_components/analytics";
+import { formatByType } from "@/lib/admin/analytics/formatters";
 import { RevenueTrendSection } from "@/app/admin/_components/overview/RevenueTrendSection";
 import { OrdersStatusSection } from "@/app/admin/_components/overview/OrdersStatusSection";
 import { ReviewsSummarySection } from "@/app/admin/_components/overview/ReviewsSummarySection";
 import { ConversionFunnelSection } from "@/app/admin/_components/overview/ConversionFunnelSection";
 import { MixRetentionSection } from "@/app/admin/_components/overview/MixRetentionSection";
-import { TopMoversSection } from "@/app/admin/_components/overview/TopMoversSection";
 import type { DashboardResponse } from "@/lib/admin/analytics/contracts";
 import { computeDelta } from "@/lib/admin/analytics/metrics-registry";
 
@@ -37,65 +42,29 @@ export default function AdminDashboardClient({
 }: AdminDashboardClientProps) {
   const { kpis, comparisonKpis } = data;
 
-  const kpiCards = [
-    {
-      label: "Revenue",
-      value: kpis.revenue,
-      format: "currency" as const,
-      delta: comparisonKpis
-        ? computeDelta(kpis.revenue, comparisonKpis.revenue)
-        : undefined,
-      icon: DollarSign,
-      href: "/admin/sales",
-    },
-    {
-      label: "Orders",
-      value: kpis.orders,
-      format: "number" as const,
-      delta: comparisonKpis
-        ? computeDelta(kpis.orders, comparisonKpis.orders)
-        : undefined,
-      icon: ShoppingCart,
-      href: "/admin/orders",
-    },
-    {
-      label: "AOV",
-      value: kpis.aov,
-      format: "currency" as const,
-      delta: comparisonKpis
-        ? computeDelta(kpis.aov, comparisonKpis.aov)
-        : undefined,
-      icon: TrendingUp,
-    },
-    {
-      label: "Reviews",
-      value: kpis.reviews,
-      format: "number" as const,
-      delta: comparisonKpis
-        ? computeDelta(kpis.reviews, comparisonKpis.reviews)
-        : undefined,
-      icon: Star,
-      href: "/admin/reviews",
-    },
-    {
-      label: "Products",
-      value: kpis.products,
-      format: "number" as const,
-      icon: Package,
-      href: "/admin/products",
-    },
-    {
-      label: "Users",
-      value: kpis.users,
-      format: "number" as const,
-      delta: comparisonKpis
-        ? computeDelta(kpis.newUsers, comparisonKpis.newUsers)
-        : undefined,
-      deltaLabel: "new",
-      icon: Users,
-      href: "/admin/users",
-    },
-  ];
+  const newsletterChurned = kpis.newsletterTotal - kpis.newsletterActive;
+
+  const handleExportCsv = useCallback(() => {
+    const headers = ["Metric", "Value"];
+    const rows = [
+      ["Revenue", formatByType(kpis.revenue, "currency")],
+      ["Orders", formatByType(kpis.orders, "number")],
+      ["Products", formatByType(kpis.products, "number")],
+      ["Reviews", formatByType(kpis.reviews, "number")],
+      ["Users", formatByType(kpis.users, "number")],
+      ["New Users", formatByType(kpis.newUsers, "number")],
+      ["Newsletter Total", formatByType(kpis.newsletterTotal, "number")],
+      ["Newsletter Active", formatByType(kpis.newsletterActive, "number")],
+    ];
+    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "dashboard-overview.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [kpis]);
 
   return (
     <>
@@ -104,21 +73,125 @@ export default function AdminDashboardClient({
         subtitle={`Welcome back, ${userName}`}
       />
 
-      <div className="space-y-6">
-        {/* Period selector */}
-        <Suspense fallback={null}>
-          <PeriodSelector mode="url" />
-        </Suspense>
+      <DashboardTabNav />
+
+      <div className="space-y-4">
+        {/* Period selector + Export */}
+        <DashboardToolbar onExport={handleExportCsv}>
+          <Suspense fallback={null}>
+            <DateRangePicker mode="url" hideCompare />
+          </Suspense>
+        </DashboardToolbar>
 
         {/* Alerts */}
         <AlertStrip alerts={data.alerts} />
 
-        {/* KPI cards */}
-        <StatGrid columns={6}>
-          {kpiCards.map((card) => (
-            <KpiCard key={card.label} {...card} />
-          ))}
-        </StatGrid>
+        {/* KPI cards — Row 1: Revenue (1.5x) + Orders + Products */}
+        <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr_2fr] gap-4">
+          <KpiCard
+            label="Revenue"
+            value={kpis.revenue}
+            format="currency"
+            valueLabel="Total"
+            secondaryValue={kpis.aov}
+            secondaryFormat="currency"
+            secondaryValueLabel="AOV"
+            secondaryValueLabelTitle="Average Order Value"
+            delta={
+              comparisonKpis
+                ? computeDelta(kpis.revenue, comparisonKpis.revenue)
+                : undefined
+            }
+            secondaryDelta={
+              comparisonKpis
+                ? computeDelta(kpis.aov, comparisonKpis.aov)
+                : undefined
+            }
+            icon={DollarSign}
+            href="/admin/sales"
+            linkText="View Sales"
+          />
+          <KpiCard
+            label="Orders"
+            value={kpis.orders}
+            format="number"
+            delta={
+              comparisonKpis
+                ? computeDelta(kpis.orders, comparisonKpis.orders)
+                : undefined
+            }
+            icon={ShoppingCart}
+            href="/admin/orders"
+            linkText="View Orders"
+          />
+          <KpiCard
+            label="Products"
+            value={kpis.products}
+            format="number"
+            icon={Package}
+            footerContent={
+              <span>
+                <Link href="/admin/products?type=COFFEE" className="hover:underline">
+                  {kpis.coffeeProducts} Coffee
+                </Link>
+                {" \u2022 "}
+                <Link href="/admin/products?type=MERCH" className="hover:underline">
+                  {kpis.merchProducts} Merch
+                </Link>
+              </span>
+            }
+          />
+        </div>
+
+        {/* KPI cards — Row 2: Reviews, Users, Newsletter (equal thirds) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <KpiCard
+            label="Reviews"
+            value={kpis.reviews}
+            format="number"
+            delta={
+              comparisonKpis
+                ? computeDelta(kpis.reviews, comparisonKpis.reviews)
+                : undefined
+            }
+            icon={Star}
+            href="/admin/reviews"
+            linkText="View Reviews"
+          />
+          <KpiCard
+            label="Users"
+            value={kpis.users}
+            format="number"
+            valueLabel="Total"
+            secondaryValue={kpis.newUsers}
+            secondaryFormat="number"
+            secondaryValueLabel="New"
+            delta={
+              comparisonKpis
+                ? computeDelta(kpis.newUsers, comparisonKpis.newUsers)
+                : undefined
+            }
+            icon={Users}
+            href="/admin/users"
+            linkText="View Users"
+          />
+          <KpiCard
+            label="Newsletter"
+            value={kpis.newsletterTotal}
+            format="number"
+            delta={
+              comparisonKpis
+                ? computeDelta(kpis.newsletterTotal, comparisonKpis.newsletterTotal)
+                : undefined
+            }
+            icon={Mail}
+            footerContent={
+              <span>
+                {kpis.newsletterActive} active {"\u2022"} {newsletterChurned} churned
+              </span>
+            }
+          />
+        </div>
 
         {/* Supporting chips */}
         <KpiChipBar chips={data.chips} />
@@ -143,16 +216,55 @@ export default function AdminDashboardClient({
           />
         </div>
 
-        {/* Row 3: Reviews + Top movers */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        {/* Row 3: Reviews (half) + Top Products (half) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ReviewsSummarySection data={data.reviewsSummary} />
-          <div className="lg:col-span-3">
-            <TopMoversSection
-              topProducts={data.topProducts}
-              topLocations={data.topLocations}
-              topSearches={data.topSearches}
+          <ChartCard
+            title="Top Products"
+            action={
+              <Link href="/admin/sales" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
+                View All <ArrowRight className="h-3 w-3" />
+              </Link>
+            }
+          >
+            <RankedList
+              items={data.topProducts}
+              valueLabel="Revenue"
+              limit={5}
             />
-          </div>
+          </ChartCard>
+        </div>
+
+        {/* Row 4: Top Locations + Top Searches + Top Customers (3-col) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <ChartCard title="Top Locations">
+            <RankedList
+              items={data.topLocations}
+              valueLabel="Revenue"
+              limit={5}
+            />
+          </ChartCard>
+          <ChartCard
+            title="Top Searches"
+            action={
+              <Link href="/admin/analytics" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
+                View All <ArrowRight className="h-3 w-3" />
+              </Link>
+            }
+          >
+            <RankedList
+              items={data.topSearches}
+              valueLabel="Count"
+              limit={5}
+            />
+          </ChartCard>
+          <ChartCard title="Top Customers">
+            <RankedList
+              items={data.topCustomers}
+              valueLabel="Revenue"
+              limit={5}
+            />
+          </ChartCard>
         </div>
       </div>
     </>

@@ -11,9 +11,17 @@ interface ConversionFunnelSectionProps {
 export function ConversionFunnelSection({
   steps,
 }: ConversionFunnelSectionProps) {
+  const hasData = steps.some((s) => s.value > 0);
+
   return (
     <ChartCard title="Conversion Funnel" description="Views → Cart → Orders">
-      <FunnelChart steps={steps} />
+      {hasData ? (
+        <FunnelChart steps={steps} />
+      ) : (
+        <div className="flex items-center justify-center h-50 text-sm text-muted-foreground">
+          No activity data
+        </div>
+      )}
     </ChartCard>
   );
 }

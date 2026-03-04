@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/admin/analytics/formatters";
 import type { RankedItem } from "@/lib/admin/analytics/contracts";
@@ -17,7 +18,7 @@ export function RankedList({
   valueLabel,
   limit = 5,
   viewAllHref,
-  viewAllLabel = "View all →",
+  viewAllLabel = "View All",
   className,
 }: RankedListProps) {
   const displayed = items.slice(0, limit);
@@ -33,7 +34,7 @@ export function RankedList({
   return (
     <div className={cn("space-y-1", className)}>
       {valueLabel && (
-        <div className="flex justify-end px-2 pb-1">
+        <div className="flex justify-end pb-1">
           <span className="text-xs text-muted-foreground">{valueLabel}</span>
         </div>
       )}
@@ -42,15 +43,12 @@ export function RankedList({
           const row = (
             <li
               key={`${item.rank}-${item.label}`}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-2 py-1.5 text-sm",
-                item.href && "hover:bg-muted cursor-pointer"
-              )}
+              className="flex items-center gap-3 py-1.5 text-sm"
             >
-              <span className="w-5 text-right text-xs text-muted-foreground tabular-nums">
+              <span className="w-5 text-left text-xs text-muted-foreground tabular-nums">
                 {item.rank}
               </span>
-              <span className="flex-1 truncate">{item.label}</span>
+              <span className="flex-1 truncate" title={item.label}>{item.label}</span>
               <span className="text-right tabular-nums font-medium">
                 {formatNumber(item.value)}
               </span>
@@ -71,9 +69,9 @@ export function RankedList({
         <div className="pt-2 text-center">
           <Link
             href={viewAllHref}
-            className="text-xs text-primary hover:underline"
+            className="text-xs text-primary hover:underline inline-flex items-center gap-1"
           >
-            {viewAllLabel}
+            {viewAllLabel} <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
       )}

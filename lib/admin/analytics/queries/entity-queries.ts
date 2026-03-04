@@ -12,11 +12,37 @@ import type { DateRange } from "../time";
 // Review summary
 // ---------------------------------------------------------------------------
 
+export interface StarBreakdownItem {
+  rating: number;
+  count: number;
+}
+
+export interface ReviewStatusCounts {
+  published: number;
+  pending: number;
+  flagged: number;
+}
+
+export interface LatestReviewRaw {
+  id: string;
+  rating: number;
+  title: string | null;
+  content: string;
+  createdAt: string;
+  status: string;
+  userName: string | null;
+  productName: string;
+  productSlug: string;
+}
+
 export interface ReviewsSummaryRaw {
   avgRating: number;
   pendingCount: number;
   total: number;
   topReviewed: { name: string; slug: string; count: number } | null;
+  starBreakdown: StarBreakdownItem[];
+  statusCounts: ReviewStatusCounts;
+  latestReview: LatestReviewRaw | null;
 }
 
 export async function getReviewsSummary(
@@ -24,7 +50,16 @@ export async function getReviewsSummary(
 ): Promise<ReviewsSummaryRaw> {
   const dateFilter = { gte: range.from, lt: range.to };
 
-  const [ratingAgg, pendingCount, total, topReviewedGroup] = await Promise.all([
+  const [
+    ratingAgg,
+    pendingCount,
+    total,
+    topReviewedGroup,
+    starBreakdownRaw,
+    publishedCount,
+    flaggedCount,
+    latestReviewRow,
+  ] = await Promise.all([
     prisma.review.aggregate({
       where: { createdAt: dateFilter },
       _avg: { rating: true },
@@ -41,6 +76,32 @@ export async function getReviewsSummary(
       _count: true,
       orderBy: { _count: { productId: "desc" } },
       take: 1,
+    }),
+    prisma.review.groupBy({
+      by: ["rating"],
+      where: { createdAt: dateFilter },
+      _count: true,
+      orderBy: { rating: "desc" },
+    }),
+    prisma.review.count({
+      where: { createdAt: dateFilter, status: "PUBLISHED" },
+    }),
+    prisma.review.count({
+      where: { createdAt: dateFilter, status: "FLAGGED" },
+    }),
+    prisma.review.findFirst({
+      where: { createdAt: dateFilter },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        rating: true,
+        title: true,
+        content: true,
+        createdAt: true,
+        status: true,
+        user: { select: { name: true } },
+        product: { select: { name: true, slug: true } },
+      },
     }),
   ]);
 
@@ -59,11 +120,40 @@ export async function getReviewsSummary(
     }
   }
 
+  // Build star breakdown (ensure all 5 ratings present, desc order)
+  const starMap = new Map(starBreakdownRaw.map((s) => [s.rating, s._count]));
+  const starBreakdown: StarBreakdownItem[] = [5, 4, 3, 2, 1].map((r) => ({
+    rating: r,
+    count: starMap.get(r) ?? 0,
+  }));
+
+  // Build latest review
+  const latestReview: LatestReviewRaw | null = latestReviewRow
+    ? {
+        id: latestReviewRow.id,
+        rating: latestReviewRow.rating,
+        title: latestReviewRow.title,
+        content: latestReviewRow.content,
+        createdAt: latestReviewRow.createdAt.toISOString(),
+        status: latestReviewRow.status,
+        userName: latestReviewRow.user.name,
+        productName: latestReviewRow.product.name,
+        productSlug: latestReviewRow.product.slug,
+      }
+    : null;
+
   return {
     avgRating: ratingAgg._avg.rating ?? 0,
     pendingCount,
     total,
     topReviewed,
+    starBreakdown,
+    statusCounts: {
+      published: publishedCount,
+      pending: pendingCount,
+      flagged: flaggedCount,
+    },
+    latestReview,
   };
 }
 
@@ -73,9 +163,12 @@ export async function getReviewsSummary(
 
 export interface EntityCounts {
   products: number;
+  coffeeProducts: number;
+  merchProducts: number;
   users: number;
   newUsers: number;
   newsletterActive: number;
+  newsletterTotal: number;
 }
 
 export async function getEntityCounts(
@@ -83,14 +176,17 @@ export async function getEntityCounts(
 ): Promise<EntityCounts> {
   const dateFilter = { gte: range.from, lt: range.to };
 
-  const [products, users, newUsers, newsletterActive] = await Promise.all([
+  const [products, coffeeProducts, merchProducts, users, newUsers, newsletterActive, newsletterTotal] = await Promise.all([
     prisma.product.count(),
+    prisma.product.count({ where: { type: "COFFEE" } }),
+    prisma.product.count({ where: { type: "MERCH" } }),
     prisma.user.count(),
     prisma.user.count({ where: { createdAt: dateFilter } }),
     prisma.newsletterSubscriber.count({ where: { isActive: true } }),
+    prisma.newsletterSubscriber.count(),
   ]);
 
-  return { products, users, newUsers, newsletterActive };
+  return { products, coffeeProducts, merchProducts, users, newUsers, newsletterActive, newsletterTotal };
 }
 
 // ---------------------------------------------------------------------------

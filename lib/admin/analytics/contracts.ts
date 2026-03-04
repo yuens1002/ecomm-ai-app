@@ -126,9 +126,14 @@ export interface DashboardKpis {
   reviews: number;
   avgRating: number;
   products: number;
+  coffeeProducts: number;
+  merchProducts: number;
   users: number;
   newUsers: number;
   newsletterActive: number;
+  newsletterTotal: number;
+  coffeeRevenue: number;
+  merchRevenue: number;
 }
 
 export interface DashboardResponse {
@@ -153,12 +158,26 @@ export interface DashboardResponse {
   topProducts: RankedItem[];
   topLocations: RankedItem[];
   topSearches: RankedItem[];
+  topCustomers: RankedItem[];
 
   reviewsSummary: {
     avgRating: number;
     pendingCount: number;
     total: number;
     topReviewed: { name: string; slug: string; count: number } | null;
+    starBreakdown: { rating: number; count: number }[];
+    statusCounts: { published: number; pending: number; flagged: number };
+    latestReview: {
+      id: string;
+      rating: number;
+      title: string | null;
+      content: string;
+      createdAt: string;
+      status: string;
+      userName: string | null;
+      productName: string;
+      productSlug: string;
+    } | null;
   };
 }
 

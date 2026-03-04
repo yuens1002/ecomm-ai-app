@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getSiteMetadata } from "@/lib/site-metadata";
+import { getWeightUnit } from "@/lib/config/app-settings";
 import SalesClient from "./SalesClient";
 
 export async function generateMetadata() {
@@ -28,5 +29,7 @@ export default async function SalesPage() {
     redirect("/");
   }
 
-  return <SalesClient />;
+  const weightUnit = await getWeightUnit();
+
+  return <SalesClient weightUnit={weightUnit} />;
 }

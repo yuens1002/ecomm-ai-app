@@ -9,11 +9,13 @@ import {
   ShoppingCart,
   TrendingUp,
   ReceiptText,
-  Repeat,
+  Weight,
+  Filter,
 } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import {
-  PeriodSelector,
+  DashboardToolbar,
+  DateRangePicker,
   KpiCard,
   StatGrid,
   ChartCard,
@@ -21,12 +23,19 @@ import {
   DonutChart,
   HBarChart,
   RankedList,
-  SplitComparison,
   SkeletonDashboard,
 } from "@/app/admin/_components/analytics";
-import { DataTable, DataTablePagination } from "@/app/admin/_components/data-table";
+import {
+  ColumnVisibilityToggle,
+  DataTable,
+  DataTableActionBar,
+  useColumnVisibility,
+} from "@/app/admin/_components/data-table";
+import type {
+  ActiveFilter,
+  FilterConfig,
+} from "@/app/admin/_components/data-table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import type {
   PeriodPreset,
   CompareMode,
@@ -34,9 +43,54 @@ import type {
   SalesRow,
 } from "@/lib/admin/analytics/contracts";
 import { computeDelta } from "@/lib/admin/analytics/metrics-registry";
-import { formatWeight, formatCurrency } from "@/lib/admin/analytics/formatters";
+import { formatCurrency } from "@/lib/admin/analytics/formatters";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+function formatStatus(status: string): string {
+  return status
+    .split("_")
+    .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
+// ── Filter & column visibility configs ────────────────────────────────
+const salesFilterConfigs: FilterConfig[] = [
+  {
+    id: "orderType",
+    label: "Type",
+    filterType: "multiSelect",
+    options: [
+      { label: "Subscription", value: "SUBSCRIPTION" },
+      { label: "One-time", value: "ONE_TIME" },
+    ],
+  },
+  {
+    id: "status",
+    label: "Status",
+    filterType: "multiSelect",
+    options: [
+      { label: "Pending", value: "PENDING" },
+      { label: "Paid", value: "PAID" },
+      { label: "Shipped", value: "SHIPPED" },
+      { label: "Delivered", value: "DELIVERED" },
+      { label: "Cancelled", value: "CANCELLED" },
+      { label: "Refunded", value: "REFUNDED" },
+    ],
+  },
+  { id: "amount", label: "Amount", shellLabel: "amount $", filterType: "comparison" },
+];
+
+const SALES_TOGGLABLE_COLUMNS = [
+  { id: "createdAt", label: "Date" },
+  { id: "customerEmail", label: "Customer" },
+  { id: "itemCount", label: "Items" },
+  { id: "orderType", label: "Type" },
+  { id: "status", label: "Status" },
+  { id: "total", label: "Total" },
+  { id: "refunded", label: "Refunded" },
+  { id: "location", label: "Location" },
+];
 
 // ── Column definitions (stable, no deps) ────────────────────────────
 const salesColumns: ColumnDef<SalesRow, unknown>[] = [
@@ -44,9 +98,7 @@ const salesColumns: ColumnDef<SalesRow, unknown>[] = [
     accessorKey: "orderNumber",
     header: "Order #",
     size: 100,
-    cell: ({ row }) => (
-      <span className="font-mono text-xs">{row.original.orderNumber}</span>
-    ),
+    cell: ({ row }) => row.original.orderNumber,
   },
   {
     accessorKey: "createdAt",
@@ -67,21 +119,27 @@ const salesColumns: ColumnDef<SalesRow, unknown>[] = [
     header: "Items",
     size: 70,
     enableSorting: true,
-    cell: ({ row }) => row.original.itemCount,
+    meta: { align: "center" as const },
+    cell: ({ row }) => (
+      <div className="text-center">{row.original.itemCount}</div>
+    ),
   },
   {
     accessorKey: "orderType",
     header: "Type",
     size: 110,
+    meta: { align: "center" as const },
     cell: ({ row }) => (
-      <Badge
-        variant={
-          row.original.orderType === "SUBSCRIPTION" ? "default" : "secondary"
-        }
-        className="text-xs"
-      >
-        {row.original.orderType === "SUBSCRIPTION" ? "Sub" : "One-time"}
-      </Badge>
+      <div className="text-center">
+        <Badge
+          variant={
+            row.original.orderType === "SUBSCRIPTION" ? "default" : "secondary"
+          }
+          className="text-xs"
+        >
+          {row.original.orderType === "SUBSCRIPTION" ? "Sub" : "One-time"}
+        </Badge>
+      </div>
     ),
   },
   {
@@ -89,10 +147,13 @@ const salesColumns: ColumnDef<SalesRow, unknown>[] = [
     header: "Status",
     size: 110,
     enableSorting: true,
+    meta: { align: "center" as const },
     cell: ({ row }) => (
-      <Badge variant="outline" className="text-xs">
-        {row.original.status}
-      </Badge>
+      <div className="text-center">
+        <Badge variant="outline" className="text-xs">
+          {formatStatus(row.original.status)}
+        </Badge>
+      </div>
     ),
   },
   {
@@ -100,14 +161,21 @@ const salesColumns: ColumnDef<SalesRow, unknown>[] = [
     header: "Total",
     size: 100,
     enableSorting: true,
-    cell: ({ row }) => formatCurrency(row.original.total),
+    meta: { align: "right" as const },
+    cell: ({ row }) => (
+      <div className="text-right">{formatCurrency(row.original.total)}</div>
+    ),
   },
   {
     accessorKey: "refunded",
     header: "Refunded",
     size: 100,
-    cell: ({ row }) =>
-      row.original.refunded > 0 ? formatCurrency(row.original.refunded) : "—",
+    meta: { align: "right" as const },
+    cell: ({ row }) => (
+      <div className="text-right">
+        {row.original.refunded > 0 ? formatCurrency(row.original.refunded) : "—"}
+      </div>
+    ),
   },
   {
     id: "location",
@@ -121,9 +189,16 @@ const salesColumns: ColumnDef<SalesRow, unknown>[] = [
 
 // ── Component ────────────────────────────────────────────────────────
 
-export default function SalesClient() {
+interface SalesClientProps {
+  weightUnit: "METRIC" | "IMPERIAL";
+}
+
+export default function SalesClient({ weightUnit }: SalesClientProps) {
   const [period, setPeriod] = useState<PeriodPreset>("30d");
   const [compare, setCompare] = useState<CompareMode>("previous");
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
+  const { columnVisibility, handleVisibilityChange } =
+    useColumnVisibility("sales-table-cols");
 
   // Server-side table state — directly drives the SWR URL
   const [sorting, setSorting] = useState<SortingState>([
@@ -137,7 +212,10 @@ export default function SalesClient() {
   const sortCol = sorting[0]?.id ?? "createdAt";
   const sortDir = sorting[0]?.desc ? "desc" : "asc";
 
-  const apiUrl = `/api/admin/sales?period=${period}&compare=${compare}&page=${pagination.pageIndex}&pageSize=${pagination.pageSize}&sort=${sortCol}&dir=${sortDir}`;
+  // Build filter query params from activeFilter state
+  const filterParams = buildFilterQueryParams(activeFilter);
+
+  const apiUrl = `/api/admin/sales?period=${period}&compare=${compare}&page=${pagination.pageIndex}&pageSize=${pagination.pageSize}&sort=${sortCol}&dir=${sortDir}${filterParams}`;
 
   const { data, isLoading } = useSWR<SalesResponse>(apiUrl, fetcher, {
     keepPreviousData: true,
@@ -170,11 +248,19 @@ export default function SalesClient() {
     []
   );
 
+  const handleFilterChange = useCallback(
+    (filter: ActiveFilter | null) => {
+      setActiveFilter(filter);
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    },
+    []
+  );
+
   // Server-side table — manual pagination/sorting, no client-side row models
   const salesTable = useReactTable<SalesRow>({
     data: data?.table.rows ?? [],
     columns: salesColumns,
-    state: { sorting, pagination },
+    state: { sorting, pagination, columnVisibility },
     onSortingChange: handleSortingChange,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
@@ -182,6 +268,7 @@ export default function SalesClient() {
     manualSorting: true,
     manualFiltering: true,
     rowCount: data?.table.total ?? 0,
+    columnResizeMode: "onChange",
   });
 
   // ── Loading / error states ─────────────────────────────────────
@@ -205,6 +292,17 @@ export default function SalesClient() {
 
   const { kpis, comparisonKpis } = data;
 
+  // Total coffee weight for KPI card
+  const totalCoffeeGrams = data.coffeeByWeight.reduce(
+    (sum, c) => sum + c.weightSoldGrams,
+    0
+  );
+  const totalCoffeeWeight =
+    weightUnit === "METRIC"
+      ? Math.round(totalCoffeeGrams / 1000)
+      : Math.round(totalCoffeeGrams / 453.592);
+  const weightUnitLabel = weightUnit === "METRIC" ? "kg" : "lbs";
+
   const kpiCards = [
     {
       label: "Revenue",
@@ -226,6 +324,7 @@ export default function SalesClient() {
     },
     {
       label: "AOV",
+      labelTitle: "Average Order Value",
       value: kpis.aov,
       format: "currency" as const,
       delta: comparisonKpis
@@ -243,39 +342,30 @@ export default function SalesClient() {
       icon: ReceiptText,
     },
     {
-      label: "Sub %",
-      value: kpis.subscriptionPercent,
-      format: "percent" as const,
-      delta: comparisonKpis
-        ? computeDelta(
-            kpis.subscriptionPercent,
-            comparisonKpis.subscriptionPercent
-          )
-        : undefined,
-      icon: Repeat,
+      label: "Coffee Sold",
+      value: totalCoffeeWeight,
+      format: "number" as const,
+      valueLabel: weightUnitLabel,
+      icon: Weight,
     },
   ];
 
   return (
     <>
-      <PageTitle
-        title="Sales Analytics"
-        action={
-          <Button variant="outline" size="sm" onClick={handleExportCsv}>
-            Export CSV
-          </Button>
-        }
-      />
+      <PageTitle title="Sales Analytics" />
 
-      <div className="space-y-6">
-        {/* Period selector */}
-        <PeriodSelector
-          mode="state"
-          value={period}
-          compare={compare}
-          onChange={handlePeriodChange}
-          onCompareChange={handleCompareChange}
-        />
+      <div className="space-y-4">
+        {/* Period selector + Export */}
+        <DashboardToolbar onExport={handleExportCsv}>
+          <DateRangePicker
+            mode="state"
+            period={period}
+            compare={compare}
+            onPeriodChange={handlePeriodChange}
+            onCompareChange={handleCompareChange}
+            hideCompare
+          />
+        </DashboardToolbar>
 
         {/* KPI cards */}
         <StatGrid columns={5}>
@@ -297,13 +387,44 @@ export default function SalesClient() {
           />
         </ChartCard>
 
-        {/* Row 2: Top products + Category breakdown */}
+        {/* Row 2: Top products + Subscription vs One-time (pie chart) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ChartCard title="Top Products">
             <RankedList
               items={data.topProducts}
               valueLabel="Revenue"
               limit={10}
+            />
+          </ChartCard>
+          <ChartCard title="Subscription vs One-time">
+            <DonutChart
+              data={[
+                {
+                  label: data.purchaseTypeSplit.left.label,
+                  value: data.purchaseTypeSplit.left.value,
+                },
+                {
+                  label: data.purchaseTypeSplit.right.label,
+                  value: data.purchaseTypeSplit.right.value,
+                },
+              ]}
+              centerLabel={formatCurrency(
+                data.purchaseTypeSplit.left.value +
+                  data.purchaseTypeSplit.right.value
+              )}
+              valueFormat="currency"
+            />
+          </ChartCard>
+        </div>
+
+        {/* Row 3: Orders by status + Category breakdown */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ChartCard title="Total Orders by Status">
+            <DonutChart
+              data={data.ordersByStatus.map((s) => ({
+                label: formatStatus(s.status),
+                value: s.count,
+              }))}
             />
           </ChartCard>
           <ChartCard title="Category Breakdown">
@@ -317,21 +438,6 @@ export default function SalesClient() {
           </ChartCard>
         </div>
 
-        {/* Row 3: Orders by status + Subscription split */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ChartCard title="Orders by Status">
-            <DonutChart
-              data={data.ordersByStatus.map((s) => ({
-                label: s.status,
-                value: s.count,
-              }))}
-            />
-          </ChartCard>
-          <ChartCard title="Subscription vs One-time">
-            <SplitComparison data={data.purchaseTypeSplit} />
-          </ChartCard>
-        </div>
-
         {/* Row 4: Top locations + Coffee by weight */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ChartCard title="Sales by Location">
@@ -341,14 +447,24 @@ export default function SalesClient() {
               limit={10}
             />
           </ChartCard>
-          <ChartCard title="Coffee Sold by Weight">
+          <ChartCard
+            title={`Coffee Sold by Weight (${weightUnitLabel})`}
+          >
             {data.coffeeByWeight.length > 0 ? (
               <HBarChart
-                data={data.coffeeByWeight.map((c) => ({
-                  label: `${c.product} (${formatWeight(c.weightSoldGrams)})`,
-                  value: c.quantity,
-                }))}
+                data={[...data.coffeeByWeight]
+                  .sort((a, b) => b.weightSoldGrams - a.weightSoldGrams)
+                  .map((c) => ({
+                    label: c.product,
+                    value: parseFloat(
+                      (weightUnit === "METRIC"
+                        ? c.weightSoldGrams / 1000
+                        : c.weightSoldGrams / 453.592
+                      ).toFixed(1)
+                    ),
+                  }))}
                 valueFormat="number"
+                labelPosition="above"
               />
             ) : (
               <p className="text-sm text-muted-foreground py-4 text-center">
@@ -359,14 +475,67 @@ export default function SalesClient() {
         </div>
 
         {/* Sales orders table */}
-        <ChartCard
-          title="Orders"
-          description={`${data.table.total} orders in period`}
-        >
+        <ChartCard title="Orders">
+          <DataTableActionBar
+            config={{
+              left: [
+                {
+                  type: "filter",
+                  configs: salesFilterConfigs,
+                  activeFilter,
+                  onFilterChange: handleFilterChange,
+                  collapse: { icon: Filter },
+                },
+                {
+                  type: "custom",
+                  content: (
+                    <ColumnVisibilityToggle
+                      columns={SALES_TOGGLABLE_COLUMNS}
+                      columnVisibility={columnVisibility}
+                      onVisibilityChange={handleVisibilityChange}
+                    />
+                  ),
+                },
+              ],
+              right: [
+                {
+                  type: "recordCount",
+                  count: data.table.total,
+                  label: "orders",
+                },
+                { type: "pageSizeSelector", table: salesTable },
+                { type: "pagination", table: salesTable },
+              ],
+            }}
+          />
           <DataTable table={salesTable} />
-          <DataTablePagination table={salesTable} />
         </ChartCard>
       </div>
     </>
   );
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────
+
+function buildFilterQueryParams(filter: ActiveFilter | null): string {
+  if (!filter) return "";
+  const params = new URLSearchParams();
+
+  if (filter.configId === "orderType") {
+    const values = filter.value as string[];
+    if (values.length > 0) params.set("orderType", values.join(","));
+  } else if (filter.configId === "status") {
+    const values = filter.value as string[];
+    if (values.length > 0) params.set("status", values.join(","));
+  } else if (filter.configId === "amount") {
+    const num = Number(filter.value);
+    if (filter.value !== "" && !isNaN(num)) {
+      const opMap: Record<string, string> = { "=": "=", "\u2265": ">=", "\u2264": "<=" };
+      params.set("amountOp", opMap[filter.operator ?? "="] ?? "=");
+      params.set("amount", String(Math.round(num * 100))); // dollars → cents
+    }
+  }
+
+  const str = params.toString();
+  return str ? `&${str}` : "";
 }

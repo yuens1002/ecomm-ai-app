@@ -50,11 +50,13 @@ export interface GetSalesParams {
   period: PeriodPreset;
   compare: CompareMode;
   orderType?: "ALL" | "ONE_TIME" | "SUBSCRIPTION";
-  status?: string;
+  statuses?: string[];
   productId?: string;
   categoryId?: string;
   promoCode?: string;
   location?: string;
+  amountOp?: "=" | ">=" | "<=";
+  amountCents?: number;
   page?: number;
   pageSize?: number;
   sort?: string;
@@ -70,11 +72,13 @@ export async function getSalesAnalytics(
   const filterParams: OrderFilterParams = {
     range,
     orderType: params.orderType,
-    statuses: params.status ? [params.status] : undefined,
+    statuses: params.statuses,
     productId: params.productId,
     categoryId: params.categoryId,
     promoCode: params.promoCode,
     location: params.location,
+    amountOp: params.amountOp,
+    amountCents: params.amountCents,
   };
 
   const kpiWhere = buildKpiOrderWhere(filterParams);

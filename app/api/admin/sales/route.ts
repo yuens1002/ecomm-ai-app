@@ -20,11 +20,15 @@ export async function GET(request: Request) {
       period,
       compare,
       orderType: parseOrderType(searchParams.get("orderType")),
-      status: searchParams.get("status") ?? undefined,
+      statuses: parseStatuses(searchParams.get("status")),
       productId: searchParams.get("productId") ?? undefined,
       categoryId: searchParams.get("categoryId") ?? undefined,
       promoCode: searchParams.get("promoCode") ?? undefined,
       location: searchParams.get("location") ?? undefined,
+      amountOp: parseAmountOp(searchParams.get("amountOp")),
+      amountCents: searchParams.get("amount")
+        ? parseIntParam(searchParams.get("amount"), 0)
+        : undefined,
       page: parseIntParam(searchParams.get("page"), 0),
       pageSize: parseIntParam(searchParams.get("pageSize"), 25),
       sort: searchParams.get("sort") ?? "createdAt",
@@ -73,8 +77,25 @@ export async function GET(request: Request) {
 function parseOrderType(
   value: string | null
 ): "ALL" | "ONE_TIME" | "SUBSCRIPTION" | undefined {
-  if (value === "ONE_TIME" || value === "SUBSCRIPTION") return value;
-  if (value === "ALL") return "ALL";
+  if (!value) return undefined;
+  // Multi-value: "SUBSCRIPTION,ONE_TIME" → both selected = ALL
+  const parts = value.split(",").filter(Boolean);
+  if (parts.length > 1) return "ALL";
+  if (parts[0] === "ONE_TIME" || parts[0] === "SUBSCRIPTION") return parts[0];
+  if (parts[0] === "ALL") return "ALL";
+  return undefined;
+}
+
+function parseStatuses(value: string | null): string[] | undefined {
+  if (!value) return undefined;
+  const parts = value.split(",").filter(Boolean);
+  return parts.length > 0 ? parts : undefined;
+}
+
+function parseAmountOp(
+  value: string | null
+): "=" | ">=" | "<=" | undefined {
+  if (value === "=" || value === ">=" || value === "<=") return value;
   return undefined;
 }
 

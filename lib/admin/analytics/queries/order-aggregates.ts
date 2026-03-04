@@ -265,6 +265,60 @@ export async function getTopLocations(
 }
 
 // ---------------------------------------------------------------------------
+// Top customers by spending
+// ---------------------------------------------------------------------------
+
+export interface TopCustomerRaw {
+  name: string;
+  email: string;
+  orders: number;
+  revenue: number;
+}
+
+export async function getTopCustomers(
+  where: Prisma.OrderWhereInput,
+  limit = 5
+): Promise<TopCustomerRaw[]> {
+  const orders = await prisma.order.findMany({
+    where: {
+      ...where,
+      customerEmail: { not: null },
+    },
+    select: {
+      customerEmail: true,
+      recipientName: true,
+      totalInCents: true,
+    },
+  });
+
+  const customerMap = new Map<
+    string,
+    { email: string; name: string; orders: number; revenue: number }
+  >();
+
+  for (const order of orders) {
+    const email = order.customerEmail!;
+    const existing = customerMap.get(email) ?? {
+      email,
+      name: order.recipientName ?? email,
+      orders: 0,
+      revenue: 0,
+    };
+    existing.orders += 1;
+    existing.revenue += order.totalInCents;
+    // Update name if we get a real name (prefer non-email name)
+    if (order.recipientName && existing.name === email) {
+      existing.name = order.recipientName;
+    }
+    customerMap.set(email, existing);
+  }
+
+  return Array.from(customerMap.values())
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, limit);
+}
+
+// ---------------------------------------------------------------------------
 // Promo order count
 // ---------------------------------------------------------------------------
 
@@ -277,6 +331,52 @@ export async function getPromoOrderCount(
       promoCode: { not: null },
     },
   });
+}
+
+// ---------------------------------------------------------------------------
+// Product type split (coffee vs merch revenue)
+// ---------------------------------------------------------------------------
+
+export interface ProductTypeSplitRaw {
+  coffeeRevenue: number;
+  merchRevenue: number;
+}
+
+export async function getProductTypeSplit(
+  where: Prisma.OrderWhereInput
+): Promise<ProductTypeSplitRaw> {
+  const items = await prisma.orderItem.findMany({
+    where: { order: where },
+    select: {
+      quantity: true,
+      priceInCents: true,
+      purchaseOption: {
+        select: {
+          variant: {
+            select: {
+              product: {
+                select: { type: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  let coffeeRevenue = 0;
+  let merchRevenue = 0;
+
+  for (const item of items) {
+    const lineTotal = item.priceInCents * item.quantity;
+    if (item.purchaseOption.variant.product.type === "COFFEE") {
+      coffeeRevenue += lineTotal;
+    } else {
+      merchRevenue += lineTotal;
+    }
+  }
+
+  return { coffeeRevenue, merchRevenue };
 }
 
 // ---------------------------------------------------------------------------

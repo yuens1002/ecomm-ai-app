@@ -12,12 +12,12 @@ describe("formatCurrency", () => {
     expect(formatCurrency(123456)).toBe("$1,234.56");
   });
 
-  it("drops trailing zeros for round dollars", () => {
-    expect(formatCurrency(100000)).toBe("$1,000");
+  it("keeps two decimal places for round dollars", () => {
+    expect(formatCurrency(100000)).toBe("$1,000.00");
   });
 
   it("handles zero", () => {
-    expect(formatCurrency(0)).toBe("$0");
+    expect(formatCurrency(0)).toBe("$0.00");
   });
 });
 
@@ -64,14 +64,14 @@ describe("formatDelta", () => {
     expect(formatDelta({ value: 0.05, direction: "down" })).toBe("−5.0%");
   });
 
-  it("formats flat delta", () => {
-    expect(formatDelta({ value: 0, direction: "flat" })).toBe("—");
+  it("formats flat delta as percentage", () => {
+    expect(formatDelta({ value: 0, direction: "flat" })).toBe("0.0%");
   });
 });
 
 describe("formatByType", () => {
   it("delegates to currency", () => {
-    expect(formatByType(5000, "currency")).toBe("$50");
+    expect(formatByType(5000, "currency")).toBe("$50.00");
   });
 
   it("delegates to percent", () => {

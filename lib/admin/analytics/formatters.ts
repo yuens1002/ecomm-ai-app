@@ -10,7 +10,7 @@ import type { DeltaResult } from "./contracts";
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
-  minimumFractionDigits: 0,
+  minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
 
@@ -61,8 +61,15 @@ export function formatCompactNumber(n: number): string {
   return compactNumberFormatter.format(n);
 }
 
-/** Format grams as pounds. e.g. 1000 → "2.2 lbs" */
-export function formatWeight(grams: number): string {
+/** Format grams as weight. Respects admin weight unit setting. */
+export function formatWeight(
+  grams: number,
+  unit: "METRIC" | "IMPERIAL" = "IMPERIAL"
+): string {
+  if (unit === "METRIC") {
+    const kg = grams / 1000;
+    return `${kg.toFixed(1)} kg`;
+  }
   const lbs = grams / 453.592;
   return `${lbs.toFixed(1)} lbs`;
 }
@@ -71,7 +78,7 @@ export function formatWeight(grams: number): string {
  * Format a DeltaResult for display. e.g. { value: 0.123, direction: "up" } → "+12.3%"
  */
 export function formatDelta(delta: DeltaResult): string {
-  if (delta.direction === "flat") return "—";
+  if (delta.direction === "flat") return percentFormatter.format(0);
   const sign = delta.direction === "up" ? "+" : "−";
   return `${sign}${percentFormatter.format(delta.value)}`;
 }

@@ -18,7 +18,8 @@ interface ChartTab {
 
 interface ChartCardProps {
   title: string;
-  description?: string;
+  description?: React.ReactNode;
+  action?: React.ReactNode;
   children: React.ReactNode;
   tabs?: ChartTab[];
   activeTab?: string;
@@ -30,6 +31,7 @@ interface ChartCardProps {
 export function ChartCard({
   title,
   description,
+  action,
   children,
   tabs,
   activeTab,
@@ -38,7 +40,7 @@ export function ChartCard({
   className,
 }: ChartCardProps) {
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn("overflow-hidden shadow-none", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div>
           <CardTitle className="text-base font-medium">{title}</CardTitle>
@@ -46,7 +48,7 @@ export function ChartCard({
             <CardDescription className="text-xs">{description}</CardDescription>
           )}
         </div>
-        {tabs && tabs.length > 1 && (
+        {tabs && tabs.length > 1 ? (
           <Tabs value={activeTab} onValueChange={onTabChange}>
             <TabsList className="h-8">
               {tabs.map((tab) => (
@@ -60,7 +62,9 @@ export function ChartCard({
               ))}
             </TabsList>
           </Tabs>
-        )}
+        ) : action ? (
+          <div className="text-sm">{action}</div>
+        ) : null}
       </CardHeader>
       <CardContent className="pb-4">
         {loading ? (

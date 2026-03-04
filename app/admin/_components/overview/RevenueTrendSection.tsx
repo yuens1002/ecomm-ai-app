@@ -13,14 +13,22 @@ export function RevenueTrendSection({
   data,
   comparisonData,
 }: RevenueTrendSectionProps) {
+  const hasData = data.some((d) => d.primary > 0 || (d.secondary ?? 0) > 0);
+
   return (
     <ChartCard title="Revenue & Orders Trend" description="Daily revenue with order count overlay">
-      <TrendChart
-        data={data}
-        primaryLabel="Revenue"
-        secondaryLabel="Orders"
-        comparisonData={comparisonData ?? undefined}
-      />
+      {hasData ? (
+        <TrendChart
+          data={data}
+          primaryLabel="Revenue"
+          secondaryLabel="Orders"
+          comparisonData={comparisonData ?? undefined}
+        />
+      ) : (
+        <div className="flex items-center justify-center h-[250px] text-sm text-muted-foreground">
+          No revenue data in this period
+        </div>
+      )}
     </ChartCard>
   );
 }

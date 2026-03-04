@@ -33,9 +33,11 @@ import {
   getOrdersByStatus,
   getTopProducts,
   getTopLocations,
+  getTopCustomers,
   getPromoOrderCount,
   getFulfilledCount,
   getPurchaseTypeSplit,
+  getProductTypeSplit,
 } from "../queries/order-aggregates";
 import { getBehaviorFunnel, getTopSearches } from "../queries/activity-queries";
 import {
@@ -64,8 +66,10 @@ export async function getDashboardAnalytics(
     revenueByDay,
     ordersByStatus,
     purchaseTypeSplit,
+    productTypeSplit,
     topProducts,
     topLocations,
+    topCustomers,
     topSearches,
     promoCount,
     fulfilledCount,
@@ -80,8 +84,10 @@ export async function getDashboardAnalytics(
     getRevenueByDay(kpiWhere, range),
     getOrdersByStatus(allWhere),
     getPurchaseTypeSplit(kpiWhere),
+    getProductTypeSplit(kpiWhere),
     getTopProducts(kpiWhere, 5),
     getTopLocations(kpiWhere, 5),
+    getTopCustomers(kpiWhere, 5),
     getTopSearches(range, 5),
     getPromoOrderCount(kpiWhere),
     getFulfilledCount(allWhere),
@@ -106,7 +112,7 @@ export async function getDashboardAnalytics(
   };
 
   // Build KPIs
-  const kpis = buildKpis(revenueAgg, reviewsSummary, entityCounts);
+  const kpis = buildKpis(revenueAgg, reviewsSummary, entityCounts, productTypeSplit);
 
   // Build chips (supporting metrics)
   const chips: ChipPayload[] = [
@@ -117,7 +123,7 @@ export async function getDashboardAnalytics(
   ];
 
   // Build alerts
-  const alerts = buildAlerts(revenueAgg, ordersByStatus);
+  const alerts = buildAlerts(revenueAgg, ordersByStatus, reviewsSummary);
 
   // Build comparison deltas
   const kpisWithDeltas = comparisonKpis
@@ -164,6 +170,11 @@ export async function getDashboardAnalytics(
       value: l.revenue,
     })),
     topSearches,
+    topCustomers: topCustomers.map((c, i) => ({
+      rank: i + 1,
+      label: c.name,
+      value: c.revenue,
+    })),
     reviewsSummary,
   };
 }
@@ -175,7 +186,8 @@ export async function getDashboardAnalytics(
 function buildKpis(
   rev: Awaited<ReturnType<typeof getRevenueAggregate>>,
   reviews: Awaited<ReturnType<typeof getReviewsSummary>>,
-  entities: Awaited<ReturnType<typeof getEntityCounts>>
+  entities: Awaited<ReturnType<typeof getEntityCounts>>,
+  productType: Awaited<ReturnType<typeof getProductTypeSplit>>
 ): DashboardKpis {
   return {
     revenue: rev.revenue,
@@ -187,9 +199,14 @@ function buildKpis(
     reviews: reviews.total,
     avgRating: reviews.avgRating,
     products: entities.products,
+    coffeeProducts: entities.coffeeProducts,
+    merchProducts: entities.merchProducts,
     users: entities.users,
     newUsers: entities.newUsers,
     newsletterActive: entities.newsletterActive,
+    newsletterTotal: entities.newsletterTotal,
+    coffeeRevenue: productType.coffeeRevenue,
+    merchRevenue: productType.merchRevenue,
   };
 }
 
@@ -197,12 +214,13 @@ async function getComparisonKpis(
   compRange: DateRange
 ): Promise<DashboardKpis> {
   const compWhere = buildKpiOrderWhere({ range: compRange });
-  const [compRev, compReviews, compEntities] = await Promise.all([
+  const [compRev, compReviews, compEntities, compProductType] = await Promise.all([
     getRevenueAggregate(compWhere),
     getReviewsSummary(compRange),
     getEntityCounts(compRange),
+    getProductTypeSplit(compWhere),
   ]);
-  return buildKpis(compRev, compReviews, compEntities);
+  return buildKpis(compRev, compReviews, compEntities, compProductType);
 }
 
 function buildDeltaKpis(
@@ -216,9 +234,29 @@ function buildDeltaKpis(
 
 function buildAlerts(
   rev: Awaited<ReturnType<typeof getRevenueAggregate>>,
-  statusBreakdown: Awaited<ReturnType<typeof getOrdersByStatus>>
+  statusBreakdown: Awaited<ReturnType<typeof getOrdersByStatus>>,
+  reviews: Awaited<ReturnType<typeof getReviewsSummary>>
 ): AlertPayload[] {
   const alerts: AlertPayload[] = [];
+
+  // Pending reviews awaiting approval
+  if (reviews.pendingCount > 0) {
+    alerts.push({
+      severity: "warning",
+      message: `${reviews.pendingCount} review${reviews.pendingCount === 1 ? "" : "s"} awaiting approval`,
+      href: "/admin/reviews?status=PENDING",
+    });
+  }
+
+  // Orders needing shipping (PAID but not yet shipped)
+  const needsShipping = statusBreakdown.find((s) => s.status === "PAID");
+  if (needsShipping && needsShipping.count > 0) {
+    alerts.push({
+      severity: "warning",
+      message: `${needsShipping.count} order${needsShipping.count === 1 ? "" : "s"} need shipping`,
+      href: "/admin/orders?status=PAID",
+    });
+  }
 
   // Refund rate > 10%
   const refundRate = computeRefundRate(rev.refunds, rev.revenue);

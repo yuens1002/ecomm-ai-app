@@ -12,6 +12,7 @@ type PrismaMock = {
     aggregate: jest.Mock;
     count: jest.Mock;
     groupBy: jest.Mock;
+    findFirst: jest.Mock;
   };
   product: {
     count: jest.Mock;
@@ -34,6 +35,7 @@ jest.mock("@/lib/prisma", () => {
       aggregate: jest.fn(),
       count: jest.fn(),
       groupBy: jest.fn(),
+      findFirst: jest.fn(),
     },
     product: {
       count: jest.fn(),
@@ -67,10 +69,22 @@ describe("getReviewsSummary", () => {
     });
     prisma.review.count
       .mockResolvedValueOnce(EXPECTED.pendingReviewCount) // pending
-      .mockResolvedValueOnce(3); // total
-    prisma.review.groupBy.mockResolvedValue([
-      { productId: "prod-1", _count: 2 },
-    ]);
+      .mockResolvedValueOnce(3) // total
+      .mockResolvedValueOnce(2) // published
+      .mockResolvedValueOnce(0); // flagged
+    prisma.review.groupBy
+      .mockResolvedValueOnce([{ productId: "prod-1", _count: 2 }]) // topReviewedGroup
+      .mockResolvedValueOnce([{ rating: 5, _count: 2 }, { rating: 4, _count: 1 }]); // starBreakdown
+    prisma.review.findFirst.mockResolvedValue({
+      id: "rev-1",
+      rating: 5,
+      title: "Great coffee",
+      content: "Love it",
+      createdAt: new Date("2024-01-15"),
+      status: "PUBLISHED",
+      user: { name: "John" },
+      product: { name: "Ethiopian Yirgacheffe", slug: "ethiopian-yirgacheffe" },
+    });
     prisma.product.findUnique.mockResolvedValue({
       name: "Ethiopian Yirgacheffe",
       slug: "ethiopian-yirgacheffe",
@@ -82,6 +96,8 @@ describe("getReviewsSummary", () => {
     expect(result.total).toBe(3);
     expect(result.topReviewed?.name).toBe("Ethiopian Yirgacheffe");
     expect(result.topReviewed?.count).toBe(2);
+    expect(result.starBreakdown).toHaveLength(5);
+    expect(result.latestReview?.productName).toBe("Ethiopian Yirgacheffe");
   });
 
   it("handles no reviews in period", async () => {
@@ -89,14 +105,20 @@ describe("getReviewsSummary", () => {
       _avg: { rating: null },
     });
     prisma.review.count
-      .mockResolvedValueOnce(0)
-      .mockResolvedValueOnce(0);
-    prisma.review.groupBy.mockResolvedValue([]);
+      .mockResolvedValueOnce(0) // pending
+      .mockResolvedValueOnce(0) // total
+      .mockResolvedValueOnce(0) // published
+      .mockResolvedValueOnce(0); // flagged
+    prisma.review.groupBy
+      .mockResolvedValueOnce([]) // topReviewedGroup
+      .mockResolvedValueOnce([]); // starBreakdown
+    prisma.review.findFirst.mockResolvedValue(null);
 
     const result = await getReviewsSummary(FIXTURE_RANGE);
     expect(result.avgRating).toBe(0);
     expect(result.total).toBe(0);
     expect(result.topReviewed).toBeNull();
+    expect(result.latestReview).toBeNull();
   });
 });
 
