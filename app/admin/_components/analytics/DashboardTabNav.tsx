@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   { href: "/admin", label: "Overview" },
-  { href: "/admin/sales", label: "Sales" },
-  { href: "/admin/analytics", label: "Analytics" },
+  { href: "/admin/sales", label: "Sales Analytics" },
+  { href: "/admin/analytics", label: "Trends & User Analytics" },
 ];
 
 export function DashboardTabNav({ className }: { className?: string }) {

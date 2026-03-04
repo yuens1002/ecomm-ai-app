@@ -13,6 +13,7 @@ import {
 
 export type NavChild = {
   label: string;
+  description?: string;
   href: string;
   icon?: LucideIcon;
   disabled?: boolean;
@@ -35,8 +36,8 @@ export const adminNavConfig: NavItem[] = [
     icon: LayoutDashboard,
     children: [
       { label: "Overview", href: "/admin" },
-      { label: "Sales", href: "/admin/sales", icon: DollarSign },
-      { label: "Analytics", href: "/admin/analytics" },
+      { label: "Sales Analytics", description: "Revenue, orders & product performance", href: "/admin/sales", icon: DollarSign },
+      { label: "Trends & User Analytics", description: "Behavior funnel, searches & activity trends", href: "/admin/analytics" },
     ],
   },
   {
@@ -283,8 +284,8 @@ export const mobileNavConfig: NavItem[] = [
     icon: LayoutDashboard,
     children: [
       { label: "Overview", href: "/admin" },
-      { label: "Sales", href: "/admin/sales", icon: DollarSign },
-      { label: "Analytics", href: "/admin/analytics" },
+      { label: "Sales Analytics", description: "Revenue, orders & product performance", href: "/admin/sales", icon: DollarSign },
+      { label: "Trends & User Analytics", description: "Behavior funnel, searches & activity trends", href: "/admin/analytics" },
     ],
   },
   {
