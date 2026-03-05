@@ -1,3 +1,4 @@
+export { DashboardPageTemplate } from "./DashboardPageTemplate";
 export { DashboardTabNav } from "./DashboardTabNav";
 export { DashboardToolbar } from "./DashboardToolbar";
 export { ExportCsvButton } from "./ExportCsvButton";

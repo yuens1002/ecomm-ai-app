@@ -100,3 +100,11 @@ export function formatByType(
       return formatNumber(value);
   }
 }
+
+/** Format a DB enum status. e.g. "IN_PROGRESS" → "In Progress" */
+export function formatStatus(status: string): string {
+  return status
+    .split("_")
+    .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+    .join(" ");
+}

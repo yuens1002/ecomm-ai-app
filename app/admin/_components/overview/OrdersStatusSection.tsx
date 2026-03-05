@@ -3,17 +3,11 @@
 import { ClipboardList } from "lucide-react";
 import { ChartCard } from "../analytics/ChartCard";
 import { DonutChart } from "../analytics/DonutChart";
+import { formatStatus } from "@/lib/admin/analytics/formatters";
 import type { StatusBreakdownItem } from "@/lib/admin/analytics/contracts";
 
 interface OrdersStatusSectionProps {
   data: StatusBreakdownItem[];
-}
-
-function formatStatus(status: string): string {
-  return status
-    .split("_")
-    .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
-    .join(" ");
 }
 
 export function OrdersStatusSection({ data }: OrdersStatusSectionProps) {

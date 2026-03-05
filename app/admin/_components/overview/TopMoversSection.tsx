@@ -1,40 +1,47 @@
 "use client";
 
-import { ChartCard } from "../analytics/ChartCard";
+import { Crown, MapPin, Search } from "lucide-react";
+import { ChartCard, ChartCardLinkAction } from "../analytics/ChartCard";
 import { RankedList } from "../analytics/RankedList";
 import type { RankedItem } from "@/lib/admin/analytics/contracts";
 
 interface TopMoversSectionProps {
-  topProducts: RankedItem[];
   topLocations: RankedItem[];
   topSearches: RankedItem[];
+  topCustomers: RankedItem[];
 }
 
 export function TopMoversSection({
-  topProducts,
   topLocations,
   topSearches,
+  topCustomers,
 }: TopMoversSectionProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <ChartCard title="Top Products">
-        <RankedList
-          items={topProducts}
-          valueLabel="Revenue"
-          viewAllHref="/admin/sales"
-        />
-      </ChartCard>
-      <ChartCard title="Top Locations">
+      <ChartCard title="Top Locations" titleIcon={MapPin} description="Revenue by customer location">
         <RankedList
           items={topLocations}
           valueLabel="Revenue"
+          limit={5}
         />
       </ChartCard>
-      <ChartCard title="Top Searches">
+      <ChartCard
+        title="Top Searches"
+        titleIcon={Search}
+        description="Most popular search terms"
+        action={<ChartCardLinkAction href="/admin/analytics" />}
+      >
         <RankedList
           items={topSearches}
           valueLabel="Count"
-          viewAllHref="/admin/analytics"
+          limit={5}
+        />
+      </ChartCard>
+      <ChartCard title="Top Customers" titleIcon={Crown} description="Highest spending customers">
+        <RankedList
+          items={topCustomers}
+          valueLabel="Revenue"
+          limit={5}
         />
       </ChartCard>
     </div>

@@ -3,29 +3,15 @@
 import { useState, useCallback } from "react";
 import useSWR from "swr";
 import {
-  Activity,
   Eye,
   Filter,
   Search,
   ShoppingCart,
   TrendingUp,
 } from "lucide-react";
+import { ADMIN_PAGES } from "@/lib/config/admin-pages";
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
-import {
+  DashboardPageTemplate,
   DashboardToolbar,
   DateRangePicker,
   KpiCard,
@@ -40,17 +26,9 @@ import type {
   UserAnalyticsResponse,
 } from "@/lib/admin/analytics/contracts";
 import { computeDelta } from "@/lib/admin/analytics/metrics-registry";
-import { formatCompactNumber } from "@/lib/admin/analytics/formatters";
+import { DailyActivitySection } from "./DailyActivitySection";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
-
-const activityChartConfig = {
-  productView: { label: "Product Views", color: "var(--chart-1)" },
-  addToCart: { label: "Add to Cart", color: "var(--chart-2)" },
-  search: { label: "Searches", color: "var(--chart-4)" },
-  pageView: { label: "Page Views", color: "var(--chart-5)" },
-  removeFromCart: { label: "Remove from Cart", color: "oklch(0.627 0.265 303.9)" },
-} satisfies ChartConfig;
 
 export default function UserAnalyticsClient() {
   const [period, setPeriod] = useState<PeriodPreset>("30d");
@@ -91,7 +69,14 @@ export default function UserAnalyticsClient() {
   }, [period, compare, isCustom, customFrom, customTo]);
 
   if (isLoading && !data) {
-    return <SkeletonDashboard sections={4} />;
+    return (
+      <DashboardPageTemplate
+        title={ADMIN_PAGES.analytics.label}
+        subtitle={ADMIN_PAGES.analytics.description}
+      >
+        <SkeletonDashboard sections={4} />
+      </DashboardPageTemplate>
+    );
   }
 
   if (!data) return null;
@@ -113,8 +98,11 @@ export default function UserAnalyticsClient() {
     : undefined;
 
   return (
-    <div className="space-y-6">
-      {/* Toolbar — period + export (compare only in calendar popover) */}
+    <DashboardPageTemplate
+      title={ADMIN_PAGES.analytics.label}
+      subtitle={ADMIN_PAGES.analytics.description}
+    >
+      {/* Toolbar — period + export */}
       <DashboardToolbar onExport={handleExportCsv}>
         <DateRangePicker
           mode="state"
@@ -166,7 +154,7 @@ export default function UserAnalyticsClient() {
       </div>
 
       {/* Row 1: Funnel + Trending Products + Top Searches */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <ChartCard title="Behavior Funnel" titleIcon={Filter} description="Views → Cart → Orders">
           <FunnelChart steps={behaviorFunnel} />
         </ChartCard>
@@ -188,88 +176,8 @@ export default function UserAnalyticsClient() {
         </ChartCard>
       </div>
 
-      {/* Row 3: Daily Activity — stacked area chart with 5 series */}
-      <ChartCard
-        title="Daily Activity"
-        description="Activity breakdown by type"
-        titleIcon={Activity}
-      >
-        <ChartContainer config={activityChartConfig} className="aspect-auto h-64 w-full">
-          <AreaChart data={data.activityByDay} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              tickFormatter={(v: string) => {
-                const d = new Date(v + "T00:00:00Z");
-                return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-              }}
-              minTickGap={32}
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(v: number) => formatCompactNumber(v)}
-              width={50}
-            />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <ChartLegend content={<ChartLegendContent />} />
-            {/* Stacked areas — removeFromCart first (bottom) to hide stroke when 0 */}
-            <Area
-              type="monotone"
-              dataKey="removeFromCart"
-              name="Remove from Cart"
-              stackId="activity"
-              stroke="var(--color-removeFromCart)"
-              fill="var(--color-removeFromCart)"
-              fillOpacity={0.4}
-              strokeWidth={0}
-            />
-            <Area
-              type="monotone"
-              dataKey="productView"
-              name="Product Views"
-              stackId="activity"
-              stroke="var(--color-productView)"
-              fill="var(--color-productView)"
-              fillOpacity={0.4}
-              strokeWidth={1.5}
-            />
-            <Area
-              type="monotone"
-              dataKey="addToCart"
-              name="Add to Cart"
-              stackId="activity"
-              stroke="var(--color-addToCart)"
-              fill="var(--color-addToCart)"
-              fillOpacity={0.4}
-              strokeWidth={1.5}
-            />
-            <Area
-              type="monotone"
-              dataKey="search"
-              name="Searches"
-              stackId="activity"
-              stroke="var(--color-search)"
-              fill="var(--color-search)"
-              fillOpacity={0.4}
-              strokeWidth={1.5}
-            />
-            <Area
-              type="monotone"
-              dataKey="pageView"
-              name="Page Views"
-              stackId="activity"
-              stroke="var(--color-pageView)"
-              fill="var(--color-pageView)"
-              fillOpacity={0.4}
-              strokeWidth={1.5}
-            />
-          </AreaChart>
-        </ChartContainer>
-      </ChartCard>
-    </div>
+      {/* Row 2: Daily Activity — stacked area chart with 5 series */}
+      <DailyActivitySection data={data.activityByDay} />
+    </DashboardPageTemplate>
   );
 }
