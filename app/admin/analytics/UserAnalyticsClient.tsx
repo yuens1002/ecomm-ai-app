@@ -49,7 +49,7 @@ const activityChartConfig = {
   addToCart: { label: "Add to Cart", color: "var(--chart-3)" },
   search: { label: "Searches", color: "var(--chart-4)" },
   pageView: { label: "Page Views", color: "var(--chart-5)" },
-  removeFromCart: { label: "Remove from Cart", color: "hsl(var(--muted-foreground))" },
+  removeFromCart: { label: "Remove from Cart", color: "oklch(0.645 0.246 16.439)" },
 } satisfies ChartConfig;
 
 export default function UserAnalyticsClient() {
