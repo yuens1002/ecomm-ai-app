@@ -6,7 +6,7 @@ export { DateRangePicker } from "./DateRangePicker";
 export { KpiCard } from "./KpiCard";
 export { KpiChipBar } from "./KpiChipBar";
 export { AlertStrip } from "./AlertStrip";
-export { ChartCard } from "./ChartCard";
+export { ChartCard, ChartCardLinkAction, ChartCardToggleAction } from "./ChartCard";
 export { TrendChart } from "./TrendChart";
 export { DonutChart } from "./DonutChart";
 export { HBarChart } from "./HBarChart";

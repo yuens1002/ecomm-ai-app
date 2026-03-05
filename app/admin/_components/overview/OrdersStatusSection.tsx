@@ -1,5 +1,6 @@
 "use client";
 
+import { ClipboardList } from "lucide-react";
 import { ChartCard } from "../analytics/ChartCard";
 import { DonutChart } from "../analytics/DonutChart";
 import type { StatusBreakdownItem } from "@/lib/admin/analytics/contracts";
@@ -24,7 +25,7 @@ export function OrdersStatusSection({ data }: OrdersStatusSectionProps) {
   const total = data.reduce((sum, s) => sum + s.count, 0);
 
   return (
-    <ChartCard title="Total Orders by Status">
+    <ChartCard title="Total Orders by Status" titleIcon={ClipboardList} description="Breakdown by fulfillment stage">
       {total > 0 ? (
         <DonutChart data={chartData} />
       ) : (

@@ -12,11 +12,14 @@ const COL_RESIZE_CURSOR = `url("data:image/svg+xml,${COL_RESIZE_SVG}") 12 12, co
 
 interface DataTableHeaderCellProps<TData> {
   header: Header<TData, unknown>;
+  /** Use minWidth instead of width (for fitContainer tables). */
+  useMinWidth?: boolean;
   className?: string;
 }
 
 export function DataTableHeaderCell<TData>({
   header,
+  useMinWidth,
   className,
 }: DataTableHeaderCellProps<TData>) {
   const canSort = header.column.getCanSort();
@@ -55,7 +58,10 @@ export function DataTableHeaderCell<TData>({
           "sticky left-0 z-30 bg-background after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-border",
         className
       )}
-      style={{ width: header.getSize() }}
+      style={useMinWidth
+        ? { minWidth: header.getSize() }
+        : { width: header.getSize() }
+      }
     >
       <div className={cn(
         "flex items-center",

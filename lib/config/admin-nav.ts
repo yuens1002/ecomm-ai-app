@@ -10,6 +10,7 @@ import {
   DollarSign,
   type LucideIcon,
 } from "lucide-react";
+import { ADMIN_PAGES } from "./admin-pages";
 
 export type NavChild = {
   label: string;
@@ -35,9 +36,9 @@ export const adminNavConfig: NavItem[] = [
     label: "Dashboard",
     icon: LayoutDashboard,
     children: [
-      { label: "Overview", href: "/admin" },
-      { label: "Sales Analytics", description: "Revenue, orders & product performance", href: "/admin/sales", icon: DollarSign },
-      { label: "Trends & User Activities", description: "Behavior funnel, searches & activity trends", href: "/admin/analytics" },
+      { label: ADMIN_PAGES.overview.label, href: ADMIN_PAGES.overview.href },
+      { label: ADMIN_PAGES.sales.label, description: ADMIN_PAGES.sales.description, href: ADMIN_PAGES.sales.href, icon: DollarSign },
+      { label: ADMIN_PAGES.analytics.label, description: ADMIN_PAGES.analytics.description, href: ADMIN_PAGES.analytics.href },
     ],
   },
   {
@@ -283,9 +284,9 @@ export const mobileNavConfig: NavItem[] = [
     label: "Dashboard",
     icon: LayoutDashboard,
     children: [
-      { label: "Overview", href: "/admin" },
-      { label: "Sales Analytics", description: "Revenue, orders & product performance", href: "/admin/sales", icon: DollarSign },
-      { label: "Trends & User Activities", description: "Behavior funnel, searches & activity trends", href: "/admin/analytics" },
+      { label: ADMIN_PAGES.overview.label, href: ADMIN_PAGES.overview.href },
+      { label: ADMIN_PAGES.sales.label, description: ADMIN_PAGES.sales.description, href: ADMIN_PAGES.sales.href, icon: DollarSign },
+      { label: ADMIN_PAGES.analytics.label, description: ADMIN_PAGES.analytics.description, href: ADMIN_PAGES.analytics.href },
     ],
   },
   {

@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ADMIN_PAGES } from "@/lib/config/admin-pages";
 
 const TABS = [
-  { href: "/admin", label: "Overview" },
-  { href: "/admin/sales", label: "Sales Analytics" },
-  { href: "/admin/analytics", label: "Trends & User Analytics" },
+  ADMIN_PAGES.overview,
+  ADMIN_PAGES.sales,
+  ADMIN_PAGES.analytics,
 ];
 
 export function DashboardTabNav({ className }: { className?: string }) {

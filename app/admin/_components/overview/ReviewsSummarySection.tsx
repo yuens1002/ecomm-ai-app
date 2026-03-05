@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Star } from "lucide-react";
-import { ChartCard } from "../analytics/ChartCard";
+import { Star } from "lucide-react";
+import { ChartCard, ChartCardLinkAction } from "../analytics/ChartCard";
 import { Badge } from "@/components/ui/badge";
 import type { DashboardResponse } from "@/lib/admin/analytics/contracts";
 
@@ -25,7 +25,7 @@ function timeAgo(iso: string): string {
 export function ReviewsSummarySection({ data }: ReviewsSummarySectionProps) {
   if (data.total === 0) {
     return (
-      <ChartCard title="Reviews">
+      <ChartCard title="Reviews" titleIcon={Star} description="Ratings & recent feedback">
         <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
           No reviews yet
         </div>
@@ -38,14 +38,9 @@ export function ReviewsSummarySection({ data }: ReviewsSummarySectionProps) {
   return (
     <ChartCard
       title="Reviews"
-      action={
-        <Link
-          href="/admin/reviews"
-          className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-        >
-          View All <ArrowRight className="h-3 w-3" />
-        </Link>
-      }
+      titleIcon={Star}
+      description="Ratings & recent feedback"
+      action={<ChartCardLinkAction href="/admin/reviews" />}
     >
       <div className="space-y-4">
         {/* Average rating + total */}
@@ -77,7 +72,7 @@ export function ReviewsSummarySection({ data }: ReviewsSummarySectionProps) {
             const barWidth = (star.count / maxStarCount) * 100;
             return (
               <div key={star.rating} className="flex items-center gap-2 text-sm">
-                <span className="w-4 text-right text-muted-foreground">
+                <span className="text-muted-foreground tabular-nums">
                   {star.rating}
                 </span>
                 <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />

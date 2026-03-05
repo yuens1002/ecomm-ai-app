@@ -5,20 +5,27 @@ import useSWR from "swr";
 import type { ColumnDef, PaginationState, SortingState } from "@tanstack/react-table";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import {
+  BarChart3,
+  ClipboardList,
   DollarSign,
+  Filter,
+  MapPin,
+  ReceiptText,
+  Repeat,
   ShoppingCart,
   TrendingUp,
-  ReceiptText,
+  Trophy,
   Weight,
-  Filter,
 } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
+import { ADMIN_PAGES } from "@/lib/config/admin-pages";
 import {
   DashboardToolbar,
   DateRangePicker,
   KpiCard,
   StatGrid,
   ChartCard,
+  ChartCardToggleAction,
   TrendChart,
   DonutChart,
   HBarChart,
@@ -45,7 +52,11 @@ import type {
 import { computeDelta } from "@/lib/admin/analytics/metrics-registry";
 import { formatCurrency } from "@/lib/admin/analytics/formatters";
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const fetcher = (url: string) =>
+  fetch(url).then((r) => {
+    if (!r.ok) throw new Error(`API ${r.status}`);
+    return r.json();
+  });
 
 function formatStatus(status: string): string {
   return status
@@ -135,7 +146,7 @@ const salesColumns: ColumnDef<SalesRow, unknown>[] = [
           variant={
             row.original.orderType === "SUBSCRIPTION" ? "default" : "secondary"
           }
-          className="text-xs"
+          className="text-xs font-normal"
         >
           {row.original.orderType === "SUBSCRIPTION" ? "Sub" : "One-time"}
         </Badge>
@@ -150,7 +161,7 @@ const salesColumns: ColumnDef<SalesRow, unknown>[] = [
     meta: { align: "center" as const },
     cell: ({ row }) => (
       <div className="text-center">
-        <Badge variant="outline" className="text-xs">
+        <Badge variant="outline" className="text-xs font-normal whitespace-nowrap">
           {formatStatus(row.original.status)}
         </Badge>
       </div>
@@ -208,6 +219,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
     pageIndex: 0,
     pageSize: 25,
   });
+  const [showAllCoffee, setShowAllCoffee] = useState(false);
 
   const sortCol = sorting[0]?.id ?? "createdAt";
   const sortDir = sorting[0]?.desc ? "desc" : "asc";
@@ -258,7 +270,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
 
   // Server-side table — manual pagination/sorting, no client-side row models
   const salesTable = useReactTable<SalesRow>({
-    data: data?.table.rows ?? [],
+    data: data?.table?.rows ?? [],
     columns: salesColumns,
     state: { sorting, pagination, columnVisibility },
     onSortingChange: handleSortingChange,
@@ -267,7 +279,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
     manualPagination: true,
     manualSorting: true,
     manualFiltering: true,
-    rowCount: data?.table.total ?? 0,
+    rowCount: data?.table?.total ?? 0,
     columnResizeMode: "onChange",
   });
 
@@ -275,7 +287,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
   if (isLoading && !data) {
     return (
       <>
-        <PageTitle title="Sales Analytics" />
+        <PageTitle title={ADMIN_PAGES.sales.label} subtitle={ADMIN_PAGES.sales.description} />
         <SkeletonDashboard />
       </>
     );
@@ -284,7 +296,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
   if (!data) {
     return (
       <>
-        <PageTitle title="Sales Analytics" />
+        <PageTitle title={ADMIN_PAGES.sales.label} subtitle={ADMIN_PAGES.sales.description} />
         <p className="text-muted-foreground">Failed to load sales data.</p>
       </>
     );
@@ -306,6 +318,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
   const kpiCards = [
     {
       label: "Revenue",
+      description: "Gross sales for the period",
       value: kpis.revenue,
       format: "currency" as const,
       delta: comparisonKpis
@@ -315,6 +328,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
     },
     {
       label: "Orders",
+      description: "Total orders placed",
       value: kpis.orders,
       format: "number" as const,
       delta: comparisonKpis
@@ -325,6 +339,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
     {
       label: "AOV",
       labelTitle: "Average Order Value",
+      description: "Revenue per order",
       value: kpis.aov,
       format: "currency" as const,
       delta: comparisonKpis
@@ -334,6 +349,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
     },
     {
       label: "Refunds",
+      description: "Returned order value",
       value: kpis.refundAmount,
       format: "currency" as const,
       delta: comparisonKpis
@@ -343,6 +359,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
     },
     {
       label: "Coffee Sold",
+      description: "Total weight shipped",
       value: totalCoffeeWeight,
       format: "number" as const,
       valueLabel: weightUnitLabel,
@@ -352,7 +369,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
 
   return (
     <>
-      <PageTitle title="Sales Analytics" />
+      <PageTitle title={ADMIN_PAGES.sales.label} subtitle={ADMIN_PAGES.sales.description} />
 
       <div className="space-y-4">
         {/* Period selector + Export */}
@@ -377,6 +394,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
         {/* Revenue trend */}
         <ChartCard
           title="Revenue Over Time"
+          titleIcon={TrendingUp}
           description="Daily revenue with comparison overlay"
         >
           <TrendChart
@@ -384,19 +402,20 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
             primaryLabel="Revenue"
             secondaryLabel="Orders"
             comparisonData={data.comparisonByDay ?? undefined}
+            className="aspect-auto h-56"
           />
         </ChartCard>
 
-        {/* Row 2: Top products + Subscription vs One-time (pie chart) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ChartCard title="Top Products">
+        {/* Row 2: Top products (60%) + Subscription vs One-time (40%) */}
+        <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-4">
+          <ChartCard title="Top Products" titleIcon={Trophy} description="Best sellers by revenue">
             <RankedList
               items={data.topProducts}
               valueLabel="Revenue"
               limit={10}
             />
           </ChartCard>
-          <ChartCard title="Subscription vs One-time">
+          <ChartCard title="Subscription vs One-time" titleIcon={Repeat} description="Revenue split by purchase type">
             <DonutChart
               data={[
                 {
@@ -417,43 +436,34 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
           </ChartCard>
         </div>
 
-        {/* Row 3: Orders by status + Category breakdown */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ChartCard title="Total Orders by Status">
-            <DonutChart
-              data={data.ordersByStatus.map((s) => ({
-                label: formatStatus(s.status),
-                value: s.count,
-              }))}
-            />
-          </ChartCard>
-          <ChartCard title="Category Breakdown">
+        {/* Row 4: Category breakdown (40%) + Coffee by weight (60%) */}
+        <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-4">
+          <ChartCard title="Category Breakdown" titleIcon={BarChart3} description="Revenue by product category">
             <HBarChart
               data={data.categoryBreakdown.map((c) => ({
                 label: c.category,
                 value: c.revenue,
               }))}
               valueFormat="currency"
-            />
-          </ChartCard>
-        </div>
-
-        {/* Row 4: Top locations + Coffee by weight */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ChartCard title="Sales by Location">
-            <RankedList
-              items={data.topLocations}
-              valueLabel="Revenue"
-              limit={10}
+              labelPosition="above"
             />
           </ChartCard>
           <ChartCard
             title={`Coffee Sold by Weight (${weightUnitLabel})`}
+            titleIcon={Weight}
+            description="Total weight shipped per product"
+            action={data.coffeeByWeight.length > 10 ? (
+              <ChartCardToggleAction
+                expanded={showAllCoffee}
+                onToggle={() => setShowAllCoffee((v) => !v)}
+              />
+            ) : undefined}
           >
             {data.coffeeByWeight.length > 0 ? (
               <HBarChart
                 data={[...data.coffeeByWeight]
                   .sort((a, b) => b.weightSoldGrams - a.weightSoldGrams)
+                  .slice(0, showAllCoffee ? undefined : 10)
                   .map((c) => ({
                     label: c.product,
                     value: parseFloat(
@@ -464,7 +474,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
                     ),
                   }))}
                 valueFormat="number"
-                labelPosition="above"
+                labelPosition="inline"
               />
             ) : (
               <p className="text-sm text-muted-foreground py-4 text-center">
@@ -474,8 +484,27 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
           </ChartCard>
         </div>
 
+        {/* Row 3: Orders by status + Sales by Location */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ChartCard title="Total Orders by Status" titleIcon={ClipboardList} description="Breakdown by fulfillment stage">
+            <DonutChart
+              data={data.ordersByStatus.map((s) => ({
+                label: formatStatus(s.status),
+                value: s.count,
+              }))}
+            />
+          </ChartCard>
+          <ChartCard title="Sales by Location" titleIcon={MapPin} description="Revenue by customer location">
+            <RankedList
+              items={data.topLocations}
+              valueLabel="Revenue"
+              limit={10}
+            />
+          </ChartCard>
+        </div>
+
         {/* Sales orders table */}
-        <ChartCard title="Orders">
+        <ChartCard title="Orders" titleIcon={ShoppingCart} description="Individual order details">
           <DataTableActionBar
             config={{
               left: [
@@ -500,7 +529,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
               right: [
                 {
                   type: "recordCount",
-                  count: data.table.total,
+                  count: data.table?.total ?? 0,
                   label: "orders",
                 },
                 { type: "pageSizeSelector", table: salesTable },
@@ -508,7 +537,7 @@ export default function SalesClient({ weightUnit }: SalesClientProps) {
               ],
             }}
           />
-          <DataTable table={salesTable} />
+          <DataTable table={salesTable} stickyHeader fitContainer />
         </ChartCard>
       </div>
     </>

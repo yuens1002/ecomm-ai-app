@@ -28,6 +28,8 @@ interface KpiCardProps {
   secondaryValueLabelTitle?: string;
   /** Tooltip for the card label itself (e.g. full name if abbreviated). */
   labelTitle?: string;
+  /** Short description shown below the label. */
+  description?: string;
   /** Content rendered in footer area with divider (e.g. breakdown links). */
   footerContent?: React.ReactNode;
   icon?: LucideIcon;
@@ -51,6 +53,7 @@ export function KpiCard({
   secondaryValueLabel,
   secondaryValueLabelTitle,
   labelTitle,
+  description,
   footerContent,
   icon: Icon,
   href,
@@ -112,22 +115,25 @@ export function KpiCard({
         {/* Spacer pushes content to bottom-align across cards */}
         <div className="flex-1" />
 
-        {/* Label with icon */}
+        {/* Label with icon + description */}
         <div className="flex items-center gap-1.5">
           {Icon && <Icon className="h-4 w-4 text-muted-foreground shrink-0" />}
           <span
             className={cn(
               "text-sm text-muted-foreground whitespace-nowrap",
-              labelTitle && "underline decoration-dashed cursor-help"
+              labelTitle && "underline decoration-dotted decoration-current underline-offset-4 cursor-help"
             )}
             title={labelTitle}
           >
             {label}
           </span>
         </div>
+        {description && (
+          <p className="text-xs text-muted-foreground/60 mt-0.5">{description}</p>
+        )}
 
         {/* Value with inline metric labels */}
-        <div className="mt-1.5">
+        <div className="mt-3">
           <span className="text-3xl font-bold tracking-tight">
             {formatByType(value, format)}
           </span>
@@ -135,7 +141,7 @@ export function KpiCard({
             <span
               className={cn(
                 "text-xs text-muted-foreground/70 ml-1.5",
-                valueLabelTitle && "underline decoration-dashed cursor-help"
+                valueLabelTitle && "underline decoration-dotted decoration-current underline-offset-4 cursor-help"
               )}
               title={valueLabelTitle}
             >
@@ -154,7 +160,7 @@ export function KpiCard({
                 <span
                   className={cn(
                     "text-xs text-muted-foreground/70 ml-1.5",
-                    secondaryValueLabelTitle && "underline decoration-dashed cursor-help"
+                    secondaryValueLabelTitle && "underline decoration-dotted decoration-current underline-offset-4 cursor-help"
                   )}
                   title={secondaryValueLabelTitle}
                 >

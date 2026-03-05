@@ -3,13 +3,14 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getSiteMetadata } from "@/lib/site-metadata";
 import { getWeightUnit } from "@/lib/config/app-settings";
+import { ADMIN_PAGES } from "@/lib/config/admin-pages";
 import SalesClient from "./SalesClient";
 
 export async function generateMetadata() {
   const { storeName } = await getSiteMetadata();
   return {
-    title: `Sales Analytics | ${storeName}`,
-    description: "Revenue, products, and order analytics",
+    title: `${ADMIN_PAGES.sales.label} | ${storeName}`,
+    description: ADMIN_PAGES.sales.description,
   };
 }
 

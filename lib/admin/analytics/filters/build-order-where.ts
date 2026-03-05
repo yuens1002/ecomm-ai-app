@@ -54,20 +54,21 @@ export function buildOrderWhere(
     where.shippingState = params.location;
   }
 
-  // Filter by order type or product/category via order items
-  const needsItemFilter =
-    (params.orderType && params.orderType !== "ALL") ||
-    params.productId ||
-    params.categoryId;
+  // Filter by order type — matches display logic (stripeSubscriptionId)
+  if (params.orderType && params.orderType !== "ALL") {
+    if (params.orderType === "SUBSCRIPTION") {
+      where.stripeSubscriptionId = { not: null };
+    } else {
+      where.stripeSubscriptionId = null;
+    }
+  }
+
+  // Filter by product or category via order items
+  const needsItemFilter = params.productId || params.categoryId;
 
   if (needsItemFilter) {
-    // Build purchaseOption filter conditions
     const poConditions: Prisma.PurchaseOptionWhereInput = {};
     const variantConditions: Prisma.ProductVariantWhereInput = {};
-
-    if (params.orderType && params.orderType !== "ALL") {
-      poConditions.type = params.orderType;
-    }
 
     if (params.productId) {
       variantConditions.productId = params.productId;

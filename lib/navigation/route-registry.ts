@@ -8,6 +8,7 @@ import {
   LifeBuoy,
 } from "lucide-react";
 import type { RouteEntry, RouteRegistry } from "./types";
+import { ADMIN_PAGES } from "@/lib/config/admin-pages";
 
 /**
  * Route Registry - Single Source of Truth for Navigation
@@ -43,25 +44,25 @@ const routeEntries: RouteEntry[] = [
   },
   {
     id: "admin.dashboard.overview",
-    pathname: "/admin",
+    pathname: ADMIN_PAGES.overview.href,
     matchMode: "exact",
-    label: "Overview",
+    label: ADMIN_PAGES.overview.label,
     parentId: "admin.dashboard",
     isNavigable: true,
   },
   {
     id: "admin.dashboard.sales",
-    pathname: "/admin/sales",
+    pathname: ADMIN_PAGES.sales.href,
     matchMode: "exact",
-    label: "Sales Analytics",
+    label: ADMIN_PAGES.sales.label,
     parentId: "admin.dashboard",
     isNavigable: true,
   },
   {
     id: "admin.dashboard.analytics",
-    pathname: "/admin/analytics",
+    pathname: ADMIN_PAGES.analytics.href,
     matchMode: "exact",
-    label: "Trends & User Analytics",
+    label: ADMIN_PAGES.analytics.label,
     parentId: "admin.dashboard",
     isNavigable: true,
   },

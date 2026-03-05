@@ -25,12 +25,6 @@ interface TrendChartProps {
   className?: string;
 }
 
-const chartConfig = {
-  primary: { label: "Primary", color: "var(--chart-1)" },
-  secondary: { label: "Secondary", color: "var(--chart-2)" },
-  comparison: { label: "Comparison", color: "var(--chart-3)" },
-} satisfies ChartConfig;
-
 export function TrendChart({
   data,
   primaryLabel,
@@ -47,10 +41,12 @@ export function TrendChart({
     };
   });
 
+  // Keys deliberately avoid "primary"/"secondary" to prevent clashing with
+  // Tailwind's --color-primary / --color-secondary theme variables.
   const config: ChartConfig = {
-    primary: { label: primaryLabel, color: "var(--chart-1)" },
+    trend1: { label: primaryLabel, color: "var(--chart-1)" },
     ...(secondaryLabel
-      ? { secondary: { label: secondaryLabel, color: "var(--chart-2)" } }
+      ? { trend2: { label: secondaryLabel, color: "var(--chart-2)" } }
       : {}),
     ...(comparisonData
       ? { comparison: { label: `${primaryLabel} (prev)`, color: "var(--chart-3)" } }
@@ -94,8 +90,8 @@ export function TrendChart({
           type="monotone"
           dataKey="primary"
           name={primaryLabel}
-          stroke="var(--color-primary)"
-          fill="var(--color-primary)"
+          stroke="var(--color-trend1)"
+          fill="var(--color-trend1)"
           fillOpacity={0.1}
           strokeWidth={2}
         />
@@ -105,8 +101,8 @@ export function TrendChart({
             type="monotone"
             dataKey="secondary"
             name={secondaryLabel}
-            stroke="var(--color-secondary)"
-            fill="var(--color-secondary)"
+            stroke="var(--color-trend2)"
+            fill="var(--color-trend2)"
             fillOpacity={0.05}
             strokeWidth={1.5}
           />
@@ -127,6 +123,3 @@ export function TrendChart({
     </ChartContainer>
   );
 }
-
-// Prevent unused import warning
-void chartConfig;

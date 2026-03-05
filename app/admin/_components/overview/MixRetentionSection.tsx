@@ -1,5 +1,6 @@
 "use client";
 
+import { Repeat } from "lucide-react";
 import { ChartCard } from "../analytics/ChartCard";
 import { SplitComparison } from "../analytics/SplitComparison";
 import type { SplitPayload } from "@/lib/admin/analytics/contracts";
@@ -14,7 +15,7 @@ export function MixRetentionSection({
   customerSplit,
 }: MixRetentionSectionProps) {
   return (
-    <ChartCard title="Mix & Retention">
+    <ChartCard title="Mix & Retention" titleIcon={Repeat} description="Subscription vs one-time & new vs returning">
       <div className="space-y-6">
         <div>
           <p className="text-xs text-muted-foreground mb-2">Revenue by Type</p>

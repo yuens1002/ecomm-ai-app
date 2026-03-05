@@ -9,7 +9,11 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
+
+const actionClasses = "text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors";
 
 interface ChartTab {
   key: string;
@@ -79,5 +83,46 @@ export function ChartCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/* ── Reusable action links / buttons for the ChartCard action slot ── */
+
+interface ChartCardLinkActionProps {
+  href: string;
+  label?: string;
+}
+
+/** Navigation link action — "View All →" style */
+export function ChartCardLinkAction({ href, label = "View All" }: ChartCardLinkActionProps) {
+  return (
+    <Link href={href} className={actionClasses}>
+      {label} <ArrowRight className="h-3 w-3" />
+    </Link>
+  );
+}
+
+interface ChartCardToggleActionProps {
+  expanded: boolean;
+  onToggle: () => void;
+  collapsedLabel?: string;
+  expandedLabel?: string;
+}
+
+/** Toggle button action — "View all ›" / "Top 10" style */
+export function ChartCardToggleAction({
+  expanded,
+  onToggle,
+  collapsedLabel = "View all",
+  expandedLabel = "Top 10",
+}: ChartCardToggleActionProps) {
+  return (
+    <button
+      type="button"
+      className={cn(actionClasses, "cursor-pointer")}
+      onClick={onToggle}
+    >
+      {expanded ? expandedLabel : collapsedLabel} <ArrowRight className={cn("h-3 w-3 transition-transform", expanded && "rotate-90")} />
+    </button>
   );
 }

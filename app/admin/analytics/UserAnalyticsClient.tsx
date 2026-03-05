@@ -3,11 +3,12 @@
 import { useState, useCallback } from "react";
 import useSWR from "swr";
 import {
+  Activity,
   Eye,
+  Filter,
+  Search,
   ShoppingCart,
   TrendingUp,
-  Search,
-  Activity,
 } from "lucide-react";
 import {
   Area,
@@ -132,6 +133,7 @@ export default function UserAnalyticsClient() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard
           label="Conversion Rate"
+          description="Visitors who ordered"
           value={kpis.conversionRate}
           format="percent"
           icon={TrendingUp}
@@ -139,6 +141,7 @@ export default function UserAnalyticsClient() {
         />
         <KpiCard
           label="Cart Conversion"
+          description="Carts that became orders"
           value={kpis.cartConversionRate}
           format="percent"
           icon={ShoppingCart}
@@ -146,6 +149,7 @@ export default function UserAnalyticsClient() {
         />
         <KpiCard
           label="Total Searches"
+          description="Site search queries"
           value={kpis.totalSearches}
           format="number"
           icon={Search}
@@ -153,6 +157,7 @@ export default function UserAnalyticsClient() {
         />
         <KpiCard
           label="Page Views"
+          description="Total pages visited"
           value={kpis.totalPageViews}
           format="number"
           icon={Eye}
@@ -162,7 +167,7 @@ export default function UserAnalyticsClient() {
 
       {/* Row 1: Funnel + Trending Products + Top Searches */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <ChartCard title="Behavior Funnel" description="Views → Cart → Orders">
+        <ChartCard title="Behavior Funnel" titleIcon={Filter} description="Views → Cart → Orders">
           <FunnelChart steps={behaviorFunnel} />
         </ChartCard>
 
@@ -189,7 +194,7 @@ export default function UserAnalyticsClient() {
         description="Activity breakdown by type"
         titleIcon={Activity}
       >
-        <ChartContainer config={activityChartConfig} className="h-100 w-full">
+        <ChartContainer config={activityChartConfig} className="aspect-auto h-64 w-full">
           <AreaChart data={data.activityByDay} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
             <CartesianGrid vertical={false} />
             <XAxis

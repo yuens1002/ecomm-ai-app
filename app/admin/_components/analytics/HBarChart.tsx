@@ -18,8 +18,8 @@ interface HBarDatum {
 interface HBarChartProps {
   data: HBarDatum[];
   valueFormat?: "currency" | "number";
-  /** "axis" = Recharts Y-axis labels (default), "above" = CSS labels above each bar. */
-  labelPosition?: "axis" | "above";
+  /** "axis" = Recharts Y-axis labels (default), "above" = CSS labels above each bar, "inline" = compact single-row per item. */
+  labelPosition?: "axis" | "above" | "inline";
   className?: string;
 }
 
@@ -71,7 +71,7 @@ export function HBarChart({
   if (labelPosition === "above") {
     const maxValue = Math.max(...data.map((d) => d.value));
     return (
-      <div className={cn("flex flex-col gap-2 max-h-80 overflow-y-auto", className)}>
+      <div className={cn("flex flex-col gap-2", className)}>
         {data.map((item) => (
           <div key={item.label}>
             <p className="text-xs text-muted-foreground mb-0.5 truncate" title={item.label}>
@@ -86,6 +86,31 @@ export function HBarChart({
                 {fullFormatter(item.value)}
               </span>
             </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Compact inline variant — label, bar, and value on a single row
+  if (labelPosition === "inline") {
+    const maxValue = Math.max(...data.map((d) => d.value));
+    return (
+      <div className={cn("flex flex-col gap-1", className)}>
+        {data.map((item) => (
+          <div key={item.label} className="flex items-center gap-2 min-h-6">
+            <span className="w-48 shrink-0 text-xs text-muted-foreground truncate" title={item.label}>
+              {item.label}
+            </span>
+            <div className="flex-1 min-w-0">
+              <div
+                className="h-3 rounded-r bg-chart-1 transition-all"
+                style={{ width: `${maxValue > 0 ? (item.value / maxValue) * 100 : 0}%` }}
+              />
+            </div>
+            <span className="w-10 shrink-0 text-xs text-muted-foreground text-right tabular-nums">
+              {fullFormatter(item.value)}
+            </span>
           </div>
         ))}
       </div>

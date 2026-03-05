@@ -54,9 +54,9 @@ export function DonutChart({
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <div className={cn("flex flex-col", className)}>
-      {/* Pie chart — centered in available space */}
-      <ChartContainer config={config} className="aspect-square w-full">
+    <div className={cn("flex h-full flex-col", className)}>
+      {/* Pie chart — fills available card space, PieChart keeps it circular */}
+      <ChartContainer config={config} className="flex-1 min-h-0 w-full aspect-auto">
         <PieChart>
           <ChartTooltip
             content={

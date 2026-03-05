@@ -3,13 +3,16 @@
 import { Suspense, useCallback } from "react";
 import Link from "next/link";
 import {
-  ArrowRight,
+  Crown,
   DollarSign,
-  ShoppingCart,
-  Users,
-  Star,
-  Package,
+  MapPin,
   Mail,
+  Package,
+  Search,
+  ShoppingCart,
+  Star,
+  Trophy,
+  Users,
 } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import {
@@ -20,6 +23,7 @@ import {
   KpiChipBar,
   AlertStrip,
   ChartCard,
+  ChartCardLinkAction,
   RankedList,
 } from "@/app/admin/_components/analytics";
 import { formatByType } from "@/lib/admin/analytics/formatters";
@@ -90,6 +94,7 @@ export default function AdminDashboardClient({
         <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr_2fr] gap-4">
           <KpiCard
             label="Revenue"
+            description="Gross sales for the period"
             value={kpis.revenue}
             format="currency"
             valueLabel="Total"
@@ -113,6 +118,7 @@ export default function AdminDashboardClient({
           />
           <KpiCard
             label="Orders"
+            description="Completed & pending orders"
             value={kpis.orders}
             format="number"
             delta={
@@ -126,6 +132,7 @@ export default function AdminDashboardClient({
           />
           <KpiCard
             label="Products"
+            description="Active catalog items"
             value={kpis.products}
             format="number"
             icon={Package}
@@ -147,6 +154,7 @@ export default function AdminDashboardClient({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <KpiCard
             label="Reviews"
+            description="Customer product reviews"
             value={kpis.reviews}
             format="number"
             delta={
@@ -160,6 +168,7 @@ export default function AdminDashboardClient({
           />
           <KpiCard
             label="Users"
+            description="Registered accounts"
             value={kpis.users}
             format="number"
             valueLabel="Total"
@@ -177,6 +186,7 @@ export default function AdminDashboardClient({
           />
           <KpiCard
             label="Newsletter"
+            description="Email subscribers"
             value={kpis.newsletterTotal}
             format="number"
             delta={
@@ -221,11 +231,9 @@ export default function AdminDashboardClient({
           <ReviewsSummarySection data={data.reviewsSummary} />
           <ChartCard
             title="Top Products"
-            action={
-              <Link href="/admin/sales" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
-                View All <ArrowRight className="h-3 w-3" />
-              </Link>
-            }
+            titleIcon={Trophy}
+            description="Best sellers by revenue"
+            action={<ChartCardLinkAction href="/admin/sales" />}
           >
             <RankedList
               items={data.topProducts}
@@ -237,7 +245,7 @@ export default function AdminDashboardClient({
 
         {/* Row 4: Top Locations + Top Searches + Top Customers (3-col) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <ChartCard title="Top Locations">
+          <ChartCard title="Top Locations" titleIcon={MapPin} description="Revenue by customer location">
             <RankedList
               items={data.topLocations}
               valueLabel="Revenue"
@@ -246,11 +254,9 @@ export default function AdminDashboardClient({
           </ChartCard>
           <ChartCard
             title="Top Searches"
-            action={
-              <Link href="/admin/analytics" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
-                View All <ArrowRight className="h-3 w-3" />
-              </Link>
-            }
+            titleIcon={Search}
+            description="Most popular search terms"
+            action={<ChartCardLinkAction href="/admin/analytics" />}
           >
             <RankedList
               items={data.topSearches}
@@ -258,7 +264,7 @@ export default function AdminDashboardClient({
               limit={5}
             />
           </ChartCard>
-          <ChartCard title="Top Customers">
+          <ChartCard title="Top Customers" titleIcon={Crown} description="Highest spending customers">
             <RankedList
               items={data.topCustomers}
               valueLabel="Revenue"

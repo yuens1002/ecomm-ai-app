@@ -69,7 +69,11 @@ export async function getSalesAnalytics(
   const range = getDateRange(params.period);
   const compRange = getComparisonRange(range, params.compare);
 
-  const filterParams: OrderFilterParams = {
+  // Base params (period only) — KPIs and charts are unaffected by table filters
+  const baseParams: OrderFilterParams = { range };
+
+  // Table params include user-applied filters (orderType, status, amount, etc.)
+  const tableFilterParams: OrderFilterParams = {
     range,
     orderType: params.orderType,
     statuses: params.statuses,
@@ -81,8 +85,9 @@ export async function getSalesAnalytics(
     amountCents: params.amountCents,
   };
 
-  const kpiWhere = buildKpiOrderWhere(filterParams);
-  const allWhere = buildOrderWhere(filterParams);
+  const kpiWhere = buildKpiOrderWhere(baseParams);
+  const allWhere = buildOrderWhere(baseParams);
+  const tableWhere = buildOrderWhere(tableFilterParams);
 
   // Run all queries in parallel
   const [
@@ -111,15 +116,15 @@ export async function getSalesAnalytics(
     getCategoryBreakdown(kpiWhere),
     getCoffeeByWeight(kpiWhere),
     getSalesTable({
-      where: allWhere,
+      where: tableWhere,
       page: params.page ?? 0,
       pageSize: params.pageSize ?? 25,
       sort: params.sort ?? "createdAt",
       dir: params.dir ?? "desc",
     }),
-    compRange ? getComparisonSalesKpis(compRange, filterParams) : Promise.resolve(null),
+    compRange ? getComparisonSalesKpis(compRange, baseParams) : Promise.resolve(null),
     compRange
-      ? getRevenueByDay(buildKpiOrderWhere({ ...filterParams, range: compRange }), compRange)
+      ? getRevenueByDay(buildKpiOrderWhere({ ...baseParams, range: compRange }), compRange)
       : Promise.resolve(null),
   ]);
 
