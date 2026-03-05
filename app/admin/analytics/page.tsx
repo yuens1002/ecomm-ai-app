@@ -5,7 +5,7 @@ export default function AdminAnalyticsPage() {
   return (
     <>
       <PageTitle
-        title="Trends & User Analytics"
+        title="Trends & User Activities"
         subtitle="Behavior funnel, search trends & daily activity"
       />
       <UserAnalyticsClient />

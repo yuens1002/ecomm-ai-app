@@ -37,7 +37,7 @@ export const adminNavConfig: NavItem[] = [
     children: [
       { label: "Overview", href: "/admin" },
       { label: "Sales Analytics", description: "Revenue, orders & product performance", href: "/admin/sales", icon: DollarSign },
-      { label: "Trends & User Analytics", description: "Behavior funnel, searches & activity trends", href: "/admin/analytics" },
+      { label: "Trends & User Activities", description: "Behavior funnel, searches & activity trends", href: "/admin/analytics" },
     ],
   },
   {
@@ -285,7 +285,7 @@ export const mobileNavConfig: NavItem[] = [
     children: [
       { label: "Overview", href: "/admin" },
       { label: "Sales Analytics", description: "Revenue, orders & product performance", href: "/admin/sales", icon: DollarSign },
-      { label: "Trends & User Analytics", description: "Behavior funnel, searches & activity trends", href: "/admin/analytics" },
+      { label: "Trends & User Activities", description: "Behavior funnel, searches & activity trends", href: "/admin/analytics" },
     ],
   },
   {
