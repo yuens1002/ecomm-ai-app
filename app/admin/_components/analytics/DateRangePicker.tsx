@@ -147,7 +147,9 @@ function DateRangePickerView({
 
   // Compute the displayed date range from the current period
   const dateRange = getDateRange(period);
-  const triggerLabel = `${format(dateRange.from, "MMM d")} – ${format(
+  const presetLabel = PERIOD_PRESETS.find((p) => p.key === period)?.label;
+  const triggerPreset = presetLabel ? `Last ${presetLabel}` : "Custom";
+  const triggerDates = `${format(dateRange.from, "MMM d")} – ${format(
     dateRange.to,
     "MMM d, yyyy"
   )}`;
@@ -190,7 +192,8 @@ function DateRangePickerView({
             className="h-8 gap-2 text-xs font-normal"
           >
             <CalendarIcon className="h-3.5 w-3.5" />
-            {triggerLabel}
+            <span className="text-muted-foreground">{triggerPreset}</span>
+            {triggerDates}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">

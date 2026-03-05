@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import useSWR from "swr";
 import {
   Eye,
@@ -44,11 +44,12 @@ import { formatCompactNumber } from "@/lib/admin/analytics/formatters";
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 const activityChartConfig = {
-  productView: { label: "Product Views", color: "var(--chart-1)" },
-  addToCart: { label: "Add to Cart", color: "var(--chart-2)" },
-  search: { label: "Searches", color: "var(--chart-3)" },
-  pageView: { label: "Page Views", color: "var(--chart-4)" },
-  removeFromCart: { label: "Remove from Cart", color: "var(--chart-5)" },
+  total: { label: "Total", color: "var(--chart-1)" },
+  productView: { label: "Product Views", color: "var(--chart-2)" },
+  addToCart: { label: "Add to Cart", color: "var(--chart-3)" },
+  search: { label: "Searches", color: "var(--chart-4)" },
+  pageView: { label: "Page Views", color: "var(--chart-5)" },
+  removeFromCart: { label: "Remove from Cart", color: "hsl(var(--muted-foreground))" },
 } satisfies ChartConfig;
 
 export default function UserAnalyticsClient() {
@@ -68,13 +69,23 @@ export default function UserAnalyticsClient() {
     );
   }, [period, compare]);
 
+  // Add total column for the overlay line (must be before early returns)
+  const chartData = useMemo(
+    () =>
+      (data?.activityByDay ?? []).map((d) => ({
+        ...d,
+        total: d.pageView + d.productView + d.search + d.addToCart + d.removeFromCart,
+      })),
+    [data?.activityByDay]
+  );
+
   if (isLoading && !data) {
     return <SkeletonDashboard sections={4} />;
   }
 
   if (!data) return null;
 
-  const { kpis, comparisonKpis, behaviorFunnel, trendingProducts, topSearches, activityByDay } = data;
+  const { kpis, comparisonKpis, behaviorFunnel, trendingProducts, topSearches } = data;
 
   // Compute deltas for KPI cards
   const conversionDelta = comparisonKpis
@@ -172,7 +183,7 @@ export default function UserAnalyticsClient() {
         titleIcon={Activity}
       >
         <ChartContainer config={activityChartConfig} className="h-75 w-full">
-          <AreaChart data={activityByDay} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="date"
@@ -193,6 +204,15 @@ export default function UserAnalyticsClient() {
             />
             <ChartTooltip content={<ChartTooltipContent />} />
             <ChartLegend content={<ChartLegendContent />} />
+            <Area
+              type="monotone"
+              dataKey="total"
+              name="Total"
+              stroke="var(--color-total)"
+              fill="none"
+              strokeWidth={2}
+              strokeDasharray="4 4"
+            />
             <Area
               type="monotone"
               dataKey="productView"
