@@ -73,6 +73,7 @@ export default function UserAnalyticsClient() {
       <DashboardPageTemplate
         title={ADMIN_PAGES.analytics.label}
         subtitle={ADMIN_PAGES.analytics.description}
+        showTabs={false}
       >
         <SkeletonDashboard sections={4} />
       </DashboardPageTemplate>
