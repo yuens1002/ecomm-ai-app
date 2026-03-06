@@ -23,14 +23,14 @@ export function OrderDetail({ order, variant, backLink }: OrderDetailProps) {
   return (
     <>
       {/* Print-only header with shop branding */}
-      <div className="hidden print:block mb-6">
+      <div className="hidden mb-6" data-print-show>
         <h1 className="text-xl font-bold">{settings.storeName}</h1>
         <hr className="my-2" />
       </div>
 
       {/* Header with back button */}
       <div className="mb-6">
-        <Button variant="ghost" asChild className="mb-4 print:hidden">
+        <Button variant="ghost" asChild className="mb-4" data-print-hide>
           <Link href={backLink.href} className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
             {backLink.label}

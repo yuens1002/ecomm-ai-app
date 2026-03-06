@@ -348,8 +348,13 @@ We define CSS variables for each theme.
   header,
   footer,
   [data-sidebar],
-  .print\\:hidden {
+  [data-print-hide] {
     display: none !important;
+  }
+
+  /* Show print-only elements */
+  [data-print-show] {
+    display: block !important;
   }
 
   /* Reset layout — full width, no sidebar offset */
@@ -367,20 +372,6 @@ We define CSS variables for each theme.
     background: white !important;
     color: black !important;
     box-shadow: none !important;
-  }
-
-  /* Preserve colored text for specific elements */
-  .text-green-600,
-  .text-green-400,
-  .text-orange-600,
-  .text-orange-400,
-  .text-red-600 {
-    color: inherit !important;
-  }
-
-  /* Show print-only elements */
-  .print\\:block {
-    display: block !important;
   }
 }
 

@@ -37,7 +37,7 @@ export function OrderItemsCard({ order, variant }: OrderItemsCardProps) {
         <Button
           variant="outline"
           size="sm"
-          className="print:hidden"
+          data-print-hide
           onClick={() => window.print()}
         >
           <Printer className="h-4 w-4 mr-1.5" />
