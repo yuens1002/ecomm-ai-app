@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { ArrowLeft, Printer } from "lucide-react";
@@ -19,6 +20,11 @@ export interface OrderDetailProps {
 export function OrderDetail({ order, variant, backLink }: OrderDetailProps) {
   const { settings } = useSiteSettings();
   const displayId = order.orderNumber || order.id.slice(-8);
+
+  useEffect(() => {
+    document.body.setAttribute("data-print-page", "");
+    return () => document.body.removeAttribute("data-print-page");
+  }, []);
 
   return (
     <>

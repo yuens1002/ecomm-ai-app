@@ -19,5 +19,11 @@ export default function AdminOrderDetailClient({
   );
   useBreadcrumb(breadcrumbs);
 
-  return <OrderDetail order={order} variant="admin" />;
+  return (
+    <OrderDetail
+      order={order}
+      variant="admin"
+      backLink={{ href: "/admin/orders", label: "Back to Orders" }}
+    />
+  );
 }
