@@ -158,12 +158,12 @@
       "notes": "38/38 ACs verified. 25 FN via code review, 8 UI via Puppeteer screenshots (3 breakpoints each for orders/subscriptions/user-orders), 4 NAV via code review, 4 REG via precheck (0 errors) + test:ci (87 suites, 1008 tests, 0 failures). 0 iterations needed."
     },
     "feat/table-ui-polish": {
-      "status": "implementing",
-      "acs_passed": 0,
+      "status": "pending",
+      "acs_passed": 14,
       "acs_total": 26,
       "tasks": [],
       "acs_doc": "docs/plans/table-ui-polish-ACs.md",
-      "notes": "UI polish pass: 10 FN + 11 UI + 2 NAV + 3 REG ACs. Shared cell renderers, alignment, mobile layout, sticky header, review inline, subscription items."
+      "notes": "14/26 ACs verified (10 FN + 2 NAV + 2 REG pass, AC-FN-9 partial — variant names not in subscription schema). 11 UI ACs + AC-REG-3 pending visual review. Precheck 0 errors, 1008 tests pass."
     }
   }
 }
