@@ -158,7 +158,7 @@
       "notes": "38/38 ACs verified. 25 FN via code review, 8 UI via Puppeteer screenshots (3 breakpoints each for orders/subscriptions/user-orders), 4 NAV via code review, 4 REG via precheck (0 errors) + test:ci (87 suites, 1008 tests, 0 failures). 0 iterations needed."
     },
     "feat/table-ui-polish": {
-      "status": "planned",
+      "status": "implementing",
       "acs_passed": 0,
       "acs_total": 26,
       "tasks": [],
