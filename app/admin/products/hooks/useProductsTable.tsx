@@ -1,12 +1,12 @@
 "use client";
 
-import type { DataTableColumnMeta } from "@/app/admin/_components/data-table";
-import { RowActionMenu, type RowActionItem } from "@/app/admin/_components/data-table/RowActionMenu";
+import type { DataTableColumnMeta } from "@/components/shared/data-table";
+import { RowActionMenu, type RowActionItem } from "@/components/shared/data-table/RowActionMenu";
 import {
   useColumnVisibility,
   useDataTable,
-} from "@/app/admin/_components/data-table/hooks";
-import type { ActiveFilter, FilterConfig } from "@/app/admin/_components/data-table/types";
+} from "@/components/shared/data-table/hooks";
+import type { ActiveFilter, FilterConfig } from "@/components/shared/data-table/types";
 import type {
   ColumnDef,
   ColumnFiltersState,

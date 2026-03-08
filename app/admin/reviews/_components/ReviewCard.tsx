@@ -6,7 +6,7 @@ import { BrewMethodBadge } from "@/app/(site)/_components/review/BrewMethodBadge
 import {
   RowActionMenu,
   type RowActionItem,
-} from "@/app/admin/_components/data-table/RowActionMenu";
+} from "@/components/shared/data-table/RowActionMenu";
 import { formatDistanceToNow } from "date-fns";
 import type { AdminReview } from "../hooks/useReviewsTable";
 

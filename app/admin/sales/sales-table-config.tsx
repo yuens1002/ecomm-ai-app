@@ -1,6 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
-import type { FilterConfig, ActiveFilter } from "@/app/admin/_components/data-table";
+import type { FilterConfig, ActiveFilter } from "@/components/shared/data-table";
 import type { SalesRow } from "@/lib/admin/analytics/contracts";
 import { formatCurrency, formatStatus } from "@/lib/admin/analytics/formatters";
 

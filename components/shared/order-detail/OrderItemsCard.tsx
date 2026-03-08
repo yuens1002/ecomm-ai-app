@@ -25,13 +25,13 @@ interface OrderItemsCardProps {
   variant: "storefront" | "admin";
 }
 
-function placeholderCategory(item: OrderItemWithDetails) {
+export function placeholderCategory(item: OrderItemWithDetails) {
   return item.purchaseOption.variant.product.type === ProductType.MERCH
     ? "culture" as const
     : "beans" as const;
 }
 
-function BuyAgainButton({ item }: { item: OrderItemWithDetails }) {
+export function BuyAgainButton({ item }: { item: OrderItemWithDetails }) {
   const { buttonState, handleAddToCart, handleActionClick } =
     useAddToCartWithFeedback();
 

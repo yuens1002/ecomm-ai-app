@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,57 +16,40 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
-import { formatPrice } from "@/components/shared/record-utils";
-import { StatusBadge } from "@/components/shared/StatusBadge";
-import { RecordActionMenu } from "@/components/shared/RecordActionMenu";
-import { ShippingAddressDisplay } from "@/components/shared/ShippingAddressDisplay";
+import {
+  DataTable,
+  DataTableActionBar,
+  DataTablePageSizeSelector,
+  DataTablePagination,
+} from "@/components/shared/data-table";
+import { useInfiniteScroll } from "@/components/shared/data-table/hooks/useInfiniteScroll";
+import type { ActionBarConfig } from "@/components/shared/data-table/types";
+import type { RowActionItem } from "@/components/shared/data-table/RowActionMenu";
+import { resolveRowActions } from "@/components/shared/data-table/row-action-config";
+import type { RowActionHandlers } from "@/components/shared/data-table/row-action-config";
+import { Search, Filter, Loader2 } from "lucide-react";
 import {
   cancelSubscription,
   skipBillingPeriod,
   resumeSubscription,
 } from "./actions";
+import {
+  useSubscriptionsTable,
+  type Subscription,
+} from "./hooks/useSubscriptionsTable";
+import { adminSubscriptionRowActions } from "./constants/row-actions";
 
-type Subscription = {
-  id: string;
-  stripeSubscriptionId: string;
-  status: "ACTIVE" | "PAUSED" | "CANCELED" | "PAST_DUE";
-  priceInCents: number;
-  deliverySchedule: string | null;
-  currentPeriodEnd: Date;
-  cancelAtPeriodEnd: boolean;
-  pausedUntil: Date | null;
-  productNames: string[];
-  recipientName: string | null;
-  recipientPhone: string | null;
-  shippingStreet: string | null;
-  shippingCity: string | null;
-  shippingState: string | null;
-  shippingPostalCode: string | null;
-  shippingCountry: string | null;
-  createdAt: Date;
-  user: {
-    name: string | null;
-    email: string | null;
-  };
-};
+type StatusFilter = "all" | "ACTIVE" | "PAUSED" | "PAST_DUE" | "CANCELED";
 
 interface SubscriptionManagementClientProps {
   initialSubscriptions: Subscription[];
 }
 
-const STATUS_TABS = [
-  { value: "all", label: "All" },
-  { value: "ACTIVE", label: "Active" },
-  { value: "PAUSED", label: "Paused" },
-  { value: "PAST_DUE", label: "Past Due" },
-  { value: "CANCELED", label: "Canceled" },
-] as const;
-
 export default function SubscriptionManagementClient({
   initialSubscriptions,
 }: SubscriptionManagementClientProps) {
   const router = useRouter();
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [skipDialogOpen, setSkipDialogOpen] = useState(false);
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
@@ -75,30 +58,30 @@ export default function SubscriptionManagementClient({
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
 
-  // Filter subscriptions based on status
-  const filteredSubscriptions =
-    statusFilter === "all"
-      ? initialSubscriptions
-      : initialSubscriptions.filter((s) => s.status === statusFilter);
+  // Filter subscriptions
+  const filteredSubscriptions = useMemo(
+    () =>
+      statusFilter === "all"
+        ? initialSubscriptions
+        : initialSubscriptions.filter((s) => s.status === statusFilter),
+    [statusFilter, initialSubscriptions]
+  );
+
+  // ── Dialog handlers ────────────────────────────────────────────────
 
   async function handleCancelSubscription() {
     if (!selectedSubscription) return;
-
     setProcessing(true);
     try {
       const result = await cancelSubscription(selectedSubscription.id);
-
-      if (!result.success) {
+      if (!result.success)
         throw new Error(result.error || "Failed to cancel subscription");
-      }
-
       toast({
         title: "Subscription Canceled",
         description: `Subscription #${selectedSubscription.id.slice(-8)} will be canceled at period end`,
         variant: undefined,
         className: "!bg-foreground !text-background !border-foreground",
       });
-
       setCancelDialogOpen(false);
       setSelectedSubscription(null);
       router.refresh();
@@ -119,22 +102,17 @@ export default function SubscriptionManagementClient({
 
   async function handleSkipBilling() {
     if (!selectedSubscription) return;
-
     setProcessing(true);
     try {
       const result = await skipBillingPeriod(selectedSubscription.id);
-
-      if (!result.success) {
+      if (!result.success)
         throw new Error(result.error || "Failed to skip billing period");
-      }
-
       toast({
         title: "Billing Period Skipped",
         description: `Next billing period for subscription #${selectedSubscription.id.slice(-8)} will be skipped`,
         variant: undefined,
         className: "!bg-foreground !text-background !border-foreground",
       });
-
       setSkipDialogOpen(false);
       setSelectedSubscription(null);
       router.refresh();
@@ -155,22 +133,17 @@ export default function SubscriptionManagementClient({
 
   async function handleResumeSubscription() {
     if (!selectedSubscription) return;
-
     setProcessing(true);
     try {
       const result = await resumeSubscription(selectedSubscription.id);
-
-      if (!result.success) {
+      if (!result.success)
         throw new Error(result.error || "Failed to resume subscription");
-      }
-
       toast({
         title: "Subscription Resumed",
         description: `Subscription #${selectedSubscription.id.slice(-8)} has been resumed`,
         variant: undefined,
         className: "!bg-foreground !text-background !border-foreground",
       });
-
       setResumeDialogOpen(false);
       setSelectedSubscription(null);
       router.refresh();
@@ -189,213 +162,250 @@ export default function SubscriptionManagementClient({
     }
   }
 
-  function openCancelDialog(subscription: Subscription) {
-    setSelectedSubscription(subscription);
-    setCancelDialogOpen(true);
-  }
+  // ── Declarative action menu ────────────────────────────────────────
 
-  function openSkipDialog(subscription: Subscription) {
-    setSelectedSubscription(subscription);
-    setSkipDialogOpen(true);
-  }
+  const actionHandlers = useMemo<RowActionHandlers<Subscription>>(
+    () => ({
+      skipBilling: (sub) => {
+        setSelectedSubscription(sub);
+        setSkipDialogOpen(true);
+      },
+      resume: (sub) => {
+        setSelectedSubscription(sub);
+        setResumeDialogOpen(true);
+      },
+      cancel: (sub) => {
+        setSelectedSubscription(sub);
+        setCancelDialogOpen(true);
+      },
+      manageStripe: (sub) =>
+        window.open(
+          `https://dashboard.stripe.com/subscriptions/${sub.stripeSubscriptionId}`,
+          "_blank"
+        ),
+    }),
+    []
+  );
 
-  function openResumeDialog(subscription: Subscription) {
-    setSelectedSubscription(subscription);
-    setResumeDialogOpen(true);
-  }
+  const getActionItems = useCallback(
+    (sub: Subscription): RowActionItem[] =>
+      resolveRowActions(sub, adminSubscriptionRowActions, actionHandlers),
+    [actionHandlers]
+  );
 
-  function getNextDateDisplay(subscription: Subscription) {
-    if (subscription.status === "CANCELED") {
-      return <span className="text-muted-foreground">—</span>;
+  // ── Table hook ─────────────────────────────────────────────────────
+
+  const {
+    table,
+    searchQuery,
+    setSearchQuery,
+    activeFilter,
+    setActiveFilter,
+    filterConfigs,
+  } = useSubscriptionsTable({
+    subscriptions: filteredSubscriptions,
+    getActionItems,
+  });
+
+  // Infinite scroll
+  const allFilteredRows = table.getFilteredRowModel().rows;
+  const batchSize = table.getState().pagination.pageSize;
+  const {
+    visibleCount,
+    sentinelRef,
+    hasMore,
+    reset: resetScroll,
+  } = useInfiniteScroll({
+    totalCount: allFilteredRows.length,
+    batchSize,
+  });
+
+  const scrollKey = `${statusFilter}|${searchQuery}|${JSON.stringify(activeFilter)}`;
+  const prevScrollKey = useRef(scrollKey);
+  useEffect(() => {
+    if (scrollKey !== prevScrollKey.current) {
+      prevScrollKey.current = scrollKey;
+      resetScroll();
     }
+  }, [scrollKey, resetScroll]);
 
-    if (subscription.status === "PAUSED") {
-      if (subscription.pausedUntil) {
-        return format(new Date(subscription.pausedUntil), "MMM d, yyyy");
-      }
-      // Paused indefinitely
-      return <span className="text-muted-foreground">—</span>;
-    }
+  // ── Action bar ─────────────────────────────────────────────────────
 
-    // ACTIVE or PAST_DUE - show next renewal date
-    return format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy");
-  }
+  const actionBarConfig: ActionBarConfig = {
+    left: [
+      {
+        type: "custom",
+        content: (
+          <Tabs
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+          >
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="ACTIVE">Active</TabsTrigger>
+              <TabsTrigger value="PAUSED">Paused</TabsTrigger>
+              <TabsTrigger value="PAST_DUE">Past Due</TabsTrigger>
+              <TabsTrigger value="CANCELED">Canceled</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        ),
+      },
+      {
+        type: "search",
+        value: searchQuery,
+        onChange: setSearchQuery,
+        placeholder: "Search subscriptions...",
+        collapse: { icon: Search },
+      },
+      {
+        type: "filter",
+        configs: filterConfigs,
+        activeFilter,
+        onFilterChange: setActiveFilter,
+        collapse: { icon: Filter },
+      },
+    ],
+    right: [
+      {
+        type: "recordCount",
+        count: allFilteredRows.length,
+        label: "subscriptions",
+      },
+      {
+        type: "custom",
+        content: (
+          <div className="hidden lg:block">
+            <DataTablePageSizeSelector table={table} />
+          </div>
+        ),
+      },
+      {
+        type: "custom",
+        content: (
+          <div className="hidden md:block">
+            <DataTablePagination table={table} />
+          </div>
+        ),
+      },
+    ],
+  };
 
-  function canSkip(subscription: Subscription) {
-    return subscription.status === "ACTIVE" && !subscription.cancelAtPeriodEnd;
-  }
-
-  function canCancel(subscription: Subscription) {
-    return (
-      (subscription.status === "ACTIVE" || subscription.status === "PAUSED") &&
-      !subscription.cancelAtPeriodEnd
-    );
-  }
-
-  function canResume(subscription: Subscription) {
-    return subscription.status === "PAUSED";
-  }
-
-  function getSubscriptionActions(subscription: Subscription) {
-    const actions: import("@/components/shared/MobileRecordCard").RecordAction[] = [];
-
-    if (canSkip(subscription)) {
-      actions.push({ label: "Skip Next Billing", onClick: () => openSkipDialog(subscription) });
-    }
-    if (canResume(subscription)) {
-      actions.push({ label: "Resume Subscription", onClick: () => openResumeDialog(subscription), className: "text-green-600" });
-    }
-    if (canCancel(subscription)) {
-      actions.push({ label: "Cancel Subscription", onClick: () => openCancelDialog(subscription), variant: "destructive" });
-    }
-
-    return actions;
-  }
+  // ── Render ─────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
-      {/* Status Filter Tabs */}
-      <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-        <TabsList>
-          {STATUS_TABS.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+    <div>
+      <DataTableActionBar
+        config={actionBarConfig}
+        className="flex-col-reverse items-start gap-1 md:flex-row md:items-center"
+      />
 
-      {/* Subscriptions */}
-      {filteredSubscriptions.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              No subscriptions found
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {/* Mobile/Tablet Card Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xl:hidden">
-            {filteredSubscriptions.map((subscription) => (
-              <Card key={subscription.id} className="py-0 gap-0">
-                <MobileRecordCard
-                  type="subscription"
-                  status={subscription.status}
-                  statusLabel={
-                    subscription.cancelAtPeriodEnd
-                      ? "Canceling"
-                      : undefined
-                  }
-                  date={new Date(subscription.createdAt)}
-                  displayId={`#${subscription.id.slice(-8)}`}
-                  customer={{ name: subscription.user?.name || subscription.recipientName, email: subscription.user?.email }}
-                  price={`$${(subscription.priceInCents / 100).toFixed(2)}`}
-                  detailsSectionHeader="Total"
-                  currentPeriod={
-                    subscription.status !== "CANCELED"
-                      ? subscription.status === "PAUSED" && subscription.pausedUntil
-                        ? `Resumes ${format(new Date(subscription.pausedUntil), "MMM d, yyyy")}`
-                        : subscription.status !== "PAUSED"
-                          ? `Next: ${format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}`
-                          : undefined
-                      : undefined
-                  }
-                  items={subscription.productNames.map((name, idx) => ({
-                    id: String(idx),
-                    name,
-                    variant: subscription.deliverySchedule || "",
-                    purchaseType: "",
-                    quantity: 1,
-                  }))}
-                  shipping={
-                    subscription.shippingStreet
-                      ? {
-                          recipientName: subscription.recipientName,
-                          street: subscription.shippingStreet,
-                          city: subscription.shippingCity,
-                          state: subscription.shippingState,
-                          postalCode: subscription.shippingPostalCode,
-                        }
-                      : undefined
-                  }
-                  actions={getSubscriptionActions(subscription)}
-                />
-              </Card>
-            ))}
-          </div>
+      {/* Desktop table */}
+      <div className="hidden md:block">
+        <DataTable
+          table={table}
+          rowHoverTitle="Double click for order details"
+          onRowDoubleClick={(sub) => {
+            if (sub.mostRecentOrderId) {
+              router.push(`/admin/orders/${sub.mostRecentOrderId}`);
+            }
+          }}
+          emptyMessage="No subscriptions found."
+        />
+      </div>
 
-          {/* Desktop Table */}
-          <div className="hidden xl:block border rounded-md">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left py-3 px-4 font-semibold text-sm">Order #</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm">Schedule</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm">Next / Resumes</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm">Customer</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm">Items</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm">Ship To</th>
-                    <th className="text-right py-3 px-4 font-semibold text-sm">Total</th>
-                    <th className="text-center py-3 px-4 font-semibold text-sm">Status</th>
-                    <th className="text-center py-3 px-4 font-semibold text-sm"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filteredSubscriptions.map((subscription) => (
-                    <tr key={subscription.id} className="hover:bg-muted/30">
-                      <td className="py-4 px-4">
-                        <div className="font-medium">{subscription.id.slice(-8)}</div>
-                      </td>
-                      <td className="py-4 px-4 text-sm">{subscription.deliverySchedule || "—"}</td>
-                      <td className="py-4 px-4 text-sm">{getNextDateDisplay(subscription)}</td>
-                      <td className="py-4 px-4">
-                        <div className="text-sm font-medium">{subscription.user?.name || subscription.recipientName || "—"}</div>
-                        <div className="text-xs text-muted-foreground">{subscription.user?.email || "—"}</div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="text-sm">
-                          {subscription.productNames.length > 0 ? subscription.productNames.join(", ") : "—"}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 max-w-xs">
-                        <ShippingAddressDisplay
-                          recipientName={subscription.recipientName}
-                          phone={subscription.recipientPhone}
-                          street={subscription.shippingStreet}
-                          city={subscription.shippingCity}
-                          state={subscription.shippingState}
-                          postalCode={subscription.shippingPostalCode}
-                          fallbackText="No address"
-                        />
-                      </td>
-                      <td className="py-4 px-4 text-right font-semibold">{formatPrice(subscription.priceInCents)}</td>
-                      <td className="py-4 px-4 text-center">
-                        <StatusBadge
-                          status={subscription.status}
-                          label={subscription.cancelAtPeriodEnd ? "Canceling" : undefined}
-                          colorClassName={
-                            subscription.cancelAtPeriodEnd
-                              ? "bg-orange-100 text-orange-800"
-                              : subscription.status === "CANCELED"
-                                ? "bg-gray-100 text-gray-800"
-                                : undefined
+      {/* Mobile cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
+        {allFilteredRows.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8 col-span-full">
+            No subscriptions found.
+          </p>
+        ) : (
+          <>
+            {allFilteredRows.slice(0, visibleCount).map((row) => {
+              const sub = row.original;
+              const mobileActions = getActionItems(sub)
+                .filter(
+                  (item): item is Extract<RowActionItem, { type: "item" }> =>
+                    item.type === "item"
+                )
+                .map((item) => ({
+                  label: item.label,
+                  onClick: item.onClick,
+                  variant: item.variant as
+                    | "default"
+                    | "destructive"
+                    | undefined,
+                  icon: item.icon ? (
+                    <item.icon className="h-4 w-4 mr-2" />
+                  ) : undefined,
+                }));
+
+              return (
+                <Card key={sub.id} className="py-0 gap-0">
+                  <MobileRecordCard
+                    type="subscription"
+                    status={sub.status}
+                    statusLabel={
+                      sub.cancelAtPeriodEnd ? "Canceling" : undefined
+                    }
+                    date={new Date(sub.createdAt)}
+                    displayId={`#${sub.id.slice(-8)}`}
+                    detailHref={
+                      sub.mostRecentOrderId
+                        ? `/admin/orders/${sub.mostRecentOrderId}`
+                        : undefined
+                    }
+                    customer={{
+                      name: sub.user?.name || sub.recipientName,
+                      email: sub.user?.email,
+                      phone: sub.recipientPhone,
+                    }}
+                    price={`$${(sub.priceInCents / 100).toFixed(2)}`}
+                    detailsSectionHeader="Total"
+                    currentPeriod={
+                      sub.status !== "CANCELED"
+                        ? sub.status === "PAUSED" && sub.pausedUntil
+                          ? `Resumes ${format(new Date(sub.pausedUntil), "MMM d, yyyy")}`
+                          : sub.status !== "PAUSED"
+                            ? `Next: ${format(new Date(sub.currentPeriodEnd), "MMM d, yyyy")}`
+                            : undefined
+                        : undefined
+                    }
+                    items={sub.productNames.map((name, idx) => ({
+                      id: String(idx),
+                      name,
+                      variant: sub.deliverySchedule || "",
+                      purchaseType: "",
+                      quantity: 1,
+                    }))}
+                    shipping={
+                      sub.shippingStreet
+                        ? {
+                            recipientName: sub.recipientName,
+                            street: sub.shippingStreet,
+                            city: sub.shippingCity,
+                            state: sub.shippingState,
+                            postalCode: sub.shippingPostalCode,
+                            country: sub.shippingCountry,
                           }
-                        />
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <RecordActionMenu actions={getSubscriptionActions(subscription)} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
-      )}
+                        : undefined
+                    }
+                    actions={mobileActions}
+                  />
+                </Card>
+              );
+            })}
+            {hasMore && (
+              <div
+                ref={sentinelRef as React.RefObject<HTMLDivElement>}
+                className="col-span-full flex justify-center py-4"
+              >
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Cancel Subscription Dialog */}
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
@@ -408,17 +418,16 @@ export default function SubscriptionManagementClient({
               access until the current billing period ends.
             </DialogDescription>
           </DialogHeader>
-
           <div className="py-4 space-y-2 text-sm text-muted-foreground">
             <p>
               <strong>Customer:</strong>{" "}
               {selectedSubscription?.user?.name ||
                 selectedSubscription?.recipientName ||
-                "—"}
+                "---"}
             </p>
             <p>
               <strong>Email:</strong>{" "}
-              {selectedSubscription?.user?.email || "—"}
+              {selectedSubscription?.user?.email || "---"}
             </p>
             <p>
               <strong>Current Period Ends:</strong>{" "}
@@ -429,7 +438,6 @@ export default function SubscriptionManagementClient({
                 )}
             </p>
           </div>
-
           <DialogFooter>
             <Button
               variant="outline"
@@ -456,21 +464,19 @@ export default function SubscriptionManagementClient({
             <DialogTitle>Skip Next Billing Period</DialogTitle>
             <DialogDescription>
               Skip the next billing period for subscription #
-              {selectedSubscription?.id.slice(-8)}? The subscription will
-              automatically resume after one billing cycle.
+              {selectedSubscription?.id.slice(-8)}?
             </DialogDescription>
           </DialogHeader>
-
           <div className="py-4 space-y-2 text-sm text-muted-foreground">
             <p>
               <strong>Customer:</strong>{" "}
               {selectedSubscription?.user?.name ||
                 selectedSubscription?.recipientName ||
-                "—"}
+                "---"}
             </p>
             <p>
               <strong>Schedule:</strong>{" "}
-              {selectedSubscription?.deliverySchedule || "—"}
+              {selectedSubscription?.deliverySchedule || "---"}
             </p>
             <p>
               <strong>Next Billing Date:</strong>{" "}
@@ -481,7 +487,6 @@ export default function SubscriptionManagementClient({
                 )}
             </p>
           </div>
-
           <DialogFooter>
             <Button
               variant="outline"
@@ -503,21 +508,19 @@ export default function SubscriptionManagementClient({
           <DialogHeader>
             <DialogTitle>Resume Subscription</DialogTitle>
             <DialogDescription>
-              Resume subscription #{selectedSubscription?.id.slice(-8)}? Billing
-              will continue from the next billing cycle.
+              Resume subscription #{selectedSubscription?.id.slice(-8)}?
             </DialogDescription>
           </DialogHeader>
-
           <div className="py-4 space-y-2 text-sm text-muted-foreground">
             <p>
               <strong>Customer:</strong>{" "}
               {selectedSubscription?.user?.name ||
                 selectedSubscription?.recipientName ||
-                "—"}
+                "---"}
             </p>
             <p>
               <strong>Schedule:</strong>{" "}
-              {selectedSubscription?.deliverySchedule || "—"}
+              {selectedSubscription?.deliverySchedule || "---"}
             </p>
             {selectedSubscription?.pausedUntil && (
               <p>
@@ -529,7 +532,6 @@ export default function SubscriptionManagementClient({
               </p>
             )}
           </div>
-
           <DialogFooter>
             <Button
               variant="outline"

@@ -190,14 +190,18 @@ function isSlotActive(slot: DataTableSlot): boolean {
 interface DataTableActionBarProps {
   config: ActionBarConfig;
   className?: string;
+  /** When true, action bar adjusts its sticky top when the site header hides on scroll */
+  headerAware?: boolean;
 }
 
 export function DataTableActionBar({
   config,
   className,
+  headerAware = false,
 }: DataTableActionBarProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [isStuck, setIsStuck] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -211,14 +215,36 @@ export function DataTableActionBar({
     return () => observer.disconnect();
   }, []);
 
+  // Watch site header show/hide to adjust sticky top position
+  useEffect(() => {
+    if (!headerAware) return;
+
+    const header = document.querySelector("header.sticky");
+    if (!header) return;
+
+    const observer = new MutationObserver(() => {
+      setIsHeaderVisible(!header.classList.contains("-translate-y-full"));
+    });
+    observer.observe(header, { attributes: true, attributeFilter: ["class"] });
+
+    return () => observer.disconnect();
+  }, [headerAware]);
+
   const expandedSlot = expandedIndex !== null ? config.left[expandedIndex] ?? null : null;
+
+  // Separate recordCount slots from other right slots for mobile repositioning
+  const recordCountSlots = config.right.filter(
+    (s): s is RecordCountSlot => s.type === "recordCount"
+  );
+  const otherRightSlots = config.right.filter((s) => s.type !== "recordCount");
 
   return (
     <>
       <div ref={sentinelRef} className="h-0" />
       <div className={cn(
-        "sticky top-[calc(4rem-1px)] z-50 flex min-h-9 items-center gap-4",
-        isStuck && "p-4 bg-background border border-t-0 border-border rounded-b-lg",
+        "sticky z-50 flex flex-wrap min-h-9 items-center gap-x-4 transition-[top] duration-300",
+        headerAware && !isHeaderVisible ? "top-0" : "top-[calc(4rem-1px)]",
+        isStuck && "p-4 bg-background/95 backdrop-blur-sm border border-t-0 border-border rounded-b-lg",
         "mb-8",
         className
       )}>
@@ -237,8 +263,18 @@ export function DataTableActionBar({
           </>
         ) : (
           <>
-            {/* Left slots */}
-            <div className="flex items-center gap-2">
+            {/* Mobile record count — above the tab bar row, left-aligned */}
+            {recordCountSlots.length > 0 && (
+              <div className="w-full lg:hidden">
+                {recordCountSlots.map((slot, i) => (
+                  <span key={i} className="text-xs text-muted-foreground">
+                    {slot.label ? `${slot.count} ${slot.label}` : `${slot.count}`}
+                  </span>
+                ))}
+              </div>
+            )}
+            {/* Left slots — mobile: tabs full-width with collapsible icons right-justified */}
+            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto w-full lg:w-auto">
               {config.left.map((slot, i) => {
                 const collapse = getCollapseConfig(slot);
                 if (collapse) {
@@ -266,12 +302,19 @@ export function DataTableActionBar({
                 }
                 return <SlotRenderer key={i} slot={slot} />;
               })}
+              {/* Push collapsible icons to the right on mobile */}
+              <div className="flex-1 lg:hidden" />
             </div>
-            {/* Spacer */}
-            <div className="flex-1" />
-            {/* Right slots */}
+            {/* Spacer (desktop only — mobile handled by w-full above) */}
+            <div className="hidden lg:block flex-1" />
+            {/* Right slots — recordCount hidden on mobile (shown above), other slots always visible */}
             <div className="flex items-center gap-2">
-              {config.right.map((slot, i) => (
+              {recordCountSlots.map((slot, i) => (
+                <div key={`rc-${i}`} className="hidden lg:block">
+                  <SlotRenderer slot={slot} />
+                </div>
+              ))}
+              {otherRightSlots.map((slot, i) => (
                 <SlotRenderer key={i} slot={slot} />
               ))}
             </div>

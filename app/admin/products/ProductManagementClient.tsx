@@ -5,7 +5,7 @@ import {
   DataTable,
   DataTableActionBar,
   type ActionBarConfig,
-} from "@/app/admin/_components/data-table";
+} from "@/components/shared/data-table";
 import {
   AlertDialog,
   AlertDialogAction,

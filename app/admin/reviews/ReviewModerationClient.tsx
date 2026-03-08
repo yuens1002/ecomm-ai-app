@@ -36,9 +36,9 @@ import {
   DataTableActionBar,
   DataTablePageSizeSelector,
   DataTablePagination,
-} from "@/app/admin/_components/data-table";
-import { useInfiniteScroll } from "@/app/admin/_components/data-table/hooks/useInfiniteScroll";
-import type { ActionBarConfig } from "@/app/admin/_components/data-table/types";
+} from "@/components/shared/data-table";
+import { useInfiniteScroll } from "@/components/shared/data-table/hooks/useInfiniteScroll";
+import type { ActionBarConfig } from "@/components/shared/data-table/types";
 import { Search, Filter, Loader2 } from "lucide-react";
 import { useReviewsTable, type AdminReview } from "./hooks/useReviewsTable";
 import { ReviewCard } from "./_components/ReviewCard";

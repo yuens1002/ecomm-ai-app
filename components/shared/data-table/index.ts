@@ -9,6 +9,12 @@ export { DataTablePagination } from "./DataTablePagination";
 export { DataTableShell } from "./DataTableShell";
 export { RowActionMenu } from "./RowActionMenu";
 export type { RowActionItem } from "./RowActionMenu";
+export { resolveRowActions } from "./row-action-config";
+export type {
+  RowActionConfigEntry,
+  RowActionHandlers,
+  RowActionSubMenuHandlers,
+} from "./row-action-config";
 export { useColumnVisibility, useDataTable } from "./hooks";
 export type { UseDataTableOptions } from "./hooks";
 export type {
