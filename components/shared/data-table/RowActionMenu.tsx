@@ -59,7 +59,7 @@ export function RowActionMenu({ items }: RowActionMenuProps) {
         <Button
           variant="ghost"
           size="icon-sm"
-          className="opacity-100 md:opacity-0 md:group-hover/row:opacity-100 focus-visible:opacity-100 transition-opacity data-[state=open]:opacity-100"
+          className="opacity-100 lg:opacity-0 lg:group-hover/row:opacity-100 focus-visible:opacity-100 transition-opacity data-[state=open]:opacity-100"
         >
           <MoreHorizontal className="h-4 w-4" />
           <span className="sr-only">Row actions</span>
