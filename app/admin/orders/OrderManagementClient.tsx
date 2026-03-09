@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import {
   Search,
@@ -29,7 +29,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
 import { formatPrice } from "@/components/shared/record-utils";
@@ -38,13 +37,15 @@ import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
 import {
   DataTable,
   DataTableActionBar,
-  DataTablePageSizeSelector,
   DataTablePagination,
   ColumnVisibilityToggle,
 } from "@/components/shared/data-table";
-import { useInfiniteScroll } from "@/components/shared/data-table/hooks/useInfiniteScroll";
+import { useDataTableInfiniteScroll } from "@/components/shared/data-table/hooks/useDataTableInfiniteScroll";
 import { useColumnVisibility } from "@/components/shared/data-table/hooks";
 import type { ActionBarConfig } from "@/components/shared/data-table/types";
+import { createStatusTabsSlot } from "@/components/shared/data-table/StatusTabsSlot";
+import { formatCadence } from "@/components/shared/order-utils";
+import { transformToMobileActions } from "@/components/shared/data-table/mobile-actions";
 import type { RowActionItem } from "@/components/shared/data-table/RowActionMenu";
 import { resolveRowActions } from "@/components/shared/data-table/row-action-config";
 import type { RowActionHandlers } from "@/components/shared/data-table/row-action-config";
@@ -57,7 +58,7 @@ const TOGGLABLE_COLUMNS = [
   { id: "orderNumber", label: "Order #" },
   { id: "date", label: "Date" },
   { id: "customer", label: "Customer" },
-  { id: "type", label: "Type" },
+  { id: "type", label: "Frequency" },
   { id: "items", label: "Items" },
   { id: "shipTo", label: "Ship To" },
   { id: "total", label: "Total" },
@@ -480,49 +481,28 @@ export default function OrderManagementClient() {
   });
 
   // Infinite scroll for mobile card grid
-  const allFilteredRows = table.getFilteredRowModel().rows;
-  const batchSize = table.getState().pagination.pageSize;
-  const {
-    visibleCount,
-    sentinelRef,
-    hasMore,
-    reset: resetScroll,
-  } = useInfiniteScroll({
-    totalCount: allFilteredRows.length,
-    batchSize,
-  });
-
-  // Reset infinite scroll when filters/search/status change
-  const scrollKey = `${statusFilter}|${searchQuery}|${JSON.stringify(activeFilter)}`;
-  const prevScrollKey = useRef(scrollKey);
-  useEffect(() => {
-    if (scrollKey !== prevScrollKey.current) {
-      prevScrollKey.current = scrollKey;
-      resetScroll();
-    }
-  }, [scrollKey, resetScroll]);
+  const { allFilteredRows, visibleCount, sentinelRef, hasMore } =
+    useDataTableInfiniteScroll({
+      table,
+      scrollKey: `${statusFilter}|${searchQuery}|${JSON.stringify(activeFilter)}`,
+    });
 
   // ── Action bar config ──────────────────────────────────────────────
 
   const actionBarConfig: ActionBarConfig = {
     left: [
-      {
-        type: "custom",
-        content: (
-          <Tabs
-            value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
-          >
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="PENDING">Pending</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-              <TabsTrigger value="FAILED">Unfulfilled</TabsTrigger>
-              <TabsTrigger value="CANCELLED">Canceled</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        ),
-      },
+      createStatusTabsSlot({
+        tabs: [
+          { value: "all", label: "All" },
+          { value: "PENDING", label: "Pending" },
+          { value: "completed", label: "Completed" },
+          { value: "FAILED", label: "Unfulfilled" },
+          { value: "CANCELLED", label: "Canceled" },
+        ],
+        value: statusFilter,
+        onChange: (v) => setStatusFilter(v as StatusFilter),
+        naturalWidth: 400,
+      }),
       {
         type: "search",
         value: searchQuery,
@@ -540,7 +520,7 @@ export default function OrderManagementClient() {
       {
         type: "custom",
         content: (
-          <div className="hidden lg:block">
+          <div className="hidden md:block">
             <ColumnVisibilityToggle
               columns={TOGGLABLE_COLUMNS}
               columnVisibility={columnVisibility}
@@ -555,14 +535,6 @@ export default function OrderManagementClient() {
         type: "recordCount",
         count: allFilteredRows.length,
         label: "orders",
-      },
-      {
-        type: "custom",
-        content: (
-          <div className="hidden lg:block">
-            <DataTablePageSizeSelector table={table} />
-          </div>
-        ),
       },
       {
         type: "custom",
@@ -587,10 +559,7 @@ export default function OrderManagementClient() {
 
   return (
     <div>
-      <DataTableActionBar
-        config={actionBarConfig}
-        className="flex-col-reverse items-start gap-1 md:flex-row md:items-center"
-      />
+      <DataTableActionBar config={actionBarConfig} />
 
       {/* Desktop table */}
       <div className="hidden md:block">
@@ -614,20 +583,7 @@ export default function OrderManagementClient() {
           <>
             {allFilteredRows.slice(0, visibleCount).map((row) => {
               const order = row.original;
-              // Convert RowActionItem[] to RecordAction[] for mobile card
-              const mobileActions = getActionItems(order)
-                .filter(
-                  (item): item is Extract<RowActionItem, { type: "item" }> =>
-                    item.type === "item"
-                )
-                .map((item) => ({
-                  label: item.label,
-                  onClick: item.onClick,
-                  variant: item.variant as "default" | "destructive" | undefined,
-                  icon: item.icon ? (
-                    <item.icon className="h-4 w-4 mr-2" />
-                  ) : undefined,
-                }));
+              const mobileActions = transformToMobileActions(getActionItems(order));
 
               return (
                 <Card key={order.id} className="py-0 gap-0">
@@ -640,7 +596,7 @@ export default function OrderManagementClient() {
                     badge={
                       order.stripeSubscriptionId ? (
                         <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                          Sub
+                          Subscription
                         </span>
                       ) : undefined
                     }
@@ -657,6 +613,11 @@ export default function OrderManagementClient() {
                       purchaseType: "",
                       quantity: item.quantity,
                       refundedQuantity: item.refundedQuantity,
+                      href: `/admin/products/${item.purchaseOption.variant.product.id}`,
+                      cadence: formatCadence(
+                        item.purchaseOption.billingInterval,
+                        item.purchaseOption.billingIntervalCount
+                      ),
                     }))}
                     price={`$${(order.totalInCents / 100).toFixed(2)}`}
                     priceExtra={

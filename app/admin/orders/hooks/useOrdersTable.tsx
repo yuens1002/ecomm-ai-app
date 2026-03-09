@@ -6,11 +6,13 @@ import {
   type RowActionItem,
 } from "@/components/shared/data-table/RowActionMenu";
 import { useDataTable } from "@/components/shared/data-table/hooks";
-import type {
-  ActiveFilter,
-  FilterConfig,
-} from "@/components/shared/data-table/types";
 import type { DateRangeFilterValue } from "@/components/shared/data-table/DataTableFilter";
+import {
+  getPurchaseType,
+  formatCadence,
+  ORDER_FILTER_CONFIGS,
+  orderFilterToColumnFilters,
+} from "@/components/shared/order-utils";
 import { ShippingAddressDisplay } from "@/components/shared/ShippingAddressDisplay";
 import { formatPrice } from "@/components/shared/record-utils";
 import {
@@ -21,11 +23,10 @@ import {
 } from "@/components/shared/data-table/cells";
 import type {
   ColumnDef,
-  ColumnFiltersState,
   FilterFn,
 } from "@tanstack/react-table";
 import { format, isWithinInterval } from "date-fns";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -69,30 +70,13 @@ export type Order = {
       variant: {
         name: string;
         product: {
+          id: string;
           name: string;
         };
       };
     };
   }>;
 };
-
-// ── Helpers ──────────────────────────────────────────────────────────
-
-function getPurchaseType(order: Order): "Subscription" | "One-time" {
-  if (order.stripeSubscriptionId) return "Subscription";
-  if (order.items.some((i) => i.purchaseOption.type === "SUBSCRIPTION"))
-    return "Subscription";
-  return "One-time";
-}
-
-function formatCadence(
-  interval: string | null | undefined,
-  count: number | null | undefined
-): string {
-  if (!interval || !count) return "";
-  const unit = interval.toLowerCase();
-  return count === 1 ? `Every ${unit}` : `Every ${count} ${unit}s`;
-}
 
 // ── Filters ─────────────────────────────────────────────────────────
 
@@ -137,7 +121,7 @@ export function useOrdersTable({
         header: "Order #",
         size: 110,
         enableSorting: false,
-        enableResizing: true,
+        enableResizing: false,
         meta: { cellClassName: "font-medium" } satisfies DataTableColumnMeta,
       },
       {
@@ -146,7 +130,7 @@ export function useOrdersTable({
         header: "Date",
         size: 120,
         enableSorting: true,
-        enableResizing: true,
+        enableResizing: false,
         cell: ({ row }) => (
           <div>
             <div>{format(new Date(row.original.createdAt), "MMM d, yyyy")}</div>
@@ -171,7 +155,7 @@ export function useOrdersTable({
         header: "Customer",
         size: 180,
         enableSorting: true,
-        enableResizing: true,
+        enableResizing: false,
         cell: ({ row }) => (
           <CustomerCell
             name={row.original.user?.name || row.original.recipientName}
@@ -183,7 +167,7 @@ export function useOrdersTable({
       {
         id: "type",
         accessorFn: (row) => getPurchaseType(row),
-        header: "Type",
+        header: "Frequency",
         size: 110,
         enableSorting: true,
         enableResizing: false,
@@ -219,6 +203,7 @@ export function useOrdersTable({
                 item.purchaseOption.billingIntervalCount
               ),
               refundedQuantity: item.refundedQuantity,
+              productHref: `/admin/products/${item.purchaseOption.variant.product.id}`,
             }))}
           />
         ),
@@ -251,6 +236,7 @@ export function useOrdersTable({
               showCountry
               countryDisplayFormat="full"
               normalPickupFont
+              muteAddressLines
             />
           );
         },
@@ -278,7 +264,7 @@ export function useOrdersTable({
             );
           }
           return (
-            <div className="text-right font-medium">
+            <div className="text-right">
               {formatPrice(order.totalInCents)}
             </div>
           );
@@ -340,58 +326,7 @@ export function useOrdersTable({
     [getActionItems]
   );
 
-  const filterConfigs = useMemo<FilterConfig[]>(
-    () => [
-      {
-        id: "date",
-        label: "Date",
-        shellLabel: "dates",
-        filterType: "dateRange",
-      },
-      {
-        id: "total",
-        label: "Total",
-        shellLabel: "total $",
-        filterType: "comparison",
-      },
-      {
-        id: "type",
-        label: "Type",
-        filterType: "multiSelect",
-        options: [
-          { label: "Subscription", value: "Subscription" },
-          { label: "One-time", value: "One-time" },
-        ],
-      },
-    ],
-    []
-  );
-
-  const filterToColumnFilters = useCallback(
-    (filter: ActiveFilter): ColumnFiltersState => {
-      if (filter.configId === "date" && filter.value) {
-        return [{ id: "date", value: filter.value as DateRangeFilterValue }];
-      }
-      if (
-        filter.configId === "total" &&
-        typeof filter.value === "number"
-      ) {
-        return [
-          {
-            id: "total",
-            value: { operator: filter.operator ?? "=", num: filter.value },
-          },
-        ];
-      }
-      if (filter.configId === "type" && Array.isArray(filter.value)) {
-        return filter.value.length > 0
-          ? [{ id: "type", value: filter.value }]
-          : [];
-      }
-      return [];
-    },
-    []
-  );
+  const filterConfigs = ORDER_FILTER_CONFIGS;
 
   const tableResult = useDataTable({
     data: orders,
@@ -399,7 +334,7 @@ export function useOrdersTable({
     filterConfigs,
     columnVisibility,
     globalFilterFn,
-    filterToColumnFilters,
+    filterToColumnFilters: orderFilterToColumnFilters,
     initialSorting: [{ id: "date", desc: true }],
     storageKey: "admin-orders-table",
   });

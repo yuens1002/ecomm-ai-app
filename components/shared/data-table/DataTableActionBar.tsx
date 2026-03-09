@@ -9,7 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Search } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DataTableFilter } from "./DataTableFilter";
 import { DataTablePageSizeSelector } from "./DataTablePageSizeSelector";
@@ -26,6 +26,66 @@ import type {
   RecordCountSlot,
   SearchSlot,
 } from "./types";
+
+// ── Dynamic collapse calculation ───────────────────────────────────────
+
+/** Minimum usable width (px) for each expanded collapsible slot (search input / filter) */
+export const EXPANDED_SLOT_MIN_WIDTH = 200;
+/** Width (px) of a collapsed icon button (icon-sm ≈ 36px) */
+export const COLLAPSED_SLOT_WIDTH = 36;
+/** Gap between items in the left section (gap-2 = 8px) */
+export const SLOT_GAP = 8;
+/** Gap between left and right sections (gap-4 = 16px) */
+export const SECTION_GAP = 16;
+
+/**
+ * Collapse levels — applied in order of priority:
+ *   0 = everything expanded (tabs + search input + filter input)
+ *   1 = search/filter collapsed to icons, tabs stay full  ← first thing to go
+ *   2 = tabs also collapsed to dropdown                   ← last resort
+ */
+export type CollapseLevel = 0 | 1 | 2;
+
+/**
+ * Pure function: compute collapse level from declared widths.
+ *
+ * All inputs are stable values that do NOT depend on the current collapse level,
+ * eliminating feedback loops.
+ *
+ * @param leftAvailable     - available width for the left section (bar - right - gap)
+ * @param tabNaturalWidth   - declared natural width of the full tab bar
+ * @param collapsibleCount  - number of collapsible slots (search + filter)
+ * @param otherFixedWidth   - width of other non-collapsible left slots (e.g. col-vis icon)
+ *
+ * @internal exported for testing
+ */
+export function computeCollapseLevel(
+  leftAvailable: number,
+  tabNaturalWidth: number,
+  collapsibleCount: number,
+  otherFixedWidth: number = 0,
+): CollapseLevel {
+  if (collapsibleCount === 0) return 0;
+
+  // Count gaps between items: tabs + collapsibles + other fixed slots
+  const itemCount = 1 + collapsibleCount + (otherFixedWidth > 0 ? 1 : 0);
+  const gaps = (itemCount - 1) * SLOT_GAP;
+
+  // Level 0: tabs full + search/filter expanded
+  const expandedNeeded =
+    tabNaturalWidth + collapsibleCount * EXPANDED_SLOT_MIN_WIDTH + otherFixedWidth + gaps;
+  if (leftAvailable >= expandedNeeded) return 0;
+
+  // Level 1: tabs full + search/filter collapsed to icons
+  const collapsedNeeded =
+    tabNaturalWidth + collapsibleCount * COLLAPSED_SLOT_WIDTH + otherFixedWidth + gaps;
+  if (leftAvailable >= collapsedNeeded) return 1;
+
+  // Level 2: tabs also collapse to dropdown (last resort)
+  return 2;
+}
+
+// ── Slot renderers ─────────────────────────────────────────────────────
 
 function SearchSlotRenderer({ slot }: { slot: SearchSlot }) {
   return (
@@ -52,28 +112,7 @@ function ButtonSlotRenderer({
   const Icon = slot.icon;
   const isResponsiveIconOnly = slot.iconOnly === "below-lg";
 
-  // Responsive icon-only: render icon-sm on mobile + sm with label on desktop
   if (!forceIconOnly && isResponsiveIconOnly && Icon) {
-    const mobileBtn = (
-      <Button size="icon-sm" variant={slot.variant} disabled={slot.disabled} className="lg:hidden" asChild={!!slot.href}>
-        {slot.href ? (
-          <Link href={slot.href}><Icon className="h-4 w-4" /></Link>
-        ) : (
-          <Icon className="h-4 w-4" />
-        )}
-      </Button>
-    );
-
-    const desktopBtn = (
-      <Button size="sm" variant={slot.variant} disabled={slot.disabled} className="hidden lg:inline-flex" asChild={!!slot.href}>
-        {slot.href ? (
-          <Link href={slot.href}><Icon className="h-4 w-4" />{slot.label}</Link>
-        ) : (
-          <><Icon className="h-4 w-4" />{slot.label}</>
-        )}
-      </Button>
-    );
-
     if (!slot.href && slot.onClick) {
       return (
         <>
@@ -87,7 +126,24 @@ function ButtonSlotRenderer({
       );
     }
 
-    return <>{mobileBtn}{desktopBtn}</>;
+    return (
+      <>
+        <Button size="icon-sm" variant={slot.variant} disabled={slot.disabled} className="lg:hidden" asChild={!!slot.href}>
+          {slot.href ? (
+            <Link href={slot.href}><Icon className="h-4 w-4" /></Link>
+          ) : (
+            <Icon className="h-4 w-4" />
+          )}
+        </Button>
+        <Button size="sm" variant={slot.variant} disabled={slot.disabled} className="hidden lg:inline-flex" asChild={!!slot.href}>
+          {slot.href ? (
+            <Link href={slot.href}><Icon className="h-4 w-4" />{slot.label}</Link>
+          ) : (
+            <><Icon className="h-4 w-4" />{slot.label}</>
+          )}
+        </Button>
+      </>
+    );
   }
 
   const content = (
@@ -117,7 +173,18 @@ function ButtonSlotRenderer({
   );
 }
 
-function CustomSlotRenderer({ slot }: { slot: CustomSlot }) {
+function CustomSlotRenderer({
+  slot,
+  forceMobile,
+}: {
+  slot: CustomSlot;
+  forceMobile?: boolean;
+}) {
+  if (slot.mobileContent) {
+    return forceMobile
+      ? <>{slot.mobileContent}</>
+      : <>{slot.content}</>;
+  }
   return <>{slot.content}</>;
 }
 
@@ -146,7 +213,7 @@ function PageSizeSelectorSlotRenderer({
 
 function RecordCountSlotRenderer({ slot }: { slot: RecordCountSlot }) {
   return (
-    <span className="text-sm text-muted-foreground whitespace-nowrap pr-4">
+    <span className="text-sm text-muted-foreground whitespace-nowrap">
       {slot.label ? `${slot.count} ${slot.label}` : slot.count}
     </span>
   );
@@ -154,8 +221,10 @@ function RecordCountSlotRenderer({ slot }: { slot: RecordCountSlot }) {
 
 function SlotRenderer({
   slot,
+  forceMobile,
 }: {
   slot: DataTableSlot;
+  forceMobile?: boolean;
 }) {
   switch (slot.type) {
     case "search":
@@ -163,7 +232,7 @@ function SlotRenderer({
     case "button":
       return <ButtonSlotRenderer slot={slot} />;
     case "custom":
-      return <CustomSlotRenderer slot={slot} />;
+      return <CustomSlotRenderer slot={slot} forceMobile={forceMobile} />;
     case "filter":
       return <FilterSlotRenderer slot={slot} />;
     case "pagination":
@@ -175,17 +244,21 @@ function SlotRenderer({
   }
 }
 
-function getCollapseConfig(slot: DataTableSlot): CollapseConfig | undefined {
+/** @internal exported for testing */
+export function getCollapseConfig(slot: DataTableSlot): CollapseConfig | undefined {
   if ("collapse" in slot) return slot.collapse;
   return undefined;
 }
 
-/** Whether a collapsible slot has an active value (search text or filter applied) */
-function isSlotActive(slot: DataTableSlot): boolean {
+/** Whether a collapsible slot has an active value (search text or filter applied)
+ *  @internal exported for testing */
+export function isSlotActive(slot: DataTableSlot): boolean {
   if (slot.type === "search") return !!slot.value;
-  if (slot.type === "filter") return slot.activeFilter != null && slot.activeFilter.value !== "" && !(Array.isArray(slot.activeFilter.value) && slot.activeFilter.value.length === 0);
+  if (slot.type === "filter") return slot.activeFilter != null && slot.activeFilter.value != null && slot.activeFilter.value !== "" && !(Array.isArray(slot.activeFilter.value) && slot.activeFilter.value.length === 0);
   return false;
 }
+
+// ── Main component ─────────────────────────────────────────────────────
 
 interface DataTableActionBarProps {
   config: ActionBarConfig;
@@ -203,12 +276,43 @@ export function DataTableActionBar({
   const [isStuck, setIsStuck] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
 
+  const collapsibleCount = useMemo(
+    () => config.left.filter((s) => getCollapseConfig(s)).length,
+    [config.left],
+  );
+
+  // Extract declared tab natural width from config (first custom slot with mobileContent)
+  const tabNaturalWidth = useMemo(() => {
+    for (const slot of config.left) {
+      if (slot.type === "custom" && slot.mobileContent && slot.naturalWidth) {
+        return slot.naturalWidth;
+      }
+    }
+    return 0;
+  }, [config.left]);
+
+  // Start at level 0 (everything expanded) — the ResizeObserver will adjust
+  // to the correct level on the first frame after layout.
+  const [collapseLevel, setCollapseLevel] = useState<CollapseLevel>(0);
+
+  // Guard against observer callbacks firing before mount (React 19 strict mode)
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  // Sticky detection
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
     const observer = new IntersectionObserver(
-      ([entry]) => setIsStuck(!entry.isIntersecting),
+      ([entry]) => {
+        if (mountedRef.current) setIsStuck(!entry.isIntersecting);
+      },
       { threshold: 0, rootMargin: "-64px 0px 0px 0px" }
     );
     observer.observe(sentinel);
@@ -223,26 +327,46 @@ export function DataTableActionBar({
     if (!header) return;
 
     const observer = new MutationObserver(() => {
-      setIsHeaderVisible(!header.classList.contains("-translate-y-full"));
+      if (mountedRef.current) setIsHeaderVisible(!header.classList.contains("-translate-y-full"));
     });
     observer.observe(header, { attributes: true, attributeFilter: ["class"] });
 
     return () => observer.disconnect();
   }, [headerAware]);
 
+  // Dynamic collapse via ResizeObserver on the outer bar ONLY.
+  // We measure rightRef inside the callback but don't observe it — this prevents
+  // collapse recalculation when pagination changes (filtering 608→16 orders changes
+  // page count, shrinking the right section, which would flip collapse level).
+  useEffect(() => {
+    const barEl = barRef.current;
+    const rightEl = rightRef.current;
+    if (!barEl || !rightEl || collapsibleCount === 0) return;
+
+    function measure() {
+      if (!mountedRef.current) return;
+      const barWidth = Math.round(barEl!.getBoundingClientRect().width);
+      const rightWidth = Math.round(rightEl!.getBoundingClientRect().width);
+      const leftAvailable = barWidth - rightWidth - SECTION_GAP;
+      setCollapseLevel(computeCollapseLevel(leftAvailable, tabNaturalWidth, collapsibleCount));
+    }
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(barEl);
+
+    return () => observer.disconnect();
+  }, [collapsibleCount, tabNaturalWidth]);
+
   const expandedSlot = expandedIndex !== null ? config.left[expandedIndex] ?? null : null;
 
-  // Separate recordCount slots from other right slots for mobile repositioning
-  const recordCountSlots = config.right.filter(
-    (s): s is RecordCountSlot => s.type === "recordCount"
-  );
-  const otherRightSlots = config.right.filter((s) => s.type !== "recordCount");
+  const slotsCollapsed = collapseLevel >= 1;
+  const tabsCompact = collapseLevel >= 2;
 
   return (
     <>
       <div ref={sentinelRef} className="h-0" />
-      <div className={cn(
-        "sticky z-50 flex flex-wrap min-h-9 items-center gap-x-4 transition-[top] duration-300",
+      <div ref={barRef} className={cn(
+        "sticky z-40 flex items-center gap-4 min-h-9 transition-[top] duration-300",
         headerAware && !isHeaderVisible ? "top-0" : "top-[calc(4rem-1px)]",
         isStuck && "p-4 bg-background/95 backdrop-blur-sm border border-t-0 border-border rounded-b-lg",
         "mb-8",
@@ -263,26 +387,17 @@ export function DataTableActionBar({
           </>
         ) : (
           <>
-            {/* Mobile record count — above the tab bar row, left-aligned */}
-            {recordCountSlots.length > 0 && (
-              <div className="w-full lg:hidden">
-                {recordCountSlots.map((slot, i) => (
-                  <span key={i} className="text-xs text-muted-foreground">
-                    {slot.label ? `${slot.count} ${slot.label}` : `${slot.count}`}
-                  </span>
-                ))}
-              </div>
-            )}
-            {/* Left slots — mobile: tabs full-width with collapsible icons right-justified */}
-            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto w-full lg:w-auto">
+            {/* Left section — takes remaining space, never overlaps right */}
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               {config.left.map((slot, i) => {
                 const collapse = getCollapseConfig(slot);
                 if (collapse) {
                   const CollapseIcon = collapse.icon;
                   const active = isSlotActive(slot);
-                  return (
-                    <div key={i}>
-                      <div className="relative lg:hidden">
+
+                  return slotsCollapsed ? (
+                    <div key={i} className="flex-shrink-0" data-collapsible="">
+                      <div className="relative">
                         <Button
                           variant="outline"
                           size="icon-sm"
@@ -294,27 +409,25 @@ export function DataTableActionBar({
                           <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 pointer-events-none" />
                         )}
                       </div>
-                      <div className="hidden lg:block">
-                        <SlotRenderer slot={slot} />
-                      </div>
+                    </div>
+                  ) : (
+                    <div key={i} data-collapsible="">
+                      <SlotRenderer slot={slot} />
                     </div>
                   );
                 }
-                return <SlotRenderer key={i} slot={slot} />;
+                return (
+                  <SlotRenderer
+                    key={i}
+                    slot={slot}
+                    forceMobile={tabsCompact}
+                  />
+                );
               })}
-              {/* Push collapsible icons to the right on mobile */}
-              <div className="flex-1 lg:hidden" />
             </div>
-            {/* Spacer (desktop only — mobile handled by w-full above) */}
-            <div className="hidden lg:block flex-1" />
-            {/* Right slots — recordCount hidden on mobile (shown above), other slots always visible */}
-            <div className="flex items-center gap-2">
-              {recordCountSlots.map((slot, i) => (
-                <div key={`rc-${i}`} className="hidden lg:block">
-                  <SlotRenderer slot={slot} />
-                </div>
-              ))}
-              {otherRightSlots.map((slot, i) => (
+            {/* Right section — fixed width, never shrinks */}
+            <div ref={rightRef} className="flex items-center gap-2 flex-shrink-0">
+              {config.right.map((slot, i) => (
                 <SlotRenderer key={i} slot={slot} />
               ))}
             </div>

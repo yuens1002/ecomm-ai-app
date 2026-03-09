@@ -15,6 +15,7 @@ interface ShippingAddressDisplayProps {
   normalPickupFont?: boolean;
   fallbackText?: string;
   mutedClassName?: string;
+  /** When true (default), renders address/country/phone in muted style. */
   muteAddressLines?: boolean;
 }
 
@@ -51,7 +52,7 @@ export function ShippingAddressDisplay({
 
   return (
     <div className="text-sm">
-      {recipientName && <div className="font-medium">{recipientName}</div>}
+      {recipientName && <div>{recipientName}</div>}
       <div className={addressLineClass}>{street}</div>
       <div className={addressLineClass}>
         {city}, {state} {postalCode}

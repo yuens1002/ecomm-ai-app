@@ -14,7 +14,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formatPhoneNumber, getStatusColor, getStatusLabel } from "./record-utils";
+import { formatPhoneNumber, getCountryName, getStatusColor, getStatusLabel } from "./record-utils";
 
 export interface RecordItem {
   id: string;
@@ -228,18 +228,38 @@ export function MobileRecordCard({
           {items.map((item) => (
             <div key={item.id} className={`flex items-start gap-2 ${itemsClassName ?? ""}`}>
               {item.imageUrl && (
-                <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-muted">
-                  <Image
-                    src={item.imageUrl}
-                    alt={item.name}
-                    fill
-                    className="object-cover"
-                    sizes="40px"
-                  />
-                </div>
+                item.href ? (
+                  <Link href={item.href} className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-muted block">
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                      sizes="40px"
+                    />
+                  </Link>
+                ) : (
+                  <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-muted">
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                      sizes="40px"
+                    />
+                  </div>
+                )
               )}
               <div className="min-w-0 flex-1">
-                <div className="text-sm">{item.name}</div>
+                <div className="text-sm">
+                  {item.href ? (
+                    <Link href={item.href} className="hover:text-primary">
+                      {item.name}
+                    </Link>
+                  ) : (
+                    item.name
+                  )}
+                </div>
                 <div className="text-xs text-muted-foreground">
                   {[item.variant, item.purchaseType].filter(Boolean).join(" · ")}
                   {(item.variant || item.purchaseType) && " · "}
@@ -268,14 +288,14 @@ export function MobileRecordCard({
             {shipping?.street ? (
               <>
                 {shipping.recipientName && (
-                  <p className="font-medium">{shipping.recipientName}</p>
+                  <p>{shipping.recipientName}</p>
                 )}
                 <p className="text-foreground">
                   {shipping.street}, {shipping.city}, {shipping.state}{" "}
                   {shipping.postalCode}
                 </p>
                 {shipping.country && (
-                  <p className="text-xs text-muted-foreground">{shipping.country}</p>
+                  <p className="text-sm text-foreground">{getCountryName(shipping.country)}</p>
                 )}
               </>
             ) : (

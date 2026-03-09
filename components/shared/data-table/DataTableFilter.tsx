@@ -91,7 +91,7 @@ function ComparisonFilterContent({
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <InputGroupButton size="xs" variant="secondary">
-            {filter.operator || "="}
+            {filter.operator || "\u2265"}
           </InputGroupButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
@@ -108,7 +108,8 @@ function ComparisonFilterContent({
       <InputGroupInput
         ref={inputRef}
         type="number"
-        placeholder="value..."
+        min="0"
+        placeholder="enter value"
         value={localValue}
         onChange={(e) => handleChange(e.target.value)}
       />
@@ -272,26 +273,33 @@ function DateRangeFilterContent({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex-1 flex items-center justify-between gap-1 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground truncate"
+            className={`flex-1 flex items-center justify-between gap-1 px-2 py-1.5 text-sm truncate ${currentValue ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
             <span className="truncate">{displayLabel}</span>
             <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
+          {currentValue && (
+            <DropdownMenuItem onClick={() => onFilterChange({ ...filter, value: null })}>
+              Select range
+            </DropdownMenuItem>
+          )}
           {customRangeLabel && (
             <DropdownMenuItem disabled className="text-muted-foreground">
               {customRangeLabel}
             </DropdownMenuItem>
           )}
-          {DATE_PRESETS.map((preset) => (
-            <DropdownMenuItem
-              key={preset.value}
-              onClick={() => handlePresetSelect(preset.value)}
-            >
-              {preset.label}
-            </DropdownMenuItem>
-          ))}
+          {DATE_PRESETS
+            .filter((preset) => preset.value !== currentValue?.preset)
+            .map((preset) => (
+              <DropdownMenuItem
+                key={preset.value}
+                onClick={() => handlePresetSelect(preset.value)}
+              >
+                {preset.label}
+              </DropdownMenuItem>
+            ))}
         </DropdownMenuContent>
       </DropdownMenu>
     </>
@@ -332,7 +340,7 @@ export function DataTableFilter({
     if (!config) return;
 
     if (config.filterType === "comparison") {
-      onFilterChange({ configId, operator: "=", value: "" });
+      onFilterChange({ configId, operator: "\u2265", value: "" });
     } else if (config.filterType === "dateRange") {
       onFilterChange({ configId, value: null });
     } else {
@@ -349,17 +357,21 @@ export function DataTableFilter({
           </InputGroupButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => handleTypeSelect(null)}>
-            None
-          </DropdownMenuItem>
-          {configs.map((c) => (
-            <DropdownMenuItem
-              key={c.id}
-              onClick={() => handleTypeSelect(c.id)}
-            >
-              {c.label}
+          {activeFilter && (
+            <DropdownMenuItem onClick={() => handleTypeSelect(null)}>
+              None
             </DropdownMenuItem>
-          ))}
+          )}
+          {configs
+            .filter((c) => c.id !== activeFilter?.configId)
+            .map((c) => (
+              <DropdownMenuItem
+                key={c.id}
+                onClick={() => handleTypeSelect(c.id)}
+              >
+                {c.label}
+              </DropdownMenuItem>
+            ))}
         </DropdownMenuContent>
       </DropdownMenu>
     </InputGroupAddon>
@@ -381,13 +393,38 @@ export function DataTableFilter({
 
   const ContentRenderer = FILTER_RENDERERS[activeConfig.filterType];
 
+  // Compute min-width so the filter accommodates the longest possible content.
+  // Base: filter icon (28px) + shell label (~ch) + type-selector button (28px) + padding (24px)
+  const longestContentCh = (() => {
+    if (activeConfig.filterType === "dateRange") {
+      // Longest preset label or "MMM d – MMM d" (≈ 15ch), plus calendar icon
+      const longestPreset = DATE_PRESETS.reduce(
+        (max, p) => Math.max(max, p.label.length),
+        0,
+      );
+      return Math.max(longestPreset, 15) + 4; // +4 for chevron + calendar icon space
+    }
+    if (activeConfig.filterType === "multiSelect") {
+      // "N selected" (10ch) or longest option label
+      const longestOption = (activeConfig.options ?? []).reduce(
+        (max, o) => Math.max(max, o.label.length),
+        0,
+      );
+      return Math.max(longestOption, 10) + 3; // +3 for chevron
+    }
+    // comparison: input field has flexible width
+    return 10;
+  })();
+  const shellLabel = activeConfig.shellLabel ?? activeConfig.label.toLowerCase();
+  const minWidthCh = shellLabel.length + longestContentCh;
+
   return (
-    <InputGroup className={className}>
+    <InputGroup className={className} style={{ minWidth: `${minWidthCh + 8}ch` }}>
       <InputGroupAddon align="inline-start">
         <Filter />
       </InputGroupAddon>
       <span className="font-mono italic text-muted-foreground px-2 py-1.5 text-sm whitespace-nowrap">
-        {activeConfig.shellLabel ?? activeConfig.label.toLowerCase()}
+        {shellLabel}
       </span>
       <ContentRenderer
         config={activeConfig}

@@ -129,13 +129,16 @@ export function useDataTable<TData>({
     });
   }, [storageKey, searchQuery, activeFilter, pagination.pageSize]);
 
-  const columnFilters = useMemo<ColumnFiltersState>(
-    () =>
-      activeFilter && filterToColumnFilters
-        ? filterToColumnFilters(activeFilter)
-        : [],
-    [activeFilter, filterToColumnFilters]
-  );
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  // Sync external activeFilter → TanStack columnFilters
+  useEffect(() => {
+    if (activeFilter && filterToColumnFilters) {
+      setColumnFilters(filterToColumnFilters(activeFilter));
+    } else {
+      setColumnFilters([]);
+    }
+  }, [activeFilter, filterToColumnFilters]);
 
   const table = useReactTable({
     data,
@@ -149,6 +152,7 @@ export function useDataTable<TData>({
     },
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
+    onColumnFiltersChange: setColumnFilters,
     globalFilterFn,
     getCoreRowModel: getCoreRowModel(),
     // Server-side mode: skip client-side processing

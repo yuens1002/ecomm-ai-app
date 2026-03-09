@@ -36,6 +36,10 @@ export type ButtonSlot = {
 export type CustomSlot = {
   type: "custom";
   content: ReactNode;
+  /** Alternative content rendered when collapse level reaches 2 (narrowest). */
+  mobileContent?: ReactNode;
+  /** Approximate natural width (px) of `content` — used for collapse calculation. */
+  naturalWidth?: number;
 };
 
 export type FilterConfig = {

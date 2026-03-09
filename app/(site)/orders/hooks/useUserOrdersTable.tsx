@@ -7,16 +7,15 @@ import {
   type RowActionItem,
 } from "@/components/shared/data-table/RowActionMenu";
 import { useDataTable } from "@/components/shared/data-table/hooks";
-import type {
-  ActiveFilter,
-  FilterConfig,
-} from "@/components/shared/data-table/types";
 import type { DateRangeFilterValue } from "@/components/shared/data-table/DataTableFilter";
+import {
+  getPurchaseType,
+  formatCadence,
+  ORDER_FILTER_CONFIGS,
+  orderFilterToColumnFilters,
+} from "@/components/shared/order-utils";
 import { ShippingAddressDisplay } from "@/components/shared/ShippingAddressDisplay";
 import { formatPrice } from "@/components/shared/record-utils";
-import {
-  BuyAgainButton,
-} from "@/components/shared/order-detail/OrderItemsCard";
 import {
   ItemsCell,
   TypeCell,
@@ -24,32 +23,15 @@ import {
 } from "@/components/shared/data-table/cells";
 import type {
   ColumnDef,
-  ColumnFiltersState,
   FilterFn,
 } from "@tanstack/react-table";
 import { format, isWithinInterval } from "date-fns";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import type { OrderWithItems } from "@/lib/types";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 import { ProductType } from "@prisma/client";
 
 // ── Helpers ──────────────────────────────────────────────────────────
-
-function getPurchaseType(order: OrderWithItems): "Subscription" | "One-time" {
-  if (order.stripeSubscriptionId) return "Subscription";
-  if (order.items.some((i) => i.purchaseOption.type === "SUBSCRIPTION"))
-    return "Subscription";
-  return "One-time";
-}
-
-function formatCadence(
-  interval: string | null | undefined,
-  count: number | null | undefined
-): string {
-  if (!interval || !count) return "";
-  const unit = interval.toLowerCase();
-  return count === 1 ? `Every ${unit}` : `Every ${count} ${unit}s`;
-}
 
 function placeholderCategory(item: OrderWithItems["items"][number]) {
   return item.purchaseOption.variant.product.type === ProductType.MERCH
@@ -102,7 +84,7 @@ export function useUserOrdersTable({
         header: "Order #",
         size: 100,
         enableSorting: false,
-        enableResizing: true,
+        enableResizing: false,
         meta: { cellClassName: "font-medium" } satisfies DataTableColumnMeta,
       },
       {
@@ -111,7 +93,7 @@ export function useUserOrdersTable({
         header: "Date",
         size: 120,
         enableSorting: true,
-        enableResizing: true,
+        enableResizing: false,
         cell: ({ row }) => (
           <div>
             <div>
@@ -134,7 +116,7 @@ export function useUserOrdersTable({
       {
         id: "type",
         accessorFn: (row) => getPurchaseType(row),
-        header: "Type",
+        header: "Frequency",
         size: 110,
         enableSorting: true,
         enableResizing: false,
@@ -200,28 +182,12 @@ export function useUserOrdersTable({
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-xs text-primary cursor-pointer hover:underline">
-                        <PenLine className="h-3 w-3" /> Report
+                        <PenLine className="h-3 w-3" /> Review
                       </span>
                     )
                   ) : undefined,
                 };
               })}
-              footer={
-                !isFullRefund ? (
-                  <div className="flex gap-2 pt-1">
-                    {order.items
-                      .filter(
-                        (item) =>
-                          !reviewedProductIds.has(
-                            item.purchaseOption.variant.product.id
-                          )
-                      )
-                      .map((item) => (
-                        <BuyAgainButton key={item.id} item={item} />
-                      ))}
-                  </div>
-                ) : undefined
-              }
             />
           );
         },
@@ -279,7 +245,7 @@ export function useUserOrdersTable({
             );
           }
           return (
-            <div className="text-right font-medium">
+            <div className="text-right">
               {formatPrice(order.totalInCents)}
             </div>
           );
@@ -333,62 +299,14 @@ export function useUserOrdersTable({
     [getActionItems, reviewedProductIds]
   );
 
-  const filterConfigs = useMemo<FilterConfig[]>(
-    () => [
-      {
-        id: "date",
-        label: "Date",
-        shellLabel: "dates",
-        filterType: "dateRange",
-      },
-      {
-        id: "total",
-        label: "Total",
-        shellLabel: "total $",
-        filterType: "comparison",
-      },
-      {
-        id: "type",
-        label: "Type",
-        filterType: "multiSelect",
-        options: [
-          { label: "Subscription", value: "Subscription" },
-          { label: "One-time", value: "One-time" },
-        ],
-      },
-    ],
-    []
-  );
-
-  const filterToColumnFilters = useCallback(
-    (filter: ActiveFilter): ColumnFiltersState => {
-      if (filter.configId === "date" && filter.value) {
-        return [{ id: "date", value: filter.value as DateRangeFilterValue }];
-      }
-      if (filter.configId === "total" && typeof filter.value === "number") {
-        return [
-          {
-            id: "total",
-            value: { operator: filter.operator ?? "=", num: filter.value },
-          },
-        ];
-      }
-      if (filter.configId === "type" && Array.isArray(filter.value)) {
-        return filter.value.length > 0
-          ? [{ id: "type", value: filter.value }]
-          : [];
-      }
-      return [];
-    },
-    []
-  );
+  const filterConfigs = ORDER_FILTER_CONFIGS;
 
   const tableResult = useDataTable({
     data: orders,
     columns,
     filterConfigs,
     globalFilterFn,
-    filterToColumnFilters,
+    filterToColumnFilters: orderFilterToColumnFilters,
     initialSorting: [{ id: "date", desc: true }],
     storageKey: "user-orders-table",
   });

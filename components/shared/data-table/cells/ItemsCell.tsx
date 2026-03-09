@@ -37,15 +37,27 @@ export function ItemsCell({ items, strikethrough, footer }: ItemsCellProps) {
       {items.map((item) => (
         <div key={item.key} className="flex items-start gap-2">
           {item.imageUrl && (
-            <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-muted">
-              <Image
-                src={item.imageUrl}
-                alt={item.name}
-                fill
-                className="object-cover"
-                sizes="40px"
-              />
-            </div>
+            item.productHref ? (
+              <Link href={item.productHref} className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-muted block">
+                <Image
+                  src={item.imageUrl}
+                  alt={item.name}
+                  fill
+                  className="object-cover"
+                  sizes="40px"
+                />
+              </Link>
+            ) : (
+              <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-muted">
+                <Image
+                  src={item.imageUrl}
+                  alt={item.name}
+                  fill
+                  className="object-cover"
+                  sizes="40px"
+                />
+              </div>
+            )
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">

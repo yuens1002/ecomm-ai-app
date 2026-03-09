@@ -1,13 +1,14 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Columns3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface TogglableColumn {
   id: string;
@@ -26,25 +27,30 @@ export function ColumnVisibilityToggle({
   onVisibilityChange,
 }: ColumnVisibilityToggleProps) {
   return (
-    <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon-sm">
-            <Columns3 className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="icon-sm">
+          <Columns3 className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-48 p-2" align="end">
+        <div className="flex flex-col gap-1 max-h-60 overflow-y-auto">
           {columns.map((col) => (
-            <DropdownMenuCheckboxItem
+            <Label
               key={col.id}
-              checked={columnVisibility[col.id] !== false}
-              onCheckedChange={(checked) =>
-                onVisibilityChange(col.id, !!checked)
-              }
+              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm font-normal"
             >
+              <Checkbox
+                checked={columnVisibility[col.id] !== false}
+                onCheckedChange={(checked) =>
+                  onVisibilityChange(col.id, !!checked)
+                }
+              />
               {col.label}
-            </DropdownMenuCheckboxItem>
+            </Label>
           ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

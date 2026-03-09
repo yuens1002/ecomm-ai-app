@@ -1,4 +1,4 @@
-import { ExternalLink, PenLine } from "lucide-react";
+import { ExternalLink, MapPin, PenLine, Truck, XCircle } from "lucide-react";
 import type { RowActionConfigEntry } from "@/components/shared/data-table/row-action-config";
 import type { OrderWithItems } from "@/lib/types";
 
@@ -37,12 +37,14 @@ export const userOrderRowActions: RowActionConfigEntry<OrderWithItems>[] = [
     id: "shipmentStatus",
     type: "item",
     label: "Shipment Status",
+    icon: Truck,
     when: isShippedOrDelivered,
   },
   {
     id: "editAddress",
     type: "item",
     label: "Edit Address",
+    icon: MapPin,
     when: (o) => isPending(o) && isDelivery(o),
   },
   {
@@ -53,6 +55,7 @@ export const userOrderRowActions: RowActionConfigEntry<OrderWithItems>[] = [
     id: "cancelOrder",
     type: "item",
     label: "Cancel Order",
+    icon: XCircle,
     variant: "destructive",
     when: isPending,
   },

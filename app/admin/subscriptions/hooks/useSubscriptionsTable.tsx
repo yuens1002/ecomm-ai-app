@@ -227,7 +227,7 @@ export function useSubscriptionsTable({
         enableResizing: false,
         meta: { cellClassName: "text-right", align: "right" } satisfies DataTableColumnMeta,
         cell: ({ row }) => (
-          <div className="text-right font-medium">
+          <div className="text-right">
             {formatPrice(row.original.priceInCents)}
           </div>
         ),

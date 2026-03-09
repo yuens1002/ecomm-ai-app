@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
@@ -13,21 +13,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
 import {
   DataTable,
   DataTableActionBar,
-  DataTablePageSizeSelector,
   DataTablePagination,
 } from "@/components/shared/data-table";
-import { useInfiniteScroll } from "@/components/shared/data-table/hooks/useInfiniteScroll";
+import { useDataTableInfiniteScroll } from "@/components/shared/data-table/hooks/useDataTableInfiniteScroll";
+import { transformToMobileActions } from "@/components/shared/data-table/mobile-actions";
 import type { ActionBarConfig } from "@/components/shared/data-table/types";
 import type { RowActionItem } from "@/components/shared/data-table/RowActionMenu";
 import { resolveRowActions } from "@/components/shared/data-table/row-action-config";
 import type { RowActionHandlers } from "@/components/shared/data-table/row-action-config";
 import { Search, Filter, Loader2 } from "lucide-react";
+import { createStatusTabsSlot } from "@/components/shared/data-table/StatusTabsSlot";
 import {
   cancelSubscription,
   skipBillingPeriod,
@@ -207,49 +207,29 @@ export default function SubscriptionManagementClient({
     getActionItems,
   });
 
-  // Infinite scroll
-  const allFilteredRows = table.getFilteredRowModel().rows;
-  const batchSize = table.getState().pagination.pageSize;
-  const {
-    visibleCount,
-    sentinelRef,
-    hasMore,
-    reset: resetScroll,
-  } = useInfiniteScroll({
-    totalCount: allFilteredRows.length,
-    batchSize,
-  });
-
-  const scrollKey = `${statusFilter}|${searchQuery}|${JSON.stringify(activeFilter)}`;
-  const prevScrollKey = useRef(scrollKey);
-  useEffect(() => {
-    if (scrollKey !== prevScrollKey.current) {
-      prevScrollKey.current = scrollKey;
-      resetScroll();
-    }
-  }, [scrollKey, resetScroll]);
+  // Infinite scroll for mobile card grid
+  const { allFilteredRows, visibleCount, sentinelRef, hasMore } =
+    useDataTableInfiniteScroll({
+      table,
+      scrollKey: `${statusFilter}|${searchQuery}|${JSON.stringify(activeFilter)}`,
+    });
 
   // ── Action bar ─────────────────────────────────────────────────────
 
   const actionBarConfig: ActionBarConfig = {
     left: [
-      {
-        type: "custom",
-        content: (
-          <Tabs
-            value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
-          >
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="ACTIVE">Active</TabsTrigger>
-              <TabsTrigger value="PAUSED">Paused</TabsTrigger>
-              <TabsTrigger value="PAST_DUE">Past Due</TabsTrigger>
-              <TabsTrigger value="CANCELED">Canceled</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        ),
-      },
+      createStatusTabsSlot({
+        tabs: [
+          { value: "all", label: "All" },
+          { value: "ACTIVE", label: "Active" },
+          { value: "PAUSED", label: "Paused" },
+          { value: "PAST_DUE", label: "Past Due" },
+          { value: "CANCELED", label: "Canceled" },
+        ],
+        value: statusFilter,
+        onChange: (v) => setStatusFilter(v as StatusFilter),
+        naturalWidth: 400,
+      }),
       {
         type: "search",
         value: searchQuery,
@@ -274,14 +254,6 @@ export default function SubscriptionManagementClient({
       {
         type: "custom",
         content: (
-          <div className="hidden lg:block">
-            <DataTablePageSizeSelector table={table} />
-          </div>
-        ),
-      },
-      {
-        type: "custom",
-        content: (
           <div className="hidden md:block">
             <DataTablePagination table={table} />
           </div>
@@ -294,10 +266,7 @@ export default function SubscriptionManagementClient({
 
   return (
     <div>
-      <DataTableActionBar
-        config={actionBarConfig}
-        className="flex-col-reverse items-start gap-1 md:flex-row md:items-center"
-      />
+      <DataTableActionBar config={actionBarConfig} />
 
       {/* Desktop table */}
       <div className="hidden md:block">
@@ -323,22 +292,7 @@ export default function SubscriptionManagementClient({
           <>
             {allFilteredRows.slice(0, visibleCount).map((row) => {
               const sub = row.original;
-              const mobileActions = getActionItems(sub)
-                .filter(
-                  (item): item is Extract<RowActionItem, { type: "item" }> =>
-                    item.type === "item"
-                )
-                .map((item) => ({
-                  label: item.label,
-                  onClick: item.onClick,
-                  variant: item.variant as
-                    | "default"
-                    | "destructive"
-                    | undefined,
-                  icon: item.icon ? (
-                    <item.icon className="h-4 w-4 mr-2" />
-                  ) : undefined,
-                }));
+              const mobileActions = transformToMobileActions(getActionItems(sub));
 
               return (
                 <Card key={sub.id} className="py-0 gap-0">

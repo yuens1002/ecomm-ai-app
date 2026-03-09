@@ -7,15 +7,19 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Loader2, Search, Filter } from "lucide-react";
+import { createStatusTabsSlot } from "@/components/shared/data-table/StatusTabsSlot";
+import { formatCadence } from "@/components/shared/order-utils";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
 import { formatPrice } from "@/components/shared/record-utils";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 import { ProductType } from "@prisma/client";
 import {
-  BuyAgainButton,
-} from "@/components/shared/order-detail/OrderItemsCard";
-import { DataTable, DataTableActionBar } from "@/components/shared/data-table";
+  DataTable,
+  DataTableActionBar,
+  DataTablePagination,
+} from "@/components/shared/data-table";
 import { useInfiniteScroll } from "@/components/shared/data-table/hooks";
+import { transformToMobileActions } from "@/components/shared/data-table/mobile-actions";
 import type { RowActionItem } from "@/components/shared/data-table/RowActionMenu";
 import { resolveRowActions } from "@/components/shared/data-table/row-action-config";
 import type {
@@ -23,7 +27,6 @@ import type {
   RowActionSubMenuHandlers,
 } from "@/components/shared/data-table/row-action-config";
 import type { ActionBarConfig } from "@/components/shared/data-table/types";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,15 +49,6 @@ import {
 } from "@/app/(site)/_components/review/BrewReportForm";
 import { useUserOrdersTable } from "./hooks/useUserOrdersTable";
 import { getUserOrderRowActions } from "./constants/row-actions";
-
-function formatCadence(
-  interval: string | null | undefined,
-  count: number | null | undefined
-): string {
-  if (!interval || !count) return "";
-  const unit = interval.toLowerCase();
-  return count === 1 ? `Every ${unit}` : `Every ${count} ${unit}s`;
-}
 
 interface OrdersPageClientProps {
   statusFilter?: string;
@@ -298,20 +292,18 @@ export default function OrdersPageClient({
   const actionBarConfig: ActionBarConfig = useMemo(
     () => ({
       left: [
-        {
-          type: "custom",
-          content: (
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="completed">Completed</TabsTrigger>
-                <TabsTrigger value="failed">Unfulfilled</TabsTrigger>
-                <TabsTrigger value="cancelled">Canceled</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          ),
-        },
+        createStatusTabsSlot({
+          tabs: [
+            { value: "all", label: "All" },
+            { value: "pending", label: "Pending" },
+            { value: "completed", label: "Completed" },
+            { value: "failed", label: "Unfulfilled" },
+            { value: "cancelled", label: "Canceled" },
+          ],
+          value: activeTab,
+          onChange: handleTabChange,
+          naturalWidth: 400,
+        }),
         {
           type: "search",
           value: searchQuery,
@@ -334,12 +326,12 @@ export default function OrdersPageClient({
           label: "orders",
         },
         {
-          type: "pageSizeSelector",
-          table,
-        },
-        {
-          type: "pagination",
-          table,
+          type: "custom",
+          content: (
+            <div className="hidden md:block">
+              <DataTablePagination table={table} />
+            </div>
+          ),
         },
       ],
     }),
@@ -390,7 +382,6 @@ export default function OrdersPageClient({
           <>
             <DataTableActionBar
               config={actionBarConfig}
-              className="flex-col-reverse items-start gap-1 md:flex-row md:items-center"
               headerAware
             />
 
@@ -416,45 +407,7 @@ export default function OrdersPageClient({
                   {allRows.slice(0, visibleCount).map((row) => {
                     const order = row.original;
 
-                    // Convert RowActionItem[] to RecordAction[] for mobile card
-                    const mobileActions = getActionItems(order)
-                      .filter(
-                        (item): item is Exclude<RowActionItem, { type: "separator" }> =>
-                          item.type !== "separator"
-                      )
-                      .map((item) => {
-                        if (item.type === "sub-menu-click") {
-                          return {
-                            label: item.label,
-                            icon: item.icon ? (
-                              <item.icon className="h-4 w-4 mr-2" />
-                            ) : undefined,
-                            subItems: item.items.map((sub) => ({
-                              label: sub.label,
-                              onClick: sub.onClick,
-                            })),
-                          };
-                        }
-                        if (item.type === "sub-menu") {
-                          return {
-                            label: item.label,
-                            icon: item.icon ? (
-                              <item.icon className="h-4 w-4 mr-2" />
-                            ) : undefined,
-                          };
-                        }
-                        return {
-                          label: item.label,
-                          onClick: item.onClick,
-                          variant: item.variant as
-                            | "default"
-                            | "destructive"
-                            | undefined,
-                          icon: item.icon ? (
-                            <item.icon className="h-4 w-4 mr-2" />
-                          ) : undefined,
-                        };
-                      });
+                    const mobileActions = transformToMobileActions(getActionItems(order));
 
                     return (
                       <Card key={order.id} className="py-0 gap-0">
@@ -471,7 +424,7 @@ export default function OrdersPageClient({
                                 i.purchaseOption.type === "SUBSCRIPTION"
                             ) ? (
                               <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                                Sub
+                                Subscription
                               </span>
                             ) : undefined
                           }
@@ -485,6 +438,7 @@ export default function OrdersPageClient({
                                 : "One-time",
                             quantity: item.quantity,
                             refundedQuantity: item.refundedQuantity,
+                            href: `/products/${item.purchaseOption.variant.product.slug}`,
                             imageUrl:
                               item.purchaseOption.variant.images?.[0]?.url ??
                               getPlaceholderImage(
@@ -521,19 +475,11 @@ export default function OrdersPageClient({
                                   city: order.shippingCity,
                                   state: order.shippingState,
                                   postalCode: order.shippingPostalCode,
+                                  country: order.shippingCountry,
                                 }
                               : undefined
                           }
                           deliveryMethod={order.deliveryMethod}
-                          itemsFooter={
-                            order.refundedAmountInCents < order.totalInCents ? (
-                              <div className="flex gap-2 pt-1">
-                                {order.items.map((item) => (
-                                  <BuyAgainButton key={item.id} item={item} />
-                                ))}
-                              </div>
-                            ) : undefined
-                          }
                           actions={
                             mobileActions.length > 0
                               ? mobileActions

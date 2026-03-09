@@ -46,11 +46,13 @@ export function SalesOrdersSection({
             {
               type: "custom",
               content: (
-                <ColumnVisibilityToggle
-                  columns={SALES_TOGGLABLE_COLUMNS}
-                  columnVisibility={columnVisibility}
-                  onVisibilityChange={onVisibilityChange}
-                />
+                <div className="hidden md:block">
+                  <ColumnVisibilityToggle
+                    columns={SALES_TOGGLABLE_COLUMNS}
+                    columnVisibility={columnVisibility}
+                    onVisibilityChange={onVisibilityChange}
+                  />
+                </div>
               ),
             },
           ],

@@ -17,7 +17,7 @@ export function CustomerCell({
 }: CustomerCellProps) {
   return (
     <div>
-      <div className="text-sm font-medium">{name || fallback}</div>
+      <div className="text-sm">{name || fallback}</div>
       {email && (
         <div className="text-xs text-muted-foreground">{email}</div>
       )}

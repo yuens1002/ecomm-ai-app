@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -34,11 +33,11 @@ import { useToast } from "@/hooks/use-toast";
 import {
   DataTable,
   DataTableActionBar,
-  DataTablePageSizeSelector,
   DataTablePagination,
 } from "@/components/shared/data-table";
-import { useInfiniteScroll } from "@/components/shared/data-table/hooks/useInfiniteScroll";
+import { useDataTableInfiniteScroll } from "@/components/shared/data-table/hooks/useDataTableInfiniteScroll";
 import type { ActionBarConfig } from "@/components/shared/data-table/types";
+import { createStatusTabsSlot } from "@/components/shared/data-table/StatusTabsSlot";
 import { Search, Filter, Loader2 } from "lucide-react";
 import { useReviewsTable, type AdminReview } from "./hooks/useReviewsTable";
 import { ReviewCard } from "./_components/ReviewCard";
@@ -234,41 +233,25 @@ export default function ReviewModerationClient() {
   });
 
   // Infinite scroll for mobile card grid
-  const allFilteredRows = table.getFilteredRowModel().rows;
-  const batchSize = table.getState().pagination.pageSize;
-  const { visibleCount, sentinelRef, hasMore, reset: resetScroll } = useInfiniteScroll({
-    totalCount: allFilteredRows.length,
-    batchSize,
-  });
-
-  // Reset infinite scroll when filters/search/status change
-  const scrollKey = `${statusFilter}|${searchQuery}|${JSON.stringify(activeFilter)}`;
-  const prevScrollKey = useRef(scrollKey);
-  useEffect(() => {
-    if (scrollKey !== prevScrollKey.current) {
-      prevScrollKey.current = scrollKey;
-      resetScroll();
-    }
-  }, [scrollKey, resetScroll]);
+  const { allFilteredRows, visibleCount, sentinelRef, hasMore } =
+    useDataTableInfiniteScroll({
+      table,
+      scrollKey: `${statusFilter}|${searchQuery}|${JSON.stringify(activeFilter)}`,
+    });
 
   const actionBarConfig: ActionBarConfig = {
     left: [
-      {
-        type: "custom",
-        content: (
-          <Tabs
-            value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
-          >
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="PUBLISHED">Published</TabsTrigger>
-              <TabsTrigger value="FLAGGED">Flagged</TabsTrigger>
-              <TabsTrigger value="PENDING">Pending</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        ),
-      },
+      createStatusTabsSlot({
+        tabs: [
+          { value: "all", label: "All" },
+          { value: "PUBLISHED", label: "Published" },
+          { value: "FLAGGED", label: "Flagged" },
+          { value: "PENDING", label: "Pending" },
+        ],
+        value: statusFilter,
+        onChange: (v) => setStatusFilter(v as StatusFilter),
+        naturalWidth: 340,
+      }),
       {
         type: "search",
         value: searchQuery,
@@ -286,20 +269,9 @@ export default function ReviewModerationClient() {
     ],
     right: [
       {
-        type: "custom",
-        content: (
-          <span className="text-sm text-muted-foreground whitespace-nowrap pr-4 pl-[11px] md:pl-0">
-            {table.getFilteredRowModel().rows.length} Reviews
-          </span>
-        ),
-      },
-      {
-        type: "custom",
-        content: (
-          <div className="hidden lg:block">
-            <DataTablePageSizeSelector table={table} />
-          </div>
-        ),
+        type: "recordCount",
+        count: table.getFilteredRowModel().rows.length,
+        label: "reviews",
       },
       {
         type: "custom",
@@ -322,7 +294,7 @@ export default function ReviewModerationClient() {
 
   return (
     <div>
-      <DataTableActionBar config={actionBarConfig} className="flex-col-reverse items-start gap-1 md:flex-row md:items-center" />
+      <DataTableActionBar config={actionBarConfig} />
 
       {/* Desktop table */}
       <div className="hidden md:block">
