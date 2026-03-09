@@ -85,7 +85,7 @@ export function DataTableHeaderCell<TData>({
             <ArrowUpDown
               className={cn(
                 "ml-1.5 h-3.5 w-3.5 flex-shrink-0 transition-opacity text-muted-foreground",
-                "opacity-100 md:opacity-0 md:group-hover/hrow:opacity-100 md:group-focus-visible/sort:opacity-100"
+                "opacity-100 lg:opacity-0 lg:group-hover/hrow:opacity-100 lg:group-focus-visible/sort:opacity-100"
               )}
             />
           </button>
@@ -106,7 +106,7 @@ export function DataTableHeaderCell<TData>({
             className={cn(
               "absolute -right-2 top-0 h-full w-4 select-none touch-none z-20",
               "after:absolute after:left-1/2 after:-translate-x-1/2 after:top-0 after:h-full after:w-px",
-              "after:bg-border after:opacity-0 sm:after:opacity-100 md:after:opacity-0 md:group-hover/hrow:after:opacity-100",
+              "after:bg-border after:opacity-100 lg:after:opacity-0 lg:group-hover/hrow:after:opacity-100",
               "hover:after:!bg-foreground hover:after:opacity-100 active:after:!bg-foreground",
               header.column.getIsResizing() && "after:!bg-foreground after:!opacity-100"
             )}

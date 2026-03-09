@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.95.1 - 2026-03-09
+
+### Fixed
+
+- **Touch device table UI**: Sort icons, resize handles, and action menu dots now stay visible at `md` breakpoint (landscape phones) instead of requiring hover — hover-based hiding moved to `lg` (1024px+)
+
 ## 0.95.0 - 2026-03-09
 
 ### Added
