@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.95.0 - 2026-03-09
+
+### Added
+
+- **Composable data table action bar**: Dynamic collapse architecture with `computeCollapseLevel()` — tabs, search, and filter slots collapse responsively based on available width
+- **Status tabs slot**: `createStatusTabsSlot()` factory for desktop tabs with mobile dropdown fallback, eliminating ~30 lines of repeated IIFE pattern across 4 consumer files
+- **Shared order utilities**: Extracted `getPurchaseType`, `formatCadence`, `ORDER_FILTER_CONFIGS`, `orderFilterToColumnFilters` to `components/shared/order-utils.ts`
+- **`useDataTableInfiniteScroll` hook**: Wraps infinite scroll + auto-reset on filter/search changes, replacing ~15 lines of boilerplate in 3 consumer files
+- **`transformToMobileActions` utility**: Converts `RowActionItem[]` to `RecordAction[]` for mobile cards, supporting items, sub-menus, and destructive variants
+- **Row action icons**: Added Truck, MapPin, and XCircle icons to user order history actions (Shipment Status, Edit Address, Cancel Order)
+
+### Changed
+
+- **Filter UX improvements**: Default comparison operator changed to `>=`, "enter value" placeholder, min=0 on number input, selected filter type hidden from dropdown, date range "Select range" clearable option
+- **Column header rename**: "Type" → "Frequency" across order tables and filters
+- **Column resizing**: Only Items and Ship To columns are resizable; other columns are fixed width
+- **Page size selector removed**: Simplified action bar by removing Rows/Page UI from all tables (pagination retained)
+- **Order detail dividers**: Unified separator styling between Order Summary and Order Items cards
+
+### Fixed
+
+- **React 19 strict mode**: Added mounted guards to ResizeObserver, IntersectionObserver, and MutationObserver callbacks to prevent state updates before mount
+- **Filter red dot on empty date**: `isSlotActive` now checks `value != null` to avoid false active indicator
+
 ## 0.94.1 - 2026-03-07
 
 ### Fixed

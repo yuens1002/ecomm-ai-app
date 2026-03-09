@@ -49,6 +49,7 @@ export async function getSubscriptions() {
       cancelAtPeriodEnd: true,
       pausedUntil: true,
       productNames: true,
+      quantities: true,
       recipientName: true,
       recipientPhone: true,
       shippingStreet: true,
@@ -69,7 +70,26 @@ export async function getSubscriptions() {
     },
   });
 
-  return subscriptions;
+  // Fetch most recent order ID for each subscription
+  const subIds = subscriptions
+    .map((s) => s.stripeSubscriptionId)
+    .filter(Boolean);
+  const recentOrders = subIds.length > 0
+    ? await prisma.order.findMany({
+        where: { stripeSubscriptionId: { in: subIds } },
+        select: { id: true, stripeSubscriptionId: true },
+        orderBy: { createdAt: "desc" },
+        distinct: ["stripeSubscriptionId"],
+      })
+    : [];
+  const orderMap = new Map(
+    recentOrders.map((o) => [o.stripeSubscriptionId, o.id])
+  );
+
+  return subscriptions.map((s) => ({
+    ...s,
+    mostRecentOrderId: orderMap.get(s.stripeSubscriptionId) ?? null,
+  }));
 }
 
 export async function cancelSubscription(id: string) {

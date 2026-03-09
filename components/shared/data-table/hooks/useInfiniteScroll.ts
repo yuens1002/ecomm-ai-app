@@ -24,6 +24,12 @@ export function useInfiniteScroll({
 }: UseInfiniteScrollOptions): UseInfiniteScrollReturn {
   const [visibleCount, setVisibleCount] = useState(batchSize);
   const sentinelRef = useRef<HTMLElement | null>(null);
+  const mountedRef = useRef(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   // Load next batch when sentinel enters viewport
   useEffect(() => {
@@ -31,7 +37,7 @@ export function useInfiniteScroll({
     if (!sentinel) return;
 
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
+      if (entry.isIntersecting && mountedRef.current) {
         setVisibleCount((prev) => Math.min(prev + batchSize, totalCount));
       }
     });

@@ -2,7 +2,7 @@
 
 import { ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatPhoneNumber } from "@/components/shared/record-utils";
+import { formatPhoneNumber, getCountryName } from "@/components/shared/record-utils";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import type { OrderWithItems } from "@/lib/types";
 
@@ -129,7 +129,7 @@ export function OrderInfoCard({ order, variant }: OrderInfoCardProps) {
               {order.shippingPostalCode}
             </div>
             {order.shippingCountry && (
-              <div>{order.shippingCountry}</div>
+              <div>{getCountryName(order.shippingCountry)}</div>
             )}
           </InfoSection>
         )}

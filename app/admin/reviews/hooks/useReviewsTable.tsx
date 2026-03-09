@@ -1,16 +1,16 @@
 "use client";
 
-import type { DataTableColumnMeta } from "@/app/admin/_components/data-table";
+import type { DataTableColumnMeta } from "@/components/shared/data-table";
 import {
   RowActionMenu,
   type RowActionItem,
-} from "@/app/admin/_components/data-table/RowActionMenu";
-import { useDataTable } from "@/app/admin/_components/data-table/hooks";
+} from "@/components/shared/data-table/RowActionMenu";
+import { useDataTable } from "@/components/shared/data-table/hooks";
 import type {
   ActiveFilter,
   FilterConfig,
-} from "@/app/admin/_components/data-table/types";
-import type { DateRangeFilterValue } from "@/app/admin/_components/data-table/DataTableFilter";
+} from "@/components/shared/data-table/types";
+import type { DateRangeFilterValue } from "@/components/shared/data-table/DataTableFilter";
 import { StarRating } from "@/app/(site)/_components/product/StarRating";
 import {
   HoverCard,

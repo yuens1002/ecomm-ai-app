@@ -23,7 +23,6 @@ export default function AdminOrderDetailClient({
     <OrderDetail
       order={order}
       variant="admin"
-      backLink={{ href: "/admin/orders", label: "Back to Orders" }}
     />
   );
 }

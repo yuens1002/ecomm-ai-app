@@ -15,10 +15,15 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { MoreHorizontal } from "lucide-react";
 
-interface RowActionSubMenuItem {
+interface RowActionSubMenuCheckboxItem {
   label: string;
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
+}
+
+interface RowActionSubMenuClickItem {
+  label: string;
+  onClick: () => void;
 }
 
 export type RowActionItem =
@@ -33,7 +38,13 @@ export type RowActionItem =
       type: "sub-menu";
       label: string;
       icon?: LucideIcon;
-      items: RowActionSubMenuItem[];
+      items: RowActionSubMenuCheckboxItem[];
+    }
+  | {
+      type: "sub-menu-click";
+      label: string;
+      icon?: LucideIcon;
+      items: RowActionSubMenuClickItem[];
     }
   | { type: "separator" };
 
@@ -76,6 +87,24 @@ export function RowActionMenu({ items }: RowActionMenuProps) {
                     >
                       {sub.label}
                     </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            );
+          }
+          if (item.type === "sub-menu-click") {
+            const Icon = item.icon;
+            return (
+              <DropdownMenuSub key={i}>
+                <DropdownMenuSubTrigger>
+                  {Icon && <Icon className="h-4 w-4" />}
+                  {item.label}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {item.items.map((sub) => (
+                    <DropdownMenuItem key={sub.label} onClick={sub.onClick}>
+                      {sub.label}
+                    </DropdownMenuItem>
                   ))}
                 </DropdownMenuSubContent>
               </DropdownMenuSub>

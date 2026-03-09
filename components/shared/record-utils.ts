@@ -60,3 +60,13 @@ export function formatPrice(priceInCents: number) {
     currency: "USD",
   }).format(priceInCents / 100);
 }
+
+/** Map ISO 3166-1 alpha-2 code to full country name. Falls back to the code itself. */
+export function getCountryName(code: string | null | undefined): string {
+  if (!code) return "";
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}

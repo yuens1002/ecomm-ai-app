@@ -14,6 +14,8 @@ import type { DataTableColumnMeta } from "./types";
 interface DataTableProps<TData> {
   table: Table<TData>;
   onRowDoubleClick?: (row: TData) => void;
+  /** Tooltip shown on row hover when onRowDoubleClick is set. */
+  rowHoverTitle?: string;
   emptyMessage?: string;
   /** Enable sticky header with a scrollable table body. */
   stickyHeader?: boolean;
@@ -40,6 +42,7 @@ function getMetaClasses(meta: DataTableColumnMeta | undefined) {
 export function DataTable<TData>({
   table,
   onRowDoubleClick,
+  rowHoverTitle = "Double-click to edit",
   emptyMessage = "No results found.",
   stickyHeader = false,
   fitContainer = false,
@@ -111,7 +114,7 @@ export function DataTable<TData>({
                   "hover:bg-muted/40 border-b last:border-b-0 group/row",
                   onRowDoubleClick && "cursor-pointer"
                 )}
-                title={onRowDoubleClick ? "Double-click to edit" : undefined}
+                title={onRowDoubleClick ? rowHoverTitle : undefined}
                 onDoubleClick={
                   onRowDoubleClick
                     ? () => onRowDoubleClick(row.original)

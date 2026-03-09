@@ -5,7 +5,7 @@ import {
   DataTable,
   DataTableActionBar,
   type ActionBarConfig,
-} from "@/app/admin/_components/data-table";
+} from "@/components/shared/data-table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -278,11 +278,13 @@ export default function ProductManagementClient({
         {
           type: "custom",
           content: (
-            <ColumnVisibilityToggle
-              columns={TOGGLABLE_COLUMNS}
-              columnVisibility={columnVisibility}
-              onVisibilityChange={handleVisibilityChange}
-            />
+            <div className="hidden md:block">
+              <ColumnVisibilityToggle
+                columns={TOGGLABLE_COLUMNS}
+                columnVisibility={columnVisibility}
+                onVisibilityChange={handleVisibilityChange}
+              />
+            </div>
           ),
         },
       ],

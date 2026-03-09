@@ -21,8 +21,8 @@ import {
   StatGrid,
   SkeletonDashboard,
 } from "@/app/admin/_components/analytics";
-import { useColumnVisibility } from "@/app/admin/_components/data-table";
-import type { ActiveFilter } from "@/app/admin/_components/data-table";
+import { useColumnVisibility } from "@/components/shared/data-table";
+import type { ActiveFilter } from "@/components/shared/data-table";
 import type {
   PeriodPreset,
   CompareMode,

@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import Image from "next/image";
 import Link from "next/link";
 import { MoreVertical, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getStatusColor, getStatusLabel } from "./record-utils";
+import { formatPhoneNumber, getCountryName, getStatusColor, getStatusLabel } from "./record-utils";
 
 export interface RecordItem {
   id: string;
@@ -23,6 +24,8 @@ export interface RecordItem {
   quantity: number;
   refundedQuantity?: number;
   href?: string;
+  imageUrl?: string;
+  cadence?: string;
 }
 
 export interface RecordShipping {
@@ -31,6 +34,7 @@ export interface RecordShipping {
   city?: string | null;
   state?: string | null;
   postalCode?: string | null;
+  country?: string | null;
 }
 
 export interface RecordAction {
@@ -71,11 +75,13 @@ interface MobileRecordCardProps {
   price?: string;
   currentPeriod?: string;
   detailsSectionHeader?: string;
-  customer?: { name?: string | null; email?: string | null };
+  customer?: { name?: string | null; email?: string | null; phone?: string | null };
   badge?: React.ReactNode;
   shipper?: RecordShipper;
   itemsClassName?: string;
   priceExtra?: React.ReactNode;
+  /** Rendered after all items (e.g., Buy Again button) */
+  itemsFooter?: React.ReactNode;
 }
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
@@ -107,12 +113,14 @@ export function MobileRecordCard({
   shipper,
   itemsClassName,
   priceExtra,
+  itemsFooter,
 }: MobileRecordCardProps) {
   return (
     <div className="flex flex-col gap-5 px-4 py-4">
       {/* Status + badge + actions row */}
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center gap-2">
         {badge}
+        <div className="flex-1" />
         <span
           className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(status)}`}
         >
@@ -173,7 +181,7 @@ export function MobileRecordCard({
         <SectionHeader>
           {type === "order" ? "Order" : "Subscription"}
         </SectionHeader>
-        {type === "order" && detailHref ? (
+        {detailHref ? (
           <Button variant="outline" size="sm" asChild className="mt-1">
             <Link href={detailHref}>{displayId}</Link>
           </Button>
@@ -189,6 +197,9 @@ export function MobileRecordCard({
           <p className="text-sm font-medium mt-0.5">{customer.name || "Guest"}</p>
           {customer.email && (
             <p className="text-xs text-muted-foreground">{customer.email}</p>
+          )}
+          {customer.phone && (
+            <p className="text-xs text-muted-foreground">{formatPhoneNumber(customer.phone)}</p>
           )}
         </div>
       )}
@@ -215,22 +226,57 @@ export function MobileRecordCard({
         <SectionHeader>Items</SectionHeader>
         <div className="mt-1 flex flex-col gap-2">
           {items.map((item) => (
-            <div key={item.id} className={itemsClassName}>
-              <div className="text-sm">{item.name}</div>
-              <div className="text-xs text-muted-foreground">
-                {[item.variant, item.purchaseType].filter(Boolean).join(" · ")}
-                {(item.variant || item.purchaseType) && " · "}
-                {item.refundedQuantity != null && item.refundedQuantity > 0 ? (
-                  <>
-                    Qty: <span className="line-through">{item.quantity}</span>{" "}
-                    <span className="text-red-600">-{item.refundedQuantity}</span>
-                  </>
+            <div key={item.id} className={`flex items-start gap-2 ${itemsClassName ?? ""}`}>
+              {item.imageUrl && (
+                item.href ? (
+                  <Link href={item.href} className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-muted block">
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                      sizes="40px"
+                    />
+                  </Link>
                 ) : (
-                  <>Qty: {item.quantity}</>
-                )}
+                  <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden bg-muted">
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                      sizes="40px"
+                    />
+                  </div>
+                )
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="text-sm">
+                  {item.href ? (
+                    <Link href={item.href} className="hover:text-primary">
+                      {item.name}
+                    </Link>
+                  ) : (
+                    item.name
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {[item.variant, item.purchaseType].filter(Boolean).join(" · ")}
+                  {(item.variant || item.purchaseType) && " · "}
+                  {item.refundedQuantity != null && item.refundedQuantity > 0 ? (
+                    <>
+                      Qty: <span className="line-through">{item.quantity}</span>{" "}
+                      <span className="text-red-600">-{item.refundedQuantity}</span>
+                    </>
+                  ) : (
+                    <>Qty: {item.quantity}</>
+                  )}
+                  {item.cadence && ` · ${item.cadence}`}
+                </div>
               </div>
             </div>
           ))}
+          {itemsFooter}
         </div>
       </div>
 
@@ -242,12 +288,15 @@ export function MobileRecordCard({
             {shipping?.street ? (
               <>
                 {shipping.recipientName && (
-                  <p className="font-medium">{shipping.recipientName}</p>
+                  <p>{shipping.recipientName}</p>
                 )}
                 <p className="text-foreground">
                   {shipping.street}, {shipping.city}, {shipping.state}{" "}
                   {shipping.postalCode}
                 </p>
+                {shipping.country && (
+                  <p className="text-sm text-foreground">{getCountryName(shipping.country)}</p>
+                )}
               </>
             ) : (
               <p className="text-foreground italic">Store Pickup</p>

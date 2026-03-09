@@ -1,19 +1,32 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { OrderWithItems } from "@/lib/types";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import type { OrderWithItems } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Loader2, CheckCircle, PenLine } from "lucide-react";
+import { Loader2, Search, Filter } from "lucide-react";
+import { createStatusTabsSlot } from "@/components/shared/data-table/StatusTabsSlot";
+import { formatCadence } from "@/components/shared/order-utils";
 import { MobileRecordCard } from "@/components/shared/MobileRecordCard";
 import { formatPrice } from "@/components/shared/record-utils";
-import { StatusBadge } from "@/components/shared/StatusBadge";
-import { RecordActionMenu } from "@/components/shared/RecordActionMenu";
-import { ShippingAddressDisplay } from "@/components/shared/ShippingAddressDisplay";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
+import { ProductType } from "@prisma/client";
+import {
+  DataTable,
+  DataTableActionBar,
+  DataTablePagination,
+} from "@/components/shared/data-table";
+import { useInfiniteScroll } from "@/components/shared/data-table/hooks";
+import { transformToMobileActions } from "@/components/shared/data-table/mobile-actions";
+import type { RowActionItem } from "@/components/shared/data-table/RowActionMenu";
+import { resolveRowActions } from "@/components/shared/data-table/row-action-config";
+import type {
+  RowActionHandlers,
+  RowActionSubMenuHandlers,
+} from "@/components/shared/data-table/row-action-config";
+import type { ActionBarConfig } from "@/components/shared/data-table/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +43,12 @@ import { useEditAddress } from "@/app/(site)/_hooks/useEditAddress";
 import { EditAddressDialog } from "@/app/(site)/_components/account/EditAddressDialog";
 import { ShipmentStatusDialog } from "@/app/(site)/_components/account/ShipmentStatusDialog";
 import { PageContainer } from "@/components/shared/PageContainer";
-import { BrewReportForm, CompletenessBar } from "@/app/(site)/_components/review/BrewReportForm";
+import {
+  BrewReportForm,
+  CompletenessBar,
+} from "@/app/(site)/_components/review/BrewReportForm";
+import { useUserOrdersTable } from "./hooks/useUserOrdersTable";
+import { getUserOrderRowActions } from "./constants/row-actions";
 
 interface OrdersPageClientProps {
   statusFilter?: string;
@@ -55,8 +73,11 @@ export default function OrdersPageClient({
   );
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelOrder, setCancelOrder] = useState<OrderWithItems | null>(null);
-  const [reviewedProductIds, setReviewedProductIds] = useState<Set<string>>(new Set());
-  const [reviewFormTarget, setReviewFormTarget] = useState<ReviewFormTarget | null>(null);
+  const [reviewedProductIds, setReviewedProductIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [reviewFormTarget, setReviewFormTarget] =
+    useState<ReviewFormTarget | null>(null);
   const [reviewScore, setReviewScore] = useState(0);
   const [shipmentStatusOrder, setShipmentStatusOrder] =
     useState<OrderWithItems | null>(null);
@@ -98,14 +119,15 @@ export default function OrdersPageClient({
       const data = await ordersRes.json();
       setOrders(data.orders);
 
-      // Fetch reviewed products separately (non-blocking)
       try {
         const reviewedRes = await fetch("/api/user/reviewed-products");
         if (reviewedRes.ok) {
           const reviewedData = await reviewedRes.json();
           setReviewedProductIds(new Set(reviewedData.productIds));
         }
-      } catch { /* silent — reviewed products are supplemental */ }
+      } catch {
+        /* silent — reviewed products are supplemental */
+      }
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -171,77 +193,161 @@ export default function OrdersPageClient({
     }
   };
 
-  // --- Helpers ---
+  // --- Declarative action menu ---
 
-  const canEditAddress = (order: OrderWithItems) =>
-    order.status === "PENDING" && order.deliveryMethod === "DELIVERY";
+  const rowActionConfig = useMemo(
+    () => getUserOrderRowActions(reviewedProductIds),
+    [reviewedProductIds]
+  );
 
-  const canCancelOrder = (order: OrderWithItems) =>
-    order.status === "PENDING";
+  const actionHandlers = useMemo<RowActionHandlers<OrderWithItems>>(
+    () => ({
+      seeOrderDetail: (order) => router.push(`/orders/${order.id}`),
+      shipmentStatus: (order) => setShipmentStatusOrder(order),
+      editAddress: (order) => editAddress.openDialog(order),
+      cancelOrder: (order) => openCancelDialog(order),
+    }),
+    [editAddress, router]
+  );
 
-  const isReviewEligible = (order: OrderWithItems) => {
-    if (order.status !== "DELIVERED" || !order.deliveredAt) return false;
-    if (order.refundedAmountInCents >= order.totalInCents) return false;
-    const daysSinceDelivery = (Date.now() - new Date(order.deliveredAt).getTime()) / (1000 * 60 * 60 * 24);
-    return daysSinceDelivery >= 7;
-  };
+  const subMenuHandlers = useMemo<RowActionSubMenuHandlers<OrderWithItems>>(
+    () => ({
+      writeReview: (_order, productId) => {
+        // Find the item matching productId to get full product info
+        for (const order of orders) {
+          const item = order.items.find(
+            (i) => i.purchaseOption.variant.product.id === productId
+          );
+          if (item) {
+            setReviewFormTarget({
+              productId: item.purchaseOption.variant.product.id,
+              productName: item.purchaseOption.variant.product.name,
+              productTastingNotes:
+                item.purchaseOption.variant.product.tastingNotes,
+              productType: item.purchaseOption.variant.product.type,
+            });
+            break;
+          }
+        }
+      },
+    }),
+    [orders]
+  );
 
-  const canTrackOrViewStatus = (order: OrderWithItems) =>
-    order.status === "SHIPPED" || order.status === "OUT_FOR_DELIVERY" || order.status === "DELIVERED";
-
-  const hasActions = (order: OrderWithItems) =>
-    canEditAddress(order) || canCancelOrder(order) || canTrackOrViewStatus(order);
-
-  const hasReviewActions = (order: OrderWithItems) =>
-    isReviewEligible(order) &&
-    order.items.some((item) => !reviewedProductIds.has(item.purchaseOption.variant.product.id));
-
-  const getReviewSubMenu = (order: OrderWithItems) => {
-    if (!hasReviewActions(order)) return [];
-    const subItems = order.items
-      .filter((item) => !reviewedProductIds.has(item.purchaseOption.variant.product.id))
-      .map((item) => ({
-        label: item.purchaseOption.variant.product.name,
-        onClick: () =>
-          setReviewFormTarget({
-            productId: item.purchaseOption.variant.product.id,
-            productName: item.purchaseOption.variant.product.name,
-            productTastingNotes: item.purchaseOption.variant.product.tastingNotes,
-            productType: item.purchaseOption.variant.product.type,
-          }),
-      }));
-    if (subItems.length === 0) return [];
-    return [{
-      label: "Write a Review",
-      icon: <PenLine className="h-4 w-4 mr-2" />,
-      subItems,
-    }];
-  };
+  const getActionItems = useCallback(
+    (order: OrderWithItems): RowActionItem[] =>
+      resolveRowActions(order, rowActionConfig, actionHandlers, subMenuHandlers),
+    [rowActionConfig, actionHandlers, subMenuHandlers]
+  );
 
   const handleReviewSuccess = () => {
     if (reviewFormTarget) {
-      setReviewedProductIds((prev) => new Set([...prev, reviewFormTarget.productId]));
+      setReviewedProductIds(
+        (prev) => new Set([...prev, reviewFormTarget.productId])
+      );
     }
     setReviewFormTarget(null);
   };
 
-  const getOrderCount = (status?: string) => {
-    if (!status || status === "all") return orders.length;
-    if (status === "completed") {
-      return orders.filter(
-        (o) => o.status === "SHIPPED" || o.status === "OUT_FOR_DELIVERY" || o.status === "DELIVERED" || o.status === "PICKED_UP"
-      ).length;
-    }
-    return orders.filter((o) => o.status === status.toUpperCase()).length;
-  };
+  // --- Tab filtering ---
 
-  const filteredOrders = orders.filter((order) => {
-    if (!statusFilter || statusFilter === "all") return true;
-    if (statusFilter === "completed") {
-      return order.status === "SHIPPED" || order.status === "OUT_FOR_DELIVERY" || order.status === "DELIVERED" || order.status === "PICKED_UP";
-    }
-    return order.status === statusFilter.toUpperCase();
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      if (!statusFilter || statusFilter === "all") return true;
+      if (statusFilter === "completed") {
+        return (
+          order.status === "SHIPPED" ||
+          order.status === "OUT_FOR_DELIVERY" ||
+          order.status === "DELIVERED" ||
+          order.status === "PICKED_UP"
+        );
+      }
+      return order.status === statusFilter.toUpperCase();
+    });
+  }, [orders, statusFilter]);
+
+  // --- Table hook ---
+
+  const {
+    table,
+    filterConfigs,
+    searchQuery,
+    setSearchQuery,
+    activeFilter,
+    setActiveFilter,
+  } = useUserOrdersTable({
+    orders: filteredOrders,
+    getActionItems,
+    reviewedProductIds,
   });
+
+  const allRows = table.getFilteredRowModel().rows;
+  const { visibleCount, sentinelRef } = useInfiniteScroll({
+    totalCount: allRows.length,
+    batchSize: 10,
+  });
+
+  // --- Action bar config ---
+
+  const actionBarConfig: ActionBarConfig = useMemo(
+    () => ({
+      left: [
+        createStatusTabsSlot({
+          tabs: [
+            { value: "all", label: "All" },
+            { value: "pending", label: "Pending" },
+            { value: "completed", label: "Completed" },
+            { value: "failed", label: "Unfulfilled" },
+            { value: "cancelled", label: "Canceled" },
+          ],
+          value: activeTab,
+          onChange: handleTabChange,
+          naturalWidth: 400,
+        }),
+        {
+          type: "search",
+          value: searchQuery,
+          onChange: setSearchQuery,
+          placeholder: "Search orders...",
+          collapse: { icon: Search },
+        },
+        {
+          type: "filter",
+          configs: filterConfigs,
+          activeFilter,
+          onFilterChange: setActiveFilter,
+          collapse: { icon: Filter },
+        },
+      ],
+      right: [
+        {
+          type: "recordCount",
+          count: allRows.length,
+          label: "orders",
+        },
+        {
+          type: "custom",
+          content: (
+            <div className="hidden md:block">
+              <DataTablePagination table={table} />
+            </div>
+          ),
+        },
+      ],
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      activeTab,
+      searchQuery,
+      setSearchQuery,
+      filterConfigs,
+      activeFilter,
+      setActiveFilter,
+      allRows.length,
+      table,
+      orders,
+    ]
+  );
 
   // --- Render ---
 
@@ -251,248 +357,145 @@ export default function OrdersPageClient({
         <h1 className="text-3xl font-bold text-foreground mb-2">
           Order History
         </h1>
-        <p className="text-muted-foreground">View and manage your past orders</p>
+        <p className="text-muted-foreground">
+          View and manage your past orders
+        </p>
       </div>
 
-      <div className="space-y-6">
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList>
-            <TabsTrigger value="all">All Orders ({getOrderCount("all")})</TabsTrigger>
-            <TabsTrigger value="pending">Pending ({getOrderCount("pending")})</TabsTrigger>
-            <TabsTrigger value="completed">Completed ({getOrderCount("completed")})</TabsTrigger>
-            <TabsTrigger value="failed">Unfulfilled ({getOrderCount("failed")})</TabsTrigger>
-            <TabsTrigger value="cancelled">Canceled ({getOrderCount("cancelled")})</TabsTrigger>
-          </TabsList>
-        </Tabs>
+      <div className="space-y-4">
+        {isLoading ? (
+          <Card>
+            <CardContent className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </CardContent>
+          </Card>
+        ) : orders.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <p className="text-muted-foreground mb-4">No orders found</p>
+              <Button asChild>
+                <Link href="/products">Start Shopping</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <DataTableActionBar
+              config={actionBarConfig}
+              headerAware
+            />
 
-      {isLoading ? (
-        <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
-      ) : filteredOrders.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground mb-4">No orders found</p>
-            <Button asChild>
-              <Link href="/products">Start Shopping</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div>
-          {/* Mobile/Tablet Card Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 xl:hidden">
-            {filteredOrders.map((order) => (
-              <Card key={order.id} className="py-0 gap-0">
-                <MobileRecordCard
-                  type="order"
-                  status={order.status}
-                  date={order.createdAt}
-                  displayId={`#${order.id.slice(-8)}`}
-                  detailHref={`/orders/${order.id}`}
-                  items={order.items.map((item) => ({
-                    id: item.id,
-                    name: item.purchaseOption.variant.product.name,
-                    variant: item.purchaseOption.variant.name,
-                    purchaseType:
-                      item.purchaseOption.type === "SUBSCRIPTION"
-                        ? "Subscription"
-                        : "One-time",
-                    quantity: item.quantity,
-                    refundedQuantity: item.refundedQuantity,
-                  }))}
-                  price={`$${(order.totalInCents / 100).toFixed(2)}`}
-                  priceExtra={order.refundedAmountInCents > 0 ? (
-                    <p className="text-sm font-semibold text-red-600">-{formatPrice(order.refundedAmountInCents)}</p>
-                  ) : undefined}
-                  itemsClassName={order.refundedAmountInCents >= order.totalInCents ? "line-through text-muted-foreground" : undefined}
-                  detailsSectionHeader="Total"
-                  shipping={
-                    order.shippingStreet
-                      ? {
-                          recipientName: order.recipientName,
-                          street: order.shippingStreet,
-                          city: order.shippingCity,
-                          state: order.shippingState,
-                          postalCode: order.shippingPostalCode,
-                        }
-                      : undefined
-                  }
-                  deliveryMethod={order.deliveryMethod}
-                  actions={
-                    hasActions(order) || hasReviewActions(order)
-                      ? [
-                          ...(canTrackOrViewStatus(order)
-                            ? [
-                                {
-                                  label: "Shipment Status",
-                                  onClick: () => setShipmentStatusOrder(order),
-                                },
-                              ]
-                            : []),
-                          ...(canEditAddress(order)
-                            ? [
-                                {
-                                  label: "Edit Address",
-                                  onClick: () => editAddress.openDialog(order),
-                                },
-                              ]
-                            : []),
-                          ...(canCancelOrder(order)
-                            ? [
-                                {
-                                  label: "Cancel Order",
-                                  onClick: () => openCancelDialog(order),
-                                  variant: "destructive" as const,
-                                },
-                              ]
-                            : []),
-                          ...getReviewSubMenu(order),
-                        ]
-                      : undefined
-                  }
-                  actionsLoading={cancellingOrderId === order.id}
-                />
-              </Card>
-            ))}
-          </div>
-
-          {/* Desktop Table */}
-          <div className="hidden xl:block border rounded-md">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left py-3 px-4 font-semibold text-sm">Order</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm">Date</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm">Item(s)</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm">Ship To</th>
-                    <th className="text-right py-3 px-4 font-semibold text-sm">Total</th>
-                    <th className="text-center py-3 px-4 font-semibold text-sm">Status</th>
-                    <th className="text-center py-3 px-4 font-semibold text-sm"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filteredOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-muted/30">
-                      <td className="py-4 px-4">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`/orders/${order.id}`}>
-                            #{order.id.slice(-8)}
-                          </Link>
-                        </Button>
-                      </td>
-                      <td className="py-4 px-4 text-sm text-foreground">
-                        {format(new Date(order.createdAt), "MMM d, yyyy")}
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className={`space-y-2 ${order.refundedAmountInCents >= order.totalInCents ? "line-through text-muted-foreground" : ""}`}>
-                          {order.items.map((item, idx) => {
-                            const product = item.purchaseOption.variant.product;
-                            const canReview = isReviewEligible(order);
-                            const isReviewed = reviewedProductIds.has(product.id);
-                            return (
-                              <div key={item.id}>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Link
-                                    href={`/products/${product.slug}`}
-                                    className="text-text-base hover:text-primary"
-                                  >
-                                    {product.name}
-                                  </Link>
-                                  {canReview && isReviewed && (
-                                    <span className="inline-flex items-center gap-0.5 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground flex-shrink-0">
-                                      <CheckCircle className="h-3 w-3" />
-                                      {product.type === "COFFEE" ? "Reported" : "Reviewed"}
-                                    </span>
-                                  )}
-                                  {canReview && !isReviewed && (
-                                    <button
-                                      type="button"
-                                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
-                                      onClick={() =>
-                                        setReviewFormTarget({
-                                          productId: product.id,
-                                          productName: product.name,
-                                          productTastingNotes: product.tastingNotes,
-                                          productType: product.type,
-                                        })
-                                      }
-                                    >
-                                      <PenLine className="h-3 w-3" />
-                                      {product.type === "COFFEE" ? "Report" : "Review"}
-                                    </button>
-                                  )}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {[
-                                    item.purchaseOption.variant.name,
-                                    item.purchaseOption.type === "SUBSCRIPTION" ? "Subscription" : "One-time",
-                                    `Qty: ${item.quantity}`,
-                                  ].filter(Boolean).join(" · ")}
-                                </div>
-                                {idx < order.items.length - 1 && (
-                                  <div className="border-t border-border mt-2" />
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <ShippingAddressDisplay
-                          recipientName={order.recipientName}
-                          phone={order.customerPhone}
-                          street={order.deliveryMethod === "DELIVERY" ? order.shippingStreet : null}
-                          city={order.shippingCity}
-                          state={order.shippingState}
-                          postalCode={order.shippingPostalCode}
-                          mutedClassName="text-muted-foreground"
-                          muteAddressLines
-                        />
-                      </td>
-                      <td className="py-4 px-4 text-right">
-                        {order.refundedAmountInCents > 0 ? (
-                          <>
-                            <span className="font-semibold line-through text-muted-foreground">{formatPrice(order.totalInCents)}</span>
-                            <div className="text-sm font-semibold text-red-600">-{formatPrice(order.refundedAmountInCents)}</div>
-                          </>
-                        ) : (
-                          <span className="font-semibold">{formatPrice(order.totalInCents)}</span>
-                        )}
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <StatusBadge status={order.status} />
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        {(hasActions(order) || hasReviewActions(order)) && (
-                          <RecordActionMenu
-                            actions={[
-                              ...(canTrackOrViewStatus(order)
-                                ? [{ label: "Shipment Status", onClick: () => setShipmentStatusOrder(order) }]
-                                : []),
-                              ...(canEditAddress(order)
-                                ? [{ label: "Edit Address", onClick: () => editAddress.openDialog(order) }]
-                                : []),
-                              ...(canCancelOrder(order)
-                                ? [{ label: "Cancel Order", onClick: () => openCancelDialog(order), variant: "destructive" as const }]
-                                : []),
-                              ...getReviewSubMenu(order),
-                            ]}
-                            loading={cancellingOrderId === order.id}
-                          />
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* Desktop table (md+) */}
+            <div className="hidden md:block">
+              <DataTable
+                table={table}
+                rowHoverTitle="Double click for order details"
+                onRowDoubleClick={(order) =>
+                  router.push(`/orders/${order.id}`)
+                }
+              />
             </div>
-          </div>
-        </div>
-      )}
+
+            {/* Mobile card grid (<md) */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+              {allRows.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No orders found.
+                </p>
+              ) : (
+                <>
+                  {allRows.slice(0, visibleCount).map((row) => {
+                    const order = row.original;
+
+                    const mobileActions = transformToMobileActions(getActionItems(order));
+
+                    return (
+                      <Card key={order.id} className="py-0 gap-0">
+                        <MobileRecordCard
+                          type="order"
+                          status={order.status}
+                          date={order.createdAt}
+                          displayId={`#${order.id.slice(-8)}`}
+                          detailHref={`/orders/${order.id}`}
+                          badge={
+                            order.stripeSubscriptionId ||
+                            order.items.some(
+                              (i) =>
+                                i.purchaseOption.type === "SUBSCRIPTION"
+                            ) ? (
+                              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                                Subscription
+                              </span>
+                            ) : undefined
+                          }
+                          items={order.items.map((item) => ({
+                            id: item.id,
+                            name: item.purchaseOption.variant.product.name,
+                            variant: item.purchaseOption.variant.name,
+                            purchaseType:
+                              item.purchaseOption.type === "SUBSCRIPTION"
+                                ? "Subscription"
+                                : "One-time",
+                            quantity: item.quantity,
+                            refundedQuantity: item.refundedQuantity,
+                            href: `/products/${item.purchaseOption.variant.product.slug}`,
+                            imageUrl:
+                              item.purchaseOption.variant.images?.[0]?.url ??
+                              getPlaceholderImage(
+                                item.purchaseOption.variant.product.name,
+                                400,
+                                item.purchaseOption.variant.product.type === ProductType.MERCH
+                                  ? "culture"
+                                  : "beans"
+                              ),
+                            cadence: formatCadence(
+                              item.purchaseOption.billingInterval,
+                              item.purchaseOption.billingIntervalCount
+                            ),
+                          }))}
+                          price={`$${(order.totalInCents / 100).toFixed(2)}`}
+                          priceExtra={
+                            order.refundedAmountInCents > 0 ? (
+                              <p className="text-sm font-semibold text-red-600">
+                                -{formatPrice(order.refundedAmountInCents)}
+                              </p>
+                            ) : undefined
+                          }
+                          itemsClassName={
+                            order.refundedAmountInCents >= order.totalInCents
+                              ? "line-through text-muted-foreground"
+                              : undefined
+                          }
+                          detailsSectionHeader="Total"
+                          shipping={
+                            order.shippingStreet
+                              ? {
+                                  recipientName: order.recipientName,
+                                  street: order.shippingStreet,
+                                  city: order.shippingCity,
+                                  state: order.shippingState,
+                                  postalCode: order.shippingPostalCode,
+                                  country: order.shippingCountry,
+                                }
+                              : undefined
+                          }
+                          deliveryMethod={order.deliveryMethod}
+                          actions={
+                            mobileActions.length > 0
+                              ? mobileActions
+                              : undefined
+                          }
+                          actionsLoading={cancellingOrderId === order.id}
+                        />
+                      </Card>
+                    );
+                  })}
+                  <div ref={sentinelRef as React.RefObject<HTMLDivElement>} />
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Cancel Order Dialog */}
@@ -570,7 +573,10 @@ export default function OrdersPageClient({
         onAddressSelect={editAddress.handleSelect}
         onFieldChange={(field, value) => {
           editAddress.setAddressForm((prev) => ({ ...prev, [field]: value }));
-          editAddress.setFormErrors((prev) => ({ ...prev, [field]: undefined }));
+          editAddress.setFormErrors((prev) => ({
+            ...prev,
+            [field]: undefined,
+          }));
         }}
         onSubmit={editAddress.handleSubmit}
       />

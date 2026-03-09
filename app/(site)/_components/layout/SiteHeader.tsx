@@ -234,7 +234,7 @@ export default function SiteHeader({
           link={banner.link}
         />
       )}
-      <div className="mx-auto max-w-screen-2xl px-4 md:px-8 py-2 md:py-4 flex items-center">
+      <div className="mx-auto max-w-screen-2xl px-4 md:px-8 h-16 flex items-center">
         {/* Container A: hamburger (mobile) / nav (desktop) — swaps from left to center */}
         <div className="order-1 md:order-2 md:flex-1 flex md:justify-center">
           {isClient && (

@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart, Loader2, Check, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -25,13 +24,13 @@ interface OrderItemsCardProps {
   variant: "storefront" | "admin";
 }
 
-function placeholderCategory(item: OrderItemWithDetails) {
+export function placeholderCategory(item: OrderItemWithDetails) {
   return item.purchaseOption.variant.product.type === ProductType.MERCH
     ? "culture" as const
     : "beans" as const;
 }
 
-function BuyAgainButton({ item }: { item: OrderItemWithDetails }) {
+export function BuyAgainButton({ item }: { item: OrderItemWithDetails }) {
   const { buttonState, handleAddToCart, handleActionClick } =
     useAddToCartWithFeedback();
 
@@ -47,7 +46,7 @@ function BuyAgainButton({ item }: { item: OrderItemWithDetails }) {
     priceInCents: po.priceInCents,
     imageUrl: po.variant.images?.[0]?.url ?? getPlaceholderImage(po.variant.product.name, 400, placeholderCategory(item)),
     billingInterval: po.billingInterval ?? undefined,
-    billingIntervalCount: po.intervalCount ?? undefined,
+    billingIntervalCount: po.billingIntervalCount ?? undefined,
   };
 
   const isAction = buttonState === "buy-now" || buttonState === "checkout-now";
@@ -93,22 +92,15 @@ export function OrderItemsCard({ order, variant }: OrderItemsCardProps) {
       <CardHeader>
         <CardTitle>Order Items</CardTitle>
       </CardHeader>
-      <CardContent className="px-0 pb-0">
+      <CardContent className="pb-0">
         <Table>
-          <TableHeader className="[&_tr]:border-b-0">
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-6">Product</TableHead>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent border-b border-border">
+              <TableHead>Product</TableHead>
               <TableHead className="text-right">Price</TableHead>
               <TableHead className="text-center">Qty</TableHead>
-              <TableHead className="text-right pr-6">Total</TableHead>
+              <TableHead className="text-right">Total</TableHead>
             </TableRow>
-            <tr>
-              <td colSpan={4} className="p-0">
-                <div className="px-6">
-                  <Separator />
-                </div>
-              </td>
-            </tr>
           </TableHeader>
           <TableBody>
             {order.items.map((item: OrderItemWithDetails) => (
@@ -120,7 +112,7 @@ export function OrderItemsCard({ order, variant }: OrderItemsCardProps) {
                     : "hover:bg-transparent border-b-0"
                 }
               >
-                <TableCell className="pl-6 py-4 whitespace-normal">
+                <TableCell className="py-4 whitespace-normal">
                   <div className="flex items-center gap-3">
                     <Image
                       src={
@@ -158,7 +150,7 @@ export function OrderItemsCard({ order, variant }: OrderItemsCardProps) {
                         {item.purchaseOption.type === "SUBSCRIPTION"
                           ? `Subscription${
                               item.purchaseOption.billingInterval
-                                ? ` \u00b7 Every ${item.purchaseOption.intervalCount || 1} ${item.purchaseOption.billingInterval?.toLowerCase()}${(item.purchaseOption.intervalCount || 1) > 1 ? "s" : ""}`
+                                ? ` \u00b7 Every ${item.purchaseOption.billingIntervalCount || 1} ${item.purchaseOption.billingInterval?.toLowerCase()}${(item.purchaseOption.billingIntervalCount || 1) > 1 ? "s" : ""}`
                                 : ""
                             }`
                           : "One-time purchase"}
@@ -183,7 +175,7 @@ export function OrderItemsCard({ order, variant }: OrderItemsCardProps) {
                     item.quantity
                   )}
                 </TableCell>
-                <TableCell className="text-right pr-6 py-4 font-semibold">
+                <TableCell className="text-right py-4 font-semibold">
                   {item.refundedQuantity > 0 ? (
                     <>
                       <span className="line-through text-muted-foreground font-normal">

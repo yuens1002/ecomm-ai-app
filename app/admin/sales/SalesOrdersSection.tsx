@@ -7,8 +7,8 @@ import {
   ColumnVisibilityToggle,
   DataTable,
   DataTableActionBar,
-} from "@/app/admin/_components/data-table";
-import type { ActiveFilter } from "@/app/admin/_components/data-table";
+} from "@/components/shared/data-table";
+import type { ActiveFilter } from "@/components/shared/data-table";
 import type { SalesRow } from "@/lib/admin/analytics/contracts";
 import { salesFilterConfigs, SALES_TOGGLABLE_COLUMNS } from "./sales-table-config";
 
@@ -46,11 +46,13 @@ export function SalesOrdersSection({
             {
               type: "custom",
               content: (
-                <ColumnVisibilityToggle
-                  columns={SALES_TOGGLABLE_COLUMNS}
-                  columnVisibility={columnVisibility}
-                  onVisibilityChange={onVisibilityChange}
-                />
+                <div className="hidden md:block">
+                  <ColumnVisibilityToggle
+                    columns={SALES_TOGGLABLE_COLUMNS}
+                    columnVisibility={columnVisibility}
+                    onVisibilityChange={onVisibilityChange}
+                  />
+                </div>
               ),
             },
           ],
