@@ -94,6 +94,7 @@ export const adminNavConfig: NavItem[] = [
       { label: "Contact", href: "/admin/settings/contact" },
       { label: "Scheduled Jobs", href: "/admin/settings/scheduled-jobs" },
       { label: "Social Links", href: "/admin/social-links" },
+      { label: "Plan", href: "/admin/settings/plan" },
     ],
   },
 ];

@@ -30,6 +30,8 @@ const OPTIONAL_KEYS = [
   "NEXT_PUBLIC_VAPI_PUBLIC_KEY",
   "NEXT_PUBLIC_VAPI_WEBHOOK_SECRET",
   "BLOB_READ_WRITE_TOKEN",
+  "LICENSE_KEY",
+  "PLATFORM_URL",
 ];
 
 export const validateEnv = (options?: {

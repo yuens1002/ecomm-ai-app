@@ -28,7 +28,7 @@ const config = {
     "/node_modules/",
     "/.next/",
     "/app/api/(?!.*__tests__/)", // Ignore API route files but allow co-located route tests
-    "/lib/__tests__/", // Skip data tests (require live database)
+    "/lib/__tests__/data", // Skip data tests (require live database)
     "/__tests__/fixtures\\.ts$", // Fixture files are not test suites
   ],
 };

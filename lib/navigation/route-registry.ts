@@ -408,6 +408,15 @@ const routeEntries: RouteEntry[] = [
     isNavigable: true,
   },
 
+  {
+    id: "admin.settings.plan",
+    pathname: "/admin/settings/plan",
+    matchMode: "exact",
+    label: "Plan",
+    parentId: "admin.settings",
+    isNavigable: true,
+  },
+
   // ==================== PROFILE (USER MENU) ====================
   {
     id: "admin.profile",
