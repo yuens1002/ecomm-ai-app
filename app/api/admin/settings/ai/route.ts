@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdminApi } from "@/lib/admin";
 import {
   getAISettings,
   setAISettings,
@@ -15,7 +15,10 @@ function maskApiKey(key: string): string {
 
 export async function GET() {
   try {
-    await requireAdmin();
+    const auth = await requireAdminApi();
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
     const settings = await getAISettings();
     return NextResponse.json({
       ...settings,
@@ -42,7 +45,10 @@ const aiSettingsSchema = z.object({
 
 export async function PUT(request: NextRequest) {
   try {
-    await requireAdmin();
+    const auth = await requireAdminApi();
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
     const body = await request.json();
     const parsed = aiSettingsSchema.safeParse(body);
 
@@ -84,7 +90,10 @@ export async function PUT(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin();
+    const auth = await requireAdminApi();
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
     const body = await request.json();
 
     const schema = z.object({

@@ -108,29 +108,6 @@ export default function AISettingsPage() {
     }
   }, [settings, toast]);
 
-  const handleToggle = useCallback(
-    async (field: "chatEnabled" | "recommendEnabled" | "aboutAssistEnabled", value: boolean) => {
-      try {
-        const res = await fetch("/api/admin/settings/ai", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ [field]: value }),
-        });
-        if (!res.ok) throw new Error("Failed to save");
-        const data = await res.json();
-        setSettings(data);
-        setOriginal(data);
-      } catch {
-        toast({
-          title: "Error",
-          description: "Failed to update toggle",
-          variant: "destructive",
-        });
-      }
-    },
-    [toast]
-  );
-
   const handleTest = useCallback(async () => {
     setTestStatus("testing");
     setTestMessage("");
@@ -355,10 +332,7 @@ export default function AISettingsPage() {
               <div className="flex items-center space-x-2">
                 <Switch
                   checked={Boolean(value)}
-                  onCheckedChange={(checked) => {
-                    onChange(checked);
-                    handleToggle("chatEnabled", checked);
-                  }}
+                  onCheckedChange={onChange}
                 />
                 <Label className="text-sm text-muted-foreground">
                   {value
@@ -384,10 +358,7 @@ export default function AISettingsPage() {
               <div className="flex items-center space-x-2">
                 <Switch
                   checked={Boolean(value)}
-                  onCheckedChange={(checked) => {
-                    onChange(checked);
-                    handleToggle("recommendEnabled", checked);
-                  }}
+                  onCheckedChange={onChange}
                 />
                 <Label className="text-sm text-muted-foreground">
                   {value
@@ -413,10 +384,7 @@ export default function AISettingsPage() {
               <div className="flex items-center space-x-2">
                 <Switch
                   checked={Boolean(value)}
-                  onCheckedChange={(checked) => {
-                    onChange(checked);
-                    handleToggle("aboutAssistEnabled", checked);
-                  }}
+                  onCheckedChange={onChange}
                 />
                 <Label className="text-sm text-muted-foreground">
                   {value
