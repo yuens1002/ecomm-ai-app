@@ -5,6 +5,8 @@ import { Loader2, CheckCircle2, XCircle, Eye, EyeOff } from "lucide-react";
 import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
 import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
+import { Field, FieldDescription } from "@/components/ui/field";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -194,120 +196,111 @@ export default function AISettingsPage() {
         description="Connect any OpenAI-compatible AI provider. Choose a preset or enter custom settings."
       >
         {/* Provider preset */}
-        <SettingsField
-          endpoint="/api/admin/settings/ai"
-          field="baseUrl"
-          label="Quick Setup"
-          description="Auto-fills Base URL. You can customize after selecting."
-          autoSave={false}
-          input={() => (
-            <Select onValueChange={handlePreset}>
-              <SelectTrigger className="w-full max-w-xs">
-                <SelectValue placeholder="Choose a provider preset..." />
-              </SelectTrigger>
-              <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
-                {Object.entries(AI_PROVIDER_PRESETS).map(([id, preset]) => (
-                  <SelectItem key={id} value={id}>
-                    {preset.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
+        <Field>
+          <FormHeading label="Quick Setup" />
+          <Select onValueChange={handlePreset}>
+            <SelectTrigger className="w-full max-w-xs">
+              <SelectValue placeholder="Choose a provider preset..." />
+            </SelectTrigger>
+            <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
+              {Object.entries(AI_PROVIDER_PRESETS).map(([id, preset]) => (
+                <SelectItem key={id} value={id}>
+                  {preset.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FieldDescription>
+            Auto-fills Base URL. You can customize after selecting.
+          </FieldDescription>
+        </Field>
 
         {/* Base URL */}
-        <SettingsField
-          endpoint="/api/admin/settings/ai"
-          field="baseUrl"
-          label="Base URL"
-          description="OpenAI-compatible API endpoint (must support /chat/completions)"
-          maxLength={200}
-          input={(_, onChange) => (
-            <Input
-              id="field-baseUrl"
-              placeholder="https://api.openai.com/v1"
-              value={settings.baseUrl}
-              onChange={(e) => {
-                setSettings((prev) => ({ ...prev, baseUrl: e.target.value }));
-                onChange(e.target.value);
-                setTestStatus("idle");
-              }}
-              className={settings.baseUrl !== original.baseUrl ? "border-amber-500" : ""}
-            />
-          )}
-          transformLoad={(data) => (data.baseUrl as string) || ""}
-          saveButtonInInput
-        />
+        <Field>
+          <FormHeading
+            htmlFor="ai-base-url"
+            label="Base URL"
+            isDirty={settings.baseUrl !== original.baseUrl}
+          />
+          <Input
+            id="ai-base-url"
+            placeholder="https://api.openai.com/v1"
+            value={settings.baseUrl}
+            onChange={(e) => {
+              setSettings((prev) => ({ ...prev, baseUrl: e.target.value }));
+              setTestStatus("idle");
+            }}
+            className={`max-w-[72ch] ${settings.baseUrl !== original.baseUrl ? "border-amber-500" : ""}`}
+          />
+          <FieldDescription>
+            OpenAI-compatible API endpoint (must support /chat/completions)
+          </FieldDescription>
+        </Field>
 
         {/* API Key */}
-        <SettingsField
-          endpoint="/api/admin/settings/ai"
-          field="apiKey"
-          label="API Key"
-          description={
-            DEMO_MODE
-              ? "API key editing is disabled in demo mode"
-              : "Optional for local providers (e.g., Ollama)"
-          }
-          input={() => (
-            <div className="relative max-w-md">
-              <Input
-                id="field-apiKey"
-                type={showApiKey && !DEMO_MODE ? "text" : "password"}
-                placeholder={settings.hasApiKey ? "••••••••(saved)" : "Enter API key"}
-                value={settings.apiKey}
-                onChange={(e) => {
-                  setSettings((prev) => ({ ...prev, apiKey: e.target.value }));
-                  setTestStatus("idle");
-                }}
-                disabled={DEMO_MODE}
-                className={settings.apiKey !== original.apiKey ? "border-amber-500 pr-10" : "pr-10"}
-              />
-              {!DEMO_MODE && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                  onClick={() => setShowApiKey((v) => !v)}
-                >
-                  {showApiKey ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
-            </div>
-          )}
-          transformLoad={(data) => (data.apiKey as string) || ""}
-          saveButtonInInput
-        />
-
-        {/* Model */}
-        <SettingsField
-          endpoint="/api/admin/settings/ai"
-          field="model"
-          label="Model"
-          description="Model identifier (e.g., gpt-4o-mini, gemini-2.5-flash, llama3.2)"
-          maxLength={100}
-          input={(_, onChange) => (
+        <Field>
+          <FormHeading
+            htmlFor="ai-api-key"
+            label="API Key"
+            isDirty={settings.apiKey !== original.apiKey}
+          />
+          <div className="relative max-w-sm">
             <Input
-              id="field-model"
-              placeholder="gpt-4o-mini"
-              value={settings.model}
+              id="ai-api-key"
+              type={showApiKey && !DEMO_MODE ? "text" : "password"}
+              placeholder={settings.hasApiKey ? "••••••••(saved)" : "Enter API key"}
+              value={settings.apiKey}
               onChange={(e) => {
-                setSettings((prev) => ({ ...prev, model: e.target.value }));
-                onChange(e.target.value);
+                setSettings((prev) => ({ ...prev, apiKey: e.target.value }));
                 setTestStatus("idle");
               }}
-              className={settings.model !== original.model ? "border-amber-500" : ""}
+              disabled={DEMO_MODE}
+              className={settings.apiKey !== original.apiKey ? "border-amber-500 pr-10" : "pr-10"}
             />
-          )}
-          transformLoad={(data) => (data.model as string) || ""}
-          saveButtonInInput
-        />
+            {!DEMO_MODE && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                onClick={() => setShowApiKey((v) => !v)}
+              >
+                {showApiKey ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+          </div>
+          <FieldDescription>
+            {DEMO_MODE
+              ? "API key editing is disabled in demo mode"
+              : "Optional for local providers (e.g., Ollama)"}
+          </FieldDescription>
+        </Field>
+
+        {/* Model */}
+        <Field>
+          <FormHeading
+            htmlFor="ai-model"
+            label="Model"
+            isDirty={settings.model !== original.model}
+          />
+          <Input
+            id="ai-model"
+            placeholder="gpt-4o-mini"
+            value={settings.model}
+            onChange={(e) => {
+              setSettings((prev) => ({ ...prev, model: e.target.value }));
+              setTestStatus("idle");
+            }}
+            className={`max-w-xs ${settings.model !== original.model ? "border-amber-500" : ""}`}
+          />
+          <FieldDescription>
+            Model identifier (e.g., gpt-4o-mini, gemini-2.5-flash, llama3.2)
+          </FieldDescription>
+        </Field>
 
         {/* Actions row */}
         <div className="flex items-center gap-3 pt-2">
