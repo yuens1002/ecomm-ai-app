@@ -1,6 +1,8 @@
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import SubscriptionManagementClient from "./SubscriptionManagementClient";
 import { getSubscriptions } from "./actions";
+import { isStripeConfigured } from "@/lib/services/stripe";
+import { IntegrationBanner } from "@/components/shared/IntegrationBanner";
 
 export default async function AdminSubscriptionsPage() {
   const subscriptions = await getSubscriptions();
@@ -11,6 +13,11 @@ export default async function AdminSubscriptionsPage() {
         title="Subscriptions"
         subtitle="Manage customer subscription orders"
       />
+      {!isStripeConfigured() && (
+        <div className="mb-4">
+          <IntegrationBanner service="Stripe" />
+        </div>
+      )}
       <SubscriptionManagementClient initialSubscriptions={subscriptions} />
     </>
   );

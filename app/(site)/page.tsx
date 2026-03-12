@@ -23,7 +23,7 @@ export default async function Home() {
   // AI section logic
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
   const isDemoUser = session?.user?.email === "demo@artisanroast.com";
-  const showVoiceBarista = isDemoUser && !isDemoMode;
+  const showVoiceBarista = isDemoMode && isDemoUser;
 
   return (
     <>

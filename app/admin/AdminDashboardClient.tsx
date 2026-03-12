@@ -33,15 +33,21 @@ import {
 import { formatByType } from "@/lib/admin/analytics/formatters";
 import type { DashboardResponse } from "@/lib/admin/analytics/contracts";
 import { computeDelta } from "@/lib/admin/analytics/metrics-registry";
+import {
+  SetupChecklist,
+  type SetupStatus,
+} from "./_components/dashboard/SetupChecklist";
 
 interface AdminDashboardClientProps {
   userName: string;
   data: DashboardResponse;
+  setupStatus: SetupStatus;
 }
 
 export default function AdminDashboardClient({
   userName,
   data,
+  setupStatus,
 }: AdminDashboardClientProps) {
   const { kpis, comparisonKpis } = data;
 
@@ -80,6 +86,9 @@ export default function AdminDashboardClient({
           <DateRangePicker mode="url" hideCompare />
         </Suspense>
       </DashboardToolbar>
+
+      {/* Setup checklist for new installs */}
+      <SetupChecklist status={setupStatus} />
 
       {/* Alerts */}
       <AlertStrip alerts={data.alerts} />
