@@ -32,7 +32,7 @@ async function main() {
 
   try {
     const result = execSync(
-      'npx prisma db execute --stdin <<< "SELECT COUNT(*) as count FROM \\"Product\\";"',
+      'echo "SELECT COUNT(*) as count FROM \\"Product\\";" | npx prisma db execute --stdin',
       {
         encoding: "utf-8",
         env: process.env,

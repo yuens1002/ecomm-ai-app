@@ -141,7 +141,7 @@ export function SetupChecklist({ status }: { status: SetupStatus }) {
                   href={check.href}
                   className="ml-auto text-xs font-medium text-amber-700 underline hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100"
                   {...(check.external
-                    ? { target: "_blank", rel: "noopener" }
+                    ? { target: "_blank", rel: "noopener noreferrer" }
                     : {})}
                 >
                   {check.linkText}

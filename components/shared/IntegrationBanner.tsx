@@ -24,7 +24,7 @@ export function IntegrationBanner({ service, context }: IntegrationBannerProps) 
         <a
           href="https://github.com/yuens1002/artisan-roast/blob/main/INSTALLATION.md#optional-integrations"
           target="_blank"
-          rel="noopener"
+          rel="noopener noreferrer"
           className="underline hover:text-yellow-900 dark:hover:text-yellow-100"
         >
           Setup guide

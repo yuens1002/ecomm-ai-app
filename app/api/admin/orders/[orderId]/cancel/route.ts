@@ -57,39 +57,47 @@ export async function POST(
       );
     }
 
-    // Update order status to CANCELLED and record full refund
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: "CANCELLED",
-        refundedAmountInCents: order.totalInCents,
-        refundedAt: new Date(),
-        refundReason: "Order cancelled",
-      },
-    });
-
-    console.log(`✅ Order ${orderId} canceled`);
-
-    // Issue Stripe refund if payment exists
+    // Issue Stripe refund before marking order as refunded
     const stripe = getStripe();
+    let stripeRefundSucceeded = false;
     if (order.stripePaymentIntentId && stripe) {
       try {
         await stripe.refunds.create({
           payment_intent: order.stripePaymentIntentId,
         });
         console.log(`💰 Stripe refund issued for order ${orderId}`);
+        stripeRefundSucceeded = true;
       } catch (stripeRefundError: unknown) {
         console.error("Failed to issue Stripe refund:", stripeRefundError);
-        return NextResponse.json(
-          {
-            success: true,
-            message: "Order canceled but Stripe refund failed",
-            error: getErrorMessage(stripeRefundError, "Unknown error"),
-            requiresManualAction: true,
-          },
-          { status: 200 }
-        );
       }
+    }
+
+    // Update order status to CANCELLED — only record refund if Stripe succeeded or no payment existed
+    const hasStripePayment = !!order.stripePaymentIntentId;
+    const recordRefund = !hasStripePayment || stripeRefundSucceeded;
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: "CANCELLED",
+        ...(recordRefund && {
+          refundedAmountInCents: order.totalInCents,
+          refundedAt: new Date(),
+        }),
+        refundReason: "Order cancelled",
+      },
+    });
+
+    console.log(`✅ Order ${orderId} canceled`);
+
+    if (hasStripePayment && !stripeRefundSucceeded) {
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Order canceled but Stripe refund failed",
+          requiresManualAction: true,
+        },
+        { status: 200 }
+      );
     }
 
     // Restore inventory
