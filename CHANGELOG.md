@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- **Build crash without Stripe keys**: Customer portal, health endpoint, and user order cancel routes still had top-level `new Stripe()` that crashed at build time — converted to lazy `getStripe()` singletons
+- **Build crash without Stripe keys**: App no longer crashes during build when Stripe keys are missing
 - **VAPI voice barista**: Disabled entirely — not ready for production
 
 ## 0.95.5 - 2026-03-12
