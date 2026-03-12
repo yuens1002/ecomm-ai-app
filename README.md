@@ -186,7 +186,7 @@ npm run dev                 # http://localhost:3000
 - [x] AI chat assistant
 - [x] Menu Builder (drag-and-drop catalog)
 - [x] Pages CMS with AI generation
-- [ ] Voice AI barista (in progress)
+- [ ] Voice AI barista (demo only)
 - [ ] Inventory management
 - [ ] Multi-store support
 

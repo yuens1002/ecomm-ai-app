@@ -1,199 +1,196 @@
-# Installation (Self-Hosted)
+# Installation
 
-This guide walks a technical shop owner or developer through installing Artisan Roast on a standard PostgreSQL instance (no Neon required).
+Three ways to get running — pick the one that fits.
 
-## Prerequisites
+| Path | Time | Requirements |
+|------|------|-------------|
+| [Vercel One-Click](#vercel-one-click) | ~3 min | Neon account |
+| [Docker Compose](#docker-compose) | ~5 min | Docker |
+| [Local Development](#local-development) | ~10 min | Node.js 18+, PostgreSQL |
 
-- Node.js 18+ and npm
-- Git
-- PostgreSQL 15 or 16 (network-accessible), with a database and user created
-- Stripe account (test mode is fine) and Stripe CLI for local webhooks (optional)
-- OAuth apps for Google/GitHub (or skip if using email/password only)
+Only **two env vars** are required: `DATABASE_URL` and `AUTH_SECRET`. Everything else (Stripe, Resend, AI, OAuth) is optional and can be added later.
 
-## 1) Clone and install
+---
+
+## Vercel One-Click
+
+1. Click the button:
+
+   [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fartisan-roast&env=DATABASE_URL,AUTH_SECRET,SEED_ON_BUILD&envDescription=DATABASE_URL%3A%20Neon%20PostgreSQL%20connection%20string.%20AUTH_SECRET%3A%20Run%20%27openssl%20rand%20-base64%2032%27.%20SEED_ON_BUILD%3A%20Set%20to%20%27true%27%20for%20demo%20data.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fartisan-roast%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
+
+2. Fill in the env vars when prompted:
+   - `DATABASE_URL` — Get a free Postgres DB at [neon.tech](https://neon.tech), copy the pooled connection string
+   - `AUTH_SECRET` — Run `openssl rand -base64 32` in your terminal
+   - `SEED_ON_BUILD` — Set to `true` so the store has demo products on first deploy
+
+3. Visit your store at `https://your-project.vercel.app`
+
+**What's next:** [Add optional integrations](#optional-integrations) (payments, email, AI, OAuth).
+
+---
+
+## Docker Compose
+
+Prerequisites: Docker and Docker Compose installed.
+
+1. Clone the repo:
+
+   ```bash
+   git clone https://github.com/yuens1002/artisan-roast.git
+   cd artisan-roast
+   ```
+
+2. Create your env file:
+
+   ```bash
+   cp .env.docker.example .env.docker
+   ```
+
+   Edit `.env.docker` — set at minimum:
+   - `AUTH_SECRET` — `openssl rand -base64 32`
+   - (DATABASE_URL is pre-configured to use the Docker Postgres container)
+
+3. Start everything:
+
+   ```bash
+   docker compose up --build -d
+   ```
+
+   This runs Postgres, migrates the schema, seeds demo data if the DB is empty, builds the app, and starts it.
+
+4. Visit `http://localhost:3000`
+
+To create an admin user:
 
 ```bash
-
-git clone https://github.com/yuens1002/artisan-roast.git artisan-roast
-cd artisan-roast
-npm install
-cp .env.example .env.local
+docker compose run --rm app npm run setup -- --email=owner@shop.com --password=changeme
 ```
 
-## 2) Configure environment
+**What's next:** [Add optional integrations](#optional-integrations) (payments, email, AI, OAuth).
 
-Edit `.env.local`:
+---
 
-- `DATABASE_URL` — Postgres connection string (use pooled/pgBouncer if available)
-- `DIRECT_URL` — Direct Postgres URL for migrations (optional but recommended)
-- `AUTH_SECRET` — `openssl rand -base64 32`
-- Stripe: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` (from `stripe listen` during dev)
-- OAuth (optional): `AUTH_GOOGLE_ID/SECRET`, `AUTH_GITHUB_ID/SECRET`
-- Email: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
-- AI: Configure via **Settings > AI** in the admin panel (or set `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL` in env)
-- Image storage: `BLOB_READ_WRITE_TOKEN` (Vercel Blob — see [Image Storage](#image-storage) below)
+## Local Development
 
-## 3) Run one-command setup
+Prerequisites: Node.js 18+, npm, Git, and a PostgreSQL database (local or managed).
 
-Creates schema, seeds data, and provisions the first admin. Safe to rerun.
+1. Clone and install:
+
+   ```bash
+   git clone https://github.com/yuens1002/artisan-roast.git
+   cd artisan-roast
+   npm install
+   cp .env.example .env.local
+   ```
+
+2. Configure `.env.local` (minimum):
+   - `DATABASE_URL` — Your Postgres connection string
+   - `AUTH_SECRET` — `openssl rand -base64 32`
+
+3. Run the setup script (creates schema, seeds data, creates admin):
+
+   ```bash
+   npm run setup -- --email=owner@shop.com --password=changeme
+   ```
+
+   Flags: `--product-mode=full|minimal`, `--seed-users=true|false`, `--seed-synthetic=true|false`, `--name="Owner Name"`
+
+4. Start the dev server:
+
+   ```bash
+   npm run dev
+   ```
+
+5. Visit `http://localhost:3000` and sign in with the admin you created.
+
+**What's next:** [Add optional integrations](#optional-integrations) or read the [production notes](#production-notes).
+
+---
+
+## Optional Integrations
+
+Add these env vars to `.env.local` (or your Vercel/Docker env) to unlock more features. The app works without them — features degrade gracefully.
+
+| Integration | Env Vars | What it enables |
+|-------------|----------|----------------|
+| **Payments** | `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Checkout, subscriptions, refunds |
+| **Email** | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Order confirmations, shipping updates, password resets |
+| **AI** | Configure via **Settings > AI** in admin (or `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`) | Chat assistant, product recommendations, content generation |
+| **OAuth** | `AUTH_GOOGLE_ID/SECRET`, `AUTH_GITHUB_ID/SECRET` | Social login (Google, GitHub) |
+| **Image Storage** | `BLOB_READ_WRITE_TOKEN` | Persistent image uploads via Vercel Blob ([setup guide](#image-storage)) |
+| **Stripe Webhooks** | `STRIPE_WEBHOOK_SECRET` | Real-time order/subscription updates |
+
+For local Stripe webhook testing:
 
 ```bash
-
-npm run setup -- --email=owner@shop.com --password=changeme \
-  --product-mode=minimal --seed-users=false --seed-synthetic=false
-```
-
-Flags:
-
-- `--product-mode=full|minimal` (default minimal seeds 1 coffee + 1 merch)
-- `--seed-users=true|false` (default false; you’ll create the owner admin above)
-- `--seed-synthetic=true|false` (default false; skip demo analytics/orders)
-- `--name=Owner Name` (optional)
-
-## 4) Start the app
-
-```bash
-
-npm run dev
-# In another terminal (optional for payments):
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
 
-Visit `http://localhost:3000` and sign in with the admin you created.
+---
 
-## 5) Production notes
+## Production Notes
 
-- Migrations: run `npx prisma migrate deploy` on deploy.
-- Backups: `npm run db:backup` writes JSON under `dev-tools/backups/`.
-- Adapter auto-detect: Neon vs Postgres is automatic; `DATABASE_ADAPTER=postgres|neon|standard` can force behavior.
-- Docker/compose smoke: see `docs/docker-smoke-test.md` for expected build logs, health check (`/api/health`), and persistence checks after `docker compose up --build -d`.
+- **Migrations:** Run `npx prisma migrate deploy` on deploy.
+- **Backups:** `npm run db:backup` writes JSON under `dev-tools/backups/`.
+- **DB adapter:** Neon vs standard Postgres is auto-detected. Force with `DATABASE_ADAPTER=postgres|neon|standard`.
+- **Docker smoke test:** See `docs/docker-smoke-test.md` for health check and persistence verification.
 
 ### Image Storage
 
-Admin-uploaded images (product photos, page heroes, category icons) are stored in **Vercel Blob** by default. This keeps uploads persistent across deployments and served via a CDN.
+Admin-uploaded images (product photos, page heroes, category icons) are stored in **Vercel Blob** by default.
 
-**Setup (Vercel Blob):**
+**Setup (Vercel):**
 
-1. Go to [vercel.com/dashboard](https://vercel.com/dashboard) and select your project
-2. Click the **Storage** tab in the top navigation
-3. Click **Create Database** → select **Blob**
-4. Give it a name (e.g., `artisan-roast-images`) and select **Public** access
-5. Click **Create** — Vercel auto-links the store to your project and injects `BLOB_READ_WRITE_TOKEN` into production/preview deployments
-6. For **local development only**: go to the Blob store → **Manage** → **Tokens**, copy the token, and add it to your `.env.local`:
+1. Go to [vercel.com/dashboard](https://vercel.com/dashboard) → your project → **Storage** tab
+2. Click **Create Database** → **Blob** → name it (e.g., `artisan-roast-images`) → **Public** access
+3. Click **Create** — Vercel auto-injects `BLOB_READ_WRITE_TOKEN` into production/preview
+4. For local dev: copy the token from Blob store → **Manage** → **Tokens** into `.env.local`
 
-   ```env
-   BLOB_READ_WRITE_TOKEN="vercel_blob_rw_..."
-   ```
+**Custom provider (S3, Cloudinary, etc.):** Replace `lib/blob.ts` — it exports `uploadToBlob()`, `deleteFromBlob()`, and `isBlobUrl()`. Add your storage hostname to `remotePatterns` in `next.config.ts`.
 
-> **Note:** Production deployments on Vercel get the token automatically — no manual env var setup needed. The `.env.local` token is only for `npm run dev`.
+### Switching Between Neon and Local Postgres
 
-**Using a different provider (S3, Cloudinary, etc.):**
+- **Neon:** Keep `.env.local` `DATABASE_URL` pointing to Neon. Run `npm run dev`.
+- **Local Docker:** `export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"` then `npm run dev`.
+- **Switch back:** `unset DATABASE_URL` (so `.env.local` wins).
 
-All upload logic is centralized in a single file: `lib/blob.ts`. It exports three functions:
-
-- `uploadToBlob()` — uploads a file and returns a public URL
-- `deleteFromBlob()` — deletes a file by URL
-- `isBlobUrl()` — checks if a URL belongs to the storage provider
-
-To swap providers, replace the implementation in `lib/blob.ts` with your preferred SDK (e.g., `@aws-sdk/client-s3`, `cloudinary`). The rest of the app only depends on these three functions. You will also need to add your storage hostname to the `remotePatterns` array in `next.config.ts` so the Next.js `<Image>` component can optimize the URLs.
-
-### Switching between Neon and local Postgres
-
-- Neon (default): keep `.env.local` `DATABASE_URL` pointing to Neon. Clear any shell override with `unset DATABASE_URL` and (optionally) set `DATABASE_ADAPTER=neon`. Start `npm run dev`.
-- Local Postgres (Docker, single DB `artisan_roast`): export the URL below and force the pg adapter. Start `npm run dev` in that shell (or set `PORT=3001` if you prefer 3001).
-- To flip back to Neon, open a fresh shell (or `unset DATABASE_URL` / `unset DATABASE_ADAPTER`) so `.env.local` wins.
-
-> Docker Compose uses `.env.docker` and ignores your shell exports. Update `DATABASE_URL`, `AUTH_SECRET`, `AUTH_TRUST_HOST=true`, and `NEXTAUTH_URL=http://localhost:3000` there, then `docker compose restart app`. Seed the compose DB via `docker compose exec app sh -c "SEED_PRODUCT_MODE=full SEED_INCLUDE_USERS=true SEED_INCLUDE_SYNTHETIC=true npm run seed"`.
-
-#### Copy-paste commands (local Docker DB: `artisan_roast`)
-
-Create and seed (first time or reset):
-
-```typescript
-
-export DATABASE_ADAPTER=postgres
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
-npm run setup -- --email=owner@example.com --password='Changeme123!' --name='Shop Owner' --product-mode=full --seed-users=true --seed-synthetic=true
-```
-
-Run dev against the same DB (example on port 3001):
-
-```typescript
-
-export DATABASE_ADAPTER=postgres
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"
-PORT=3000 npm run dev
-```
-
-```bash
-
-$env:DATABASE_ADAPTER = "postgres"; $env:DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/artisan_roast?schema=public"; $env:PORT = "3000"; npm run dev
-```
-
-Switch back to Neon (uses `.env.local`):
-
-```bash
-
-unset DATABASE_URL
-unset DATABASE_ADAPTER
-npm run dev
-```
+---
 
 ## Telemetry
 
-Artisan Roast collects **anonymous usage data** to help the maintainers understand how the platform is used. No personal information, customer data, revenue, or product details are ever collected.
+Artisan Roast collects **anonymous usage data** (instance UUID, app version, aggregate counts). No personal information is ever collected.
 
-### What is collected
+| Event | Trigger |
+|-------|---------|
+| `install` | First database seed |
+| `heartbeat` | Daily cron |
 
-- A random instance UUID (not linked to you or your store)
-- App version and edition
-- Aggregate counts: number of products, users, and orders
-- Server environment: Node.js version and OS platform
+**Opt out** (any one of these):
 
-### When events are sent
+1. `TELEMETRY_DISABLED=true` in env
+2. Set `telemetry_enabled` to `"false"` in `siteSettings` table
+3. Admin > Support > Data Privacy toggle
 
-| Event | Trigger | Description |
-|-------|---------|-------------|
-| `install` | First database seed | Confirms a new instance was set up |
-| `heartbeat` | Daily cron (`/api/cron/heartbeat`) | Reports aggregate usage stats |
+Override endpoint: `TELEMETRY_ENDPOINT="https://your-server.com/api/telemetry/events"`
 
-### How to opt out
-
-Three options (checked in priority order):
-
-1. **Environment variable** (highest priority):
-
-   ```env
-   TELEMETRY_DISABLED=true
-   ```
-
-2. **Database setting**: Set `telemetry_enabled` to `"false"` in the `siteSettings` table.
-
-3. **Admin UI**: Go to **Admin > Support > Data Privacy** and toggle "Share Anonymous Usage Data" off.
-
-### Override the telemetry endpoint
-
-Self-hosters running a fork can point telemetry at their own server:
-
-```env
-TELEMETRY_ENDPOINT="https://your-server.com/api/telemetry/events"
-```
-
-If unset, events are sent to the default platform endpoint.
+---
 
 ## Google Analytics (Optional)
 
-Google Analytics 4 is supported but **disabled by default**. To enable it, add your GA4 Measurement ID to `.env.local`:
+Disabled by default. Add to `.env.local`:
 
 ```env
 NEXT_PUBLIC_GA4_ID="G-XXXXXXXXXX"
 ```
 
-This tracks **your storefront visitors** using your own GA4 property — it is completely separate from the platform telemetry above. No admin UI toggle exists for this; it is controlled entirely via the environment variable.
+This tracks your storefront visitors using your own GA4 property — separate from platform telemetry.
+
+---
 
 ## Troubleshooting
 
-- `DATABASE_URL is required`: confirm `.env.local` is loaded and the URL is reachable.
-- SSL errors: append `?sslmode=require` for managed Postgres providers.
-- Prisma errors after schema change: `npx prisma generate` then rerun setup.
-- Stripe webhooks: ensure Stripe CLI is running; refresh `STRIPE_WEBHOOK_SECRET` when restarting `stripe listen`.
+- **`DATABASE_URL is required`** — Confirm `.env.local` is loaded and the URL is reachable.
+- **SSL errors** — Append `?sslmode=require` for managed Postgres providers.
+- **Prisma errors after schema change** — `npx prisma generate` then rerun setup.
+- **Stripe webhooks** — Ensure Stripe CLI is running; refresh `STRIPE_WEBHOOK_SECRET` on restart.
+- **Empty store after deploy** — Set `SEED_ON_BUILD=true` or run `npm run seed` manually.
