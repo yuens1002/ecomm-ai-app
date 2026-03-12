@@ -47,20 +47,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Health returns "ok" when skipped (not "degraded") — "degraded" only on error
           - profile: minimal
             stripe_key: ""
             stripe_pub_key: ""
             resend_key: ""
-            expected_status: degraded
+            expected_status: ok
             expected_stripe: skipped
             expected_resend: skipped
             checkout_expect: 503
 
           - profile: stripe-only
-            stripe_key: ${{ secrets.STRIPE_SECRET_KEY }}
-            stripe_pub_key: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+            stripe_key: from_secret
+            stripe_pub_key: from_secret
             resend_key: ""
-            expected_status: degraded
+            expected_status: ok
             expected_stripe: ok
             expected_resend: skipped
             checkout_expect: 400
@@ -68,16 +69,16 @@ jobs:
           - profile: resend-only
             stripe_key: ""
             stripe_pub_key: ""
-            resend_key: ${{ secrets.RESEND_API_KEY }}
-            expected_status: degraded
+            resend_key: from_secret
+            expected_status: ok
             expected_stripe: skipped
             expected_resend: ok
             checkout_expect: 503
 
           - profile: full
-            stripe_key: ${{ secrets.STRIPE_SECRET_KEY }}
-            stripe_pub_key: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-            resend_key: ${{ secrets.RESEND_API_KEY }}
+            stripe_key: from_secret
+            stripe_pub_key: from_secret
+            resend_key: from_secret
             expected_status: ok
             expected_stripe: ok
             expected_resend: ok
@@ -87,9 +88,9 @@ jobs:
       DATABASE_URL: postgresql://testuser:testpass@localhost:5432/artisan_test?schema=public
       DIRECT_URL: postgresql://testuser:testpass@localhost:5432/artisan_test?schema=public
       AUTH_SECRET: test-secret-at-least-32-characters-long
-      STRIPE_SECRET_KEY: ${{ matrix.stripe_key }}
-      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ matrix.stripe_pub_key }}
-      RESEND_API_KEY: ${{ matrix.resend_key }}
+      STRIPE_SECRET_KEY: ${{ matrix.stripe_key == 'from_secret' && secrets.STRIPE_SECRET_KEY || '' }}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ matrix.stripe_pub_key == 'from_secret' && secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '' }}
+      RESEND_API_KEY: ${{ matrix.resend_key == 'from_secret' && secrets.RESEND_API_KEY || '' }}
       RESEND_FROM_EMAIL: "Test <test@example.com>"
       SKIP_SSG: "true"
 
@@ -104,7 +105,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-engines
 
       - name: Generate Prisma client
         run: npx prisma generate
@@ -122,13 +123,15 @@ jobs:
         run: |
           npm start &
           echo "Waiting for server..."
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
             if curl -sf http://localhost:3000/api/health > /dev/null 2>&1; then
               echo "Server ready after ${i}s"
-              break
+              exit 0
             fi
             sleep 1
           done
+          echo "FAIL: server did not become ready within 60s"
+          exit 1
 
       - name: "Assert: health endpoint status"
         run: |
@@ -138,9 +141,9 @@ jobs:
 
           echo "Profile: ${{ matrix.profile }}"
           echo "HTTP: $HTTP_CODE | Status: $STATUS"
-          echo "Full response: $RESPONSE" | jq .
+          echo "$RESPONSE" | jq .
 
-          # Assert HTTP code is 200 (both ok and degraded return 200)
+          # Assert HTTP code is 200
           [ "$HTTP_CODE" = "200" ] || { echo "FAIL: expected HTTP 200, got $HTTP_CODE"; exit 1; }
 
           # Assert overall status
@@ -183,14 +186,21 @@ jobs:
       - name: "Assert: seed idempotency (minimal only)"
         if: matrix.profile == 'minimal'
         run: |
-          # Count products before
-          COUNT_BEFORE=$(echo "SELECT COUNT(*) FROM \"Product\";" | npx prisma db execute --stdin 2>&1 | grep -oP '\d+' | head -1)
+          # Count products via node to avoid fragile grep parsing
+          COUNT_BEFORE=$(node -e "
+            const { PrismaClient } = require('@prisma/client');
+            const p = new PrismaClient();
+            p.product.count().then(c => { console.log(c); p.\$disconnect(); });
+          ")
 
           # Run seed again
           node scripts/seed-if-empty.js
 
-          # Count products after
-          COUNT_AFTER=$(echo "SELECT COUNT(*) FROM \"Product\";" | npx prisma db execute --stdin 2>&1 | grep -oP '\d+' | head -1)
+          COUNT_AFTER=$(node -e "
+            const { PrismaClient } = require('@prisma/client');
+            const p = new PrismaClient();
+            p.product.count().then(c => { console.log(c); p.\$disconnect(); });
+          ")
 
           echo "Before: $COUNT_BEFORE | After: $COUNT_AFTER"
 
