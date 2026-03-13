@@ -68,6 +68,7 @@ function makeProResponse(): LicenseInfo {
       propertyName: null,
       lastSynced: null,
     },
+    availableActions: [],
   };
 }
 
@@ -102,6 +103,7 @@ function makeTrialResponse(): LicenseInfo {
       propertyName: null,
       lastSynced: null,
     },
+    availableActions: [],
   };
 }
 

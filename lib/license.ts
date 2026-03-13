@@ -53,6 +53,7 @@ const FREE_DEFAULT: LicenseInfo = {
   warnings: [],
   usage: null,
   gaConfig: DEFAULT_GA_CONFIG,
+  availableActions: [],
 };
 
 // ---------------------------------------------------------------------------
@@ -84,7 +85,7 @@ function setCache<T>(key: string, data: T, ttl: number): void {
 // License key resolution
 // ---------------------------------------------------------------------------
 
-async function getLicenseKey(): Promise<string> {
+export async function getLicenseKey(): Promise<string> {
   try {
     const setting = await prisma.siteSettings.findUnique({
       where: { key: "license.key" },
@@ -386,6 +387,20 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
           billingRequired: false,
         },
         gaConfig: DEFAULT_GA_CONFIG,
+        availableActions: [
+          {
+            slug: "upgrade-pro",
+            label: "Upgrade to Pro",
+            url: `${PLATFORM_URL}/signup?plan=pro`,
+            variant: "primary",
+          },
+          {
+            slug: "manage-billing",
+            label: "Manage Billing",
+            url: `${PLATFORM_URL}/billing`,
+            variant: "outline",
+          },
+        ],
       };
     case "PRO":
       return {
@@ -403,6 +418,20 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
         warnings: [],
         usage: null,
         gaConfig: DEFAULT_GA_CONFIG,
+        availableActions: [
+          {
+            slug: "add-features",
+            label: "Add Features",
+            url: `${PLATFORM_URL}/billing`,
+            variant: "outline",
+          },
+          {
+            slug: "manage-billing",
+            label: "Manage Billing",
+            url: `${PLATFORM_URL}/billing`,
+            variant: "outline",
+          },
+        ],
       };
     case "HOSTED":
       return {
@@ -428,6 +457,14 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
           propertyName: "Mock Store",
           lastSynced: new Date().toISOString(),
         },
+        availableActions: [
+          {
+            slug: "manage-billing",
+            label: "Manage Billing",
+            url: `${PLATFORM_URL}/billing`,
+            variant: "outline",
+          },
+        ],
       };
     default:
       return FREE_DEFAULT;

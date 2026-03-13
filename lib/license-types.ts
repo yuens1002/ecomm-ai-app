@@ -25,6 +25,8 @@ export interface LicenseInfo {
   warnings: string[];
   usage: UsageInfo | null;
   gaConfig: GAConfig;
+  /** Platform-driven CTAs — labels, URLs, and variants come from the platform. */
+  availableActions: AvailableAction[];
 }
 
 export interface UsageInfo {
@@ -39,6 +41,21 @@ export interface GAConfig {
   measurementId: string | null;
   propertyName: string | null;
   lastSynced: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Available actions (from platform — contextual CTAs)
+// ---------------------------------------------------------------------------
+
+export interface AvailableAction {
+  /** Machine-readable action identifier (e.g. "start-trial", "manage-billing") */
+  slug: string;
+  /** Human-readable button label */
+  label: string;
+  /** Full URL to navigate to */
+  url: string;
+  /** Button styling hint */
+  variant: "primary" | "outline" | "ghost";
 }
 
 // ---------------------------------------------------------------------------
