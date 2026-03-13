@@ -159,7 +159,7 @@ jobs:
           [ "$HTTP_CODE" = "200" ] || { echo "FAIL: expected HTTP 200, got $HTTP_CODE"; exit 1; }
 
           # Assert overall status
-          [ "$STATUS" = "ok" ] || { echo "FAIL: expected status 'ok', got '$STATUS'"; exit 1; }
+          [ "$STATUS" = "${{ matrix.expected_status }}" ] || { echo "FAIL: expected status '${{ matrix.expected_status }}', got '$STATUS'"; exit 1; }
 
           # Assert database is always ok
           DB_STATUS=$(echo "$RESPONSE" | jq -r '.checks.database.status')
@@ -205,12 +205,12 @@ jobs:
       - name: "Assert: seed idempotency (minimal only)"
         if: matrix.profile == 'minimal'
         run: |
-          # Count products via node — redirect stderr and take last line to avoid Prisma noise
+          # Count products via node — capture stderr separately, print on failure
           COUNT_BEFORE=$(node -e "
             const { PrismaClient } = require('@prisma/client');
             const p = new PrismaClient();
             p.product.count().then(c => { process.stdout.write(String(c)); return p.\$disconnect(); });
-          " 2>/dev/null)
+          " 2>/tmp/prisma-count-err.log) || { echo "Count query failed:"; cat /tmp/prisma-count-err.log; exit 1; }
 
           echo "Products before re-seed: $COUNT_BEFORE"
 
@@ -221,7 +221,7 @@ jobs:
             const { PrismaClient } = require('@prisma/client');
             const p = new PrismaClient();
             p.product.count().then(c => { process.stdout.write(String(c)); return p.\$disconnect(); });
-          " 2>/dev/null)
+          " 2>/tmp/prisma-count-err.log) || { echo "Count query failed:"; cat /tmp/prisma-count-err.log; exit 1; }
 
           echo "Products after re-seed: $COUNT_AFTER"
 

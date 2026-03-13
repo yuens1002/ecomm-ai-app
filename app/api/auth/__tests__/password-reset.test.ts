@@ -215,19 +215,19 @@ describe("Password Reset Service", () => {
 
       (prisma.siteSettings.findUnique as jest.Mock).mockResolvedValue(null);
 
-      // Mock getResend() returning null (no RESEND_API_KEY)
-      const resendModule = jest.requireMock("@/lib/services/resend") as {
-        getResend: jest.Mock;
-      };
-      resendModule.getResend = jest.fn(() => null);
+      // Temporarily override getResend() to return null (no RESEND_API_KEY)
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const resendModule = require("@/lib/services/resend") as { getResend: jest.Mock };
+      const spy = jest.spyOn(resendModule, "getResend").mockReturnValue(null);
 
-      const result = await requestPasswordReset("user@example.com");
+      try {
+        const result = await requestPasswordReset("user@example.com");
 
-      expect(result).toEqual({ ok: true });
-      expect(mockResend.emails.send).not.toHaveBeenCalled();
-
-      // Restore original mock
-      resendModule.getResend = jest.fn(() => mockResendClient);
+        expect(result).toEqual({ ok: true });
+        expect(mockResendClient.emails.send).not.toHaveBeenCalled();
+      } finally {
+        spy.mockRestore();
+      }
     });
 
     it("should create token with correct expiry time", async () => {
