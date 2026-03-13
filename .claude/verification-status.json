@@ -166,12 +166,12 @@
       "notes": "26/26 ACs verified. 10 FN + 11 UI + 2 NAV + 3 REG via code review + Puppeteer screenshots. Bug found: intervalCount→billingIntervalCount type mismatch fixed. Precheck 0 errors, 1008 tests pass."
     },
     "feat/phase2b-license-plan": {
-      "status": "pending",
-      "acs_passed": 0,
+      "status": "verified",
+      "acs_passed": 28,
       "acs_total": 28,
       "tasks": [],
       "acs_doc": "docs/plans/phase2b-plan-support-ACs.md",
-      "notes": "Plan Page + Support v2. 11 UI + 13 FN + 4 REG ACs. Implementation complete, pending verification."
+      "notes": "28/28 ACs verified. 11 UI + 13 FN + 4 REG. Code review (22 ACs) + Puppeteer screenshots (5 ACs) + test suite (1065 tests, 0 failures) + precheck (0 errors). 0 iterations needed."
     },
     "feat/phase2a-llm-agnostic-ai": {
       "status": "verified",
