@@ -2,75 +2,114 @@
 
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin";
-import { setLicenseKey } from "@/lib/config/app-settings";
-import { validateLicense, invalidateCache } from "@/lib/license";
-import type { LicenseInfo } from "@/lib/license-types";
+import { listTickets, createTicket, createCommunityIssue, SupportError } from "@/lib/support";
+import type { TicketsResponse, CreateTicketResponse, CommunityIssueResponse } from "@/lib/support-types";
 
-const activateSchema = z.object({
-  key: z.string().min(1, "License key is required"),
+// ---------------------------------------------------------------------------
+// Support tickets
+// ---------------------------------------------------------------------------
+
+const ticketSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200),
+  body: z.string().max(5000).optional(),
 });
 
-interface ActivateResult {
+interface TicketResult {
   success: boolean;
   error?: string;
-  license?: LicenseInfo;
+  data?: CreateTicketResponse;
 }
 
 /**
- * Activate a license key — saves to DB, invalidates cache, re-validates.
+ * Submit a new support ticket to the platform.
  */
-export async function activateLicense(
+export async function submitSupportTicket(
   formData: FormData
-): Promise<ActivateResult> {
+): Promise<TicketResult> {
   await requireAdmin();
 
-  const parsed = activateSchema.safeParse({ key: formData.get("key") });
+  const parsed = ticketSchema.safeParse({
+    title: formData.get("title"),
+    body: formData.get("body") || undefined,
+  });
+
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
   }
 
-  const { key } = parsed.data;
+  try {
+    const data = await createTicket(parsed.data);
+    return { success: true, data };
+  } catch (error) {
+    if (error instanceof SupportError) {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: "Failed to create ticket" };
+  }
+}
 
-  // Save key to DB
-  await setLicenseKey(key);
+// ---------------------------------------------------------------------------
+// Community issues
+// ---------------------------------------------------------------------------
 
-  // Clear cached license so next validate hits the platform
-  invalidateCache();
+const communityIssueSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200),
+  email: z.string().email("Valid email is required"),
+  body: z.string().max(5000).optional(),
+});
 
-  // Re-validate with new key
-  const license = await validateLicense();
+interface CommunityIssueResult {
+  success: boolean;
+  error?: string;
+  data?: CommunityIssueResponse;
+}
 
-  if (license.tier === "FREE") {
-    // Key was rejected by platform (or platform unreachable)
-    return {
-      success: false,
-      error:
-        "Could not validate this key. Check the key and try again.",
-      license,
-    };
+/**
+ * Submit a community issue to GitHub via the platform.
+ */
+export async function submitCommunityIssue(
+  formData: FormData
+): Promise<CommunityIssueResult> {
+  await requireAdmin();
+
+  const parsed = communityIssueSchema.safeParse({
+    title: formData.get("title"),
+    email: formData.get("email"),
+    body: formData.get("body") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
   }
 
-  return { success: true, license };
+  try {
+    const data = await createCommunityIssue(parsed.data);
+    return { success: true, data };
+  } catch (error) {
+    if (error instanceof SupportError) {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: "Failed to create issue" };
+  }
 }
 
 /**
- * Remove the current license key and revert to FREE tier.
+ * Fetch support tickets and usage from the platform.
  */
-export async function deactivateLicense(): Promise<ActivateResult> {
+export async function fetchSupportTickets(): Promise<{
+  success: boolean;
+  error?: string;
+  data?: TicketsResponse;
+}> {
   await requireAdmin();
 
-  await setLicenseKey("");
-  invalidateCache();
-
-  const license = await validateLicense();
-  return { success: true, license };
-}
-
-/**
- * Force re-validate the license (clears cache).
- */
-export async function refreshLicense(): Promise<LicenseInfo> {
-  await requireAdmin();
-  invalidateCache();
-  return validateLicense();
+  try {
+    const data = await listTickets();
+    return { success: true, data };
+  } catch (error) {
+    if (error instanceof SupportError) {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: "Failed to fetch tickets" };
+  }
 }
