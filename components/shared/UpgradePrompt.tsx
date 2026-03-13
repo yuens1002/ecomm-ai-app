@@ -21,7 +21,7 @@ export function UpgradePrompt({ featureName, description }: UpgradePromptProps) 
         )}
       </div>
       <Link
-        href="/admin/support"
+        href="/admin/settings/plan"
         className="text-sm font-medium text-primary underline-offset-4 hover:underline"
       >
         View Plans
