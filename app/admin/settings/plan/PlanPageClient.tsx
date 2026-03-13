@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from "react";
 import {
+  AlertTriangle,
   Check,
+  CheckCircle2,
   Circle,
   ExternalLink,
   Key,
@@ -11,12 +13,14 @@ import {
   ShieldCheck,
   Sparkles,
   X,
+  XCircle,
 } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import {
   activateLicense,
@@ -35,6 +39,7 @@ interface PlanPageClientProps {
   license: LicenseInfo;
   plans: Plan[];
   catalog: CatalogFeature[];
+  offline: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -45,10 +50,13 @@ export function PlanPageClient({
   license: initialLicense,
   plans,
   catalog,
+  offline,
 }: PlanPageClientProps) {
   const { toast } = useToast();
   const [license, setLicense] = useState(initialLicense);
   const [isPending, startTransition] = useTransition();
+  const [now] = useState(() => Date.now());
+  const tier = license.tier;
 
   // ==================== PLAN CARDS ====================
 
@@ -147,6 +155,122 @@ export function PlanPageClient({
   return (
     <div className="space-y-8">
       <PageTitle title="Plan" subtitle="Manage your subscription and features" />
+
+      {/* ==================== OFFLINE WARNING ==================== */}
+      {offline && (
+        <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          Unable to reach platform. Showing offline status.
+        </div>
+      )}
+
+      {/* ==================== COMPATIBILITY WARNINGS ==================== */}
+      {license.warnings.length > 0 && (
+        <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/30">
+          <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
+            <AlertTriangle className="h-4 w-4" />
+            Compatibility Notice
+          </div>
+          <ul className="list-disc pl-6 text-sm text-amber-700 dark:text-amber-300">
+            {license.warnings.map((w, i) => (
+              <li key={i}>{w}</li>
+            ))}
+          </ul>
+          <p className="text-sm text-amber-600 dark:text-amber-400">
+            Run{" "}
+            <code className="rounded bg-amber-100 px-1 dark:bg-amber-900">
+              npm run upgrade
+            </code>{" "}
+            to update your store.
+          </p>
+        </div>
+      )}
+
+      {/* ==================== CURRENT PLAN ==================== */}
+      <SettingsSection
+        title="Current Plan"
+        description={
+          tier === "FREE"
+            ? "Self-hosted, open source"
+            : tier === "TRIAL"
+              ? "All features enabled during your trial"
+              : "Licensed features active"
+        }
+        action={
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isPending}
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : ""}`}
+            />
+          </Button>
+        }
+      >
+        <div className="flex items-center gap-3">
+          <Badge
+            variant={
+              tier === "PRO" || tier === "HOSTED"
+                ? "default"
+                : tier === "TRIAL"
+                  ? "secondary"
+                  : "outline"
+            }
+            className="text-sm"
+          >
+            {tier === "HOSTED"
+              ? "Hosted"
+              : tier === "PRO"
+                ? "Pro"
+                : tier === "TRIAL"
+                  ? "Trial"
+                  : "Free"}
+          </Badge>
+          {tier === "PRO" && (
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+          )}
+        </div>
+
+        {/* Trial progress */}
+        {tier === "TRIAL" && license.trialEndsAt && (
+          <div className="space-y-3 pt-2">
+            <TrialProgress trialEndsAt={license.trialEndsAt} now={now} />
+            {license.usage && (
+              <TokenBudget
+                used={license.usage.tokensUsed}
+                budget={license.usage.tokenBudget}
+                billingRequired={license.usage.billingRequired}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Platform-driven CTAs */}
+        {license.availableActions.length > 0 && (
+          <div className="flex items-center gap-3 pt-2">
+            {license.availableActions.map((action) => (
+              <Button
+                key={action.slug}
+                variant={
+                  action.variant === "primary" ? "default" : action.variant
+                }
+                asChild
+              >
+                <a
+                  href={action.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {action.label}
+                  <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                </a>
+              </Button>
+            ))}
+          </div>
+        )}
+      </SettingsSection>
 
       {/* ==================== PLAN CARDS ==================== */}
       {plans.length > 0 && (
@@ -426,4 +550,76 @@ function formatCategory(category: string): string {
     support: "Support",
   };
   return labels[category] || category.charAt(0).toUpperCase() + category.slice(1);
+}
+
+// ---------------------------------------------------------------------------
+// Trial / Budget sub-components
+// ---------------------------------------------------------------------------
+
+function TrialProgress({
+  trialEndsAt,
+  now,
+}: {
+  trialEndsAt: string;
+  now: number;
+}) {
+  const end = new Date(trialEndsAt).getTime();
+  const daysRemaining = Math.max(
+    0,
+    Math.ceil((end - now) / (1000 * 60 * 60 * 24))
+  );
+  const percentElapsed = Math.min(
+    100,
+    Math.round(((30 - daysRemaining) / 30) * 100)
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">
+          {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining
+        </span>
+        <span className="text-xs text-muted-foreground">30-day trial</span>
+      </div>
+      <Progress value={percentElapsed} className="h-2" />
+    </div>
+  );
+}
+
+function TokenBudget({
+  used,
+  budget,
+  billingRequired,
+}: {
+  used: number;
+  budget: number;
+  billingRequired: boolean;
+}) {
+  const percent = budget > 0 ? Math.round((used / budget) * 100) : 0;
+  const exhausted = used >= budget;
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">
+          {used.toLocaleString()} / {budget.toLocaleString()} tokens
+        </span>
+        {exhausted && (
+          <span className="flex items-center gap-1 text-xs text-destructive">
+            <XCircle className="h-3 w-3" />
+            Budget exhausted
+          </span>
+        )}
+      </div>
+      <Progress
+        value={Math.min(percent, 100)}
+        className={`h-2 ${exhausted ? "[&>div]:bg-destructive" : ""}`}
+      />
+      {billingRequired && (
+        <p className="text-xs text-destructive">
+          Add billing to continue using AI features.
+        </p>
+      )}
+    </div>
+  );
 }
