@@ -1,38 +1,34 @@
-import { validateLicense, getFeatureCatalog } from "@/lib/license";
+import { auth } from "@/auth";
+import { validateLicense, getLicenseKey } from "@/lib/license";
+import { listTickets } from "@/lib/support";
 import { SupportPageClient } from "./SupportPageClient";
-
-// Feature flag: show Plan UI when platform integration is configured
-const showPlan = !!(
-  process.env.PLATFORM_URL ||
-  process.env.MOCK_LICENSE_TIER ||
-  process.env.LICENSE_KEY
-);
+import type { TicketsResponse } from "@/lib/support-types";
 
 export default async function SupportPage() {
-  let license;
-  let catalog;
-  let offline = false;
+  const [license, session] = await Promise.all([
+    validateLicense(),
+    auth(),
+  ]);
 
-  try {
-    [license, catalog] = await Promise.all([
-      validateLicense(),
-      getFeatureCatalog(),
-    ]);
-  } catch {
-    const { validateLicense: vl, getFeatureCatalog: gc } = await import(
-      "@/lib/license"
-    );
-    license = await vl();
-    catalog = await gc();
-    offline = true;
+  let supportData: TicketsResponse | null = null;
+
+  // Fetch tickets for any user with a license key (not just priority-support)
+  const key = await getLicenseKey();
+  if (key) {
+    try {
+      supportData = await listTickets();
+    } catch {
+      // Fail silently — client can retry via refresh
+    }
   }
+
+  const adminEmail = session?.user?.email || "";
 
   return (
     <SupportPageClient
       license={license}
-      catalog={catalog}
-      offline={offline}
-      showPlan={showPlan}
+      supportData={supportData}
+      adminEmail={adminEmail}
     />
   );
 }
