@@ -11,7 +11,6 @@ import {
   Loader2,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
   X,
   XCircle,
 } from "lucide-react";
@@ -26,10 +25,8 @@ import {
   activateLicense,
   deactivateLicense,
   refreshLicense,
-  startCheckout,
 } from "./actions";
 import type { LicenseInfo, CatalogFeature } from "@/lib/license-types";
-import type { Plan } from "@/lib/plan-types";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -37,9 +34,7 @@ import type { Plan } from "@/lib/plan-types";
 
 interface PlanPageClientProps {
   license: LicenseInfo;
-  plans: Plan[];
   catalog: CatalogFeature[];
-  offline: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -48,9 +43,7 @@ interface PlanPageClientProps {
 
 export function PlanPageClient({
   license: initialLicense,
-  plans,
   catalog,
-  offline,
 }: PlanPageClientProps) {
   const { toast } = useToast();
   const [license, setLicense] = useState(initialLicense);
@@ -58,42 +51,11 @@ export function PlanPageClient({
   const [now] = useState(() => Date.now());
   const tier = license.tier;
 
-  // ==================== PLAN CARDS ====================
-
-  function handleSubscribe(planSlug: string) {
-    const formData = new FormData();
-    formData.set("planSlug", planSlug);
-
-    startTransition(async () => {
-      const result = await startCheckout(formData);
-      if (result.success && result.url) {
-        window.location.href = result.url;
-      } else {
-        toast({
-          title: "Checkout failed",
-          description: result.error,
-          variant: "destructive",
-        });
-      }
-    });
-  }
-
-  function handleManageBilling() {
-    const billingAction = license.availableActions.find(
-      (a) => a.slug === "manage-billing"
-    );
-    if (billingAction) {
-      window.open(billingAction.url, "_blank", "noopener,noreferrer");
-    }
-  }
-
   // ==================== LICENSE KEY ====================
 
   const [keyInput, setKeyInput] = useState("");
   const isLicensed = license.tier !== "FREE";
-  const maskedKey = isLicensed
-    ? maskLicenseKey(license)
-    : null;
+  const maskedKey = isLicensed ? maskLicenseKey(license) : null;
 
   function handleActivate() {
     if (!keyInput.trim()) return;
@@ -155,14 +117,6 @@ export function PlanPageClient({
   return (
     <div className="space-y-8">
       <PageTitle title="Plan" subtitle="Manage your subscription and features" />
-
-      {/* ==================== OFFLINE WARNING ==================== */}
-      {offline && (
-        <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
-          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-          Unable to reach platform. Showing offline status.
-        </div>
-      )}
 
       {/* ==================== COMPATIBILITY WARNINGS ==================== */}
       {license.warnings.length > 0 && (
@@ -272,31 +226,26 @@ export function PlanPageClient({
         )}
       </SettingsSection>
 
-      {/* ==================== PLAN CARDS ==================== */}
-      {plans.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {plans.map((plan) => {
-            const isSubscribed = plan.features.some((f) =>
-              license.features.includes(f)
-            );
-            return (
-              <PlanCard
-                key={plan.slug}
-                plan={plan}
-                isSubscribed={isSubscribed}
-                isPending={isPending}
-                onSubscribe={() => handleSubscribe(plan.slug)}
-                onManageBilling={handleManageBilling}
-              />
-            );
-          })}
-        </div>
-      )}
+      {/* ==================== PLANS (coming soon) ==================== */}
+      <div className="rounded-lg border border-dashed border-muted-foreground/25 bg-muted/50 p-6 text-center">
+        <p className="text-sm text-muted-foreground">
+          Subscription plans and billing details will appear here.
+        </p>
+        <p className="mt-2 text-xs font-medium text-muted-foreground/70">
+          Coming soon
+        </p>
+      </div>
 
       {/* ==================== FEATURE CATALOG ==================== */}
       <SettingsSection
-        title="Features"
-        description="Feature availability for your current plan"
+        title={tier === "FREE" ? "Pro Features" : "Features"}
+        description={
+          tier === "FREE"
+            ? "Upgrade to unlock these capabilities"
+            : tier === "TRIAL"
+              ? "All features are enabled during your trial"
+              : "Features included in your plan"
+        }
       >
         <div className="space-y-6">
           {Object.entries(groupedFeatures).map(([category, features]) => (
@@ -340,7 +289,11 @@ export function PlanPageClient({
       <SettingsSection
         title="License Key"
         icon={<Key className="h-4 w-4" />}
-        description="Activate or manage your license key"
+        description={
+          isLicensed
+            ? "Your license key"
+            : "Already have a key? Paste it below to activate."
+        }
         action={
           isLicensed ? (
             <Button
@@ -414,117 +367,10 @@ export function PlanPageClient({
 }
 
 // ---------------------------------------------------------------------------
-// Plan Card sub-component
-// ---------------------------------------------------------------------------
-
-interface PlanCardProps {
-  plan: Plan;
-  isSubscribed: boolean;
-  isPending: boolean;
-  onSubscribe: () => void;
-  onManageBilling: () => void;
-}
-
-function PlanCard({
-  plan,
-  isSubscribed,
-  isPending,
-  onSubscribe,
-  onManageBilling,
-}: PlanCardProps) {
-  const priceDisplay = `$${(plan.price / 100).toFixed(0)}`;
-  const intervalLabel = plan.interval === "year" ? "/yr" : "/mo";
-
-  return (
-    <div
-      className={`relative flex flex-col rounded-lg border p-6 ${
-        plan.highlight ? "border-primary shadow-sm" : ""
-      }`}
-    >
-      {plan.highlight && (
-        <Badge className="absolute -top-2.5 left-4" variant="default">
-          <Sparkles className="mr-1 h-3 w-3" />
-          Recommended
-        </Badge>
-      )}
-
-      {isSubscribed && (
-        <Badge className="absolute -top-2.5 right-4" variant="secondary">
-          Active
-        </Badge>
-      )}
-
-      <div className="mb-4 space-y-1">
-        <h3 className="text-lg font-semibold">{plan.name}</h3>
-        <p className="text-sm text-muted-foreground">{plan.description}</p>
-      </div>
-
-      <div className="mb-4">
-        <span className="text-3xl font-bold">{priceDisplay}</span>
-        <span className="text-muted-foreground">{intervalLabel}</span>
-      </div>
-
-      {/* Benefits */}
-      {plan.details.benefits.length > 0 && (
-        <ul className="mb-4 space-y-1.5 text-sm">
-          {plan.details.benefits.map((benefit) => (
-            <li key={benefit} className="flex items-start gap-2">
-              <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
-              {benefit}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Quotas */}
-      {Object.keys(plan.details.quotas).length > 0 && (
-        <div className="mb-4 space-y-1 text-xs text-muted-foreground">
-          {Object.entries(plan.details.quotas).map(([key, value]) => (
-            <div key={key} className="flex justify-between">
-              <span className="capitalize">{key.replace(/_/g, " ")}</span>
-              <span>{typeof value === "number" ? value.toLocaleString() : value}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-auto pt-4">
-        {isSubscribed ? (
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={onManageBilling}
-            >
-              Manage Billing
-              <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-            </Button>
-          </div>
-        ) : (
-          <Button
-            size="sm"
-            className="w-full"
-            onClick={onSubscribe}
-            disabled={isPending}
-          >
-            {isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : null}
-            Subscribe
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function maskLicenseKey(license: LicenseInfo): string {
-  // The platform doesn't expose the actual key, so we show a generic masked version
   if (license.tier === "TRIAL") return "ar_lic_••••_trial";
   if (license.tier === "PRO") return "ar_lic_••••_pro";
   if (license.tier === "HOSTED") return "ar_lic_••••_hosted";
@@ -623,3 +469,32 @@ function TokenBudget({
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Plan Card template (not rendered — plan details not finalized yet)
+// Uncomment and wire up when platform /api/plans is ready.
+// ---------------------------------------------------------------------------
+// import type { Plan } from "@/lib/plan-types";
+//
+// interface PlanCardProps {
+//   plan: Plan;
+//   isSubscribed: boolean;
+//   isPending: boolean;
+//   onSubscribe: () => void;
+//   onManageBilling: () => void;
+// }
+//
+// function PlanCard({ plan, isSubscribed, isPending, onSubscribe, onManageBilling }: PlanCardProps) {
+//   const priceDisplay = `$${(plan.price / 100).toFixed(0)}`;
+//   const intervalLabel = plan.interval === "year" ? "/yr" : "/mo";
+//   return (
+//     <div className={`relative flex flex-col rounded-lg border p-6 ${plan.highlight ? "border-primary shadow-sm" : ""}`}>
+//       {plan.highlight && <Badge className="absolute -top-2.5 left-4"><Sparkles className="mr-1 h-3 w-3" />Recommended</Badge>}
+//       {isSubscribed && <Badge className="absolute -top-2.5 right-4" variant="secondary">Active</Badge>}
+//       <div className="mb-4 space-y-1"><h3 className="text-lg font-semibold">{plan.name}</h3><p className="text-sm text-muted-foreground">{plan.description}</p></div>
+//       <div className="mb-4"><span className="text-3xl font-bold">{priceDisplay}</span><span className="text-muted-foreground">{intervalLabel}</span></div>
+//       {plan.details.benefits.length > 0 && <ul className="mb-4 space-y-1.5 text-sm">{plan.details.benefits.map(b => <li key={b} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />{b}</li>)}</ul>}
+//       <div className="mt-auto pt-4">{isSubscribed ? <Button variant="outline" size="sm" onClick={onManageBilling}>Manage Billing<ExternalLink className="ml-1.5 h-3.5 w-3.5" /></Button> : <Button size="sm" className="w-full" onClick={onSubscribe} disabled={isPending}>Subscribe</Button>}</div>
+//     </div>
+//   );
+// }
