@@ -6,6 +6,7 @@ import {
   Check,
   CheckCircle2,
   Circle,
+  Clock,
   ExternalLink,
   Key,
   Loader2,
@@ -25,8 +26,10 @@ import {
   activateLicense,
   deactivateLicense,
   refreshLicense,
+  startCheckout,
 } from "./actions";
 import type { LicenseInfo, CatalogFeature } from "@/lib/license-types";
+import type { Plan } from "@/lib/plan-types";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -34,6 +37,7 @@ import type { LicenseInfo, CatalogFeature } from "@/lib/license-types";
 
 interface PlanPageClientProps {
   license: LicenseInfo;
+  plans: Plan[];
   catalog: CatalogFeature[];
 }
 
@@ -43,6 +47,7 @@ interface PlanPageClientProps {
 
 export function PlanPageClient({
   license: initialLicense,
+  plans,
   catalog,
 }: PlanPageClientProps) {
   const { toast } = useToast();
@@ -50,6 +55,35 @@ export function PlanPageClient({
   const [isPending, startTransition] = useTransition();
   const [now] = useState(() => Date.now());
   const tier = license.tier;
+
+  // ==================== PLAN ACTIONS ====================
+
+  function handleSubscribe(planSlug: string) {
+    const formData = new FormData();
+    formData.set("planSlug", planSlug);
+
+    startTransition(async () => {
+      const result = await startCheckout(formData);
+      if (result.success && result.url) {
+        window.location.href = result.url;
+      } else {
+        toast({
+          title: "Checkout failed",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+    });
+  }
+
+  function handleManageBilling() {
+    const billingAction = license.availableActions.find(
+      (a) => a.slug === "manage-billing"
+    );
+    if (billingAction) {
+      window.open(billingAction.url, "_blank", "noopener,noreferrer");
+    }
+  }
 
   // ==================== LICENSE KEY ====================
 
@@ -226,15 +260,22 @@ export function PlanPageClient({
         )}
       </SettingsSection>
 
-      {/* ==================== PLANS (coming soon) ==================== */}
-      <div className="rounded-lg border border-dashed border-muted-foreground/25 bg-muted/50 p-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          Subscription plans and billing details will appear here.
-        </p>
-        <p className="mt-2 text-xs font-medium text-muted-foreground/70">
-          Coming soon
-        </p>
-      </div>
+      {/* ==================== AVAILABLE PLANS ==================== */}
+      {plans.map((plan) => {
+        const isSubscribed = plan.features.some((f) =>
+          license.features.includes(f)
+        );
+        return (
+          <PlanCard
+            key={plan.slug}
+            plan={plan}
+            isSubscribed={isSubscribed}
+            isPending={isPending}
+            onSubscribe={() => handleSubscribe(plan.slug)}
+            onManageBilling={handleManageBilling}
+          />
+        );
+      })}
 
       {/* ==================== FEATURE CATALOG ==================== */}
       <SettingsSection
@@ -367,6 +408,189 @@ export function PlanPageClient({
 }
 
 // ---------------------------------------------------------------------------
+// Plan Card
+// ---------------------------------------------------------------------------
+
+interface PlanCardProps {
+  plan: Plan;
+  isSubscribed: boolean;
+  isPending: boolean;
+  onSubscribe: () => void;
+  onManageBilling: () => void;
+}
+
+function PlanCard({
+  plan,
+  isSubscribed,
+  isPending,
+  onSubscribe,
+  onManageBilling,
+}: PlanCardProps) {
+  const priceDisplay = `$${(plan.price / 100).toFixed(0)}`;
+  const intervalLabel = plan.interval === "year" ? "/yr" : "/mo";
+  const { details } = plan;
+
+  return (
+    <SettingsSection
+      title={plan.name}
+      description={plan.description}
+      action={
+        isSubscribed ? (
+          <Badge variant="secondary">
+            <CheckCircle2 className="mr-1 h-3 w-3" />
+            Active
+          </Badge>
+        ) : undefined
+      }
+    >
+      <div className="space-y-5">
+        {/* Price */}
+        <div>
+          <span className="text-3xl font-bold">{priceDisplay}</span>
+          <span className="text-muted-foreground">{intervalLabel}</span>
+        </div>
+
+        {/* Benefits */}
+        {details.benefits && details.benefits.length > 0 && (
+          <ul className="space-y-1.5 text-sm">
+            {details.benefits.map((benefit) => (
+              <li key={benefit} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                {benefit}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* SLA */}
+        {details.sla && (
+          <div className="space-y-1.5">
+            <h4 className="text-sm font-medium text-muted-foreground">
+              Service Level
+            </h4>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+              {details.sla.responseTime && (
+                <>
+                  <dt className="flex items-center gap-1.5 text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" />
+                    Response time
+                  </dt>
+                  <dd>{details.sla.responseTime}</dd>
+                </>
+              )}
+              {details.sla.availability && (
+                <>
+                  <dt className="text-muted-foreground">Availability</dt>
+                  <dd>{details.sla.availability}</dd>
+                </>
+              )}
+              {details.sla.videoCallDuration && (
+                <>
+                  <dt className="text-muted-foreground">Video call</dt>
+                  <dd>{details.sla.videoCallDuration}</dd>
+                </>
+              )}
+            </dl>
+          </div>
+        )}
+
+        {/* Quotas */}
+        {details.quotas && Object.keys(details.quotas).length > 0 && (
+          <div className="space-y-1.5">
+            <h4 className="text-sm font-medium text-muted-foreground">
+              Monthly Quotas
+            </h4>
+            <div className="space-y-1 text-sm">
+              {Object.entries(details.quotas).map(([key, value]) => (
+                <div key={key} className="flex justify-between">
+                  <span className="capitalize text-muted-foreground">
+                    {key.replace(/-/g, " ")}
+                  </span>
+                  <span>{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Scope */}
+        {details.scope && details.scope.length > 0 && (
+          <div className="space-y-1.5">
+            <h4 className="text-sm font-medium text-muted-foreground">
+              What&apos;s Covered
+            </h4>
+            <ul className="space-y-1 text-sm">
+              {details.scope.map((item) => (
+                <li key={item} className="flex items-start gap-2">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Excludes */}
+        {details.excludes && details.excludes.length > 0 && (
+          <div className="space-y-1.5">
+            <h4 className="text-sm font-medium text-muted-foreground">
+              Not Included
+            </h4>
+            <ul className="space-y-1 text-sm text-muted-foreground">
+              {details.excludes.map((item) => (
+                <li key={item} className="flex items-start gap-2">
+                  <X className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/40" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Terms */}
+        {details.terms && details.terms.length > 0 && (
+          <details className="text-xs text-muted-foreground">
+            <summary className="cursor-pointer font-medium hover:text-foreground">
+              Terms & conditions
+            </summary>
+            <ul className="mt-2 list-disc space-y-0.5 pl-5">
+              {details.terms.map((term) => (
+                <li key={term}>{term}</li>
+              ))}
+            </ul>
+          </details>
+        )}
+
+        {/* CTA */}
+        <div className="pt-1">
+          {isSubscribed ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onManageBilling}
+            >
+              Manage Billing
+              <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={onSubscribe}
+              disabled={isPending}
+            >
+              {isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Subscribe
+            </Button>
+          )}
+        </div>
+      </div>
+    </SettingsSection>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -469,32 +693,3 @@ function TokenBudget({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Plan Card template (not rendered — plan details not finalized yet)
-// Uncomment and wire up when platform /api/plans is ready.
-// ---------------------------------------------------------------------------
-// import type { Plan } from "@/lib/plan-types";
-//
-// interface PlanCardProps {
-//   plan: Plan;
-//   isSubscribed: boolean;
-//   isPending: boolean;
-//   onSubscribe: () => void;
-//   onManageBilling: () => void;
-// }
-//
-// function PlanCard({ plan, isSubscribed, isPending, onSubscribe, onManageBilling }: PlanCardProps) {
-//   const priceDisplay = `$${(plan.price / 100).toFixed(0)}`;
-//   const intervalLabel = plan.interval === "year" ? "/yr" : "/mo";
-//   return (
-//     <div className={`relative flex flex-col rounded-lg border p-6 ${plan.highlight ? "border-primary shadow-sm" : ""}`}>
-//       {plan.highlight && <Badge className="absolute -top-2.5 left-4"><Sparkles className="mr-1 h-3 w-3" />Recommended</Badge>}
-//       {isSubscribed && <Badge className="absolute -top-2.5 right-4" variant="secondary">Active</Badge>}
-//       <div className="mb-4 space-y-1"><h3 className="text-lg font-semibold">{plan.name}</h3><p className="text-sm text-muted-foreground">{plan.description}</p></div>
-//       <div className="mb-4"><span className="text-3xl font-bold">{priceDisplay}</span><span className="text-muted-foreground">{intervalLabel}</span></div>
-//       {plan.details.benefits.length > 0 && <ul className="mb-4 space-y-1.5 text-sm">{plan.details.benefits.map(b => <li key={b} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />{b}</li>)}</ul>}
-//       <div className="mt-auto pt-4">{isSubscribed ? <Button variant="outline" size="sm" onClick={onManageBilling}>Manage Billing<ExternalLink className="ml-1.5 h-3.5 w-3.5" /></Button> : <Button size="sm" className="w-full" onClick={onSubscribe} disabled={isPending}>Subscribe</Button>}</div>
-//     </div>
-//   );
-// }
