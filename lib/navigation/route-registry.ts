@@ -308,6 +308,14 @@ const routeEntries: RouteEntry[] = [
     icon: LifeBuoy,
     isNavigable: true,
   },
+  {
+    id: "admin.management.support.plans",
+    pathname: "/admin/support/plans",
+    matchMode: "exact",
+    label: "Plans",
+    parentId: "admin.management.support",
+    isNavigable: true,
+  },
 
   // ==================== SETTINGS ====================
   {

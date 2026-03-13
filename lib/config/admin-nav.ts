@@ -77,6 +77,7 @@ export const adminNavConfig: NavItem[] = [
       { label: "Newsletter", href: "/admin/newsletter" },
       { label: "Reviews", href: "/admin/reviews", badgeId: "unread-reviews" },
       { label: "Support", href: "/admin/support", icon: LifeBuoy },
+      { label: "Plans", href: "/admin/support/plans" },
     ],
   },
   {
@@ -89,7 +90,6 @@ export const adminNavConfig: NavItem[] = [
       { label: "Location", href: "/admin/settings/location" },
       { label: "Commerce", href: "/admin/settings/commerce" },
       { label: "AI", href: "/admin/settings/ai" },
-      { label: "Plan", href: "/admin/settings/plan" },
       { label: "Shipping", href: "/admin/settings/shipping" },
       { label: "Marketing", href: "/admin/settings/marketing" },
       { label: "Contact", href: "/admin/settings/contact" },
@@ -327,6 +327,7 @@ export const mobileNavConfig: NavItem[] = [
       { label: "Newsletter", href: "/admin/newsletter" },
       { label: "Reviews", href: "/admin/reviews", badgeId: "unread-reviews" },
       { label: "Support", href: "/admin/support", icon: LifeBuoy },
+      { label: "Plans", href: "/admin/support/plans" },
     ],
   },
   {
@@ -339,7 +340,6 @@ export const mobileNavConfig: NavItem[] = [
       { label: "Location", href: "/admin/settings/location" },
       { label: "Commerce", href: "/admin/settings/commerce" },
       { label: "AI", href: "/admin/settings/ai" },
-      { label: "Plan", href: "/admin/settings/plan" },
       { label: "Shipping", href: "/admin/settings/shipping" },
       { label: "Marketing", href: "/admin/settings/marketing" },
       { label: "Contact", href: "/admin/settings/contact" },

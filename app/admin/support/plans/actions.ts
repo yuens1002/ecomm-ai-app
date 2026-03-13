@@ -50,7 +50,7 @@ export async function activateLicense(
     await setLicenseKey(parsed.data.key);
     invalidateCache();
     const license = await validateLicense();
-    revalidatePath("/admin/settings/plan");
+    revalidatePath("/admin/support/plans");
     return { success: true, license };
   } catch {
     return { success: false, error: "Failed to activate license" };
@@ -67,7 +67,7 @@ export async function deactivateLicense(): Promise<LicenseResult> {
     await setLicenseKey("");
     invalidateCache();
     const license = await validateLicense();
-    revalidatePath("/admin/settings/plan");
+    revalidatePath("/admin/support/plans");
     return { success: true, license };
   } catch {
     return { success: false, error: "Failed to deactivate license" };

@@ -114,10 +114,10 @@ export function CommunityIssueSection({
         <p className="text-xs text-muted-foreground">
           For priority response times, subscribe to Priority Support in{" "}
           <Link
-            href="/admin/settings/plan"
+            href="/admin/support/plans"
             className="font-medium text-primary underline-offset-4 hover:underline"
           >
-            Settings &gt; Plan
+            Plans
           </Link>
           .
         </p>
