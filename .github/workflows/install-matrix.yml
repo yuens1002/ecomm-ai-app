@@ -205,23 +205,15 @@ jobs:
       - name: "Assert: seed idempotency (minimal only)"
         if: matrix.profile == 'minimal'
         run: |
-          # Count products via node — capture stderr separately, print on failure
-          COUNT_BEFORE=$(node -e "
-            const { PrismaClient } = require('@prisma/client');
-            const p = new PrismaClient();
-            p.product.count().then(c => { process.stdout.write(String(c)); return p.\$disconnect(); });
-          " 2>/tmp/prisma-count-err.log) || { echo "Count query failed:"; cat /tmp/prisma-count-err.log; exit 1; }
+          # Count products via psql directly (avoids Prisma client issues post-build)
+          COUNT_BEFORE=$(PGPASSWORD=testpass psql -h localhost -U testuser -d artisan_test -tAc 'SELECT COUNT(*) FROM "Product"')
 
           echo "Products before re-seed: $COUNT_BEFORE"
 
           # Run seed again
           node scripts/seed-if-empty.js
 
-          COUNT_AFTER=$(node -e "
-            const { PrismaClient } = require('@prisma/client');
-            const p = new PrismaClient();
-            p.product.count().then(c => { process.stdout.write(String(c)); return p.\$disconnect(); });
-          " 2>/tmp/prisma-count-err.log) || { echo "Count query failed:"; cat /tmp/prisma-count-err.log; exit 1; }
+          COUNT_AFTER=$(PGPASSWORD=testpass psql -h localhost -U testuser -d artisan_test -tAc 'SELECT COUNT(*) FROM "Product"')
 
           echo "Products after re-seed: $COUNT_AFTER"
 
