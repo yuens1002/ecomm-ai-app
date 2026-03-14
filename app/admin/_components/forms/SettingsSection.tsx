@@ -14,7 +14,7 @@ interface SettingsSectionProps {
   /** Section title */
   title: string;
   /** Description shown below the title */
-  description: ReactNode;
+  description?: ReactNode;
   /** Settings fields to display */
   children: ReactNode;
   /** Optional action element rendered in the top-right of the header */
@@ -49,10 +49,12 @@ export function SettingsSection({
                 {icon}
                 {title}
               </FieldTitle>
-              {descriptionIsString ? (
-                <FieldDescription>{description}</FieldDescription>
-              ) : (
-                <div className={descriptionClassName}>{description}</div>
+              {description != null && (
+                descriptionIsString ? (
+                  <FieldDescription>{description}</FieldDescription>
+                ) : (
+                  <div className={descriptionClassName}>{description}</div>
+                )
               )}
             </FieldContent>
           </Field>
