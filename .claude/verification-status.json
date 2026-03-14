@@ -174,12 +174,12 @@
       "notes": "28/28 ACs verified. 11 UI + 13 FN + 4 REG. Code review (22 ACs) + Puppeteer screenshots (5 ACs) + test suite (1065 tests, 0 failures) + precheck (0 errors). 0 iterations needed."
     },
     "feat/support-plans-restructure": {
-      "status": "implementing",
-      "acs_passed": 0,
+      "status": "verified",
+      "acs_passed": 36,
       "acs_total": 36,
       "tasks": [],
       "acs_doc": "docs/plans/support-plans-restructure-ACs.md",
-      "notes": "15 UI + 8 FN + 9 E2E + 4 REG ACs. Implementation complete, pending verification."
+      "notes": "36/36 ACs verified. 15 UI + 8 FN + 9 E2E + 4 REG via code review + precheck (0 errors) + test:ci (89 suites, 1066 tests, 0 failures). 0 iterations needed."
     },
     "feat/phase2a-llm-agnostic-ai": {
       "status": "verified",
