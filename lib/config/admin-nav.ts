@@ -76,8 +76,16 @@ export const adminNavConfig: NavItem[] = [
       { label: "All Users", href: "/admin/users" },
       { label: "Newsletter", href: "/admin/newsletter" },
       { label: "Reviews", href: "/admin/reviews", badgeId: "unread-reviews" },
-      { label: "Support", href: "/admin/support", icon: LifeBuoy },
+    ],
+  },
+  {
+    label: "Support & Plans",
+    icon: LifeBuoy,
+    children: [
+      { label: "Submit Ticket", href: "/admin/support" },
       { label: "Plans", href: "/admin/support/plans" },
+      { label: "Manage", href: "/admin/support/manage" },
+      { label: "Terms & Conditions", href: "/admin/support/terms" },
     ],
   },
   {
@@ -326,8 +334,16 @@ export const mobileNavConfig: NavItem[] = [
       { label: "All Users", href: "/admin/users" },
       { label: "Newsletter", href: "/admin/newsletter" },
       { label: "Reviews", href: "/admin/reviews", badgeId: "unread-reviews" },
-      { label: "Support", href: "/admin/support", icon: LifeBuoy },
+    ],
+  },
+  {
+    label: "Support & Plans",
+    icon: LifeBuoy,
+    children: [
+      { label: "Submit Ticket", href: "/admin/support" },
       { label: "Plans", href: "/admin/support/plans" },
+      { label: "Manage", href: "/admin/support/manage" },
+      { label: "Terms & Conditions", href: "/admin/support/terms" },
     ],
   },
   {
