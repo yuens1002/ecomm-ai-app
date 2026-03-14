@@ -42,6 +42,10 @@ This project uses **co-located file structure**. Place new files by scope — ne
 
 ## Development Workflow
 
+### Feature Branches
+
+Read [`docs/AGENTIC-WORKFLOW.md`](docs/AGENTIC-WORKFLOW.md) and follow all 6 phases. Use [`docs/templates/plan-template.md`](docs/templates/plan-template.md) for planning. Use [`docs/templates/acs-template.md`](docs/templates/acs-template.md) for ACs.
+
 ### Commits
 
 ```text
