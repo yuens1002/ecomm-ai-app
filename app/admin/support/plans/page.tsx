@@ -1,13 +1,10 @@
-import { validateLicense, getFeatureCatalog } from "@/lib/license";
+import { validateLicense } from "@/lib/license";
 import { fetchPlans } from "@/lib/plans";
 import { PlanPageClient } from "./PlanPageClient";
 import type { Plan } from "@/lib/plan-types";
 
 export default async function PlanPage() {
-  const [license, catalog] = await Promise.all([
-    validateLicense(),
-    getFeatureCatalog(),
-  ]);
+  const license = await validateLicense();
 
   let plans: Plan[];
   try {
@@ -16,5 +13,5 @@ export default async function PlanPage() {
     plans = [];
   }
 
-  return <PlanPageClient license={license} plans={plans} catalog={catalog} />;
+  return <PlanPageClient license={license} plans={plans} />;
 }
