@@ -22,12 +22,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import {
-  activateLicense,
-  deactivateLicense,
-  refreshLicense,
-  startCheckout,
-} from "./actions";
+import { activateLicense, refreshLicense } from "../actions";
+import { startCheckout } from "./actions";
 import type { LicenseInfo, CatalogFeature } from "@/lib/license-types";
 import type { Plan } from "@/lib/plan-types";
 
@@ -105,22 +101,6 @@ export function PlanPageClient({
       } else {
         toast({
           title: "Activation failed",
-          description: result.error,
-          variant: "destructive",
-        });
-      }
-    });
-  }
-
-  function handleDeactivate() {
-    startTransition(async () => {
-      const result = await deactivateLicense();
-      if (result.success && result.license) {
-        setLicense(result.license);
-        toast({ title: "License removed" });
-      } else {
-        toast({
-          title: "Failed to remove license",
           description: result.error,
           variant: "destructive",
         });
@@ -359,19 +339,7 @@ export function PlanPageClient({
               </code>
               <Badge variant="secondary">active</Badge>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDeactivate}
-              disabled={isPending}
-            >
-              {isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <X className="mr-2 h-4 w-4" />
-              )}
-              Remove License
-            </Button>
+            {/* License is permanent once activated — no remove option */}
           </div>
         ) : (
           <div className="space-y-3">

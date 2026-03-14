@@ -1,12 +1,9 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
-import { setLicenseKey } from "@/lib/config/app-settings";
-import { invalidateCache, validateLicense } from "@/lib/license";
+import { getInstanceId } from "@/lib/telemetry";
 import { prisma } from "@/lib/prisma";
-import type { LicenseInfo } from "@/lib/license-types";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -16,78 +13,9 @@ const PLATFORM_URL = (
   process.env.PLATFORM_URL || "https://manage.artisanroast.app"
 ).replace(/\/+$/, "");
 
-// ---------------------------------------------------------------------------
-// License key management
-// ---------------------------------------------------------------------------
-
-const licenseKeySchema = z.object({
-  key: z.string().min(1, "License key is required"),
-});
-
-interface LicenseResult {
-  success: boolean;
-  error?: string;
-  license?: LicenseInfo;
-}
-
-/**
- * Activate a license key — saves to DB, clears cache, re-validates.
- */
-export async function activateLicense(
-  formData: FormData
-): Promise<LicenseResult> {
-  await requireAdmin();
-
-  const parsed = licenseKeySchema.safeParse({
-    key: formData.get("key"),
-  });
-
-  if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message };
-  }
-
-  try {
-    await setLicenseKey(parsed.data.key);
-    invalidateCache();
-    const license = await validateLicense();
-    revalidatePath("/admin/support/plans");
-    return { success: true, license };
-  } catch {
-    return { success: false, error: "Failed to activate license" };
-  }
-}
-
-/**
- * Remove the license key — clears DB entry and cache.
- */
-export async function deactivateLicense(): Promise<LicenseResult> {
-  await requireAdmin();
-
-  try {
-    await setLicenseKey("");
-    invalidateCache();
-    const license = await validateLicense();
-    revalidatePath("/admin/support/plans");
-    return { success: true, license };
-  } catch {
-    return { success: false, error: "Failed to deactivate license" };
-  }
-}
-
-/**
- * Refresh license data from the platform without changing the key.
- */
-export async function refreshLicense(): Promise<LicenseResult> {
-  await requireAdmin();
-
-  try {
-    invalidateCache();
-    const license = await validateLicense();
-    return { success: true, license };
-  } catch {
-    return { success: false, error: "Failed to refresh license" };
-  }
-}
+const APP_URL = (
+  process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || "http://localhost:3000"
+).replace(/\/+$/, "");
 
 // ---------------------------------------------------------------------------
 // Checkout
@@ -105,6 +33,7 @@ interface CheckoutResult {
 
 /**
  * Start a Stripe checkout session for a plan via the platform.
+ * Sends callbackUrl, customerEmail, and instanceId per handoff §2.
  */
 export async function startCheckout(
   formData: FormData
@@ -120,9 +49,11 @@ export async function startCheckout(
   }
 
   try {
-    // Get instance ID and admin email
-    const instanceSetting = await prisma.siteSettings.findUnique({
-      where: { key: "app.instanceId" },
+    const instanceId = await getInstanceId(prisma);
+
+    // Fetch contactEmail for customerEmail
+    const contactSetting = await prisma.siteSettings.findUnique({
+      where: { key: "contactEmail" },
     });
 
     const response = await fetch(`${PLATFORM_URL}/api/checkout`, {
@@ -130,7 +61,9 @@ export async function startCheckout(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         planSlug: parsed.data.planSlug,
-        instanceId: instanceSetting?.value || "",
+        instanceId: instanceId || "",
+        customerEmail: contactSetting?.value || "",
+        callbackUrl: `${APP_URL}/api/admin/platform/activate`,
       }),
       signal: AbortSignal.timeout(10_000),
     });

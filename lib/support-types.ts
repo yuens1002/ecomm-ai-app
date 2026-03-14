@@ -63,6 +63,7 @@ export interface CommunityIssueInput {
   title: string;
   body?: string;
   email: string;
+  instanceId: string;
 }
 
 export interface CommunityIssueResponse {
