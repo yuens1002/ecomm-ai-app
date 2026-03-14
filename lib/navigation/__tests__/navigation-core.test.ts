@@ -606,10 +606,16 @@ describe("navigation-core", () => {
       }
     });
 
-    it("should return 4 children for admin.management", () => {
+    it("should return 3 children for admin.management", () => {
       const children = getNavigableChildren("admin.management");
       const labels = children.map((c) => c.label);
-      expect(labels).toEqual(["All Users", "Newsletter", "Reviews", "Support"]);
+      expect(labels).toEqual(["All Users", "Newsletter", "Reviews"]);
+    });
+
+    it("should return 4 navigable children for admin.support", () => {
+      const children = getNavigableChildren("admin.support");
+      const labels = children.map((c) => c.label);
+      expect(labels).toEqual(["Submit Ticket", "Plans", "Manage", "Terms & Conditions"]);
     });
   });
 });
