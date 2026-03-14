@@ -11,26 +11,22 @@ import { useToast } from "@/hooks/use-toast";
 import { submitCommunityIssue } from "./actions";
 
 interface CommunityIssueSectionProps {
-  adminEmail: string;
   showUpsell: boolean;
 }
 
 export function CommunityIssueSection({
-  adminEmail,
   showUpsell,
 }: CommunityIssueSectionProps) {
   const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [email, setEmail] = useState(adminEmail);
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit() {
-    if (!title.trim() || !email.trim()) return;
+    if (!title.trim()) return;
 
     const formData = new FormData();
     formData.set("title", title.trim());
-    formData.set("email", email.trim());
     if (body.trim()) formData.set("body", body.trim());
 
     startTransition(async () => {
@@ -85,17 +81,9 @@ export function CommunityIssueSection({
           maxLength={5000}
           aria-label="Issue details"
         />
-        <Input
-          type="email"
-          placeholder="Your email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          disabled={isPending}
-          aria-label="Email address"
-        />
         <Button
           onClick={handleSubmit}
-          disabled={isPending || !title.trim() || !email.trim()}
+          disabled={isPending || !title.trim()}
           size="sm"
         >
           {isPending ? (
