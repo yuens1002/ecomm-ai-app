@@ -79,13 +79,12 @@ export const adminNavConfig: NavItem[] = [
     ],
   },
   {
-    label: "Support & Plans",
+    label: "Support & Services",
     icon: LifeBuoy,
     children: [
       { label: "Submit Ticket", href: "/admin/support" },
-      { label: "Plans", href: "/admin/support/plans" },
-      { label: "Manage", href: "/admin/support/manage" },
-      { label: "Terms & Conditions", href: "/admin/support/terms" },
+      { label: "Subscriptions", href: "/admin/support/plans" },
+      { label: "License & Terms", href: "/admin/support/terms" },
     ],
   },
   {
@@ -337,13 +336,12 @@ export const mobileNavConfig: NavItem[] = [
     ],
   },
   {
-    label: "Support & Plans",
+    label: "Support & Services",
     icon: LifeBuoy,
     children: [
       { label: "Submit Ticket", href: "/admin/support" },
-      { label: "Plans", href: "/admin/support/plans" },
-      { label: "Manage", href: "/admin/support/manage" },
-      { label: "Terms & Conditions", href: "/admin/support/terms" },
+      { label: "Subscriptions", href: "/admin/support/plans" },
+      { label: "License & Terms", href: "/admin/support/terms" },
     ],
   },
   {

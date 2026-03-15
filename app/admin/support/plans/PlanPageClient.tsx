@@ -81,7 +81,7 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
 
   return (
     <div className="space-y-8">
-      <PageTitle title="Plans" subtitle="Browse available plans" />
+      <PageTitle title="Subscriptions" subtitle="Browse and manage paid services" />
 
       {/* ==================== COMPATIBILITY WARNINGS ==================== */}
       {license.warnings.length > 0 && (

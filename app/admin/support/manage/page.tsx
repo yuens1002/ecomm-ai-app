@@ -1,9 +1,5 @@
-import { validateLicense, getLicenseKey } from "@/lib/license";
-import { ManagePageClient } from "./ManagePageClient";
+import { redirect } from "next/navigation";
 
-export default async function ManagePage() {
-  const license = await validateLicense();
-  const rawKey = await getLicenseKey();
-
-  return <ManagePageClient license={license} hasKey={!!rawKey} rawKey={rawKey || ""} />;
+export default function ManagePage() {
+  redirect("/admin/support/terms?tab=license");
 }

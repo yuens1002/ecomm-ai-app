@@ -299,12 +299,12 @@ const routeEntries: RouteEntry[] = [
     parentId: "admin.management",
     isNavigable: true,
   },
-  // ==================== SUPPORT & PLANS ====================
+  // ==================== SUPPORT & SERVICES ====================
   {
     id: "admin.support",
     pathname: "/admin/support",
     matchMode: "prefix",
-    label: "Support & Plans",
+    label: "Support & Services",
     parentId: undefined,
     icon: LifeBuoy,
     isNavigable: false, // Grouping only
@@ -321,7 +321,7 @@ const routeEntries: RouteEntry[] = [
     id: "admin.support.plans",
     pathname: "/admin/support/plans",
     matchMode: "exact",
-    label: "Plans",
+    label: "Subscriptions",
     parentId: "admin.support",
     isNavigable: true,
   },
@@ -334,18 +334,10 @@ const routeEntries: RouteEntry[] = [
     isNavigable: true,
   },
   {
-    id: "admin.support.manage",
-    pathname: "/admin/support/manage",
-    matchMode: "exact",
-    label: "Manage",
-    parentId: "admin.support",
-    isNavigable: true,
-  },
-  {
     id: "admin.support.terms",
     pathname: "/admin/support/terms",
     matchMode: "exact",
-    label: "Terms & Conditions",
+    label: "License & Terms",
     parentId: "admin.support",
     isNavigable: true,
   },
