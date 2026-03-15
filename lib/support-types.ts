@@ -22,7 +22,7 @@ export interface SupportTicket {
 }
 
 // ---------------------------------------------------------------------------
-// Usage
+// Usage (legacy — kept for backward compatibility with existing ticket list)
 // ---------------------------------------------------------------------------
 
 export interface SupportUsage {
@@ -31,6 +31,13 @@ export interface SupportUsage {
   remaining: number;
   resetsAt: string;
 }
+
+// ---------------------------------------------------------------------------
+// Credit pool (Phase 3 — dual pool: plan + purchased)
+// Re-exported from license-types for convenience.
+// ---------------------------------------------------------------------------
+
+export type { CreditPool } from "./license-types";
 
 // ---------------------------------------------------------------------------
 // API responses

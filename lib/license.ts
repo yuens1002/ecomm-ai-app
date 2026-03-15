@@ -18,6 +18,7 @@ import type {
   CatalogFeature,
   Capabilities,
   GAConfig,
+  SupportQuotas,
 } from "./license-types";
 import { APP_VERSION } from "./version";
 import { prisma } from "./prisma";
@@ -43,6 +44,11 @@ const DEFAULT_GA_CONFIG: GAConfig = {
   lastSynced: null,
 };
 
+const DEFAULT_SUPPORT_QUOTAS: SupportQuotas = {
+  tickets: { limit: 0, purchased: 0, used: 0, remaining: 0 },
+  oneOnOne: { limit: 0, purchased: 0, used: 0, remaining: 0 },
+};
+
 const FREE_DEFAULT: LicenseInfo = {
   valid: false,
   tier: "FREE",
@@ -54,6 +60,11 @@ const FREE_DEFAULT: LicenseInfo = {
   usage: null,
   gaConfig: DEFAULT_GA_CONFIG,
   availableActions: [],
+  plan: null,
+  lapsed: null,
+  support: DEFAULT_SUPPORT_QUOTAS,
+  alaCarte: [],
+  legal: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -401,6 +412,11 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
             variant: "outline",
           },
         ],
+        plan: null,
+        lapsed: null,
+        support: DEFAULT_SUPPORT_QUOTAS,
+        alaCarte: [],
+        legal: null,
       };
     case "PRO":
       return {
@@ -411,6 +427,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
           "ai-product-ops",
           "ai-reviews",
           "analytics-insights",
+          "priority-support",
         ],
         trialEndsAt: null,
         managedBy: null,
@@ -432,6 +449,40 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
             variant: "outline",
           },
         ],
+        plan: {
+          slug: "priority-support",
+          name: "Priority Support",
+          snapshotAt: "2026-03-01T00:00:00Z",
+        },
+        lapsed: null,
+        support: {
+          tickets: { limit: 5, purchased: 1, used: 2, remaining: 4 },
+          oneOnOne: { limit: 1, purchased: 0, used: 0, remaining: 1 },
+        },
+        alaCarte: [
+          {
+            id: "alacarte-tickets-5",
+            label: "5 Support Tickets",
+            description:
+              "Add 5 priority support tickets to your account. Never expire.",
+            price: "$39",
+            checkoutUrl: `${PLATFORM_URL}/checkout/alacarte-tickets-5`,
+          },
+          {
+            id: "alacarte-sessions-2",
+            label: "2 One-on-One Sessions (30 min)",
+            description: "Add 2 scheduled 1:1 sessions. Never expire.",
+            price: "$99",
+            checkoutUrl: `${PLATFORM_URL}/checkout/alacarte-sessions-2`,
+          },
+        ],
+        legal: {
+          pendingAcceptance: [],
+          acceptedVersions: {
+            "terms-of-service": "2026-03-15",
+            "support-terms": "2026-03-15",
+          },
+        },
       };
     case "HOSTED":
       return {
@@ -465,6 +516,40 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
             variant: "outline",
           },
         ],
+        plan: {
+          slug: "priority-support",
+          name: "Priority Support",
+          snapshotAt: "2026-03-01T00:00:00Z",
+        },
+        lapsed: null,
+        support: {
+          tickets: { limit: 5, purchased: 0, used: 1, remaining: 4 },
+          oneOnOne: { limit: 1, purchased: 0, used: 0, remaining: 1 },
+        },
+        alaCarte: [
+          {
+            id: "alacarte-tickets-5",
+            label: "5 Support Tickets",
+            description:
+              "Add 5 priority support tickets to your account. Never expire.",
+            price: "$39",
+            checkoutUrl: `${PLATFORM_URL}/checkout/alacarte-tickets-5`,
+          },
+          {
+            id: "alacarte-sessions-2",
+            label: "2 One-on-One Sessions (30 min)",
+            description: "Add 2 scheduled 1:1 sessions. Never expire.",
+            price: "$99",
+            checkoutUrl: `${PLATFORM_URL}/checkout/alacarte-sessions-2`,
+          },
+        ],
+        legal: {
+          pendingAcceptance: [],
+          acceptedVersions: {
+            "terms-of-service": "2026-03-15",
+            "support-terms": "2026-03-15",
+          },
+        },
       };
     default:
       return FREE_DEFAULT;

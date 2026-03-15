@@ -27,6 +27,80 @@ export interface LicenseInfo {
   gaConfig: GAConfig;
   /** Platform-driven CTAs — labels, URLs, and variants come from the platform. */
   availableActions: AvailableAction[];
+
+  // Phase 3 — Plan versioning, metered support, a la carte, legal
+  /** Active plan context. Null when no active plan. */
+  plan: PlanContext | null;
+  /** Previous subscription context for lapsed users. Null for true FREE users. */
+  lapsed: LapsedContext | null;
+  /** Metered support quotas (always present, zeros for FREE with no purchases). */
+  support: SupportQuotas;
+  /** A la carte packages available for purchase (any tier). */
+  alaCarte: AlaCartePackage[];
+  /** Legal document acceptance state. */
+  legal: LegalState | null;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 3 — Plan context
+// ---------------------------------------------------------------------------
+
+export interface PlanContext {
+  slug: string;
+  name: string;
+  /** ISO timestamp — when subscriber's terms were locked in. */
+  snapshotAt: string;
+}
+
+export interface LapsedContext {
+  previousTier: string;
+  previousFeatures: string[];
+  planSlug: string;
+  deactivatedAt: string;
+  renewUrl: string;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 3 — Metered support
+// ---------------------------------------------------------------------------
+
+export interface CreditPool {
+  /** Monthly quota from plan (resets each billing cycle). 0 if no plan. */
+  limit: number;
+  /** Unused credits from a la carte purchases (never expire). */
+  purchased: number;
+  /** Credits consumed this billing period. */
+  used: number;
+  /** limit + purchased - used */
+  remaining: number;
+}
+
+export interface SupportQuotas {
+  tickets: CreditPool;
+  oneOnOne: CreditPool;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 3 — A la carte packages
+// ---------------------------------------------------------------------------
+
+export interface AlaCartePackage {
+  id: string;
+  label: string;
+  description: string;
+  price: string;
+  checkoutUrl: string;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 3 — Legal
+// ---------------------------------------------------------------------------
+
+export interface LegalState {
+  /** Document slugs that require acceptance before feature access. */
+  pendingAcceptance: string[];
+  /** Map of document slug → accepted version string. */
+  acceptedVersions: Record<string, string>;
 }
 
 export interface UsageInfo {

@@ -69,6 +69,14 @@ function makeProResponse(): LicenseInfo {
       lastSynced: null,
     },
     availableActions: [],
+    plan: null,
+    lapsed: null,
+    support: {
+      tickets: { limit: 0, purchased: 0, used: 0, remaining: 0 },
+      oneOnOne: { limit: 0, purchased: 0, used: 0, remaining: 0 },
+    },
+    alaCarte: [],
+    legal: null,
   };
 }
 
@@ -104,6 +112,14 @@ function makeTrialResponse(): LicenseInfo {
       lastSynced: null,
     },
     availableActions: [],
+    plan: null,
+    lapsed: null,
+    support: {
+      tickets: { limit: 0, purchased: 0, used: 0, remaining: 0 },
+      oneOnOne: { limit: 0, purchased: 0, used: 0, remaining: 0 },
+    },
+    alaCarte: [],
+    legal: null,
   };
 }
 
