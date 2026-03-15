@@ -10,6 +10,9 @@ import type {
   TicketsResponse,
   CreateTicketResponse,
   CreateTicketInput,
+  PriorityTicketInput,
+  PriorityTicketResponse,
+  BookSessionResponse,
   CommunityIssueInput,
   CommunityIssueResponse,
 } from "./support-types";
@@ -101,6 +104,30 @@ export async function createTicket(
   return supportFetch<CreateTicketResponse>("/api/support/tickets", {
     method: "POST",
     body: JSON.stringify(input),
+  });
+}
+
+/**
+ * Submit a priority ticket with type (normal/priority).
+ * Phase 3: Deducts a credit from the user's pool.
+ */
+export async function submitPriorityTicket(
+  input: PriorityTicketInput
+): Promise<PriorityTicketResponse> {
+  return supportFetch<PriorityTicketResponse>("/api/support/tickets", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+/**
+ * Book a 1:1 support session.
+ * Phase 3: Deducts a session credit, returns a booking URL.
+ */
+export async function bookSession(): Promise<BookSessionResponse> {
+  return supportFetch<BookSessionResponse>("/api/support/sessions", {
+    method: "POST",
+    body: JSON.stringify({}),
   });
 }
 

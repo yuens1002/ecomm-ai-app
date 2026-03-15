@@ -62,6 +62,30 @@ export interface CreateTicketInput {
   body?: string;
 }
 
+export interface PriorityTicketInput {
+  title: string;
+  body?: string;
+  type: "normal" | "priority";
+}
+
+// ---------------------------------------------------------------------------
+// Priority ticket response (Phase 3 — deducts credit)
+// ---------------------------------------------------------------------------
+
+export interface PriorityTicketResponse {
+  ticket: SupportTicket;
+  creditsRemaining: number;
+}
+
+// ---------------------------------------------------------------------------
+// Session booking (Phase 3)
+// ---------------------------------------------------------------------------
+
+export interface BookSessionResponse {
+  bookingUrl: string;
+  creditsRemaining: number;
+}
+
 // ---------------------------------------------------------------------------
 // Community issues (no license required)
 // ---------------------------------------------------------------------------
