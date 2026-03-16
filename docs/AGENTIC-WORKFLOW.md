@@ -88,9 +88,27 @@ ACs use three actionable columns instead of a vague description. This eliminates
 **Rules:**
 
 - **What** must name a specific element, page, or code path — never a vague behavior
-- **How** must specify the verification method and exact steps
+- **How** must specify the verification method and exact steps (see method table below)
 - **Pass** must be a binary-checkable condition — the sub-agent checks this literally, not interpretively
 - ACs are numbered with category prefix for traceability in reports
+
+### How Column — Verification Methods for UI ACs
+
+The **How** column is the verification contract. It tells the sub-agent exactly what method to use and the QC validator (`qc-validator.js`) enforces that evidence matches the method.
+
+| Method | Format | Evidence required |
+|--------|--------|-------------------|
+| **Screenshot** | `Screenshot: {page/element at breakpoint}` | `.png` file path in Agent/QC columns |
+| **Interactive** | `Interactive: {click/hover} → screenshot` | `.png` file path in Agent/QC columns |
+| **Exercise** | `Exercise: {form flow} → screenshot` | `.png` file path in Agent/QC columns |
+| **Code review** | `Code review: {file}` | `file:line` refs (no screenshot needed) |
+
+**Screenshot method rules:**
+
+- `Screenshot:`, `Interactive:`, and `Exercise:` are the **default** for UI ACs — use these unless the AC genuinely cannot be screenshotted (e.g., server redirect, route registration, build config)
+- **At least 50% of UI ACs must use screenshot-based methods.** If all say `Code review:`, the plan is missing visual verification and the QC validator will reject it.
+- The sub-agent MUST produce `.png` evidence for screenshot-method ACs. Code-only evidence for a `Screenshot:` How will be flagged by the validator.
+- Use `Code review:` only for non-visual ACs (redirects, route config, type definitions)
 
 ### Plan Approval
 
@@ -304,6 +322,19 @@ Main thread reads both reports when complete                           ─┘
 | `/ui-verify` | 3 | Screenshot capture + comparison (used by sub-agent) |
 | `/verify-workflow` | 2-4 | Full orchestration (when running without sub-agents) |
 | `/release` | 6 | Version bump + tag + PR |
+| `/retro` | Post-session | Capture process lessons → update skills, templates, validators |
+
+## Learning Loop
+
+When a session reveals a process gap (not a code bug), run `/retro` to capture the lesson and apply durable fixes. The retro protocol:
+
+1. **Identify** what went wrong and why the system allowed it
+2. **Classify** which layers need fixing (skill, template, validator, workflow doc)
+3. **Apply** concrete, enforceable changes to each layer
+4. **Test** validator changes, trace skill changes through the failure scenario
+5. **Log** the lesson in `.claude/skills/retro/retro-log.md`
+
+Future sessions automatically benefit because skills, templates, and validators are loaded at session start. The retro log serves as an audit trail of what was learned and when.
 
 ## Quick Reference
 

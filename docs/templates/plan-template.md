@@ -27,10 +27,12 @@
 
 ### UI (verified by screenshots)
 
+> **How column methods:** `Screenshot:`, `Interactive:`, `Exercise:` (require `.png` evidence), or `Code review:` (only for non-visual ACs like redirects/route registration). At least 50% of UI ACs must use screenshot-based methods. See `docs/templates/acs-template.md` for full rules.
+
 | AC | What | How | Pass |
 |----|------|-----|------|
-| AC-UI-1 | {element/state} | {Static/Interactive/Exercise: steps} | {pass condition} |
-| AC-UI-2 | {element/state} | {Static/Interactive/Exercise: steps} | {pass condition} |
+| AC-UI-1 | {element/state} | {Screenshot/Interactive/Exercise: steps} | {pass condition} |
+| AC-UI-2 | {element/state} | {Screenshot/Interactive/Exercise: steps} | {pass condition} |
 
 ### Functional (verified by code review)
 

@@ -18,10 +18,24 @@
 
 ## UI Acceptance Criteria
 
+> **How column — verification methods for UI ACs:**
+>
+> | Method | Format | Evidence required |
+> |--------|--------|-------------------|
+> | **Screenshot** | `Screenshot: {page/element at breakpoint}` | `.png` file path in Agent/QC columns |
+> | **Interactive** | `Interactive: {click/hover} → screenshot` | `.png` file path in Agent/QC columns |
+> | **Exercise** | `Exercise: {form flow} → screenshot` | `.png` file path in Agent/QC columns |
+> | **Code review** | `Code review: {file}` | file:line refs (no screenshot needed) |
+>
+> **Rules:**
+> - Screenshot/Interactive/Exercise are the **default** for UI ACs — use these unless the AC genuinely cannot be screenshotted (e.g., server redirect, route registration, build config).
+> - At least 50% of UI ACs must use screenshot-based methods. If all say `Code review`, the plan is missing visual verification.
+> - The QC validator enforces this: screenshot-method ACs require `.png`/`screenshot` evidence; code-review ACs require file:line evidence.
+
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|-----|----------|
-| AC-UI-1 | {element/state to verify} | {Static/Interactive/Exercise: steps} | {explicit pass condition} | | | |
-| AC-UI-2 | {element/state to verify} | {Static/Interactive/Exercise: steps} | {explicit pass condition} | | | |
+| AC-UI-1 | {element/state to verify} | {Screenshot/Interactive/Exercise: steps} | {explicit pass condition} | | | |
+| AC-UI-2 | {element/state to verify} | {Screenshot/Interactive/Exercise: steps} | {explicit pass condition} | | | |
 
 ## Functional Acceptance Criteria
 

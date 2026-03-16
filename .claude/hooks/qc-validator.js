@@ -4,6 +4,10 @@
 // Validates that QC column entries in ACs tracking docs are substantive,
 // not rubber stamps, and independent from Agent column entries.
 //
+// For UI ACs, also validates that the How column's verification method
+// matches the evidence provided — screenshot methods require screenshot
+// evidence (.png/.jpg refs), code review methods require file:line refs.
+//
 // Usage:
 //   const { validateQC } = require('./qc-validator');
 //   const result = validateQC(projectDir, 'docs/plans/feature-ACs.md');
@@ -37,13 +41,35 @@ const RUBBER_STAMPS = [
 // Minimum substantive characters after stripping common prefixes like "PASS —"
 const MIN_SUBSTANCE_CHARS = 15;
 
-// Keywords that count as visual observation evidence for UI ACs
-const UI_EVIDENCE_KEYWORDS = [
+// ---------------------------------------------------------------------------
+// How-column method detection
+// ---------------------------------------------------------------------------
+
+// How-column prefixes that require screenshot evidence (.png/.jpg references)
+// in the Agent and/or QC columns.
+const SCREENSHOT_HOW_PREFIXES = [
+  "screenshot",
+  "interactive",
+  "exercise",
+  "static",
+];
+
+// How-column prefixes that allow code-only evidence (file:line refs).
+const CODE_REVIEW_HOW_PREFIXES = ["code review"];
+
+// Keywords that prove a screenshot was actually taken/referenced.
+const SCREENSHOT_EVIDENCE_KEYWORDS = [
   ".png",
   ".jpg",
   ".jpeg",
   ".webp",
   "screenshot",
+  ".screenshots/",
+];
+
+// Fallback keywords for UI ACs with code-review How methods.
+// These are generic UI-observation words — accepted only when How says "Code review".
+const CODE_REVIEW_UI_KEYWORDS = [
   "file:",
   "line ",
   "line:",
@@ -57,23 +83,34 @@ const UI_EVIDENCE_KEYWORDS = [
   "shown",
   "appears",
   "layout",
-  "color",
   "badge",
   "button",
   "dialog",
   "modal",
-  "text ",
   "label",
-  "column",
-  "row",
   "tab",
   "icon",
-  "image",
 ];
 
 /**
+ * Determine if a How column value specifies a screenshot-based method.
+ * Returns "screenshot" | "code-review" | "unknown".
+ */
+function classifyHowMethod(how) {
+  if (!how) return "unknown";
+  const howLower = how.toLowerCase().trim();
+  for (const prefix of SCREENSHOT_HOW_PREFIXES) {
+    if (howLower.startsWith(prefix)) return "screenshot";
+  }
+  for (const prefix of CODE_REVIEW_HOW_PREFIXES) {
+    if (howLower.startsWith(prefix)) return "code-review";
+  }
+  return "unknown";
+}
+
+/**
  * Parse markdown tables from ACs doc that have both "Agent" and "QC" headers.
- * Returns array of { ac, agent, qc, isUI } objects.
+ * Returns array of { ac, agent, qc, how, isUI } objects.
  */
 function parseACTables(content) {
   const lines = content.split("\n");
@@ -83,6 +120,7 @@ function parseACTables(content) {
   let acIdx = -1;
   let agentIdx = -1;
   let qcIdx = -1;
+  let howIdx = -1;
   let separatorSeen = false;
 
   for (let i = 0; i < lines.length; i++) {
@@ -102,6 +140,7 @@ function parseACTables(content) {
       acIdx = headers.findIndex((h) => /^AC$/i.test(h));
       agentIdx = headers.findIndex((h) => /^Agent$/i.test(h));
       qcIdx = headers.findIndex((h) => /^QC$/i.test(h));
+      howIdx = headers.findIndex((h) => /^How$/i.test(h));
 
       if (acIdx >= 0 && agentIdx >= 0 && qcIdx >= 0) {
         inTable = true;
@@ -124,9 +163,10 @@ function parseACTables(content) {
         const ac = rawCells[acIdx] || "";
         const agent = rawCells[agentIdx] || "";
         const qc = rawCells[qcIdx] || "";
+        const how = howIdx >= 0 && rawCells.length > howIdx ? rawCells[howIdx] || "" : "";
         const isUI = /^AC-UI/i.test(ac);
 
-        results.push({ ac, agent, qc, isUI });
+        results.push({ ac, agent, qc, how, isUI });
       }
     }
 
@@ -136,6 +176,7 @@ function parseACTables(content) {
       acIdx = -1;
       agentIdx = -1;
       qcIdx = -1;
+      howIdx = -1;
       separatorSeen = false;
     }
   }
@@ -234,8 +275,14 @@ function validateQC(projectDir, acsDocRelPath) {
 
   const issues = [];
 
-  for (const { ac, agent, qc, isUI } of acs) {
+  // Track UI AC screenshot method stats for the 50% rule
+  let uiScreenshotMethodCount = 0;
+  let uiTotalCount = 0;
+
+  for (const { ac, agent, qc, how, isUI } of acs) {
     if (!ac) continue; // skip rows without AC identifier
+
+    if (isUI) uiTotalCount++;
 
     // Rule 1: Empty check
     if (!qc || qc.length === 0) {
@@ -269,19 +316,50 @@ function validateQC(projectDir, acsDocRelPath) {
       continue;
     }
 
-    // Rule 4: UI evidence (AC-UI-* only)
+    // Rule 4: UI evidence — method-aware validation (AC-UI-* only)
     if (isUI) {
-      const qcLower = qc.toLowerCase();
-      const hasKeyword = UI_EVIDENCE_KEYWORDS.some((kw) =>
-        qcLower.includes(kw.toLowerCase())
-      );
-      // Also check for file:line patterns like "route.ts:15" or "Component.tsx:100-200"
-      const hasFileLineRef = /\.\w+:\d+/.test(qc);
-      if (!hasKeyword && !hasFileLineRef) {
-        issues.push(
-          `${ac}: UI AC QC lacks visual evidence (no screenshot ref, file:line, or visual observation keyword)`
+      const howMethod = classifyHowMethod(how);
+      const combinedEvidence = `${agent} ${qc}`.toLowerCase();
+
+      if (howMethod === "screenshot") {
+        // Screenshot method: require screenshot evidence in Agent or QC
+        uiScreenshotMethodCount++;
+        const hasScreenshotRef = SCREENSHOT_EVIDENCE_KEYWORDS.some((kw) =>
+          combinedEvidence.includes(kw.toLowerCase())
         );
-        continue;
+        if (!hasScreenshotRef) {
+          issues.push(
+            `${ac}: UI AC How says "${how.split(":")[0].trim()}" but Agent/QC lack screenshot evidence (.png/.jpg reference). Take screenshots or change How to "Code review".`
+          );
+          continue;
+        }
+      } else if (howMethod === "code-review") {
+        // Code review method: accept file:line refs or UI observation keywords
+        const hasFileLineRef = /\.\w+:\d+/.test(qc);
+        const hasObservation = CODE_REVIEW_UI_KEYWORDS.some((kw) =>
+          qc.toLowerCase().includes(kw.toLowerCase())
+        );
+        if (!hasFileLineRef && !hasObservation) {
+          issues.push(
+            `${ac}: UI AC QC lacks evidence (no file:line ref or UI observation keyword)`
+          );
+          continue;
+        }
+      } else {
+        // Unknown How method — fallback: require either screenshot or file:line
+        const hasScreenshotRef = SCREENSHOT_EVIDENCE_KEYWORDS.some((kw) =>
+          combinedEvidence.includes(kw.toLowerCase())
+        );
+        const hasFileLineRef = /\.\w+:\d+/.test(qc);
+        const hasObservation = CODE_REVIEW_UI_KEYWORDS.some((kw) =>
+          qc.toLowerCase().includes(kw.toLowerCase())
+        );
+        if (!hasScreenshotRef && !hasFileLineRef && !hasObservation) {
+          issues.push(
+            `${ac}: UI AC QC lacks visual evidence (no screenshot ref, file:line, or visual observation keyword)`
+          );
+          continue;
+        }
       }
     }
 
@@ -307,6 +385,21 @@ function validateQC(projectDir, acsDocRelPath) {
         continue;
       }
     }
+  }
+
+  // Rule 6: At least 50% of UI ACs should use screenshot methods
+  // (only flag when there are UI ACs and none use screenshots)
+  if (uiTotalCount > 0 && uiScreenshotMethodCount === 0) {
+    issues.push(
+      `0/${uiTotalCount} UI ACs use screenshot verification (Screenshot/Interactive/Exercise). At least 50% should use screenshot-based methods per acs-template.md.`
+    );
+  } else if (
+    uiTotalCount >= 4 &&
+    uiScreenshotMethodCount / uiTotalCount < 0.5
+  ) {
+    issues.push(
+      `${uiScreenshotMethodCount}/${uiTotalCount} UI ACs use screenshot verification — below the 50% minimum. Add screenshot-based How methods to more UI ACs.`
+    );
   }
 
   return {

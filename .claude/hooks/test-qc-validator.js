@@ -56,29 +56,29 @@ writeDoc(
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|-----|----------|
-| AC-UI-1 | Badge color | Static: screenshot | Blue badge | PASS — blue badge visible | Confirmed | |
+| AC-UI-1 | Badge color | Screenshot: badge element | Blue badge | PASS — blue badge visible | Confirmed | |
 | AC-FN-1 | API route | Code review | Returns 200 | PASS — returns 200 at route.ts:15 | Confirmed | |
 `
 );
 
 let result = validateQC(tmpDir, "test1.md");
 assert(!result.valid, "Should be invalid");
-assert(result.issues.length === 2, `Should have 2 issues (got ${result.issues.length})`);
+assert(result.issues.length >= 2, `Should have at least 2 issues (got ${result.issues.length})`);
 assert(
   result.issues[0].includes("rubber stamp"),
   `First issue should mention rubber stamp (got: ${result.issues[0]})`
 );
 
-// ── Test 2: Substantive QC ──
+// ── Test 2: Substantive QC with screenshot evidence ──
 
-console.log("\nTest 2: Substantive QC (should pass)");
+console.log("\nTest 2: Substantive QC with screenshot evidence (should pass)");
 writeDoc(
   "test2.md",
   `## UI Acceptance Criteria
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|-----|----------|
-| AC-UI-1 | Badge color | Static: screenshot | Blue badge | PASS — blue badge visible | PASS — record-utils.ts:12 returns bg-blue-100 class, confirmed in screenshot | |
+| AC-UI-1 | Badge color | Screenshot: badge element | Blue badge | PASS — blue badge visible in .screenshots/verify-badge.png | PASS — .screenshots/verify-badge.png shows blue bg-blue-100 badge | |
 
 ## Functional Acceptance Criteria
 
@@ -114,26 +114,47 @@ assert(
   `Issue should mention empty (got: ${result.issues[0]})`
 );
 
-// ── Test 4: UI AC without visual evidence ──
+// ── Test 4: UI AC with Screenshot How but no screenshot evidence ──
 
-console.log("\nTest 4: UI AC without screenshot/visual evidence");
+console.log("\nTest 4: UI AC with Screenshot How but only code evidence (should fail)");
 writeDoc(
   "test4.md",
   `## UI Acceptance Criteria
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|-----|----------|
-| AC-UI-1 | Badge color | Static: screenshot | Blue badge | PASS — blue badge visible | The implementation follows the standard pattern correctly | |
+| AC-UI-1 | Badge color | Screenshot: badge element | Blue badge | PASS — code review confirms class at Component.tsx:42 | Confirmed: Component.tsx:42 applies bg-blue-100 class to badge element | |
 `
 );
 
 result = validateQC(tmpDir, "test4.md");
 assert(!result.valid, "Should be invalid");
-assert(result.issues.length === 1, `Should have 1 issue (got ${result.issues.length})`);
+assert(result.issues.length >= 1, `Should have at least 1 issue (got ${result.issues.length})`);
 assert(
-  result.issues[0].includes("UI AC") && result.issues[0].includes("visual evidence"),
-  `Issue should mention UI AC visual evidence (got: ${result.issues[0]})`
+  result.issues.some((i) => i.includes("screenshot evidence")),
+  `Should mention missing screenshot evidence (got: ${result.issues.join("; ")})`
 );
+
+// ── Test 4b: UI AC with Code review How and file:line evidence (should pass individually) ──
+
+console.log("\nTest 4b: UI AC with Code review How and file:line evidence");
+writeDoc(
+  "test4b.md",
+  `## UI Acceptance Criteria
+
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-UI-1 | Manage redirect | Code review: manage/page.tsx | Redirects to /terms | PASS — redirect at manage/page.tsx:4 | Confirmed: manage/page.tsx:4 calls redirect to /admin/support/terms?tab=license | |
+`
+);
+
+result = validateQC(tmpDir, "test4b.md");
+// Individual AC should pass its own validation (file:line evidence for Code review How)
+const acIssues = result.issues.filter((i) => i.startsWith("AC-UI-1:"));
+assert(acIssues.length === 0, `Individual AC should pass (got: ${acIssues.join("; ") || "none"})`);
+// But the 50% rule should flag it (1 UI AC, 0 screenshot methods)
+const ruleIssues = result.issues.filter((i) => i.includes("screenshot verification"));
+assert(ruleIssues.length === 1, `Should flag 50% rule (got ${ruleIssues.length} issues)`);
 
 // ── Test 5: QC echoes Agent column ──
 
@@ -165,16 +186,16 @@ writeDoc(
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|-----|----------|
-| AC-UI-8 | Completed tab | Interactive | DELIVERED visible | CODE_REVIEW PASS: filter: SHIPPED \\| DELIVERED \\| PICKED_UP | Confirmed | |
+| AC-UI-8 | Completed tab | Interactive: click tab → screenshot | DELIVERED visible | CODE_REVIEW PASS: filter: SHIPPED \\| DELIVERED \\| PICKED_UP | Confirmed | |
 `
 );
 
 result = validateQC(tmpDir, "test5b.md");
 assert(!result.valid, "Should be invalid (rubber stamp)");
-assert(result.issues.length === 1, `Should have 1 issue (got ${result.issues.length})`);
+assert(result.issues.length >= 1, `Should have at least 1 issue (got ${result.issues.length})`);
 assert(
-  result.issues[0].includes("AC-UI-8") && result.issues[0].includes("rubber stamp"),
-  `Issue should flag AC-UI-8 rubber stamp (got: ${result.issues[0]})`
+  result.issues.some((i) => i.includes("AC-UI-8") && i.includes("rubber stamp")),
+  `Should flag AC-UI-8 rubber stamp (got: ${result.issues.join("; ")})`
 );
 
 // ── Test 6: No ACs doc (should skip) ──
@@ -211,16 +232,16 @@ assert(
   `Issue should mention substance (got: ${result.issues[0]})`
 );
 
-// ── Test 9: Multiple tables (UI + FN + REG) ──
+// ── Test 9: Multiple tables with proper How + screenshot evidence ──
 
-console.log("\nTest 9: Multiple tables parsed correctly");
+console.log("\nTest 9: Multiple tables with screenshot How + evidence");
 writeDoc(
   "test9.md",
   `## UI Acceptance Criteria
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|-----|----------|
-| AC-UI-1 | Badge | Screenshot | Blue | PASS | Badge renders blue at record-utils.ts:12 | |
+| AC-UI-1 | Badge | Screenshot: badge element | Blue | PASS — .screenshots/badge.png shows blue | Badge renders blue in .screenshots/badge.png verified | |
 
 ## Functional Acceptance Criteria
 
@@ -242,32 +263,88 @@ const parsed = parseACTables(
 assert(parsed.length === 3, `Should parse 3 ACs (got ${parsed.length})`);
 assert(parsed[0].isUI === true, "First AC should be UI");
 assert(parsed[1].isUI === false, "Second AC should not be UI");
+assert(parsed[0].how === "Screenshot: badge element", `Should parse How column (got: "${parsed[0].how}")`);
 
 result = validateQC(tmpDir, "test9.md");
-assert(result.valid, "Should be valid");
+assert(result.valid, `Should be valid (got issues: ${result.issues.join("; ") || "none"})`);
 
-// ── Test 10: Real ACs doc (if exists) ──
+// ── Test 10: All UI ACs use Code review (should fail 50% rule) ──
 
-console.log("\nTest 10: Real ACs doc (order-delivery-tracking-ACs.md)");
-const projectDir = path.resolve(__dirname, "..", "..");
-const realDoc = "docs/plans/order-delivery-tracking-ACs.md";
-const realDocPath = path.join(projectDir, realDoc);
+console.log("\nTest 10: All UI ACs use Code review (should fail 50% rule)");
+writeDoc(
+  "test10.md",
+  `## UI Acceptance Criteria
 
-if (fs.existsSync(realDocPath)) {
-  result = validateQC(projectDir, realDoc);
-  if (result.valid) {
-    console.log(`  ✓ Real doc passes QC validation (all entries substantive)`);
-    passed++;
-  } else {
-    console.log(`  ✓ Real doc flagged ${result.issues.length} issues:`);
-    passed++;
-    result.issues.forEach((issue) => {
-      console.log(`    → ${issue}`);
-    });
-  }
-} else {
-  console.log("  (skipped — real doc not found)");
-}
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-UI-1 | Nav labels | Code review: admin-nav.ts | Correct labels | PASS — admin-nav.ts:82 | Confirmed: admin-nav.ts:82 shows correct label in config | |
+| AC-UI-2 | Page title | Code review: PageClient.tsx | Title matches | PASS — PageClient.tsx:15 | Confirmed: PageClient.tsx:15 renders correct title text | |
+| AC-UI-3 | Redirect | Code review: manage/page.tsx | Redirects correctly | PASS — manage/page.tsx:4 | Confirmed: manage/page.tsx:4 redirects to correct URL path | |
+| AC-UI-4 | Route registry | Code review: route-registry.ts | Routes registered | PASS — route-registry.ts:307 | Confirmed: route-registry.ts:307 has correct route entry configured | |
+`
+);
+
+result = validateQC(tmpDir, "test10.md");
+assert(!result.valid, "Should be invalid (50% rule)");
+assert(
+  result.issues.some((i) => i.includes("screenshot verification")),
+  `Should mention screenshot verification rule (got: ${result.issues.join("; ")})`
+);
+
+// ── Test 11: Mixed screenshot + code review UI ACs (should pass) ──
+
+console.log("\nTest 11: Mixed screenshot + code review UI ACs (should pass)");
+writeDoc(
+  "test11.md",
+  `## UI Acceptance Criteria
+
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-UI-1 | Plan card layout | Screenshot: /admin/support/plans | Cards visible | PASS — .screenshots/plans.png | Plans page renders card layout in .screenshots/plans.png | |
+| AC-UI-2 | License tab | Screenshot: /admin/support/terms | Tab content shown | PASS — .screenshots/terms.png | License tab shows key input in .screenshots/terms.png | |
+| AC-UI-3 | Redirect | Code review: manage/page.tsx | Redirects correctly | PASS — manage/page.tsx:4 | Confirmed: manage/page.tsx:4 redirects to /admin/support/terms?tab=license | |
+| AC-UI-4 | Route registry | Code review: route-registry.ts | Routes registered | PASS — route-registry.ts:307 | Confirmed: route-registry.ts:307 has correct route entry for support | |
+`
+);
+
+result = validateQC(tmpDir, "test11.md");
+assert(result.valid, `Should be valid (got issues: ${result.issues.join("; ") || "none"})`);
+
+// ── Test 12: Interactive How method with screenshot evidence ──
+
+console.log("\nTest 12: Interactive How method with screenshot evidence");
+writeDoc(
+  "test12.md",
+  `## UI Acceptance Criteria
+
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-UI-1 | Dialog opens | Interactive: click Edit → wait for dialog | Modal visible | PASS — .screenshots/dialog.png shows modal | Dialog opens correctly in .screenshots/dialog.png with fields populated | |
+`
+);
+
+result = validateQC(tmpDir, "test12.md");
+assert(result.valid, `Should be valid (got issues: ${result.issues.join("; ") || "none"})`);
+
+// ── Test 13: Interactive How without screenshot evidence (should fail) ──
+
+console.log("\nTest 13: Interactive How without screenshot evidence (should fail)");
+writeDoc(
+  "test13.md",
+  `## UI Acceptance Criteria
+
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-UI-1 | Dialog opens | Interactive: click Edit → wait for dialog | Modal visible | PASS — code review confirms DialogComponent.tsx:55 renders modal | Confirmed: DialogComponent.tsx:55 renders the modal with correct fields mapped | |
+`
+);
+
+result = validateQC(tmpDir, "test13.md");
+assert(!result.valid, "Should be invalid (Interactive needs screenshot)");
+assert(
+  result.issues.some((i) => i.includes("screenshot evidence")),
+  `Should mention screenshot evidence (got: ${result.issues.join("; ")})`
+);
 
 // ── Cleanup ──
 
