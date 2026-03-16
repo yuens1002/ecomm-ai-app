@@ -20,7 +20,7 @@ export function AddOnsPageClient({ license }: AddOnsPageClientProps) {
   const packages = license.alaCarte;
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-5xl space-y-8">
       <PageTitle
         title="Add-Ons"
         subtitle="Purchase one-time support packages — never expire"

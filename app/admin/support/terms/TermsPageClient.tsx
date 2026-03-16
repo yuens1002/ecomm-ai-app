@@ -71,7 +71,7 @@ export function TermsPageClient({
   const defaultTab = searchParams.get("tab") || "license";
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-5xl space-y-8">
       <PageTitle
         title="License & Terms"
         subtitle="License, privacy, and service terms"

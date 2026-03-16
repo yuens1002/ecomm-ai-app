@@ -209,7 +209,7 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
   const configs = plans.map((p) => computePlanCardConfig(p, license));
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-5xl space-y-8">
       <PageTitle
         title="Plans"
         subtitle="Browse and manage your support plan"

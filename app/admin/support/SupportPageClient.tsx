@@ -13,13 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { UsageBar } from "./UsageBar";
 import { usePaidAction } from "./_hooks/usePaidAction";
@@ -96,7 +90,7 @@ export function SupportPageClient({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-5xl space-y-8">
       <PageTitle
         title="Submit Ticket"
         subtitle="Get support from our team and the community"
@@ -246,36 +240,46 @@ function TicketFormCard({
           </div>
         )}
 
-        {/* Type selector */}
+        {/* Type selector — radio cards */}
         {config.showTypeSelector && (
-          <div className="w-48">
-            <Label htmlFor="ticket-type" className="text-sm mb-1.5 block">
-              Ticket Type
-            </Label>
-            <Select
-              value={ticketType}
-              onValueChange={(v) =>
-                setTicketType(v as "normal" | "priority")
-              }
-            >
-              <SelectTrigger id="ticket-type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                sideOffset={4}
+          <div>
+            <Label className="text-sm mb-1.5 block">Ticket Type</Label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                disabled={config.priorityDisabled}
+                onClick={() => setTicketType("priority")}
+                className={cn(
+                  "flex-1 rounded-lg border p-3 text-left transition-colors",
+                  ticketType === "priority"
+                    ? "border-primary ring-1 ring-primary"
+                    : "hover:bg-muted/50",
+                  config.priorityDisabled && "opacity-50 cursor-not-allowed"
+                )}
               >
-                <SelectItem
-                  value="priority"
-                  disabled={config.priorityDisabled}
-                >
-                  Priority{config.priorityDisabled ? " (no credits)" : ""}
-                </SelectItem>
-                <SelectItem value="normal">Normal</SelectItem>
-              </SelectContent>
-            </Select>
+                <p className="text-sm font-medium">Priority</p>
+                <p className="text-xs text-muted-foreground">
+                  {config.priorityDisabled
+                    ? "No credits remaining"
+                    : "48-hr SLA · Uses 1 credit"}
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTicketType("normal")}
+                className={cn(
+                  "flex-1 rounded-lg border p-3 text-left transition-colors",
+                  ticketType === "normal"
+                    ? "border-primary ring-1 ring-primary"
+                    : "hover:bg-muted/50"
+                )}
+              >
+                <p className="text-sm font-medium">Normal</p>
+                <p className="text-xs text-muted-foreground">
+                  Community-triaged · No credits needed
+                </p>
+              </button>
+            </div>
           </div>
         )}
 
@@ -293,6 +297,9 @@ function TicketFormCard({
               disabled={isPending}
               maxLength={200}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              A brief summary helps us triage faster
+            </p>
           </div>
           <div>
             <Label htmlFor="ticket-steps" className="text-sm mb-1.5 block">
@@ -307,6 +314,9 @@ function TicketFormCard({
               rows={3}
               maxLength={5000}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              What steps lead to the issue?
+            </p>
           </div>
           <div>
             <Label htmlFor="ticket-expected" className="text-sm mb-1.5 block">
@@ -321,6 +331,9 @@ function TicketFormCard({
               rows={2}
               maxLength={5000}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              What did you expect vs what happened?
+            </p>
           </div>
         </div>
 

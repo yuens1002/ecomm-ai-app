@@ -81,7 +81,7 @@ export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
     details.sla || (details.quotas && Object.keys(details.quotas).length > 0);
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-5xl space-y-8">
       <PageTitle title={plan.name} subtitle={plan.description} />
 
       {/* Two-column: Pricing+Benefits left, SLA+Quotas right */}
