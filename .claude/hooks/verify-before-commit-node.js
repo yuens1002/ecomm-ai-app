@@ -96,7 +96,8 @@ function main(input) {
         if (!qcResult.valid) {
           // Separate per-AC issues (blockers) from planning-level rules (warnings)
           const perAcIssues = qcResult.issues.filter((i) => /^AC-/.test(i));
-          const planningIssues = qcResult.issues.filter((i) => !/^AC-/.test(i));
+          // Planning-level issues (50% screenshot rule) are warnings, not blockers
+          // const planningIssues = qcResult.issues.filter((i) => !/^AC-/.test(i));
 
           // Per-AC issues (rubber stamps, empty, echo) are hard blockers
           if (perAcIssues.length > 0) {

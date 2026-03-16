@@ -16,6 +16,10 @@ npm-audit*.json
 
 # testing
 /coverage
+/playwright-report/
+/blob-report/
+/test-results/
+e2e/.auth/
 
 # next.js
 /.next/

@@ -11,10 +11,13 @@
 
 export type TicketStatus = "OPEN" | "RESOLVED" | "CLOSED";
 
+export type TicketType = "normal" | "priority";
+
 export interface SupportTicket {
   id: string;
   title: string;
   body: string | null;
+  type: TicketType;
   status: TicketStatus;
   githubUrl: string | null;
   createdAt: string;

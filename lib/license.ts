@@ -45,8 +45,7 @@ const DEFAULT_GA_CONFIG: GAConfig = {
 };
 
 const DEFAULT_SUPPORT_QUOTAS: SupportQuotas = {
-  tickets: { limit: 0, purchased: 0, used: 0, remaining: 0 },
-  oneOnOne: { limit: 0, purchased: 0, used: 0, remaining: 0 },
+  pools: [],
 };
 
 const FREE_DEFAULT: LicenseInfo = {
@@ -404,12 +403,14 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
             label: "Upgrade to Pro",
             url: `${PLATFORM_URL}/signup?plan=pro`,
             variant: "primary",
+            icon: "arrow-up-right",
           },
           {
             slug: "manage-billing",
-            label: "Manage Billing",
+            label: "Billing",
             url: `${PLATFORM_URL}/billing`,
             variant: "outline",
+            icon: "credit-card",
           },
         ],
         plan: null,
@@ -441,12 +442,21 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
             label: "Add Features",
             url: `${PLATFORM_URL}/billing`,
             variant: "outline",
+            icon: "plus",
           },
           {
             slug: "manage-billing",
-            label: "Manage Billing",
+            label: "Billing",
             url: `${PLATFORM_URL}/billing`,
             variant: "outline",
+            icon: "credit-card",
+          },
+          {
+            slug: "schedule-call",
+            label: "Session",
+            url: `${PLATFORM_URL}/schedule`,
+            variant: "outline",
+            icon: "calendar",
           },
         ],
         plan: {
@@ -456,8 +466,10 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
         },
         lapsed: null,
         support: {
-          tickets: { limit: 5, purchased: 1, used: 2, remaining: 4 },
-          oneOnOne: { limit: 1, purchased: 0, used: 0, remaining: 1 },
+          pools: [
+            { slug: "tickets", label: "Priority Tickets", icon: "ticket", limit: 5, purchased: 1, used: 2, remaining: 4 },
+            { slug: "one-on-one", label: "1:1 Sessions", icon: "video", limit: 1, purchased: 0, used: 0, remaining: 1 },
+          ],
         },
         alaCarte: [
           {
@@ -511,9 +523,10 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
         availableActions: [
           {
             slug: "manage-billing",
-            label: "Manage Billing",
+            label: "Billing",
             url: `${PLATFORM_URL}/billing`,
             variant: "outline",
+            icon: "credit-card",
           },
         ],
         plan: {
@@ -523,8 +536,10 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
         },
         lapsed: null,
         support: {
-          tickets: { limit: 5, purchased: 0, used: 1, remaining: 4 },
-          oneOnOne: { limit: 1, purchased: 0, used: 0, remaining: 1 },
+          pools: [
+            { slug: "tickets", label: "Priority Tickets", icon: "ticket", limit: 5, purchased: 0, used: 1, remaining: 4 },
+            { slug: "one-on-one", label: "1:1 Sessions", icon: "video", limit: 1, purchased: 0, used: 0, remaining: 1 },
+          ],
         },
         alaCarte: [
           {

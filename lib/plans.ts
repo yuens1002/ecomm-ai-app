@@ -29,6 +29,11 @@ let cached: { data: Plan[]; expiresAt: number } | null = null;
 
 /** Fetch available plans from the platform. Cached 24h. */
 export async function fetchPlans(): Promise<Plan[]> {
+  // Dev mock override
+  if (process.env.MOCK_LICENSE_TIER) {
+    return MOCK_PLANS;
+  }
+
   if (cached && Date.now() < cached.expiresAt) {
     return cached.data;
   }
@@ -57,3 +62,88 @@ export async function fetchPlans(): Promise<Plan[]> {
 export function invalidatePlansCache(): void {
   cached = null;
 }
+
+// ---------------------------------------------------------------------------
+// Mock plans (for MOCK_LICENSE_TIER env var)
+// ---------------------------------------------------------------------------
+
+const MOCK_PLANS: Plan[] = [
+  {
+    slug: "priority-support",
+    name: "Priority Support",
+    description: "Dedicated support with guaranteed response times",
+    price: 4900,
+    currency: "USD",
+    interval: "month",
+    features: ["priority-support"],
+    highlight: true,
+    details: {
+      benefits: [
+        "Priority email support with 48-hr SLA",
+        "5 support tickets per month",
+        "1 one-on-one session per month (30 min)",
+        "Anonymous GitHub issue tracking & transparency",
+      ],
+      sla: {
+        responseTime: "48 hours",
+        availability: "Business days (Mon\u2013Fri)",
+      },
+      quotas: { SupportTickets: 5, OneOnOneSessions: 1 },
+      scope: [
+        "Setup & configuration",
+        "Troubleshooting",
+        "Platform guidance",
+      ],
+      excludes: [
+        "Custom development",
+        "Feature requests",
+        "Third-party integrations",
+      ],
+      terms: [
+        "Billed monthly, cancel anytime from your billing dashboard",
+        "Unused tickets do not roll over to the next billing period",
+        "Purchased add-on credits never expire",
+      ],
+    },
+  },
+  {
+    slug: "enterprise-support",
+    name: "Enterprise Support",
+    description: "White-glove support for mission-critical deployments",
+    price: 29900,
+    currency: "USD",
+    interval: "month",
+    features: ["priority-support", "enterprise-support"],
+    highlight: false,
+    details: {
+      benefits: [
+        "Everything in Priority Support",
+        "4-hour response time SLA",
+        "Unlimited support tickets",
+        "4 one-on-one sessions per month (60 min)",
+        "Dedicated account manager",
+        "Custom integration guidance",
+      ],
+      sla: {
+        responseTime: "4 hours",
+        availability: "24/7",
+        videoCallDuration: "60 min",
+        videoCallBooking: "Self-service",
+      },
+      quotas: { SupportTickets: -1, OneOnOneSessions: 4 },
+      scope: [
+        "Setup & configuration",
+        "Troubleshooting",
+        "Platform guidance",
+        "Custom integration support",
+        "Performance optimization",
+      ],
+      excludes: ["Custom development", "Managed hosting migrations"],
+      terms: [
+        "Billed monthly, 30-day notice to cancel",
+        "Annual billing available at 15% discount",
+        "Unused sessions do not roll over",
+      ],
+    },
+  },
+];

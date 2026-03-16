@@ -72,8 +72,7 @@ function makeProResponse(): LicenseInfo {
     plan: null,
     lapsed: null,
     support: {
-      tickets: { limit: 0, purchased: 0, used: 0, remaining: 0 },
-      oneOnOne: { limit: 0, purchased: 0, used: 0, remaining: 0 },
+      pools: [],
     },
     alaCarte: [],
     legal: null,
@@ -115,8 +114,7 @@ function makeTrialResponse(): LicenseInfo {
     plan: null,
     lapsed: null,
     support: {
-      tickets: { limit: 0, purchased: 0, used: 0, remaining: 0 },
-      oneOnOne: { limit: 0, purchased: 0, used: 0, remaining: 0 },
+      pools: [],
     },
     alaCarte: [],
     legal: null,

@@ -79,15 +79,6 @@ export const adminNavConfig: NavItem[] = [
     ],
   },
   {
-    label: "Support & Services",
-    icon: LifeBuoy,
-    children: [
-      { label: "Submit Ticket", href: "/admin/support" },
-      { label: "Subscriptions", href: "/admin/support/plans" },
-      { label: "License & Terms", href: "/admin/support/terms" },
-    ],
-  },
-  {
     label: "Settings",
     icon: Settings,
     children: [
@@ -102,6 +93,16 @@ export const adminNavConfig: NavItem[] = [
       { label: "Contact", href: "/admin/settings/contact" },
       { label: "Scheduled Jobs", href: "/admin/settings/scheduled-jobs" },
       { label: "Social Links", href: "/admin/social-links" },
+    ],
+  },
+  {
+    label: "Support & Services",
+    icon: LifeBuoy,
+    children: [
+      { label: "Submit Ticket", href: "/admin/support" },
+      { label: "Plans", href: "/admin/support/plans" },
+      { label: "Add-Ons", href: "/admin/support/add-ons" },
+      { label: "License & Terms", href: "/admin/support/terms" },
     ],
   },
 ];
@@ -336,15 +337,6 @@ export const mobileNavConfig: NavItem[] = [
     ],
   },
   {
-    label: "Support & Services",
-    icon: LifeBuoy,
-    children: [
-      { label: "Submit Ticket", href: "/admin/support" },
-      { label: "Subscriptions", href: "/admin/support/plans" },
-      { label: "License & Terms", href: "/admin/support/terms" },
-    ],
-  },
-  {
     label: "Settings",
     icon: Settings,
     children: [
@@ -359,6 +351,16 @@ export const mobileNavConfig: NavItem[] = [
       { label: "Contact", href: "/admin/settings/contact" },
       { label: "Scheduled Jobs", href: "/admin/settings/scheduled-jobs" },
       { label: "Social Links", href: "/admin/social-links" },
+    ],
+  },
+  {
+    label: "Support & Services",
+    icon: LifeBuoy,
+    children: [
+      { label: "Submit Ticket", href: "/admin/support" },
+      { label: "Plans", href: "/admin/support/plans" },
+      { label: "Add-Ons", href: "/admin/support/add-ons" },
+      { label: "License & Terms", href: "/admin/support/terms" },
     ],
   },
 ];

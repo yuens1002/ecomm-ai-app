@@ -1,11 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { ExternalLink, RefreshCw } from "lucide-react";
-import {
-  FieldSet,
-  FieldLegend,
-} from "@/components/ui/field";
+import { useTransition } from "react";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -18,18 +14,18 @@ import type { SupportTicket } from "@/lib/support-types";
 
 interface SupportTicketsListProps {
   tickets: SupportTicket[];
+  onTicketsChange: (tickets: SupportTicket[]) => void;
 }
 
-export function SupportTicketsList({ tickets: initialTickets }: SupportTicketsListProps) {
+export function SupportTicketsList({ tickets, onTicketsChange }: SupportTicketsListProps) {
   const { toast } = useToast();
-  const [tickets, setTickets] = useState(initialTickets);
   const [isPending, startTransition] = useTransition();
 
   function handleRefresh() {
     startTransition(async () => {
       const result = await fetchSupportTickets();
       if (result.success && result.data) {
-        setTickets(result.data.tickets);
+        onTicketsChange(result.data.tickets);
         toast({ title: "Tickets refreshed" });
       } else {
         toast({
@@ -42,9 +38,9 @@ export function SupportTicketsList({ tickets: initialTickets }: SupportTicketsLi
   }
 
   return (
-    <FieldSet>
+    <div className="rounded-lg border p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <FieldLegend className="mb-0">Recent Tickets</FieldLegend>
+        <h3 className="text-sm font-medium">Recent Tickets</h3>
         <Button
           variant="ghost"
           size="sm"
@@ -56,7 +52,6 @@ export function SupportTicketsList({ tickets: initialTickets }: SupportTicketsLi
           />
         </Button>
       </div>
-
       {tickets.length === 0 ? (
         <div className="rounded-md border border-dashed p-6 text-center">
           <p className="text-sm font-medium text-muted-foreground">No tickets yet</p>
@@ -65,39 +60,34 @@ export function SupportTicketsList({ tickets: initialTickets }: SupportTicketsLi
           </p>
         </div>
       ) : (
-        <div className="divide-y">
+        <div className="space-y-3">
           {tickets.map((ticket) => (
-            <div
+            <a
               key={ticket.id}
-              className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0"
+              href={ticket.githubUrl ?? undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-lg border p-3 space-y-1.5 transition-shadow hover:shadow-md cursor-pointer"
             >
-              <div className="min-w-0 space-y-1">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <StatusBadge status={ticket.status} />
-                  <p className="truncate text-sm font-medium">
-                    {ticket.title}
-                  </p>
+                  {ticket.type === "priority" && (
+                    <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+                      Priority
+                    </Badge>
+                  )}
+                  <span className="text-xs text-muted-foreground">
+                    {relativeTime(ticket.createdAt)}
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {relativeTime(ticket.createdAt)}
-                </p>
               </div>
-              {ticket.githubUrl && (
-                <a
-                  href={ticket.githubUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 text-muted-foreground hover:text-foreground"
-                  aria-label="View on GitHub"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              )}
-            </div>
+              <p className="text-sm font-medium truncate">{ticket.title}</p>
+            </a>
           ))}
         </div>
       )}
-    </FieldSet>
+    </div>
   );
 }
 

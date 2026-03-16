@@ -75,9 +75,19 @@ export interface CreditPool {
   remaining: number;
 }
 
+/** A single metered usage pool with display metadata from the platform. */
+export interface UsagePool extends CreditPool {
+  /** Machine-readable identifier (e.g. "tickets", "one-on-one", "tokens") */
+  slug: string;
+  /** Human-readable label (e.g. "Priority Tickets", "1:1 Sessions", "AI Tokens") */
+  label: string;
+  /** Lucide icon name hint (e.g. "ticket", "video", "cpu") */
+  icon: string;
+}
+
 export interface SupportQuotas {
-  tickets: CreditPool;
-  oneOnOne: CreditPool;
+  /** All metered usage pools — rendered dynamically by slug */
+  pools: UsagePool[];
 }
 
 // ---------------------------------------------------------------------------
@@ -130,6 +140,8 @@ export interface AvailableAction {
   url: string;
   /** Button styling hint */
   variant: "primary" | "outline" | "ghost";
+  /** Lucide icon name hint (e.g. "calendar", "credit-card", "arrow-up-right") */
+  icon: string;
 }
 
 // ---------------------------------------------------------------------------

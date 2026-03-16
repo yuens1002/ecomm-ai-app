@@ -321,7 +321,7 @@ const routeEntries: RouteEntry[] = [
     id: "admin.support.plans",
     pathname: "/admin/support/plans",
     matchMode: "exact",
-    label: "Subscriptions",
+    label: "Plans",
     parentId: "admin.support",
     isNavigable: true,
   },
@@ -331,6 +331,14 @@ const routeEntries: RouteEntry[] = [
     matchMode: "prefix-nested",
     label: null, // Resolved at runtime via plan slug
     parentId: "admin.support.plans",
+    isNavigable: true,
+  },
+  {
+    id: "admin.support.addons",
+    pathname: "/admin/support/add-ons",
+    matchMode: "exact",
+    label: "Add-Ons",
+    parentId: "admin.support",
     isNavigable: true,
   },
   {

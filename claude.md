@@ -98,6 +98,7 @@ Run before any commit: `npm run precheck` (TypeScript + ESLint)
 
 **Must-have on all code:**
 
+- **Re-read before editing**: If a file was modified earlier in the session (by you or by a linter), ALWAYS re-read it before making another edit. Never edit from stale context — prior corrections will be silently reverted
 - No `any` types — use `unknown` + type guards
 - All server actions validated with Zod
 - Server Components by default — `"use client"` only when needed
@@ -107,6 +108,19 @@ Run before any commit: `npm run precheck` (TypeScript + ESLint)
 - Inputs validated at system boundaries (user input, external APIs)
 - Semantic HTML + ARIA labels
 - Use shadcn/ui skills (`/cui`, `/rui`, `/iui`, `/ftc`) when building UI
+- Run `/ui-guide` before any admin UI design work
+
+**Admin UI conventions (always apply):**
+
+- Flat cards: `rounded-lg border p-6` — never shadcn Card/CardContent wrappers
+- Grid gap: `gap-4` (matches dashboard) — not gap-6 or gap-8
+- Desktop max width: `max-w-[72ch]` on inputs and text content
+- Sections: `space-y-12` between major, `space-y-6` within
+- Bottom CTAs: `flex flex-col` + `mt-auto pt-5`, never `w-full`
+- ExternalLink icons: `text-muted-foreground`; action icons: normal color
+- Clickable cards: `transition-shadow hover:shadow-md cursor-pointer`
+- Auto-refresh lists after mutations — never require manual refresh
+- Config-driven rendering for multi-state UIs
 
 **Testing:**
 

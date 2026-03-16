@@ -179,7 +179,7 @@
       "acs_total": 44,
       "tasks": [],
       "acs_doc": "docs/plans/support-services-ACs.md",
-      "notes": "44/44 ACs verified via code review. 24 UI + 15 FN + 5 REG. Precheck 0 errors, 1089 tests pass. 0 iterations needed."
+      "notes": "44/44 ACs verified via code review. 24 UI + 15 FN + 5 REG. Precheck 0 errors, 1089 tests pass. Retro: How-column enforcement added post-verification."
     },
     "feat/phase2a-llm-agnostic-ai": {
       "status": "verified",
