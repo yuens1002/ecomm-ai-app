@@ -43,3 +43,17 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 - `~/.claude/projects/.../memory/ui_patterns_admin.md` — Canonical code pattern reference
 
 **Prevented by:** All 4 shadcn commands now inject project conventions as a post-processing step. Plans now require explicit UX flow answers before implementation starts.
+
+---
+
+## 2026-03-16 — Corrections from prior sessions not carried to new sessions
+
+**Gap:** UI corrections made in session N (flat cards, gap-4, icon muting, auto-refresh) were not applied in session N+1 on the same branch. The agent repeated the same mistakes because memory files are linked but not always proactively read.
+
+**Root cause:** UI patterns were stored in memory (`ui_patterns_admin.md`) which is a linked file from `MEMORY.md`. Memory files are only read when the agent decides to check them — they're not in the always-loaded context. CLAUDE.md is the only file guaranteed to be in context every session.
+
+**Fix applied to:**
+- `CLAUDE.md` — Added "Admin UI conventions (always apply)" section under Code Quality with the 9 most critical rules (flat cards, gap-4, max-w-[72ch], spacing, CTAs, icons, clickable cards, auto-refresh, config-driven state)
+- Also added `/ui-guide` reminder to the shadcn skills line
+
+**Prevented by:** Critical UI conventions are now in CLAUDE.md (always loaded) rather than only in linked memory files. Every session starts with these rules in context.
