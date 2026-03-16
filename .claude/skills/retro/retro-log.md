@@ -57,3 +57,16 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 - Also added `/ui-guide` reminder to the shadcn skills line
 
 **Prevented by:** Critical UI conventions are now in CLAUDE.md (always loaded) rather than only in linked memory files. Every session starts with these rules in context.
+
+---
+
+## 2026-03-16 — Prior corrections reverted by subsequent edits
+
+**Gap:** User asks for UI change A (e.g., flat cards). Agent applies it. User asks for change B on the same file (e.g., add badge). Agent edits from stale context and silently reverts change A. User has to re-request the same correction.
+
+**Root cause:** The Edit tool uses string matching. When the agent works from a cached/stale version of the file (read earlier before change A was applied), the `old_string` may include pre-change-A content. The edit succeeds but overwrites change A with the stale version.
+
+**Fix applied to:**
+- `CLAUDE.md` — Added "Re-read before editing" rule as the first item under Must-have: if a file was modified earlier in the session (by agent or linter), always re-read before the next edit. Never edit from stale context.
+
+**Prevented by:** The rule is in CLAUDE.md (always loaded) and positioned as the first code quality rule for visibility. The agent must re-read any previously-modified file before editing it again.
