@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   Check,
-  CheckCircle2,
   ExternalLink,
   Loader2,
 } from "lucide-react";
