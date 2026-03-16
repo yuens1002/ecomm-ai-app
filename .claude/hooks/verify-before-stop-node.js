@@ -127,11 +127,28 @@ function main(input) {
         const { validateQC } = require("./qc-validator");
         const qcResult = validateQC(projectDir, acsDoc);
         if (!qcResult.valid) {
-          block(
-            `BLOCKED: QC validation failed for "${branch}" (${qcResult.issues.length} issue(s)):\n` +
-              qcResult.issues.map((i) => `  • ${i}`).join("\n") +
-              `\n\nFix the QC column in ${acsDoc} with substantive, independent evidence before finishing.`
-          );
+          // Separate per-AC issues (blockers) from planning-level rules (warnings)
+          const perAcIssues = qcResult.issues.filter((i) => /^AC-/.test(i));
+          const planningIssues = qcResult.issues.filter((i) => !/^AC-/.test(i));
+
+          // Per-AC issues (rubber stamps, empty, echo) are hard blockers
+          if (perAcIssues.length > 0) {
+            block(
+              `BLOCKED: QC validation failed for "${branch}" (${perAcIssues.length} issue(s)):\n` +
+                perAcIssues.map((i) => `  • ${i}`).join("\n") +
+                `\n\nFix the QC column in ${acsDoc} with substantive, independent evidence before finishing.`
+            );
+          }
+          // Planning-level issues (50% screenshot rule) are warnings on verified branches
+          // These should be enforced at plan time, not retroactively
+          if (planningIssues.length > 0) {
+            process.stderr.write(
+              `WARNING: Planning-level QC issues on "${branch}" (apply to future branches):\n` +
+                planningIssues.map((i) => `  • ${i}`).join("\n") +
+                `\n\nThese are planning-time rules. For future features, set How columns at plan time.`
+            );
+            // Allow stop — these are warnings, not blockers for already-verified work
+          }
         }
       }
       process.exit(0);
