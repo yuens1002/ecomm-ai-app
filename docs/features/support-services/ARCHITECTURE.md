@@ -1,0 +1,367 @@
+# Support & Services — Architecture
+
+**Last Updated:** 2026-03-16
+**Status:** Phase 1-4 complete, Phase 5+ planned
+**Branch:** `feat/support-plans-restructure` (base: `main`)
+
+---
+
+## Overview
+
+Support & Services is a multi-page admin subsystem that connects self-hosted store instances to the Artisan Roast platform for subscription plans, metered support (tickets + 1:1 sessions), a la carte purchases, and legal document management.
+
+The store renders everything dynamically from the platform's validate response — no hardcoded labels, prices, or URLs. This enables the platform team to update offerings without requiring a store-side release.
+
+---
+
+## System Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Store Admin UI                                                  │
+│                                                                  │
+│  ┌─────────────┐  ┌──────────────┐  ┌───────────┐  ┌─────────┐ │
+│  │Submit Ticket │  │Subscriptions │  │Plan Detail│  │License  │ │
+│  │  /support    │  │  /plans      │  │/plans/[s] │  │& Terms  │ │
+│  └──────┬──────┘  └──────┬───────┘  └─────┬─────┘  └────┬────┘ │
+│         │                │                 │              │      │
+│         └────────────────┴─────────────────┴──────────────┘      │
+│                              │                                   │
+│              ┌───────────────┴───────────────┐                   │
+│              │        Server Actions         │                   │
+│              │  submitTypedTicket()           │                   │
+│              │  submitCommunityIssue()        │                   │
+│              │  bookSupportSession()          │                   │
+│              │  activateLicense()             │                   │
+│              │  acceptTerms()                 │                   │
+│              │  startCheckout()               │                   │
+│              └───────────────┬───────────────┘                   │
+│                              │                                   │
+│              ┌───────────────┴───────────────┐                   │
+│              │         Lib Modules           │                   │
+│              │  lib/license.ts  (validate)   │                   │
+│              │  lib/support.ts  (tickets)    │                   │
+│              │  lib/plans.ts    (catalog)    │                   │
+│              │  lib/legal.ts    (docs)       │                   │
+│              └───────────────┬───────────────┘                   │
+└──────────────────────────────┼───────────────────────────────────┘
+                               │ HTTPS
+                               ▼
+┌──────────────────────────────────────────────────────────────────┐
+│  Artisan Roast Platform  (manage.artisanroast.app)              │
+│                                                                  │
+│  POST /api/license/validate  — License + credits + legal state  │
+│  GET  /api/plans             — Plan catalog (public)            │
+│  POST /api/support/tickets   — Submit ticket, deduct credit     │
+│  POST /api/support/sessions  — Book session, deduct credit      │
+│  GET  /api/legal/{slug}      — Legal doc content (public)       │
+│  POST /api/legal/accept      — Track acceptance (auth)          │
+│  POST /api/checkout          — Stripe checkout session          │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Pages
+
+### Navigation
+
+```
+Support & Services (LifeBuoy)
+├── Submit Ticket      /admin/support
+├── Plans              /admin/support/plans
+│   └── [slug]         /admin/support/plans/[slug]   (grandchild, hidden from nav)
+├── Add-Ons            /admin/support/add-ons
+└── License & Terms    /admin/support/terms
+```
+
+Legacy route: `/admin/support/manage` → redirects to `/admin/support/terms?tab=license`
+
+### Page Responsibilities
+
+| Page | Server Data | Client State | Purpose |
+|------|-------------|-------------|---------|
+| Submit Ticket | `license`, `tickets` | Filter, pagination, form state | Ticket form + ticket list |
+| Plans | `license`, `plans[]` | Checkout, refresh | Plan cards (active/inactive/none) + a la carte |
+| Plan Detail | `license`, `plan` | — | Full plan specs, add-on packages, SLA |
+| Add-Ons | `license` | — | A la carte package grid |
+| License & Terms | `license`, `plans[]`, `legalDoc` | Tab, key input, telemetry | Key management, privacy, legal docs |
+
+---
+
+## Core Design Patterns
+
+### 1. Config-Driven UI State
+
+Each page computes a config object from `LicenseInfo` that drives all conditional rendering. No raw tier checks in JSX.
+
+```typescript
+// Submit Ticket page
+function computeTicketPageConfig(license: LicenseInfo, hasKey: boolean): TicketPageConfig {
+  // Returns: showCredits, ticketCredits, showTypeSelector, defaultType,
+  //          priorityDisabled, ticketPacks, showUpsell, hasKey
+}
+
+// Subscriptions page
+function computePlanCardConfig(plan: Plan, license: LicenseInfo): PlanCardConfig {
+  // Returns: status (active/inactive/none), badge, primaryCta,
+  //          showCredits, credits, actions, snapshotAt, inactiveInfo
+}
+```
+
+### 2. Platform-Driven Labels
+
+All user-facing text for plans, actions, credit pools, and packages comes from the platform API response. The store never hardcodes labels, prices, or URLs.
+
+| Data | Source | Store Renders |
+|------|--------|---------------|
+| Plan names/prices | `GET /api/plans` | `plan.name`, `plan.price` |
+| CTA buttons | `license.availableActions[]` | `action.label`, `action.icon` |
+| Credit labels | `license.support.pools[]` | `pool.label`, `pool.icon` |
+| Package names | `license.alaCarte[]` | `package.label`, `package.price` |
+
+### 3. Dual Credit Pools
+
+Two independent credit sources, managed platform-side:
+
+| Pool | Source | Expiry | Consumed |
+|------|--------|--------|----------|
+| Plan credits | Monthly plan quota | Reset each billing cycle | First |
+| Purchased credits | A la carte purchases | Never | After plan credits exhausted |
+
+The platform computes `remaining = limit + purchased - used` and returns it. The store displays the breakdown when both pools have credits.
+
+### 4. Graceful Degradation
+
+Every platform call has a fallback:
+
+| Call | Fallback | UI Result |
+|------|----------|-----------|
+| `validateLicense()` | `FREE_DEFAULT` (all zeros/null) | FREE tier experience |
+| `fetchPlans()` | `[]` | "Plans could not be loaded" empty state |
+| `fetchLegalDoc()` | `null` | Direct links to platform pages |
+| `listTickets()` | `[]` | Empty ticket list |
+
+### 5. Server-Side Legal Enforcement
+
+Legal acceptance is enforced in two layers — no client-side gate:
+
+| Layer | Trigger | Response |
+|-------|---------|----------|
+| **Stripe checkout** | First purchase | Stripe's built-in legal consent |
+| **Platform 403** | Paid endpoint + outdated terms | `{ error: "terms_acceptance_required" }` |
+
+The store handles 403 by showing an amber banner directing the user to the Terms tab. The `SupportError.code` field carries the machine-readable error code through server actions to the client.
+
+---
+
+## Data Flow
+
+### LicenseInfo (Phase 3 — full shape)
+
+```typescript
+interface LicenseInfo {
+  valid: boolean;
+  tier: Tier;                    // "FREE" | "TRIAL" | "PRO" | "HOSTED"
+  features: string[];
+  plan: PlanContext | null;       // { slug, name, snapshotAt }
+  lapsed: LapsedContext | null;   // { previousTier, renewUrl, deactivatedAt, ... }
+  support: SupportQuotas;         // { pools: UsagePool[] }
+  alaCarte: AlaCartePackage[];    // [{ id, label, price, checkoutUrl }]
+  legal: LegalState | null;       // { pendingAcceptance, acceptedVersions }
+  availableActions: AvailableAction[]; // [{ slug, label, url, variant, icon }]
+  // ...plus usage, gaConfig, warnings, trialEndsAt, compatibility
+}
+```
+
+### Plan Catalog (GET /api/plans)
+
+```typescript
+interface Plan {
+  slug: string;           // "free", "priority-support", "enterprise-support"
+  name: string;
+  description: string;
+  price: number;          // cents (0 = free, 4900 = $49)
+  currency: string;
+  interval: "month" | "year";
+  features: string[];
+  details: PlanDetails;   // sla, benefits, quotas, scope, excludes, terms
+  highlight: boolean;
+  salePrice?: number;     // cents — promotional price (NOT YET IN PLATFORM CONTRACT)
+  saleEndsAt?: string;    // ISO 8601 — sale expiration (NOT YET IN PLATFORM CONTRACT)
+  priceLabel?: string;    // e.g. "Launch Special" (NOT YET IN PLATFORM CONTRACT)
+}
+```
+
+> **Gap:** `salePrice`, `saleEndsAt`, and `priceLabel` are implemented store-side but not yet in the platform contract. Needs a plan-catalog addendum before the platform ships `GET /api/plans`.
+
+---
+
+## File Map
+
+### Pages & Components
+
+```
+app/admin/support/
+├── page.tsx                        Server — fetches tickets, passes to client
+├── actions.ts                      Server actions (9 functions, all Zod-validated)
+├── SupportPageClient.tsx           Client — ticket form + computeTicketPageConfig()
+├── SupportTicketsSection.tsx       Client — filter tabs, pagination, scrollable list
+├── UsageBar.tsx                    Client — reusable credit progress bar
+├── manage/
+│   └── page.tsx                    Server — redirect to /terms?tab=license
+├── plans/
+│   ├── page.tsx                    Server — fetches plans
+│   ├── actions.ts                  Server action — startCheckout()
+│   ├── PlanPageClient.tsx          Client — plan cards + computePlanCardConfig()
+│   └── [slug]/
+│       ├── page.tsx                Server — fetches single plan
+│       └── PlanDetailClient.tsx    Client — full plan specs
+├── add-ons/
+│   ├── page.tsx                    Server — reads license.alaCarte
+│   └── AddOnsPageClient.tsx        Client — package grid
+└── terms/
+    ├── page.tsx                    Server — fetches legal docs
+    └── TermsPageClient.tsx         Client — 3-tab UI (License, Privacy, Terms)
+```
+
+### Lib Modules
+
+| File | Purpose | Auth | Cache |
+|------|---------|------|-------|
+| `lib/license.ts` | Validate license, feature gating | License key | 24h in-memory |
+| `lib/license-types.ts` | TypeScript types (LicenseInfo, CreditPool, etc.) | — | — |
+| `lib/support.ts` | Platform support API client | License key | None |
+| `lib/support-types.ts` | TypeScript types (SupportTicket, etc.) | — | — |
+| `lib/plans.ts` | Fetch plan catalog | None (public) | 24h in-memory |
+| `lib/plan-types.ts` | TypeScript types (Plan, PlanDetails) | — | — |
+| `lib/legal.ts` | Fetch/accept legal docs | Public / License key | 24h in-memory |
+| `lib/legal-utils.ts` | Client-safe helpers (getLegalUrl) | — | — |
+
+### Config
+
+| File | Support-Related Entries |
+|------|----------------------|
+| `lib/config/admin-nav.ts` | "Support & Services" group with 4 children |
+| `lib/navigation/route-registry.ts` | Route entries for all support pages |
+
+---
+
+## Error Handling
+
+### SupportError
+
+```typescript
+class SupportError extends Error {
+  constructor(message: string, public status: number, public code?: string) {}
+}
+```
+
+Platform HTTP status → SupportError → server action result → client UI:
+
+| Status | Code | Client Behavior |
+|--------|------|-----------------|
+| 401 | — | "Invalid or missing license key" |
+| 402 | `credits_exhausted` | Show a la carte CTAs from error response |
+| 403 | `terms_acceptance_required` | Amber banner → link to Terms tab |
+| 403 | — | "Priority support is not included in your plan" |
+| 429 | — | "Too many requests" |
+
+---
+
+## Plan Card States
+
+| State | Trigger | Badge | CTA | Border |
+|-------|---------|-------|-----|--------|
+| Active (free) | `plan.slug === "free"` | Active (secondary) | — | `border-primary` |
+| Active (paid) | `license.plan.slug === plan.slug` | Active (secondary) | Manage Billing, Session | `border-primary` |
+| Inactive | `license.lapsed.planSlug === plan.slug` | Inactive (destructive) | Renew (`lapsed.renewUrl`) | default |
+| None | No match | — | Subscribe | default |
+
+---
+
+## Platform Contracts
+
+All contracts live in `docs/internal/`:
+
+| Document | Covers | Status |
+|----------|--------|--------|
+| `phase3-contract-update.md` | Store-side: validate response, credit consumption, legal docs, FREE a la carte flow | Finalized |
+| `phase3-contract-addendum.md` | Both teams: plan versioning, lapsed state, metered support, credit pools, a la carte | Finalized |
+| `phase3-payload-labels-contract.md` | Both teams: `availableActions[].icon`, `support.pools[]` array, FREE plan in catalog | Finalized |
+
+### Contract Gaps
+
+| Gap | Affected | Status |
+|-----|----------|--------|
+| `salePrice`, `saleEndsAt`, `priceLabel` on `GET /api/plans` response | Plan catalog | **Needs addendum** — store types + mock data ready, platform contract missing |
+| Ticket reply/messaging API (`GET /api/support/tickets/:id/messages`, `POST .../messages`) | Ticket detail | **Not started** — no contract exists yet |
+
+---
+
+## What's Built vs What's Planned
+
+### Done (on branch)
+
+| Area | What | Commits |
+|------|------|---------|
+| Types | `LicenseInfo` Phase 3 fields, `UsagePool`, `SupportQuotas.pools[]` | Multiple |
+| Nav | "Support & Services" with 4 children, Manage redirect | Done |
+| Submit Ticket | Config-driven form, type selector, credit display, 403 handling, filters, pagination | Done |
+| Subscriptions | Plan cards (active/inactive/none), a la carte section, icon map, sale pricing | Done |
+| Plan Detail | Full specs, SLA grid, add-on packages, breadcrumbs | Done |
+| Add-Ons | Package grid from `license.alaCarte[]` | Done |
+| License & Terms | 3-tab UI (key, privacy, terms), telemetry toggle, legal doc rendering | Done |
+| Lib | `support.ts` (SupportError.code, 402/403 parsing), `legal.ts`, `plans.ts` (mock data) | Done |
+| Tests | Integration tests for community issue, checkout | Done |
+
+### Planned (not yet started)
+
+| Phase | Scope | Mock Data? | Dependencies |
+|-------|-------|-----------|-------------|
+| Foundation | `PaidActionButton` — reusable 403 terms handling for all paid CTAs | No | None |
+| UI Refinement | Radio card type selector, persistent helper text, desktop layout polish | No | None |
+| Platform API | Wire real endpoints for tickets, sessions, credits | Yes (mock available) | Platform deploy |
+| EULA | Legal acceptance UI on Terms tab + mock legal docs | Yes | None |
+| Reply/Messaging | Ticket detail view with message thread | Yes (needs mock) | Platform contract needed |
+| Real API Wiring | Swap mocks for live platform endpoints | No | Platform deploy |
+
+---
+
+## Mock Data Strategy
+
+All platform-dependent features have mock data activated by `MOCK_LICENSE_TIER` env var:
+
+| Module | Mock Trigger | Mock Data |
+|--------|-------------|-----------|
+| `lib/license.ts` | `MOCK_LICENSE_TIER` env var | Full `LicenseInfo` with tier-appropriate credits, pools, actions, legal state |
+| `lib/plans.ts` | `MOCK_LICENSE_TIER` env var | 3 plans (Community, Priority $49, Enterprise $299) with full details |
+| `app/admin/support/page.tsx` | Always (TODO: remove) | 5 mock tickets for layout testing |
+
+Supported mock tiers: `FREE`, `TRIAL`, `PRO`, `priority-support`, `enterprise-support`
+
+---
+
+## Environment Variables
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `PLATFORM_URL` | No | Platform API base (default: `https://manage.artisanroast.app`) |
+| `LICENSE_KEY` | No | License key (fallback; primary source is DB `siteSettings`) |
+| `MOCK_LICENSE_TIER` | Dev only | Activates mock license + plans for development |
+| `NEXT_PUBLIC_APP_URL` | No | Callback URL for Stripe checkout (default: Vercel URL or localhost) |
+
+---
+
+## Key Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| `pools[]` array instead of fixed `tickets`/`oneOnOne` keys | Platform can add new credit types (AI tokens) without store release |
+| Platform-driven labels + icons | No hardcoded strings — platform controls all display text |
+| Server-side legal enforcement (no client checkbox) | Stripe handles first-purchase consent; platform 403 handles updates |
+| `salePrice`/`saleEndsAt` on Plan type | Dynamic promotional pricing from platform catalog |
+| Config-driven components | `computeTicketPageConfig()` and `computePlanCardConfig()` — single source of truth for all conditional rendering |
+| Dual credit pools with plan-first deduction | Maximizes value of purchased credits (they never expire) |
+| FREE plan in catalog | Gives free users a comparison point on the Subscriptions page |
+| Manage page redirect | Consolidated into License & Terms tabs — no separate page needed |
