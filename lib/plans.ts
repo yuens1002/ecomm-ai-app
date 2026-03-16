@@ -69,6 +69,31 @@ export function invalidatePlansCache(): void {
 
 const MOCK_PLANS: Plan[] = [
   {
+    slug: "free",
+    name: "Community",
+    description: "Open-source self-hosted store with community support",
+    price: 0,
+    currency: "USD",
+    interval: "month",
+    features: [],
+    highlight: false,
+    priceLabel: "Forever",
+    details: {
+      benefits: [
+        "Full e-commerce platform",
+        "Unlimited products & orders",
+        "Community support via GitHub",
+        "Self-hosted — you own your data",
+      ],
+      excludes: [
+        "Priority support tickets",
+        "1:1 video sessions",
+        "AI-powered features",
+        "Google Analytics integration",
+      ],
+    },
+  },
+  {
     slug: "priority-support",
     name: "Priority Support",
     description: "Dedicated support with guaranteed response times",
@@ -77,6 +102,9 @@ const MOCK_PLANS: Plan[] = [
     interval: "month",
     features: ["priority-support"],
     highlight: true,
+    salePrice: 2900,
+    saleEndsAt: "2026-04-25T00:00:00Z",
+    priceLabel: "Launch Special",
     details: {
       benefits: [
         "Priority email support with 48-hr SLA",

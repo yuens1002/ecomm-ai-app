@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ExternalLink,
   Loader2,
   Send,
@@ -12,7 +13,6 @@ import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { UsageBar } from "./UsageBar";
-import { submitTypedTicket, submitCommunityIssue, acceptTerms, fetchSupportTickets } from "./actions";
+import { submitTypedTicket, submitCommunityIssue, fetchSupportTickets } from "./actions";
 import { SupportTicketsList } from "./SupportTicketsSection";
 import type { LicenseInfo, AlaCartePackage, CreditPool } from "@/lib/license-types";
 import type { SupportTicket } from "@/lib/support-types";
@@ -35,12 +35,10 @@ import type { SupportTicket } from "@/lib/support-types";
 interface TicketPageConfig {
   showCredits: boolean;
   ticketCredits: CreditPool;
-  sessionCredits: CreditPool;
   showTypeSelector: boolean;
   defaultType: "normal" | "priority";
   priorityDisabled: boolean;
   ticketPacks: AlaCartePackage[];
-  needsTermsAcceptance: boolean;
   showUpsell: boolean;
   hasKey: boolean;
 }
@@ -50,7 +48,6 @@ function computeTicketPageConfig(
   hasKey: boolean
 ): TicketPageConfig {
   const ticketCredits = license.support.pools.find((p) => p.slug === "tickets") ?? { limit: 0, purchased: 0, used: 0, remaining: 0 };
-  const sessionCredits = license.support.pools.find((p) => p.slug === "one-on-one") ?? { limit: 0, purchased: 0, used: 0, remaining: 0 };
   const hasCredits = ticketCredits.remaining > 0;
   const hasPurchased = ticketCredits.purchased > 0;
   const hasPlan = ticketCredits.limit > 0;
@@ -59,21 +56,13 @@ function computeTicketPageConfig(
     p.id.startsWith("alacarte-tickets")
   );
 
-  const needsTermsAcceptance =
-    hasKey &&
-    license.legal != null &&
-    (license.legal.pendingAcceptance.includes("support-terms") ||
-      !license.legal.acceptedVersions["support-terms"]);
-
   return {
     showCredits: hasKey && (hasCredits || hasPurchased || hasPlan),
     ticketCredits,
-    sessionCredits,
     showTypeSelector: hasKey && (hasCredits || hasPurchased || hasPlan),
     defaultType: hasCredits ? "priority" : "normal",
     priorityDisabled: ticketCredits.remaining === 0,
     ticketPacks: !hasCredits || !hasKey ? ticketPacks : [],
-    needsTermsAcceptance,
     showUpsell: !hasKey,
     hasKey,
   };
@@ -145,33 +134,17 @@ function TicketFormCard({
   const [ticketType, setTicketType] = useState<"normal" | "priority">(
     config.defaultType
   );
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsNotice, setTermsNotice] = useState(false);
 
-  const isLegalBlocked = config.needsTermsAcceptance && !termsAccepted;
   const canSubmit =
     title.trim().length > 0 &&
     !isPending &&
-    !isLegalBlocked &&
     (ticketType === "normal" || !config.priorityDisabled);
 
   function handleSubmit() {
     if (!canSubmit) return;
 
     startTransition(async () => {
-      if (config.needsTermsAcceptance && termsAccepted) {
-        const legalResult = await acceptTerms([
-          { slug: "support-terms", version: "current" },
-        ]);
-        if (!legalResult.success) {
-          toast({
-            title: "Failed to accept terms",
-            description: legalResult.error,
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
       if (config.hasKey && config.showTypeSelector) {
         const formData = new FormData();
         formData.set("title", title.trim());
@@ -184,6 +157,7 @@ function TicketFormCard({
           setTitle("");
           setSteps("");
           setExpected("");
+          setTermsNotice(false);
           await onSubmitted();
           if (ticketType === "priority") {
             toast({
@@ -206,11 +180,16 @@ function TicketFormCard({
             });
           }
         } else {
-          toast({
-            title: "Failed to create ticket",
-            description: result.error,
-            variant: "destructive",
-          });
+          // Handle terms_acceptance_required from platform 403
+          if (result.errorCode === "terms_acceptance_required") {
+            setTermsNotice(true);
+          } else {
+            toast({
+              title: "Failed to create ticket",
+              description: result.error,
+              variant: "destructive",
+            });
+          }
         }
       } else {
         const formData = new FormData();
@@ -255,39 +234,33 @@ function TicketFormCard({
 
   return (
     <div className="rounded-lg border p-6 space-y-6">
-        {/* Legal gate */}
-        {config.needsTermsAcceptance && (
-          <div className="rounded-lg border border-dashed p-4 space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Before submitting, please review and accept the{" "}
-              <Link
-                href="/admin/support/terms?tab=terms"
-                className="font-medium text-primary underline-offset-4 hover:underline"
-              >
-                Support Service Terms
-              </Link>
-              .
-            </p>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="accept-terms"
-                checked={termsAccepted}
-                onCheckedChange={(checked) =>
-                  setTermsAccepted(checked === true)
-                }
-              />
-              <Label htmlFor="accept-terms" className="text-sm">
-                I accept the Support Service Terms
-              </Label>
+        {/* Terms updated notice — shown when platform returns 403 terms_acceptance_required */}
+        {termsNotice && (
+          <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/30">
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                Updated terms require acceptance
+              </p>
+              <p className="text-sm text-amber-700 dark:text-amber-300">
+                Our terms have been updated. Please{" "}
+                <Link
+                  href="/admin/support/terms?tab=terms"
+                  className="font-medium underline underline-offset-4"
+                >
+                  review and accept
+                </Link>{" "}
+                the new terms, then try again.
+              </p>
             </div>
           </div>
         )}
 
-        {/* Support Status — ticket credits only (sessions managed on Plans page) */}
+        {/* Credits — ticket credits only (sessions managed on Plans page) */}
         {config.showCredits && (
           <div className="rounded-lg bg-muted/30 p-4 space-y-4">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Support Status
+              Credits
             </p>
             <UsageBar
               icon={<Ticket className="h-4 w-4 text-muted-foreground" />}

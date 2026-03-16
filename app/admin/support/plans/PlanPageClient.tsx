@@ -57,6 +57,22 @@ function resolveIcon(icon: string, fallback: LucideIcon = ExternalLink): LucideI
   return ICON_MAP[icon] ?? fallback;
 }
 
+/** Build price label text, appending "offer ends {date}" when saleEndsAt is set. */
+function formatPriceLabel(plan: Plan): string | null {
+  if (!plan.priceLabel && !plan.saleEndsAt) return null;
+  const parts: string[] = [];
+  if (plan.priceLabel) parts.push(plan.priceLabel);
+  if (plan.saleEndsAt) {
+    const ends = new Date(plan.saleEndsAt).toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    });
+    parts.push(`offer ends ${ends}`);
+  }
+  return parts.join(", ");
+}
+
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
@@ -64,7 +80,7 @@ function resolveIcon(icon: string, fallback: LucideIcon = ExternalLink): LucideI
 interface PlanCardConfig {
   plan: Plan;
   status: "active" | "inactive" | "none";
-  badge: { label: string; variant: "secondary" | "destructive" } | null;
+  badge: { label: string; variant: "secondary" | "destructive" | "outline" } | null;
   pools: UsagePool[];
   actions: AvailableAction[];
   renewalDate: string | null;
@@ -101,7 +117,7 @@ function computePlanCardConfig(
     return {
       plan,
       status: "inactive",
-      badge: { label: "Inactive", variant: "destructive" },
+      badge: { label: "Inactive", variant: "outline" },
       pools: [],
       actions: [],
       renewalDate: null,
@@ -110,6 +126,21 @@ function computePlanCardConfig(
         renewUrl: license.lapsed.renewUrl,
         previousFeatures: license.lapsed.previousFeatures,
       },
+    };
+  }
+
+  // Free plan: show "Current Plan" when user has no active paid plan
+  if (plan.price === 0 && !license.plan) {
+    return {
+      plan,
+      status: "active",
+      badge: { label: "Current Plan", variant: "secondary" },
+      pools: license.support.pools.filter((p) => p.purchased > 0),
+      actions: license.availableActions.filter(
+        (a) => a.slug !== "upgrade-pro" && a.slug !== "add-features"
+      ),
+      renewalDate: null,
+      inactiveInfo: null,
     };
   }
 
@@ -240,7 +271,8 @@ function PlanCard({
 }: PlanCardProps) {
   const router = useRouter();
   const { plan, status } = config;
-  const detailHref = `/admin/support/plans/${plan.slug}`;
+  const isFree = plan.price === 0;
+  const detailHref = isFree ? "/admin/support/terms?tab=terms" : `/admin/support/plans/${plan.slug}`;
 
   function handleCardClick(e: React.MouseEvent) {
     // Don't navigate if clicking interactive elements
@@ -251,20 +283,19 @@ function PlanCard({
 
   // ── Active: compact status-focused, 60/40 layout ──
   if (status === "active") {
+    const isPaidActive = plan.price > 0;
     return (
       <div className="flex flex-col rounded-lg border border-primary p-6 transition-shadow hover:shadow-lg cursor-pointer" onClick={handleCardClick}>
-          {/* Header: badge right when no menu (lg+), badge left + menu right on mobile */}
-          <div className="flex items-center justify-between lg:justify-end mb-4">
-            <Badge variant={config.badge!.variant} className="gap-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              {config.badge!.label}
-            </Badge>
-
-            {/* Mobile: dropdown menu */}
-            {config.actions.length > 0 && (
+          {/* Mobile: badge left + dropdown right (only when actions exist) */}
+          {config.actions.length > 0 && (
+            <div className="flex items-center justify-between lg:hidden mb-3">
+              <Badge variant={config.badge!.variant} className="gap-1.5">
+                {isPaidActive && <CheckCircle2 className="h-3.5 w-3.5" />}
+                {config.badge!.label}
+              </Badge>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 lg:hidden">
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
                     <MoreVertical className="h-4 w-4" />
                     <span className="sr-only">Actions</span>
                   </Button>
@@ -294,22 +325,52 @@ function PlanCard({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="space-y-5">
-            <div>
-              <h3 className="text-lg font-semibold">{plan.name}</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {plan.description}
-              </p>
+            {/* Title + badge inline (desktop always, mobile only when no actions) */}
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold">{plan.name}</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {plan.description}
+                </p>
+              </div>
+              <Badge
+                variant={config.badge!.variant}
+                className={`shrink-0 gap-1.5 ${config.actions.length > 0 ? "hidden lg:inline-flex" : ""}`}
+              >
+                {isPaidActive && <CheckCircle2 className="h-3.5 w-3.5" />}
+                {config.badge!.label}
+              </Badge>
             </div>
+
+            {!isPaidActive && (
+              <div>
+                <span className="text-3xl font-bold">Free</span>
+                {formatPriceLabel(plan) && (
+                  <p className="text-xs text-muted-foreground mt-1">{formatPriceLabel(plan)}</p>
+                )}
+              </div>
+            )}
 
             {config.renewalDate && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <RefreshCw className="h-3.5 w-3.5" />
                 Renews on {config.renewalDate}
               </div>
+            )}
+
+            {!isPaidActive && config.pools.length === 0 && plan.details.benefits && plan.details.benefits.length > 0 && (
+              <ul className="space-y-2 text-sm">
+                {plan.details.benefits.map((benefit) => (
+                  <li key={benefit} className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                    {benefit}
+                  </li>
+                ))}
+              </ul>
             )}
 
             {config.pools.map((pool) => {
@@ -322,6 +383,7 @@ function PlanCard({
                   }
                   label={pool.label}
                   pool={pool}
+                  showBreakdown={false}
                 />
               );
             })}
@@ -330,10 +392,10 @@ function PlanCard({
           {/* Desktop: inline buttons — always bottom-aligned */}
           <div className="hidden lg:flex items-center gap-2 mt-auto pt-5">
             <Link
-              href={detailHref}
+              href={isPaidActive ? detailHref : "/admin/support/terms?tab=terms"}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              View Details
+              {isPaidActive ? "View Details" : "View Terms"}
             </Link>
             <div className="flex-1" />
             {config.actions.map((action) => {
@@ -364,10 +426,16 @@ function PlanCard({
 
   // ── Inactive (lapsed): renewal CTA ──
   if (status === "inactive" && config.inactiveInfo) {
+    const inactiveHasSale = plan.salePrice != null;
+    const inactivePrice = `$${(plan.price / 100).toFixed(0)}`;
+    const inactiveSalePrice = inactiveHasSale ? `$${(plan.salePrice! / 100).toFixed(0)}` : null;
+    const inactiveInterval = plan.interval === "year" ? "/yr" : "/mo";
+
     return (
       <div className="flex flex-col rounded-lg border p-6 space-y-4 transition-shadow hover:shadow-lg cursor-pointer" onClick={handleCardClick}>
-          <div className="flex items-start justify-between">
-            <div>
+          {/* Title + badge inline */}
+          <div className="flex items-start gap-3">
+            <div className="flex-1 min-w-0">
               <h3 className="text-lg font-semibold">{plan.name}</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Ended on{" "}
@@ -385,6 +453,24 @@ function PlanCard({
             </Badge>
           </div>
 
+          <div>
+            {inactiveHasSale ? (
+              <>
+                <span className="text-3xl font-bold">{inactiveSalePrice}</span>
+                <span className="text-muted-foreground">{inactiveInterval}</span>
+                <span className="ml-2 text-lg text-muted-foreground line-through">{inactivePrice}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-3xl font-bold">{inactivePrice}</span>
+                <span className="text-muted-foreground">{inactiveInterval}</span>
+              </>
+            )}
+            {formatPriceLabel(plan) && (
+              <p className="text-xs text-muted-foreground mt-1">{formatPriceLabel(plan)}</p>
+            )}
+          </div>
+
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
               Renew to get back:
@@ -399,7 +485,14 @@ function PlanCard({
             </ul>
           </div>
 
-          <div className="mt-auto pt-1">
+          <div className="flex items-center gap-2 mt-auto pt-1">
+            <Link
+              href={detailHref}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              View Details
+            </Link>
+            <div className="flex-1" />
             <Button size="sm" asChild>
               <a
                 href={config.inactiveInfo.renewUrl}
@@ -416,21 +509,38 @@ function PlanCard({
   }
 
   // ── None: full details to sell ──
-  const priceDisplay = `$${(plan.price / 100).toFixed(0)}`;
-  const intervalLabel = plan.interval === "year" ? "/yr" : "/mo";
+  const hasSale = !isFree && plan.salePrice != null;
+  const priceDisplay = isFree ? "Free" : `$${(plan.price / 100).toFixed(0)}`;
+  const salePriceDisplay = hasSale ? `$${(plan.salePrice! / 100).toFixed(0)}` : null;
+  const intervalLabel = isFree ? "" : plan.interval === "year" ? "/yr" : "/mo";
 
   return (
     <div className="flex flex-col rounded-lg border p-6 space-y-5 transition-shadow hover:shadow-lg cursor-pointer" onClick={handleCardClick}>
-        <div>
-          <h3 className="text-lg font-semibold">{plan.name}</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            {plan.description}
-          </p>
+        <div className="flex items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold">{plan.name}</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {plan.description}
+            </p>
+          </div>
         </div>
 
         <div>
-          <span className="text-3xl font-bold">{priceDisplay}</span>
-          <span className="text-muted-foreground">{intervalLabel}</span>
+          {hasSale ? (
+            <>
+              <span className="text-3xl font-bold">{salePriceDisplay}</span>
+              <span className="text-muted-foreground">{intervalLabel}</span>
+              <span className="ml-2 text-lg text-muted-foreground line-through">{priceDisplay}</span>
+            </>
+          ) : (
+            <>
+              <span className="text-3xl font-bold">{priceDisplay}</span>
+              <span className="text-muted-foreground">{intervalLabel}</span>
+            </>
+          )}
+          {formatPriceLabel(plan) && (
+            <p className="text-xs text-muted-foreground mt-1">{formatPriceLabel(plan)}</p>
+          )}
         </div>
 
         {plan.details.benefits && plan.details.benefits.length > 0 && (
@@ -449,19 +559,23 @@ function PlanCard({
             href={detailHref}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            View Details
+            {isFree ? "View Terms" : "View Details"}
           </Link>
-          <div className="flex-1" />
-          <Button
-            size="sm"
-            onClick={() => onSubscribe(plan.slug)}
-            disabled={isPending}
-          >
-            {isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            Subscribe
-          </Button>
+          {!isFree && (
+            <>
+              <div className="flex-1" />
+              <Button
+                size="sm"
+                onClick={() => onSubscribe(plan.slug)}
+                disabled={isPending}
+              >
+                {isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Subscribe
+              </Button>
+            </>
+          )}
         </div>
     </div>
   );

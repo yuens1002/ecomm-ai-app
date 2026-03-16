@@ -566,6 +566,59 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
           },
         },
       };
+    case "FREE":
+      return {
+        valid: true,
+        tier: "FREE",
+        features: [],
+        trialEndsAt: null,
+        managedBy: null,
+        compatibility: "full",
+        warnings: [],
+        usage: null,
+        gaConfig: DEFAULT_GA_CONFIG,
+        availableActions: [
+          {
+            slug: "schedule-call",
+            label: "Session",
+            url: `${PLATFORM_URL}/schedule`,
+            variant: "outline",
+            icon: "calendar",
+          },
+        ],
+        plan: null,
+        lapsed: {
+          previousTier: "PRO",
+          previousFeatures: [
+            "Priority email support with 48-hr SLA",
+            "5 support tickets per month",
+            "1 one-on-one session per month (30 min)",
+          ],
+          planSlug: "priority-support",
+          deactivatedAt: "2026-02-28T00:00:00Z",
+          renewUrl: `${PLATFORM_URL}/renew?plan=priority-support`,
+        },
+        support: {
+          pools: [
+            { slug: "tickets", label: "Priority Tickets", icon: "ticket", limit: 0, purchased: 3, used: 0, remaining: 3 },
+            { slug: "one-on-one", label: "1:1 Sessions", icon: "video", limit: 0, purchased: 2, used: 1, remaining: 1 },
+          ],
+        },
+        alaCarte: [
+          {
+            id: "alacarte-tickets-5",
+            label: "5 Support Tickets",
+            description:
+              "Add 5 priority support tickets to your account. Never expire.",
+            price: "$39",
+            checkoutUrl: `${PLATFORM_URL}/checkout/alacarte-tickets-5`,
+          },
+        ],
+        legal: {
+          pendingAcceptance: ["support-terms"],
+          acceptedVersions: {},
+        },
+      };
     default:
       return FREE_DEFAULT;
   }

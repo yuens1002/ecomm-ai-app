@@ -81,6 +81,8 @@ const priorityTicketSchema = z.object({
 interface PriorityTicketResult {
   success: boolean;
   error?: string;
+  /** Machine-readable error code (e.g. "terms_acceptance_required") */
+  errorCode?: string;
   data?: PriorityTicketResponse;
 }
 
@@ -118,7 +120,7 @@ export async function submitTypedTicket(
     return { success: true, data };
   } catch (error) {
     if (error instanceof SupportError) {
-      return { success: false, error: error.message };
+      return { success: false, error: error.message, errorCode: error.code };
     }
     return { success: false, error: "Failed to create ticket" };
   }

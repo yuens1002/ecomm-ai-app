@@ -32,7 +32,9 @@ const PLATFORM_URL = (
 export class SupportError extends Error {
   constructor(
     message: string,
-    public status: number
+    public status: number,
+    /** Machine-readable error code from the platform (e.g. "terms_acceptance_required") */
+    public code?: string
   ) {
     super(message);
     this.name = "SupportError";
@@ -64,14 +66,36 @@ async function supportFetch<T>(
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
+    let parsed: Record<string, unknown> | null = null;
+    try {
+      parsed = JSON.parse(body);
+    } catch {
+      // Not JSON — fall through to default handling
+    }
+
     switch (response.status) {
       case 401:
         throw new SupportError("Invalid license key", 401);
-      case 403:
+      case 402:
+        throw new SupportError(
+          "No credits remaining",
+          402,
+          "credits_exhausted"
+        );
+      case 403: {
+        const code = typeof parsed?.error === "string" ? parsed.error : undefined;
+        if (code === "terms_acceptance_required") {
+          throw new SupportError(
+            "Please review and accept the updated terms before continuing.",
+            403,
+            "terms_acceptance_required"
+          );
+        }
         throw new SupportError(
           "Priority support is not included in your plan",
           403
         );
+      }
       case 429:
         throw new SupportError(
           "Ticket limit reached for this billing cycle",
@@ -79,7 +103,8 @@ async function supportFetch<T>(
         );
       default:
         throw new SupportError(
-          body || `Platform error (${response.status})`,
+          (typeof parsed?.message === "string" ? parsed.message : body) ||
+            `Platform error (${response.status})`,
           response.status
         );
     }

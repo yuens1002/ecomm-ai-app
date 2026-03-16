@@ -11,9 +11,11 @@ interface UsageBarProps {
   icon: React.ReactNode;
   label: string;
   pool: CreditPool;
+  /** Show breakdown text ("3 plan, 1 add-on") when both sources exist. Default true. */
+  showBreakdown?: boolean;
 }
 
-export function UsageBar({ icon, label, pool }: UsageBarProps) {
+export function UsageBar({ icon, label, pool, showBreakdown = true }: UsageBarProps) {
   const total = pool.limit + pool.purchased;
   const pct = total > 0 ? (pool.used / total) * 100 : 0;
 
@@ -44,7 +46,7 @@ export function UsageBar({ icon, label, pool }: UsageBarProps) {
         </span>
       </div>
       <Progress value={pct} className="h-2" />
-      {breakdown.length > 1 && (
+      {showBreakdown && breakdown.length > 1 && (
         <p className="text-xs text-muted-foreground">
           {pool.remaining} remaining ({breakdown.join(", ")})
         </p>

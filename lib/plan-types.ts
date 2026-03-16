@@ -28,6 +28,12 @@ export interface Plan {
   details: PlanDetails;
   /** Whether to visually highlight this plan (e.g. "recommended") */
   highlight: boolean;
+  /** Optional sale price in cents (shown as current price, original struck through) */
+  salePrice?: number;
+  /** ISO 8601 date when the sale offer expires (e.g. "2026-04-25T00:00:00Z") */
+  saleEndsAt?: string;
+  /** Price label (e.g. "Forever", "Launch Special") */
+  priceLabel?: string;
 }
 
 export interface PlanDetails {
