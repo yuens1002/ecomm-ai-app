@@ -119,6 +119,7 @@ async function supportFetch<T>(
 
 /** List support tickets and usage for the current license. */
 export async function listTickets(): Promise<TicketsResponse> {
+  if (process.env.MOCK_LICENSE_TIER) return MOCK_TICKETS_RESPONSE;
   return supportFetch<TicketsResponse>("/api/support/tickets");
 }
 
@@ -139,6 +140,23 @@ export async function createTicket(
 export async function submitPriorityTicket(
   input: PriorityTicketInput
 ): Promise<PriorityTicketResponse> {
+  if (process.env.MOCK_LICENSE_TIER) {
+    return {
+      ticket: {
+        id: `t-${Date.now()}`,
+        title: input.title,
+        body: input.body ?? null,
+        type: input.type,
+        status: "OPEN",
+        githubUrl: input.type === "normal"
+          ? `https://github.com/artisanroast/artisan-roast/issues/${Math.floor(Math.random() * 100) + 50}`
+          : null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      creditsRemaining: input.type === "priority" ? 4 : 5,
+    };
+  }
   return supportFetch<PriorityTicketResponse>("/api/support/tickets", {
     method: "POST",
     body: JSON.stringify(input),
@@ -150,6 +168,12 @@ export async function submitPriorityTicket(
  * Phase 3: Deducts a session credit, returns a booking URL.
  */
 export async function bookSession(): Promise<BookSessionResponse> {
+  if (process.env.MOCK_LICENSE_TIER) {
+    return {
+      bookingUrl: "https://cal.com/mock-session",
+      creditsRemaining: 0,
+    };
+  }
   return supportFetch<BookSessionResponse>("/api/support/sessions", {
     method: "POST",
     body: JSON.stringify({}),
@@ -190,3 +214,25 @@ export async function createCommunityIssue(
 
   return response.json() as Promise<CommunityIssueResponse>;
 }
+
+// ---------------------------------------------------------------------------
+// Mock data (for MOCK_LICENSE_TIER env var)
+// ---------------------------------------------------------------------------
+
+const MOCK_TICKETS: import("./support-types").SupportTicket[] = (() => {
+  const base = "2026-03-16T12:00:00Z";
+  const offset = (ms: number) =>
+    new Date(new Date(base).getTime() - ms).toISOString();
+  return [
+    { id: "t1", title: "Menu items not syncing after bulk import", body: null, type: "priority", status: "OPEN", githubUrl: "https://github.com/artisanroast/artisan-roast/issues/42", createdAt: offset(2 * 3600_000), updatedAt: offset(2 * 3600_000) },
+    { id: "t2", title: "Order confirmation email missing store logo", body: null, type: "normal", status: "OPEN", githubUrl: "https://github.com/artisanroast/artisan-roast/issues/41", createdAt: offset(8 * 3600_000), updatedAt: offset(8 * 3600_000) },
+    { id: "t3", title: "Stripe webhook fails on subscription renewal", body: null, type: "priority", status: "RESOLVED", githubUrl: "https://github.com/artisanroast/artisan-roast/issues/38", createdAt: offset(3 * 86400_000), updatedAt: offset(1 * 86400_000) },
+    { id: "t4", title: "Product images 404 after domain change", body: null, type: "normal", status: "RESOLVED", githubUrl: "https://github.com/artisanroast/artisan-roast/issues/37", createdAt: offset(7 * 86400_000), updatedAt: offset(5 * 86400_000) },
+    { id: "t5", title: "Dashboard analytics not loading on Safari", body: null, type: "normal", status: "CLOSED", githubUrl: "https://github.com/artisanroast/artisan-roast/issues/35", createdAt: offset(14 * 86400_000), updatedAt: offset(10 * 86400_000) },
+  ];
+})();
+
+const MOCK_TICKETS_RESPONSE: TicketsResponse = {
+  tickets: MOCK_TICKETS,
+  usage: { used: 1, limit: 5, remaining: 4, resetsAt: "2026-04-01T00:00:00Z" },
+};

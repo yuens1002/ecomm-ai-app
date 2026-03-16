@@ -32,6 +32,10 @@ const PLATFORM_URL = (
 export async function fetchLegalDoc(
   slug: string
 ): Promise<LegalDocument | null> {
+  if (process.env.MOCK_LICENSE_TIER) {
+    return MOCK_LEGAL_DOCS[slug] ?? null;
+  }
+
   try {
     const response = await fetch(`${PLATFORM_URL}/api/legal/${slug}`, {
       signal: AbortSignal.timeout(10_000),
@@ -61,6 +65,11 @@ export async function fetchLegalDoc(
 export async function acceptLegalDocs(
   documents: Array<{ slug: string; version: string }>
 ): Promise<{ success: boolean; error?: string }> {
+  if (process.env.MOCK_LICENSE_TIER) {
+    console.log("[mock] acceptLegalDocs:", documents);
+    return { success: true };
+  }
+
   const key = await getLicenseKey();
   if (!key) {
     return { success: false, error: "No license key configured" };
@@ -89,4 +98,64 @@ export async function acceptLegalDocs(
     return { success: false, error: "Platform unreachable" };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Mock data (for MOCK_LICENSE_TIER env var)
+// ---------------------------------------------------------------------------
+
+const MOCK_LEGAL_DOCS: Record<string, LegalDocument> = {
+  "support-terms": {
+    slug: "support-terms",
+    title: "Support Service Terms",
+    version: "1.0.0",
+    format: "markdown",
+    effectiveDate: "2026-03-01T00:00:00Z",
+    lastUpdated: "2026-03-01T00:00:00Z",
+    content: [
+      "# Support Service Terms",
+      "",
+      "**Effective:** March 1, 2026 · **Version:** 1.0.0",
+      "",
+      "## 1. Service Scope",
+      "",
+      "Priority Support provides email-based technical support for your Artisan Roast store instance. Support covers setup, configuration, troubleshooting, and platform guidance.",
+      "",
+      "## 2. Response Times",
+      "",
+      "| Plan | Response Time | Availability |",
+      "|------|--------------|--------------|",
+      "| Priority Support | 48 hours | Business days (Mon–Fri) |",
+      "| Enterprise Support | 4 hours | 24/7 |",
+      "",
+      "## 3. Credit Policy",
+      "",
+      "- Plan credits reset at the start of each billing cycle",
+      "- Purchased add-on credits never expire",
+      "- Plan credits are consumed first; purchased credits are used only after plan credits are exhausted",
+      "",
+      "## 4. Exclusions",
+      "",
+      "Support does not cover custom development, feature requests, or third-party integrations.",
+      "",
+      "## 5. Termination",
+      "",
+      "You may cancel your support subscription at any time from your billing dashboard. Cancellation takes effect at the end of the current billing period.",
+    ].join("\n"),
+  },
+  "privacy-policy": {
+    slug: "privacy-policy",
+    title: "Privacy Policy",
+    version: "1.0.0",
+    format: "markdown",
+    effectiveDate: "2026-03-01T00:00:00Z",
+    lastUpdated: "2026-03-01T00:00:00Z",
+    content: [
+      "# Privacy Policy",
+      "",
+      "**Effective:** March 1, 2026",
+      "",
+      "We collect anonymous telemetry data (install events, heartbeats) to improve the platform. No personal data or store content is transmitted. You can opt out via the Data Privacy settings in your admin panel.",
+    ].join("\n"),
+  },
+};
 
