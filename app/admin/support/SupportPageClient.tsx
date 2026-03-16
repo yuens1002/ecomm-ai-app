@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle,
   ExternalLink,
   Loader2,
   Send,
@@ -23,10 +22,13 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { UsageBar } from "./UsageBar";
+import { usePaidAction } from "./_hooks/usePaidAction";
+import { TermsNotice } from "./_components/TermsNotice";
 import { submitTypedTicket, submitCommunityIssue, fetchSupportTickets } from "./actions";
 import { SupportTicketsList } from "./SupportTicketsSection";
 import type { LicenseInfo, AlaCartePackage, CreditPool } from "@/lib/license-types";
 import type { SupportTicket } from "@/lib/support-types";
+import type { PriorityTicketResponse } from "@/lib/support-types";
 
 // ---------------------------------------------------------------------------
 // Config-driven state
@@ -127,15 +129,46 @@ function TicketFormCard({
   onSubmitted: () => Promise<void>;
 }) {
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
+  const [communityPending, startCommunityTransition] = useTransition();
   const [title, setTitle] = useState("");
   const [steps, setSteps] = useState("");
   const [expected, setExpected] = useState("");
   const [ticketType, setTicketType] = useState<"normal" | "priority">(
     config.defaultType
   );
-  const [termsNotice, setTermsNotice] = useState(false);
 
+  // Paid action hook — handles 403 terms_acceptance_required automatically
+  const paidAction = usePaidAction<PriorityTicketResponse>({
+    onSuccess: async (data) => {
+      setTitle("");
+      setSteps("");
+      setExpected("");
+      await onSubmitted();
+      if (ticketType === "priority") {
+        toast({ title: "Ticket created — we'll respond within 48 hours" });
+      } else {
+        const ticket = data.ticket;
+        toast({
+          title: "Issue created",
+          description: ticket.githubUrl ? (
+            <a
+              href={ticket.githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 underline"
+            >
+              View on GitHub <ExternalLink className="h-3 w-3" />
+            </a>
+          ) : undefined,
+        });
+      }
+    },
+    onError: (error) => {
+      toast({ title: "Failed to create ticket", description: error, variant: "destructive" });
+    },
+  });
+
+  const isPending = paidAction.isPending || communityPending;
   const canSubmit =
     title.trim().length > 0 &&
     !isPending &&
@@ -144,54 +177,16 @@ function TicketFormCard({
   function handleSubmit() {
     if (!canSubmit) return;
 
-    startTransition(async () => {
-      if (config.hasKey && config.showTypeSelector) {
-        const formData = new FormData();
-        formData.set("title", title.trim());
-        if (steps.trim()) formData.set("steps", steps.trim());
-        if (expected.trim()) formData.set("expected", expected.trim());
-        formData.set("type", ticketType);
+    if (config.hasKey && config.showTypeSelector) {
+      const formData = new FormData();
+      formData.set("title", title.trim());
+      if (steps.trim()) formData.set("steps", steps.trim());
+      if (expected.trim()) formData.set("expected", expected.trim());
+      formData.set("type", ticketType);
 
-        const result = await submitTypedTicket(formData);
-        if (result.success && result.data) {
-          setTitle("");
-          setSteps("");
-          setExpected("");
-          setTermsNotice(false);
-          await onSubmitted();
-          if (ticketType === "priority") {
-            toast({
-              title: "Ticket created — we'll respond within 48 hours",
-            });
-          } else {
-            const ticket = result.data.ticket;
-            toast({
-              title: "Issue created",
-              description: ticket.githubUrl ? (
-                <a
-                  href={ticket.githubUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 underline"
-                >
-                  View on GitHub <ExternalLink className="h-3 w-3" />
-                </a>
-              ) : undefined,
-            });
-          }
-        } else {
-          // Handle terms_acceptance_required from platform 403
-          if (result.errorCode === "terms_acceptance_required") {
-            setTermsNotice(true);
-          } else {
-            toast({
-              title: "Failed to create ticket",
-              description: result.error,
-              variant: "destructive",
-            });
-          }
-        }
-      } else {
+      paidAction.execute(() => submitTypedTicket(formData));
+    } else {
+      startCommunityTransition(async () => {
         const formData = new FormData();
         formData.set("title", title.trim());
         const bodyParts: string[] = [];
@@ -228,33 +223,14 @@ function TicketFormCard({
             variant: "destructive",
           });
         }
-      }
-    });
+      });
+    }
   }
 
   return (
     <div className="rounded-lg border p-6 space-y-6">
-        {/* Terms updated notice — shown when platform returns 403 terms_acceptance_required */}
-        {termsNotice && (
-          <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/30">
-            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                Updated terms require acceptance
-              </p>
-              <p className="text-sm text-amber-700 dark:text-amber-300">
-                Our terms have been updated. Please{" "}
-                <Link
-                  href="/admin/support/terms?tab=terms"
-                  className="font-medium underline underline-offset-4"
-                >
-                  review and accept
-                </Link>{" "}
-                the new terms, then try again.
-              </p>
-            </div>
-          </div>
-        )}
+        {/* Terms notice — shown when platform returns 403 terms_acceptance_required */}
+        {paidAction.showTermsNotice && <TermsNotice />}
 
         {/* Credits — ticket credits only (sessions managed on Plans page) */}
         {config.showCredits && (

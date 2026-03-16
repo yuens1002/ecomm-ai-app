@@ -259,16 +259,17 @@ export async function acceptTerms(
 export async function bookSupportSession(): Promise<{
   success: boolean;
   error?: string;
-  bookingUrl?: string;
+  errorCode?: string;
+  data?: { bookingUrl: string };
 }> {
   await requireAdmin();
 
   try {
-    const data = await bookSession();
-    return { success: true, bookingUrl: data.bookingUrl };
+    const result = await bookSession();
+    return { success: true, data: { bookingUrl: result.bookingUrl } };
   } catch (error) {
     if (error instanceof SupportError) {
-      return { success: false, error: error.message };
+      return { success: false, error: error.message, errorCode: error.code };
     }
     return { success: false, error: "Failed to book session" };
   }
