@@ -22,3 +22,24 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 - `docs/AGENTIC-WORKFLOW.md` — Added "How Column — Verification Methods for UI ACs" section with method table and screenshot method rules
 
 **Prevented by:** QC validator now rejects screenshot-method ACs without `.png` evidence, flags plans where <50% of UI ACs use screenshot methods, and the ac-verify skill validates How methods before starting verification.
+
+---
+
+## 2026-03-16 — UI code patterns not applied by shadcn commands
+
+**Gap:** shadcn MCP commands (`/rui`, `/iui`, `/cui`, `/ftc`) generated code using default shadcn patterns (Card wrappers, gap-6, full-width buttons) that conflicted with established project conventions. Every session required 10+ corrections for the same issues: flat cards vs Card wrappers, gap-4 vs gap-8, icon muting, button alignment, desktop max-width.
+
+**Root cause:** Two gaps:
+1. shadcn commands (`.claude/commands/*.md`) were bare wrappers with no project context — they called the MCP and blindly followed output
+2. No UX flow review in the plan template — post-action behavior (auto-refresh, user response paths) was discovered late during implementation
+
+**Fix applied to:**
+- `.claude/commands/rui.md` — Added project code conventions block (flat cards, gap-4, max-w-[72ch], icon rules, button alignment, config-driven state)
+- `.claude/commands/iui.md` — Same conventions block
+- `.claude/commands/cui.md` — Same conventions block
+- `.claude/commands/ftc.md` — Same conventions block
+- `.claude/skills/ui-guide/SKILL.md` — NEW: design-only skill for loading visual language before UI work
+- `docs/templates/plan-template.md` — Added "UX Flows" section (post-action, response, error, empty, loading)
+- `~/.claude/projects/.../memory/ui_patterns_admin.md` — Canonical code pattern reference
+
+**Prevented by:** All 4 shadcn commands now inject project conventions as a post-processing step. Plans now require explicit UX flow answers before implementation starts.

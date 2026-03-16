@@ -50,6 +50,20 @@
 
 ---
 
+## UX Flows
+
+{For UI features, walk through key user journeys and answer these questions. Skip for backend-only changes.}
+
+| Flow | Question | Answer |
+|------|----------|--------|
+| Post-action | What happens after the user submits/saves/deletes? | {e.g., list auto-refreshes, toast shown, form clears} |
+| Response | How does the user respond/follow up? | {e.g., reply via admin UI, click to view on GitHub, no action needed} |
+| Error | What does the user see when something fails? | {e.g., toast with retry, inline error, fallback state} |
+| Empty | What does the user see with no data? | {e.g., dashed border empty state with helper text} |
+| Loading | What does the user see while waiting? | {e.g., spinner on button, skeleton, optimistic update} |
+
+---
+
 ## Implementation Details
 
 ### Commit {n}: {title}
