@@ -174,12 +174,12 @@
       "notes": "28/28 ACs verified. 11 UI + 13 FN + 4 REG. Code review (22 ACs) + Puppeteer screenshots (5 ACs) + test suite (1065 tests, 0 failures) + precheck (0 errors). 0 iterations needed."
     },
     "feat/support-plans-restructure": {
-      "status": "implementing",
-      "acs_passed": 0,
+      "status": "verified",
+      "acs_passed": 44,
       "acs_total": 44,
       "tasks": [],
       "acs_doc": "docs/plans/support-services-ACs.md",
-      "notes": "Phase 3 support-services rework. 24 UI + 15 FN + 5 REG ACs. Prior 36 ACs verified. New ACs for Phase 3 contract: metered support, dual credit pools, a la carte, legal docs, inactive state."
+      "notes": "44/44 ACs verified via code review. 24 UI + 15 FN + 5 REG. Precheck 0 errors, 1089 tests pass. 0 iterations needed."
     },
     "feat/phase2a-llm-agnostic-ai": {
       "status": "verified",
