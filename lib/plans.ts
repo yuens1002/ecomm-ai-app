@@ -77,7 +77,6 @@ const MOCK_PLANS: Plan[] = [
     interval: "month",
     features: [],
     highlight: false,
-    priceLabel: "Forever",
     details: {
       benefits: [
         "Full e-commerce platform",
@@ -104,7 +103,7 @@ const MOCK_PLANS: Plan[] = [
     highlight: true,
     salePrice: 2900,
     saleEndsAt: "2026-04-25T00:00:00Z",
-    priceLabel: "Launch Special",
+    saleLabel: "Launch Special",
     details: {
       benefits: [
         "Priority email support with 48-hr SLA",

@@ -32,8 +32,8 @@ export interface Plan {
   salePrice?: number;
   /** ISO 8601 date when the sale offer expires (e.g. "2026-04-25T00:00:00Z") */
   saleEndsAt?: string;
-  /** Price label (e.g. "Forever", "Launch Special") */
-  priceLabel?: string;
+  /** Sale badge text (e.g. "Launch Special"). Null when no active sale. */
+  saleLabel?: string;
 }
 
 export interface PlanDetails {

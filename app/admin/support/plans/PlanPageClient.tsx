@@ -59,9 +59,9 @@ function resolveIcon(icon: string, fallback: LucideIcon = ExternalLink): LucideI
 
 /** Build price label text, appending "offer ends {date}" when saleEndsAt is set. */
 function formatPriceLabel(plan: Plan): string | null {
-  if (!plan.priceLabel && !plan.saleEndsAt) return null;
+  if (!plan.saleLabel && !plan.saleEndsAt) return null;
   const parts: string[] = [];
-  if (plan.priceLabel) parts.push(plan.priceLabel);
+  if (plan.saleLabel) parts.push(plan.saleLabel);
   if (plan.saleEndsAt) {
     const ends = new Date(plan.saleEndsAt).toLocaleDateString("en-US", {
       month: "2-digit",
