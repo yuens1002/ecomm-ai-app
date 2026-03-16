@@ -29,7 +29,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { activateLicense, refreshLicense } from "../actions";
+import { activateLicense, refreshLicense, acceptTerms } from "../actions";
 import { getLegalUrl } from "@/lib/legal-utils";
 import type { LicenseInfo } from "@/lib/license-types";
 import type { Plan } from "@/lib/plan-types";
@@ -98,7 +98,7 @@ export function TermsPageClient({
         </TabsContent>
 
         <TabsContent value="terms" className="space-y-6 pt-6">
-          <TermsTab supportTerms={supportTerms} />
+          <TermsTab supportTerms={supportTerms} license={initialLicense} />
         </TabsContent>
       </Tabs>
     </div>
@@ -385,13 +385,53 @@ function DataPrivacyTab() {
 // Tab 3: Terms & Conditions
 // ---------------------------------------------------------------------------
 
-function TermsTab({ supportTerms }: { supportTerms: LegalDocument | null }) {
+function TermsTab({
+  supportTerms,
+  license: initialLicense,
+}: {
+  supportTerms: LegalDocument | null;
+  license: LicenseInfo;
+}) {
+  const { toast } = useToast();
+  const [license, setLicense] = useState(initialLicense);
+  const [isPending, startTransition] = useTransition();
+
+  const acceptedVersion = license.legal?.acceptedVersions?.["support-terms"];
+  const needsAcceptance = license.legal?.pendingAcceptance?.includes("support-terms") ?? false;
+
+  function handleAccept() {
+    if (!supportTerms) return;
+    startTransition(async () => {
+      const result = await acceptTerms([
+        { slug: "support-terms", version: supportTerms.version },
+      ]);
+      if (result.success && result.license) {
+        setLicense(result.license);
+        toast({ title: "Terms accepted" });
+      } else {
+        toast({
+          title: "Failed to accept terms",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+    });
+  }
+
   return (
     <>
       {/* Support Service Terms */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Support Service Terms</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm">Support Service Terms</CardTitle>
+            {acceptedVersion && (
+              <Badge variant="secondary" className="gap-1">
+                <ShieldCheck className="h-3 w-3" />
+                Accepted v{acceptedVersion}
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {supportTerms ? (
@@ -400,13 +440,30 @@ function TermsTab({ supportTerms }: { supportTerms: LegalDocument | null }) {
                 className="prose prose-sm dark:prose-invert max-w-none"
                 dangerouslySetInnerHTML={{ __html: supportTerms.content }}
               />
-              <p className="text-xs text-muted-foreground">
-                Last updated: {new Date(supportTerms.lastUpdated).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </p>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Last updated: {new Date(supportTerms.lastUpdated).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+                {needsAcceptance && (
+                  <Button
+                    onClick={handleAccept}
+                    disabled={isPending}
+                    size="sm"
+                  >
+                    {isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                    )}
+                    Accept Terms
+                  </Button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="rounded-md border border-dashed p-6 text-center">
