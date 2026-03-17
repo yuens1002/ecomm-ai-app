@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -116,11 +117,9 @@ export function SupportTicketsList({ tickets, onTicketsChange }: SupportTicketsL
       ) : (
         <div className="space-y-3 max-h-128 overflow-y-auto">
           {visible.map((ticket) => (
-            <a
+            <Link
               key={ticket.id}
-              href={ticket.githubUrl ?? undefined}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={`/admin/support/tickets/${ticket.id}`}
               className="block rounded-lg border p-3 space-y-1.5 transition-shadow hover:shadow-md cursor-pointer"
             >
               <div className="flex items-center justify-between gap-2">
@@ -137,7 +136,7 @@ export function SupportTicketsList({ tickets, onTicketsChange }: SupportTicketsL
                 </div>
               </div>
               <p className="text-sm font-medium truncate">{ticket.title}</p>
-            </a>
+            </Link>
           ))}
 
           {/* Load more */}

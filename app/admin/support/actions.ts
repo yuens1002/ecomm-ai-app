@@ -9,6 +9,8 @@ import {
   createCommunityIssue,
   submitPriorityTicket,
   bookSession,
+  getTicketDetail,
+  replyToTicket,
   SupportError,
 } from "@/lib/support";
 import { setLicenseKey } from "@/lib/config/app-settings";
@@ -21,6 +23,8 @@ import type {
   CreateTicketResponse,
   CommunityIssueResponse,
   PriorityTicketResponse,
+  TicketDetailResponse,
+  ReplyResponse,
 } from "@/lib/support-types";
 import type { LicenseInfo } from "@/lib/license-types";
 
@@ -328,5 +332,57 @@ export async function refreshLicense(): Promise<LicenseResult> {
     return { success: true, license };
   } catch {
     return { success: false, error: "Failed to refresh license" };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Ticket detail + messaging (Phase 5)
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch a single ticket with its message thread.
+ */
+export async function fetchTicketDetail(
+  id: string
+): Promise<{ success: boolean; error?: string; data?: TicketDetailResponse }> {
+  await requireAdmin();
+
+  try {
+    const data = await getTicketDetail(id);
+    return { success: true, data };
+  } catch (error) {
+    if (error instanceof SupportError) {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: "Failed to fetch ticket" };
+  }
+}
+
+const replySchema = z.object({
+  body: z.string().min(1, "Reply cannot be empty").max(5000),
+});
+
+/**
+ * Reply to a support ticket.
+ */
+export async function submitTicketReply(
+  ticketId: string,
+  formData: FormData
+): Promise<{ success: boolean; error?: string; errorCode?: string; data?: ReplyResponse }> {
+  await requireAdmin();
+
+  const parsed = replySchema.safeParse({ body: formData.get("body") });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  try {
+    const data = await replyToTicket(ticketId, parsed.data.body);
+    return { success: true, data };
+  } catch (error) {
+    if (error instanceof SupportError) {
+      return { success: false, error: error.message, errorCode: error.code };
+    }
+    return { success: false, error: "Failed to send reply" };
   }
 }

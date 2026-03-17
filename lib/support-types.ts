@@ -90,6 +90,27 @@ export interface BookSessionResponse {
 }
 
 // ---------------------------------------------------------------------------
+// Ticket messages (Phase 5)
+// ---------------------------------------------------------------------------
+
+export interface TicketMessage {
+  id: string;
+  ticketId: string;
+  sender: "user" | "support";
+  body: string;
+  createdAt: string;
+}
+
+export interface TicketDetailResponse {
+  ticket: SupportTicket;
+  messages: TicketMessage[];
+}
+
+export interface ReplyResponse {
+  message: TicketMessage;
+}
+
+// ---------------------------------------------------------------------------
 // Community issues (no license required)
 // ---------------------------------------------------------------------------
 
