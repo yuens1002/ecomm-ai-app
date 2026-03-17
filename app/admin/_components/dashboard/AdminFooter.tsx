@@ -46,7 +46,7 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
               </Link>
               <span className="text-border">•</span>
               <Link
-                href="#"
+                href="/admin/support/terms?tab=license"
                 className="hover:text-foreground transition-colors"
               >
                 License
@@ -93,7 +93,7 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
               </Link>
               <span className="text-border">•</span>
               <Link
-                href="#"
+                href="/admin/support/terms?tab=license"
                 className="hover:text-foreground transition-colors"
               >
                 License

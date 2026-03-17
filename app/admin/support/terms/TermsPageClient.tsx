@@ -79,7 +79,7 @@ export function TermsPageClient({
 
       <Tabs defaultValue={defaultTab}>
         <TabsList>
-          <TabsTrigger value="license">License Key</TabsTrigger>
+          <TabsTrigger value="license">License</TabsTrigger>
           <TabsTrigger value="privacy">Data Privacy</TabsTrigger>
           <TabsTrigger value="terms">Terms & Conditions</TabsTrigger>
         </TabsList>
@@ -106,7 +106,7 @@ export function TermsPageClient({
 }
 
 // ---------------------------------------------------------------------------
-// Tab 1: License Key
+// Tab 1: License
 // ---------------------------------------------------------------------------
 
 function LicenseKeyTab({
@@ -167,9 +167,9 @@ function LicenseKeyTab({
     });
   }
 
-  const enrolledPlans = license.plan
-    ? plans.filter((p) => p.slug === license.plan!.slug)
-    : [];
+  const enrolledPlan = license.plan
+    ? plans.find((p) => p.slug === license.plan!.slug) ?? null
+    : null;
 
   return (
     <>
@@ -196,7 +196,19 @@ function LicenseKeyTab({
       {/* Platform License */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Platform License</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm">Platform License</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isPending}
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : ""}`}
+              />
+            </Button>
+          </div>
           <CardDescription>
             A platform license key unlocks premium features and services provided
             through the Artisan Roast platform.
@@ -225,21 +237,14 @@ function LicenseKeyTab({
                 <Badge variant="secondary">active</Badge>
               </div>
 
-              {enrolledPlans.length > 0 && (
+              {enrolledPlan && (
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Enrolled Plans:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {enrolledPlans.map((plan) => (
-                      <Link
-                        key={plan.slug}
-                        href={`/admin/support/plans/${plan.slug}`}
-                      >
-                        <Badge variant="outline" className="cursor-pointer hover:bg-accent">
-                          {plan.name}
-                        </Badge>
-                      </Link>
-                    ))}
-                  </div>
+                  <p className="text-sm text-muted-foreground">Enrolled Plan:</p>
+                  <Link href={`/admin/support/plans/${enrolledPlan.slug}`}>
+                    <Badge variant="outline" className="cursor-pointer hover:bg-accent">
+                      {enrolledPlan.name}
+                    </Badge>
+                  </Link>
                 </div>
               )}
 
@@ -284,16 +289,6 @@ function LicenseKeyTab({
                 >
                   View Plans
                 </Link>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRefresh}
-                  disabled={isPending}
-                >
-                  <RefreshCw
-                    className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : ""}`}
-                  />
-                </Button>
               </div>
             </>
           ) : (
