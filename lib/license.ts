@@ -184,11 +184,14 @@ export async function getTier(): Promise<Tier> {
   return info.tier;
 }
 
-/** Check if Pro or Hosted tier is active. */
-export async function isProEnabled(): Promise<boolean> {
+/** Check if a paid tier (Priority Support or Hosted) is active. */
+export async function isPaidTier(): Promise<boolean> {
   const tier = await getTier();
-  return tier === "PRO" || tier === "HOSTED";
+  return tier === "PRIORITY_SUPPORT" || tier === "HOSTED";
 }
+
+/** @deprecated Use `isPaidTier()` instead. */
+export const isProEnabled = isPaidTier;
 
 // ---------------------------------------------------------------------------
 // Feature gating
@@ -419,10 +422,10 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
         alaCarte: [],
         legal: null,
       };
-    case "PRO":
+    case "PRIORITY_SUPPORT":
       return {
         valid: true,
-        tier: "PRO",
+        tier: "PRIORITY_SUPPORT",
         features: [
           "ga",
           "ai-product-ops",
@@ -588,7 +591,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
         ],
         plan: null,
         lapsed: {
-          previousTier: "PRO",
+          previousTier: "PRIORITY_SUPPORT",
           previousFeatures: [
             "Priority email support with 48-hr SLA",
             "5 support tickets per month",

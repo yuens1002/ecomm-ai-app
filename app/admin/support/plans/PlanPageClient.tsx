@@ -542,7 +542,7 @@ function PlanCard({
 
         <div className="flex items-center gap-2 mt-auto pt-0">
           <Link
-            href={detailHref}
+            href={isFree ? "/admin/support/terms?tab=terms" : detailHref}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             {isFree ? "View Terms" : "View Details"}

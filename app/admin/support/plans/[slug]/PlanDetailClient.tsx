@@ -3,13 +3,11 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import {
-  Calendar,
   Check,
   Clock,
   X,
 } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -17,11 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
 import { useBreadcrumb } from "@/app/admin/_components/dashboard/BreadcrumbContext";
-import { usePaidAction } from "@/app/admin/support/_hooks/usePaidAction";
-import { TermsNotice } from "@/app/admin/support/_components/TermsNotice";
-import { bookSupportSession } from "@/app/admin/support/actions";
 import type { Plan } from "@/lib/plan-types";
 import type { LicenseInfo } from "@/lib/license-types";
 
@@ -53,25 +47,12 @@ interface PlanDetailClientProps {
 export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
   const breadcrumbs = useMemo(() => [{ label: plan.name }], [plan.name]);
   useBreadcrumb(breadcrumbs);
-  const { toast } = useToast();
 
-  // Session booking via usePaidAction
-  const sessionAction = usePaidAction<{ bookingUrl: string }>({
-    onSuccess: (data) => {
-      window.open(data.bookingUrl, "_blank", "noopener");
-      toast({ title: "Session booked", description: "Opening booking page…" });
-    },
-    onError: (error) => {
-      toast({ title: "Booking failed", description: error, variant: "destructive" });
-    },
-  });
-
-  // Check if the active plan matches this plan and has session credits
+  // Plan versioning:
+  // - Active plan: shows the plan version at time of purchase (snapshotAt)
+  //   — updates on subscription renewal
+  // - Available/lapsed plan: shows current version from platform catalog
   const isActivePlan = license.plan?.slug === plan.slug;
-  const sessionPool = license.support?.pools?.find(
-    (p) => p.slug === "one-on-one" || /session/i.test(p.label ?? "")
-  );
-  const hasSessionCredits = sessionPool ? sessionPool.remaining > 0 : false;
 
   const { details } = plan;
   const isFree = plan.price === 0;
@@ -285,28 +266,6 @@ export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
         </Card>
       )}
 
-      {/* Book Session CTA — only on the active plan with session credits */}
-      {isActivePlan && hasSessionCredits && (
-        <Card>
-          <CardContent className="flex items-center justify-between pt-6">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Schedule a 1:1 Session</p>
-              <p className="text-xs text-muted-foreground">
-                {sessionPool!.remaining} session{sessionPool!.remaining !== 1 ? "s" : ""} remaining
-              </p>
-            </div>
-            <Button
-              onClick={() => sessionAction.execute(() => bookSupportSession())}
-              disabled={sessionAction.isPending}
-            >
-              <Calendar className="mr-2 h-4 w-4" />
-              {sessionAction.isPending ? "Booking…" : "Book Session"}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {sessionAction.showTermsNotice && <TermsNotice />}
     </div>
   );
 }

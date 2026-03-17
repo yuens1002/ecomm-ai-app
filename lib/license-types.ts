@@ -9,7 +9,7 @@
 // Tier
 // ---------------------------------------------------------------------------
 
-export type Tier = "FREE" | "TRIAL" | "PRO" | "HOSTED";
+export type Tier = "FREE" | "TRIAL" | "PRIORITY_SUPPORT" | "HOSTED";
 
 // ---------------------------------------------------------------------------
 // License validation response (from platform)

@@ -55,7 +55,7 @@ global.fetch = mockFetch;
 function makeProResponse(): LicenseInfo {
   return {
     valid: true,
-    tier: "PRO",
+    tier: "PRIORITY_SUPPORT",
     features: ["ga", "ai-product-ops", "ai-reviews", "analytics-insights"],
     trialEndsAt: null,
     managedBy: null,
@@ -173,7 +173,7 @@ describe("validateLicense", () => {
     });
 
     const result = await validateLicense();
-    expect(result.tier).toBe("PRO");
+    expect(result.tier).toBe("PRIORITY_SUPPORT");
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/license/validate"),
@@ -195,7 +195,7 @@ describe("validateLicense", () => {
     });
 
     const result = await validateLicense();
-    expect(result.tier).toBe("PRO");
+    expect(result.tier).toBe("PRIORITY_SUPPORT");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
@@ -214,7 +214,7 @@ describe("validateLicense", () => {
     await validateLicense(); // populate cache
     const result = await validateLicense(); // should use cache
 
-    expect(result.tier).toBe("PRO");
+    expect(result.tier).toBe("PRIORITY_SUPPORT");
     expect(mockFetch).toHaveBeenCalledTimes(1); // only first call
   });
 
@@ -267,9 +267,9 @@ describe("MOCK_LICENSE_TIER", () => {
   });
 
   it("returns mock PRO without network call", async () => {
-    process.env.MOCK_LICENSE_TIER = "PRO";
+    process.env.MOCK_LICENSE_TIER = "PRIORITY_SUPPORT";
     const result = await validateLicense();
-    expect(result.tier).toBe("PRO");
+    expect(result.tier).toBe("PRIORITY_SUPPORT");
     expect(result.features).toContain("ai-product-ops");
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -283,14 +283,14 @@ describe("MOCK_LICENSE_TIER", () => {
 
 describe("getTier", () => {
   it("returns the tier from validateLicense", async () => {
-    process.env.MOCK_LICENSE_TIER = "PRO";
-    expect(await getTier()).toBe("PRO");
+    process.env.MOCK_LICENSE_TIER = "PRIORITY_SUPPORT";
+    expect(await getTier()).toBe("PRIORITY_SUPPORT");
   });
 });
 
 describe("isProEnabled", () => {
   it("returns true for PRO", async () => {
-    process.env.MOCK_LICENSE_TIER = "PRO";
+    process.env.MOCK_LICENSE_TIER = "PRIORITY_SUPPORT";
     expect(await isProEnabled()).toBe(true);
   });
 
@@ -311,12 +311,12 @@ describe("isProEnabled", () => {
 
 describe("hasFeature", () => {
   it("returns true when feature is in license", async () => {
-    process.env.MOCK_LICENSE_TIER = "PRO";
+    process.env.MOCK_LICENSE_TIER = "PRIORITY_SUPPORT";
     expect(await hasFeature("ai-product-ops")).toBe(true);
   });
 
   it("returns false when feature is not in license", async () => {
-    process.env.MOCK_LICENSE_TIER = "PRO";
+    process.env.MOCK_LICENSE_TIER = "PRIORITY_SUPPORT";
     expect(await hasFeature("ai-cms")).toBe(false);
   });
 
@@ -334,7 +334,7 @@ describe("getTrialDaysRemaining", () => {
   });
 
   it("returns null for non-TRIAL tiers", async () => {
-    process.env.MOCK_LICENSE_TIER = "PRO";
+    process.env.MOCK_LICENSE_TIER = "PRIORITY_SUPPORT";
     expect(await getTrialDaysRemaining()).toBeNull();
   });
 
@@ -359,7 +359,7 @@ describe("checkUsageBudget", () => {
   });
 
   it("returns null for PRO", async () => {
-    process.env.MOCK_LICENSE_TIER = "PRO";
+    process.env.MOCK_LICENSE_TIER = "PRIORITY_SUPPORT";
     expect(await checkUsageBudget()).toBeNull();
   });
 });

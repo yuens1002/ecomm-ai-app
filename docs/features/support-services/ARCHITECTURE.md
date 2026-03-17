@@ -21,7 +21,7 @@ The store renders everything dynamically from the platform's validate response �
 │  Store Admin UI                                                  │
 │                                                                  │
 │  ┌─────────────┐  ┌──────────────┐  ┌───────────┐  ┌─────────┐ │
-│  │Submit Ticket │  │Subscriptions │  │Plan Detail│  │License  │ │
+│  │Submit Ticket │  │   Plans     │  │Plan Detail│  │License  │ │
 │  │  /support    │  │  /plans      │  │/plans/[s] │  │& Terms  │ │
 │  └──────┬──────┘  └──────┬───────┘  └─────┬─────┘  └────┬────┘ │
 │         │                │                 │              │      │
@@ -83,7 +83,7 @@ Legacy route: `/admin/support/manage` → redirects to `/admin/support/terms?tab
 |------|-------------|-------------|---------|
 | Submit Ticket | `license`, `tickets` | Filter, pagination, form state | Ticket form + ticket list |
 | Plans | `license`, `plans[]` | Checkout, refresh | Plan cards (active/inactive/none) + a la carte |
-| Plan Detail | `license`, `plan` | — | Full plan specs, add-on packages, SLA |
+| Plan Detail | `license`, `plan` | — | Full plan specs (read-only, no CTAs), versioned by plan state |
 | Add-Ons | `license` | — | A la carte package grid |
 | License & Terms | `license`, `plans[]`, `legalDoc` | Tab, key input, telemetry | Key management, privacy, legal docs |
 
@@ -102,7 +102,7 @@ function computeTicketPageConfig(license: LicenseInfo, hasKey: boolean): TicketP
   //          priorityDisabled, ticketPacks, showUpsell, hasKey
 }
 
-// Subscriptions page
+// Plans page
 function computePlanCardConfig(plan: Plan, license: LicenseInfo): PlanCardConfig {
   // Returns: status (active/inactive/none), badge, primaryCta,
   //          showCredits, credits, actions, snapshotAt, inactiveInfo
@@ -142,7 +142,19 @@ Every platform call has a fallback:
 | `fetchLegalDoc()` | `null` | Direct links to platform pages |
 | `listTickets()` | `[]` | Empty ticket list |
 
-### 5. Server-Side Legal Enforcement
+### 5. Plan Detail Versioning
+
+Plan Detail is a **read-only specs page** with no CTAs. The plan data shown depends on the user's relationship to the plan:
+
+| State | Data Source | What's Shown |
+|-------|-------------|--------------|
+| **Active plan** | `license.plan` snapshot | Plan version at time of purchase — updates on subscription renewal |
+| **Available plan** | `GET /api/plans` catalog | Current version of the plan from the platform |
+| **Lapsed plan** | `GET /api/plans` catalog | Current version of the plan (user can compare before renewing) |
+
+All CTAs (Manage Billing, Book Session, Subscribe, Renew) live on the **Plans** page, not the detail page.
+
+### 6. Server-Side Legal Enforcement
 
 Legal acceptance is enforced in two layers — no client-side gate:
 
@@ -162,7 +174,7 @@ The store handles 403 by showing an amber banner directing the user to the Terms
 ```typescript
 interface LicenseInfo {
   valid: boolean;
-  tier: Tier;                    // "FREE" | "TRIAL" | "PRO" | "HOSTED"
+  tier: Tier;                    // "FREE" | "TRIAL" | "PRIORITY_SUPPORT" | "HOSTED"
   features: string[];
   plan: PlanContext | null;       // { slug, name, snapshotAt }
   lapsed: LapsedContext | null;   // { previousTier, renewUrl, deactivatedAt, ... }
@@ -206,12 +218,13 @@ app/admin/support/
 ├── page.tsx                        Server — fetches tickets, passes to client
 ├── actions.ts                      Server actions (11 functions, all Zod-validated)
 ├── SupportPageClient.tsx           Client — ticket form + radio cards + computeTicketPageConfig()
-├── SupportTicketsSection.tsx       Client — filter tabs, pagination, links to detail
+├── SupportTicketsSection.tsx       Client — filter tabs, pagination, opens TicketDetailSheet
 ├── UsageBar.tsx                    Client — reusable credit progress bar
 ├── _hooks/
 │   └── usePaidAction.ts           Hook — wraps paid server actions, catches 403
 ├── _components/
-│   └── TermsNotice.tsx            Amber notice directing to Terms tab
+│   ├── TermsNotice.tsx            Amber notice directing to Terms tab
+│   └── TicketDetailSheet.tsx      Sheet — message thread + reply form (slide-in from ticket list)
 ├── manage/
 │   └── page.tsx                    Server — redirect to /terms?tab=license
 ├── plans/
@@ -220,14 +233,10 @@ app/admin/support/
 │   ├── PlanPageClient.tsx          Client — plan cards + computePlanCardConfig()
 │   └── [slug]/
 │       ├── page.tsx                Server — fetches plan + license
-│       └── PlanDetailClient.tsx    Client — full plan specs + Book Session CTA
+│       └── PlanDetailClient.tsx    Client — full plan specs (read-only, no CTAs)
 ├── add-ons/
 │   ├── page.tsx                    Server — reads license.alaCarte
 │   └── AddOnsPageClient.tsx        Client — package grid
-├── tickets/
-│   └── [id]/
-│       ├── page.tsx                Server — fetches ticket detail
-│       └── TicketDetailClient.tsx  Client — message thread + reply form
 └── terms/
     ├── page.tsx                    Server — fetches legal docs
     └── TermsPageClient.tsx         Client — 3-tab UI (License, Privacy, Terms + acceptance)
@@ -282,7 +291,7 @@ Platform HTTP status → SupportError → server action result → client UI:
 | State | Trigger | Badge | CTA | Border |
 |-------|---------|-------|-----|--------|
 | Active (free) | `plan.slug === "free"` | Active (secondary) | — | `border-primary` |
-| Active (paid) | `license.plan.slug === plan.slug` | Active (secondary) | Manage Billing, Session | `border-primary` |
+| Active (paid) | `license.plan.slug === plan.slug` | Active (secondary) | Manage Billing, Schedule Call | `border-primary` |
 | Inactive | `license.lapsed.planSlug === plan.slug` | Inactive (destructive) | Renew (`lapsed.renewUrl`) | default |
 | None | No match | — | Subscribe | default |
 
@@ -316,11 +325,11 @@ All contracts live in `docs/internal/`:
 | Types | `LicenseInfo` Phase 3 fields, `UsagePool`, `SupportQuotas.pools[]`, `TicketMessage` | Multiple |
 | Nav | "Support & Services" with 4 children, Manage redirect | Done |
 | Submit Ticket | Config-driven form, radio card type selector, credit display, helper text, 403 handling, filters, pagination | Done |
-| Subscriptions | Plan cards (active/inactive/none), a la carte section, icon map, sale pricing | Done |
-| Plan Detail | Full specs, SLA grid, add-on packages, breadcrumbs, Book Session CTA | Done |
+| Plans | Plan cards (active/inactive/none), a la carte section, icon map, sale pricing | Done |
+| Plan Detail | Full specs (read-only, no CTAs), SLA grid, plan versioning by state, breadcrumbs | Done |
 | Add-Ons | Package grid from `license.alaCarte[]` | Done |
 | License & Terms | 3-tab UI (key, privacy, terms), telemetry toggle, legal doc rendering, terms acceptance | Done |
-| Ticket Detail | Message thread UI, reply form, status display, breadcrumbs | Done |
+| Ticket Detail | Sheet slide-in with message thread, reply form, status display | Done |
 | Reusable 403 | `usePaidAction` hook + `TermsNotice` component for all paid CTAs | Done |
 | Desktop Layout | `max-w-5xl` containment on all 5 support page clients | Done |
 | Mock API | Mock data for tickets, sessions, legal docs in lib modules (no page-level mocks) | Done |
@@ -346,7 +355,7 @@ All platform-dependent features have mock data activated by `MOCK_LICENSE_TIER` 
 | `lib/support.ts` | `MOCK_LICENSE_TIER` env var | 5 mock tickets, message threads (3 tickets), submit/reply/book responses |
 | `lib/legal.ts` | `MOCK_LICENSE_TIER` env var | Support terms + privacy policy (HTML content) |
 
-Supported mock tiers: `FREE`, `TRIAL`, `PRO`, `priority-support`, `enterprise-support`
+Supported mock tiers: `FREE`, `TRIAL`, `PRIORITY_SUPPORT`, `priority-support`, `enterprise-support`
 
 ---
 
@@ -371,9 +380,10 @@ Supported mock tiers: `FREE`, `TRIAL`, `PRO`, `priority-support`, `enterprise-su
 | `salePrice`/`saleEndsAt` on Plan type | Dynamic promotional pricing from platform catalog |
 | Config-driven components | `computeTicketPageConfig()` and `computePlanCardConfig()` — single source of truth for all conditional rendering |
 | Dual credit pools with plan-first deduction | Maximizes value of purchased credits (they never expire) |
-| FREE plan in catalog | Gives free users a comparison point on the Subscriptions page |
+| FREE plan in catalog | Gives free users a comparison point on the Plans page |
 | Manage page redirect | Consolidated into License & Terms tabs — no separate page needed |
 | `usePaidAction` hook not wrapper component | More flexible — pages have different button variants and layouts |
-| Route not drawer for ticket detail | Message threads can be long, deep-linkable, consistent with plan detail pattern |
+| Sheet not route for ticket detail | Keeps user in context on the Submit Ticket page; full-screen on mobile via default Sheet behavior |
+| Plan Detail is read-only (no CTAs) | Plan detail shows timestamped plan terms; all actions live on the Plans page |
 | Mock data in lib modules not pages | Consolidates all mock data, keeps page components clean |
 | Radio cards not dropdown for ticket type | Better visibility of options and credit info at a glance |
