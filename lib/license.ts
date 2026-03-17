@@ -468,7 +468,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
         support: {
           pools: [
             { slug: "tickets", label: "Priority Tickets", icon: "ticket", limit: 5, purchased: 1, used: 2, remaining: 4 },
-            { slug: "one-on-one", label: "1:1 Sessions", icon: "video", limit: 1, purchased: 0, used: 0, remaining: 1 },
+            { slug: "one-on-one", label: "1:1 Sessions", icon: "calendar", limit: 1, purchased: 0, used: 0, remaining: 1 },
           ],
         },
         alaCarte: [
@@ -538,7 +538,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
         support: {
           pools: [
             { slug: "tickets", label: "Priority Tickets", icon: "ticket", limit: 5, purchased: 0, used: 1, remaining: 4 },
-            { slug: "one-on-one", label: "1:1 Sessions", icon: "video", limit: 1, purchased: 0, used: 0, remaining: 1 },
+            { slug: "one-on-one", label: "1:1 Sessions", icon: "calendar", limit: 1, purchased: 0, used: 0, remaining: 1 },
           ],
         },
         alaCarte: [
@@ -601,7 +601,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
         support: {
           pools: [
             { slug: "tickets", label: "Priority Tickets", icon: "ticket", limit: 0, purchased: 3, used: 0, remaining: 3 },
-            { slug: "one-on-one", label: "1:1 Sessions", icon: "video", limit: 0, purchased: 2, used: 1, remaining: 1 },
+            { slug: "one-on-one", label: "1:1 Sessions", icon: "calendar", limit: 0, purchased: 2, used: 1, remaining: 1 },
           ],
         },
         alaCarte: [

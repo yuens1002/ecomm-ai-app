@@ -16,7 +16,7 @@ import { useBreadcrumb } from "@/app/admin/_components/dashboard/BreadcrumbConte
 import { usePaidAction } from "@/app/admin/support/_hooks/usePaidAction";
 import { TermsNotice } from "@/app/admin/support/_components/TermsNotice";
 import { submitTicketReply } from "@/app/admin/support/actions";
-import type { SupportTicket, TicketMessage, ReplyResponse } from "@/lib/support-types";
+import type { SupportTicket, TicketReply, ReplyResponse } from "@/lib/support-types";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -44,7 +44,7 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 
 interface TicketDetailClientProps {
   ticket: SupportTicket;
-  messages: TicketMessage[];
+  replies: TicketReply[];
 }
 
 // ---------------------------------------------------------------------------
@@ -53,7 +53,7 @@ interface TicketDetailClientProps {
 
 export function TicketDetailClient({
   ticket,
-  messages: initialMessages,
+  replies: initialReplies,
 }: TicketDetailClientProps) {
   const breadcrumbs = useMemo(
     () => [
@@ -65,17 +65,21 @@ export function TicketDetailClient({
   useBreadcrumb(breadcrumbs);
 
   const { toast } = useToast();
-  const [messages, setMessages] = useState(initialMessages);
+  const [replies, setReplies] = useState(initialReplies);
   const [replyText, setReplyText] = useState("");
 
   const replyAction = usePaidAction<ReplyResponse>({
     onSuccess: (data) => {
-      setMessages((prev) => [...prev, data.message]);
+      setReplies((prev) => [...prev, data]);
       setReplyText("");
       toast({ title: "Reply sent" });
     },
-    onError: (error) => {
-      toast({ title: "Failed to send reply", description: error, variant: "destructive" });
+    onError: (error, errorCode) => {
+      if (errorCode === "ticket_not_open") {
+        toast({ title: "Ticket closed", description: "This ticket is no longer open.", variant: "destructive" });
+      } else {
+        toast({ title: "Failed to send reply", description: error, variant: "destructive" });
+      }
     },
   });
 
@@ -114,34 +118,34 @@ export function TicketDetailClient({
 
       <Separator />
 
-      {/* Message thread */}
-      {messages.length > 0 ? (
+      {/* Reply thread */}
+      {replies.length > 0 ? (
         <div className="space-y-4">
-          {messages.map((msg) => (
+          {replies.map((reply) => (
             <div
-              key={msg.id}
+              key={reply.id}
               className={
-                msg.sender === "support"
+                reply.source === "SUPPORT"
                   ? "rounded-lg border bg-muted/30 p-4"
                   : "rounded-lg border p-4"
               }
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium">
-                  {msg.sender === "support" ? "Support Team" : "You"}
+                  {reply.source === "SUPPORT" ? "Support Team" : "You"}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {formatDate(msg.createdAt)}
+                  {formatDate(reply.createdAt)}
                 </span>
               </div>
-              <p className="text-sm whitespace-pre-wrap">{msg.body}</p>
+              <p className="text-sm whitespace-pre-wrap">{reply.body}</p>
             </div>
           ))}
         </div>
       ) : (
         <div className="rounded-md border border-dashed p-6 text-center">
           <p className="text-sm text-muted-foreground">
-            No messages yet. Start the conversation below.
+            No replies yet. Start the conversation below.
           </p>
         </div>
       )}
@@ -157,7 +161,7 @@ export function TicketDetailClient({
               onChange={(e) => setReplyText(e.target.value)}
               disabled={replyAction.isPending}
               rows={3}
-              maxLength={5000}
+              maxLength={10000}
             />
             <Button
               onClick={handleReply}

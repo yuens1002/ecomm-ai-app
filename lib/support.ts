@@ -98,6 +98,12 @@ async function supportFetch<T>(
           403
         );
       }
+      case 409:
+        throw new SupportError(
+          "Ticket is not open",
+          409,
+          "ticket_not_open"
+        );
       case 429:
         throw new SupportError(
           "Ticket limit reached for this billing cycle",
@@ -186,35 +192,38 @@ export async function bookSession(): Promise<BookSessionResponse> {
 // Ticket detail + messaging (Phase 5)
 // ---------------------------------------------------------------------------
 
-/** Fetch a single ticket with its message thread. */
+/** Fetch a single ticket with its reply thread. */
 export async function getTicketDetail(
   id: string
 ): Promise<TicketDetailResponse> {
   if (process.env.MOCK_LICENSE_TIER) {
     const ticket = MOCK_TICKETS.find((t) => t.id === id);
     if (!ticket) throw new SupportError("Ticket not found", 404);
-    return { ticket, messages: MOCK_MESSAGES[id] ?? [] };
+    return { ticket, replies: MOCK_REPLIES[id] ?? [] };
   }
-  return supportFetch<TicketDetailResponse>(`/api/support/tickets/${id}`);
+  // GET /api/support/tickets/{id} returns ticket; replies come from a separate call
+  const [ticket, repliesData] = await Promise.all([
+    supportFetch<{ ticket: import("./support-types").SupportTicket }>(`/api/support/tickets/${id}`),
+    supportFetch<{ replies: import("./support-types").TicketReply[] }>(`/api/support/tickets/${id}/replies`),
+  ]);
+  return { ticket: ticket.ticket, replies: repliesData.replies };
 }
 
-/** Reply to a ticket. */
+/** Reply to a ticket. Returns the created reply (flat object per contract). */
 export async function replyToTicket(
   id: string,
   body: string
 ): Promise<ReplyResponse> {
   if (process.env.MOCK_LICENSE_TIER) {
     return {
-      message: {
-        id: `msg-${Date.now()}`,
-        ticketId: id,
-        sender: "user",
-        body,
-        createdAt: new Date().toISOString(),
-      },
+      id: `reply-${Date.now()}`,
+      ticketId: id,
+      body,
+      source: "CUSTOMER",
+      createdAt: new Date().toISOString(),
     };
   }
-  return supportFetch<ReplyResponse>(`/api/support/tickets/${id}/messages`, {
+  return supportFetch<ReplyResponse>(`/api/support/tickets/${id}/replies`, {
     method: "POST",
     body: JSON.stringify({ body }),
   });
@@ -240,6 +249,11 @@ export async function createCommunityIssue(
     switch (response.status) {
       case 400:
         throw new SupportError(body || "Missing required fields", 400);
+      case 429:
+        throw new SupportError(
+          "You've submitted too many issues. Please try again in an hour.",
+          429
+        );
       case 502:
         throw new SupportError("GitHub API unavailable", 502);
       case 503:
@@ -277,19 +291,19 @@ const MOCK_TICKETS_RESPONSE: TicketsResponse = {
   usage: { used: 1, limit: 5, remaining: 4, resetsAt: "2026-04-01T00:00:00Z" },
 };
 
-const MOCK_MESSAGES: Record<string, import("./support-types").TicketMessage[]> = {
+const MOCK_REPLIES: Record<string, import("./support-types").TicketReply[]> = {
   t1: [
-    { id: "msg-1a", ticketId: "t1", sender: "user", body: "After running bulk import with 50+ items, the menu page still shows the old items. Tried clearing cache and restarting — same issue.", createdAt: "2026-03-16T10:00:00Z" },
-    { id: "msg-1b", ticketId: "t1", sender: "support", body: "Thanks for reporting this. Can you check if the import completed successfully? Look in Admin > Settings > Import History for any failed rows. Also, which file format did you use (CSV or JSON)?", createdAt: "2026-03-16T10:30:00Z" },
-    { id: "msg-1c", ticketId: "t1", sender: "user", body: "CSV format. Import history shows all 50 rows succeeded, but the menu page is stale. The products page shows them correctly though.", createdAt: "2026-03-16T11:00:00Z" },
+    { id: "reply-1a", ticketId: "t1", source: "CUSTOMER", body: "After running bulk import with 50+ items, the menu page still shows the old items. Tried clearing cache and restarting — same issue.", createdAt: "2026-03-16T10:00:00Z" },
+    { id: "reply-1b", ticketId: "t1", source: "SUPPORT", body: "Thanks for reporting this. Can you check if the import completed successfully? Look in Admin > Settings > Import History for any failed rows. Also, which file format did you use (CSV or JSON)?", createdAt: "2026-03-16T10:30:00Z" },
+    { id: "reply-1c", ticketId: "t1", source: "CUSTOMER", body: "CSV format. Import history shows all 50 rows succeeded, but the menu page is stale. The products page shows them correctly though.", createdAt: "2026-03-16T11:00:00Z" },
   ],
   t2: [
-    { id: "msg-2a", ticketId: "t2", sender: "user", body: "The order confirmation emails are missing the store logo. It was working last week before the theme update.", createdAt: "2026-03-16T04:00:00Z" },
-    { id: "msg-2b", ticketId: "t2", sender: "support", body: "This is a known issue with the latest theme update. We're working on a fix. As a workaround, re-upload your logo in Settings > Store > Branding.", createdAt: "2026-03-16T06:00:00Z" },
+    { id: "reply-2a", ticketId: "t2", source: "CUSTOMER", body: "The order confirmation emails are missing the store logo. It was working last week before the theme update.", createdAt: "2026-03-16T04:00:00Z" },
+    { id: "reply-2b", ticketId: "t2", source: "SUPPORT", body: "This is a known issue with the latest theme update. We're working on a fix. As a workaround, re-upload your logo in Settings > Store > Branding.", createdAt: "2026-03-16T06:00:00Z" },
   ],
   t3: [
-    { id: "msg-3a", ticketId: "t3", sender: "user", body: "Stripe webhook for subscription.renewed is failing with a 500 error. Logs show 'Invalid subscription ID'.", createdAt: "2026-03-13T12:00:00Z" },
-    { id: "msg-3b", ticketId: "t3", sender: "support", body: "This was caused by a migration issue in v0.94. Please update to v0.95.3 which includes the fix. Let us know if the issue persists after updating.", createdAt: "2026-03-14T08:00:00Z" },
-    { id: "msg-3c", ticketId: "t3", sender: "user", body: "Updated to v0.95.3 and the webhook is working now. Thanks!", createdAt: "2026-03-15T12:00:00Z" },
+    { id: "reply-3a", ticketId: "t3", source: "CUSTOMER", body: "Stripe webhook for subscription.renewed is failing with a 500 error. Logs show 'Invalid subscription ID'.", createdAt: "2026-03-13T12:00:00Z" },
+    { id: "reply-3b", ticketId: "t3", source: "SUPPORT", body: "This was caused by a migration issue in v0.94. Please update to v0.95.3 which includes the fix. Let us know if the issue persists after updating.", createdAt: "2026-03-14T08:00:00Z" },
+    { id: "reply-3c", ticketId: "t3", source: "CUSTOMER", body: "Updated to v0.95.3 and the webhook is working now. Thanks!", createdAt: "2026-03-15T12:00:00Z" },
   ],
 };

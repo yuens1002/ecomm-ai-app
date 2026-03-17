@@ -56,6 +56,26 @@ export function DynamicIcon({
 }
 
 /**
+ * Resolve a kebab-case icon hint (e.g. "credit-card", "arrow-up-right")
+ * to its PascalCase Lucide component, or return the fallback.
+ */
+export function resolveIconComponent(
+  hint: string,
+  fallback: LucideIcon = icons.FileText
+): LucideIcon {
+  // Try direct PascalCase match first (e.g. "Calendar")
+  if (icons[hint as keyof typeof icons]) {
+    return icons[hint as keyof typeof icons] as LucideIcon;
+  }
+  // Convert kebab-case to PascalCase (e.g. "credit-card" → "CreditCard")
+  const pascal = hint
+    .split("-")
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join("");
+  return (icons[pascal as keyof typeof icons] as LucideIcon) ?? fallback;
+}
+
+/**
  * Get list of all available Lucide icon names
  */
 export function getAvailableIcons(): string[] {

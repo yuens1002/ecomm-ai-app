@@ -24,6 +24,6 @@ export default async function TicketDetailPage({
   }
 
   return (
-    <TicketDetailClient ticket={data.ticket} messages={data.messages} />
+    <TicketDetailClient ticket={data.ticket} replies={data.replies} />
   );
 }

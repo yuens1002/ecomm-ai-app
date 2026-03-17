@@ -143,6 +143,7 @@ describe("submitCommunityIssue", () => {
       body: "Add dark mode",
       email: "shop@artisanroast.com",
       instanceId: "inst_abc123",
+      termsAccepted: true,
     });
   });
 

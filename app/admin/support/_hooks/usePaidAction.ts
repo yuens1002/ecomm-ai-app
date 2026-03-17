@@ -17,8 +17,8 @@ interface PaidActionResponse<T = unknown> {
 interface UsePaidActionOptions<T> {
   /** Called when the action succeeds (success: true). */
   onSuccess?: (data: T) => void | Promise<void>;
-  /** Called for non-terms errors (generic failures, 402, etc.). */
-  onError?: (error: string) => void;
+  /** Called for non-terms errors (generic failures, 402, 409, etc.). */
+  onError?: (error: string, errorCode?: string) => void;
 }
 
 interface UsePaidActionResult<T> {
@@ -63,7 +63,7 @@ export function usePaidAction<T = unknown>(
         return;
       }
 
-      options?.onError?.(result.error ?? "Something went wrong");
+      options?.onError?.(result.error ?? "Something went wrong", result.errorCode);
     });
   }
 

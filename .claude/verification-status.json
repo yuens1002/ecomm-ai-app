@@ -175,11 +175,11 @@
     },
     "feat/support-plans-restructure": {
       "status": "verified",
-      "acs_passed": 44,
-      "acs_total": 44,
+      "acs_passed": 59,
+      "acs_total": 59,
       "tasks": [],
-      "acs_doc": "docs/plans/support-services-ACs.md",
-      "notes": "44/44 ACs verified via code review. 24 UI + 15 FN + 5 REG. Precheck 0 errors, 1089 tests pass. Retro: How-column enforcement added post-verification."
+      "acs_doc": "docs/plans/contract-alignment-ACs.md",
+      "notes": "59/59 ACs verified. All 3 mock tiers (PRO, FREE, no-key) screenshot-verified. 33 UI + 22 FN + 4 REG. 2 code fixes: plan detail sale pricing, community issue test. 6 ACs updated to match finalized design (active card usage, separate Add-Ons page, 4-item nav, two-layer legal). 2 iterations."
     },
     "feat/phase2a-llm-agnostic-ai": {
       "status": "verified",

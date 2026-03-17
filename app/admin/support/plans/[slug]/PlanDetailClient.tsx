@@ -3,9 +3,9 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import {
+  Calendar,
   Check,
   Clock,
-  Video,
   X,
 } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
@@ -74,15 +74,36 @@ export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
   const hasSessionCredits = sessionPool ? sessionPool.remaining > 0 : false;
 
   const { details } = plan;
-  const priceDisplay = `$${(plan.price / 100).toFixed(0)}`;
-  const intervalLabel = plan.interval === "year" ? "/yr" : "/mo";
+  const isFree = plan.price === 0;
+  const hasSale = !isFree && plan.salePrice != null;
+  const priceDisplay = isFree ? "Free" : `$${(plan.price / 100).toFixed(0)}`;
+  const salePriceDisplay = hasSale ? `$${(plan.salePrice! / 100).toFixed(0)}` : null;
+  const intervalLabel = isFree ? "" : plan.interval === "year" ? "/yr" : "/mo";
 
   const hasSlaOrQuotas =
     details.sla || (details.quotas && Object.keys(details.quotas).length > 0);
 
+  // Subtitle: "Your plan since {date}" for active subscribers, description otherwise
+  const planSince = isActivePlan && license.plan?.snapshotAt
+    ? new Date(license.plan.snapshotAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : null;
+  const subtitle = planSince ? `Your plan since ${planSince}` : plan.description;
+
+  // Sale label (e.g. "Launch Special, offer ends 04/25/2026")
+  const saleLabel = (() => {
+    if (!plan.saleLabel && !plan.saleEndsAt) return null;
+    const parts: string[] = [];
+    if (plan.saleLabel) parts.push(plan.saleLabel);
+    if (plan.saleEndsAt) {
+      const ends = new Date(plan.saleEndsAt).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
+      parts.push(`offer ends ${ends}`);
+    }
+    return parts.join(", ");
+  })();
+
   return (
     <div className="max-w-5xl space-y-8">
-      <PageTitle title={plan.name} subtitle={plan.description} />
+      <PageTitle title={plan.name} subtitle={subtitle} />
 
       {/* Two-column: Pricing+Benefits left, SLA+Quotas right */}
       <div className={hasSlaOrQuotas ? "grid gap-8 lg:grid-cols-[1fr_340px]" : ""}>
@@ -90,8 +111,21 @@ export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
         <Card>
           <CardContent className="pt-6 space-y-5">
             <div>
-              <span className="text-3xl font-bold">{priceDisplay}</span>
-              <span className="text-muted-foreground">{intervalLabel}</span>
+              {hasSale ? (
+                <>
+                  <span className="text-3xl font-bold">{salePriceDisplay}</span>
+                  <span className="text-muted-foreground">{intervalLabel}</span>
+                  <span className="ml-2 text-lg text-muted-foreground line-through">{priceDisplay}</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-3xl font-bold">{priceDisplay}</span>
+                  <span className="text-muted-foreground">{intervalLabel}</span>
+                </>
+              )}
+              {saleLabel && (
+                <p className="text-xs text-muted-foreground mt-1">{saleLabel}</p>
+              )}
             </div>
 
             {details.benefits && details.benefits.length > 0 && (
@@ -265,7 +299,7 @@ export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
               onClick={() => sessionAction.execute(() => bookSupportSession())}
               disabled={sessionAction.isPending}
             >
-              <Video className="mr-2 h-4 w-4" />
+              <Calendar className="mr-2 h-4 w-4" />
               {sessionAction.isPending ? "Booking…" : "Book Session"}
             </Button>
           </CardContent>

@@ -5,20 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   ArrowRight,
-  ArrowUpRight,
-  Calendar,
   Check,
   CheckCircle2,
-  CreditCard,
   ExternalLink,
   Loader2,
   MoreVertical,
-  Plus,
   RefreshCw,
-  Ticket,
-  Video,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { resolveIconComponent } from "@/components/shared/icons/DynamicIcon";
 import Link from "next/link";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Button } from "@/components/ui/button";
@@ -41,20 +36,11 @@ import type {
 import type { Plan } from "@/lib/plan-types";
 
 // ---------------------------------------------------------------------------
-// Icon map — maps platform icon hints to lucide components
+// Icon resolution — delegates to shared DynamicIcon utility
 // ---------------------------------------------------------------------------
 
-const ICON_MAP: Record<string, LucideIcon> = {
-  calendar: Calendar,
-  "credit-card": CreditCard,
-  "arrow-up-right": ArrowUpRight,
-  plus: Plus,
-  ticket: Ticket,
-  video: Video,
-};
-
 function resolveIcon(icon: string, fallback: LucideIcon = ExternalLink): LucideIcon {
-  return ICON_MAP[icon] ?? fallback;
+  return resolveIconComponent(icon, fallback);
 }
 
 /** Build price label text, appending "offer ends {date}" when saleEndsAt is set. */
@@ -374,7 +360,7 @@ function PlanCard({
             )}
 
             {config.pools.map((pool) => {
-              const PoolIcon = resolveIcon(pool.icon, Ticket);
+              const PoolIcon = resolveIcon(pool.icon);
               return (
                 <UsageBar
                   key={pool.slug}

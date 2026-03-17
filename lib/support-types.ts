@@ -90,25 +90,26 @@ export interface BookSessionResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Ticket messages (Phase 5)
+// Ticket replies (Phase 5 — per ticketing contract)
 // ---------------------------------------------------------------------------
 
-export interface TicketMessage {
+export type ReplySource = "CUSTOMER" | "SUPPORT";
+
+export interface TicketReply {
   id: string;
   ticketId: string;
-  sender: "user" | "support";
   body: string;
+  source: ReplySource;
   createdAt: string;
 }
 
 export interface TicketDetailResponse {
   ticket: SupportTicket;
-  messages: TicketMessage[];
+  replies: TicketReply[];
 }
 
-export interface ReplyResponse {
-  message: TicketMessage;
-}
+/** POST /api/support/tickets/{id}/replies returns a flat reply object. */
+export type ReplyResponse = TicketReply;
 
 // ---------------------------------------------------------------------------
 // Community issues (no license required)
@@ -119,6 +120,7 @@ export interface CommunityIssueInput {
   body?: string;
   email: string;
   instanceId: string;
+  termsAccepted: boolean;
 }
 
 export interface CommunityIssueResponse {

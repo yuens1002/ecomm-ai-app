@@ -81,7 +81,7 @@ export interface UsagePool extends CreditPool {
   slug: string;
   /** Human-readable label (e.g. "Priority Tickets", "1:1 Sessions", "AI Tokens") */
   label: string;
-  /** Lucide icon name hint (e.g. "ticket", "video", "cpu") */
+  /** Lucide icon name hint (e.g. "ticket", "calendar", "cpu") */
   icon: string;
 }
 

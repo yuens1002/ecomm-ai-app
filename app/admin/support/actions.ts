@@ -183,6 +183,7 @@ export async function submitCommunityIssue(
       ...parsed.data,
       email: contactEmail,
       instanceId: instanceId || "",
+      termsAccepted: true,
     });
     return { success: true, data };
   } catch (error) {
@@ -359,7 +360,7 @@ export async function fetchTicketDetail(
 }
 
 const replySchema = z.object({
-  body: z.string().min(1, "Reply cannot be empty").max(5000),
+  body: z.string().min(1, "Reply cannot be empty").max(10_000),
 });
 
 /**
