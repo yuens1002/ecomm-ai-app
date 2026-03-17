@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import Link from "next/link";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { TicketDetailSheet } from "./_components/TicketDetailSheet";
 import { fetchSupportTickets } from "./actions";
 import type { SupportTicket } from "@/lib/support-types";
 
@@ -39,6 +39,8 @@ export function SupportTicketsList({ tickets, onTicketsChange }: SupportTicketsL
   const [isPending, startTransition] = useTransition();
   const [filter, setFilter] = useState<TicketFilter>("all");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const filtered = useMemo(() => {
     if (filter === "all") return tickets;
@@ -117,10 +119,11 @@ export function SupportTicketsList({ tickets, onTicketsChange }: SupportTicketsL
       ) : (
         <div className="space-y-3 max-h-128 overflow-y-auto">
           {visible.map((ticket) => (
-            <Link
+            <button
               key={ticket.id}
-              href={`/admin/support/tickets/${ticket.id}`}
-              className="block rounded-lg border p-3 space-y-1.5 transition-shadow hover:shadow-md cursor-pointer"
+              type="button"
+              onClick={() => { setSelectedTicket(ticket); setSheetOpen(true); }}
+              className="block w-full rounded-lg border p-3 space-y-1.5 text-left transition-shadow hover:shadow-md cursor-pointer"
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -136,7 +139,7 @@ export function SupportTicketsList({ tickets, onTicketsChange }: SupportTicketsL
                 </div>
               </div>
               <p className="text-sm font-medium truncate">{ticket.title}</p>
-            </Link>
+            </button>
           ))}
 
           {/* Load more */}
@@ -152,6 +155,12 @@ export function SupportTicketsList({ tickets, onTicketsChange }: SupportTicketsL
           )}
         </div>
       )}
+
+      <TicketDetailSheet
+        ticket={selectedTicket}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
     </div>
   );
 }
