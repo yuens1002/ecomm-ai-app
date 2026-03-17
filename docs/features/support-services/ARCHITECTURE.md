@@ -204,10 +204,14 @@ interface Plan {
 ```text
 app/admin/support/
 ├── page.tsx                        Server — fetches tickets, passes to client
-├── actions.ts                      Server actions (9 functions, all Zod-validated)
-├── SupportPageClient.tsx           Client — ticket form + computeTicketPageConfig()
-├── SupportTicketsSection.tsx       Client — filter tabs, pagination, scrollable list
+├── actions.ts                      Server actions (11 functions, all Zod-validated)
+├── SupportPageClient.tsx           Client — ticket form + radio cards + computeTicketPageConfig()
+├── SupportTicketsSection.tsx       Client — filter tabs, pagination, links to detail
 ├── UsageBar.tsx                    Client — reusable credit progress bar
+├── _hooks/
+│   └── usePaidAction.ts           Hook — wraps paid server actions, catches 403
+├── _components/
+│   └── TermsNotice.tsx            Amber notice directing to Terms tab
 ├── manage/
 │   └── page.tsx                    Server — redirect to /terms?tab=license
 ├── plans/
@@ -215,14 +219,18 @@ app/admin/support/
 │   ├── actions.ts                  Server action — startCheckout()
 │   ├── PlanPageClient.tsx          Client — plan cards + computePlanCardConfig()
 │   └── [slug]/
-│       ├── page.tsx                Server — fetches single plan
-│       └── PlanDetailClient.tsx    Client — full plan specs
+│       ├── page.tsx                Server — fetches plan + license
+│       └── PlanDetailClient.tsx    Client — full plan specs + Book Session CTA
 ├── add-ons/
 │   ├── page.tsx                    Server — reads license.alaCarte
 │   └── AddOnsPageClient.tsx        Client — package grid
+├── tickets/
+│   └── [id]/
+│       ├── page.tsx                Server — fetches ticket detail
+│       └── TicketDetailClient.tsx  Client — message thread + reply form
 └── terms/
     ├── page.tsx                    Server — fetches legal docs
-    └── TermsPageClient.tsx         Client — 3-tab UI (License, Privacy, Terms)
+    └── TermsPageClient.tsx         Client — 3-tab UI (License, Privacy, Terms + acceptance)
 ```
 
 ### Lib Modules
@@ -305,25 +313,24 @@ All contracts live in `docs/internal/`:
 
 | Area | What | Commits |
 |------|------|---------|
-| Types | `LicenseInfo` Phase 3 fields, `UsagePool`, `SupportQuotas.pools[]` | Multiple |
+| Types | `LicenseInfo` Phase 3 fields, `UsagePool`, `SupportQuotas.pools[]`, `TicketMessage` | Multiple |
 | Nav | "Support & Services" with 4 children, Manage redirect | Done |
-| Submit Ticket | Config-driven form, type selector, credit display, 403 handling, filters, pagination | Done |
+| Submit Ticket | Config-driven form, radio card type selector, credit display, helper text, 403 handling, filters, pagination | Done |
 | Subscriptions | Plan cards (active/inactive/none), a la carte section, icon map, sale pricing | Done |
-| Plan Detail | Full specs, SLA grid, add-on packages, breadcrumbs | Done |
+| Plan Detail | Full specs, SLA grid, add-on packages, breadcrumbs, Book Session CTA | Done |
 | Add-Ons | Package grid from `license.alaCarte[]` | Done |
-| License & Terms | 3-tab UI (key, privacy, terms), telemetry toggle, legal doc rendering | Done |
-| Lib | `support.ts` (SupportError.code, 402/403 parsing), `legal.ts`, `plans.ts` (mock data) | Done |
+| License & Terms | 3-tab UI (key, privacy, terms), telemetry toggle, legal doc rendering, terms acceptance | Done |
+| Ticket Detail | Message thread UI, reply form, status display, breadcrumbs | Done |
+| Reusable 403 | `usePaidAction` hook + `TermsNotice` component for all paid CTAs | Done |
+| Desktop Layout | `max-w-5xl` containment on all 5 support page clients | Done |
+| Mock API | Mock data for tickets, sessions, legal docs in lib modules (no page-level mocks) | Done |
+| Lib | `support.ts` (SupportError.code, 402/403 parsing, mock paths), `legal.ts` (mock docs), `plans.ts` | Done |
 | Tests | Integration tests for community issue, checkout | Done |
 
 ### Planned (not yet started)
 
 | Phase | Scope | Mock Data? | Dependencies |
 |-------|-------|-----------|-------------|
-| Foundation | `PaidActionButton` — reusable 403 terms handling for all paid CTAs | No | None |
-| UI Refinement | Radio card type selector, persistent helper text, desktop layout polish | No | None |
-| Platform API | Wire real endpoints for tickets, sessions, credits | Yes (mock available) | Platform deploy |
-| EULA | Legal acceptance UI on Terms tab + mock legal docs | Yes | None |
-| Reply/Messaging | Ticket detail view with message thread | Yes (needs mock) | Platform contract needed |
 | Real API Wiring | Swap mocks for live platform endpoints | No | Platform deploy |
 
 ---
@@ -336,7 +343,8 @@ All platform-dependent features have mock data activated by `MOCK_LICENSE_TIER` 
 |--------|-------------|-----------|
 | `lib/license.ts` | `MOCK_LICENSE_TIER` env var | Full `LicenseInfo` with tier-appropriate credits, pools, actions, legal state |
 | `lib/plans.ts` | `MOCK_LICENSE_TIER` env var | 3 plans (Community, Priority $49, Enterprise $299) with full details |
-| `app/admin/support/page.tsx` | Always (TODO: remove) | 5 mock tickets for layout testing |
+| `lib/support.ts` | `MOCK_LICENSE_TIER` env var | 5 mock tickets, message threads (3 tickets), submit/reply/book responses |
+| `lib/legal.ts` | `MOCK_LICENSE_TIER` env var | Support terms + privacy policy (HTML content) |
 
 Supported mock tiers: `FREE`, `TRIAL`, `PRO`, `priority-support`, `enterprise-support`
 
@@ -365,3 +373,7 @@ Supported mock tiers: `FREE`, `TRIAL`, `PRO`, `priority-support`, `enterprise-su
 | Dual credit pools with plan-first deduction | Maximizes value of purchased credits (they never expire) |
 | FREE plan in catalog | Gives free users a comparison point on the Subscriptions page |
 | Manage page redirect | Consolidated into License & Terms tabs — no separate page needed |
+| `usePaidAction` hook not wrapper component | More flexible — pages have different button variants and layouts |
+| Route not drawer for ticket detail | Message threads can be long, deep-linkable, consistent with plan detail pattern |
+| Mock data in lib modules not pages | Consolidates all mock data, keeps page components clean |
+| Radio cards not dropdown for ticket type | Better visibility of options and credit info at a glance |
