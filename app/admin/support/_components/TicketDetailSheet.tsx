@@ -5,11 +5,10 @@ import {
   ExternalLink,
   Loader2,
   MessageSquare,
-  Send,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { FormTextArea } from "@/components/ui/forms/FormTextArea";
 import {
   Sheet,
   SheetContent,
@@ -183,10 +182,11 @@ export function TicketDetailSheet({
                 <div className="space-y-4">
                   {/* Original ticket body — visually distinct from replies */}
                   {ticket.body && (
-                    <div className="border-l-2 border-border pl-4 py-1 space-y-1.5">
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(ticket.createdAt)}
-                      </span>
+                    <div className="border-l-2 border-border px-4 py-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium">Issue</span>
+                        <span className="text-xs text-muted-foreground">{formatDate(ticket.createdAt)}</span>
+                      </div>
                       <p className="text-sm whitespace-pre-wrap">{ticket.body}</p>
                     </div>
                   )}
@@ -195,10 +195,10 @@ export function TicketDetailSheet({
                     <div
                       key={reply.id}
                       className={cn(
-                        "rounded-lg px-4 py-3 space-y-2",
+                        "px-4 py-3 space-y-2",
                         reply.source === "SUPPORT"
-                          ? "bg-muted/40"
-                          : "border"
+                          ? "ml-6 border-l-2 border-border"
+                          : "border rounded-lg"
                       )}
                     >
                       <div className="flex items-center justify-between">
@@ -234,30 +234,19 @@ export function TicketDetailSheet({
 
             {/* Reply form — fixed at bottom */}
             {isOpen && (
-              <div className="border-t px-5 py-4 space-y-3">
+              <div className="px-5 py-4 space-y-3">
                 {replyAction.showTermsNotice && <TermsNotice />}
-                <Textarea
+                <FormTextArea
                   placeholder="Write a reply..."
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   disabled={replyAction.isPending}
                   rows={2}
-                  maxLength={10000}
-                  className="resize-none"
+                  showSaveButton
+                  isSaving={replyAction.isPending}
+                  isSaveDisabled={!replyText.trim() || replyAction.isPending}
+                  onSave={handleReply}
                 />
-                <Button
-                  onClick={handleReply}
-                  disabled={!replyText.trim() || replyAction.isPending}
-                  size="sm"
-                  className="w-full sm:w-auto"
-                >
-                  {replyAction.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="mr-2 h-4 w-4" />
-                  )}
-                  Send Reply
-                </Button>
               </div>
             )}
 
