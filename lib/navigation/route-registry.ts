@@ -342,6 +342,48 @@ const routeEntries: RouteEntry[] = [
     isNavigable: true,
   },
 
+  // ==================== TERMS & CONDITIONS ====================
+  {
+    id: "admin.terms",
+    pathname: "/admin/terms",
+    matchMode: "prefix",
+    label: "Terms & Conditions",
+    parentId: undefined,
+    isNavigable: false,
+  },
+  {
+    id: "admin.terms.support-terms",
+    pathname: "/admin/terms/support-terms",
+    matchMode: "exact",
+    label: "Support Service Terms",
+    parentId: "admin.terms",
+    isNavigable: true,
+  },
+  {
+    id: "admin.terms.terms-of-service",
+    pathname: "/admin/terms/terms-of-service",
+    matchMode: "exact",
+    label: "Terms of Service",
+    parentId: "admin.terms",
+    isNavigable: true,
+  },
+  {
+    id: "admin.terms.privacy-policy",
+    pathname: "/admin/terms/privacy-policy",
+    matchMode: "exact",
+    label: "Privacy Policy",
+    parentId: "admin.terms",
+    isNavigable: true,
+  },
+  {
+    id: "admin.terms.acceptable-use",
+    pathname: "/admin/terms/acceptable-use",
+    matchMode: "exact",
+    label: "Acceptable Use Policy",
+    parentId: "admin.terms",
+    isNavigable: true,
+  },
+
   // ==================== SETTINGS ====================
   {
     id: "admin.settings",

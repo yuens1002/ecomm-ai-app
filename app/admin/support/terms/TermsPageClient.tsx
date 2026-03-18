@@ -1,12 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { marked } from "marked";
+import { useEffect, useState, useTransition } from "react";
 import {
   Check,
-  ChevronDown,
   ExternalLink,
   Eye,
   EyeOff,
@@ -16,30 +12,15 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { activateLicense, refreshLicense, acceptTerms } from "../actions";
-import { getLegalUrl } from "@/lib/legal-utils";
+import { activateLicense, refreshLicense } from "../actions";
 import type { LicenseInfo } from "@/lib/license-types";
 import type { Plan } from "@/lib/plan-types";
-import type { LegalDocument } from "@/lib/legal-utils";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -50,10 +31,6 @@ interface TermsPageClientProps {
   hasKey: boolean;
   rawKey: string;
   plans: Plan[];
-  supportTerms: LegalDocument | null;
-  termsOfService: LegalDocument | null;
-  privacyPolicy: LegalDocument | null;
-  acceptableUse: LegalDocument | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,26 +51,18 @@ export function TermsPageClient({
   hasKey: initialHasKey,
   rawKey: initialRawKey,
   plans,
-  supportTerms,
-  termsOfService,
-  privacyPolicy,
-  acceptableUse,
 }: TermsPageClientProps) {
-  const searchParams = useSearchParams();
-  const defaultTab = searchParams.get("tab") || "license";
-
   return (
     <div className="max-w-5xl space-y-8">
       <PageTitle
         title="License & Terms"
-        subtitle="License, privacy, and service terms"
+        subtitle="License key and data privacy settings"
       />
 
-      <Tabs defaultValue={defaultTab}>
+      <Tabs defaultValue="license">
         <TabsList>
           <TabsTrigger value="license">License</TabsTrigger>
           <TabsTrigger value="privacy">Data Privacy</TabsTrigger>
-          <TabsTrigger value="terms">Terms & Conditions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="license" className="space-y-6 pt-6">
@@ -107,16 +76,6 @@ export function TermsPageClient({
 
         <TabsContent value="privacy" className="pt-6">
           <DataPrivacyTab />
-        </TabsContent>
-
-        <TabsContent value="terms" className="space-y-6 pt-6">
-          <TermsTab
-            supportTerms={supportTerms}
-            license={initialLicense}
-            termsOfService={termsOfService}
-            privacyPolicy={privacyPolicy}
-            acceptableUse={acceptableUse}
-          />
         </TabsContent>
       </Tabs>
     </div>
@@ -465,238 +424,5 @@ function DataPrivacyTab() {
         </div>
       </div>
     </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Tab 3: Terms & Conditions
-// ---------------------------------------------------------------------------
-
-function TermsTab({
-  supportTerms,
-  license: initialLicense,
-  termsOfService,
-  privacyPolicy,
-  acceptableUse,
-}: {
-  supportTerms: LegalDocument | null;
-  license: LicenseInfo;
-  termsOfService: LegalDocument | null;
-  privacyPolicy: LegalDocument | null;
-  acceptableUse: LegalDocument | null;
-}) {
-  const { toast } = useToast();
-  const [license, setLicense] = useState(initialLicense);
-  const [isPending, startTransition] = useTransition();
-  const renderedSupportTerms = useMemo(() => {
-    if (!supportTerms) return null;
-
-    return marked.parse(supportTerms.content, {
-      gfm: true,
-      breaks: true,
-    }) as string;
-  }, [supportTerms]);
-
-  const acceptedVersion = license.legal?.acceptedVersions?.["support-terms"];
-  const needsAcceptance = license.legal?.pendingAcceptance?.includes("support-terms") ?? false;
-
-  function handleAccept() {
-    if (!supportTerms) return;
-    startTransition(async () => {
-      const result = await acceptTerms([
-        { slug: "support-terms", version: supportTerms.version },
-      ]);
-      if (result.success && result.license) {
-        setLicense(result.license);
-        toast({ title: "Terms accepted" });
-      } else {
-        toast({
-          title: "Failed to accept terms",
-          description: result.error,
-          variant: "destructive",
-        });
-      }
-    });
-  }
-
-  return (
-    <>
-      {/* Support Service Terms */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm">Support Service Terms</CardTitle>
-            {acceptedVersion && (
-              <Badge variant="secondary" className="gap-1">
-                <ShieldCheck className="h-3 w-3" />
-                Accepted v{acceptedVersion}
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {supportTerms ? (
-            <div className="space-y-4">
-              <div
-                className="prose max-w-none text-sm"
-                dangerouslySetInnerHTML={{ __html: renderedSupportTerms ?? "" }}
-              />
-              <Separator />
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  Last updated: {new Date(supportTerms.lastUpdated ?? supportTerms.effectiveDate).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
-                {needsAcceptance && (
-                  <Button
-                    onClick={handleAccept}
-                    disabled={isPending}
-                    size="sm"
-                  >
-                    {isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <ShieldCheck className="mr-2 h-4 w-4" />
-                    )}
-                    Accept Terms
-                  </Button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-md border border-dashed p-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Legal documents could not be loaded.
-              </p>
-              <a
-                href={getLegalUrl("support-terms")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm text-primary underline-offset-4 hover:underline mt-2"
-              >
-                View on platform <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Other legal documents — rendered inline */}
-      {[
-        { doc: termsOfService, label: "Terms of Service" },
-        { doc: privacyPolicy, label: "Privacy Policy" },
-        { doc: acceptableUse, label: "Acceptable Use Policy" },
-      ].map(({ doc, label }) => (
-        <LegalDocCollapsible
-          key={label}
-          doc={doc}
-          label={label}
-          license={license}
-          onAccepted={setLicense}
-        />
-      ))}
-    </>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Collapsible legal doc card (for ToS, Privacy Policy, AUP)
-// ---------------------------------------------------------------------------
-
-function LegalDocCollapsible({
-  doc,
-  label,
-  license,
-  onAccepted,
-}: {
-  doc: LegalDocument | null;
-  label: string;
-  license: LicenseInfo;
-  onAccepted: (license: LicenseInfo) => void;
-}) {
-  const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
-
-  const rendered = useMemo(() => {
-    if (!doc) return null;
-    return marked.parse(doc.content, { gfm: true, breaks: true }) as string;
-  }, [doc]);
-
-  const needsAcceptance =
-    !!doc && (license.legal?.pendingAcceptance?.includes(doc.slug) ?? false);
-
-  function handleAccept() {
-    if (!doc) return;
-    startTransition(async () => {
-      const result = await acceptTerms([{ slug: doc.slug, version: doc.version }]);
-      if (result.success && result.license) {
-        onAccepted(result.license);
-        toast({ title: "Terms accepted" });
-      } else {
-        toast({ title: "Failed to accept terms", description: result.error, variant: "destructive" });
-      }
-    });
-  }
-
-  return (
-    <Card>
-      <Collapsible>
-        <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer select-none [&[data-state=open]>div>svg]:rotate-180">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-sm">{label}</CardTitle>
-                {needsAcceptance && (
-                  <Badge variant="destructive" className="text-xs">
-                    Review required
-                  </Badge>
-                )}
-              </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200" />
-            </div>
-            {doc && (
-              <CardDescription className="text-xs">
-                v{doc.version} · Effective{" "}
-                {new Date(doc.effectiveDate).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </CardDescription>
-            )}
-          </CardHeader>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <CardContent className="space-y-4">
-            {rendered ? (
-              <div
-                className="prose max-w-none text-sm"
-                dangerouslySetInnerHTML={{ __html: rendered }}
-              />
-            ) : (
-              <p className="text-sm text-muted-foreground">Document unavailable.</p>
-            )}
-            {needsAcceptance && (
-              <>
-                <Separator />
-                <div className="flex justify-end">
-                  <Button onClick={handleAccept} disabled={isPending} size="sm">
-                    {isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <ShieldCheck className="mr-2 h-4 w-4" />
-                    )}
-                    Accept Terms
-                  </Button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
-    </Card>
   );
 }

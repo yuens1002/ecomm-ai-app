@@ -251,6 +251,7 @@ export async function acceptTerms(
   invalidateCache();
   const license = await validateLicense();
   revalidatePath("/admin/support");
+  revalidatePath("/admin/terms", "layout");
   return { success: true, license };
 }
 

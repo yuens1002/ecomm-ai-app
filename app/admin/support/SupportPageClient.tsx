@@ -89,12 +89,16 @@ export function SupportPageClient({
     }
   }
 
+  const hasPendingTerms = (license.legal?.pendingAcceptance?.length ?? 0) > 0;
+
   return (
     <div className="max-w-5xl space-y-8">
       <PageTitle
         title="Submit Ticket"
         subtitle="Get support from our team and the community"
       />
+
+      {hasPendingTerms && <TermsNotice />}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-8">

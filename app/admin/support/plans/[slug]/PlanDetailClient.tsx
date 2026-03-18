@@ -257,7 +257,7 @@ export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
               ))}
             </ul>
             <Link
-              href="/admin/support/terms?tab=terms"
+              href="/admin/terms/support-terms"
               className="text-sm text-primary underline-offset-4 hover:underline"
             >
               View Support Service Terms &rarr;

@@ -258,7 +258,7 @@ function PlanCard({
   const router = useRouter();
   const { plan, status } = config;
   const isFree = plan.price === 0;
-  const detailHref = isFree ? "/admin/support/terms?tab=terms" : `/admin/support/plans/${plan.slug}`;
+  const detailHref = isFree ? "/admin/terms/support-terms" : `/admin/support/plans/${plan.slug}`;
 
   function handleCardClick(e: React.MouseEvent) {
     // Don't navigate if clicking interactive elements
@@ -378,7 +378,7 @@ function PlanCard({
           {/* Desktop: inline buttons — always bottom-aligned */}
           <div className="hidden lg:flex items-center gap-2 mt-auto pt-5">
             <Link
-              href={isPaidActive ? detailHref : "/admin/support/terms?tab=terms"}
+              href={isPaidActive ? detailHref : "/admin/terms/support-terms"}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               {isPaidActive ? "View Details" : "View Terms"}
@@ -542,7 +542,7 @@ function PlanCard({
 
         <div className="flex items-center gap-2 mt-auto pt-0">
           <Link
-            href={isFree ? "/admin/support/terms?tab=terms" : detailHref}
+            href={isFree ? "/admin/terms/support-terms" : detailHref}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             {isFree ? "View Terms" : "View Details"}

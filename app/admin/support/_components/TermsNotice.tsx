@@ -18,7 +18,7 @@ export function TermsNotice() {
         <p className="text-sm text-amber-700 dark:text-amber-300">
           Our terms have been updated. Please{" "}
           <Link
-            href="/admin/support/terms?tab=terms"
+            href="/admin/terms/support-terms"
             className="font-medium underline underline-offset-4"
           >
             review and accept

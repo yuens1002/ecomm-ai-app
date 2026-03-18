@@ -492,10 +492,14 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
           },
         ],
         legal: {
-          pendingAcceptance: [],
+          pendingAcceptance: ["support-terms"],
           acceptedVersions: {
             "terms-of-service": "2026-03-15",
             "support-terms": "2026-03-15",
+          },
+          acceptedAt: {
+            "terms-of-service": "2026-03-01T00:00:00Z",
+            "support-terms": "2026-03-01T00:00:00Z",
           },
         },
       };
@@ -567,6 +571,10 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
             "terms-of-service": "2026-03-15",
             "support-terms": "2026-03-15",
           },
+          acceptedAt: {
+            "terms-of-service": "2026-03-01T00:00:00Z",
+            "support-terms": "2026-03-01T00:00:00Z",
+          },
         },
       };
     case "FREE":
@@ -618,8 +626,9 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
           },
         ],
         legal: {
-          pendingAcceptance: ["support-terms"],
+          pendingAcceptance: [],
           acceptedVersions: {},
+          acceptedAt: {},
         },
       };
     default:

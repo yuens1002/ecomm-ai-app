@@ -181,6 +181,14 @@
       "acs_doc": "docs/plans/contract-alignment-ACs.md",
       "notes": "59/59 ACs verified. All 3 mock tiers (PRO, FREE, no-key) screenshot-verified. 33 UI + 22 FN + 4 REG. 2 code fixes: plan detail sale pricing, community issue test. 6 ACs updated to match finalized design (active card usage, separate Add-Ons page, 4-item nav, two-layer legal). 2 iterations."
     },
+    "feature/phase3g-legal": {
+      "status": "verified",
+      "acs_passed": 19,
+      "acs_total": 19,
+      "tasks": [],
+      "acs_doc": "docs/plans/phase3g-legal-terms-page-ACs.md",
+      "notes": "19/19 ACs verified. 9 UI via Chrome screenshots + code review, 7 FN via code review, 3 REG via precheck (0 errors) + test:ci (93 suites, 1089 tests). 1 fix: removed unused Link import from TermsPageClient.tsx."
+    },
     "feat/phase2a-llm-agnostic-ai": {
       "status": "verified",
       "acs_passed": 22,

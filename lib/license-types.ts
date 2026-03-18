@@ -111,6 +111,8 @@ export interface LegalState {
   pendingAcceptance: string[];
   /** Map of document slug → accepted version string. */
   acceptedVersions: Record<string, string>;
+  /** Map of document slug → ISO timestamp of acceptance. */
+  acceptedAt?: Record<string, string>;
 }
 
 export interface UsageInfo {

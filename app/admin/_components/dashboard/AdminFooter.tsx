@@ -39,10 +39,10 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
             {/* Center: Links */}
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <Link
-                href="#"
+                href="/admin/terms"
                 className="hover:text-foreground transition-colors"
               >
-                Disclaimer
+                Terms &amp; Conditions
               </Link>
               <span className="text-border">•</span>
               <Link
@@ -86,10 +86,10 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
             {/* Row 2: Links + Social */}
             <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground flex-wrap">
               <Link
-                href="#"
+                href="/admin/terms"
                 className="hover:text-foreground transition-colors"
               >
-                Disclaimer
+                Terms &amp; Conditions
               </Link>
               <span className="text-border">•</span>
               <Link

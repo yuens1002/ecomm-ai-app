@@ -27,6 +27,7 @@ export interface LegalDocument {
   format: "markdown";
   effectiveDate: string;
   lastUpdated: string;
+  materialChange?: boolean;
 }
 
 // ---------------------------------------------------------------------------
