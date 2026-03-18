@@ -55,7 +55,7 @@ export function TermsPageClient({
   return (
     <div className="max-w-5xl space-y-8">
       <PageTitle
-        title="License & Terms"
+        title="License & Privacy"
         subtitle="License key and data privacy settings"
       />
 

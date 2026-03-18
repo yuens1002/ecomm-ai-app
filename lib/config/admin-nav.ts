@@ -102,7 +102,7 @@ export const adminNavConfig: NavItem[] = [
       { label: "Submit Ticket", href: "/admin/support" },
       { label: "Plans", href: "/admin/support/plans" },
       { label: "Add-Ons", href: "/admin/support/add-ons" },
-      { label: "License & Terms", href: "/admin/support/terms" },
+      { label: "License & Privacy", href: "/admin/support/terms" },
     ],
   },
 ];
@@ -360,7 +360,7 @@ export const mobileNavConfig: NavItem[] = [
       { label: "Submit Ticket", href: "/admin/support" },
       { label: "Plans", href: "/admin/support/plans" },
       { label: "Add-Ons", href: "/admin/support/add-ons" },
-      { label: "License & Terms", href: "/admin/support/terms" },
+      { label: "License & Privacy", href: "/admin/support/terms" },
     ],
   },
 ];

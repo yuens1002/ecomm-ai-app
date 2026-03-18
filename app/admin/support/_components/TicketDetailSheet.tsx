@@ -10,7 +10,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -23,6 +22,7 @@ import { usePaidAction } from "@/app/admin/support/_hooks/usePaidAction";
 import { TermsNotice } from "@/app/admin/support/_components/TermsNotice";
 import { fetchTicketDetail, submitTicketReply } from "@/app/admin/support/actions";
 import type { SupportTicket, TicketReply, ReplyResponse } from "@/lib/support-types";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -180,36 +180,37 @@ export function TicketDetailSheet({
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : replies.length > 0 ? (
-                <div className="space-y-3">
-                  {/* Original ticket body */}
+                <div className="space-y-4">
+                  {/* Original ticket body — visually distinct from replies */}
                   {ticket.body && (
-                    <>
-                      <div className="rounded-lg border p-3">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs font-medium">You</span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(ticket.createdAt)}
-                          </span>
-                        </div>
-                        <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                          {ticket.body}
-                        </p>
+                    <div className="rounded-lg bg-muted/50 px-4 py-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Original Issue
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(ticket.createdAt)}
+                        </span>
                       </div>
-                      <Separator />
-                    </>
+                      <p className="text-sm whitespace-pre-wrap">{ticket.body}</p>
+                    </div>
                   )}
 
                   {replies.map((reply) => (
                     <div
                       key={reply.id}
-                      className={
+                      className={cn(
+                        "rounded-lg px-4 py-3 space-y-2",
                         reply.source === "SUPPORT"
-                          ? "rounded-lg border bg-muted/30 p-3"
-                          : "rounded-lg border p-3"
-                      }
+                          ? "bg-muted/40"
+                          : "border"
+                      )}
                     >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-medium">
+                      <div className="flex items-center justify-between">
+                        <span className={cn(
+                          "text-xs font-medium",
+                          reply.source === "SUPPORT" ? "text-muted-foreground" : "text-foreground"
+                        )}>
                           {reply.source === "SUPPORT" ? "Support Team" : "You"}
                         </span>
                         <span className="text-xs text-muted-foreground">
