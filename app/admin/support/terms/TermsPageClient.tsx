@@ -316,22 +316,6 @@ function DataPrivacyTab() {
   const [enabled, setEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
-  const telemetryPayloadPreview = `{
-  "anonymousInstanceId": "random, not linked to you",
-  "app": {
-    "version": "app version",
-    "edition": "app edition"
-  },
-  "aggregateCounts": {
-    "products": "count",
-    "users": "count",
-    "orders": "count"
-  },
-  "serverEnvironment": {
-    "nodeVersion": "Node.js version",
-    "platform": "platform"
-  }
-}`;
 
   useEffect(() => {
     const fetchTelemetrySettings = async () => {
@@ -396,9 +380,12 @@ function DataPrivacyTab() {
 
         <div className="rounded-md bg-muted/50 p-4 text-sm text-muted-foreground">
           <p className="mb-2 font-medium text-foreground">What we collect:</p>
-          <pre className="overflow-x-auto rounded-md border bg-background/70 p-3 font-mono text-xs leading-relaxed text-foreground whitespace-pre-wrap">
-            {telemetryPayloadPreview}
-          </pre>
+          <ul className="list-disc list-inside space-y-1">
+            <li>Anonymous instance ID (random, not linked to you)</li>
+            <li>App version and edition</li>
+            <li>Aggregate counts (products, users, orders)</li>
+            <li>Server environment (Node.js version, platform)</li>
+          </ul>
           <p className="mt-3">
             We <strong>never</strong> collect personal information, customer
             data, or anything that could identify you or your customers.
