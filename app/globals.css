@@ -176,22 +176,22 @@ We define CSS variables for each theme.
 
     /* Headings */
     & h1 {
-      @apply text-4xl font-bold tracking-tight mb-6 mt-8 first:mt-0;
+      @apply text-2xl font-bold tracking-tight mb-6 mt-8 first:mt-0;
     }
     & h2 {
-      @apply text-3xl font-semibold tracking-tight mb-4 mt-8 first:mt-0;
+      @apply text-xl font-semibold tracking-tight mb-4 mt-8 first:mt-0;
     }
     & h3 {
-      @apply text-2xl font-semibold tracking-tight mb-3 mt-6;
+      @apply text-base font-semibold tracking-tight mb-3 mt-6;
     }
     & h4 {
-      @apply text-xl font-semibold mb-2 mt-4;
+      @apply text-sm font-semibold mb-2 mt-4;
     }
     & h5 {
-      @apply text-lg font-semibold mb-2 mt-4;
+      @apply text-sm font-medium mb-2 mt-4;
     }
     & h6 {
-      @apply text-base font-semibold mb-2 mt-4;
+      @apply text-sm font-medium mb-2 mt-4;
     }
 
     /* Paragraphs */
@@ -231,6 +231,25 @@ We define CSS variables for each theme.
     }
     & em {
       @apply italic;
+    }
+
+    /* Tables */
+    & table {
+      @apply w-full border-collapse mb-4 text-sm;
+    }
+    & th {
+      @apply border-b border-border px-3 py-2 text-left font-semibold text-foreground;
+    }
+    & td {
+      @apply border-b border-border px-3 py-2 text-muted-foreground;
+    }
+
+    /* Code blocks */
+    & pre {
+      @apply mb-4 overflow-x-auto rounded-md border bg-muted/50 p-3 font-mono text-xs leading-relaxed;
+    }
+    & pre code {
+      @apply bg-transparent p-0;
     }
 
     /* Horizontal rule */

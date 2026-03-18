@@ -20,26 +20,15 @@ const PLATFORM_URL = (
   process.env.PLATFORM_URL || "https://manage.artisanroast.app"
 ).replace(/\/+$/, "");
 
-// ---------------------------------------------------------------------------
-// Fetch legal document
-// ---------------------------------------------------------------------------
-
-/**
- * Fetch a legal document from the platform.
- * No auth required — legal documents are public.
- * Returns null if platform is unreachable.
- */
-export async function fetchLegalDoc(
-  slug: string
+async function fetchLiveLegalDoc(
+  slug: string,
+  timeoutMs: number,
+  revalidateSeconds: number
 ): Promise<LegalDocument | null> {
-  if (process.env.MOCK_LICENSE_TIER) {
-    return MOCK_LEGAL_DOCS[slug] ?? null;
-  }
-
   try {
     const response = await fetch(`${PLATFORM_URL}/api/legal/${slug}`, {
-      signal: AbortSignal.timeout(10_000),
-      next: { revalidate: 86400 }, // 24h cache
+      signal: AbortSignal.timeout(timeoutMs),
+      next: { revalidate: revalidateSeconds },
     });
 
     if (!response.ok) {
@@ -52,6 +41,73 @@ export async function fetchLegalDoc(
     console.error("Legal doc fetch error:", error);
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Fetch legal document(s)
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch a legal document from the platform.
+ * No auth required — legal documents are public.
+ * Returns null if platform is unreachable.
+ */
+export async function fetchLegalDoc(
+  slug: string
+): Promise<LegalDocument | null> {
+  const mockDoc = MOCK_LEGAL_DOCS[slug] ?? null;
+
+  if (process.env.MOCK_LICENSE_TIER) {
+    // In local dev, prefer live platform legal payload for realistic Terms rendering.
+    // Keep tests deterministic and keep mock fallback for offline work.
+    if (process.env.NODE_ENV === "test") {
+      return mockDoc;
+    }
+
+    const liveDoc = await fetchLiveLegalDoc(slug, 4_000, 3600);
+    return liveDoc ?? mockDoc;
+  }
+
+  return fetchLiveLegalDoc(slug, 10_000, 86400);
+}
+
+const ALL_LEGAL_SLUGS = [
+  "support-terms",
+  "terms-of-service",
+  "privacy-policy",
+  "acceptable-use",
+] as const;
+
+/**
+ * Fetch all active legal documents from the platform in a single request.
+ * Falls back to parallel individual fetches if the bulk endpoint is unavailable.
+ */
+export async function fetchAllLegalDocs(): Promise<LegalDocument[]> {
+  if (process.env.NODE_ENV === "test") {
+    return Object.values(MOCK_LEGAL_DOCS);
+  }
+
+  const timeoutMs = process.env.MOCK_LICENSE_TIER ? 4_000 : 10_000;
+  const revalidate = process.env.MOCK_LICENSE_TIER ? 3600 : 86400;
+
+  try {
+    const response = await fetch(`${PLATFORM_URL}/api/legal`, {
+      signal: AbortSignal.timeout(timeoutMs),
+      next: { revalidate },
+    });
+
+    if (response.ok) {
+      return (await response.json()) as LegalDocument[];
+    }
+  } catch {
+    // bulk endpoint unavailable — fall through to parallel individual fetches
+  }
+
+  // Fallback: parallel individual slug fetches
+  const results = await Promise.all(
+    ALL_LEGAL_SLUGS.map((slug) => fetchLegalDoc(slug))
+  );
+  return results.filter((d): d is LegalDocument => d !== null);
 }
 
 // ---------------------------------------------------------------------------
