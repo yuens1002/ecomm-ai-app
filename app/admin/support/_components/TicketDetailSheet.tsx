@@ -5,10 +5,15 @@ import {
   ExternalLink,
   Loader2,
   MessageSquare,
+  SendHorizonal,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { FormTextArea } from "@/components/ui/forms/FormTextArea";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupTextarea,
+} from "@/components/ui/forms/InputGroup";
 import {
   Sheet,
   SheetContent,
@@ -197,7 +202,7 @@ export function TicketDetailSheet({
                       className={cn(
                         "px-4 py-3 space-y-2",
                         reply.source === "SUPPORT"
-                          ? "ml-6 border-l-2 border-border"
+                          ? "ml-6 bg-muted/40 rounded-lg"
                           : "border rounded-lg"
                       )}
                     >
@@ -236,17 +241,31 @@ export function TicketDetailSheet({
             {isOpen && (
               <div className="px-5 py-4 space-y-3">
                 {replyAction.showTermsNotice && <TermsNotice />}
-                <FormTextArea
-                  placeholder="Write a reply..."
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  disabled={replyAction.isPending}
-                  rows={2}
-                  showSaveButton
-                  isSaving={replyAction.isPending}
-                  isSaveDisabled={!replyText.trim() || replyAction.isPending}
-                  onSave={handleReply}
-                />
+                <InputGroup>
+                  <InputGroupTextarea
+                    placeholder="Write a reply..."
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    disabled={replyAction.isPending}
+                    rows={2}
+                  />
+                  <InputGroupAddon align="block-end" className="items-end">
+                    <InputGroupButton
+                      size="sm"
+                      variant="default"
+                      onClick={handleReply}
+                      disabled={!replyText.trim() || replyAction.isPending}
+                      className="ml-auto"
+                    >
+                      {replyAction.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <SendHorizonal className="h-4 w-4" />
+                      )}
+                      <span className="ml-2">{replyAction.isPending ? "Sending" : "Send"}</span>
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
               </div>
             )}
 
