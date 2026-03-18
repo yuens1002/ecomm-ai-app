@@ -38,11 +38,18 @@ interface TicketPageConfig {
   ticketPacks: AlaCartePackage[];
   showUpsell: boolean;
   hasKey: boolean;
+  slaResponseTime?: string;
+}
+
+function formatSlaLabel(responseTime: string): string {
+  // "48 hours" → "48-hr", "24 hours" → "24-hr", etc.
+  return responseTime.replace(/^(\d+)\s+hours?$/i, "$1-hr");
 }
 
 function computeTicketPageConfig(
   license: LicenseInfo,
-  hasKey: boolean
+  hasKey: boolean,
+  slaResponseTime?: string,
 ): TicketPageConfig {
   const ticketCredits = license.support.pools.find((p) => p.slug === "tickets") ?? { limit: 0, purchased: 0, used: 0, remaining: 0 };
   const hasCredits = ticketCredits.remaining > 0;
@@ -62,6 +69,7 @@ function computeTicketPageConfig(
     ticketPacks: !hasCredits || !hasKey ? ticketPacks : [],
     showUpsell: !hasKey,
     hasKey,
+    slaResponseTime,
   };
 }
 
@@ -73,14 +81,16 @@ interface SupportPageClientProps {
   license: LicenseInfo;
   tickets: SupportTicket[];
   hasKey: boolean;
+  slaResponseTime?: string;
 }
 
 export function SupportPageClient({
   license,
   tickets: initialTickets,
   hasKey,
+  slaResponseTime,
 }: SupportPageClientProps) {
-  const config = computeTicketPageConfig(license, hasKey);
+  const config = computeTicketPageConfig(license, hasKey, slaResponseTime);
   const [tickets, setTickets] = useState(initialTickets);
 
   async function refreshTickets() {
@@ -270,7 +280,9 @@ function TicketFormCard({
                     Priority
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    {config.priorityDisabled ? "No credits remaining" : "48-hr SLA · Uses 1 credit"}
+                    {config.priorityDisabled
+                      ? "No credits remaining"
+                      : `${config.slaResponseTime ? `${formatSlaLabel(config.slaResponseTime)} response time` : "Priority response"} · Uses 1 credit`}
                   </p>
                 </div>
               </div>
