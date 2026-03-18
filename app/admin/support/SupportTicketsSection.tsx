@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { RefreshCw } from "lucide-react";
+import { ExternalLink, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -118,29 +118,55 @@ export function SupportTicketsList({ tickets, onTicketsChange }: SupportTicketsL
         </div>
       ) : (
         <div className="space-y-3 max-h-128 overflow-y-auto">
-          {visible.map((ticket) => (
-            <button
-              key={ticket.id}
-              type="button"
-              onClick={() => { setSelectedTicket(ticket); setSheetOpen(true); }}
-              className="block w-full rounded-lg border p-3 space-y-1.5 text-left transition-shadow hover:shadow-md cursor-pointer"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={ticket.status} />
-                  {ticket.type === "priority" && (
-                    <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
-                      Priority
-                    </Badge>
+          {visible.map((ticket) => {
+            const isGithubTicket = ticket.type === "normal" && !!ticket.githubUrl;
+            const cardContent = (
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={ticket.status} />
+                    {ticket.type === "priority" && (
+                      <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+                        Priority
+                      </Badge>
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {relativeTime(ticket.createdAt)}
+                    </span>
+                  </div>
+                  {isGithubTicket && (
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   )}
-                  <span className="text-xs text-muted-foreground">
-                    {relativeTime(ticket.createdAt)}
-                  </span>
                 </div>
-              </div>
-              <p className="text-sm font-medium truncate">{ticket.title}</p>
-            </button>
-          ))}
+                <p className="text-sm font-medium truncate">{ticket.title}</p>
+              </>
+            );
+
+            if (isGithubTicket) {
+              return (
+                <a
+                  key={ticket.id}
+                  href={ticket.githubUrl!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full rounded-lg border p-3 space-y-1.5 text-left transition-shadow hover:shadow-md cursor-pointer"
+                >
+                  {cardContent}
+                </a>
+              );
+            }
+
+            return (
+              <button
+                key={ticket.id}
+                type="button"
+                onClick={() => { setSelectedTicket(ticket); setSheetOpen(true); }}
+                className="block w-full rounded-lg border p-3 space-y-1.5 text-left transition-shadow hover:shadow-md cursor-pointer"
+              >
+                {cardContent}
+              </button>
+            );
+          })}
 
           {/* Load more */}
           {hasMore && (
