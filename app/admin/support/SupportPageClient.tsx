@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   ExternalLink,
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { UsageBar } from "./UsageBar";
@@ -127,6 +128,7 @@ function TicketFormCard({
   onSubmitted: () => Promise<void>;
 }) {
   const { toast } = useToast();
+  const ticketTypeId = useId();
   const [communityPending, startCommunityTransition] = useTransition();
   const [title, setTitle] = useState("");
   const [steps, setSteps] = useState("");
@@ -244,46 +246,51 @@ function TicketFormCard({
           </div>
         )}
 
-        {/* Type selector — radio cards */}
+        {/* Support level selector — radio cards */}
         {config.showTypeSelector && (
           <div>
-            <Label className="text-sm mb-1.5 block">Ticket Type</Label>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                disabled={config.priorityDisabled}
-                onClick={() => setTicketType("priority")}
-                className={cn(
-                  "flex-1 rounded-lg border p-3 text-left transition-colors",
-                  ticketType === "priority"
-                    ? "border-primary ring-1 ring-primary"
-                    : "hover:bg-muted/50",
-                  config.priorityDisabled && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                <p className="text-sm font-medium">Priority</p>
-                <p className="text-xs text-muted-foreground">
-                  {config.priorityDisabled
-                    ? "No credits remaining"
-                    : "48-hr SLA · Uses 1 credit"}
-                </p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTicketType("normal")}
-                className={cn(
-                  "flex-1 rounded-lg border p-3 text-left transition-colors",
-                  ticketType === "normal"
-                    ? "border-primary ring-1 ring-primary"
-                    : "hover:bg-muted/50"
-                )}
-              >
-                <p className="text-sm font-medium">Normal</p>
-                <p className="text-xs text-muted-foreground">
-                  Community-triaged · No credits needed
-                </p>
-              </button>
-            </div>
+            <Label className="text-sm mb-1.5 block">Support Level</Label>
+            <RadioGroup
+              value={ticketType}
+              onValueChange={(v) => setTicketType(v as "normal" | "priority")}
+              className="flex flex-col sm:flex-row gap-2"
+            >
+              <div className={cn(
+                "border-input has-data-[state=checked]:border-primary/50 relative flex flex-1 items-center gap-3 rounded-md border p-4 shadow-xs",
+                config.priorityDisabled && "opacity-50 cursor-not-allowed"
+              )}>
+                <RadioGroupItem
+                  value="priority"
+                  id={`${ticketTypeId}-priority`}
+                  disabled={config.priorityDisabled}
+                  className="size-4 after:absolute after:inset-0 [&_svg]:size-2.5"
+                />
+                <div className="grid gap-0.5">
+                  <Label htmlFor={`${ticketTypeId}-priority`} className="text-sm font-medium leading-none">
+                    Priority
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {config.priorityDisabled ? "No credits remaining" : "48-hr SLA · Uses 1 credit"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-input has-data-[state=checked]:border-primary/50 relative flex flex-1 items-center gap-3 rounded-md border p-4 shadow-xs">
+                <RadioGroupItem
+                  value="normal"
+                  id={`${ticketTypeId}-normal`}
+                  className="size-4 after:absolute after:inset-0 [&_svg]:size-2.5"
+                />
+                <div className="grid gap-0.5">
+                  <Label htmlFor={`${ticketTypeId}-normal`} className="text-sm font-medium leading-none">
+                    Normal
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Community-triaged · No credits needed
+                  </p>
+                </div>
+              </div>
+            </RadioGroup>
           </div>
         )}
 
