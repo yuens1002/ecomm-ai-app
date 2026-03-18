@@ -11,6 +11,7 @@ import {
   RefreshCw,
   ShieldCheck,
 } from "lucide-react";
+import Link from "next/link";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -392,21 +393,21 @@ function DataPrivacyTab() {
           </p>
         </div>
 
-        <div className="mt-auto pt-5">
-          <div className="flex items-center space-x-3">
+        <div className="mt-auto pt-5 flex items-center justify-between">
+          <Link
+            href="/admin/terms/privacy-policy"
+            className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            View Data Privacy
+          </Link>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Telemetry</span>
             <Switch
               checked={enabled}
               onCheckedChange={handleTelemetryToggle}
               disabled={isLoading || isPending}
               aria-label="Toggle telemetry"
             />
-            <p className="text-sm text-muted-foreground">
-              {isLoading
-                ? "Loading telemetry setting..."
-                : enabled
-                  ? "Telemetry is enabled"
-                  : "Telemetry is disabled"}
-            </p>
           </div>
         </div>
       </div>

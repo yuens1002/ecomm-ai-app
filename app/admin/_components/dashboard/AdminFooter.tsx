@@ -18,7 +18,6 @@ interface AdminFooterProps {
   socialLinks: SocialLink[];
 }
 
-const GITHUB_ISSUES_URL = "https://github.com/yuens1002/ecomm-ai-app/issues";
 
 export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -60,9 +59,7 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
               </button>
               <span className="text-border">•</span>
               <Link
-                href={GITHUB_ISSUES_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/admin/support"
                 className="hover:text-foreground transition-colors"
               >
                 Support
@@ -107,9 +104,7 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
               </button>
               <span className="text-border">•</span>
               <Link
-                href={GITHUB_ISSUES_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/admin/support"
                 className="hover:text-foreground transition-colors"
               >
                 Support
