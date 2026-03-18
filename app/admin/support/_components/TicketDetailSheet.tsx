@@ -137,7 +137,7 @@ export function TicketDetailSheet({
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="right"
-        className="flex flex-col w-full sm:max-w-md p-0 gap-0"
+        className="flex flex-col w-full sm:max-w-md p-0 gap-0 top-16 h-[calc(100vh-4rem)]"
       >
         {ticket && (
           <>
@@ -183,15 +183,10 @@ export function TicketDetailSheet({
                 <div className="space-y-4">
                   {/* Original ticket body — visually distinct from replies */}
                   {ticket.body && (
-                    <div className="rounded-lg bg-muted/50 px-4 py-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                          Original Issue
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(ticket.createdAt)}
-                        </span>
-                      </div>
+                    <div className="border-l-2 border-border pl-4 py-1 space-y-1.5">
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(ticket.createdAt)}
+                      </span>
                       <p className="text-sm whitespace-pre-wrap">{ticket.body}</p>
                     </div>
                   )}
