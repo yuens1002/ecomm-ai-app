@@ -70,6 +70,7 @@ describe("POST /api/admin/platform/activate", () => {
       makeRequest({
         licenseKey: "ar_lic_test_abc123",
         email: "admin@store.com",
+        instanceId: "inst_abc123",
       })
     );
 

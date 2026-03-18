@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 const activateSchema = z.object({
   licenseKey: z.string().min(1),
   email: z.string().email(),
-  instanceId: z.string().min(1).optional(),
+  instanceId: z.string().min(1),
 });
 
 /**
@@ -32,15 +32,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify instanceId if provided (platform should send it back)
-    if (parsed.data.instanceId) {
-      const localInstanceId = await getInstanceId(prisma);
-      if (localInstanceId && parsed.data.instanceId !== localInstanceId) {
-        return NextResponse.json(
-          { error: "Instance ID mismatch" },
-          { status: 403 }
-        );
-      }
+    // Verify instanceId against local store ID
+    const localInstanceId = await getInstanceId(prisma);
+    if (localInstanceId && parsed.data.instanceId !== localInstanceId) {
+      return NextResponse.json(
+        { error: "Instance ID mismatch" },
+        { status: 403 }
+      );
     }
 
     await setLicenseKey(parsed.data.licenseKey);

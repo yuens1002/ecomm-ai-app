@@ -63,10 +63,14 @@ describe("fetchPlans", () => {
         slug: "pro",
         name: "Pro",
         description: "Professional plan",
-        price: { amount: 29, currency: "USD", interval: "month" },
+        price: 2900,
+        currency: "USD",
+        interval: "month" as const,
         features: ["ga", "ai-product-ops"],
-        benefits: ["Google Analytics integration"],
-        details: {},
+        highlight: false,
+        details: {
+          benefits: ["Google Analytics integration"],
+        },
       },
     ];
 

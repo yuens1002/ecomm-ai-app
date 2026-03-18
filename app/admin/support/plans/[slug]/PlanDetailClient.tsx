@@ -8,12 +8,6 @@ import {
   X,
 } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useBreadcrumb } from "@/app/admin/_components/dashboard/BreadcrumbContext";
 import type { Plan } from "@/lib/plan-types";
@@ -89,46 +83,43 @@ export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
       {/* Two-column: Pricing+Benefits left, SLA+Quotas right */}
       <div className={hasSlaOrQuotas ? "grid gap-8 lg:grid-cols-[1fr_340px]" : ""}>
         {/* Left: Pricing + Benefits */}
-        <Card>
-          <CardContent className="pt-6 space-y-5">
-            <div>
-              {hasSale ? (
-                <>
-                  <span className="text-3xl font-bold">{salePriceDisplay}</span>
-                  <span className="text-muted-foreground">{intervalLabel}</span>
-                  <span className="ml-2 text-lg text-muted-foreground line-through">{priceDisplay}</span>
-                </>
-              ) : (
-                <>
-                  <span className="text-3xl font-bold">{priceDisplay}</span>
-                  <span className="text-muted-foreground">{intervalLabel}</span>
-                </>
-              )}
-              {saleLabel && (
-                <p className="text-xs text-muted-foreground mt-1">{saleLabel}</p>
-              )}
-            </div>
-
-            {details.benefits && details.benefits.length > 0 && (
+        <div className="rounded-lg border p-6 space-y-5">
+          <div>
+            {hasSale ? (
               <>
-                <Separator />
-                <ul className="space-y-2 text-sm">
-                  {details.benefits.map((benefit) => (
-                    <li key={benefit} className="flex items-start gap-2">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
-                      {benefit}
-                    </li>
-                  ))}
-                </ul>
+                <span className="text-3xl font-bold">{salePriceDisplay}</span>
+                <span className="text-muted-foreground">{intervalLabel}</span>
+                <span className="ml-2 text-lg text-muted-foreground line-through">{priceDisplay}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-3xl font-bold">{priceDisplay}</span>
+                <span className="text-muted-foreground">{intervalLabel}</span>
               </>
             )}
-          </CardContent>
-        </Card>
+            {saleLabel && (
+              <p className="text-xs text-muted-foreground mt-1">{saleLabel}</p>
+            )}
+          </div>
+
+          {details.benefits && details.benefits.length > 0 && (
+            <>
+              <Separator />
+              <ul className="space-y-2 text-sm">
+                {details.benefits.map((benefit) => (
+                  <li key={benefit} className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                    {benefit}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
 
         {/* Right: SLA + Quotas */}
         {hasSlaOrQuotas && (
-          <Card>
-            <CardContent className="pt-6 space-y-5">
+          <div className="rounded-lg border p-6 space-y-5">
               {details.sla && (
                 <div className="space-y-3">
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -197,8 +188,7 @@ export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+          </div>
         )}
       </div>
 
@@ -207,63 +197,51 @@ export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
         (details.excludes && details.excludes.length > 0)) && (
         <div className="grid gap-6 md:grid-cols-2">
           {details.scope && details.scope.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">What&apos;s Covered</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  {details.scope.map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <div className="rounded-lg border p-6">
+              <p className="pb-3 text-sm font-semibold">What&apos;s Covered</p>
+              <ul className="space-y-2 text-sm">
+                {details.scope.map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
           {details.excludes && details.excludes.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Not Included</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  {details.excludes.map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <X className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/40" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <div className="rounded-lg border p-6">
+              <p className="pb-3 text-sm font-semibold">Not Included</p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {details.excludes.map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <X className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/40" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       )}
 
       {/* Plan Terms */}
       {details.terms && details.terms.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Plan Terms</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-              {details.terms.map((term) => (
-                <li key={term}>{term}</li>
-              ))}
-            </ul>
-            <Link
-              href="/admin/terms/support-terms"
-              className="text-sm text-primary underline-offset-4 hover:underline"
-            >
-              View Support Service Terms &rarr;
-            </Link>
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border p-6 space-y-4">
+          <p className="text-sm font-semibold">Plan Terms</p>
+          <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+            {details.terms.map((term) => (
+              <li key={term}>{term}</li>
+            ))}
+          </ul>
+          <Link
+            href="/admin/terms/support-terms"
+            className="text-sm text-primary underline-offset-4 hover:underline"
+          >
+            View Support Service Terms &rarr;
+          </Link>
+        </div>
       )}
 
     </div>

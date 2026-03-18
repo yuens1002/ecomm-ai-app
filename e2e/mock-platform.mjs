@@ -14,7 +14,7 @@ import { createServer } from "node:http";
 
 const DEFAULT_LICENSE = {
   valid: true,
-  tier: "PRO",
+  tier: "PRIORITY_SUPPORT",
   features: ["ga", "ai-product-ops", "priority-support"],
   trialEndsAt: null,
   managedBy: null,

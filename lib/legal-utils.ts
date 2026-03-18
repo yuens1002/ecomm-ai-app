@@ -10,9 +10,7 @@
 // ---------------------------------------------------------------------------
 
 const PLATFORM_URL = (
-  process.env.PLATFORM_URL ||
-  process.env.NEXT_PUBLIC_APP_URL?.replace("localhost:3000", "manage.artisanroast.app") ||
-  "https://manage.artisanroast.app"
+  process.env.PLATFORM_URL || "https://manage.artisanroast.app"
 ).replace(/\/+$/, "");
 
 // ---------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { marked } from "marked";
+import DOMPurify from "dompurify";
 import { ExternalLink } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -34,12 +35,12 @@ export function SupportTermsClient({
 
   const rendered = useMemo(() => {
     if (!supportTerms) return null;
-    const html = marked.parse(supportTerms.content, { gfm: true, breaks: true }) as string;
-    return html.replace(
+    const html = (marked.parse(supportTerms.content, { gfm: true, breaks: true }) as string).replace(
       /<a href="mailto:([^"]+)">([^<]+)<\/a>\s*\(subject:\s*(\[[^\]]+\])\)/g,
       (_, email: string, label: string, subject: string) =>
         `<a href="mailto:${email}?subject=${encodeURIComponent(subject)}">${label}</a> (subject: ${subject})`
     );
+    return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
   }, [supportTerms]);
 
   function handleAccept() {

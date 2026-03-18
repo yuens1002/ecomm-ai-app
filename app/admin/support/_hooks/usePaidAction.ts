@@ -51,6 +51,7 @@ export function usePaidAction<T = unknown>(
 
   function execute(action: () => Promise<PaidActionResponse<T>>) {
     startTransition(async () => {
+      setShowTermsNotice(false);
       const result = await action();
 
       if (result.success && result.data !== undefined) {
