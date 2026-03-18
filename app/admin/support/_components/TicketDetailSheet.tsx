@@ -12,6 +12,7 @@ import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
+  InputGroupText,
   InputGroupTextarea,
 } from "@/components/ui/forms/InputGroup";
 import {
@@ -27,6 +28,8 @@ import { TermsNotice } from "@/app/admin/support/_components/TermsNotice";
 import { fetchTicketDetail, submitTicketReply } from "@/app/admin/support/actions";
 import type { SupportTicket, TicketReply, ReplyResponse } from "@/lib/support-types";
 import { cn } from "@/lib/utils";
+
+const REPLY_MAX_LENGTH = 2000;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -244,9 +247,13 @@ export function TicketDetailSheet({
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     disabled={replyAction.isPending}
+                    maxLength={REPLY_MAX_LENGTH}
                     rows={2}
                   />
                   <InputGroupAddon align="block-end" className="items-end">
+                    <InputGroupText className="text-xs font-medium">
+                      {replyText.length}/{REPLY_MAX_LENGTH}
+                    </InputGroupText>
                     <InputGroupButton
                       size="sm"
                       variant="default"
