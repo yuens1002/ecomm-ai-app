@@ -23,4 +23,8 @@ export const ADMIN_PAGES = {
     description: "Behavior funnel, searches & activity trends",
     href: "/admin/analytics",
   },
+  plans: {
+    label: "Plans",
+    href: "/admin/support/plans",
+  },
 } as const;

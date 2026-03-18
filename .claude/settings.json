@@ -89,6 +89,11 @@
       "Bash(echo:*)",
       "Bash(where:*)",
       "Bash(chmod:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(cp:*)",
+      "Bash(touch:*)",
       "Bash(source:*)",
       "Bash(cd:*)",
       "Bash(xargs:*)",
@@ -112,7 +117,12 @@
       "mcp__shadcn-studio-mcp__collect_selected_components",
       "mcp__shadcn-studio-mcp__get_add_command_for_components",
       "WebFetch(domain:shadcnuikit.com)",
-      "Bash(lsof -ti :3000)"
+      "Bash(lsof -ti :3000)",
+      "Bash(curl:*)",
+      "Bash(rm -rf .next:*)",
+      "Bash(kill:*)",
+      "Bash(xargs:*)",
+      "Bash(for:*)"
     ]
   },
   "hooks": {

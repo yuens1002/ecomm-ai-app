@@ -101,7 +101,7 @@ function NavDropdown({ item, unreadCount }: { item: NavItem; unreadCount: number
       </NavigationMenuPrimitive.Trigger>
       <NavigationMenuPrimitive.Content
         className={cn(
-          "absolute left-0 top-full mt-1.5 w-56 rounded-md border bg-popover p-2 text-popover-foreground shadow-lg",
+          "absolute left-0 top-full mt-1.5 w-56 max-h-[35vh] overflow-y-auto scrollbar-none rounded-md border bg-popover p-2 text-popover-foreground shadow-lg",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
           "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"

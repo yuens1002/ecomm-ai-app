@@ -16,6 +16,8 @@ const APP_SETTINGS_KEYS = {
   NOTIFY_ON_NEW_REVIEW: "commerce.notifyOnNewReview",
   STOREFRONT_THEME: "storefront.theme",
   CRON_SECRET: "cron.secret",
+  // License
+  LICENSE_KEY: "license.key",
   // AI provider configuration
   AI_BASE_URL: "ai.baseUrl",
   AI_API_KEY: "ai.apiKey",
@@ -290,6 +292,37 @@ export async function getAppSettings() {
     locationType,
     weightUnit,
   };
+}
+
+// ---------------------------------------------------------------------------
+// License Key
+// ---------------------------------------------------------------------------
+
+/**
+ * Get the license key. DB value takes precedence over env var.
+ */
+export async function getLicenseKey(): Promise<string> {
+  const setting = await prisma.siteSettings.findUnique({
+    where: { key: APP_SETTINGS_KEYS.LICENSE_KEY },
+  });
+  return setting?.value || process.env.LICENSE_KEY || "";
+}
+
+/**
+ * Set the license key in the database.
+ */
+export async function setLicenseKey(value: string): Promise<void> {
+  if (!value) {
+    await prisma.siteSettings.deleteMany({
+      where: { key: APP_SETTINGS_KEYS.LICENSE_KEY },
+    });
+    return;
+  }
+  await prisma.siteSettings.upsert({
+    where: { key: APP_SETTINGS_KEYS.LICENSE_KEY },
+    update: { value },
+    create: { key: APP_SETTINGS_KEYS.LICENSE_KEY, value },
+  });
 }
 
 // ---------------------------------------------------------------------------

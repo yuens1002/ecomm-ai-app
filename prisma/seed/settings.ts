@@ -324,7 +324,7 @@ export async function seedSettings(prisma: PrismaClient) {
   const socialLinks = [
     {
       platform: "github",
-      url: "https://github.com/yuens1002/ecomm-ai-app",
+      url: "https://github.com/yuens1002/artisan-roast",
       icon: "github",
       order: 0,
     },

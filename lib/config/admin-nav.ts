@@ -76,7 +76,6 @@ export const adminNavConfig: NavItem[] = [
       { label: "All Users", href: "/admin/users" },
       { label: "Newsletter", href: "/admin/newsletter" },
       { label: "Reviews", href: "/admin/reviews", badgeId: "unread-reviews" },
-      { label: "Support", href: "/admin/support", icon: LifeBuoy },
     ],
   },
   {
@@ -94,6 +93,16 @@ export const adminNavConfig: NavItem[] = [
       { label: "Contact", href: "/admin/settings/contact" },
       { label: "Scheduled Jobs", href: "/admin/settings/scheduled-jobs" },
       { label: "Social Links", href: "/admin/social-links" },
+    ],
+  },
+  {
+    label: "Support & Services",
+    icon: LifeBuoy,
+    children: [
+      { label: "Submit Ticket", href: "/admin/support" },
+      { label: "Plans", href: "/admin/support/plans" },
+      { label: "Add-Ons", href: "/admin/support/add-ons" },
+      { label: "License & Terms", href: "/admin/support/terms" },
     ],
   },
 ];
@@ -325,7 +334,6 @@ export const mobileNavConfig: NavItem[] = [
       { label: "All Users", href: "/admin/users" },
       { label: "Newsletter", href: "/admin/newsletter" },
       { label: "Reviews", href: "/admin/reviews", badgeId: "unread-reviews" },
-      { label: "Support", href: "/admin/support", icon: LifeBuoy },
     ],
   },
   {
@@ -343,6 +351,16 @@ export const mobileNavConfig: NavItem[] = [
       { label: "Contact", href: "/admin/settings/contact" },
       { label: "Scheduled Jobs", href: "/admin/settings/scheduled-jobs" },
       { label: "Social Links", href: "/admin/social-links" },
+    ],
+  },
+  {
+    label: "Support & Services",
+    icon: LifeBuoy,
+    children: [
+      { label: "Submit Ticket", href: "/admin/support" },
+      { label: "Plans", href: "/admin/support/plans" },
+      { label: "Add-Ons", href: "/admin/support/add-ons" },
+      { label: "License & Terms", href: "/admin/support/terms" },
     ],
   },
 ];

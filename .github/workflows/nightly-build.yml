@@ -1,0 +1,50 @@
+name: Nightly Build
+
+on:
+  schedule:
+    # Run at 6:00 AM UTC daily
+    - cron: "0 6 * * *"
+  workflow_dispatch: # Allow manual trigger
+
+concurrency:
+  group: nightly-build
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    env:
+      # Dummy secrets for build — nightly validates from-scratch install, not runtime
+      DATABASE_URL: "postgresql://user:pass@localhost:5432/nightly?sslmode=disable"
+      DIRECT_URL: "postgresql://user:pass@localhost:5432/nightly?sslmode=disable"
+      STRIPE_SECRET_KEY: "sk_test_dummy"
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_dummy"
+      RESEND_API_KEY: "re_test_dummy"
+      RESEND_FROM_EMAIL: "nightly@example.com"
+      AUTH_SECRET: "nightly-build-secret-not-real"
+      SKIP_SSG: "true"
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Clean install (npm ci)
+        run: npm ci
+
+      - name: Typecheck and lint
+        run: npm run precheck
+
+      - name: Run tests
+        run: npm run test:ci
+
+      - name: Build
+        run: npm run build:no-migrate

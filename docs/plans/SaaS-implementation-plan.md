@@ -37,9 +37,11 @@ Store-side implementation for SaaS platform integration. Platform team implement
 | 1 | All 3 current AI features (chat, recommendations, about-assist) stay **FREE** | Customer-facing features drive engagement and sales |
 | 2 | **LLM-agnostic** — remove Gemini dependency, use OpenAI-compatible API format | Open-source users pick any provider (OpenAI, Ollama, Groq, etc.) |
 | 3 | **Breaking change** — `GEMINI_API_KEY` replaced by generic LLM config | No users yet; clean break is better than a migration shim |
-| 4 | Single "Manage Billing" link on Pro Plan page | Stripe Portal handles billing + cancellation |
+| 4 | **Platform-driven CTAs** — the store never hardcodes plan names, prices, or upgrade URLs | `LicenseInfo.availableActions` array carries labels, URLs, and button variants. The platform decides what to show based on the customer's current state. Store just maps actions to buttons. Allows plan changes, pricing updates, and new offerings without touching store code |
 | 5 | AI settings page built first (no platform dependency) | Immediate value for FREE tier |
 | 6 | Pro AI features (reviews, CMS, promotions, insights) don't exist yet | Gated when built, no stubs needed |
+| 7 | Priority Support is a **standalone feature** — any tier (including FREE) can purchase it | Support revenue is independent of AI/analytics. Owner subscribes on platform, gets a key with `priority-support` in features array. If they later upgrade to Pro/Hosted (which bundles support), the platform merges the feature into the new key — no ticket history lost, no double billing |
+| 8 | No Stripe checkout on store side for support | All subscription management (signup, billing, cancellation) happens on the platform site. The store only reads the `priority-support` feature flag from the license |
 
 ---
 
@@ -51,7 +53,7 @@ Replace Gemini-specific code with OpenAI-compatible client. Admin UI for LLM con
 
 ### Phase 2B: License & Plan Foundation (No Platform Dependency)
 
-`lib/license.ts`, Plan page, upgrade prompts. Testable with mock responses.
+`lib/license.ts`, Plan page, upgrade prompts, priority support ticket integration. Testable with mock responses. Priority support is a standalone feature purchasable by any tier — see B7 and Key Decision #7/#8.
 
 ### Phase 2C: AI Proxy Integration (Requires Platform)
 
@@ -429,6 +431,17 @@ getCapabilities(): Promise<Capabilities>
 
 **Graceful degradation:** Network error → cached result → FREE tier. Store never breaks.
 
+**Platform-driven CTAs:** `LicenseInfo.availableActions` is an array of `AvailableAction` objects returned by the platform's `/api/license/validate` endpoint. Each action has a `slug`, `label`, `url`, and `variant` ("primary" | "outline" | "ghost"). The store renders these as-is — it never decides what plans exist, what they cost, or what upgrade paths are available. The platform tailors actions based on the customer's current state (e.g., FREE sees "Start Trial", TRIAL sees "Upgrade", PRO sees "Manage Billing"). When the platform is unreachable or no key is configured, `availableActions` is empty and no CTAs are shown.
+
+```typescript
+interface AvailableAction {
+  slug: string;       // e.g. "start-trial", "upgrade-pro", "manage-billing"
+  label: string;      // Button text — rendered as-is
+  url: string;        // Full URL to navigate to
+  variant: "primary" | "outline" | "ghost";
+}
+```
+
 ---
 
 ### B2. `.env.example` — Platform Vars
@@ -509,6 +522,60 @@ Reusable dashed-border card for gated Pro features. Pulls name/description from 
 **New file:** `components/shared/ConnectGAPrompt.tsx`
 
 Shown when `hasFeature("analytics-insights")` is true but `gaConfig.connected` is false.
+
+---
+
+### B7. Priority Support — Store Integration
+
+Priority Support is a **standalone feature** available to any tier. A store owner purchases a support subscription on the platform (`artisanroast.app/signup?plan=support`), receives a license key containing `"priority-support"` in the features array, and pastes it into their store. The store then surfaces a ticket form inside the existing Support page.
+
+**Subscription model:**
+
+| Scenario | What happens |
+|----------|-------------|
+| FREE owner buys support | Gets a license key with `features: ["priority-support"]`, tier stays `FREE` |
+| TRIAL owner | Already has `priority-support` included in trial features |
+| PRO/HOSTED owner | Already has `priority-support` bundled in the plan |
+| FREE+support owner upgrades to Pro | Platform merges features into the new key. Ticket history is tied to the license on the platform side — no data lost. Old support-only key is superseded; owner can keep using the same key or platform issues a new one. No double billing — platform handles proration |
+| Owner cancels Pro but keeps support | Platform issues a new key with only `priority-support`. Store reverts to FREE tier + support |
+
+**Key principle:** The store never manages subscriptions. It only reads `license.features.includes("priority-support")` and renders the appropriate UI. All billing, plan changes, and proration logic live on the platform.
+
+**New files:**
+
+```text
+lib/support-types.ts       # SupportTicket, TicketStatus, SupportUsage, API response types
+lib/support.ts             # Server-only platform client: createTicket(), listTickets()
+app/admin/support/
+  SupportTicketsSection.tsx  # Client component — usage bar, ticket form, ticket list
+```
+
+**Modified files:**
+
+```text
+lib/license.ts             # Export getLicenseKey() (was private)
+app/admin/support/
+  actions.ts               # Add submitSupportTicket(), fetchSupportTickets() server actions
+  page.tsx                 # Server-side ticket fetch when entitled
+  SupportPageClient.tsx    # Render SupportTicketsSection or upsell link
+```
+
+**Platform API contract (consumed by `lib/support.ts`):**
+
+```text
+GET  {PLATFORM_URL}/api/support/tickets
+POST {PLATFORM_URL}/api/support/tickets
+Authorization: Bearer {license_key}
+
+Response: { tickets: SupportTicket[], usage: SupportUsage }
+```
+
+**UI states:**
+
+- **Entitled** (`priority-support` in features): Usage bar (used/limit + progress), ticket form (title required, body optional, disabled when limit reached), ticket list (status badge, title, relative time, GitHub link)
+- **Not entitled**: Support ticket section hidden. Upgrade path (if any) is driven by `availableActions` from the platform — the store never hardcodes plan names or signup URLs
+
+**Error handling:** `SupportError` class with typed status codes (401 invalid key, 403 not entitled, 429 limit reached, 500 platform error). Server page catches fetch errors silently — client can retry via refresh button.
 
 ---
 
@@ -809,13 +876,13 @@ ACs follow the 7-column template from `docs/templates/acs-template.md`. Separate
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|-----|----------|
-| AC-UI-B1 | FREE state renders | Static: navigate to `/admin/settings/plan` with no license key, element screenshot | "Free" badge, feature catalog by category, trial/buy CTAs, key input visible | | N/A — Phase 2B not implemented | |
+| AC-UI-B1 | FREE state renders | Static: navigate to `/admin/support` with no license key, element screenshot | "Free" badge, feature catalog by category, key input visible, no hardcoded CTAs (actions driven by `availableActions`) | | N/A — Phase 2B not implemented | |
 | AC-UI-B2 | Catalog grouped by category | Static: screenshot catalog section | Analytics, AI, Support sections with feature names + descriptions | | N/A — Phase 2B not implemented | |
-| AC-UI-B3 | Trial CTA links to platform | Interactive: click "Start Free Trial" | URL contains `{PLATFORM_URL}/signup?plan=trial&appVersion=` | | N/A — Phase 2B not implemented | |
+| AC-UI-B3 | Platform-driven CTAs render | Static: screenshot catalog section with mock `availableActions` | Buttons render with platform-provided labels, URLs, and variants — no hardcoded plan names or URLs in store code | | N/A — Phase 2B not implemented | |
 | AC-UI-B4 | Key activation success | Exercise: paste valid key, click Activate, screenshot | Success toast, page shows new tier state | | N/A — Phase 2B not implemented | |
 | AC-UI-B5 | Invalid key error | Exercise: paste malformed key, click Activate, screenshot | Error toast: "Invalid license key" | | N/A — Phase 2B not implemented | |
-| AC-UI-B6 | TRIAL state renders | Static: screenshot Plan page with trial key active | Days remaining, progress bar, token budget bar, enabled features visible | | N/A — Phase 2B not implemented | |
-| AC-UI-B7 | PRO state renders | Static: screenshot Plan page with pro key active | Enabled features, add-ons, "Manage Billing" link, masked key visible | | N/A — Phase 2B not implemented | |
+| AC-UI-B6 | TRIAL state renders | Static: screenshot Plan page with trial key active | Days remaining, progress bar, token budget bar, enabled features, platform CTAs visible | | N/A — Phase 2B not implemented | |
+| AC-UI-B7 | PRO state renders | Static: screenshot Plan page with pro key active | Enabled features, platform-driven CTAs (e.g. "Manage Billing"), masked key visible | | N/A — Phase 2B not implemented | |
 | AC-UI-B8 | Compatibility warnings | Static: mock `compatibility: "partial"` response, screenshot | Yellow banner with warnings + `npm run upgrade` CTA | | N/A — Phase 2B not implemented | |
 | AC-UI-B9 | "Plan" in Settings nav | Static: screenshot Settings nav | "Plan" item visible as last Settings child | | N/A — Phase 2B not implemented | |
 | AC-UI-B10 | UpgradePrompt component | Static: navigate to a Pro-gated area, screenshot | Dashed card with feature name, description, "View Plans" link | | N/A — Phase 2B not implemented | |
@@ -842,6 +909,42 @@ ACs follow the 7-column template from `docs/templates/acs-template.md`. Separate
 | AC-REG-B2 | Platform unreachable is safe | Code review + E2E: set invalid `PLATFORM_URL` | No 500s, falls back gracefully | | N/A — Phase 2B not implemented | |
 | AC-REG-B3 | Test suite passes | `npm run test:ci` | All tests pass, 0 failures | | N/A — Phase 2B not implemented | |
 | AC-REG-B4 | Precheck passes | `npm run precheck` | TypeScript + ESLint 0 errors | | N/A — Phase 2B not implemented | |
+
+### Phase 2B-S: Priority Support Tickets
+
+#### UI Acceptance Criteria
+
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-UI-S1 | Entitled user sees ticket section | Static: `MOCK_LICENSE_TIER=TRIAL`, navigate to `/admin/support`, screenshot | "Priority Support" card with usage bar, ticket form, and refresh button visible | | | |
+| AC-UI-S2 | Usage bar shows tickets used/limit | Static: screenshot usage bar in SupportTicketsSection | `used / limit tickets this cycle` text, progress bar, `remaining` count | | | |
+| AC-UI-S3 | Ticket form has title + body | Static: screenshot ticket form | Input with "Ticket title" placeholder, Textarea with "Describe your issue" placeholder, Submit button | | | |
+| AC-UI-S4 | Form disabled when exhausted | Code review: `SupportTicketsSection.tsx` | Input, Textarea, and Submit button have `disabled={exhausted}` when `remaining === 0` | | | |
+| AC-UI-S5 | Ticket list shows status + GitHub link | Code review: `SupportTicketsSection.tsx` | Each ticket renders `StatusBadge`, title, relative time, and optional `ExternalLink` to `githubUrl` | | | |
+| AC-UI-S6 | Non-entitled user sees no ticket section | Static: `MOCK_LICENSE_TIER=PRO` (no `priority-support` in mock features), screenshot | Support ticket section not rendered — upgrade path handled by platform-driven `availableActions` in catalog section, not hardcoded upsell | | | |
+| AC-UI-S7 | Refresh button in section header | Static: screenshot SupportTicketsSection header | RefreshCw icon button rendered via `SettingsSection` `action` prop | | | |
+
+#### Functional Acceptance Criteria
+
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-FN-S1 | `getLicenseKey()` exported | Code review: `lib/license.ts` | Function is `export async function getLicenseKey()` (was private) | | | |
+| AC-FN-S2 | Support client uses Bearer auth | Code review: `lib/support.ts` | `Authorization: Bearer ${key}` header on all requests | | | |
+| AC-FN-S3 | Support client has 10s timeout | Code review: `lib/support.ts` | `AbortSignal.timeout(10_000)` on fetch calls | | | |
+| AC-FN-S4 | Typed errors for 401/403/429 | Code review: `lib/support.ts` | `SupportError` with specific messages for each status code | | | |
+| AC-FN-S5 | `submitSupportTicket` uses requireAdmin + Zod | Code review: `app/admin/support/actions.ts` | `requireAdmin()` called first, `ticketSchema` validates title (1-200) and body (max 5000) | | | |
+| AC-FN-S6 | `fetchSupportTickets` uses requireAdmin | Code review: `app/admin/support/actions.ts` | `requireAdmin()` called before `listTickets()` | | | |
+| AC-FN-S7 | Server page gates on `priority-support` feature | Code review: `app/admin/support/page.tsx` | `license.features.includes("priority-support")` check before calling `listTickets()` | | | |
+| AC-FN-S8 | Ticket fetch failure is silent | Code review: `app/admin/support/page.tsx` | `try/catch` around `listTickets()`, `supportData` stays `null` on error | | | |
+
+#### Regression Acceptance Criteria
+
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-REG-S1 | Support page loads without license | E2E: start app with no `MOCK_LICENSE_TIER`, navigate to `/admin/support` | Page loads, shows "Coming soon" or plan UI — no errors | | | |
+| AC-REG-S2 | Existing plan UI unchanged | Static: `MOCK_LICENSE_TIER=TRIAL`, screenshot full Support page | Current Plan, Feature Catalog, License Key sections still render correctly | | | |
+| AC-REG-S3 | Precheck passes | `npm run precheck` | TypeScript + ESLint 0 errors | | | |
+| AC-REG-S4 | Test suite passes | `npm run test:ci` | All tests pass, 0 failures | | | |
 
 ### Phase 2C: AI Proxy (Deferred)
 

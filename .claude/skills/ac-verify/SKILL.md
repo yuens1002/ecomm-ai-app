@@ -67,17 +67,27 @@ Before any screenshots, verify these in order. If any fail, report as BLOCKER an
 
 If login fails or pages don't load, STOP and report. Do not proceed to AC verification with a broken environment.
 
-### Step 1.5: Categorize UI ACs by Verification Method
+### Step 1.5: Validate How Column Methods
 
-For each UI AC, determine the verification method:
+The **How** column in the ACs doc is the verification contract. Before starting any verification, validate that each UI AC's How column specifies the correct method and that you will produce the correct evidence type.
 
-| Method | When to use | Puppeteer pattern |
-|--------|-------------|-------------------|
-| **Static** | Element presence, layout, visibility | Navigate → wait → screenshot |
-| **Interactive** | State after UI interaction (open dialog, hover, click) | Navigate → click/hover → wait → screenshot |
-| **Exercise** | End-to-end flow with data mutation (form submit, state change) | Navigate → interact → fill form → submit → wait for result → screenshot |
+| How prefix | Evidence required | Puppeteer pattern |
+|------------|-------------------|-------------------|
+| **Screenshot:** | `.png` file path in Agent column | Navigate → wait → screenshot |
+| **Interactive:** | `.png` file path in Agent column | Navigate → click/hover → wait → screenshot |
+| **Exercise:** | `.png` file path in Agent column | Navigate → interact → fill form → submit → wait for result → screenshot |
+| **Code review:** | `file:line` refs in Agent column | Read source files, trace code paths |
 
-Record the method chosen per AC in the final report (e.g., `Interactive: clicked edit → dialog opened`).
+**Pre-verification checks (MANDATORY):**
+
+1. **Count How methods**: Tally how many UI ACs use screenshot-based methods (`Screenshot:`, `Interactive:`, `Exercise:`) vs `Code review:`.
+2. **Enforce 50% rule**: At least 50% of UI ACs MUST use screenshot-based methods. If they don't, STOP and report: "ACs plan has insufficient screenshot coverage — {n}/{total} UI ACs use screenshot methods. Update How columns before verification."
+3. **Match evidence to How**: For each UI AC, confirm you will produce the right evidence type:
+   - `Screenshot:` / `Interactive:` / `Exercise:` → You MUST take Puppeteer screenshots and reference `.png` paths
+   - `Code review:` → You MUST provide `file:line` references (no screenshot needed)
+4. **Never downgrade**: If How says `Screenshot:` but you can't take a screenshot (server down, page broken), mark as BLOCKED — do NOT silently switch to code review.
+
+Record the method per AC in the final report (e.g., `Interactive: clicked edit → dialog opened → .screenshots/verify-dialog.png`).
 
 ### Step 2: Verify UI ACs (screenshots)
 
@@ -186,6 +196,8 @@ If no ACs doc exists yet, produce the report inline in this format:
 7. **Combine interaction + evidence.** When an AC requires UI interaction before verification, write a single Puppeteer flow that interacts and captures evidence in sequence. Do not split interaction and screenshot into separate scripts.
 8. **Exercise cautiously.** For ACs requiring form submission or data mutation, verify the UI response (toast, state change) — do not verify database state directly.
 9. **Check Pass criteria literally.** Do not interpret — the Pass column is the contract. If it says "no red text visible" and you see red text, it's FAIL regardless of context.
+10. **How column is the contract.** The How column dictates the verification method. If How says `Screenshot:`, you MUST take a screenshot — do not substitute code review. The QC validator will reject mismatched evidence.
+11. **Screenshot-method ACs need `.png` evidence.** Your Agent column entry for any `Screenshot:`/`Interactive:`/`Exercise:` AC must reference a `.png` file path (e.g., `.screenshots/verify-desktop-plans.png`). Without it, the QC validator will flag the AC.
 
 ## Puppeteer Hard Rules
 

@@ -28,6 +28,8 @@ const OPTIONAL_KEYS = [
   "AI_MODEL",
   "NEXT_PUBLIC_APP_URL",
   "BLOB_READ_WRITE_TOKEN",
+  "LICENSE_KEY",
+  "PLATFORM_URL",
 ];
 
 export const validateEnv = (options?: {
