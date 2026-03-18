@@ -160,9 +160,6 @@ export function TicketDetailSheet({
                       Priority
                     </Badge>
                   )}
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate(ticket.createdAt)}
-                  </span>
                   {ticket.githubUrl && (
                     <a
                       href={ticket.githubUrl}
