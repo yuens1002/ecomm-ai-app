@@ -28,7 +28,7 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
       <footer className="border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Desktop Layout: 3 columns */}
-          <div className="hidden md:flex h-16 items-center justify-between">
+          <div className="hidden lg:flex h-16 items-center justify-between">
             {/* Left: Branding with copyright and version */}
             <div className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} {storeName}
@@ -73,7 +73,7 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
           </div>
 
           {/* Mobile/Tablet Layout: xs–md stacked groups */}
-          <div className="md:hidden py-4 space-y-3">
+          <div className="lg:hidden py-4 space-y-3">
             {/* Row 1: Branding */}
             <div className="text-sm text-muted-foreground text-center">
               © {new Date().getFullYear()} {storeName}
