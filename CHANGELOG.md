@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.96.1 - 2026-03-19
+
+### Fixed
+
+- **Demo onboarding checklist**: Seed now sets `store_name` to `"Artisan Roast Demo"` so the branding step auto-completes on fresh installs
+
+## 0.96.0 - 2026-03-19
+
+### Added
+
+- **Priority Support plan**: Full support tier with ticket submission, priority ticket queue, usage tracking, and 1:1 session quotas
+- **Terms & legal pages**: `/admin/terms` with collapsible sections, version history, and acceptance flow
+- **Ticket management**: Slide-in sheet drawer for ticket details; normal tickets route to GitHub issues
+
+### Changed
+
+- **Tier renamed**: `PRO` → `PRIORITY_SUPPORT` throughout codebase
+- **E2E test suite**: All 5 tests passing in CI with mock platform server, global setup, and cache isolation
+
 ## 0.95.6 - 2026-03-12
 
 ### Fixed
