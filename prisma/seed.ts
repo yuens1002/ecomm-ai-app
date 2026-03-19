@@ -144,7 +144,7 @@ async function main() {
     update: {},
     create: {
       key: "store_name",
-      value: "Artisan Roast",
+      value: "Artisan Roast Demo",
     },
   });
 
