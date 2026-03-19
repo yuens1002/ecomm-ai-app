@@ -9,6 +9,8 @@ import { test, expect } from "@playwright/test";
 test.beforeEach(async ({ request }) => {
   // Reset mock platform state
   await request.post("http://localhost:9999/__reset");
+  // Clear in-memory license/plans cache so the page re-fetches from mock
+  await request.post("/api/test/reset-cache");
   // Configure license as FREE (no subscription) so Subscribe CTA shows
   await request.post("http://localhost:9999/__config", {
     data: {
@@ -24,6 +26,11 @@ test.beforeEach(async ({ request }) => {
           usage: null,
           gaConfig: { connected: false, measurementId: null, propertyName: null, lastSynced: null },
           availableActions: [],
+          plan: null,
+          lapsed: null,
+          support: { pools: [] },
+          alaCarte: [],
+          legal: null,
         },
       },
     },
@@ -34,7 +41,7 @@ test("Subscribe CTA redirects to Stripe checkout", async ({ page, context }) => 
   await page.goto("/admin/support/plans");
 
   // Wait for plan cards to load
-  await expect(page.getByText("Priority Support")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole("heading", { name: "Pro" })).toBeVisible({ timeout: 10_000 });
 
   // The Subscribe button should be visible (not "Manage" since we're FREE)
   const subscribeButton = page.getByRole("button", { name: /Subscribe/i });

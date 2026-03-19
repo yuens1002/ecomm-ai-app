@@ -28,12 +28,12 @@ jobs:
       SKIP_SSG: "true"
     steps:
       - name: Checkout main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
         with:
           ref: main
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: 22
 

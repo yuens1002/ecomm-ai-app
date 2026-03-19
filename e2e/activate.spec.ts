@@ -16,7 +16,7 @@ test("Paste license key and activate shows masked key", async ({ page }) => {
   await page.goto("/admin/support/manage");
 
   // Wait for the page to load
-  await expect(page.getByText("License Key")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("Platform License")).toBeVisible({ timeout: 10_000 });
 
   // The key input should be visible (FREE state — no key yet)
   const keyInput = page.getByRole("textbox", { name: /license key/i });
@@ -37,6 +37,6 @@ test("Paste license key and activate shows masked key", async ({ page }) => {
   // The Activate button should be gone, replaced by the masked key display
   await expect(keyInput).not.toBeVisible();
 
-  // Subscription section should appear with plan features
-  await expect(page.getByText(/Subscription/i)).toBeVisible();
+  // Plan info should appear (DEFAULT_LICENSE includes plan slug "pro")
+  await expect(page.getByText(/Current plan:/i)).toBeVisible();
 });
