@@ -644,7 +644,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
             description:
               "Add 5 priority support tickets to your account. Never expire.",
             price: "$39",
-            checkoutUrl: `${PLATFORM_URL}/checkout/alacarte-tickets-5`,
+            checkoutUrl: `${PLATFORM_URL}/api/checkout`,
           },
         ],
         legal: {
