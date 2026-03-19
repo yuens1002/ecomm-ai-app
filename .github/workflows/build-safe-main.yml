@@ -135,7 +135,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DIRECT_URL }}
           DEMO_ADMIN_EMAIL: admin@artisanroast.com
-          DEMO_ADMIN_PASSWORD: "ivcF8ZV3FnGaBJ&#8j"
+          DEMO_ADMIN_PASSWORD: ${{ secrets.E2E_DEMO_ADMIN_PASSWORD }}
 
       - name: Run E2E tests
         run: npm run test:e2e
