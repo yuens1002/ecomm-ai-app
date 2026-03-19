@@ -24,6 +24,11 @@ test.beforeEach(async ({ request }) => {
           usage: null,
           gaConfig: { connected: false, measurementId: null, propertyName: null, lastSynced: null },
           availableActions: [],
+          plan: null,
+          lapsed: null,
+          support: { pools: [] },
+          alaCarte: [],
+          legal: null,
         },
       },
     },
@@ -34,7 +39,7 @@ test("Subscribe CTA redirects to Stripe checkout", async ({ page, context }) => 
   await page.goto("/admin/support/plans");
 
   // Wait for plan cards to load
-  await expect(page.getByText("Priority Support")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("Pro")).toBeVisible({ timeout: 10_000 });
 
   // The Subscribe button should be visible (not "Manage" since we're FREE)
   const subscribeButton = page.getByRole("button", { name: /Subscribe/i });

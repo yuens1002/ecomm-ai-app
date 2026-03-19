@@ -1,8 +1,8 @@
 /**
- * AC-E2E-4: Submit community issue
+ * AC-E2E-4: Submit normal ticket (community path)
  *
- * Navigate to Support page → fill title + body → Submit
- * → verify success toast with GitHub link.
+ * Navigate to Support page → select Normal type → fill title + steps → Submit
+ * → verify success toast appears.
  */
 
 import { test, expect } from "@playwright/test";
@@ -12,37 +12,40 @@ test.beforeEach(async ({ request }) => {
   await request.post("http://localhost:9999/__reset");
 });
 
-test("Submit community issue shows success toast with GitHub link", async ({
+test("Submit normal ticket shows success toast", async ({
   page,
 }) => {
   await page.goto("/admin/support");
 
   // Wait for the page to load
-  await expect(page.getByText("Community Support")).toBeVisible({
+  await expect(page.getByText("Submit Ticket")).toBeVisible({
     timeout: 10_000,
   });
 
+  // If the type selector is visible (hasKey=true), select Normal type
+  const normalButton = page.getByRole("button", { name: /^Normal$/i });
+  if (await normalButton.isVisible()) {
+    await normalButton.click();
+  }
+
   // Fill in the issue title
-  const titleInput = page.getByRole("textbox", { name: /issue title/i });
+  const titleInput = page.locator("#ticket-title");
   await expect(titleInput).toBeVisible();
   await titleInput.fill("Bug: Cart not updating");
 
-  // Fill in the body (optional but testing it)
-  const bodyInput = page.getByRole("textbox", { name: /issue details/i });
-  await bodyInput.fill("The cart count badge does not update after adding items.");
+  // Fill in the steps field
+  const stepsInput = page.locator("#ticket-steps");
+  await stepsInput.fill("The cart count badge does not update after adding items.");
 
-  // Submit the issue
-  const submitButton = page.getByRole("button", { name: /Submit Issue/i });
+  // Submit the ticket
+  const submitButton = page.getByRole("button", { name: /Submit Ticket/i });
   await expect(submitButton).toBeEnabled();
   await submitButton.click();
 
-  // Verify success toast appears with issue number
-  await expect(page.getByText(/Issue #42 created/i)).toBeVisible({
-    timeout: 10_000,
-  });
-
-  // Verify the GitHub link is in the toast
-  await expect(page.getByRole("link", { name: /View on GitHub/i })).toBeVisible();
+  // Verify success toast appears (title depends on submission path)
+  await expect(
+    page.getByText(/Issue created|Issue #\d+ created/i)
+  ).toBeVisible({ timeout: 10_000 });
 
   // Form should be cleared after successful submission
   await expect(titleInput).toHaveValue("");

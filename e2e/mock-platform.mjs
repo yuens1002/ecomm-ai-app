@@ -28,6 +28,23 @@ const DEFAULT_LICENSE = {
     lastSynced: null,
   },
   availableActions: [],
+  plan: { slug: "pro", name: "Pro", snapshotAt: new Date().toISOString() },
+  lapsed: null,
+  support: {
+    pools: [
+      {
+        slug: "tickets",
+        label: "Priority Tickets",
+        icon: "ticket",
+        limit: 5,
+        purchased: 0,
+        used: 0,
+        remaining: 5,
+      },
+    ],
+  },
+  alaCarte: [],
+  legal: null,
 };
 
 const FREE_LICENSE = {
@@ -46,6 +63,11 @@ const FREE_LICENSE = {
     lastSynced: null,
   },
   availableActions: [],
+  plan: null,
+  lapsed: null,
+  support: { pools: [] },
+  alaCarte: [],
+  legal: null,
 };
 
 const DEFAULT_PLANS = [
@@ -209,7 +231,7 @@ async function handler(req, res) {
     };
     tickets.unshift(ticket);
 
-    const resp = getResponse("createTicket", ticket);
+    const resp = getResponse("createTicket", { ticket, creditsRemaining: Math.max(0, 5 - ticketCount) });
     res.writeHead(resp.status);
     res.end(JSON.stringify(resp.body));
     return;
