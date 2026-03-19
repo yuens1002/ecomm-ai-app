@@ -15,11 +15,11 @@ setup("authenticate as admin", async ({ page }) => {
   // Click the demo admin sign-in button
   await page.getByRole("button", { name: /Sign in as Admin/i }).click();
 
-  // Wait for redirect to admin dashboard
-  await page.waitForURL(/\/admin/, { timeout: 15_000 });
+  // Wait for redirect to admin dashboard — must not match /auth/admin-signin
+  await page.waitForURL(/\/admin(?![-/]signin)/, { timeout: 15_000 });
 
   // Verify we're authenticated
-  await expect(page).toHaveURL(/\/admin/);
+  await expect(page).toHaveURL(/\/admin(?![-/]signin)/);
 
   // Save storage state for reuse
   await page.context().storageState({ path: authFile });
