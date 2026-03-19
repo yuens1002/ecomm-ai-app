@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,7 +22,13 @@ interface EulaStepProps {
 
 const MIT_SLUG = "mit-license";
 
+function renderDoc(content: string): string {
+  const html = marked.parse(content, { gfm: true, breaks: true }) as string;
+  return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+}
+
 export function EulaStep({ docs, onAccepted }: EulaStepProps) {
+  const renderedDocs = useMemo(() => docs.map((d) => ({ ...d, html: renderDoc(d.content) })), [docs]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
@@ -98,7 +106,7 @@ export function EulaStep({ docs, onAccepted }: EulaStepProps) {
             style={{ maxHeight: "400px" }}
           >
             <div className="p-5 space-y-8">
-              {docs.map((doc) => (
+              {renderedDocs.map((doc) => (
                 <section key={doc.slug}>
                   <div className="mb-2">
                     <h2 className="text-base font-semibold">{doc.title}</h2>
@@ -113,7 +121,7 @@ export function EulaStep({ docs, onAccepted }: EulaStepProps) {
                   </div>
                   <div
                     className="prose prose-sm max-w-none text-foreground"
-                    dangerouslySetInnerHTML={{ __html: doc.content }}
+                    dangerouslySetInnerHTML={{ __html: doc.html }}
                   />
                 </section>
               ))}

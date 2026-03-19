@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { versions, acceptedAt } = body ?? {};
 
-    if (!versions || typeof versions !== "object" || !acceptedAt) {
+    if (!versions || typeof versions !== "object" || Array.isArray(versions) || !acceptedAt) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
