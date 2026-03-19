@@ -18,7 +18,7 @@ export default async function Image() {
     loadOgFonts(),
   ]);
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://artisanroast.app";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://demo.artisanroast.app";
 
   return new ImageResponse(
     await renderOgLayout({

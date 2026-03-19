@@ -1,14 +1,13 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { startAlaCarteCheckout } from "./actions";
 import type { LicenseInfo } from "@/lib/license-types";
-
-const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -25,7 +24,15 @@ interface AddOnsPageClientProps {
 export function AddOnsPageClient({ license }: AddOnsPageClientProps) {
   const packages = license.alaCarte;
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (searchParams.get("demo") === "success") {
+      toast({ title: "Purchase complete — Demo mode, no charge made." });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handlePurchase(alaCarteSlug: string) {
     const formData = new FormData();
@@ -52,14 +59,6 @@ export function AddOnsPageClient({ license }: AddOnsPageClientProps) {
         subtitle="Purchase one-time support packages — never expire"
       />
 
-      {DEMO_MODE && (
-        <div className="rounded-lg border border-dashed py-4 px-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Checkout is disabled in demo mode.
-          </p>
-        </div>
-      )}
-
       {packages.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {packages.map((pkg) => (
@@ -73,7 +72,7 @@ export function AddOnsPageClient({ license }: AddOnsPageClientProps) {
                 <div className="flex items-center justify-between mt-auto">
                   <Button
                     size="sm"
-                    disabled={isPending || DEMO_MODE}
+                    disabled={isPending}
                     onClick={() => handlePurchase(pkg.id)}
                   >
                     {isPending && (

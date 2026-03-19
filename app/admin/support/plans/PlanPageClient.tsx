@@ -29,8 +29,6 @@ import { UsageBar, getNextRenewalDate } from "../UsageBar";
 import { refreshLicense } from "../actions";
 import { startCheckout } from "./actions";
 
-const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-
 import type {
   LicenseInfo,
   UsagePool,
@@ -172,6 +170,9 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
           });
         }
       });
+    }
+    if (searchParams.get("demo") === "success") {
+      toast({ title: "Purchase complete — Demo mode, no charge made." });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -556,7 +557,7 @@ function PlanCard({
               <Button
                 size="sm"
                 onClick={() => onSubscribe(plan.slug)}
-                disabled={isPending || DEMO_MODE}
+                disabled={isPending}
               >
                 {isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

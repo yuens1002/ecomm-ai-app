@@ -9,6 +9,8 @@ import { prisma } from "@/lib/prisma";
 // Constants
 // ---------------------------------------------------------------------------
 
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
 const PLATFORM_URL = (
   process.env.PLATFORM_URL || "https://manage.artisanroast.app"
 ).replace(/\/+$/, "");
@@ -48,6 +50,10 @@ export async function startAlaCarteCheckout(
 
   if (!parsed.success) {
     return { success: false, error: "Invalid package" };
+  }
+
+  if (DEMO_MODE) {
+    return { success: true, url: "/admin/support/add-ons?demo=success" };
   }
 
   try {

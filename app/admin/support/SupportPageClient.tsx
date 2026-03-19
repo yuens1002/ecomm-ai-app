@@ -24,7 +24,6 @@ import { startAlaCarteCheckout } from "./add-ons/actions";
 import { SupportTicketsList } from "./SupportTicketsSection";
 import type { LicenseInfo, AlaCartePackage, CreditPool } from "@/lib/license-types";
 
-const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 import type { SupportTicket } from "@/lib/support-types";
 import type { PriorityTicketResponse } from "@/lib/support-types";
 
@@ -452,7 +451,7 @@ function UpsellSection({
               <button
                 key={pack.id}
                 type="button"
-                disabled={isPending || DEMO_MODE}
+                disabled={isPending}
                 onClick={() => handlePurchase(pack.id)}
                 className="flex w-full items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >

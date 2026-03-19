@@ -1,6 +1,14 @@
 {
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
+    "feature/fix-alacarte-checkout-demo-guard": {
+      "status": "implementing",
+      "acs_passed": 0,
+      "acs_total": 9,
+      "tasks": [],
+      "acs_doc": "docs/plans/demo-domain-checkout-plan.md",
+      "notes": "Commit 1 done (domain refs). Commit 2 pending: simulated demo checkout in actions + client toast. Ops tasks (Vercel domain migration) tracked in plan."
+    },
     "fix/seed-and-icon-polish": {
       "status": "partial",
       "acs_passed": 3,
