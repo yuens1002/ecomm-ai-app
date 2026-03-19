@@ -7,12 +7,19 @@ import {
 
 const getProductSeedMode = () => {
   const raw = (process.env.SEED_PRODUCT_MODE ?? "full").toLowerCase();
+  if (raw === "none" || raw === "skip" || raw === "empty") return "none";
   if (["minimal", "lean", "tiny", "demo"].includes(raw)) return "minimal";
   return "full";
 };
 
 export async function seedProducts(prisma: PrismaClient) {
   const productSeedMode = getProductSeedMode();
+
+  if (productSeedMode === "none") {
+    console.log("  ↷ Phase 2 skipped: SEED_PRODUCT_MODE=none (clean install)");
+    return;
+  }
+
   const isMinimal = productSeedMode === "minimal";
 
   console.log(`  🛒 Creating products... (mode: ${productSeedMode})`);
