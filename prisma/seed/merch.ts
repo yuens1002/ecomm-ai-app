@@ -24,6 +24,7 @@ interface MerchItem {
 }
 const getMerchSeedMode = () => {
   const raw = (process.env.SEED_PRODUCT_MODE ?? "full").toLowerCase();
+  if (raw === "none" || raw === "skip" || raw === "empty") return "none";
   if (["minimal", "lean", "tiny", "demo"].includes(raw)) return "minimal";
   return "full";
 };
@@ -253,6 +254,12 @@ const merchItemsFull: MerchItem[] = [
 
 export async function seedMerch(prisma: PrismaClient) {
   const seedMode = getMerchSeedMode();
+
+  if (seedMode === "none") {
+    console.log(`  ↷ Phase 1b skipped: SEED_PRODUCT_MODE=${process.env.SEED_PRODUCT_MODE ?? "none"} (clean install)`);
+    return;
+  }
+
   const merchItems =
     seedMode === "minimal" ? merchItemsFull.slice(0, 1) : merchItemsFull;
 

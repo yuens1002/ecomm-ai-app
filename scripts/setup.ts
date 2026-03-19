@@ -18,13 +18,13 @@ function parseArgs() {
   const email = parsed.email?.trim();
   const password = parsed.password?.trim();
   const name = parsed.name?.trim();
-  const productMode = parsed["product-mode"]?.toLowerCase() ?? "minimal";
+  const productMode = parsed["product-mode"]?.toLowerCase() ?? "none";
   const seedUsers = parsed["seed-users"]?.toLowerCase() ?? "false";
   const seedSynthetic = parsed["seed-synthetic"]?.toLowerCase() ?? "false";
 
   if (!email || !password) {
     console.error(
-      "Usage: npm run setup -- --email=owner@shop.com --password=secret [--name=Owner] [--product-mode=full|minimal] [--seed-users=true|false] [--seed-synthetic=true|false]"
+      "Usage: npm run setup -- --email=owner@shop.com --password=secret [--name=Owner] [--product-mode=none|minimal|full] [--seed-users=true|false] [--seed-synthetic=true|false]"
     );
     process.exit(1);
   }
