@@ -28,6 +28,9 @@ import { useToast } from "@/hooks/use-toast";
 import { UsageBar, getNextRenewalDate } from "../UsageBar";
 import { refreshLicense } from "../actions";
 import { startCheckout } from "./actions";
+
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
 import type {
   LicenseInfo,
   UsagePool,
@@ -553,7 +556,7 @@ function PlanCard({
               <Button
                 size="sm"
                 onClick={() => onSubscribe(plan.slug)}
-                disabled={isPending}
+                disabled={isPending || DEMO_MODE}
               >
                 {isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
