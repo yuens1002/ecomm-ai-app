@@ -11,6 +11,7 @@ import {
   RefreshCw,
   ShieldCheck,
 } from "lucide-react";
+import Link from "next/link";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,7 @@ export function TermsPageClient({
   return (
     <div className="max-w-5xl space-y-8">
       <PageTitle
-        title="License & Terms"
+        title="License & Privacy"
         subtitle="License key and data privacy settings"
       />
 
@@ -316,22 +317,6 @@ function DataPrivacyTab() {
   const [enabled, setEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
-  const telemetryPayloadPreview = `{
-  "anonymousInstanceId": "random, not linked to you",
-  "app": {
-    "version": "app version",
-    "edition": "app edition"
-  },
-  "aggregateCounts": {
-    "products": "count",
-    "users": "count",
-    "orders": "count"
-  },
-  "serverEnvironment": {
-    "nodeVersion": "Node.js version",
-    "platform": "platform"
-  }
-}`;
 
   useEffect(() => {
     const fetchTelemetrySettings = async () => {
@@ -396,30 +381,33 @@ function DataPrivacyTab() {
 
         <div className="rounded-md bg-muted/50 p-4 text-sm text-muted-foreground">
           <p className="mb-2 font-medium text-foreground">What we collect:</p>
-          <pre className="overflow-x-auto rounded-md border bg-background/70 p-3 font-mono text-xs leading-relaxed text-foreground whitespace-pre-wrap">
-            {telemetryPayloadPreview}
-          </pre>
+          <ul className="list-disc list-inside space-y-1">
+            <li>Anonymous instance ID (random, not linked to you)</li>
+            <li>App version and edition</li>
+            <li>Aggregate counts (products, users, orders)</li>
+            <li>Server environment (Node.js version, platform)</li>
+          </ul>
           <p className="mt-3">
             We <strong>never</strong> collect personal information, customer
             data, or anything that could identify you or your customers.
           </p>
         </div>
 
-        <div className="mt-auto pt-5">
-          <div className="flex items-center space-x-3">
+        <div className="mt-auto pt-5 flex items-center justify-between">
+          <Link
+            href="/admin/terms/privacy-policy"
+            className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            View Data Privacy
+          </Link>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Telemetry</span>
             <Switch
               checked={enabled}
               onCheckedChange={handleTelemetryToggle}
               disabled={isLoading || isPending}
               aria-label="Toggle telemetry"
             />
-            <p className="text-sm text-muted-foreground">
-              {isLoading
-                ? "Loading telemetry setting..."
-                : enabled
-                  ? "Telemetry is enabled"
-                  : "Telemetry is disabled"}
-            </p>
           </div>
         </div>
       </div>

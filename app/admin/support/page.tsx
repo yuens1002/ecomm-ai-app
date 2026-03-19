@@ -1,10 +1,11 @@
 import { validateLicense, getLicenseKey } from "@/lib/license";
 import { listTickets } from "@/lib/support";
+import { fetchPlans } from "@/lib/plans";
 import { SupportPageClient } from "./SupportPageClient";
 import type { SupportTicket } from "@/lib/support-types";
 
 export default async function SupportPage() {
-  const license = await validateLicense();
+  const [license, plans] = await Promise.all([validateLicense(), fetchPlans()]);
 
   const key = await getLicenseKey();
   let tickets: SupportTicket[] = [];
@@ -18,11 +19,15 @@ export default async function SupportPage() {
     }
   }
 
+  const enrolledPlan = license.plan ? plans.find((p) => p.slug === license.plan!.slug) : null;
+  const slaResponseTime = enrolledPlan?.details?.sla?.responseTime;
+
   return (
     <SupportPageClient
       license={license}
       tickets={tickets}
       hasKey={!!key}
+      slaResponseTime={slaResponseTime}
     />
   );
 }

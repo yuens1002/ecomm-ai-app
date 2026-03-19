@@ -5,12 +5,16 @@ import {
   ExternalLink,
   Loader2,
   MessageSquare,
-  Send,
+  SendHorizontal,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupText,
+  InputGroupTextarea,
+} from "@/components/ui/forms/InputGroup";
 import {
   Sheet,
   SheetContent,
@@ -23,6 +27,9 @@ import { usePaidAction } from "@/app/admin/support/_hooks/usePaidAction";
 import { TermsNotice } from "@/app/admin/support/_components/TermsNotice";
 import { fetchTicketDetail, submitTicketReply } from "@/app/admin/support/actions";
 import type { SupportTicket, TicketReply, ReplyResponse } from "@/lib/support-types";
+import { cn } from "@/lib/utils";
+
+const REPLY_MAX_LENGTH = 2000;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -137,7 +144,7 @@ export function TicketDetailSheet({
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="right"
-        className="flex flex-col w-full sm:max-w-md p-0 gap-0"
+        className="flex flex-col w-full sm:max-w-md p-0 gap-0 top-16 h-[calc(100vh-4rem)]"
       >
         {ticket && (
           <>
@@ -156,9 +163,6 @@ export function TicketDetailSheet({
                       Priority
                     </Badge>
                   )}
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate(ticket.createdAt)}
-                  </span>
                   {ticket.githubUrl && (
                     <a
                       href={ticket.githubUrl}
@@ -180,36 +184,33 @@ export function TicketDetailSheet({
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : replies.length > 0 ? (
-                <div className="space-y-3">
-                  {/* Original ticket body */}
+                <div className="space-y-4">
+                  {/* Original ticket body — visually distinct from replies */}
                   {ticket.body && (
-                    <>
-                      <div className="rounded-lg border p-3">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs font-medium">You</span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(ticket.createdAt)}
-                          </span>
-                        </div>
-                        <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                          {ticket.body}
-                        </p>
+                    <div className="border-l-2 border-border px-4 py-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium">Issue</span>
+                        <span className="text-xs text-muted-foreground">{formatDate(ticket.createdAt)}</span>
                       </div>
-                      <Separator />
-                    </>
+                      <p className="text-sm whitespace-pre-wrap">{ticket.body}</p>
+                    </div>
                   )}
 
                   {replies.map((reply) => (
                     <div
                       key={reply.id}
-                      className={
+                      className={cn(
+                        "px-4 py-3 space-y-2",
                         reply.source === "SUPPORT"
-                          ? "rounded-lg border bg-muted/30 p-3"
-                          : "rounded-lg border p-3"
-                      }
+                          ? "ml-6 bg-muted/40 rounded-lg"
+                          : "border rounded-lg"
+                      )}
                     >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-medium">
+                      <div className="flex items-center justify-between">
+                        <span className={cn(
+                          "text-xs font-medium",
+                          reply.source === "SUPPORT" ? "text-muted-foreground" : "text-foreground"
+                        )}>
                           {reply.source === "SUPPORT" ? "Support Team" : "You"}
                         </span>
                         <span className="text-xs text-muted-foreground">
@@ -238,30 +239,37 @@ export function TicketDetailSheet({
 
             {/* Reply form — fixed at bottom */}
             {isOpen && (
-              <div className="border-t px-5 py-4 space-y-3">
+              <div className="px-5 py-4 space-y-3">
                 {replyAction.showTermsNotice && <TermsNotice />}
-                <Textarea
-                  placeholder="Write a reply..."
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  disabled={replyAction.isPending}
-                  rows={2}
-                  maxLength={10000}
-                  className="resize-none"
-                />
-                <Button
-                  onClick={handleReply}
-                  disabled={!replyText.trim() || replyAction.isPending}
-                  size="sm"
-                  className="w-full sm:w-auto"
-                >
-                  {replyAction.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="mr-2 h-4 w-4" />
-                  )}
-                  Send Reply
-                </Button>
+                <InputGroup>
+                  <InputGroupTextarea
+                    placeholder="Write a reply..."
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    disabled={replyAction.isPending}
+                    maxLength={REPLY_MAX_LENGTH}
+                    rows={2}
+                  />
+                  <InputGroupAddon align="block-end" className="items-end">
+                    <InputGroupText className="text-xs font-medium">
+                      {replyText.length}/{REPLY_MAX_LENGTH}
+                    </InputGroupText>
+                    <InputGroupButton
+                      size="sm"
+                      variant="default"
+                      onClick={handleReply}
+                      disabled={!replyText.trim() || replyAction.isPending}
+                      className="ml-auto"
+                    >
+                      {replyAction.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <SendHorizontal className="h-4 w-4" />
+                      )}
+                      <span className="ml-2">{replyAction.isPending ? "Sending" : "Send"}</span>
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
               </div>
             )}
 

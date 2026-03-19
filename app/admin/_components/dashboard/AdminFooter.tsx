@@ -18,7 +18,6 @@ interface AdminFooterProps {
   socialLinks: SocialLink[];
 }
 
-const GITHUB_ISSUES_URL = "https://github.com/yuens1002/ecomm-ai-app/issues";
 
 export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -29,7 +28,7 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
       <footer className="border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Desktop Layout: 3 columns */}
-          <div className="hidden sm:flex h-16 items-center justify-between">
+          <div className="hidden lg:flex h-16 items-center justify-between">
             {/* Left: Branding with copyright and version */}
             <div className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} {storeName}
@@ -60,9 +59,7 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
               </button>
               <span className="text-border">•</span>
               <Link
-                href={GITHUB_ISSUES_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/admin/support"
                 className="hover:text-foreground transition-colors"
               >
                 Support
@@ -75,16 +72,16 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
             </div>
           </div>
 
-          {/* Mobile Layout: Stacked */}
-          <div className="sm:hidden py-4 space-y-3">
-            {/* Row 1: Branding with copyright and version */}
+          {/* Mobile/Tablet Layout: xs–md stacked groups */}
+          <div className="lg:hidden py-4 space-y-3">
+            {/* Row 1: Branding */}
             <div className="text-sm text-muted-foreground text-center">
               © {new Date().getFullYear()} {storeName}
               <span className="ml-2 text-xs opacity-60">v{appVersion}</span>
             </div>
 
-            {/* Row 2: Links + Social */}
-            <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground flex-wrap">
+            {/* Row 2: Links */}
+            <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground flex-wrap">
               <Link
                 href="/admin/terms"
                 className="hover:text-foreground transition-colors"
@@ -107,20 +104,19 @@ export function AdminFooter({ storeName, socialLinks }: AdminFooterProps) {
               </button>
               <span className="text-border">•</span>
               <Link
-                href={GITHUB_ISSUES_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/admin/support"
                 className="hover:text-foreground transition-colors"
               >
                 Support
               </Link>
-              {socialLinks.length > 0 && (
-                <>
-                  <span className="text-border">•</span>
-                  <SocialLinks links={socialLinks} />
-                </>
-              )}
             </div>
+
+            {/* Row 3: Social icons */}
+            {socialLinks.length > 0 && (
+              <div className="flex justify-center">
+                <SocialLinks links={socialLinks} />
+              </div>
+            )}
           </div>
         </div>
       </footer>

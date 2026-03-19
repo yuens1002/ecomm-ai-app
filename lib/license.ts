@@ -456,7 +456,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
           },
           {
             slug: "schedule-call",
-            label: "Session",
+            label: "1:1 Session",
             url: `${PLATFORM_URL}/schedule`,
             variant: "outline",
             icon: "calendar",
@@ -591,7 +591,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
         availableActions: [
           {
             slug: "schedule-call",
-            label: "Session",
+            label: "1:1 Session",
             url: `${PLATFORM_URL}/schedule`,
             variant: "outline",
             icon: "calendar",
