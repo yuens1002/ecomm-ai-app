@@ -121,11 +121,6 @@ export async function fetchAllLegalDocs(): Promise<LegalDocument[]> {
 export async function acceptLegalDocs(
   documents: Array<{ slug: string; version: string }>
 ): Promise<{ success: boolean; error?: string }> {
-  if (process.env.MOCK_LICENSE_TIER) {
-    console.log("[mock] acceptLegalDocs:", documents);
-    return { success: true };
-  }
-
   const key = await getLicenseKey();
   if (!key) {
     return { success: false, error: "No license key configured" };

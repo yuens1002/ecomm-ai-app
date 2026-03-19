@@ -189,6 +189,14 @@
       "acs_doc": "docs/plans/phase3g-legal-terms-page-ACs.md",
       "notes": "19/19 ACs verified. 9 UI via Chrome screenshots + code review, 7 FN via code review, 3 REG via precheck (0 errors) + test:ci (93 suites, 1089 tests). 1 fix: removed unused Link import from TermsPageClient.tsx."
     },
+    "feat/api-wiring": {
+      "status": "verified",
+      "acs_passed": 16,
+      "acs_total": 16,
+      "tasks": [],
+      "acs_doc": "docs/plans/api-wiring-ACs.md",
+      "notes": "16/16 ACs verified. 10 FN via code review, 6 REG via precheck (0 errors) + test:ci (93 suites, 1089 tests, 0 failures). 0 iterations needed."
+    },
     "feat/phase2a-llm-agnostic-ai": {
       "status": "verified",
       "acs_passed": 22,
