@@ -231,7 +231,8 @@ async function handler(req, res) {
     };
     tickets.unshift(ticket);
 
-    const resp = getResponse("createTicket", { ticket, creditsRemaining: Math.max(0, 5 - ticketCount) });
+    const priorityUsed = body.type === "priority" ? ticketCount : ticketCount - 1;
+    const resp = getResponse("createTicket", { ticket, creditsRemaining: Math.max(0, 5 - priorityUsed) });
     res.writeHead(resp.status);
     res.end(JSON.stringify(resp.body));
     return;

@@ -23,7 +23,7 @@ test("Submit normal ticket shows success toast", async ({
   });
 
   // If the type selector is visible (hasKey=true), select Normal type
-  const normalButton = page.getByRole("button", { name: /^Normal$/i });
+  const normalButton = page.getByRole("button", { name: /Normal/i });
   if (await normalButton.isVisible()) {
     await normalButton.click();
   }
