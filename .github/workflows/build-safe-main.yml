@@ -113,6 +113,7 @@ jobs:
       DIRECT_URL: ${{ secrets.DIRECT_URL }}
       PLATFORM_URL: http://localhost:9999
       NEXT_PUBLIC_DEMO_MODE: "true"
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET != '' && secrets.AUTH_SECRET || 'e2e-ci-placeholder-secret-min32chars!!' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
