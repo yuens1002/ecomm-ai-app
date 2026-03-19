@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UsageBar, getNextRenewalDate } from "../UsageBar";
 import { refreshLicense } from "../actions";
 import { startCheckout } from "./actions";
+
 import type {
   LicenseInfo,
   UsagePool,
@@ -169,6 +170,9 @@ export function PlanPageClient({ license, plans }: PlanPageClientProps) {
           });
         }
       });
+    }
+    if (searchParams.get("demo") === "success") {
+      toast({ title: "Purchase complete — Demo mode, no charge made." });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

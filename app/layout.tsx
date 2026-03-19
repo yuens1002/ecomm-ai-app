@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const { storeName, storeTagline, storeDescription, storeFaviconUrl } =
     await getSiteMetadata();
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://artisanroast.app";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://demo.artisanroast.app";
 
   const ogTitle = isDemoMode
     ? "Artisan Roast — Open-Source E-Commerce for Specialty Coffee"
@@ -104,7 +104,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const { storeName, storeDescription } = await getSiteMetadata();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://artisanroast.app";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://demo.artisanroast.app";
 
   const jsonLd = {
     "@context": "https://schema.org",

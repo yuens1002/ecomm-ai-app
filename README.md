@@ -6,7 +6,7 @@
 
 **Your beans deserve better than Shopify.**
 
-[**Try the Live Demo**](https://artisanroast.app/) | [Self-Host Guide](#quick-start) | [Documentation](./docs/)
+[**Try the Live Demo**](https://demo.artisanroast.app/) | [Self-Host Guide](#quick-start) | [Documentation](./docs/)
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fartisan-roast&env=DATABASE_URL,AUTH_SECRET,SEED_ON_BUILD&envDescription=DATABASE_URL%3A%20Neon%20PostgreSQL%20connection%20string.%20AUTH_SECRET%3A%20Run%20%27openssl%20rand%20-base64%2032%27.%20SEED_ON_BUILD%3A%20Set%20to%20%27true%27%20for%20demo%20data.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fartisan-roast%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
 
@@ -20,7 +20,7 @@
 
 ## Try the Demo
 
-No signup required. Click **"Sign in as Admin"** or **"Sign in as Demo Customer"** on the [sign-in page](https://artisanroast.app/auth/signin) to explore instantly.
+No signup required. Click **"Sign in as Admin"** or **"Sign in as Demo Customer"** on the [sign-in page](https://demo.artisanroast.app/auth/signin) to explore instantly.
 
 | Account | What You'll See |
 |---------|-----------------|
@@ -215,6 +215,6 @@ MIT License - Use it however you want. See [LICENSE](./LICENSE).
 
 **Built by a coffee nerd who codes.**
 
-[Demo](https://artisanroast.app/) · [GitHub](https://github.com/yuens1002/artisan-roast) · [Setup Guide](./INSTALLATION.md)
+[Demo](https://demo.artisanroast.app/) · [GitHub](https://github.com/yuens1002/artisan-roast) · [Setup Guide](./INSTALLATION.md)
 
 </div>

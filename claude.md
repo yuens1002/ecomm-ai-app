@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Type:** Full-stack E-commerce Coffee Store with AI Integration | **Live:** <https://artisanroast.app/>
+**Type:** Full-stack E-commerce Coffee Store with AI Integration | **Live:** <https://demo.artisanroast.app/>
 
 **Tech Stack:** Next.js 16 (App Router, React 19) · TypeScript strict · PostgreSQL/Neon + Prisma ORM · Tailwind CSS 4 + shadcn/ui · Zustand (cart) · NextAuth.js v5 (GitHub/Google OAuth) · Stripe (Checkout + Billing Portal) · Google Gemini API · Jest + Testing Library · GitHub Actions + Vercel
 

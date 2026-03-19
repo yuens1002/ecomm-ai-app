@@ -503,14 +503,14 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
             description:
               "Add 5 priority support tickets to your account. Never expire.",
             price: "$39",
-            checkoutUrl: `${PLATFORM_URL}/checkout/alacarte-tickets-5`,
+            checkoutUrl: `${PLATFORM_URL}/api/checkout`,
           },
           {
             id: "alacarte-sessions-2",
             label: "2 One-on-One Sessions (30 min)",
             description: "Add 2 scheduled 1:1 sessions. Never expire.",
             price: "$99",
-            checkoutUrl: `${PLATFORM_URL}/checkout/alacarte-sessions-2`,
+            checkoutUrl: `${PLATFORM_URL}/api/checkout`,
           },
         ],
         legal: {
@@ -577,14 +577,14 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
             description:
               "Add 5 priority support tickets to your account. Never expire.",
             price: "$39",
-            checkoutUrl: `${PLATFORM_URL}/checkout/alacarte-tickets-5`,
+            checkoutUrl: `${PLATFORM_URL}/api/checkout`,
           },
           {
             id: "alacarte-sessions-2",
             label: "2 One-on-One Sessions (30 min)",
             description: "Add 2 scheduled 1:1 sessions. Never expire.",
             price: "$99",
-            checkoutUrl: `${PLATFORM_URL}/checkout/alacarte-sessions-2`,
+            checkoutUrl: `${PLATFORM_URL}/api/checkout`,
           },
         ],
         legal: {
@@ -644,7 +644,7 @@ function getMockLicenseInfo(tier: Tier): LicenseInfo {
             description:
               "Add 5 priority support tickets to your account. Never expire.",
             price: "$39",
-            checkoutUrl: `${PLATFORM_URL}/checkout/alacarte-tickets-5`,
+            checkoutUrl: `${PLATFORM_URL}/api/checkout`,
           },
         ],
         legal: {

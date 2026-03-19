@@ -1,7 +1,12 @@
 "use client";
 
+import { useEffect, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { startAlaCarteCheckout } from "./actions";
 import type { LicenseInfo } from "@/lib/license-types";
 
 // ---------------------------------------------------------------------------
@@ -18,6 +23,34 @@ interface AddOnsPageClientProps {
 
 export function AddOnsPageClient({ license }: AddOnsPageClientProps) {
   const packages = license.alaCarte;
+  const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (searchParams.get("demo") === "success") {
+      toast({ title: "Purchase complete — Demo mode, no charge made." });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handlePurchase(alaCarteSlug: string) {
+    const formData = new FormData();
+    formData.set("alaCarteSlug", alaCarteSlug);
+
+    startTransition(async () => {
+      const result = await startAlaCarteCheckout(formData);
+      if (result.success && result.url) {
+        window.location.href = result.url;
+      } else {
+        toast({
+          title: "Checkout failed",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+    });
+  }
 
   return (
     <div className="max-w-5xl space-y-8">
@@ -37,14 +70,15 @@ export function AddOnsPageClient({ license }: AddOnsPageClientProps) {
                   </p>
                 </div>
                 <div className="flex items-center justify-between mt-auto">
-                  <Button size="sm" asChild>
-                    <a
-                      href={pkg.checkoutUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Purchase
-                    </a>
+                  <Button
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => handlePurchase(pkg.id)}
+                  >
+                    {isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Purchase
                   </Button>
                   <span className="text-lg font-bold">{pkg.price}</span>
                 </div>

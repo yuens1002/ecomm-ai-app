@@ -26,7 +26,7 @@ const APP_URL = (
 // ---------------------------------------------------------------------------
 
 const checkoutSchema = z.object({
-  planSlug: z.string().min(1),
+  alaCarteSlug: z.string().min(1),
 });
 
 interface CheckoutResult {
@@ -36,30 +36,29 @@ interface CheckoutResult {
 }
 
 /**
- * Start a Stripe checkout session for a plan via the platform.
- * Sends callbackUrl, customerEmail, and instanceId per handoff §2.
+ * Start a Stripe checkout session for an a la carte package via the platform.
+ * Sends alaCarteSlug, callbackUrl, customerEmail, and instanceId.
  */
-export async function startCheckout(
+export async function startAlaCarteCheckout(
   formData: FormData
 ): Promise<CheckoutResult> {
   await requireAdmin();
 
   const parsed = checkoutSchema.safeParse({
-    planSlug: formData.get("planSlug"),
+    alaCarteSlug: formData.get("alaCarteSlug"),
   });
 
   if (!parsed.success) {
-    return { success: false, error: "Invalid plan" };
+    return { success: false, error: "Invalid package" };
   }
 
   if (DEMO_MODE) {
-    return { success: true, url: "/admin/support/plans?demo=success" };
+    return { success: true, url: "/admin/support/add-ons?demo=success" };
   }
 
   try {
     const instanceId = await getInstanceId(prisma);
 
-    // Fetch contactEmail for customerEmail
     const contactSetting = await prisma.siteSettings.findUnique({
       where: { key: "contactEmail" },
     });
@@ -68,7 +67,7 @@ export async function startCheckout(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        planSlug: parsed.data.planSlug,
+        alaCarteSlug: parsed.data.alaCarteSlug,
         instanceId: instanceId || "",
         customerEmail: contactSetting?.value || "",
         callbackUrl: `${APP_URL}/api/admin/platform/activate`,

@@ -20,8 +20,10 @@ import { UsageBar } from "./UsageBar";
 import { usePaidAction } from "./_hooks/usePaidAction";
 import { TermsNotice } from "./_components/TermsNotice";
 import { submitTypedTicket, submitCommunityIssue, fetchSupportTickets } from "./actions";
+import { startAlaCarteCheckout } from "./add-ons/actions";
 import { SupportTicketsList } from "./SupportTicketsSection";
 import type { LicenseInfo, AlaCartePackage, CreditPool } from "@/lib/license-types";
+
 import type { SupportTicket } from "@/lib/support-types";
 import type { PriorityTicketResponse } from "@/lib/support-types";
 
@@ -398,9 +400,30 @@ function UpsellSection({
   config: TicketPageConfig;
   license: LicenseInfo;
 }) {
+  const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
+
   const allTicketPacks = config.showUpsell
     ? license.alaCarte.filter((p) => p.id.startsWith("alacarte-tickets"))
     : config.ticketPacks;
+
+  function handlePurchase(alaCarteSlug: string) {
+    const formData = new FormData();
+    formData.set("alaCarteSlug", alaCarteSlug);
+
+    startTransition(async () => {
+      const result = await startAlaCarteCheckout(formData);
+      if (result.success && result.url) {
+        window.location.href = result.url;
+      } else {
+        toast({
+          title: "Checkout failed",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+    });
+  }
 
   return (
     <div className="rounded-lg border p-6 space-y-4">
@@ -425,23 +448,27 @@ function UpsellSection({
               </p>
             )}
             {allTicketPacks.map((pack) => (
-              <a
+              <button
                 key={pack.id}
-                href={pack.checkoutUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                type="button"
+                disabled={isPending}
+                onClick={() => handlePurchase(pack.id)}
+                className="flex w-full items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <div>
+                <div className="text-left">
                   <p className="text-sm font-medium">{pack.label}</p>
                   <p className="text-xs text-muted-foreground">
                     {pack.description}
                   </p>
                 </div>
                 <span className="text-sm font-medium shrink-0 ml-3">
-                  {pack.price}
+                  {isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    pack.price
+                  )}
                 </span>
-              </a>
+              </button>
             ))}
           </div>
         )}
