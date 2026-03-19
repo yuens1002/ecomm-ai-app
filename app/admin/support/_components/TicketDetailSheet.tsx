@@ -5,7 +5,7 @@ import {
   ExternalLink,
   Loader2,
   MessageSquare,
-  SendHorizonal,
+  SendHorizontal,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -264,7 +264,7 @@ export function TicketDetailSheet({
                       {replyAction.isPending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <SendHorizonal className="h-4 w-4" />
+                        <SendHorizontal className="h-4 w-4" />
                       )}
                       <span className="ml-2">{replyAction.isPending ? "Sending" : "Send"}</span>
                     </InputGroupButton>
