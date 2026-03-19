@@ -256,7 +256,7 @@ export async function seedMerch(prisma: PrismaClient) {
   const seedMode = getMerchSeedMode();
 
   if (seedMode === "none") {
-    console.log("  ↷ Phase 1b skipped: SEED_PRODUCT_MODE=none (clean install)");
+    console.log(`  ↷ Phase 1b skipped: SEED_PRODUCT_MODE=${process.env.SEED_PRODUCT_MODE ?? "none"} (clean install)`);
     return;
   }
 

@@ -16,7 +16,7 @@ export async function seedProducts(prisma: PrismaClient) {
   const productSeedMode = getProductSeedMode();
 
   if (productSeedMode === "none") {
-    console.log("  ↷ Phase 2 skipped: SEED_PRODUCT_MODE=none (clean install)");
+    console.log(`  ↷ Phase 2 skipped: SEED_PRODUCT_MODE=${process.env.SEED_PRODUCT_MODE ?? "none"} (clean install)`);
     return;
   }
 
