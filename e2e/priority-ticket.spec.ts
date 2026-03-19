@@ -18,7 +18,7 @@ test("Submit priority ticket appears in list", async ({
   await page.goto("/admin/support");
 
   // Wait for the Support page to load
-  await expect(page.getByText("Submit Ticket")).toBeVisible({
+  await expect(page.getByRole("heading", { name: "Submit Ticket" })).toBeVisible({
     timeout: 10_000,
   });
 
@@ -44,7 +44,8 @@ test("Submit priority ticket appears in list", async ({
   await submitButton.click();
 
   // Verify success toast
-  await expect(page.getByText(/Ticket created|Issue created/i)).toBeVisible({
+  // Use .first() to avoid strict mode — aria-live span also matches the pattern
+  await expect(page.getByText(/Ticket created|Issue created/i).first()).toBeVisible({
     timeout: 10_000,
   });
 

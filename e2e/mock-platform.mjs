@@ -273,7 +273,9 @@ async function handler(req, res) {
 const server = createServer(handler);
 const PORT = process.env.MOCK_PLATFORM_PORT || 9999;
 
-server.listen(PORT, () => {
+// Listen on :: (dual-stack) so both IPv4 (127.0.0.1) and IPv6 (::1) connections
+// are accepted — on Windows, Node 18+ resolves localhost to ::1 by default.
+server.listen(PORT, "::", () => {
   console.log(`Mock platform server running on http://localhost:${PORT}`);
 });
 

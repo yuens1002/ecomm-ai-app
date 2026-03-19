@@ -77,6 +77,20 @@ interface CacheEntry<T> {
 
 const cache = new Map<string, CacheEntry<unknown>>();
 
+/**
+ * Test-only flag: when true, validateLicense() returns FREE_DEFAULT immediately.
+ * Uses globalThis so the flag is visible across all Next.js module instances
+ * (route handlers and server components run in separate webpack chunks).
+ * Only honoured when NEXT_PUBLIC_DEMO_MODE=true.
+ */
+const g = globalThis as Record<string, unknown>;
+
+/** Force FREE tier for the next validateLicense() call (test use only). */
+export function forceFreeTierForTest(): void {
+  g.__testForceFree = true;
+  cache.clear();
+}
+
 function getCached<T>(key: string): T | null {
   const entry = cache.get(key);
   if (!entry) return null;
@@ -116,6 +130,13 @@ export async function getLicenseKey(): Promise<string> {
  * Returns cached result within TTL. Falls back to FREE on error.
  */
 export async function validateLicense(): Promise<LicenseInfo> {
+  // Test-only: force FREE tier when the reset-cache endpoint was called.
+  // Uses globalThis so it works across separate Next.js module instances.
+  if (g.__testForceFree === true && process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+    g.__testForceFree = false; // consume once
+    return FREE_DEFAULT;
+  }
+
   // Dev/test mock override
   const mockTier = process.env.MOCK_LICENSE_TIER as Tier | undefined;
   if (mockTier) {
@@ -365,6 +386,7 @@ export function getCapabilities(): Capabilities {
 
 /** Clear all cached license data. Call after key changes. */
 export function invalidateCache(): void {
+  g.__testForceFree = false;
   cache.clear();
 }
 

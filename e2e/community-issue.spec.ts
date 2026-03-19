@@ -18,14 +18,14 @@ test("Submit normal ticket shows success toast", async ({
   await page.goto("/admin/support");
 
   // Wait for the page to load
-  await expect(page.getByText("Submit Ticket")).toBeVisible({
+  await expect(page.getByRole("heading", { name: "Submit Ticket" })).toBeVisible({
     timeout: 10_000,
   });
 
   // If the type selector is visible (hasKey=true), select Normal type
-  const normalButton = page.getByRole("button", { name: /Normal/i });
-  if (await normalButton.isVisible()) {
-    await normalButton.click();
+  const normalRadio = page.getByRole("radio", { name: /Normal/i });
+  if (await normalRadio.isVisible()) {
+    await normalRadio.click();
   }
 
   // Fill in the issue title
@@ -43,8 +43,9 @@ test("Submit normal ticket shows success toast", async ({
   await submitButton.click();
 
   // Verify success toast appears (title depends on submission path)
+  // Use .first() to avoid strict mode — aria-live span also matches the pattern
   await expect(
-    page.getByText(/Issue created|Issue #\d+ created/i)
+    page.getByText(/Issue created|Issue #\d+ created/i).first()
   ).toBeVisible({ timeout: 10_000 });
 
   // Form should be cleared after successful submission
