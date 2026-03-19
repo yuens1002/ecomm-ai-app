@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.96.3 - 2026-03-19
+
+### Fixed
+
+- **A la carte checkout**: Purchase buttons now POST to the platform checkout API via server action instead of navigating to a POST-only endpoint as a link
+- **Demo mode checkout guard**: Subscribe and Purchase buttons are disabled when `NEXT_PUBLIC_DEMO_MODE=true`
+
+## 0.96.2 - 2026-03-19
+
+### Fixed
+
+- **Clean install seed**: `SEED_PRODUCT_MODE=none` skips product and merch seeding for new self-hosted installs; setup script defaults to this mode so the onboarding checklist "Add your products" step starts unchecked
+
 ## 0.96.1 - 2026-03-19
 
 ### Fixed
