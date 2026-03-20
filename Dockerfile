@@ -26,8 +26,14 @@ RUN apt-get update \
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 COPY --chown=node:node . .
 
-# Ensure /app is owned by node so runtime can create .next and other dirs
+# Ensure /app is owned by node so runtime can create subdirs
 RUN chown node:node /app
+
+# Pre-build Next.js at image build time so container startup is fast (~10s vs ~5min)
+# SKIP_SSG prevents generateStaticParams from querying the DB (no DB at build time)
+ENV SKIP_SSG=true
+ENV AUTH_SECRET="build-time-placeholder"
+RUN npm run build:no-migrate
 
 EXPOSE 3000
 

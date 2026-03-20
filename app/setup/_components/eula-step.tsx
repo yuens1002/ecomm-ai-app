@@ -12,7 +12,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ScrollText, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { Loader2 } from "lucide-react";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import type { LegalDocument } from "@/lib/legal-utils";
 
 interface EulaStepProps {
@@ -28,6 +30,7 @@ function renderDoc(content: string): string {
 }
 
 export function EulaStep({ docs, onAccepted }: EulaStepProps) {
+  const { settings } = useSiteSettings();
   const renderedDocs = useMemo(() => docs.map((d) => ({ ...d, html: renderDoc(d.content) })), [docs]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
@@ -85,9 +88,13 @@ export function EulaStep({ docs, onAccepted }: EulaStepProps) {
       <Card className="w-full max-w-2xl">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <ScrollText className="h-8 w-8 text-primary" />
-            </div>
+            <Image
+              src={settings.storeLogoUrl || "/logo.svg"}
+              alt={settings.storeName}
+              width={64}
+              height={64}
+              className="rounded-full"
+            />
           </div>
           <CardTitle className="text-2xl font-bold text-center">
             Review &amp; Accept Terms
