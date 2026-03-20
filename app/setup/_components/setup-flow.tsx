@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import Image from "next/image";
 import { Loader2, Eye, EyeOff, Shield, AlertCircle } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { EulaStep } from "./eula-step";
@@ -114,8 +115,7 @@ export function SetupFlow({ docs }: SetupFlowProps) {
         return;
       }
 
-      const params = new URLSearchParams({ message: "Admin account created. Please sign in.", callbackUrl: "/admin" });
-      router.push(`/auth/signin?${params.toString()}`);
+      router.push("/admin");
     } catch (error) {
       console.error("Setup error:", error);
       setError("An unexpected error occurred. Please try again.");
@@ -178,12 +178,16 @@ export function SetupFlow({ docs }: SetupFlowProps) {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Shield className="h-8 w-8 text-primary" />
-            </div>
+            <Image
+              src={settings.storeLogoUrl || "/logo.svg"}
+              alt={settings.storeName}
+              width={64}
+              height={64}
+              className="rounded-full"
+            />
           </div>
           <CardTitle className="text-2xl font-bold text-center">
-            Initial Setup
+            Store Setup
           </CardTitle>
           <CardDescription className="text-center">
             Create the first admin account for {settings.storeName}
