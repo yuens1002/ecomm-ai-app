@@ -31,7 +31,7 @@ RUN chown node:node /app
 
 EXPOSE 3000
 
-# Healthcheck expects /api/health (will be added in Phase 2)
+# Healthcheck hits /api/health — returns { status: "ok" } when app and DB are ready
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD node -e "fetch('http://localhost:3000/api/health').then(r=>{if(!r.ok)process.exit(1);return r.json();}).then(b=>{if(b && b.status && b.status!=='ok')process.exit(1);}).catch(()=>process.exit(1))"
 
 USER node
