@@ -6,9 +6,7 @@
 
 **Your beans deserve better than Shopify.**
 
-[**Try the Live Demo**](https://demo.artisanroast.app/) | [Self-Host Guide](#quick-start) | [Documentation](./docs/)
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fartisan-roast&env=DATABASE_URL,AUTH_SECRET,SEED_ON_BUILD&envDescription=DATABASE_URL%3A%20Neon%20PostgreSQL%20connection%20string.%20AUTH_SECRET%3A%20Run%20%27openssl%20rand%20-base64%2032%27.%20SEED_ON_BUILD%3A%20Set%20to%20%27true%27%20for%20demo%20data.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fartisan-roast%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
+[**Try the Live Demo**](https://demo.artisanroast.app/) | [Self-Host Guide](./INSTALLATION.md) | [Documentation](./docs/)
 
 ---
 
@@ -92,34 +90,11 @@ Most e-commerce platforms treat coffee like any other product. But your customer
 
 ---
 
-## Quick Start
+## Self-Hosting
 
-### Option 1: One-Click Deploy (Recommended)
+Setting up Artisan Roast requires a free database (Neon) and a deployment host (Vercel). No code changes needed — about 30 minutes to a running store.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fartisan-roast&env=DATABASE_URL,AUTH_SECRET,SEED_ON_BUILD&envDescription=DATABASE_URL%3A%20Neon%20PostgreSQL%20connection%20string.%20AUTH_SECRET%3A%20Run%20%27openssl%20rand%20-base64%2032%27.%20SEED_ON_BUILD%3A%20Set%20to%20%27true%27%20for%20demo%20data.&envLink=https%3A%2F%2Fgithub.com%2Fyuens1002%2Fartisan-roast%2Fblob%2Fmain%2F.env.example&project-name=artisan-roast&repository-name=artisan-roast)
-
-You'll need:
-
-- [Neon](https://neon.tech) account (free tier available) for PostgreSQL database
-
-Optional (add later for full functionality):
-
-- [Stripe](https://stripe.com) account for payment processing
-- [Resend](https://resend.com) account (free tier: 3,000 emails/month) for transactional emails
-
-### Option 2: Run Locally
-
-```bash
-
-git clone https://github.com/yuens1002/artisan-roast.git
-cd artisan-roast
-npm install
-cp .env.example .env.local  # Add your API keys
-npm run setup               # Database + seed data
-npm run dev                 # http://localhost:3000
-```
-
-**Full setup guide:** [INSTALLATION.md](./INSTALLATION.md)
+**→ [Full self-host guide](./INSTALLATION.md)**
 
 ---
 
