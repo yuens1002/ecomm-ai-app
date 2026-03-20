@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { defaultSettings } from "@/lib/site-settings";
 
 export async function getSiteMetadata() {
   const settings = await prisma.siteSettings.findMany({
@@ -24,7 +25,7 @@ export async function getSiteMetadata() {
   );
 
   return {
-    storeName: settingsMap.store_name || "",
+    storeName: settingsMap.store_name || defaultSettings.storeName,
     storeTagline: settingsMap.store_tagline || "",
     storeDescription: settingsMap.store_description || "",
     storeLogoUrl: settingsMap.store_logo_url || "/logo.svg",

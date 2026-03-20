@@ -19,7 +19,7 @@ export interface SiteSettings {
 }
 
 export const defaultSettings: SiteSettings = {
-  storeName: "",
+  storeName: "Artisan Roast",
   storeTagline: "",
   storeDescription: "",
   storeLogoUrl: "/logo.svg",

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.96.4 - 2026-03-20
+
+### Fixed
+
+- **Install flow**: Admin account creation now redirects to `/admin` after sign-in instead of `/account`
+- **Install flow**: Store name no longer shows blank in setup and sign-in pages on fresh installs (defaults to "Artisan Roast")
+- **Docker seed**: Fixed seed-if-empty.js regex matching dotenvx version string (`17` from `dotenv@17.x`) instead of the actual SQL product count, causing seed to be skipped on genuinely empty databases
+
 ## 0.96.3 - 2026-03-19
 
 ### Fixed
