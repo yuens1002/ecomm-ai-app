@@ -26,6 +26,9 @@ RUN apt-get update \
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 COPY --chown=node:node . .
 
+# Ensure /app is owned by node so runtime can create .next and other dirs
+RUN chown node:node /app
+
 EXPOSE 3000
 
 # Healthcheck expects /api/health (will be added in Phase 2)

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.96.5 - 2026-03-20
+
+### Fixed
+
+- **Docker**: Fixed `EACCES: permission denied, mkdir '/app/.next'` at container startup — `WORKDIR /app` was root-owned, preventing the `node` user from creating subdirectories at runtime
+- **Docker**: Added `.dockerignore` to exclude `.next/`, `node_modules/`, `.git/` from build context
+
 ## 0.96.4 - 2026-03-20
 
 ### Fixed
