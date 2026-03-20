@@ -24,7 +24,7 @@ export async function getSiteMetadata() {
   );
 
   return {
-    storeName: settingsMap.store_name || "",
+    storeName: settingsMap.store_name || "Artisan Roast",
     storeTagline: settingsMap.store_tagline || "",
     storeDescription: settingsMap.store_description || "",
     storeLogoUrl: settingsMap.store_logo_url || "/logo.svg",

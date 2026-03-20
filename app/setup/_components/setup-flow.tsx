@@ -114,7 +114,7 @@ export function SetupFlow({ docs }: SetupFlowProps) {
         return;
       }
 
-      router.push("/auth/signin?message=Admin account created. Please sign in.");
+      router.push("/auth/signin?message=Admin account created. Please sign in.&callbackUrl=/admin");
     } catch (error) {
       console.error("Setup error:", error);
       setError("An unexpected error occurred. Please try again.");

@@ -40,7 +40,7 @@ async function main() {
       }
     );
 
-    const match = result.match(/(\d+)/);
+    const match = result.match(/"count":\s*"?(\d+)"?/) || result.match(/^\s*(\d+)\s*$/m);
     const productCount = match ? parseInt(match[1], 10) : 0;
 
     if (productCount > 0) {
