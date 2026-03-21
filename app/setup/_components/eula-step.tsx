@@ -7,14 +7,11 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import Image from "next/image";
-import { Loader2 } from "lucide-react";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { Loader2, ScrollText } from "lucide-react";
+import { SetupStepper, SetupHeader, SetupLogo } from "./setup-header";
 import type { LegalDocument } from "@/lib/legal-utils";
 
 interface EulaStepProps {
@@ -30,7 +27,6 @@ function renderDoc(content: string): string {
 }
 
 export function EulaStep({ docs, onAccepted }: EulaStepProps) {
-  const { settings } = useSiteSettings();
   const renderedDocs = useMemo(() => docs.map((d) => ({ ...d, html: renderDoc(d.content) })), [docs]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
@@ -85,25 +81,17 @@ export function EulaStep({ docs, onAccepted }: EulaStepProps) {
 
   return (
     <div className="container mx-auto px-4 py-16 flex items-center justify-center min-h-[80vh]">
-      <Card className="w-full max-w-2xl">
-        <CardHeader className="space-y-1">
-          <div className="flex justify-center mb-4">
-            <Image
-              src={settings.storeLogoUrl || "/logo.svg"}
-              alt={settings.storeName}
-              width={64}
-              height={64}
-              className="rounded-full"
+      <div className="w-full max-w-2xl">
+        <SetupLogo />
+        <Card>
+          <CardHeader className="space-y-4">
+            <SetupStepper current="eula" />
+            <SetupHeader
+              icon={<ScrollText className="h-6 w-6" />}
+              title="Review & Accept Terms"
+              description="Please read and scroll through the following documents before proceeding."
             />
-          </div>
-          <CardTitle className="text-2xl font-bold text-center">
-            Review &amp; Accept Terms
-          </CardTitle>
-          <CardDescription className="text-center">
-            Please read and scroll through the following documents before
-            proceeding.
-          </CardDescription>
-        </CardHeader>
+          </CardHeader>
 
         <CardContent className="space-y-4">
           {/* Scrollable doc container */}
@@ -164,7 +152,8 @@ export function EulaStep({ docs, onAccepted }: EulaStepProps) {
             )}
           </Button>
         </CardFooter>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

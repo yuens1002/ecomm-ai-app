@@ -11,10 +11,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import Image from "next/image";
-import { Loader2, Eye, EyeOff, Shield, AlertCircle } from "lucide-react";
+import { Loader2, Eye, EyeOff, Shield, AlertCircle, Store } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { EulaStep } from "./eula-step";
+import { SetupStepper, SetupHeader, SetupLogo } from "./setup-header";
 import type { LegalDocument } from "@/lib/legal-utils";
 
 interface PasswordValidation {
@@ -175,24 +175,17 @@ export function SetupFlow({ docs }: SetupFlowProps) {
 
   return (
     <div className="container mx-auto px-4 py-16 flex items-center justify-center min-h-[80vh]">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex justify-center mb-4">
-            <Image
-              src={settings.storeLogoUrl || "/logo.svg"}
-              alt={settings.storeName}
-              width={64}
-              height={64}
-              className="rounded-full"
+      <div className="w-full max-w-md">
+        <SetupLogo />
+        <Card>
+          <CardHeader className="space-y-4">
+            <SetupStepper current="account" />
+            <SetupHeader
+              icon={<Store className="h-6 w-6" />}
+              title="Store Setup"
+              description={`Create the first admin account for ${settings.storeName}`}
             />
-          </div>
-          <CardTitle className="text-2xl font-bold text-center">
-            Store Setup
-          </CardTitle>
-          <CardDescription className="text-center">
-            Create the first admin account for {settings.storeName}
-          </CardDescription>
-        </CardHeader>
+          </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
             <p className="text-sm text-blue-900 dark:text-blue-100">
@@ -329,7 +322,8 @@ export function SetupFlow({ docs }: SetupFlowProps) {
             </p>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }
