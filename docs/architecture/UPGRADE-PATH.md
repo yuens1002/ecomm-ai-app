@@ -6,9 +6,8 @@ This document outlines how database migrations and upgrades are applied across d
 
 | Deployment Type | How Migrations Run | When |
 |-----------------|-------------------|------|
-| **Vercel (demo)** | Auto via `vercel-build` → `prisma migrate deploy` | Every deployment |
-| **Self-hosted** | Manual: `npx prisma migrate deploy` or `npm run build` | Before starting updated app |
-| **Docker** | Manual or via entrypoint script | Container startup or manual |
+| **Vercel** | Auto via `vercel-build` → `prisma migrate deploy` | Every deployment |
+| **Self-hosted (Neon + Vercel)** | Automatic on Vercel redeploy after syncing fork | On merge to main in your fork |
 
 ---
 
@@ -35,61 +34,21 @@ DATABASE_URL=$DIRECT_URL PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT=180000 node script
 
 ---
 
-### Self-Hosted Deployments
+### Self-Hosted Deployments (Neon + Vercel)
 
-Users upgrading a self-hosted instance should:
+Migrations run automatically for self-hosters using the recommended Neon + Vercel stack:
 
-```bash
+1. In your GitHub fork, click **Sync fork → Update branch**
+2. Vercel detects the push and redeploys automatically
+3. The `vercel-build` script runs `prisma migrate deploy` before starting the app
 
-# 1. Pull latest code
-git pull origin main
+**No manual steps required.** Migrations always run before the new code is live.
 
-# 2. Install any new dependencies
-npm install
-
-# 3. Run migrations (choose one)
-npx prisma migrate deploy          # Just migrations
-# OR
-npm run build                      # Migrations + full build
-
-# 4. Restart the application
-pm2 restart artisan-roast          # or however you run it
-```
-
-**Critical:** Migrations must run BEFORE the new code starts, otherwise Prisma client will reference columns that don't exist.
-
----
-
-### Docker Deployments
-
-#### Option 1: Manual Migration
+If you need to verify migration status:
 
 ```bash
-
-# After pulling new image
-docker compose exec app npx prisma migrate deploy
-docker compose restart app
+npx prisma migrate status
 ```
-
-#### Option 2: Entrypoint Script (Recommended)
-
-Add to your Docker entrypoint or compose command:
-
-```dockerfile
-# In Dockerfile or docker-compose.yml
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
-```
-
-Or in `docker-compose.yml`:
-
-```bash
-
-services:
-  app:
-    command: sh -c "npx prisma migrate deploy && npm start"
-```
-
-**Note:** Ensure `DATABASE_URL` in `.env.docker` points to a direct (non-pooled) connection for migrations.
 
 ---
 
@@ -114,16 +73,15 @@ npx prisma migrate deploy
 npx prisma migrate status  # Should show "Database schema is up to date!"
 ```
 
-### Method 2: Docker Simulation (Closest to Real)
+### Method 2: Neon Branch Simulation (Closest to Real)
 
-```typescript
+```bash
+# 1. Create a Neon branch from your production branch
+#    (Neon dashboard → Branches → New Branch → from main)
 
-# 1. Start fresh Docker instance with older image/state
-docker compose up -d db
-docker compose exec db psql -U postgres -c "CREATE DATABASE artisan_test;"
-
-# 2. Point to test database
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/artisan_test"
+# 2. Point to the branch database
+export DATABASE_URL="<neon-branch-pooled-url>"
+export DIRECT_URL="<neon-branch-direct-url>"
 
 # 3. Apply older migration state (e.g., reset to specific migration)
 npx prisma migrate resolve --applied "20260101000000_some_old_migration"
@@ -133,6 +91,8 @@ npx prisma migrate deploy
 
 # 5. Verify all migrations applied
 npx prisma migrate status
+
+# 6. Delete the branch when done (Neon dashboard)
 ```
 
 ### Method 3: Staging Environment
