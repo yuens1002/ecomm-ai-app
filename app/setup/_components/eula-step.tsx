@@ -124,7 +124,7 @@ export function EulaStep({ docs, onAccepted }: EulaStepProps) {
             )}
           </CardContent>
           <CardFooter>
-            <Button className="w-full" disabled={!scrolledToBottom || isAccepting} onClick={handleAccept}>
+            <Button data-testid="eula-accept-btn" className="w-full" disabled={!scrolledToBottom || isAccepting} onClick={handleAccept}>
               {isAccepting ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Recording acceptance...</>
               ) : (
