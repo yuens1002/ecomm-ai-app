@@ -201,7 +201,8 @@ const tools = [
 async function executeTool(page, name, input) {
   switch (name) {
     case "navigate": {
-      const url = input.path.startsWith("http") ? input.path : `${BASE_URL}${input.path}`;
+      const rawPath = input.path.startsWith("/") || input.path.startsWith("http") ? input.path : `/${input.path}`;
+      const url = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath}`;
       console.log(`  → navigate: ${url}`);
       await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
       await new Promise((r) => setTimeout(r, 500));
@@ -285,7 +286,7 @@ async function runAgent(page, acs) {
     .join("\n");
 
   const systemPrompt = `You are a QA agent verifying a fresh install of a web application.
-You have browser tools: navigate, screenshot, click, type, scroll, key.
+You have browser tools: navigate, screenshot, click, type, scroll, key, check_url, check_text.
 
 TARGET URL: ${BASE_URL}
 
@@ -379,6 +380,10 @@ Start by taking a screenshot of /setup.`;
     if (toolResults.length > 0) {
       messages.push({ role: "user", content: toolResults });
     }
+  }
+
+  if (!doneResult && iterations >= MAX_ITERATIONS) {
+    console.log(`\n⚠️  MAX_ITERATIONS (${MAX_ITERATIONS}) reached — agent did not call done()`);
   }
 
   return doneResult;
