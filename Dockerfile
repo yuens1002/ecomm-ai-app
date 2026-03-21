@@ -30,9 +30,11 @@ COPY --chown=node:node . .
 RUN chown node:node /app
 
 # Pre-build Next.js at image build time so container startup is fast (~10s vs ~5min)
-# SKIP_SSG prevents generateStaticParams from querying the DB (no DB at build time)
-ENV SKIP_SSG=true
+# Dummy env vars satisfy validation — DB is not contacted during build (no-migrate + SKIP_SSG)
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build?schema=public"
+ENV DIRECT_URL="postgresql://build:build@localhost:5432/build?schema=public"
 ENV AUTH_SECRET="build-time-placeholder"
+ENV SKIP_SSG=true
 RUN npm run build:no-migrate
 
 EXPOSE 3000
