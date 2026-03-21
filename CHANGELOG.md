@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.96.6 - 2026-03-20
+
+### Changed
+
+- **Docker removed**: Dropped Dockerfile, docker-compose.yml, and GHCR workflow — self-hosting is now Neon + Vercel only
+- **Setup UI**: Redesigned setup flow with logo above card, step indicator (EULA → Store Setup), and contextual icons (ScrollText / Store)
+- **Installation guide**: Rewrote `INSTALLATION.md` with honest expectations, prerequisites table, and exact 5-step self-host walkthrough
+
 ## 0.96.5 - 2026-03-20
 
 ### Fixed
