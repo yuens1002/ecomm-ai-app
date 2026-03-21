@@ -275,7 +275,7 @@ async function executeTool(page, name, input) {
 // ── Agent loop ─────────────────────────────────────────────────────────────
 
 async function runAgent(page, acs) {
-  const client = new Anthropic();
+  const client = new Anthropic({ maxRetries: 5 });
 
   const resolvedKnownValues = Object.entries(KNOWN_VALUES)
     .map(([k, v]) => `  ${k} = "${v}"`)
