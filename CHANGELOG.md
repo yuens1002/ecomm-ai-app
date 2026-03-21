@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.96.7 - 2026-03-20
+
+### Added
+
+- **Install assurance**: Automated post-merge CI verifies a fresh install on every push to main — Claude computer use agent walks `VERIFICATION.md` ACs against a dedicated QA Vercel stack, opens a GitHub issue on failure
+- **VERIFICATION.md**: Structured install spec (16 ACs across Install Flow, Known Value Round-Trips, Initial App State) — read-only source of truth for the QA agent
+- **Spec drift guard**: PR comment when setup-related files change without updating `VERIFICATION.md`
+
 ## 0.96.6 - 2026-03-20
 
 ### Changed
