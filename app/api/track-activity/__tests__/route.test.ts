@@ -8,6 +8,15 @@ jest.mock("@/auth", () => ({
   auth: jest.fn(),
 }));
 
+// Mock Prisma to avoid real DB connections
+jest.mock("@/lib/prisma", () => ({
+  prisma: {
+    userActivity: {
+      create: jest.fn().mockResolvedValue({ id: "mock-activity-id" }),
+    },
+  },
+}));
+
 describe("POST /api/track-activity", () => {
   it("should return 400 if sessionId is missing", async () => {
     const request = new NextRequest(
@@ -61,9 +70,10 @@ describe("POST /api/track-activity", () => {
     );
 
     const response = await POST(request);
+    const data = await response.json();
 
-    // Should either succeed (200) or fail gracefully (500)
-    expect([200, 500]).toContain(response.status);
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
   });
 
   it("should accept valid ADD_TO_CART activity", async () => {
@@ -80,8 +90,10 @@ describe("POST /api/track-activity", () => {
     );
 
     const response = await POST(request);
+    const data = await response.json();
 
-    expect([200, 500]).toContain(response.status);
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
   });
 
   it("should accept valid REMOVE_FROM_CART activity", async () => {
@@ -98,7 +110,9 @@ describe("POST /api/track-activity", () => {
     );
 
     const response = await POST(request);
+    const data = await response.json();
 
-    expect([200, 500]).toContain(response.status);
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
   });
 });
