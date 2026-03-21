@@ -4,9 +4,14 @@
 
 ### Added
 
-- **Install assurance**: Automated post-merge CI verifies a fresh install on every push to main — Claude computer use agent walks `VERIFICATION.md` ACs against a dedicated QA Vercel stack, opens a GitHub issue on failure
+- **Install assurance**: Automated post-merge CI verifies a fresh install on every push to main — deterministic Puppeteer script walks `VERIFICATION.md` ACs, opens a GitHub issue on failure; Claude Haiku called only on failure to generate issue body (~$0/run)
 - **VERIFICATION.md**: Structured install spec (16 ACs across Install Flow, Known Value Round-Trips, Initial App State) — read-only source of truth for the QA agent
 - **Spec drift guard**: PR comment when setup-related files change without updating `VERIFICATION.md`
+
+### Fixed
+
+- **Admin layout**: Added `force-dynamic` to prevent Next.js prerendering cached `/setup` redirects when DB is empty at build time
+- **QA agent**: Increased Anthropic `maxRetries` to 5 for overload resilience (used on failure path only)
 
 ## 0.96.6 - 2026-03-20
 
