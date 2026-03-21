@@ -3,7 +3,8 @@
  * QA Agent — Install Assurance
  *
  * Reads VERIFICATION.md (repo root), parses all AC tables, then uses
- * Claude computer use to walk through each AC against a live URL.
+ * Claude + Puppeteer to walk through each AC against a live URL.
+ * Claude receives screenshots and decides what to do next via custom tools.
  *
  * Usage:
  *   BASE_URL=https://your-qa.vercel.app node scripts/qa-agent.js
@@ -25,6 +26,16 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Load .env.local for local runs (CI sets env vars directly)
+if (!process.env.BASE_URL && !process.env.QA_BASE_URL) {
+  const { default: dotenv } = await import("dotenv");
+  dotenv.config({ path: path.join(__dirname, "../.env.local") });
+}
+// Allow QA_BASE_URL as alias for BASE_URL (matches .env.local convention)
+if (!process.env.BASE_URL && process.env.QA_BASE_URL) {
+  process.env.BASE_URL = process.env.QA_BASE_URL;
+}
+
 // ── Env validation ─────────────────────────────────────────────────────────
 
 const BASE_URL = process.env.BASE_URL?.replace(/\/$/, "");
@@ -45,10 +56,6 @@ const KNOWN_VALUES = {
 
 // ── VERIFICATION.md parsing ────────────────────────────────────────────────
 
-/**
- * Parse all AC rows from VERIFICATION.md.
- * Returns { id, what, how, pass }[] for every non-header, non-separator row.
- */
 function parseVerificationMd() {
   const specPath = path.join(__dirname, "../VERIFICATION.md");
   const content = fs.readFileSync(specPath, "utf-8");
@@ -56,7 +63,6 @@ function parseVerificationMd() {
 
   for (const line of content.split("\n")) {
     const trimmed = line.trim();
-    // Skip non-table lines, header rows, and separator rows
     if (!trimmed.startsWith("|")) continue;
     if (trimmed.includes("---")) continue;
 
@@ -64,9 +70,7 @@ function parseVerificationMd() {
     if (cells.length < 4) continue;
 
     const [id, what, how, pass] = cells;
-    // Skip header rows (id column is "AC" or "---")
     if (id === "AC" || id.startsWith("---")) continue;
-    // Only include rows that look like AC-XX-N
     if (!/^AC-[A-Z]+-\d+$/.test(id)) continue;
 
     acs.push({ id, what, how, pass });
@@ -75,128 +79,197 @@ function parseVerificationMd() {
   return acs;
 }
 
-// ── Tools definition ───────────────────────────────────────────────────────
+// ── Tools ─────────────────────────────────────────────────────────────────
 
-const DISPLAY_WIDTH = 1280;
-const DISPLAY_HEIGHT = 800;
-
-const computerTool = {
-  type: "computer_20241022",
-  name: "computer",
-  display_width_px: DISPLAY_WIDTH,
-  display_height_px: DISPLAY_HEIGHT,
-};
-
-const doneTool = {
-  name: "done",
-  description: "Call this when all ACs have been attempted. Returns per-AC results.",
-  input_schema: {
-    type: "object",
-    properties: {
-      passed: {
-        type: "boolean",
-        description: "true if every AC passed, false if any failed",
+const tools = [
+  {
+    name: "navigate",
+    description: "Navigate the browser to a path (e.g. '/setup') or absolute URL.",
+    input_schema: {
+      type: "object",
+      properties: {
+        path: { type: "string", description: "Path relative to BASE_URL or absolute URL" },
       },
-      results: {
-        type: "array",
-        description: "One entry per AC in the order they were verified",
-        items: {
-          type: "object",
-          properties: {
-            id: { type: "string", description: "AC identifier, e.g. AC-IF-1" },
-            status: { type: "string", enum: ["PASS", "FAIL", "SKIP"], description: "Result" },
-            evidence: { type: "string", description: "One-line description of what was observed" },
+      required: ["path"],
+    },
+  },
+  {
+    name: "screenshot",
+    description: "Take a screenshot of the current page. Always call this after navigating or taking an action to observe the result.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "click",
+    description: "Click at a specific x,y coordinate on the page.",
+    input_schema: {
+      type: "object",
+      properties: {
+        x: { type: "number", description: "X coordinate" },
+        y: { type: "number", description: "Y coordinate" },
+        description: { type: "string", description: "What you're clicking (for logging)" },
+      },
+      required: ["x", "y"],
+    },
+  },
+  {
+    name: "type",
+    description: "Type text using the keyboard (into the currently focused element).",
+    input_schema: {
+      type: "object",
+      properties: {
+        text: { type: "string", description: "Text to type" },
+      },
+      required: ["text"],
+    },
+  },
+  {
+    name: "scroll",
+    description: "Scroll at a specific x,y coordinate. Use direction 'down' or 'up' and amount (number of scroll steps).",
+    input_schema: {
+      type: "object",
+      properties: {
+        x: { type: "number", description: "X coordinate to scroll at" },
+        y: { type: "number", description: "Y coordinate to scroll at" },
+        direction: { type: "string", enum: ["down", "up"] },
+        amount: { type: "number", description: "Number of scroll steps (default 5)" },
+      },
+      required: ["x", "y", "direction"],
+    },
+  },
+  {
+    name: "key",
+    description: "Press a keyboard key (e.g. 'Enter', 'Tab', 'Escape').",
+    input_schema: {
+      type: "object",
+      properties: {
+        key: { type: "string", description: "Key name, e.g. Enter, Tab, Escape" },
+      },
+      required: ["key"],
+    },
+  },
+  {
+    name: "check_url",
+    description: "Check if the current page pathname starts with an expected path. Use this instead of screenshot to verify navigation succeeded. Be precise: '/admin' will NOT match '/auth/admin-signin'.",
+    input_schema: {
+      type: "object",
+      properties: {
+        expected: { type: "string", description: "Expected path prefix (e.g. '/admin', '/setup'). Matched against the URL pathname only — not the full URL." },
+      },
+      required: ["expected"],
+    },
+  },
+  {
+    name: "check_text",
+    description: "Check if specific text appears in the page content. Use this instead of screenshot to verify text-based ACs.",
+    input_schema: {
+      type: "object",
+      properties: {
+        text: { type: "string", description: "Text to search for in the page" },
+        exact: { type: "boolean", description: "If true, match exact string; if false (default), case-insensitive substring match" },
+      },
+      required: ["text"],
+    },
+  },
+  {
+    name: "done",
+    description: "Call this when all ACs have been attempted. Returns per-AC results.",
+    input_schema: {
+      type: "object",
+      properties: {
+        passed: { type: "boolean", description: "true if every AC passed, false if any failed" },
+        results: {
+          type: "array",
+          description: "One entry per AC in the order they were verified",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string", description: "AC identifier, e.g. AC-IF-1" },
+              status: { type: "string", enum: ["PASS", "FAIL", "SKIP"] },
+              evidence: { type: "string", description: "One-line description of what was observed" },
+            },
+            required: ["id", "status", "evidence"],
           },
-          required: ["id", "status", "evidence"],
         },
       },
+      required: ["passed", "results"],
     },
-    required: ["passed", "results"],
   },
-};
+];
 
-// ── Computer use executor ──────────────────────────────────────────────────
+// ── Tool execution ─────────────────────────────────────────────────────────
 
-async function executeComputerAction(page, action) {
-  switch (action.action) {
-    case "screenshot": {
-      const buf = await page.screenshot({ fullPage: false });
-      return { type: "base64", media_type: "image/png", data: buf.toString("base64") };
+async function executeTool(page, name, input) {
+  switch (name) {
+    case "navigate": {
+      const rawPath = input.path.startsWith("/") || input.path.startsWith("http") ? input.path : `/${input.path}`;
+      const url = rawPath.startsWith("http") ? rawPath : `${BASE_URL}${rawPath}`;
+      console.log(`  → navigate: ${url}`);
+      await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
+      await new Promise((r) => setTimeout(r, 500));
+      return { ok: true, url };
     }
 
-    case "left_click": {
-      const [x, y] = action.coordinate;
-      await page.mouse.click(x, y);
+    case "screenshot": {
+      const buf = await page.screenshot({ fullPage: false });
+      return { image: buf.toString("base64") };
+    }
+
+    case "click": {
+      const cx = Number(input.x);
+      const cy = Number(input.y);
+      if (isNaN(cx) || isNaN(cy)) {
+        return { error: `Invalid coordinates x=${input.x}, y=${input.y}. Take a screenshot first to get valid numeric coordinates.` };
+      }
+      console.log(`  → click (${cx}, ${cy})${input.description ? ` — ${input.description}` : ""}`);
+      await page.mouse.click(cx, cy);
       await new Promise((r) => setTimeout(r, 600));
       return { ok: true };
     }
 
-    case "right_click": {
-      const [x, y] = action.coordinate;
-      await page.mouse.click(x, y, { button: "right" });
-      await new Promise((r) => setTimeout(r, 400));
-      return { ok: true };
-    }
-
-    case "double_click": {
-      const [x, y] = action.coordinate;
-      await page.mouse.dblclick(x, y);
-      await new Promise((r) => setTimeout(r, 400));
-      return { ok: true };
-    }
-
-    case "mouse_move": {
-      const [x, y] = action.coordinate;
-      await page.mouse.move(x, y);
-      return { ok: true };
-    }
-
-    case "left_click_drag": {
-      const [sx, sy] = action.start_coordinate;
-      const [ex, ey] = action.coordinate;
-      await page.mouse.move(sx, sy);
-      await page.mouse.down();
-      await page.mouse.move(ex, ey);
-      await page.mouse.up();
-      await new Promise((r) => setTimeout(r, 400));
-      return { ok: true };
-    }
-
     case "type": {
-      await page.keyboard.type(action.text, { delay: 40 });
-      return { ok: true };
-    }
-
-    case "key": {
-      // Map common key names
-      const keyMap = { Return: "Enter", Escape: "Escape", Tab: "Tab" };
-      const key = keyMap[action.text] ?? action.text;
-      await page.keyboard.press(key);
-      await new Promise((r) => setTimeout(r, 400));
+      console.log(`  → type: "${input.text.slice(0, 40)}${input.text.length > 40 ? "…" : ""}"`);
+      await page.keyboard.type(input.text, { delay: 40 });
       return { ok: true };
     }
 
     case "scroll": {
-      const [x, y] = action.coordinate;
-      const deltaY = (action.amount ?? 3) * (action.direction === "up" ? -100 : 100);
-      await page.mouse.move(x, y);
+      const deltaY = (input.amount ?? 5) * (input.direction === "up" ? -100 : 100);
+      await page.mouse.move(input.x, input.y);
       await page.mouse.wheel({ deltaY });
       await new Promise((r) => setTimeout(r, 500));
       return { ok: true };
     }
 
+    case "key": {
+      await page.keyboard.press(input.key);
+      await new Promise((r) => setTimeout(r, 400));
+      return { ok: true };
+    }
+
+    case "check_url": {
+      const current = page.url();
+      const parsed = new URL(current);
+      // Match against pathname+search so "/admin" doesn't match "/auth/admin-signin"
+      const matches = parsed.pathname.startsWith(input.expected) || parsed.pathname === input.expected;
+      console.log(`  → check_url: ${input.expected} → ${matches ? "MATCH" : "NO MATCH"} (${current})`);
+      return { matches, current, pathname: parsed.pathname };
+    }
+
+    case "check_text": {
+      const content = await page.evaluate(() => document.body.innerText);
+      const matches = input.exact
+        ? content.includes(input.text)
+        : content.toLowerCase().includes(input.text.toLowerCase());
+      console.log(`  → check_text: "${input.text.slice(0, 40)}" → ${matches ? "FOUND" : "NOT FOUND"}`);
+      return { matches, text: input.text };
+    }
+
+    case "done":
+      return null; // handled in loop
+
     default:
-      return { error: `Unknown computer action: ${action.action}` };
+      return { error: `Unknown tool: ${name}` };
   }
-}
-
-// ── Navigate helper ────────────────────────────────────────────────────────
-
-async function navigate(page, urlPath) {
-  const url = urlPath.startsWith("http") ? urlPath : `${BASE_URL}${urlPath}`;
-  console.log(`  → navigate: ${url}`);
-  await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
-  await new Promise((r) => setTimeout(r, 500));
 }
 
 // ── Agent loop ─────────────────────────────────────────────────────────────
@@ -204,7 +277,6 @@ async function navigate(page, urlPath) {
 async function runAgent(page, acs) {
   const client = new Anthropic();
 
-  // Resolve known values into the system prompt — no raw $VAR references reach Claude
   const resolvedKnownValues = Object.entries(KNOWN_VALUES)
     .map(([k, v]) => `  ${k} = "${v}"`)
     .join("\n");
@@ -214,56 +286,49 @@ async function runAgent(page, acs) {
     .join("\n");
 
   const systemPrompt = `You are a QA agent verifying a fresh install of a web application.
+You have browser tools: navigate, screenshot, click, type, scroll, key, check_url, check_text.
 
 TARGET URL: ${BASE_URL}
 
-KNOWN VALUES (already resolved — use these exact strings when filling in forms):
+KNOWN VALUES (use these exact strings when filling forms):
 ${resolvedKnownValues}
 
 ACCEPTANCE CRITERIA TO VERIFY (in order):
 ${acList}
 
 INSTRUCTIONS:
-1. Work through each AC in the order listed above.
-2. Before checking each AC, navigate to the appropriate page and take a screenshot.
-3. After each action (click, type, scroll, key), take a screenshot to observe the result.
-4. Record PASS, FAIL, or SKIP for each AC with a one-line evidence description.
-5. When all ACs have been attempted, call the \`done\` tool with the full results array.
+1. Work through each AC in order.
+2. Use check_url to verify navigation — it is fast and 100% accurate. Only use screenshot when you need to find where to click on an unfamiliar page.
+3. Use check_text to verify text content (store name, headings, status messages). Only use screenshot when you cannot determine pass/fail from text alone.
+4. Click using coordinates — take a screenshot first to see where elements are, then click.
+5. When filling forms: click the field, then type.
+6. To scroll the EULA: scroll at coordinates near the center of the document pane (e.g. x=640, y=400).
+7. Record PASS, FAIL, or SKIP for each AC with one-line evidence.
+8. When all ACs are attempted, call the done tool with the full results array.
 
-RULES:
-- Never skip an AC without attempting it (SKIP only if a prior failure makes it impossible).
-- Use the exact known values when filling forms — do not invent credentials.
-- The URL for the setup page is: ${BASE_URL}/setup
-- After admin creation, the app should redirect to /admin.
-- To sign out: look for a user menu, profile, or sign out link in the top navigation.
-
-Start by navigating to /setup and taking a screenshot.`;
+Start by taking a screenshot of /setup.`;
 
   const messages = [
     {
       role: "user",
-      content: `Begin verification. Navigate to /setup and start with AC-IF-1.`,
+      content: `Begin verification. The browser is at ${BASE_URL}/setup. Take a screenshot and start with AC-IF-1.`,
     },
   ];
 
   let doneResult = null;
   let iterations = 0;
-  const MAX_ITERATIONS = 60;
-
-  // Navigate to setup first
-  await navigate(page, "/setup");
+  const MAX_ITERATIONS = 120;
 
   while (!doneResult && iterations < MAX_ITERATIONS) {
     iterations++;
-    process.stdout.write(`\n[iteration ${iterations}] `);
+    process.stdout.write(`\n[iter ${iterations}] `);
 
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 4096,
       system: systemPrompt,
-      tools: [computerTool, doneTool],
+      tools,
       messages,
-      betas: ["computer-use-2024-10-22"],
     });
 
     messages.push({ role: "assistant", content: response.content });
@@ -281,7 +346,11 @@ Start by navigating to /setup and taking a screenshot.`;
         continue;
       }
 
-      if (block.type === "tool_use" && block.name === "done") {
+      if (block.type !== "tool_use") continue;
+
+      process.stdout.write(`[${block.name}]`);
+
+      if (block.name === "done") {
         doneResult = block.input;
         toolResults.push({
           type: "tool_result",
@@ -291,25 +360,20 @@ Start by navigating to /setup and taking a screenshot.`;
         break;
       }
 
-      if (block.type === "tool_use" && block.name === "computer") {
-        const action = block.input;
-        process.stdout.write(`[${action.action}]`);
+      const result = await executeTool(page, block.name, block.input);
 
-        const result = await executeComputerAction(page, action);
-
-        if (action.action === "screenshot") {
-          toolResults.push({
-            type: "tool_result",
-            tool_use_id: block.id,
-            content: [{ type: "image", source: result }],
-          });
-        } else {
-          toolResults.push({
-            type: "tool_result",
-            tool_use_id: block.id,
-            content: JSON.stringify(result),
-          });
-        }
+      if (block.name === "screenshot" && result?.image) {
+        toolResults.push({
+          type: "tool_result",
+          tool_use_id: block.id,
+          content: [{ type: "image", source: { type: "base64", media_type: "image/png", data: result.image } }],
+        });
+      } else {
+        toolResults.push({
+          type: "tool_result",
+          tool_use_id: block.id,
+          content: JSON.stringify(result),
+        });
       }
     }
 
@@ -318,8 +382,8 @@ Start by navigating to /setup and taking a screenshot.`;
     }
   }
 
-  if (iterations >= MAX_ITERATIONS && !doneResult) {
-    console.error("\n⚠️  Max iterations reached without done() call");
+  if (!doneResult && iterations >= MAX_ITERATIONS) {
+    console.log(`\n⚠️  MAX_ITERATIONS (${MAX_ITERATIONS}) reached — agent did not call done()`);
   }
 
   return doneResult;
@@ -329,7 +393,6 @@ Start by navigating to /setup and taking a screenshot.`;
 
 function printResults(acs, result) {
   const SEP = "─".repeat(70);
-
   console.log(`\n${SEP}`);
   console.log(result?.passed ? "✅  INSTALL VERIFICATION PASSED" : "❌  INSTALL VERIFICATION FAILED");
   console.log(SEP);
@@ -339,10 +402,8 @@ function printResults(acs, result) {
     return;
   }
 
-  // Build a map for quick lookup
   const resultMap = new Map((result.results ?? []).map((r) => [r.id, r]));
 
-  // Print per-AC table
   console.log("\nPer-AC Results:\n");
   console.log(`${"AC".padEnd(12)} ${"Status".padEnd(6)} Evidence`);
   console.log(`${"-".repeat(12)} ${"-".repeat(6)} ${"-".repeat(48)}`);
@@ -355,7 +416,6 @@ function printResults(acs, result) {
     console.log(`${icon} ${ac.id.padEnd(10)} ${status.padEnd(6)} ${evidence}`);
   }
 
-  // Summary counts
   const passed = (result.results ?? []).filter((r) => r.status === "PASS").length;
   const failed = (result.results ?? []).filter((r) => r.status === "FAIL").length;
   const skipped = (result.results ?? []).filter((r) => r.status === "SKIP").length;
@@ -364,7 +424,6 @@ function printResults(acs, result) {
   console.log(`Total: ${acs.length} ACs | PASS: ${passed} | FAIL: ${failed} | SKIP: ${skipped}`);
   console.log(SEP);
 
-  // Also emit JSON for workflow parsing
   console.log("\n::group::JSON Results");
   console.log(JSON.stringify(result, null, 2));
   console.log("::endgroup::");
@@ -391,7 +450,9 @@ async function main() {
 
   try {
     const page = await browser.newPage();
-    await page.setViewport({ width: DISPLAY_WIDTH, height: DISPLAY_HEIGHT });
+    await page.setViewport({ width: 1280, height: 800 });
+
+    await page.goto(`${BASE_URL}/setup`, { waitUntil: "networkidle2", timeout: 30000 });
 
     const result = await runAgent(page, acs);
     printResults(acs, result);

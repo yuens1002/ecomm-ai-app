@@ -54,6 +54,11 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.QA_DATABASE_URL }}
           DIRECT_URL: ${{ secrets.QA_DIRECT_URL }}
+          # Clean install: seed foundation data only (no products, no orders, no extra users)
+          SEED_PRODUCT_MODE: none
+          SEED_INCLUDE_SYNTHETIC: "false"
+          SEED_INCLUDE_MERCH: "false"
+          SEED_INCLUDE_USERS: "false"
         run: npx prisma migrate reset --force
 
       # ── Wait for QA deployment to be ready ───────────────────────────────
