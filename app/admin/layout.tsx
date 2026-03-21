@@ -4,6 +4,12 @@ import { AdminShell } from "@/app/admin/_components/dashboard";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
+// Force dynamic rendering — auth and setup checks must never be prerendered/cached.
+// Without this, routes like /admin/orders and /admin/settings (which have "use client"
+// page components with no server-side auth call) can serve a stale prerendered redirect
+// to /setup from build time when the DB was empty.
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({
   children,
 }: {
