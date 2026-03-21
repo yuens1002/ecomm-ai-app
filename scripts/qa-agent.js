@@ -149,11 +149,11 @@ const tools = [
   },
   {
     name: "check_url",
-    description: "Check if the current page URL contains an expected path or string. Use this instead of screenshot to verify navigation succeeded.",
+    description: "Check if the current page pathname starts with an expected path. Use this instead of screenshot to verify navigation succeeded. Be precise: '/admin' will NOT match '/auth/admin-signin'.",
     input_schema: {
       type: "object",
       properties: {
-        expected: { type: "string", description: "Path or substring to match against the current URL (e.g. '/admin')" },
+        expected: { type: "string", description: "Expected path prefix (e.g. '/admin', '/setup'). Matched against the URL pathname only — not the full URL." },
       },
       required: ["expected"],
     },
@@ -216,6 +216,9 @@ async function executeTool(page, name, input) {
     case "click": {
       const cx = Number(input.x);
       const cy = Number(input.y);
+      if (isNaN(cx) || isNaN(cy)) {
+        return { error: `Invalid coordinates x=${input.x}, y=${input.y}. Take a screenshot first to get valid numeric coordinates.` };
+      }
       console.log(`  → click (${cx}, ${cy})${input.description ? ` — ${input.description}` : ""}`);
       await page.mouse.click(cx, cy);
       await new Promise((r) => setTimeout(r, 600));
@@ -244,9 +247,11 @@ async function executeTool(page, name, input) {
 
     case "check_url": {
       const current = page.url();
-      const matches = current.includes(input.expected);
+      const parsed = new URL(current);
+      // Match against pathname+search so "/admin" doesn't match "/auth/admin-signin"
+      const matches = parsed.pathname.startsWith(input.expected) || parsed.pathname === input.expected;
       console.log(`  → check_url: ${input.expected} → ${matches ? "MATCH" : "NO MATCH"} (${current})`);
-      return { matches, current };
+      return { matches, current, pathname: parsed.pathname };
     }
 
     case "check_text": {
@@ -311,7 +316,7 @@ Start by taking a screenshot of /setup.`;
 
   let doneResult = null;
   let iterations = 0;
-  const MAX_ITERATIONS = 80;
+  const MAX_ITERATIONS = 120;
 
   while (!doneResult && iterations < MAX_ITERATIONS) {
     iterations++;
