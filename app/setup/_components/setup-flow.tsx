@@ -13,8 +13,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Loader2, Eye, EyeOff, Shield, AlertCircle, Store } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { EulaStep } from "./eula-step";
-import { SetupStepper, SetupHeader, SetupLogo } from "./setup-header";
+import { EulaStep, SetupStepper, SetupHeader, SetupLogo } from "./eula-step";
 import type { LegalDocument } from "@/lib/legal-utils";
 
 interface PasswordValidation {
