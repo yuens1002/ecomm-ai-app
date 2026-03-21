@@ -125,7 +125,13 @@ async function checkUrl(page, expected) {
 }
 
 async function checkText(page, text) {
-  const content = await page.evaluate(() => document.body.innerText);
+  const content = await page.evaluate(() => {
+    const bodyText = document.body.innerText;
+    const inputValues = Array.from(
+      document.querySelectorAll("input, textarea, select")
+    ).map((el) => el.value).join(" ");
+    return bodyText + " " + inputValues;
+  });
   const matches = content.toLowerCase().includes(text.toLowerCase());
   console.log(`  → check_text: "${text.slice(0, 50)}" → ${matches ? "FOUND" : "NOT FOUND"}`);
   return matches;
