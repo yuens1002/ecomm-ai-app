@@ -272,6 +272,29 @@ async function executeTool(page, name, input) {
   }
 }
 
+// ── Screenshot pruning ─────────────────────────────────────────────────────
+// Keep only the last N screenshots in the message history to bound context size.
+// Older screenshots are replaced with a text stub — Claude can always take a
+// fresh screenshot if it needs to see the current page state.
+
+function pruneScreenshots(messages, keepLast = 2) {
+  const found = [];
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    if (msg.role !== "user" || !Array.isArray(msg.content)) continue;
+    for (let j = 0; j < msg.content.length; j++) {
+      const block = msg.content[j];
+      if (block.type !== "tool_result" || !Array.isArray(block.content)) continue;
+      if (block.content.some((c) => c.type === "image")) {
+        found.push({ i, j });
+      }
+    }
+  }
+  for (const { i, j } of found.slice(0, -keepLast)) {
+    messages[i].content[j].content = [{ type: "text", text: "[screenshot removed — take a new one if needed]" }];
+  }
+}
+
 // ── Agent loop ─────────────────────────────────────────────────────────────
 
 async function runAgent(page, acs) {
@@ -379,6 +402,7 @@ Start by taking a screenshot of /setup.`;
 
     if (toolResults.length > 0) {
       messages.push({ role: "user", content: toolResults });
+      pruneScreenshots(messages);
     }
   }
 
