@@ -4,7 +4,7 @@
 
 ### Changed
 
-- **Docker removed**: Dropped Dockerfile, docker-compose.yml, and GHCR workflow — self-hosting is now Neon + Vercel only
+- **Docker removed**: Dropped Dockerfile, docker-compose.yml, GHCR workflow, and remaining Docker references in docs (including `docs/architecture/UPGRADE-PATH.md`) — self-hosting is now Neon + Vercel only
 - **Setup UI**: Redesigned setup flow with logo above card, step indicator (EULA → Store Setup), and contextual icons (ScrollText / Store)
 - **Installation guide**: Rewrote `INSTALLATION.md` with honest expectations, prerequisites table, and exact 5-step self-host walkthrough
 
