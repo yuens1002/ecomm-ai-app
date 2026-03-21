@@ -128,8 +128,18 @@ async function checkText(page, text) {
   const content = await page.evaluate(() => {
     const bodyText = document.body.innerText;
     const inputValues = Array.from(
-      document.querySelectorAll("input, textarea, select")
-    ).map((el) => el.value).join(" ");
+      document.querySelectorAll(
+        "textarea, select, input:not([type='password']):not([type='hidden']):not([type='checkbox']):not([type='radio'])"
+      )
+    )
+      .map((el) => {
+        if (el.tagName === "SELECT") {
+          const selectedOptions = Array.from(el.selectedOptions || []);
+          return selectedOptions.map((opt) => opt.textContent || "").join(" ");
+        }
+        return el.value;
+      })
+      .join(" ");
     return bodyText + " " + inputValues;
   });
   const matches = content.toLowerCase().includes(text.toLowerCase());
