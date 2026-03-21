@@ -1,0 +1,57 @@
+name: Spec Drift Check
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  spec-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Detect changed files
+        id: filter
+        uses: dorny/paths-filter@v3.0.2
+        with:
+          filters: |
+            setup:
+              - 'app/setup/**'
+              - 'prisma/schema.prisma'
+              - 'INSTALLATION.md'
+              - 'app/admin/**'
+            spec:
+              - 'VERIFICATION.md'
+
+      - name: Post spec-drift comment
+        if: steps.filter.outputs.setup == 'true' && steps.filter.outputs.spec == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              '## ⚠️ Spec Drift Detected',
+              '',
+              'This PR modifies setup-related files but does not update `VERIFICATION.md`.',
+              '',
+              '**Changed files that may affect the install flow:**',
+              '- `app/setup/**`',
+              '- `prisma/schema.prisma`',
+              '- `INSTALLATION.md`',
+              '- `app/admin/**`',
+              '',
+              'If these changes affect what a fresh install looks like, please update the relevant AC rows in [`VERIFICATION.md`](../blob/main/VERIFICATION.md).',
+              '',
+              'If this change does not affect the install flow, you can safely ignore this comment.',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
