@@ -115,6 +115,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
