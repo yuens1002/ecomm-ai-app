@@ -1,9 +1,0 @@
-.env.local
-.env.*.local
-.next/
-node_modules/
-.git/
-.github/
-.scratch/
-.screenshot/
-*.log
