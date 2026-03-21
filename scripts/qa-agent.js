@@ -148,6 +148,29 @@ const tools = [
     },
   },
   {
+    name: "check_url",
+    description: "Check if the current page URL contains an expected path or string. Use this instead of screenshot to verify navigation succeeded.",
+    input_schema: {
+      type: "object",
+      properties: {
+        expected: { type: "string", description: "Path or substring to match against the current URL (e.g. '/admin')" },
+      },
+      required: ["expected"],
+    },
+  },
+  {
+    name: "check_text",
+    description: "Check if specific text appears in the page content. Use this instead of screenshot to verify text-based ACs.",
+    input_schema: {
+      type: "object",
+      properties: {
+        text: { type: "string", description: "Text to search for in the page" },
+        exact: { type: "boolean", description: "If true, match exact string; if false (default), case-insensitive substring match" },
+      },
+      required: ["text"],
+    },
+  },
+  {
     name: "done",
     description: "Call this when all ACs have been attempted. Returns per-AC results.",
     input_schema: {
@@ -219,6 +242,22 @@ async function executeTool(page, name, input) {
       return { ok: true };
     }
 
+    case "check_url": {
+      const current = page.url();
+      const matches = current.includes(input.expected);
+      console.log(`  → check_url: ${input.expected} → ${matches ? "MATCH" : "NO MATCH"} (${current})`);
+      return { matches, current };
+    }
+
+    case "check_text": {
+      const content = await page.evaluate(() => document.body.innerText);
+      const matches = input.exact
+        ? content.includes(input.text)
+        : content.toLowerCase().includes(input.text.toLowerCase());
+      console.log(`  → check_text: "${input.text.slice(0, 40)}" → ${matches ? "FOUND" : "NOT FOUND"}`);
+      return { matches, text: input.text };
+    }
+
     case "done":
       return null; // handled in loop
 
@@ -252,12 +291,14 @@ ACCEPTANCE CRITERIA TO VERIFY (in order):
 ${acList}
 
 INSTRUCTIONS:
-1. Work through each AC in order. Take a screenshot after every action to observe results.
-2. Click using coordinates — always take a screenshot first to see where elements are.
-3. When filling forms: click the field, then type.
-4. To scroll the EULA: scroll at coordinates near the center of the document pane (e.g. x=640, y=400).
-5. Record PASS, FAIL, or SKIP for each AC with one-line evidence.
-6. When all ACs are attempted, call the done tool with the full results array.
+1. Work through each AC in order.
+2. Use check_url to verify navigation — it is fast and 100% accurate. Only use screenshot when you need to find where to click on an unfamiliar page.
+3. Use check_text to verify text content (store name, headings, status messages). Only use screenshot when you cannot determine pass/fail from text alone.
+4. Click using coordinates — take a screenshot first to see where elements are, then click.
+5. When filling forms: click the field, then type.
+6. To scroll the EULA: scroll at coordinates near the center of the document pane (e.g. x=640, y=400).
+7. Record PASS, FAIL, or SKIP for each AC with one-line evidence.
+8. When all ACs are attempted, call the done tool with the full results array.
 
 Start by taking a screenshot of /setup.`;
 
