@@ -26,6 +26,16 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Load .env.local for local runs (CI sets env vars directly)
+if (!process.env.BASE_URL && !process.env.QA_BASE_URL) {
+  const { default: dotenv } = await import("dotenv");
+  dotenv.config({ path: path.join(__dirname, "../.env.local") });
+}
+// Allow QA_BASE_URL as alias for BASE_URL (matches .env.local convention)
+if (!process.env.BASE_URL && process.env.QA_BASE_URL) {
+  process.env.BASE_URL = process.env.QA_BASE_URL;
+}
+
 // ── Env validation ─────────────────────────────────────────────────────────
 
 const BASE_URL = process.env.BASE_URL?.replace(/\/$/, "");
@@ -181,8 +191,10 @@ async function executeTool(page, name, input) {
     }
 
     case "click": {
-      console.log(`  → click (${input.x}, ${input.y})${input.description ? ` — ${input.description}` : ""}`);
-      await page.mouse.click(input.x, input.y);
+      const cx = Number(input.x);
+      const cy = Number(input.y);
+      console.log(`  → click (${cx}, ${cy})${input.description ? ` — ${input.description}` : ""}`);
+      await page.mouse.click(cx, cy);
       await new Promise((r) => setTimeout(r, 600));
       return { ok: true };
     }
