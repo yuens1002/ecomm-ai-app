@@ -178,26 +178,9 @@ async function executeComputerAction(page, action) {
 
     case "scroll": {
       const [x, y] = action.coordinate;
-      const amount = (action.amount ?? 3) * (action.direction === "up" ? -100 : 100);
-      await page.evaluate((px, py, delta) => {
-        const el = document.elementFromPoint(px, py);
-        if (el) {
-          // Find the nearest scrollable ancestor
-          let node = el;
-          while (node && node !== document.body) {
-            const style = getComputedStyle(node);
-            if (
-              (style.overflowY === "auto" || style.overflowY === "scroll") &&
-              node.scrollHeight > node.clientHeight
-            ) {
-              node.scrollTop += delta;
-              return;
-            }
-            node = node.parentElement;
-          }
-        }
-        window.scrollBy(0, delta);
-      }, x, y, amount);
+      const deltaY = (action.amount ?? 3) * (action.direction === "up" ? -100 : 100);
+      await page.mouse.move(x, y);
+      await page.mouse.wheel({ deltaY });
       await new Promise((r) => setTimeout(r, 500));
       return { ok: true };
     }
