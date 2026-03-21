@@ -37,6 +37,7 @@
     "theme:add": "tsx scripts/add-theme.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@auth/prisma-adapter": "^2.11.1",
     "@hookform/resolvers": "^5.2.2",
     "@neondatabase/serverless": "^1.0.2",
