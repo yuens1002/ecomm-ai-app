@@ -4,15 +4,18 @@ import {
   getHomeRecommendations,
   getPublicSiteSettings,
 } from "@/lib/data";
+import { isAIConfigured, isAIFeatureEnabled } from "@/lib/ai-client";
 import HomeAiSection from "@/app/(site)/_components/ai/HomeAiSection";
 import FeaturedProducts from "@/app/(site)/_components/product/FeaturedProducts";
 import RecommendationsSection from "@/app/(site)/_components/product/RecommendationsSection";
 
 export default async function Home() {
-  const [session, featuredProducts, settings] = await Promise.all([
+  const [session, featuredProducts, settings, aiConfigured, chatEnabled] = await Promise.all([
     auth(),
     getFeaturedProducts(),
     getPublicSiteSettings(),
+    isAIConfigured(),
+    isAIFeatureEnabled("chat"),
   ]);
 
   const userId = session?.user?.id;
@@ -25,12 +28,14 @@ export default async function Home() {
 
   return (
     <>
-      <HomeAiSection
-        showVoiceBarista={showVoiceBarista}
-        userEmail={session?.user?.email || undefined}
-        userName={session?.user?.name || undefined}
-        isAuthenticated={!!session?.user}
-      />
+      {aiConfigured && chatEnabled && (
+        <HomeAiSection
+          showVoiceBarista={showVoiceBarista}
+          userEmail={session?.user?.email || undefined}
+          userName={session?.user?.name || undefined}
+          isAuthenticated={!!session?.user}
+        />
+      )}
 
       <RecommendationsSection
         products={recommendations.products}

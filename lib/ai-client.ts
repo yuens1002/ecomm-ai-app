@@ -107,6 +107,18 @@ export async function getAIConfig(): Promise<AIConfig> {
 }
 
 /**
+ * Returns true if a base URL is configured (DB setting or env var).
+ * Use this server-side to conditionally render AI-dependent UI.
+ */
+export async function isAIConfigured(): Promise<boolean> {
+  const setting = await prisma.siteSettings.findUnique({
+    where: { key: AI_SETTINGS_KEYS.BASE_URL },
+  });
+  const baseUrl = (setting?.value || process.env.AI_BASE_URL || "").trim();
+  return baseUrl.length > 0;
+}
+
+/**
  * Check whether a specific AI feature is enabled.
  * Returns true if the setting is missing (enabled by default).
  */
