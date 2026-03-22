@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.96.11 - 2026-03-22
+
+### Fixed
+
+- **Setup flow**: Platform branding in setup sidebar now uses `PLATFORM_NAME`/`PLATFORM_LOGO` constants — sidebar represents Artisan Roast the platform, not the store being configured
+- **Setup flow**: `SETUP_PREVIEW=true` bypass now only applies when an admin already exists; on a fresh DB the normal setup flow runs as expected
+- **QA agent**: `scrollIntoView` uses `behavior: "auto"` for cross-browser compatibility; fixed EULA text selectors and `SETUP_PREVIEW` logic
+
 ## 0.96.10 - 2026-03-22
 
 ### Changed
