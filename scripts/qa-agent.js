@@ -514,6 +514,16 @@ async function main() {
     await navigate(page, "/setup");
 
     const results = await runVerification(page);
+
+    // Fail any AC from the spec that has no test block in runVerification().
+    // A missing test is a bug in the agent, not a skip — it must not silently pass.
+    const testedIds = new Set(results.map((r) => r.id));
+    for (const ac of acs) {
+      if (!testedIds.has(ac.id)) {
+        results.push(fail(ac.id, "No test block implemented in qa-agent.js — add one or remove the AC from VERIFICATION.md"));
+      }
+    }
+
     const allPassed = printResults(acs, results);
 
     if (!allPassed) {

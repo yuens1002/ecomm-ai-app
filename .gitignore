@@ -78,7 +78,10 @@ next-env.d.ts
 # Runtime stamp files written by hooks (not source)
 .claude/hooks/.*-stamp*.json
 nul
+.screenshot/
+.screenshots/
 .screenshots
+.scratch/
 .scratchpad/
 scratchpad/
 .archive/
