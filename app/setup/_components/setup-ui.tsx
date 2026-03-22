@@ -41,7 +41,6 @@ export function SetupLayout({ children }: { children: ReactNode }) {
           fill
           sizes="25vw"
           className="object-cover object-center"
-          priority
         />
         <div className="absolute inset-0 bg-black/55" />
 
@@ -55,7 +54,7 @@ export function SetupLayout({ children }: { children: ReactNode }) {
               height={32}
               className="rounded-full"
             />
-            <span className="text-white font-semibold text-sm drop-shadow">Artisan Roast</span>
+            <span className="text-white font-semibold text-sm drop-shadow">{settings.storeName}</span>
           </div>
           <p className="text-white/60 text-sm leading-relaxed">
             An open-source platform for roasters who believe coffee is more than a commodity.

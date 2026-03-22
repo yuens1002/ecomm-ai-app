@@ -38,7 +38,7 @@ export function EulaStep({ docs, onAccepted }: EulaStepProps) {
       ([entry]) => {
         if (entry.isIntersecting) setScrolledToBottom(true);
       },
-      { threshold: 0.1 }
+      { threshold: 0 }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -71,7 +71,6 @@ export function EulaStep({ docs, onAccepted }: EulaStepProps) {
 
   return (
     <SetupLayout>
-      <SetupMobileLogo />
       <SetupStepper current="eula" />
       <SetupHeader
         title="The fine print (it's genuinely fine)"
@@ -97,8 +96,8 @@ export function EulaStep({ docs, onAccepted }: EulaStepProps) {
             />
           </section>
         ))}
-        {/* Sentinel — becomes visible when user reaches the bottom */}
-        <div ref={sentinelRef} />
+        {/* Sentinel — 1px height ensures IntersectionObserver fires reliably */}
+        <div ref={sentinelRef} className="h-px" />
       </div>
 
       {!scrolledToBottom && (

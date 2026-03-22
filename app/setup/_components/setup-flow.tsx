@@ -9,7 +9,7 @@ import { Loader2, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { EulaStep } from "./eula-step";
-import { SetupLayout, SetupMobileLogo, SetupStepper, SetupHeader } from "./setup-ui";
+import { SetupLayout, SetupStepper, SetupHeader } from "./setup-ui";
 import type { LegalDocument } from "@/lib/legal-utils";
 
 interface PasswordValidation {
@@ -132,7 +132,7 @@ export function SetupFlow({ docs }: SetupFlowProps) {
   if (adminExists) {
     return (
       <SetupLayout>
-        <SetupMobileLogo />
+
         <div className="space-y-6">
           <div className="space-y-2">
             <h2 className="text-2xl font-bold">You&apos;re all set</h2>
@@ -154,7 +154,6 @@ export function SetupFlow({ docs }: SetupFlowProps) {
 
   return (
     <SetupLayout>
-      <SetupMobileLogo />
       <SetupStepper current="account" />
       <SetupHeader
         title="Almost there."
