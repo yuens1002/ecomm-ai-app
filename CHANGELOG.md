@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.96.12 - 2026-03-22
+
+### Fixed
+
+- **Storefront**: AI chat section no longer renders on the homepage when no AI provider is configured (`AI_BASE_URL` / `ai.baseUrl` not set) — fresh installs show a clean storefront instead of a non-functional chat UI
+- **Storefront**: Featured products section header no longer renders when there are no featured products — prevents an empty section appearing on a fresh install
+
 ## 0.96.11 - 2026-03-22
 
 ### Fixed
