@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.96.10 - 2026-03-22
+
+### Changed
+
+- **Setup flow**: Redesigned with split layout — branded sidebar (1/4) with coffee photo, brand description, and bold typographic tagline; full content area (3/4) with terms flowing openly (no inner scroll window)
+- **Setup flow**: Added `SETUP_PREVIEW=true` dev env var to view `/setup` without wiping the admin account
+- **Setup flow**: Avatar-icon stepper, friendlier copy throughout, natural-width buttons
+
 ## 0.96.9 - 2026-03-22
 
 ### Fixed
