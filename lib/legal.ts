@@ -83,7 +83,10 @@ const ALL_LEGAL_SLUGS = [
  * Falls back to parallel individual fetches if the bulk endpoint is unavailable.
  */
 export async function fetchAllLegalDocs(): Promise<LegalDocument[]> {
-  if (process.env.NODE_ENV === "test") {
+  if (
+    process.env.NODE_ENV === "test" ||
+    (process.env.NODE_ENV === "development" && process.env.SETUP_PREVIEW === "true")
+  ) {
     return Object.values(MOCK_LEGAL_DOCS);
   }
 

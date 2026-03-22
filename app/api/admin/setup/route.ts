@@ -4,13 +4,19 @@ import { hasAnyAdmin } from "@/lib/admin";
 import bcrypt from "bcryptjs";
 
 export async function HEAD() {
+  // Dev-only preview bypass: SETUP_PREVIEW=true lets you view the setup UI
+  // without wiping your admin. POST remains protected regardless.
+  if (process.env.NODE_ENV === "development" && process.env.SETUP_PREVIEW === "true") {
+    return new NextResponse(null, { status: 200 });
+  }
+
   try {
     const adminExists = await hasAnyAdmin();
-    
+
     if (adminExists) {
       return new NextResponse(null, { status: 403 });
     }
-    
+
     return new NextResponse(null, { status: 200 });
   } catch {
     return new NextResponse(null, { status: 500 });

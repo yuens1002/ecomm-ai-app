@@ -1,6 +1,6 @@
 {
   "name": "artisan-roast",
-  "version": "0.96.9",
+  "version": "0.96.10",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -99,6 +99,7 @@
     "next-auth": "^5.0.0-beta.30",
     "next-themes": "^0.4.6",
     "pg": "^8.16.3",
+    "radix-ui": "^1.4.3",
     "react": "^19.2.4",
     "react-day-picker": "^9.13.2",
     "react-dom": "^19.2.4",

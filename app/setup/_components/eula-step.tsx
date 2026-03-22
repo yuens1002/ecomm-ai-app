@@ -4,17 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
-import { Loader2, ScrollText } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import type { LegalDocument } from "@/lib/legal-utils";
-import { SetupStepper, SetupHeader, SetupLogo } from "./setup-ui";
+import { SetupStepper, SetupHeader, SetupMobileLogo, SetupLayout } from "./setup-ui";
 
-export { SetupStepper, SetupHeader, SetupLogo };
+export { SetupStepper, SetupHeader, SetupMobileLogo as SetupLogo };
 
 // ─── EULA step ───────────────────────────────────────────────────────────────
 
@@ -32,20 +26,22 @@ function renderDoc(content: string): string {
 
 export function EulaStep({ docs, onAccepted }: EulaStepProps) {
   const renderedDocs = useMemo(() => docs.map((d) => ({ ...d, html: renderDoc(d.content) })), [docs]);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const el = scrollRef.current;
+    const el = sentinelRef.current;
     if (!el) return;
-    const check = () => {
-      if (el.scrollHeight - el.scrollTop <= el.clientHeight + 8) setScrolledToBottom(true);
-    };
-    check();
-    el.addEventListener("scroll", check, { passive: true });
-    return () => el.removeEventListener("scroll", check);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setScrolledToBottom(true);
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   const handleAccept = async () => {
@@ -74,66 +70,58 @@ export function EulaStep({ docs, onAccepted }: EulaStepProps) {
   };
 
   return (
-    <div className="container mx-auto px-4 py-16 flex items-center justify-center min-h-[80vh]">
-      <div className="w-full max-w-2xl">
-        <SetupLogo />
-        <Card>
-          <CardHeader className="space-y-4">
-            <SetupStepper current="eula" />
-            <SetupHeader
-              icon={<ScrollText className="h-6 w-6" />}
-              title="Review & Accept Terms"
-              description="Please read and scroll through the following documents before proceeding."
-            />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div
-              ref={scrollRef}
-              className="border rounded-md overflow-y-auto bg-muted/30"
-              style={{ maxHeight: "400px" }}
-            >
-              <div className="p-5 space-y-8">
-                {renderedDocs.map((doc) => (
-                  <section key={doc.slug}>
-                    <div className="mb-2">
-                      <h2 className="text-base font-semibold">{doc.title}</h2>
-                      {doc.slug === MIT_SLUG && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Open-Source Software License — governs the store codebase
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground">Version {doc.version}</p>
-                    </div>
-                    <div
-                      className="prose prose-sm max-w-none text-foreground"
-                      dangerouslySetInnerHTML={{ __html: doc.html }}
-                    />
-                  </section>
-                ))}
-              </div>
-            </div>
-            {!scrolledToBottom && (
-              <p className="text-xs text-muted-foreground text-center">
-                Scroll to the bottom to enable the Accept button.
-              </p>
-            )}
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter>
-            <Button data-testid="eula-accept-btn" className="w-full" disabled={!scrolledToBottom || isAccepting} onClick={handleAccept}>
-              {isAccepting ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Recording acceptance...</>
-              ) : (
-                "I Accept"
+    <SetupLayout>
+      <SetupMobileLogo />
+      <SetupStepper current="eula" />
+      <SetupHeader
+        title="The fine print (it's genuinely fine)"
+        description="You own this code outright — MIT licensed, no strings attached. These docs just cover how our optional platform services work, in plain English."
+      />
+
+      {/* Terms flow openly — no inner window or border */}
+      <div className="space-y-10 mb-8">
+        {renderedDocs.map((doc) => (
+          <section key={doc.slug}>
+            <div className="mb-3">
+              <h2 className="text-base font-semibold">{doc.title}</h2>
+              {doc.slug === MIT_SLUG && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Open-Source Software License — governs the store codebase
+                </p>
               )}
-            </Button>
-          </CardFooter>
-        </Card>
+              <p className="text-xs text-muted-foreground">Version {doc.version}</p>
+            </div>
+            <div
+              className="prose prose-sm max-w-none text-foreground"
+              dangerouslySetInnerHTML={{ __html: doc.html }}
+            />
+          </section>
+        ))}
+        {/* Sentinel — becomes visible when user reaches the bottom */}
+        <div ref={sentinelRef} />
       </div>
-    </div>
+
+      {!scrolledToBottom && (
+        <p className="text-xs text-muted-foreground mb-3">
+          Scroll to the bottom to continue.
+        </p>
+      )}
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 mb-3">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
+      <Button
+        data-testid="eula-accept-btn"
+        disabled={!scrolledToBottom || isAccepting}
+        onClick={handleAccept}
+      >
+        {isAccepting ? (
+          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Just a moment...</>
+        ) : (
+          "Looks good, let\u2019s continue"
+        )}
+      </Button>
+    </SetupLayout>
   );
 }
