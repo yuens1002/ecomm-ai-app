@@ -114,8 +114,8 @@ export async function isAIConfigured(): Promise<boolean> {
   const setting = await prisma.siteSettings.findUnique({
     where: { key: AI_SETTINGS_KEYS.BASE_URL },
   });
-  const baseUrl = setting?.value || process.env.AI_BASE_URL || "";
-  return !!baseUrl;
+  const baseUrl = (setting?.value || process.env.AI_BASE_URL || "").trim();
+  return baseUrl.length > 0;
 }
 
 /**
