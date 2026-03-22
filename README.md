@@ -133,7 +133,7 @@ Setting up Artisan Roast requires a free database (Neon) and a deployment host (
 - **Stripe** payments and subscriptions
 - **OAuth** login (Google, GitHub)
 - **AI** powered by any OpenAI-compatible provider
-- **500+ tests** with Jest and Testing Library
+- **1,000+ tests** with Jest and Testing Library
 
 ---
 
