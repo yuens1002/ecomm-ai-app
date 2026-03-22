@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.96.8 - 2026-03-22
+
+### Fixed
+
+- **Auth pages**: Added `force-dynamic` to auth layout to prevent nightly build failures when DB is unavailable at build time (all `/auth/*` pages call `getSiteMetadata()` which hits Prisma)
+- **QA agent**: `checkText` now includes `<input>`/`<textarea>`/`<select>` values so AC-KV-4 (store name on settings page) passes correctly
+- **track-activity test**: Mocked Prisma to prevent DB connection timeout in CI
+
 ## 0.96.7 - 2026-03-20
 
 ### Added
