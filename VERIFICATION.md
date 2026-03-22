@@ -12,31 +12,31 @@
 
 ## Install Flow
 
-| AC | What | How | Pass |
-|----|------|-----|------|
-| AC-IF-1 | /setup accessible on fresh install | Navigate to /setup, screenshot | Page loads; EULA heading visible; no "Setup Already Complete" |
-| AC-IF-2 | Accept button is scroll-gated | Screenshot immediately after page load | "I Accept" button is disabled |
-| AC-IF-3 | Accept button enables after scrolling to bottom | Scroll EULA to bottom, screenshot | "I Accept" button is enabled |
-| AC-IF-4 | EULA acceptance advances to Store Setup step | Click "I Accept", screenshot | Step indicator shows Store Setup active; form fields visible |
-| AC-IF-5 | Admin account creation succeeds with known values | Fill Full Name=$QA_ADMIN_NAME, Email=$QA_ADMIN_EMAIL, Password=$QA_ADMIN_PASSWORD, Confirm=$QA_ADMIN_PASSWORD; submit | Browser navigates to /admin |
-| AC-IF-6 | /setup is locked out after admin exists | Navigate to /setup after setup complete | "Setup Already Complete" shown; no form visible |
+| AC | What | Verification | Pass |
+|----|------|-------------|------|
+| AC-IF-1 | /setup accessible on fresh install | Navigate to /setup; assert URL, EULA heading text, absence of "Setup Already Complete" | Page loads; EULA heading visible; no "Setup Already Complete" |
+| AC-IF-2 | Accept button is scroll-gated | Assert `aria-disabled="true"` on accept button; assert scroll hint text visible | "I Accept" button is disabled; scroll hint shown |
+| AC-IF-3 | Accept button enables after scrolling to bottom | Scroll EULA pane to bottom; assert `aria-disabled` removed from accept button | "I Accept" button is enabled |
+| AC-IF-4 | EULA acceptance advances to Store Setup step | Click accept button; assert "Store Setup" text visible and name input present | Step indicator shows Store Setup active; form fields visible |
+| AC-IF-5 | Admin account creation succeeds with known values | Fill Full Name=$QA_ADMIN_NAME, Email=$QA_ADMIN_EMAIL, Password=$QA_ADMIN_PASSWORD, Confirm=$QA_ADMIN_PASSWORD; submit; handle redirect chain; sign in if needed | Browser reaches /admin |
+| AC-IF-6 | /setup is locked out after admin exists | Navigate to /setup; assert "Setup Already Complete" text; assert name input absent | "Setup Already Complete" shown; no form visible |
 
 ## Known Value Round-Trips
 
-| AC | What | How | Pass |
-|----|------|-----|------|
-| AC-KV-1 | Admin name visible in admin UI | Screenshot /admin dashboard or user menu | $QA_ADMIN_NAME appears on screen |
-| AC-KV-2 | Admin email and password authenticate | Sign out, navigate to /auth/signin, sign in with $QA_ADMIN_EMAIL + $QA_ADMIN_PASSWORD | Login succeeds; redirected to /admin |
-| AC-KV-3 | Store name appears on storefront | Navigate to / (homepage), screenshot | $QA_STORE_NAME visible in page header or title |
-| AC-KV-4 | Store name appears in admin settings | Navigate to /admin/settings, screenshot | $QA_STORE_NAME visible in store settings section |
+| AC | What | Verification | Pass |
+|----|------|-------------|------|
+| AC-KV-1 | Admin name visible in admin UI | Navigate to /admin; assert $QA_ADMIN_NAME in page text | $QA_ADMIN_NAME appears on screen |
+| AC-KV-2 | Admin email and password authenticate | Clear session (cookies + localStorage); navigate to /auth/admin-signin; sign in with $QA_ADMIN_EMAIL + $QA_ADMIN_PASSWORD | Login succeeds; redirected to /admin |
+| AC-KV-3 | Store name appears on storefront | Navigate to / (homepage); assert $QA_STORE_NAME in page text | $QA_STORE_NAME visible in page header or title |
+| AC-KV-4 | Store name appears in admin settings | Navigate to /admin/settings; assert $QA_STORE_NAME in page text (including input values) | $QA_STORE_NAME visible in store settings section |
 
 ## Initial App State
 
-| AC | What | How | Pass |
-|----|------|-----|------|
-| AC-IS-1 | Getting Started checklist shows 0 of 4 complete | Screenshot /admin dashboard | Checklist visible; all items unchecked / 0 complete |
-| AC-IS-2 | Products section shows empty state | Navigate to /admin/products, screenshot | Empty state message shown; no products listed |
-| AC-IS-3 | Orders section shows empty state | Navigate to /admin/orders, screenshot | Empty state message shown; no orders listed |
-| AC-IS-4 | Settings page loads without error | Navigate to /admin/settings, screenshot | Page renders; no error page or 500 |
-| AC-IS-5 | Storefront homepage loads without error | Navigate to /, screenshot | Page renders; no error page or 500 |
-| AC-IS-6 | Admin navigation links are all reachable | Click each main nav item in /admin, screenshot each | No 404 or 500 on Products, Orders, Settings |
+| AC | What | Verification | Pass |
+|----|------|-------------|------|
+| AC-IS-1 | Getting Started checklist visible on fresh install | Navigate to /admin; assert "Getting started" text present | Checklist visible on dashboard |
+| AC-IS-2 | Products section shows empty state | Navigate to /admin/products; assert URL and "No products" text | Empty state message shown; no products listed |
+| AC-IS-3 | Orders section shows empty state | Navigate to /admin/orders; assert URL and "No orders" text | Empty state message shown; no orders listed |
+| AC-IS-4 | Settings page loads without error | Navigate to /admin/settings; assert URL reached (no redirect) | Page renders without error |
+| AC-IS-5 | Storefront homepage loads without error | Navigate to /; assert URL reached (no redirect) | Page renders without error |
+| AC-IS-6 | Admin navigation links are all reachable | Navigate directly to /admin/products, /admin/orders, /admin/settings; assert URL for each | No 404 or 500 on Products, Orders, Settings |

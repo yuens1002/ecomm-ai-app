@@ -30,7 +30,7 @@ Each AC is a labeled Puppeteer block with explicit DOM interactions: `page.click
 
 **Why:** ~$0/run when all ACs pass. Fast (~2 min). Predictable output — no LLM variance in pass/fail decisions. Easy to debug: each AC block maps 1:1 to a row in `VERIFICATION.md`.
 
-**AI on the failure path only:** If any AC fails, Claude Haiku (`claude-haiku-4-5-20251001`) is called once to generate a concise GitHub issue body from the failure list (~$0.002). The issue is then opened automatically.
+**AI on the failure path only:** If any AC fails, Claude Haiku (`claude-haiku-4-5-20251001`) is called once to write a concise failure summary (3–5 bullets) which is printed to the run log. The workflow then opens a GitHub issue with a link to the run. (~$0.002 on failure, $0 on pass).
 
 ### Selector Stability
 
