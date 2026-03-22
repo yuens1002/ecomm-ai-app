@@ -125,7 +125,25 @@ async function checkUrl(page, expected) {
 }
 
 async function checkText(page, text) {
-  const content = await page.evaluate(() => document.body.innerText);
+  const content = await page.evaluate(() => {
+    const bodyText = document.body.innerText;
+    // Include visible input/textarea/select values — e.g. store name on settings page
+    // is rendered in an <input> and won't appear in innerText.
+    const inputValues = Array.from(
+      document.querySelectorAll(
+        "textarea, select, input:not([type='password']):not([type='hidden']):not([type='checkbox']):not([type='radio'])"
+      )
+    )
+      .map((el) => {
+        if (el.tagName === "SELECT") {
+          const selectedOptions = Array.from(el.selectedOptions || []);
+          return selectedOptions.map((opt) => opt.textContent || "").join(" ");
+        }
+        return el.value;
+      })
+      .join(" ");
+    return bodyText + " " + inputValues;
+  });
   const matches = content.toLowerCase().includes(text.toLowerCase());
   console.log(`  → check_text: "${text.slice(0, 50)}" → ${matches ? "FOUND" : "NOT FOUND"}`);
   return matches;
