@@ -27,7 +27,10 @@ jobs:
               - 'app/admin/**'
             spec:
               - 'VERIFICATION.md'
+            agent:
+              - 'scripts/qa-agent.js'
 
+      # Warn when setup-related files change without updating the spec
       - name: Post spec-drift comment
         if: steps.filter.outputs.setup == 'true' && steps.filter.outputs.spec == 'false'
         uses: actions/github-script@v7
@@ -47,6 +50,29 @@ jobs:
               'If these changes affect what a fresh install looks like, please update the relevant AC rows in [`VERIFICATION.md`](../blob/main/VERIFICATION.md).',
               '',
               'If this change does not affect the install flow, you can safely ignore this comment.',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
+      # Warn when the spec changes without updating the qa-agent test blocks
+      - name: Post missing-test comment
+        if: steps.filter.outputs.spec == 'true' && steps.filter.outputs.agent == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              '## ⚠️ VERIFICATION.md changed — qa-agent.js not updated',
+              '',
+              'This PR adds or modifies ACs in `VERIFICATION.md` but does not update `scripts/qa-agent.js`.',
+              '',
+              'Every AC row in `VERIFICATION.md` must have a corresponding test block in `runVerification()` in `scripts/qa-agent.js`. Missing test blocks automatically **FAIL** the install-test run (they are not skipped).',
+              '',
+              'Please add or update the relevant AC block in `scripts/qa-agent.js`, or remove the AC from `VERIFICATION.md` if it is not yet implemented.',
             ].join('\n');
 
             await github.rest.issues.createComment({
