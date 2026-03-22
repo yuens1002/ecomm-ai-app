@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.96.9 - 2026-03-22
+
+### Fixed
+
+- **Security (XSS)**: Password reset callback no longer interpolates token into inline `<script>` — now redirects to `/auth/reset-password?token=<encoded>` (CodeQL #6)
+- **Security (ReDoS)**: Replaced vulnerable email regex with `z.string().email()` in user profile and admin email settings routes (CodeQL #11, #12)
+- **Security (path traversal)**: Vercel Blob URL check in image upload now parses hostname instead of using `.includes()` substring match (CodeQL #14, #16)
+- **Security (weak randomness)**: Session tracking IDs now use `crypto.randomUUID()` instead of `Math.random()` in `useActivityTracking` and `SearchResults` (CodeQL #2, #3)
+
+### Changed
+
+- **Next.js**: Updated to 16.2.1
+- **Prisma**: Updated to 7.5.0
+
 ## 0.96.8 - 2026-03-22
 
 ### Fixed

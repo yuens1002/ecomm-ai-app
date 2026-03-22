@@ -14,26 +14,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/forgot-password", request.url));
   }
 
-  // Create HTML that stores token in sessionStorage and redirects
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Processing Password Reset...</title>
-        <script>
-          // Store token in sessionStorage and redirect
-          sessionStorage.setItem('passwordResetToken', '${token}');
-          window.location.href = '/auth/reset-password';
-        </script>
-      </head>
-      <body>
-        <p>Processing your password reset request...</p>
-      </body>
-    </html>
-  `;
-
-  return new NextResponse(html, {
-    status: 200,
-    headers: { "Content-Type": "text/html" },
-  });
+  // Redirect to the reset-password page with the token as a search param.
+  // The reset-password page reads the token from the URL and stores it in
+  // sessionStorage client-side. This avoids interpolating the token into
+  // an inline script, which would be a reflected XSS vector.
+  const destination = new URL("/auth/reset-password", request.url);
+  destination.searchParams.set("token", token);
+  return NextResponse.redirect(destination);
 }

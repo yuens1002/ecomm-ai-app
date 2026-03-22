@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -22,8 +23,7 @@ export async function PATCH(request: Request) {
     const { name, email } = await request.json();
 
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!z.string().email().safeParse(email).success) {
       return NextResponse.json(
         { error: "Invalid email format" },
         { status: 400 }
