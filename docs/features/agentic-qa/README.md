@@ -4,7 +4,7 @@
 
 An automated post-merge CI system that verifies a fresh install of Artisan Roast on the reference stack (Neon + Vercel) after every merge to `main`.
 
-A Claude agent — using the computer use API — walks through `VERIFICATION.md` and confirms each acceptance criterion passes in a real browser against a real deployment.
+A deterministic Puppeteer script walks through `VERIFICATION.md` and confirms each acceptance criterion passes in a real browser against a real deployment. Claude Haiku is called only on failure to write a concise GitHub issue body.
 
 ---
 
@@ -24,11 +24,24 @@ A separate Vercel project (`artisan-roast-qa`) watches the same repo on `main`. 
 
 **DB isolation per run:** `prisma migrate reset --force` before each run drops all data and re-runs migrations from scratch — equivalent to a fresh install, without Neon branch API overhead.
 
-### Claude Computer Use (not Puppeteer)
+### Deterministic Puppeteer (not AI in the hot path)
 
-The agent uses `claude-sonnet-4-6` with the `computer_use` tool type. Claude receives a screenshot of a real Chromium browser and decides where to click, what to type, when to scroll — no DOM querying, no selectors, no brittle XPath.
+Each AC is a labeled Puppeteer block with explicit DOM interactions: `page.click()`, `page.type()`, `page.evaluate()`, `waitForNavigation()`. Selectors and visible-text constants are defined at the top of `scripts/qa-agent.js` as the canonical update points when the setup UI changes.
 
-**Why:** Selector-based automation breaks whenever UI text or structure changes. Computer use is resilient to refactoring; it sees the page as a user would.
+**Why:** ~$0/run when all ACs pass. Fast (~2 min). Predictable output — no LLM variance in pass/fail decisions. Easy to debug: each AC block maps 1:1 to a row in `VERIFICATION.md`.
+
+**AI on the failure path only:** If any AC fails, Claude Haiku (`claude-haiku-4-5-20251001`) is called once to generate a concise GitHub issue body from the failure list (~$0.002). The issue is then opened automatically.
+
+### Selector Stability
+
+Two constants at the top of `scripts/qa-agent.js` are the only places that need updating when the setup UI changes:
+
+```js
+const SEL = { /* CSS selectors */ };
+const TEXT = { /* visible strings to assert */ };
+```
+
+`checkText()` checks both `document.body.innerText` and visible `<input>`/`<textarea>`/`<select>` values, so assertions work even when values are in form fields rather than rendered text.
 
 ### VERIFICATION.md is Static
 
@@ -45,10 +58,6 @@ After a merge to `main`, the workflow sleeps 30 min before triggering. GitHub Ac
 **Why:** Rapid merge sequences (e.g., version bump commits, docs fixes) would otherwise queue many redundant runs.
 
 **Development override:** `workflow_dispatch` with `skip_debounce: true` runs immediately — no wait.
-
-### Model: `claude-sonnet-4-6`
-
-Not Opus. Sonnet 4.6 is capable for visual browser tasks and cost-efficient for automated runs that may trigger many times per day.
 
 ---
 
@@ -85,6 +94,18 @@ When you change the setup flow, admin UI, or database schema:
 
 The spec is plain markdown — no tooling required to edit it.
 
+### Updating selectors or text assertions
+
+When the setup UI changes (copy, element structure), update the constants at the top of `scripts/qa-agent.js`:
+
+```js
+// ── Selectors — UPDATE THESE if the setup UI elements change ─────────────
+const SEL = { ... };
+
+// ── Text markers — UPDATE THESE if visible copy changes ──────────────────
+const TEXT = { ... };
+```
+
 ---
 
 ## Required Secrets
@@ -93,20 +114,22 @@ The spec is plain markdown — no tooling required to edit it.
 |--------|---------|
 | `QA_BASE_URL` | Fixed URL of the `artisan-roast-qa` Vercel project |
 | `QA_VERCEL_DEPLOY_HOOK` | Webhook to trigger QA project redeploy |
-| `QA_DATABASE_URL` | Pooled Neon connection for QA DB |
+| `QA_DATABASE_URL` | Pooled Neon connection for QA DB (runtime) |
 | `QA_DIRECT_URL` | Direct Neon connection for QA DB (migrations) |
 | `QA_ADMIN_NAME` | Known admin name for round-trip verification |
 | `QA_ADMIN_EMAIL` | Known admin email |
 | `QA_ADMIN_PASSWORD` | Known admin password |
 | `QA_STORE_NAME` | Expected store name post-setup |
-| `ANTHROPIC_API_KEY` | Claude agent (Sonnet 4.6) |
+| `ANTHROPIC_API_KEY` | Claude Haiku — called only on failure to generate issue body |
 
 ---
 
 ## One-Time Infrastructure Setup
 
 1. Create a new Vercel project — import from `yuens1002/artisan-roast`, name it `artisan-roast-qa`, branch `main`
-2. Add `QA_DATABASE_URL`, `QA_DIRECT_URL`, `AUTH_SECRET`, `NEXTAUTH_SECRET`, `NEXT_PUBLIC_APP_URL` (= `QA_BASE_URL`) to its Vercel env vars
+2. Add env vars to the Vercel QA project (all environments — Production **and** Preview):
+   - `DATABASE_URL`, `DIRECT_URL` (QA Neon connection strings)
+   - `AUTH_SECRET`, `NEXT_PUBLIC_APP_URL` (= `QA_BASE_URL`)
 3. Vercel QA project → Settings → Git → Deploy Hooks → create hook → store as `QA_VERCEL_DEPLOY_HOOK`
 4. Create a dedicated Neon project for QA → copy connection strings → store as `QA_DATABASE_URL` / `QA_DIRECT_URL`
 5. Add all secrets to GitHub repo → Settings → Secrets → Actions
@@ -117,7 +140,7 @@ The spec is plain markdown — no tooling required to edit it.
 
 | File | Purpose |
 |------|---------|
-| `VERIFICATION.md` | Static install spec — ACs in table format |
-| `scripts/qa-agent.js` | Claude computer use agent — parses VERIFICATION.md, walks each AC, reports PASS/FAIL |
-| `.github/workflows/install-test.yml` | Triggered on push to main (debounced) or workflow_dispatch |
-| `.github/workflows/spec-drift.yml` | PR comment guard — flags spec-related file changes without VERIFICATION.md update |
+| `VERIFICATION.md` | Static install spec — 16 ACs in table format |
+| `scripts/qa-agent.js` | Deterministic Puppeteer script — walks each AC, calls Haiku on failure for issue body |
+| `.github/workflows/install-test.yml` | Triggered on push to main (30 min debounce) or `workflow_dispatch` |
+| `.github/workflows/spec-drift.yml` | PR comment guard — flags spec-related file changes without `VERIFICATION.md` update |
