@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
 
@@ -53,8 +54,7 @@ export async function PUT(request: NextRequest) {
     const { contactEmail, notifyAdminOnNewsletterSignup } = body;
 
     // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(contactEmail)) {
+    if (!z.string().email().safeParse(contactEmail).success) {
       return NextResponse.json(
         { error: "Invalid email format" },
         { status: 400 }

@@ -1,25 +1,24 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { resetPasswordWithTokenAction } from "@/app/auth/actions";
 
 export function ResetPasswordContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get token from sessionStorage
-    const storedToken = sessionStorage.getItem("passwordResetToken");
+    // Token is passed as a URL search param by the password-reset-callback route.
+    const urlToken = searchParams.get("token");
 
-    if (!storedToken) {
-      // Schedule state update to avoid cascading render
+    if (!urlToken) {
       queueMicrotask(() => {
         setError("No reset token found. Please request a new password reset.");
       });
-      // Redirect after showing error
       const timer = setTimeout(() => {
         router.push("/auth/forgot-password");
       }, 3000);
@@ -27,9 +26,9 @@ export function ResetPasswordContent() {
     }
 
     queueMicrotask(() => {
-      setToken(storedToken);
+      setToken(urlToken);
     });
-  }, [router]);
+  }, [router, searchParams]);
 
   const handleResetPassword = async (
     prevState: unknown,
@@ -49,8 +48,6 @@ export function ResetPasswordContent() {
     const result = await resetPasswordWithTokenAction(prevState, newFormData);
 
     if (result.ok) {
-      // Clear the token
-      sessionStorage.removeItem("passwordResetToken");
       // Redirect after 2 seconds
       setTimeout(() => {
         router.push("/auth/signin");

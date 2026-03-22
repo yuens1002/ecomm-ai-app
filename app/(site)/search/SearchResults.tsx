@@ -54,7 +54,7 @@ function getSessionId() {
 
   let sessionId = sessionStorage.getItem("artisan_session_id");
   if (!sessionId) {
-    sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    sessionId = crypto.randomUUID();
     sessionStorage.setItem("artisan_session_id", sessionId);
   }
   return sessionId;

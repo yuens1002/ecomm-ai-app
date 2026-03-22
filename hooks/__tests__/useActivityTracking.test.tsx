@@ -29,7 +29,7 @@ describe("useActivityTracking", () => {
       // Session ID should be created and stored
       const sessionId = sessionStorage.getItem("artisan_session_id");
       expect(sessionId).toBeTruthy();
-      expect(sessionId).toMatch(/^session_\d+_[a-z0-9]+$/);
+      expect(sessionId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
 
     it("should retrieve existing session ID from sessionStorage", () => {

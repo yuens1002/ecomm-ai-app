@@ -119,11 +119,14 @@ export function useImageUpload({
     }
 
     // Pass original URL for cleanup (local files or blob URLs)
-    if (
-      originalUrl &&
-      (originalUrl.startsWith("/") ||
-        originalUrl.includes(".blob.vercel-storage.com"))
-    ) {
+    const isVercelBlobUrl = (() => {
+      try {
+        return new URL(originalUrl ?? "").hostname.endsWith(".blob.vercel-storage.com");
+      } catch {
+        return false;
+      }
+    })();
+    if (originalUrl && (originalUrl.startsWith("/") || isVercelBlobUrl)) {
       formData.append("oldPath", originalUrl);
     }
 
@@ -468,11 +471,14 @@ export function useMultiImageUpload({
         }
 
         // Pass original URL for cleanup (local files or blob URLs)
-        if (
-          img.originalUrl &&
-          (img.originalUrl.startsWith("/") ||
-            img.originalUrl.includes(".blob.vercel-storage.com"))
-        ) {
+        const isVercelBlobUrl = (() => {
+          try {
+            return new URL(img.originalUrl ?? "").hostname.endsWith(".blob.vercel-storage.com");
+          } catch {
+            return false;
+          }
+        })();
+        if (img.originalUrl && (img.originalUrl.startsWith("/") || isVercelBlobUrl)) {
           formData.append("oldPath", img.originalUrl);
         }
 
