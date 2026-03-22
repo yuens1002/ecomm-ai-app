@@ -73,30 +73,30 @@ After a merge to `main`, the workflow sleeps 30 min before triggering. GitHub Ac
 
 ## Spec Drift Guard
 
-`.github/workflows/spec-drift.yml` watches setup-related files:
-- `app/setup/**`
-- `prisma/schema.prisma`
-- `INSTALLATION.md`
-- `app/admin/**`
+`.github/workflows/spec-drift.yml` enforces two bidirectional checks on every PR:
 
-If any of these change in a PR without `VERIFICATION.md` also changing, the workflow posts a PR comment reminding the author to update the spec.
+| Trigger | Missing | Comment |
+|---------|---------|---------|
+| `app/setup/**`, `prisma/schema.prisma`, `INSTALLATION.md`, or `app/admin/**` changed | `VERIFICATION.md` not updated | "Update the spec — install flow may have changed" |
+| `VERIFICATION.md` changed | `scripts/qa-agent.js` not updated | "Add the test block — untested ACs fail CI" |
+
+### Untested ACs are hard failures
+
+`qa-agent.js` compares every AC parsed from `VERIFICATION.md` against the results produced by `runVerification()`. Any AC with no corresponding test block is recorded as a **FAIL**, not a skip. This means:
+
+- You cannot add an AC to `VERIFICATION.md` and merge without also implementing the test
+- The PR comment from spec-drift is a reminder; CI is the enforcement
 
 ---
 
 ## How to Maintain the Spec
 
-When you change the setup flow, admin UI, or database schema:
+### When the setup flow, admin UI, or schema changes
 
-1. Open `VERIFICATION.md`
-2. Update the affected AC rows (or add new ones)
-3. If you remove a step, remove its AC
-4. The spec-drift workflow will remind you if you forget
-
-The spec is plain markdown — no tooling required to edit it.
-
-### Updating selectors or text assertions
-
-When the setup UI changes (copy, element structure), update the constants at the top of `scripts/qa-agent.js`:
+1. Update the affected AC rows in `VERIFICATION.md` (or add new ones)
+2. Update the corresponding test block in `runVerification()` in `scripts/qa-agent.js`
+3. If UI selectors or copy changed, update the `SEL` / `TEXT` constants at the top of `qa-agent.js`
+4. The spec-drift workflow will remind you if either file is missed
 
 ```js
 // ── Selectors — UPDATE THESE if the setup UI elements change ─────────────
@@ -105,6 +105,18 @@ const SEL = { ... };
 // ── Text markers — UPDATE THESE if visible copy changes ──────────────────
 const TEXT = { ... };
 ```
+
+### When adding a new AC
+
+1. Add the row to `VERIFICATION.md` with the correct `AC-XX-N` ID
+2. Add a labeled block to `runVerification()` in `scripts/qa-agent.js`:
+   ```js
+   // AC-XX-N: <what>
+   console.log("\n[AC-XX-N]");
+   // ... puppeteer assertions ...
+   results.push(pass("AC-XX-N", "...") or fail("AC-XX-N", "..."));
+   ```
+3. If you skip step 2, CI will fail with: `No test block implemented in qa-agent.js`
 
 ---
 
