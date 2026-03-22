@@ -11,6 +11,12 @@ import { hasAnyAdmin } from "@/lib/admin";
  */
 export async function POST(req: NextRequest) {
   try {
+    // Dev-only: bypass admin check when SETUP_PREVIEW=true so the setup UI
+    // can be walked through without wiping the admin account.
+    if (process.env.NODE_ENV === "development" && process.env.SETUP_PREVIEW === "true") {
+      return NextResponse.json({ ok: true });
+    }
+
     const adminExists = await hasAnyAdmin();
     if (adminExists) {
       return NextResponse.json({ error: "Setup already complete" }, { status: 403 });

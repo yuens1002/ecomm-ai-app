@@ -9,6 +9,10 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 // ─── Shared setup UI ────────────────────────────────────────────────────────
 
+// Platform identity — shown in the setup sidebar, not from store settings.
+const PLATFORM_NAME = "Artisan Roast";
+const PLATFORM_LOGO = "/logo.svg";
+
 type SetupStep = "eula" | "account";
 
 const STEPS = [
@@ -44,17 +48,17 @@ export function SetupLayout({ children }: { children: ReactNode }) {
         />
         <div className="absolute inset-0 bg-black/55" />
 
-        {/* Top: logo + name + brand desc */}
+        {/* Top: platform logo + name + brand desc */}
         <div className="relative z-10 space-y-4">
           <div className="flex items-center gap-2.5">
             <Image
-              src={settings.storeLogoUrl || "/logo.svg"}
-              alt={settings.storeName}
+              src={PLATFORM_LOGO}
+              alt={PLATFORM_NAME}
               width={32}
               height={32}
               className="rounded-full"
             />
-            <span className="text-white font-semibold text-sm drop-shadow">{settings.storeName}</span>
+            <span className="text-white font-semibold text-sm drop-shadow">{PLATFORM_NAME}</span>
           </div>
           <p className="text-white/60 text-sm leading-relaxed">
             An open-source platform for roasters who believe coffee is more than a commodity.
