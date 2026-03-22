@@ -8,6 +8,15 @@ jest.mock("@/auth", () => ({
   auth: jest.fn(),
 }));
 
+// Mock Prisma to avoid real DB connections in unit tests
+jest.mock("@/lib/prisma", () => ({
+  prisma: {
+    userActivity: {
+      create: jest.fn().mockResolvedValue({ id: "mock-id" }),
+    },
+  },
+}));
+
 describe("POST /api/track-activity", () => {
   it("should return 400 if sessionId is missing", async () => {
     const request = new NextRequest(
