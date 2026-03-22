@@ -5,19 +5,24 @@ import { hasAnyAdmin } from "@/lib/admin";
 /**
  * POST /api/admin/setup/eula
  * Persists EULA acceptance to SiteSettings during first-time setup.
- * Only callable when no admin account exists (same guard as /api/admin/setup).
+ * Returns 403 if an admin already exists (setup already complete).
+ *
+ * Dev exception: when SETUP_PREVIEW=true and an admin already exists, returns
+ * 200 without persisting — allows walking the setup UI without wiping your dev admin.
  *
  * Body: { versions: Record<string, string>; acceptedAt: string }
  */
 export async function POST(req: NextRequest) {
   try {
-    // Dev-only: bypass admin check when SETUP_PREVIEW=true so the setup UI
-    // can be walked through without wiping the admin account.
-    if (process.env.NODE_ENV === "development" && process.env.SETUP_PREVIEW === "true") {
+    const adminExists = await hasAnyAdmin();
+
+    // Dev-only: bypass EULA persistence when SETUP_PREVIEW=true and an admin already
+    // exists — lets you walk the full setup flow without wiping your dev admin.
+    // On a fresh DB (no admin yet), fall through to normal persistence.
+    if (process.env.NODE_ENV === "development" && process.env.SETUP_PREVIEW === "true" && adminExists) {
       return NextResponse.json({ ok: true });
     }
 
-    const adminExists = await hasAnyAdmin();
     if (adminExists) {
       return NextResponse.json({ error: "Setup already complete" }, { status: 403 });
     }

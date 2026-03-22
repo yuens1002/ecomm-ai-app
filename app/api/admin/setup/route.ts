@@ -25,14 +25,15 @@ export async function HEAD() {
 
 export async function POST(req: NextRequest) {
   try {
-    // Dev-only: bypass account creation when SETUP_PREVIEW=true so the full
-    // setup flow can be walked through without creating a duplicate admin.
-    if (process.env.NODE_ENV === "development" && process.env.SETUP_PREVIEW === "true") {
-      return NextResponse.json({ ok: true });
-    }
-
     // Check if an admin already exists
     const adminExists = await hasAnyAdmin();
+
+    // Dev-only: bypass account creation when SETUP_PREVIEW=true and an admin already
+    // exists — lets you walk the full setup flow without wiping your dev admin.
+    // On a fresh DB (no admin yet), fall through to normal creation.
+    if (process.env.NODE_ENV === "development" && process.env.SETUP_PREVIEW === "true" && adminExists) {
+      return NextResponse.json({ ok: true });
+    }
 
     if (adminExists) {
       return NextResponse.json(

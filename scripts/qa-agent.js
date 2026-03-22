@@ -186,7 +186,7 @@ async function scrollToBottom(page) {
   await page.evaluate(() => {
     const sentinel = document.querySelector('[data-testid="eula-sentinel"]');
     if (sentinel) {
-      sentinel.scrollIntoView({ behavior: "instant", block: "end" });
+      sentinel.scrollIntoView({ behavior: "auto", block: "end" });
     } else {
       // Fallback: scroll the overflow pane or window.
       const pane = document.querySelector(".overflow-y-auto, .overflow-y-scroll");
