@@ -24,7 +24,7 @@ require("dotenv").config({ path: ".env.local" });
 
 // Configuration
 const config = {
-  skipMigrations: process.argv.includes("--no-migrate"),
+  skipMigrations: process.argv.includes("--no-migrate") || process.env.SKIP_MIGRATIONS === "true",
   directUrl: process.argv
     .find((arg) => arg.startsWith("--direct-url="))
     ?.split("=")[1],
