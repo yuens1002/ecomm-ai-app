@@ -5,7 +5,6 @@ import Image from "next/image";
 import { ChevronRight, ScrollText, Store } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 // ─── Shared setup UI ────────────────────────────────────────────────────────
 
@@ -33,7 +32,6 @@ const STEPS = [
 // ─── Split layout — 1/4 branded sidebar | 3/4 content ────────────────────────
 
 export function SetupLayout({ children }: { children: ReactNode }) {
-  const { settings } = useSiteSettings();
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left sidebar — 1/4 width, hidden on mobile */}
@@ -90,16 +88,16 @@ export function SetupLayout({ children }: { children: ReactNode }) {
 
       {/* Right — 3/4 content area */}
       <div className="flex-1 flex flex-col bg-background overflow-y-auto min-h-screen lg:min-h-0">
-        {/* Mobile: logo strip */}
+        {/* Mobile: platform logo strip */}
         <div className="lg:hidden flex items-center gap-2.5 px-6 pt-6 pb-4 border-b">
           <Image
-            src={settings.storeLogoUrl || "/logo.svg"}
-            alt={settings.storeName}
+            src={PLATFORM_LOGO}
+            alt={PLATFORM_NAME}
             width={28}
             height={28}
             className="rounded-full"
           />
-          <span className="font-semibold text-sm">{settings.storeName}</span>
+          <span className="font-semibold text-sm">{PLATFORM_NAME}</span>
         </div>
 
         <div className="flex-1 px-10 py-12 sm:px-14 lg:px-20 lg:py-16 max-w-3xl">
