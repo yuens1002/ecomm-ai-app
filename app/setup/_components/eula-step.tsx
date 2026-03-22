@@ -97,7 +97,7 @@ export function EulaStep({ docs, onAccepted }: EulaStepProps) {
           </section>
         ))}
         {/* Sentinel — 1px height ensures IntersectionObserver fires reliably */}
-        <div ref={sentinelRef} className="h-px" />
+        <div ref={sentinelRef} data-testid="eula-sentinel" className="h-px" />
       </div>
 
       {!scrolledToBottom && (

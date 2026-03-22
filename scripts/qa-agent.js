@@ -65,9 +65,9 @@ const KNOWN = {
 // UPDATE THESE if the setup UI elements change.
 
 const SEL = {
-  // Shadcn v2 sets data-slot="button" on all buttons; /setup has exactly one button.
-  // data-testid="eula-accept-btn" is also set on the button (eula-step.tsx) for future reference.
-  eulaAcceptBtn:  '[data-slot="button"]',             // the I Accept / scroll-gated button
+  // data-testid="eula-accept-btn" set in eula-step.tsx — used instead of generic [data-slot="button"]
+  // because the new split layout has multiple buttons visible on the page (stepper, etc.)
+  eulaAcceptBtn:  '[data-testid="eula-accept-btn"]',  // the scroll-gated accept button
   nameInput:      'input[name="name"]',
   emailInput:     'input[name="email"]',
   passwordInput:  'input[name="password"]',
@@ -80,10 +80,10 @@ const SEL = {
 // UPDATE THESE if visible copy changes.
 
 const TEXT = {
-  eulaHeading:    "Review & Accept Terms",
+  eulaHeading:    "The fine print",              // heading of eula step
   scrollHint:     "Scroll to the bottom",        // hint shown before scroll
-  setupComplete:  "Setup Already Complete",
-  storeSetup:     "Store Setup",                 // step 2 heading
+  setupComplete:  "You're all set",              // shown when admin already exists
+  storeSetup:     "Almost there",                // step 2 heading
   gettingStarted: "Getting started",             // dashboard checklist
   noProducts:     "No products",
   noOrders:       "No orders",
@@ -181,13 +181,20 @@ async function submitForm(page, selector = SEL.submitBtn) {
 
 async function scrollToBottom(page) {
   console.log(`  → scroll_to_bottom`);
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  // Also scroll any overflow-y container (EULA pane)
+  // Use scrollIntoView on the sentinel — this reliably triggers IntersectionObserver
+  // in headless Chrome, whereas programmatic scrollTop assignment does not.
   await page.evaluate(() => {
-    const pane = document.querySelector(".overflow-y-auto, .overflow-y-scroll, [data-eula-scroll]");
-    if (pane) pane.scrollTop = pane.scrollHeight;
+    const sentinel = document.querySelector('[data-testid="eula-sentinel"]');
+    if (sentinel) {
+      sentinel.scrollIntoView({ behavior: "auto", block: "end" });
+    } else {
+      // Fallback: scroll the overflow pane or window.
+      const pane = document.querySelector(".overflow-y-auto, .overflow-y-scroll");
+      if (pane) pane.scrollTop = pane.scrollHeight;
+      else window.scrollTo(0, document.body.scrollHeight);
+    }
   });
-  await new Promise((r) => setTimeout(r, 800));
+  await new Promise((r) => setTimeout(r, 600));
 }
 
 async function clearSession(page) {
@@ -248,7 +255,21 @@ async function runVerification(page) {
   // AC-IF-3: Accept button enables after scrolling to bottom
   console.log("\n[AC-IF-3]");
   await scrollToBottom(page);
-  const ariaDisabledAfter = await getAttribute(page, SEL.eulaAcceptBtn, "aria-disabled");
+  // Poll up to 3s for the IntersectionObserver + React re-render to enable the button.
+  let ariaDisabledAfter = "true";
+  try {
+    await page.waitForFunction(
+      (sel) => {
+        const btn = document.querySelector(sel);
+        return btn && btn.getAttribute("aria-disabled") !== "true";
+      },
+      { timeout: 3000 },
+      SEL.eulaAcceptBtn
+    );
+    ariaDisabledAfter = null;
+  } catch {
+    ariaDisabledAfter = await getAttribute(page, SEL.eulaAcceptBtn, "aria-disabled");
+  }
   results.push(
     ariaDisabledAfter !== "true"
       ? pass("AC-IF-3", "Accept button aria-disabled removed after scroll")
