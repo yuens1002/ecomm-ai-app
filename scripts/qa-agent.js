@@ -45,12 +45,12 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Load .env.local for local runs (CI sets env vars directly)
-if (!process.env.BASE_URL && !process.env.QA_BASE_URL) {
-  try {
-    const { default: dotenv } = await import("dotenv");
-    dotenv.config({ path: path.join(__dirname, "../.env.local") });
-  } catch {}
-}
+// Always load .env.local for local runs — inline env vars override it.
+// CI sets env vars directly and has no .env.local, so this is a no-op there.
+try {
+  const { default: dotenv } = await import("dotenv");
+  dotenv.config({ path: path.join(__dirname, "../.env.local"), override: false });
+} catch {}
 if (!process.env.BASE_URL && process.env.QA_BASE_URL) {
   process.env.BASE_URL = process.env.QA_BASE_URL;
 }
