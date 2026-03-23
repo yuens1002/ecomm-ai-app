@@ -48,7 +48,7 @@ jobs:
           QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
           QA_STORE_NAME: ${{ secrets.QA_STORE_NAME }}
           QA_MODEL: ${{ inputs.model || 'claude-sonnet-4-6' }}
-          QA_TOKEN_BUDGET: "150000"
+          QA_TOKEN_BUDGET: "300000"
         run: node scripts/qa-agent.js
 
       - name: Open GitHub issue on failure
