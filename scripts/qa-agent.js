@@ -9,8 +9,9 @@
  * All Claude API calls route through the Vercel AI Gateway, billing against
  * the Max subscription (ANTHROPIC_BASE_URL + ANTHROPIC_API_KEY).
  *
- * Usage (local):
- *   BASE_URL=http://localhost:3000 QA_MODEL=claude-haiku-4-5-20251001 node scripts/qa-agent.js
+ * Usage (local — always target the QA DB and QA URL, never your dev DB):
+ *   DATABASE_URL=$QA_DATABASE_URL DIRECT_URL=$QA_DIRECT_URL npx prisma migrate reset --force
+ *   BASE_URL=$QA_BASE_URL QA_MODEL=claude-haiku-4-5-20251001 node scripts/qa-agent.js
  *
  * Required env:
  *   BASE_URL / QA_BASE_URL     target URL (no trailing slash)
