@@ -177,7 +177,7 @@ async function toolScrollToBottom(page) {
   await page.evaluate(() => {
     const sentinel = document.querySelector('[data-testid="eula-sentinel"]');
     if (sentinel) {
-      // Scroll every overflow-y ancestor to its max, then bring sentinel into viewport
+      // Scroll every overflow-y ancestor to its max
       let el = sentinel.parentElement;
       while (el && el !== document.body) {
         const style = getComputedStyle(el);
@@ -186,19 +186,28 @@ async function toolScrollToBottom(page) {
         }
         el = el.parentElement;
       }
+      // Also scroll window to bottom and bring sentinel into viewport
+      window.scrollTo(0, document.body.scrollHeight);
       sentinel.scrollIntoView({ behavior: "instant", block: "end" });
+      // Dispatch scroll events to help IntersectionObserver fire
+      window.dispatchEvent(new Event("scroll"));
+      document.dispatchEvent(new Event("scroll"));
     } else {
       window.scrollTo(0, document.body.scrollHeight);
     }
   });
-  // Wait for accept button to become enabled (IntersectionObserver fires after scroll)
+  // Give IntersectionObserver + React state update time to settle
+  await page.waitForTimeout(1000);
+  // Wait up to 5s for accept button to become enabled
   await page.waitForFunction(
     () => {
       const btn = document.querySelector('[data-testid="eula-accept-btn"]');
       return !btn || (!btn.disabled && btn.getAttribute("aria-disabled") !== "true");
     },
-    { timeout: 3000 }
-  ).catch(() => {}); // ok if no eula btn on this page
+    { timeout: 5000 }
+  ).catch(() => {
+    console.warn("  ⚠️  eula-accept-btn still disabled after scroll");
+  });
   await page.waitForTimeout(300);
   return readPage(page);
 }
