@@ -19,8 +19,7 @@
  *
  * Required env:
  *   BASE_URL / QA_BASE_URL     target URL (no trailing slash)
- *   ANTHROPIC_BASE_URL         Vercel AI Gateway (https://ai-gateway.vercel.sh)
- *   ANTHROPIC_API_KEY          Vercel AI Gateway token
+ *   VERCEL_OIDC_TOKEN          set automatically by `vercel env pull` (used as API key)
  *   QA_ADMIN_NAME
  *   QA_ADMIN_EMAIL
  *   QA_ADMIN_PASSWORD
@@ -56,6 +55,16 @@ if (!process.env.BASE_URL && process.env.QA_BASE_URL) {
   process.env.BASE_URL = process.env.QA_BASE_URL;
 }
 
+// VERCEL_OIDC_TOKEN (from `vercel env pull`) is the gateway auth token.
+// Fall back to it automatically so ANTHROPIC_API_KEY doesn't need to be
+// set separately in .env.local after every pull.
+if (!process.env.ANTHROPIC_API_KEY && process.env.VERCEL_OIDC_TOKEN) {
+  process.env.ANTHROPIC_API_KEY = process.env.VERCEL_OIDC_TOKEN;
+}
+if (!process.env.ANTHROPIC_BASE_URL) {
+  process.env.ANTHROPIC_BASE_URL = "https://ai-gateway.vercel.sh";
+}
+
 // ── Config ──────────────────────────────────────────────────────────────────
 
 const BASE_URL = process.env.BASE_URL?.replace(/\/$/, "");
@@ -63,7 +72,7 @@ const MODEL    = process.env.QA_MODEL || "claude-sonnet-4-6";
 const BUDGET   = parseInt(process.env.QA_TOKEN_BUDGET || "150000", 10);
 
 const REQUIRED = [
-  "BASE_URL", "ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY",
+  "BASE_URL", "ANTHROPIC_API_KEY",
   "QA_ADMIN_NAME", "QA_ADMIN_EMAIL", "QA_ADMIN_PASSWORD", "QA_STORE_NAME",
 ];
 const missing = REQUIRED.filter((k) => !process.env[k]);
