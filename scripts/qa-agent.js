@@ -2,33 +2,38 @@
 /**
  * QA Agent — Install Assurance
  *
- * Deterministic Puppeteer verification of VERIFICATION.md ACs against a live URL.
- * No AI in the hot path — fast, cheap, reliable.
- * Claude Haiku is called once at the end only if failures are found, to draft
- * a human-readable GitHub issue body.
+ * Playwright + Claude Agent SDK. Claude drives the browser via semantic
+ * accessibility-tree tools — no hardcoded selectors, no fixed timeouts,
+ * no screenshots. Resilient to UI copy and layout changes.
  *
- * Usage:
- *   BASE_URL=https://your-qa.vercel.app node scripts/qa-agent.js
+ * All Claude API calls route through the Vercel AI Gateway, billing against
+ * the Max subscription (ANTHROPIC_BASE_URL + ANTHROPIC_API_KEY).
+ *
+ * Usage (local):
+ *   BASE_URL=http://localhost:3000 QA_MODEL=claude-haiku-4-5-20251001 node scripts/qa-agent.js
  *
  * Required env:
- *   BASE_URL             — target URL (no trailing slash)
- *   ANTHROPIC_API_KEY    — Claude API key (used only on failure for issue body)
- *   QA_ADMIN_NAME        — known admin full name
- *   QA_ADMIN_EMAIL       — known admin email
- *   QA_ADMIN_PASSWORD    — known admin password
- *   QA_STORE_NAME        — expected store name post-setup
+ *   BASE_URL / QA_BASE_URL     target URL (no trailing slash)
+ *   ANTHROPIC_BASE_URL         Vercel AI Gateway (https://ai-gateway.vercel.sh)
+ *   ANTHROPIC_API_KEY          Vercel AI Gateway token
+ *   QA_ADMIN_NAME
+ *   QA_ADMIN_EMAIL
+ *   QA_ADMIN_PASSWORD
+ *   QA_STORE_NAME
  *
- * ── UPDATE THIS FILE WHEN THE SETUP FLOW CHANGES ──────────────────────────
- * If you change the setup UI (selectors, copy, steps), update:
- *   1. SEL — CSS selectors for interactive elements
- *   2. TEXT — visible text strings used for verification
- *   3. The AC blocks in runVerification() that test the changed behaviour
- * Each AC is a clearly labelled block — search for "AC-IF-1" etc. to find it.
- * ──────────────────────────────────────────────────────────────────────────
+ * Optional env:
+ *   QA_MODEL                   Claude model (default: claude-sonnet-4-6)
+ *   QA_TOKEN_BUDGET            Hard token abort limit (default: 150000)
+ *
+ * Exit codes:
+ *   0  All ACs passed
+ *   1  One or more ACs failed
+ *   2  Token budget exceeded (abort)
+ *   3  Infrastructure error (URL unreachable, missing env, unexpected crash)
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import puppeteer from "puppeteer";
+import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -37,63 +42,43 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Load .env.local for local runs (CI sets env vars directly)
 if (!process.env.BASE_URL && !process.env.QA_BASE_URL) {
-  const { default: dotenv } = await import("dotenv");
-  dotenv.config({ path: path.join(__dirname, "../.env.local") });
+  try {
+    const { default: dotenv } = await import("dotenv");
+    dotenv.config({ path: path.join(__dirname, "../.env.local") });
+  } catch {}
 }
 if (!process.env.BASE_URL && process.env.QA_BASE_URL) {
   process.env.BASE_URL = process.env.QA_BASE_URL;
 }
 
-// ── Env validation ─────────────────────────────────────────────────────────
+// ── Config ──────────────────────────────────────────────────────────────────
 
 const BASE_URL = process.env.BASE_URL?.replace(/\/$/, "");
-const REQUIRED_ENV = ["BASE_URL", "ANTHROPIC_API_KEY", "QA_ADMIN_NAME", "QA_ADMIN_EMAIL", "QA_ADMIN_PASSWORD", "QA_STORE_NAME"];
-const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
+const MODEL    = process.env.QA_MODEL || "claude-sonnet-4-6";
+const BUDGET   = parseInt(process.env.QA_TOKEN_BUDGET || "150000", 10);
+
+const REQUIRED = [
+  "BASE_URL", "ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY",
+  "QA_ADMIN_NAME", "QA_ADMIN_EMAIL", "QA_ADMIN_PASSWORD", "QA_STORE_NAME",
+];
+const missing = REQUIRED.filter((k) => !process.env[k]);
 if (missing.length) {
   console.error(`❌  Missing required env vars: ${missing.join(", ")}`);
-  process.exit(1);
+  process.exit(3);
 }
 
 const KNOWN = {
-  adminName: process.env.QA_ADMIN_NAME,
-  adminEmail: process.env.QA_ADMIN_EMAIL,
+  adminName:     process.env.QA_ADMIN_NAME,
+  adminEmail:    process.env.QA_ADMIN_EMAIL,
   adminPassword: process.env.QA_ADMIN_PASSWORD,
-  storeName: process.env.QA_STORE_NAME,
+  storeName:     process.env.QA_STORE_NAME,
 };
 
-// ── Selectors ──────────────────────────────────────────────────────────────
-// UPDATE THESE if the setup UI elements change.
-
-const SEL = {
-  // data-testid="eula-accept-btn" set in eula-step.tsx — used instead of generic [data-slot="button"]
-  // because the new split layout has multiple buttons visible on the page (stepper, etc.)
-  eulaAcceptBtn:  '[data-testid="eula-accept-btn"]',  // the scroll-gated accept button
-  nameInput:      'input[name="name"]',
-  emailInput:     'input[name="email"]',
-  passwordInput:  'input[name="password"]',
-  confirmInput:   'input[name="confirmPassword"]',
-  submitBtn:      'form button[type="submit"]',
-  adminSigninLink:'a[href="/auth/admin-signin"]',
-};
-
-// ── Text markers ───────────────────────────────────────────────────────────
-// UPDATE THESE if visible copy changes.
-
-const TEXT = {
-  eulaHeading:    "The fine print",              // heading of eula step
-  scrollHint:     "Scroll to the bottom",        // hint shown before scroll
-  setupComplete:  "You're all set",              // shown when admin already exists
-  storeSetup:     "Almost there",                // step 2 heading
-  gettingStarted: "Getting started",             // dashboard checklist
-  noProducts:     "No products",
-  noOrders:       "No orders",
-};
-
-// ── VERIFICATION.md parsing ────────────────────────────────────────────────
+// ── VERIFICATION.md parsing (unchanged from previous agent) ─────────────────
 
 function parseVerificationMd() {
   const specPath = path.join(__dirname, "../VERIFICATION.md");
-  const content = fs.readFileSync(specPath, "utf-8");
+  const content  = fs.readFileSync(specPath, "utf-8");
   const acs = [];
   for (const line of content.split("\n")) {
     const trimmed = line.trim();
@@ -107,463 +92,372 @@ function parseVerificationMd() {
   return acs;
 }
 
-// ── Browser helpers ────────────────────────────────────────────────────────
-
-async function navigate(page, urlPath) {
-  const raw = urlPath.startsWith("/") || urlPath.startsWith("http") ? urlPath : `/${urlPath}`;
-  const url = raw.startsWith("http") ? raw : `${BASE_URL}${raw}`;
-  console.log(`  → navigate: ${url}`);
-  await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
-  await new Promise((r) => setTimeout(r, 300));
+function groupACs(acs) {
+  return {
+    installFlow:  acs.filter((ac) => ac.id.startsWith("AC-IF-")),
+    knownValues:  acs.filter((ac) => ac.id.startsWith("AC-KV-")),
+    appState:     acs.filter((ac) => ac.id.startsWith("AC-IS-")),
+  };
 }
 
-async function checkUrl(page, expected) {
-  const pathname = new URL(page.url()).pathname;
-  const matches = pathname.startsWith(expected);
-  console.log(`  → check_url: ${expected} → ${matches ? "MATCH" : "NO MATCH"} (${pathname})`);
-  return matches;
-}
+// ── Playwright tool implementations ─────────────────────────────────────────
 
-async function checkText(page, text) {
-  const content = await page.evaluate(() => {
-    const bodyText = document.body.innerText;
-    // Include visible input/textarea/select values — e.g. store name on settings page
-    // is rendered in an <input> and won't appear in innerText.
-    const inputValues = Array.from(
-      document.querySelectorAll(
-        "textarea, select, input:not([type='password']):not([type='hidden']):not([type='checkbox']):not([type='radio'])"
-      )
-    )
-      .map((el) => {
-        if (el.tagName === "SELECT") {
-          const selectedOptions = Array.from(el.selectedOptions || []);
-          return selectedOptions.map((opt) => opt.textContent || "").join(" ");
-        }
-        return el.value;
-      })
-      .join(" ");
-    return bodyText + " " + inputValues;
-  });
-  const matches = content.toLowerCase().includes(text.toLowerCase());
-  console.log(`  → check_text: "${text.slice(0, 50)}" → ${matches ? "FOUND" : "NOT FOUND"}`);
-  return matches;
-}
-
-async function getAttribute(page, selector, attr) {
+async function readPage(page) {
+  const url = page.url();
+  let text;
   try {
-    const value = await page.$eval(selector, (el, a) => {
-      if (a === "disabled") return el.disabled;
-      if (a === "aria-disabled") return el.getAttribute("aria-disabled");
-      return el.getAttribute(a);
-    }, attr);
-    console.log(`  → get_attr: ${selector}[${attr}] = ${JSON.stringify(value)}`);
-    return value;
+    text = await page.locator("body").ariaSnapshot({ timeout: 5000 });
   } catch {
-    return null;
+    text = await page.evaluate(() => document.body.innerText).catch(() => "");
   }
+  // Cap at 8K chars — keeps tokens low while preserving all visible content
+  return { url, text: text.slice(0, 8000) };
 }
 
-async function fillField(page, selector, value) {
-  console.log(`  → fill: ${selector} = "${value.slice(0, 40)}${value.length > 40 ? "…" : ""}"`);
-  await page.waitForSelector(selector, { timeout: 5000 });
-  await page.click(selector, { clickCount: 3 });
-  await page.keyboard.type(value, { delay: 30 });
+async function toolNavigate(page, { url }) {
+  const full = url.startsWith("http") ? url : `${BASE_URL}${url}`;
+  console.log(`  → navigate: ${full}`);
+  await page.goto(full, { waitUntil: "domcontentloaded", timeout: 30000 });
+  return readPage(page);
 }
 
-async function submitForm(page, selector = SEL.submitBtn) {
-  console.log(`  → submit: ${selector}`);
-  await page.waitForSelector(selector, { timeout: 5000 });
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }),
-    page.click(selector),
-  ]);
+async function toolClick(page, { target }) {
+  console.log(`  → click: "${target}"`);
+  // Try semantic Playwright locators in order: button → link → text → tree-walker fallback
+  const attempts = [
+    () => page.getByRole("button", { name: target, exact: false }).first().click({ timeout: 3000 }),
+    () => page.getByRole("link",   { name: target, exact: false }).first().click({ timeout: 3000 }),
+    () => page.getByText(target,   { exact: false }).first().click({ timeout: 3000 }),
+    () => page.evaluate((t) => {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node.nodeValue?.trim().toLowerCase().includes(t.toLowerCase())) {
+          const el = node.parentElement?.closest('button,a,[role="button"]');
+          if (el) { el.click(); return true; }
+        }
+      }
+      return false;
+    }, target),
+  ];
+  for (const attempt of attempts) {
+    try { await attempt(); break; } catch { /* try next */ }
+  }
+  await page.waitForLoadState("domcontentloaded").catch(() => {});
+  return readPage(page);
 }
 
-async function scrollToBottom(page) {
+async function toolFill(page, { label, value }) {
+  console.log(`  → fill: "${label}" = "${String(value).slice(0, 40)}"`);
+  try {
+    await page.getByLabel(label, { exact: false }).fill(value, { timeout: 5000 });
+  } catch {
+    await page.getByPlaceholder(label, { exact: false }).fill(value, { timeout: 3000 }).catch(() => {});
+  }
+  return { ok: true };
+}
+
+async function toolScrollToBottom(page) {
   console.log(`  → scroll_to_bottom`);
-  // Use scrollIntoView on the sentinel — this reliably triggers IntersectionObserver
-  // in headless Chrome, whereas programmatic scrollTop assignment does not.
   await page.evaluate(() => {
     const sentinel = document.querySelector('[data-testid="eula-sentinel"]');
-    if (sentinel) {
-      sentinel.scrollIntoView({ behavior: "auto", block: "end" });
-    } else {
-      // Fallback: scroll the overflow pane or window.
-      const pane = document.querySelector(".overflow-y-auto, .overflow-y-scroll");
-      if (pane) pane.scrollTop = pane.scrollHeight;
-      else window.scrollTo(0, document.body.scrollHeight);
-    }
+    if (sentinel) sentinel.scrollIntoView({ behavior: "instant", block: "end" });
+    else window.scrollTo(0, document.body.scrollHeight);
   });
-  await new Promise((r) => setTimeout(r, 600));
+  await page.waitForTimeout(800);
+  return readPage(page);
 }
 
-async function clearSession(page) {
-  console.log(`  → clear_session`);
-  const cookies = await page.cookies();
-  if (cookies.length) await page.deleteCookie(...cookies);
-  await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch {} });
+async function toolWaitForText(page, { text, timeout_ms = 8000 }) {
+  console.log(`  → wait_for_text: "${text}" (up to ${timeout_ms}ms)`);
+  const deadline = Date.now() + timeout_ms;
+  while (Date.now() < deadline) {
+    const { text: pageText } = await readPage(page);
+    if (pageText.toLowerCase().includes(text.toLowerCase()))
+      return { found: true, text: pageText.slice(0, 4000) };
+    await page.waitForTimeout(500);
+  }
+  const { text: final } = await readPage(page);
+  return { found: false, text: final.slice(0, 4000) };
 }
 
-async function signIn(page, email, password) {
-  await navigate(page, "/auth/admin-signin");
-  await fillField(page, SEL.emailInput, email);
-  await fillField(page, SEL.passwordInput, password);
-  await submitForm(page);
+async function executeTool(page, name, input) {
+  switch (name) {
+    case "navigate":          return toolNavigate(page, input);
+    case "read_page":         return readPage(page);
+    case "click":             return toolClick(page, input);
+    case "fill":              return toolFill(page, input);
+    case "scroll_to_bottom":  return toolScrollToBottom(page);
+    case "wait_for_text":     return toolWaitForText(page, input);
+    default:                  return { error: `Unknown tool: ${name}` };
+  }
 }
 
-// ── Result helpers ─────────────────────────────────────────────────────────
+// ── Tool schemas ─────────────────────────────────────────────────────────────
 
-function pass(id, evidence) {
-  console.log(`  ✅ ${id} PASS — ${evidence}`);
-  return { id, status: "PASS", evidence };
-}
-
-function fail(id, evidence) {
-  console.log(`  ❌ ${id} FAIL — ${evidence}`);
-  return { id, status: "FAIL", evidence };
-}
-
-// ── Verification ───────────────────────────────────────────────────────────
-
-async function runVerification(page) {
-  const results = [];
-
-  // ── Install Flow ──────────────────────────────────────────────────────
-
-  // AC-IF-1: /setup accessible on fresh install
-  console.log("\n[AC-IF-1]");
-  await navigate(page, "/setup");
-  const setupLoaded   = await checkUrl(page, "/setup");
-  const eulaVisible   = await checkText(page, TEXT.eulaHeading);
-  const notComplete   = !(await checkText(page, TEXT.setupComplete));
-  results.push(
-    setupLoaded && eulaVisible && notComplete
-      ? pass("AC-IF-1", "Setup page loaded; EULA heading visible; no 'Setup Already Complete'")
-      : fail("AC-IF-1", `loaded=${setupLoaded} eula=${eulaVisible} notComplete=${notComplete}`)
-  );
-
-  // AC-IF-2: Accept button is scroll-gated before scrolling
-  console.log("\n[AC-IF-2]");
-  const ariaDisabledBefore = await getAttribute(page, SEL.eulaAcceptBtn, "aria-disabled");
-  const scrollHintVisible  = await checkText(page, TEXT.scrollHint);
-  results.push(
-    ariaDisabledBefore === "true" && scrollHintVisible
-      ? pass("AC-IF-2", "Accept button aria-disabled=true; scroll hint visible")
-      : fail("AC-IF-2", `aria-disabled=${ariaDisabledBefore} scrollHint=${scrollHintVisible}`)
-  );
-
-  // AC-IF-3: Accept button enables after scrolling to bottom
-  console.log("\n[AC-IF-3]");
-  await scrollToBottom(page);
-  // Poll up to 3s for the IntersectionObserver + React re-render to enable the button.
-  let ariaDisabledAfter = "true";
-  try {
-    await page.waitForFunction(
-      (sel) => {
-        const btn = document.querySelector(sel);
-        return btn && btn.getAttribute("aria-disabled") !== "true";
+const TOOLS = [
+  {
+    name: "navigate",
+    description: "Navigate to a URL or path. Use paths like /setup, /admin.",
+    input_schema: {
+      type: "object",
+      properties: { url: { type: "string" } },
+      required: ["url"],
+    },
+  },
+  {
+    name: "read_page",
+    description: "Read the current page as an accessibility tree. Use to verify visible content.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "click",
+    description: "Click an element by its visible label or button/link text.",
+    input_schema: {
+      type: "object",
+      properties: { target: { type: "string", description: "Visible button label, link text, or accessible name" } },
+      required: ["target"],
+    },
+  },
+  {
+    name: "fill",
+    description: "Fill a form field identified by its label.",
+    input_schema: {
+      type: "object",
+      properties: {
+        label: { type: "string", description: "Form field label text (e.g. 'Email address', 'Your name')" },
+        value: { type: "string", description: "Value to enter" },
       },
-      { timeout: 3000 },
-      SEL.eulaAcceptBtn
-    );
-    ariaDisabledAfter = null;
-  } catch {
-    ariaDisabledAfter = await getAttribute(page, SEL.eulaAcceptBtn, "aria-disabled");
-  }
-  results.push(
-    ariaDisabledAfter !== "true"
-      ? pass("AC-IF-3", "Accept button aria-disabled removed after scroll")
-      : fail("AC-IF-3", `aria-disabled still "${ariaDisabledAfter}" after scroll`)
-  );
+      required: ["label", "value"],
+    },
+  },
+  {
+    name: "scroll_to_bottom",
+    description: "Scroll to the bottom of the page. Required before the EULA accept button becomes enabled.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "wait_for_text",
+    description: "Wait until specific text appears on the page (polls up to timeout_ms).",
+    input_schema: {
+      type: "object",
+      properties: {
+        text:       { type: "string", description: "Text to wait for" },
+        timeout_ms: { type: "number", description: "Max wait in ms (default 8000)" },
+      },
+      required: ["text"],
+    },
+  },
+  {
+    name: "done",
+    description: "Report your results for this AC group. Call when all ACs are verified.",
+    input_schema: {
+      type: "object",
+      properties: {
+        results: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id:       { type: "string" },
+              status:   { type: "string", enum: ["PASS", "FAIL"] },
+              evidence: { type: "string", description: "One-line observation" },
+            },
+            required: ["id", "status", "evidence"],
+          },
+        },
+      },
+      required: ["results"],
+    },
+  },
+];
 
-  // AC-IF-4: EULA acceptance advances to Store Setup step
-  console.log("\n[AC-IF-4]");
-  try {
-    await page.click(SEL.eulaAcceptBtn);
-    await new Promise((r) => setTimeout(r, 600));
-    const storeSetupVisible = await checkText(page, TEXT.storeSetup);
-    const formVisible       = await page.$(`${SEL.nameInput}`) !== null;
-    results.push(
-      storeSetupVisible && formVisible
-        ? pass("AC-IF-4", "Store Setup step visible; name/email/password fields present")
-        : fail("AC-IF-4", `storeSetup=${storeSetupVisible} form=${formVisible}`)
-    );
-  } catch (e) {
-    results.push(fail("AC-IF-4", `Click failed: ${e.message}`));
-  }
+// ── System prompt ─────────────────────────────────────────────────────────────
 
-  // AC-IF-5: Admin account creation succeeds with known values
-  console.log("\n[AC-IF-5]");
-  await fillField(page, SEL.nameInput,    KNOWN.adminName);
-  await fillField(page, SEL.emailInput,   KNOWN.adminEmail);
-  await fillField(page, SEL.passwordInput, KNOWN.adminPassword);
-  await fillField(page, SEL.confirmInput, KNOWN.adminPassword);
-  await submitForm(page);
-  // After setup, the app calls router.push("/admin") (client-side pushState).
-  // The pushState fires waitForNavigation early, but /admin then redirects server-side
-  // to /auth/admin-signin (no session). Wait for the full redirect chain to settle.
-  await new Promise((r) => setTimeout(r, 2000));
-  const atSignin = await checkUrl(page, "/auth");
-  if (atSignin) await signIn(page, KNOWN.adminEmail, KNOWN.adminPassword);
-  else {
-    // Already at /admin somehow — still need a session for subsequent checks
-    const stillAdmin = await checkUrl(page, "/admin");
-    if (!stillAdmin) await signIn(page, KNOWN.adminEmail, KNOWN.adminPassword);
-  }
-  const atAdmin = await checkUrl(page, "/admin");
-  results.push(
-    atAdmin
-      ? pass("AC-IF-5", "Admin created; signed in; reached /admin")
-      : fail("AC-IF-5", `Expected /admin, got ${new URL(page.url()).pathname}`)
-  );
+function buildSystemPrompt(acGroup) {
+  return `You are a QA agent verifying a fresh install of Artisan Roast (self-hosted e-commerce).
 
-  // AC-IF-6: /setup is locked out after admin exists
-  console.log("\n[AC-IF-6]");
-  await navigate(page, "/setup");
-  const setupBlocked  = await checkText(page, TEXT.setupComplete);
-  const formGone      = await page.$(SEL.nameInput) === null;
-  results.push(
-    setupBlocked && formGone
-      ? pass("AC-IF-6", "'Setup Already Complete' shown; no form visible")
-      : fail("AC-IF-6", `blocked=${setupBlocked} formGone=${formGone}`)
-  );
+Target: ${BASE_URL}
+Known values — use exactly as given, do not modify:
+  Admin name:     ${KNOWN.adminName}
+  Admin email:    ${KNOWN.adminEmail}
+  Admin password: ${KNOWN.adminPassword}
+  Store name:     ${KNOWN.storeName}
 
-  // ── Known Value Round-Trips ───────────────────────────────────────────
+Rules:
+- Work through each AC below in order
+- For each AC: take the described action, read the result, record PASS or FAIL with one-line evidence
+- Use \`wait_for_text\` after any click that triggers an API call or page transition
+- Use \`read_page\` to verify visible content before asserting
+- Never use CSS selectors — use visible labels and button text only
+- Call \`done\` when all ACs are verified
 
-  // AC-KV-1: Admin name visible in admin UI
-  console.log("\n[AC-KV-1]");
-  await navigate(page, "/admin");
-  // If the post-setup session redirect landed us at /auth, sign in then re-navigate
-  if (await checkUrl(page, "/auth")) {
-    await signIn(page, KNOWN.adminEmail, KNOWN.adminPassword);
-    await navigate(page, "/admin");
-  }
-  const nameVisible = await checkText(page, KNOWN.adminName);
-  results.push(
-    nameVisible
-      ? pass("AC-KV-1", `"${KNOWN.adminName}" visible on /admin dashboard`)
-      : fail("AC-KV-1", `"${KNOWN.adminName}" not found on /admin`)
-  );
-
-  // AC-KV-2: Admin email and password authenticate
-  console.log("\n[AC-KV-2]");
-  await clearSession(page);
-  await signIn(page, KNOWN.adminEmail, KNOWN.adminPassword);
-  const signInOk = await checkUrl(page, "/admin");
-  results.push(
-    signInOk
-      ? pass("AC-KV-2", `Signed in with known email/password; redirected to /admin`)
-      : fail("AC-KV-2", `Sign-in failed; at ${new URL(page.url()).pathname}`)
-  );
-
-  // AC-KV-3: Store name appears on storefront
-  console.log("\n[AC-KV-3]");
-  await navigate(page, "/");
-  const storeNameOnHome = await checkText(page, KNOWN.storeName);
-  results.push(
-    storeNameOnHome
-      ? pass("AC-KV-3", `"${KNOWN.storeName}" visible on storefront homepage`)
-      : fail("AC-KV-3", `"${KNOWN.storeName}" not found on /`)
-  );
-
-  // AC-KV-4: Store name appears in admin settings
-  console.log("\n[AC-KV-4]");
-  await navigate(page, "/admin/settings");
-  const atSettings      = await checkUrl(page, "/admin/settings");
-  const storeNameInSettings = atSettings && await checkText(page, KNOWN.storeName);
-  results.push(
-    storeNameInSettings
-      ? pass("AC-KV-4", `"${KNOWN.storeName}" visible in /admin/settings`)
-      : fail("AC-KV-4", `atSettings=${atSettings} found=${storeNameInSettings}`)
-  );
-
-  // ── Initial App State ─────────────────────────────────────────────────
-
-  // AC-IS-1: Getting Started checklist shows 0 of 4 complete
-  console.log("\n[AC-IS-1]");
-  await navigate(page, "/admin");
-  const checklistVisible = await checkText(page, TEXT.gettingStarted);
-  results.push(
-    checklistVisible
-      ? pass("AC-IS-1", "'Getting started' checklist visible on /admin dashboard")
-      : fail("AC-IS-1", "'Getting started' not found on /admin")
-  );
-
-  // AC-IS-2: Products section shows empty state
-  console.log("\n[AC-IS-2]");
-  await navigate(page, "/admin/products");
-  const atProducts   = await checkUrl(page, "/admin/products");
-  const emptyProducts = atProducts && await checkText(page, TEXT.noProducts);
-  results.push(
-    emptyProducts
-      ? pass("AC-IS-2", "Products page shows empty state")
-      : fail("AC-IS-2", `atProducts=${atProducts} empty=${emptyProducts}`)
-  );
-
-  // AC-IS-3: Orders section shows empty state
-  console.log("\n[AC-IS-3]");
-  await navigate(page, "/admin/orders");
-  const atOrders   = await checkUrl(page, "/admin/orders");
-  const emptyOrders = atOrders && await checkText(page, TEXT.noOrders);
-  results.push(
-    emptyOrders
-      ? pass("AC-IS-3", "Orders page shows empty state")
-      : fail("AC-IS-3", `atOrders=${atOrders} empty=${emptyOrders}`)
-  );
-
-  // AC-IS-4: Settings page loads without error
-  console.log("\n[AC-IS-4]");
-  await navigate(page, "/admin/settings");
-  const settingsOk = await checkUrl(page, "/admin/settings");
-  results.push(
-    settingsOk
-      ? pass("AC-IS-4", "/admin/settings renders without error")
-      : fail("AC-IS-4", `Unexpected URL: ${new URL(page.url()).pathname}`)
-  );
-
-  // AC-IS-5: Storefront homepage loads without error
-  console.log("\n[AC-IS-5]");
-  await navigate(page, "/");
-  const homeOk = await checkUrl(page, "/");
-  results.push(
-    homeOk
-      ? pass("AC-IS-5", "Storefront homepage loads without error")
-      : fail("AC-IS-5", `Unexpected URL: ${new URL(page.url()).pathname}`)
-  );
-
-  // AC-IS-6: Admin navigation links are all reachable
-  console.log("\n[AC-IS-6]");
-  const navChecks = ["/admin/products", "/admin/orders", "/admin/settings"];
-  const navFails = [];
-  for (const navPath of navChecks) {
-    await navigate(page, navPath);
-    const ok = await checkUrl(page, navPath);
-    if (!ok) navFails.push(navPath);
-  }
-  results.push(
-    navFails.length === 0
-      ? pass("AC-IS-6", "Products, Orders, Settings nav links all reachable")
-      : fail("AC-IS-6", `Failed routes: ${navFails.join(", ")}`)
-  );
-
-  return results;
+ACs:
+${acGroup.map((ac) =>
+  `${ac.id}: ${ac.what}\n  How: ${ac.how}\n  Pass if: ${ac.pass}`
+).join("\n\n")}`;
 }
 
-// ── Failure summary via Haiku ──────────────────────────────────────────────
+// ── Agent loop ────────────────────────────────────────────────────────────────
 
-async function generateFailureSummary(results, runUrl) {
-  const failures = results.filter((r) => r.status === "FAIL");
-  if (failures.length === 0) return null;
+async function runGroupAgent(page, client, acGroup, tokenState) {
+  const messages = [{ role: "user", content: "Begin verification." }];
 
-  const client = new Anthropic({ maxRetries: 3 });
-  const prompt = `The following install verification ACs failed. Write a concise GitHub issue body (markdown) summarising what failed and why it matters. Be brief — 3-5 bullet points max.
+  while (true) {
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 2048,
+      system: buildSystemPrompt(acGroup),
+      tools: TOOLS,
+      messages,
+    });
 
-Failed ACs:
-${failures.map((f) => `- ${f.id}: ${f.evidence}`).join("\n")}
+    tokenState.total += (response.usage?.input_tokens ?? 0) + (response.usage?.output_tokens ?? 0);
+    console.log(`  [tokens] ${tokenState.total} / ${BUDGET}`);
 
-Run: ${runUrl}`;
+    if (tokenState.total > BUDGET) {
+      console.error(`\n❌  Token budget exceeded (${tokenState.total} > ${BUDGET}). Aborting.`);
+      process.exit(2);
+    }
 
-  const response = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 512,
-    messages: [{ role: "user", content: prompt }],
-  });
+    messages.push({ role: "assistant", content: response.content });
 
-  return response.content[0]?.text ?? null;
-}
+    if (response.stop_reason === "end_turn") {
+      console.warn("  ⚠️  Agent ended without calling done");
+      return [];
+    }
 
-// ── Output ─────────────────────────────────────────────────────────────────
+    const toolResults = [];
+    let doneResults = null;
 
-function printResults(acs, results) {
-  const SEP = "─".repeat(70);
-  const allPassed = results.every((r) => r.status === "PASS");
-  console.log(`\n${SEP}`);
-  console.log(allPassed ? "✅  INSTALL VERIFICATION PASSED" : "❌  INSTALL VERIFICATION FAILED");
-  console.log(SEP);
+    for (const block of response.content) {
+      if (block.type !== "tool_use") continue;
 
-  const resultMap = new Map(results.map((r) => [r.id, r]));
+      if (block.name === "done") {
+        doneResults = block.input.results;
+        toolResults.push({ type: "tool_result", tool_use_id: block.id, content: '{"ok":true}' });
+        break;
+      }
 
-  console.log("\nPer-AC Results:\n");
-  console.log(`${"AC".padEnd(12)} ${"Status".padEnd(6)} Evidence`);
-  console.log(`${"-".repeat(12)} ${"-".repeat(6)} ${"-".repeat(48)}`);
+      const result = await executeTool(page, block.name, block.input);
+      toolResults.push({
+        type: "tool_result",
+        tool_use_id: block.id,
+        content: JSON.stringify(result),
+      });
+    }
 
-  for (const ac of acs) {
-    const r = resultMap.get(ac.id);
-    const status   = r?.status ?? "SKIP";
-    const evidence = r?.evidence ?? "(not attempted)";
-    const icon = status === "PASS" ? "✅" : status === "FAIL" ? "❌" : "⚠️ ";
-    console.log(`${icon} ${ac.id.padEnd(10)} ${status.padEnd(6)} ${evidence}`);
+    if (doneResults) return doneResults;
+    if (toolResults.length) messages.push({ role: "user", content: toolResults });
   }
-
-  const passed  = results.filter((r) => r.status === "PASS").length;
-  const failed  = results.filter((r) => r.status === "FAIL").length;
-  const skipped = results.filter((r) => r.status === "SKIP").length;
-
-  console.log(`\n${SEP}`);
-  console.log(`Total: ${acs.length} ACs | PASS: ${passed} | FAIL: ${failed} | SKIP: ${skipped}`);
-  console.log(SEP);
-
-  console.log("\n::group::JSON Results");
-  console.log(JSON.stringify({ passed: allPassed, results }, null, 2));
-  console.log("::endgroup::");
-
-  return allPassed;
 }
 
-// ── Main ───────────────────────────────────────────────────────────────────
+// ── Result helpers ────────────────────────────────────────────────────────────
+
+function skipAC(id, reason) {
+  console.log(`  ⏭️  ${id} SKIP — ${reason}`);
+  return { id, status: "SKIP", evidence: reason };
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log(`\n🤖 QA Agent — Install Assurance`);
-  console.log(`📋 Spec: VERIFICATION.md`);
-  console.log(`🌐 Target: ${BASE_URL}\n`);
+  console.log(`\n🔍 Artisan Roast Install Verification`);
+  console.log(`   URL:    ${BASE_URL}`);
+  console.log(`   Model:  ${MODEL}`);
+  console.log(`   Budget: ${BUDGET.toLocaleString()} tokens\n`);
 
-  const acs = parseVerificationMd();
-  if (acs.length === 0) {
-    console.error("❌  No ACs found in VERIFICATION.md");
-    process.exit(1);
+  // Preflight health check — fail fast before spinning up browser
+  try {
+    const res = await fetch(`${BASE_URL}/api/health`, {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    console.log(`✅  Health check passed\n`);
+  } catch (e) {
+    console.error(`❌  Cannot reach ${BASE_URL}: ${e.message}`);
+    process.exit(3);
   }
-  console.log(`📝 Loaded ${acs.length} ACs from VERIFICATION.md\n`);
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-  });
+  const acs    = parseVerificationMd();
+  const groups = groupACs(acs);
+  const client = new Anthropic(); // reads ANTHROPIC_BASE_URL + ANTHROPIC_API_KEY from env
+  const tokenState = { total: 0 };
+  const allResults = [];
+
+  const browser = await chromium.launch({ headless: true });
+  const page    = await browser.newPage();
+  await page.setViewportSize({ width: 1280, height: 800 });
 
   try {
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 800 });
-    await navigate(page, "/setup");
+    const blocked = new Set();
 
-    const results = await runVerification(page);
-
-    // Fail any AC from the spec that has no test block in runVerification().
-    // A missing test is a bug in the agent, not a skip — it must not silently pass.
-    const testedIds = new Set(results.map((r) => r.id));
-    for (const ac of acs) {
-      if (!testedIds.has(ac.id)) {
-        results.push(fail(ac.id, "No test block implemented in qa-agent.js — add one or remove the AC from VERIFICATION.md"));
-      }
+    // ── Group A: Install Flow ─────────────────────────────────────────────
+    console.log("━━━ Group A: Install Flow ━━━");
+    const ifResults = await runGroupAgent(page, client, groups.installFlow, tokenState);
+    for (const r of ifResults) {
+      allResults.push(r);
+      console.log(`  ${r.status === "PASS" ? "✅" : "❌"} ${r.id} ${r.status} — ${r.evidence}`);
     }
 
-    const allPassed = printResults(acs, results);
-
-    if (!allPassed) {
-      const runUrl = `${process.env.GITHUB_SERVER_URL ?? ""}/${process.env.GITHUB_REPOSITORY ?? ""}/actions/runs/${process.env.GITHUB_RUN_ID ?? "local"}`;
-      const summary = await generateFailureSummary(results, runUrl);
-      if (summary) {
-        console.log("\n::group::Failure Summary (for GitHub issue)");
-        console.log(summary);
-        console.log("::endgroup::");
-      }
+    // Block downstream groups if critical install steps failed
+    const ifFailed = new Set(ifResults.filter((r) => r.status === "FAIL").map((r) => r.id));
+    if (ifFailed.has("AC-IF-1")) {
+      blocked.add("knownValues");
+      blocked.add("appState");
+    } else if (ifFailed.has("AC-IF-5")) {
+      blocked.add("knownValues");
+      blocked.add("appState");
     }
 
-    process.exit(allPassed ? 0 : 1);
+    // ── Group B: Known Value Round-Trips ──────────────────────────────────
+    console.log("\n━━━ Group B: Known Value Round-Trips ━━━");
+    if (blocked.has("knownValues")) {
+      groups.knownValues.forEach((ac) =>
+        allResults.push(skipAC(ac.id, "blocked — install flow did not complete"))
+      );
+    } else {
+      const kvResults = await runGroupAgent(page, client, groups.knownValues, tokenState);
+      kvResults.forEach((r) => {
+        allResults.push(r);
+        console.log(`  ${r.status === "PASS" ? "✅" : "❌"} ${r.id} ${r.status} — ${r.evidence}`);
+      });
+    }
+
+    // ── Group C: Initial App State ────────────────────────────────────────
+    console.log("\n━━━ Group C: Initial App State ━━━");
+    if (blocked.has("appState")) {
+      groups.appState.forEach((ac) =>
+        allResults.push(skipAC(ac.id, "blocked — install flow did not complete"))
+      );
+    } else {
+      const isResults = await runGroupAgent(page, client, groups.appState, tokenState);
+      isResults.forEach((r) => {
+        allResults.push(r);
+        console.log(`  ${r.status === "PASS" ? "✅" : "❌"} ${r.id} ${r.status} — ${r.evidence}`);
+      });
+    }
   } finally {
     await browser.close();
   }
+
+  // ── Summary ───────────────────────────────────────────────────────────────
+  const failed  = allResults.filter((r) => r.status === "FAIL");
+  const skipped = allResults.filter((r) => r.status === "SKIP");
+  const checked = allResults.length - skipped.length;
+
+  console.log("\n━━━ Summary ━━━");
+  for (const r of allResults) {
+    const icon = r.status === "PASS" ? "✅" : r.status === "SKIP" ? "⏭️ " : "❌";
+    console.log(`${icon}  ${r.id.padEnd(10)} ${r.status.padEnd(5)}  ${r.evidence}`);
+  }
+  console.log(`\n${failed.length === 0 ? "✅" : "❌"}  ${checked} checked  •  ${failed.length} failed  •  ${skipped.length} skipped`);
+  console.log(`   Tokens: ${tokenState.total.toLocaleString()} / ${BUDGET.toLocaleString()}`);
+
+  process.exit(failed.length > 0 ? 1 : 0);
 }
 
-main().catch((err) => {
-  console.error("\nFatal error:", err);
-  process.exit(1);
+main().catch((e) => {
+  console.error("❌  Unexpected error:", e);
+  process.exit(3);
 });

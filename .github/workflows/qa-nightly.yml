@@ -1,0 +1,67 @@
+name: Nightly QA Verification
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # 6am UTC daily — previous day's pushes fully settled
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Override test URL (blank = QA_BASE_URL secret)"
+        required: false
+      model:
+        description: "Claude model override"
+        default: "claude-haiku-4-5-20251001"
+
+concurrency:
+  group: qa-nightly
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install chromium --with-deps
+
+      - name: Run QA agent
+        env:
+          BASE_URL: ${{ inputs.base_url || secrets.QA_BASE_URL }}
+          ANTHROPIC_BASE_URL: ${{ secrets.VERCEL_AI_GATEWAY_BASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.VERCEL_AI_GATEWAY_TOKEN }}
+          QA_ADMIN_NAME: ${{ secrets.QA_ADMIN_NAME }}
+          QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
+          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
+          QA_STORE_NAME: ${{ secrets.QA_STORE_NAME }}
+          QA_MODEL: ${{ inputs.model || 'claude-sonnet-4-6' }}
+          QA_TOKEN_BUDGET: "150000"
+        run: node scripts/qa-agent.js
+
+      - name: Open GitHub issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "QA verification failed — $(date -u '+%Y-%m-%d')" \
+            --label "install-assurance,bug" \
+            --body "## QA Verification Failed
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          Commit: \`${{ github.sha }}\`
+
+          Check the run log for the per-AC breakdown."
