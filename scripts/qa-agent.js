@@ -133,8 +133,13 @@ async function readPage(page) {
   } catch {
     text = await page.evaluate(() => document.body.innerText).catch(() => "");
   }
-  // Cap at 8K chars — keeps tokens low while preserving all visible content
-  return { url, text: text.slice(0, 8000) };
+  // Keep first 6K + last 1.5K — preserves page structure AND bottom elements (buttons, hints)
+  const MAX = 8000;
+  const TAIL = 1500;
+  const trimmed = text.length > MAX
+    ? text.slice(0, MAX - TAIL - 5) + "\n...\n" + text.slice(-TAIL)
+    : text;
+  return { url, text: trimmed };
 }
 
 async function toolNavigate(page, { url }) {
@@ -146,22 +151,29 @@ async function toolNavigate(page, { url }) {
 
 async function toolClick(page, { target }) {
   console.log(`  → click: "${target}"`);
-  // Try semantic Playwright locators in order: button → link → text → tree-walker fallback
+  // Normalize typography so curly-quote vs straight-quote differences don't break matching
+  const norm = (s) => s.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+  const normTarget = norm(target);
+  // Try semantic Playwright locators in order: exact match first (avoids demo/partial matches), then partial
   const attempts = [
-    () => page.getByRole("button", { name: target, exact: false }).first().click({ timeout: 3000 }),
-    () => page.getByRole("link",   { name: target, exact: false }).first().click({ timeout: 3000 }),
-    () => page.getByText(target,   { exact: false }).first().click({ timeout: 3000 }),
+    () => page.getByRole("button", { name: normTarget, exact: true  }).first().click({ timeout: 3000 }),
+    () => page.getByRole("button", { name: normTarget, exact: false }).first().click({ timeout: 3000 }),
+    () => page.getByRole("link",   { name: normTarget, exact: true  }).first().click({ timeout: 3000 }),
+    () => page.getByRole("link",   { name: normTarget, exact: false }).first().click({ timeout: 3000 }),
+    () => page.getByText(normTarget, { exact: true  }).first().click({ timeout: 3000 }),
+    () => page.getByText(normTarget, { exact: false }).first().click({ timeout: 3000 }),
     () => page.evaluate((t) => {
+      const norm = (s) => s.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
       const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
       let node;
       while ((node = walker.nextNode())) {
-        if (node.nodeValue?.trim().toLowerCase().includes(t.toLowerCase())) {
+        if (norm(node.nodeValue?.trim() ?? "").toLowerCase().includes(t.toLowerCase())) {
           const el = node.parentElement?.closest('button,a,[role="button"]');
-          if (el) { el.click(); return true; }
+          if (el && !el.disabled) { el.click(); return true; }
         }
       }
       return false;
-    }, target),
+    }, normTarget),
   ];
   for (const attempt of attempts) {
     try { await attempt(); break; } catch { /* try next */ }
@@ -172,10 +184,18 @@ async function toolClick(page, { target }) {
 
 async function toolFill(page, { label, value }) {
   console.log(`  → fill: "${label}" = "${String(value).slice(0, 40)}"`);
+  const str = String(value);
+  // Use pressSequentially so React controlled inputs receive key events and update state.
+  // plain fill() uses CDP text insertion which can bypass React's onChange handler.
+  async function typeInto(locator) {
+    await locator.click({ timeout: 5000 });
+    await locator.fill(""); // clear existing value
+    await locator.pressSequentially(str, { delay: 0 });
+  }
   try {
-    await page.getByLabel(label, { exact: false }).fill(value, { timeout: 5000 });
+    await typeInto(page.getByLabel(label, { exact: false }).first());
   } catch {
-    await page.getByPlaceholder(label, { exact: false }).fill(value, { timeout: 3000 }).catch(() => {});
+    await typeInto(page.getByPlaceholder(label, { exact: false }).first()).catch(() => {});
   }
   return { ok: true };
 }
@@ -226,13 +246,25 @@ async function toolWaitForText(page, { text, timeout_ms = 8000 }) {
   console.log(`  → wait_for_text: "${text}" (up to ${timeout_ms}ms)`);
   const deadline = Date.now() + timeout_ms;
   while (Date.now() < deadline) {
-    const { text: pageText } = await readPage(page);
-    if (pageText.toLowerCase().includes(text.toLowerCase()))
-      return { found: true, text: pageText.slice(0, 4000) };
+    const { url: currentUrl, text: pageText } = await readPage(page);
+    const needle = text.toLowerCase();
+    // URL match: check path exactly (/admin) or as parent (/admin/settings) — avoids false
+    // positives like /auth/admin-signin matching needle "admin"
+    const urlPath = (() => { try { return new URL(currentUrl).pathname.toLowerCase(); } catch { return ""; } })();
+    const urlMatches = urlPath === `/${needle}` || urlPath.startsWith(`/${needle}/`);
+    if (pageText.toLowerCase().includes(needle) || urlMatches)
+      return { found: true, url: currentUrl, text: pageText.slice(0, 4000) };
     await page.waitForTimeout(500);
   }
-  const { text: final } = await readPage(page);
-  return { found: false, text: final.slice(0, 4000) };
+  const { url: finalUrl, text: final } = await readPage(page);
+  return { found: false, url: finalUrl, text: final.slice(0, 4000) };
+}
+
+async function toolClearSession(page) {
+  console.log(`  → clear_session`);
+  await page.context().clearCookies();
+  await page.evaluate(() => { try { localStorage.clear(); } catch {} });
+  return { ok: true };
 }
 
 async function executeTool(page, name, input) {
@@ -243,6 +275,7 @@ async function executeTool(page, name, input) {
     case "fill":              return toolFill(page, input);
     case "scroll_to_bottom":  return toolScrollToBottom(page);
     case "wait_for_text":     return toolWaitForText(page, input);
+    case "clear_session":     return toolClearSession(page);
     default:                  return { error: `Unknown tool: ${name}` };
   }
 }
@@ -303,71 +336,135 @@ const TOOLS = [
     },
   },
   {
+    name: "clear_session",
+    description: "Clear browser cookies and localStorage to simulate a fresh logged-out session. Use before sign-in tests.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
     name: "done",
-    description: "Report your results for this AC group. Call when all ACs are verified.",
+    description: "Report the result for this single AC. Call once you have verified it.",
     input_schema: {
       type: "object",
       properties: {
-        results: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              id:       { type: "string" },
-              status:   { type: "string", enum: ["PASS", "FAIL"] },
-              evidence: { type: "string", description: "One-line observation" },
-            },
-            required: ["id", "status", "evidence"],
-          },
-        },
+        status:   { type: "string", enum: ["PASS", "FAIL"] },
+        evidence: { type: "string", description: "One-line observation" },
       },
-      required: ["results"],
+      required: ["status", "evidence"],
     },
   },
 ];
 
+// ── Tool filtering — only give an AC the tools it actually needs ──────────────
+
+function getToolsForAC(ac) {
+  const how = (ac.how || "").toLowerCase();
+  return TOOLS.filter(({ name }) => {
+    // navigate: when How says "navigate to", OR when it involves a redirect chain that requires navigating to a specific sign-in page
+    if (name === "navigate")         return how.includes("navigate") || (how.includes("redirect") && how.includes("sign in"));
+    // scroll_to_bottom: only when How mentions using the scroll tool
+    if (name === "scroll_to_bottom") return how.includes("scroll_to_bottom") || how.includes("scroll eula") || how.includes("scroll pane");
+    // click: when How says click, submit, or sign in
+    if (name === "click")            return how.includes("click") || how.includes("submit") || how.includes("sign in");
+    // fill: when How says fill, OR when signing in (sign-in forms require filling email+password)
+    if (name === "fill")             return how.includes("fill") || how.includes("sign in");
+    // clear_session: only for sign-out round-trip tests
+    if (name === "clear_session")    return how.includes("clear session");
+    return true; // read_page, wait_for_text, done always available
+  });
+}
+
+// ── Per-AC hints — machine-readable guidance for tricky ACs ──────────────────
+// Injected into the system prompt when present. Keeps VERIFICATION.md human-
+// readable while giving the model precise step-by-step instructions.
+
+const AC_HINTS = {
+  "AC-IF-2": [
+    "ONLY call read_page once, then call done immediately.",
+    "Do NOT call scroll_to_bottom, click, fill, or navigate.",
+    "PASS if BOTH are true: (1) the button 'Looks good, let\\'s continue' appears disabled, AND (2) text 'Scroll to the bottom' is visible on the page.",
+  ].join(" "),
+
+  "AC-IF-3": [
+    "Call scroll_to_bottom ONCE. Then call read_page.",
+    "PASS if the button 'Looks good, let\\'s continue' is now enabled (not disabled/grayed).",
+    "Do NOT click the button — this AC only verifies the state change, not the click.",
+  ].join(" "),
+
+  "AC-IF-4": [
+    "The accept button is already enabled from the previous step. Call click('Looks good, let\\'s continue').",
+    "Then call read_page. PASS if the page shows 'Your Store' text (step indicator) AND the heading 'Almost there.' with input fields is visible.",
+  ].join(" "),
+
+  "AC-IF-5": [
+    "The browser is already on the account creation step — do NOT call navigate yet.",
+    "Fill these 4 fields in order using the known values:",
+    "  fill('Your name', Admin name), fill('Email address', Admin email),",
+    "  fill('Password', Admin password), fill('Confirm password', Admin password).",
+    "Then click('Take me to my store').",
+    "IMPORTANT: After clicking submit, navigate to '/auth/admin-signin' (the admin sign-in page).",
+    "On that page: fill 'Email' with Admin email, fill 'Password' with Admin password, then click 'Sign In'.",
+    "Call read_page. PASS if URL path is /admin (does NOT contain /auth).",
+  ].join(" "),
+
+  "AC-KV-2": [
+    "Call clear_session first (clears cookies + localStorage to log out).",
+    "Call navigate('/auth/admin-signin').",
+    "Fill 'Email address' with the known Admin email, fill 'Password' with the known Admin password.",
+    "Click 'Sign In'. Call read_page. PASS if URL path is /admin (not /auth).",
+  ].join(" "),
+};
+
 // ── System prompt ─────────────────────────────────────────────────────────────
 
-function buildSystemPrompt(acGroup) {
-  return `You are a QA agent verifying a fresh install of Artisan Roast (self-hosted e-commerce).
+function buildSystemPrompt(ac, currentUrl) {
+  const hint = AC_HINTS[ac.id];
+  return `You are a QA agent verifying one acceptance criterion for a fresh install of Artisan Roast.
 
-Target: ${BASE_URL}
-Known values — use exactly as given, do not modify:
+Browser is currently at: ${currentUrl}
+Base URL: ${BASE_URL}
+Known values — use exactly as given:
   Admin name:     ${KNOWN.adminName}
   Admin email:    ${KNOWN.adminEmail}
   Admin password: ${KNOWN.adminPassword}
   Store name:     ${KNOWN.storeName}
 
 Rules:
-- Work through each AC below in order
-- For each AC: take the described action, read the result, record PASS or FAIL with one-line evidence
-- Use \`wait_for_text\` after any click that triggers an API call or page transition
-- Use \`read_page\` to verify visible content before asserting
-- Never use CSS selectors — use visible labels and button text only
-- Call \`done\` when all ACs are verified
+- Perform ONLY the action described in "How" below — nothing more
+- Do NOT navigate away unless "How" explicitly says to navigate
+- /setup uses client-side React state — navigating away resets the flow to the EULA step
+- When "How" says "assert" or "check", use read_page to observe — do NOT scroll, click, or fill
+- After a click that triggers a redirect, call read_page — the result includes the current URL, which is the most reliable way to confirm where the browser ended up
+- Call done with PASS or FAIL and one-line evidence once you have verified the AC
 
-ACs:
-${acGroup.map((ac) =>
-  `${ac.id}: ${ac.what}\n  How: ${ac.how}\n  Pass if: ${ac.pass}`
-).join("\n\n")}`;
+AC to verify:
+  ${ac.id}: ${ac.what}
+  How:     ${ac.how}
+  Pass if: ${ac.pass}${hint ? `\n  Hint:    ${hint}` : ""}`;
 }
 
-// ── Agent loop ────────────────────────────────────────────────────────────────
+// ── Single-AC agent loop ──────────────────────────────────────────────────────
 
-async function runGroupAgent(page, client, acGroup, tokenState) {
-  const messages = [{ role: "user", content: "Begin verification." }];
+async function runSingleAC(page, client, ac, tokenState) {
+  const currentUrl = page.url();
+  console.log(`\n  ▶ ${ac.id}: ${ac.what}`);
+  const messages = [{ role: "user", content: "Verify the AC." }];
+  // AC-IF-5 has more steps: fill×4 + click + navigate + fill×2 + click + read_page
+  const MAX_TURNS = ac.id === "AC-IF-5" ? 15 : 10;
+  const tools = getToolsForAC(ac);
+  let turns = 0;
 
-  while (true) {
+  while (turns < MAX_TURNS) {
+    turns++;
     const response = await client.messages.create({
       model: MODEL,
-      max_tokens: 2048,
-      system: buildSystemPrompt(acGroup),
-      tools: TOOLS,
+      max_tokens: 512,
+      system: buildSystemPrompt(ac, currentUrl),
+      tools,
       messages,
     });
 
     tokenState.total += (response.usage?.input_tokens ?? 0) + (response.usage?.output_tokens ?? 0);
-    console.log(`  [tokens] ${tokenState.total} / ${BUDGET}`);
+    console.log(`    [tokens] +${response.usage?.input_tokens + response.usage?.output_tokens} → ${tokenState.total}`);
 
     if (tokenState.total > BUDGET) {
       console.error(`\n❌  Token budget exceeded (${tokenState.total} > ${BUDGET}). Aborting.`);
@@ -378,17 +475,17 @@ async function runGroupAgent(page, client, acGroup, tokenState) {
 
     if (response.stop_reason === "end_turn") {
       console.warn("  ⚠️  Agent ended without calling done");
-      return [];
+      return { id: ac.id, status: "FAIL", evidence: "agent ended without verdict" };
     }
 
     const toolResults = [];
-    let doneResults = null;
+    let doneResult = null;
 
     for (const block of response.content) {
       if (block.type !== "tool_use") continue;
 
       if (block.name === "done") {
-        doneResults = block.input.results;
+        doneResult = { id: ac.id, status: block.input.status, evidence: block.input.evidence };
         toolResults.push({ type: "tool_result", tool_use_id: block.id, content: '{"ok":true}' });
         break;
       }
@@ -401,9 +498,10 @@ async function runGroupAgent(page, client, acGroup, tokenState) {
       });
     }
 
-    if (doneResults) return doneResults;
+    if (doneResult) return doneResult;
     if (toolResults.length) messages.push({ role: "user", content: toolResults });
   }
+  return { id: ac.id, status: "FAIL", evidence: "exceeded max turns — agent did not reach a verdict" };
 }
 
 // ── Result helpers ────────────────────────────────────────────────────────────
@@ -443,7 +541,7 @@ async function main() {
   const page    = await browser.newPage();
   await page.setViewportSize({ width: 1280, height: 800 });
 
-  // Log setup API responses for debugging
+  // Log setup API responses
   page.on("response", async (response) => {
     const url = response.url();
     if (url.includes("/api/admin/setup")) {
@@ -452,52 +550,42 @@ async function main() {
   });
 
   try {
+    // Blockers: if these ACs fail, downstream groups are skipped
+    const BLOCKERS = {
+      "AC-IF-1": ["knownValues", "appState"],
+      "AC-IF-5": ["knownValues", "appState"],
+    };
     const blocked = new Set();
 
-    // ── Group A: Install Flow ─────────────────────────────────────────────
-    console.log("━━━ Group A: Install Flow ━━━");
-    const ifResults = await runGroupAgent(page, client, groups.installFlow, tokenState);
-    for (const r of ifResults) {
-      allResults.push(r);
-      console.log(`  ${r.status === "PASS" ? "✅" : "❌"} ${r.id} ${r.status} — ${r.evidence}`);
-    }
+    const GROUP_LABELS = {
+      installFlow:  "Group A: Install Flow",
+      knownValues:  "Group B: Known Value Round-Trips",
+      appState:     "Group C: Initial App State",
+    };
+    const GROUP_BLOCK_KEY = {
+      knownValues: "knownValues",
+      appState:    "appState",
+    };
 
-    // Block downstream groups if critical install steps failed
-    const ifFailed = new Set(ifResults.filter((r) => r.status === "FAIL").map((r) => r.id));
-    if (ifFailed.has("AC-IF-1")) {
-      blocked.add("knownValues");
-      blocked.add("appState");
-    } else if (ifFailed.has("AC-IF-5")) {
-      blocked.add("knownValues");
-      blocked.add("appState");
-    }
+    for (const [groupKey, groupACs] of Object.entries(groups)) {
+      console.log(`\n━━━ ${GROUP_LABELS[groupKey]} ━━━`);
+      const blockKey = GROUP_BLOCK_KEY[groupKey];
+      if (blockKey && blocked.has(blockKey)) {
+        groupACs.forEach((ac) =>
+          allResults.push(skipAC(ac.id, "blocked — install flow did not complete"))
+        );
+        continue;
+      }
 
-    // ── Group B: Known Value Round-Trips ──────────────────────────────────
-    console.log("\n━━━ Group B: Known Value Round-Trips ━━━");
-    if (blocked.has("knownValues")) {
-      groups.knownValues.forEach((ac) =>
-        allResults.push(skipAC(ac.id, "blocked — install flow did not complete"))
-      );
-    } else {
-      const kvResults = await runGroupAgent(page, client, groups.knownValues, tokenState);
-      kvResults.forEach((r) => {
+      for (const ac of groupACs) {
+        const r = await runSingleAC(page, client, ac, tokenState);
         allResults.push(r);
         console.log(`  ${r.status === "PASS" ? "✅" : "❌"} ${r.id} ${r.status} — ${r.evidence}`);
-      });
-    }
-
-    // ── Group C: Initial App State ────────────────────────────────────────
-    console.log("\n━━━ Group C: Initial App State ━━━");
-    if (blocked.has("appState")) {
-      groups.appState.forEach((ac) =>
-        allResults.push(skipAC(ac.id, "blocked — install flow did not complete"))
-      );
-    } else {
-      const isResults = await runGroupAgent(page, client, groups.appState, tokenState);
-      isResults.forEach((r) => {
-        allResults.push(r);
-        console.log(`  ${r.status === "PASS" ? "✅" : "❌"} ${r.id} ${r.status} — ${r.evidence}`);
-      });
+        // Gate downstream groups on critical failures
+        for (const key of (BLOCKERS[r.id] ?? [])) {
+          if (r.status === "FAIL") blocked.add(key);
+        }
+      }
     }
   } finally {
     await browser.close();
