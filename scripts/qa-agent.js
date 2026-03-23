@@ -14,8 +14,9 @@
  *   BASE_URL=http://localhost:3000 QA_MODEL=claude-haiku-4-5-20251001 node scripts/qa-agent.js
  *
  * Usage (nightly CI / maintainer QA run against dedicated QA stack):
- *   DATABASE_URL=$QA_DATABASE_URL DIRECT_URL=$QA_DIRECT_URL npx prisma migrate reset --force
- *   BASE_URL=$QA_BASE_URL node scripts/qa-agent.js
+ *   ⚠️  Always use explicit values — shell vars from .env.local are NOT auto-exported:
+ *   DATABASE_URL="<qa-db-url>" DIRECT_URL="<qa-direct-url>" npx prisma migrate reset --force
+ *   BASE_URL=https://artisan-roast-qa.vercel.app node scripts/qa-agent.js
  *
  * Required env:
  *   BASE_URL / QA_BASE_URL     target URL (no trailing slash)
