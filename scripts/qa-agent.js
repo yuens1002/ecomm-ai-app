@@ -70,7 +70,7 @@ if (!process.env.ANTHROPIC_BASE_URL) {
 
 const BASE_URL = process.env.BASE_URL?.replace(/\/$/, "");
 const MODEL    = process.env.QA_MODEL || "claude-sonnet-4-6";
-const BUDGET   = parseInt(process.env.QA_TOKEN_BUDGET || "150000", 10);
+const BUDGET   = parseInt(process.env.QA_TOKEN_BUDGET || "300000", 10);
 
 const REQUIRED = [
   "BASE_URL", "ANTHROPIC_API_KEY",
