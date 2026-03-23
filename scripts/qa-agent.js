@@ -49,7 +49,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // CI sets env vars directly and has no .env.local, so this is a no-op there.
 try {
   const { default: dotenv } = await import("dotenv");
-  dotenv.config({ path: path.join(__dirname, "../.env.local"), override: false });
+  dotenv.config({ path: path.join(__dirname, "../.env.local"), override: true });
 } catch {}
 if (!process.env.BASE_URL && process.env.QA_BASE_URL) {
   process.env.BASE_URL = process.env.QA_BASE_URL;
