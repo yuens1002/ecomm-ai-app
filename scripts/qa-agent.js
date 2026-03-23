@@ -176,10 +176,30 @@ async function toolScrollToBottom(page) {
   console.log(`  → scroll_to_bottom`);
   await page.evaluate(() => {
     const sentinel = document.querySelector('[data-testid="eula-sentinel"]');
-    if (sentinel) sentinel.scrollIntoView({ behavior: "instant", block: "end" });
-    else window.scrollTo(0, document.body.scrollHeight);
+    if (sentinel) {
+      // Scroll every overflow-y ancestor to its max, then bring sentinel into viewport
+      let el = sentinel.parentElement;
+      while (el && el !== document.body) {
+        const style = getComputedStyle(el);
+        if (style.overflowY === "auto" || style.overflowY === "scroll") {
+          el.scrollTop = el.scrollHeight;
+        }
+        el = el.parentElement;
+      }
+      sentinel.scrollIntoView({ behavior: "instant", block: "end" });
+    } else {
+      window.scrollTo(0, document.body.scrollHeight);
+    }
   });
-  await page.waitForTimeout(800);
+  // Wait for accept button to become enabled (IntersectionObserver fires after scroll)
+  await page.waitForFunction(
+    () => {
+      const btn = document.querySelector('[data-testid="eula-accept-btn"]');
+      return !btn || (!btn.disabled && btn.getAttribute("aria-disabled") !== "true");
+    },
+    { timeout: 3000 }
+  ).catch(() => {}); // ok if no eula btn on this page
+  await page.waitForTimeout(300);
   return readPage(page);
 }
 
