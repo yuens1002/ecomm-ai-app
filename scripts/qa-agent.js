@@ -197,18 +197,20 @@ async function toolScrollToBottom(page) {
     }
   });
   // Give IntersectionObserver + React state update time to settle
-  await page.waitForTimeout(1000);
-  // Wait up to 5s for accept button to become enabled
-  await page.waitForFunction(
-    () => {
-      const btn = document.querySelector('[data-testid="eula-accept-btn"]');
-      return !btn || (!btn.disabled && btn.getAttribute("aria-disabled") !== "true");
-    },
-    { timeout: 5000 }
-  ).catch(() => {
-    console.warn("  ⚠️  eula-accept-btn still disabled after scroll");
-  });
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(1500);
+  // Use Playwright native locator waiting — more reliable than waitForFunction
+  const acceptBtn = page.locator('[data-testid="eula-accept-btn"]');
+  const btnExists = await acceptBtn.count() > 0;
+  if (btnExists) {
+    await acceptBtn.waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
+    // Poll isEnabled — more reliable than DOM attribute check in headless
+    for (let i = 0; i < 10; i++) {
+      if (await acceptBtn.isEnabled()) break;
+      await page.waitForTimeout(300);
+    }
+    const enabled = await acceptBtn.isEnabled();
+    console.log(`  → eula-accept-btn enabled: ${enabled}`);
+  }
   return readPage(page);
 }
 
