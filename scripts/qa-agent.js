@@ -45,20 +45,28 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load .env.local for local runs (CI sets env vars directly)
-// Always load .env.local for local runs — inline env vars override it.
+// Load .env.local — override: false so inline env vars (e.g. QA_MODEL=sonnet) always win.
 // CI sets env vars directly and has no .env.local, so this is a no-op there.
+let _dotenvParsed = {};
 try {
   const { default: dotenv } = await import("dotenv");
-  dotenv.config({ path: path.join(__dirname, "../.env.local"), override: true });
+  const result = dotenv.config({ path: path.join(__dirname, "../.env.local"), override: false });
+  _dotenvParsed = result.parsed || {};
 } catch {}
 if (!process.env.BASE_URL && process.env.QA_BASE_URL) {
   process.env.BASE_URL = process.env.QA_BASE_URL;
 }
 
-// VERCEL_OIDC_TOKEN (from `vercel env pull`) is the gateway auth token.
-// Fall back to it automatically so ANTHROPIC_API_KEY doesn't need to be
-// set separately in .env.local after every pull.
+// Special case: if ANTHROPIC_API_KEY is the system Claude Code key (sk-ant-api...),
+// override it with the gateway key from .env.local so billing routes correctly.
+if (process.env.ANTHROPIC_API_KEY?.startsWith("sk-ant-api") && _dotenvParsed.ANTHROPIC_API_KEY) {
+  process.env.ANTHROPIC_API_KEY = _dotenvParsed.ANTHROPIC_API_KEY;
+}
+if (_dotenvParsed.ANTHROPIC_BASE_URL && !process.env.ANTHROPIC_BASE_URL?.startsWith("https://ai-gateway")) {
+  process.env.ANTHROPIC_BASE_URL = _dotenvParsed.ANTHROPIC_BASE_URL;
+}
+
+// VERCEL_OIDC_TOKEN fallback if no gateway key configured
 if (!process.env.ANTHROPIC_API_KEY && process.env.VERCEL_OIDC_TOKEN) {
   process.env.ANTHROPIC_API_KEY = process.env.VERCEL_OIDC_TOKEN;
 }
