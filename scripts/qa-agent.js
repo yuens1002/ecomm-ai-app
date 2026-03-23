@@ -443,6 +443,14 @@ async function main() {
   const page    = await browser.newPage();
   await page.setViewportSize({ width: 1280, height: 800 });
 
+  // Log setup API responses for debugging
+  page.on("response", async (response) => {
+    const url = response.url();
+    if (url.includes("/api/admin/setup")) {
+      console.log(`  [api] ${response.request().method()} ${url.split("/api")[1]} → ${response.status()}`);
+    }
+  });
+
   try {
     const blocked = new Set();
 
