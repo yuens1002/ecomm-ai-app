@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.96.19 - 2026-03-24
+
+### Fixed
+
+- **Domain migration**: `robots.ts` fallback URL updated to `demo.artisanroast.app` — all `NEXT_PUBLIC_APP_URL` fallbacks in layout, sitemap, robots, and OG images now reference the correct demo domain
+- **Demo checkout**: Simulated checkout flow for demo mode — clicking Purchase on Add-Ons or Plans redirects to `?demo=success` instead of calling Stripe; a toast confirms "Demo mode, no charge made"
+
 ## 0.96.18 - 2026-03-24
 
 ### Fixed
