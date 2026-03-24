@@ -15,7 +15,8 @@ type Phase = "idle" | "exit" | "enter";
 
 /**
  * Demo banner that invites users to try the admin dashboard.
- * Only renders when NEXT_PUBLIC_DEMO_MODE env var is set to "true" and user is not logged in.
+ * Only mounted by SiteLayout when NEXT_PUBLIC_DEMO_MODE=true — never runs on self-hosted instances.
+ * Hides itself when dismissed or when user is authenticated.
  * CTA text cycles with a slide-up ticker animation.
  */
 export function DemoBanner() {
@@ -43,15 +44,16 @@ export function DemoBanner() {
   }, []);
 
   useEffect(() => {
+    if (isDismissed || isAuthenticated) return;
     const interval = setInterval(cycle, 4000);
     return () => {
       clearInterval(interval);
       cancelAnimationFrame(rafRef.current);
     };
-  }, [cycle]);
+  }, [cycle, isDismissed, isAuthenticated]);
 
-  // Only show in demo mode when not logged in
-  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true" || isDismissed || isAuthenticated) {
+  // Hide when dismissed or logged in
+  if (isDismissed || isAuthenticated) {
     return null;
   }
 
