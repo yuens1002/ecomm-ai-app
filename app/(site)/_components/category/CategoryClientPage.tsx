@@ -61,6 +61,7 @@ export default function CategoryClientPage({
                 showPurchaseOptions={showPurchaseOptions}
                 categorySlug={categorySlug}
                 sizes="(max-width: 768px) calc(100vw - 2rem), (max-width: 1200px) calc(50vw - 2rem), 400px"
+                priority={index < 3}
               />
             </ScrollReveal>
           ))}

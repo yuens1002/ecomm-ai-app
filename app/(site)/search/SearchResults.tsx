@@ -187,11 +187,12 @@ export default function SearchResults() {
 
           {results.count > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {results.products.map((product) => (
+              {results.products.map((product, index) => (
                 <ProductCard
                   key={product.id}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   product={product as any}
+                  priority={index < 3}
                 />
               ))}
             </div>
