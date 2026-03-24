@@ -38,6 +38,34 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install chromium --with-deps
 
+      - name: Validate QA database URL
+        env:
+          QA_DATABASE_URL: ${{ secrets.QA_DATABASE_URL }}
+          QA_DB_ENDPOINT: ${{ secrets.QA_DB_ENDPOINT }}
+        run: |
+          if [ -z "$QA_DATABASE_URL" ]; then
+            echo "❌ QA_DATABASE_URL secret is not set. Refusing to reset an unknown database."
+            exit 1
+          fi
+          if [ -z "$QA_DB_ENDPOINT" ]; then
+            echo "❌ QA_DB_ENDPOINT secret is not set. Cannot verify target database identity."
+            exit 1
+          fi
+          if ! echo "$QA_DATABASE_URL" | grep -qF "$QA_DB_ENDPOINT"; then
+            echo "❌ QA_DATABASE_URL does not contain the expected QA endpoint ($QA_DB_ENDPOINT). Aborting reset."
+            exit 1
+          fi
+          echo "✅ QA database endpoint verified"
+
+      - name: Reset QA state
+        env:
+          DATABASE_URL: ${{ secrets.QA_DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.QA_DIRECT_URL }}
+        run: |
+          printf 'DELETE FROM "SiteSettings" WHERE key = '"'"'eula_accepted'"'"';\nDELETE FROM "User";' \
+            | npx prisma db execute --stdin
+          echo "✅ QA state reset (EULA + users cleared)"
+
       - name: Run QA agent
         env:
           BASE_URL: ${{ inputs.base_url || secrets.QA_BASE_URL }}
