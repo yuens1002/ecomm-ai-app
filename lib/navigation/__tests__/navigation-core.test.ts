@@ -612,10 +612,10 @@ describe("navigation-core", () => {
       expect(labels).toEqual(["All Users", "Newsletter", "Reviews"]);
     });
 
-    it("should return 3 navigable children for admin.support", () => {
+    it("should return 4 navigable children for admin.support", () => {
       const children = getNavigableChildren("admin.support");
       const labels = children.map((c) => c.label);
-      expect(labels).toEqual(["Submit Ticket", "Plans", "License & Privacy"]);
+      expect(labels).toEqual(["Submit Ticket", "Plans", "License & Privacy", "Add-Ons"]);
     });
   });
 });
