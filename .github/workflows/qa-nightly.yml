@@ -62,9 +62,12 @@ jobs:
           DATABASE_URL: ${{ secrets.QA_DATABASE_URL }}
           DIRECT_URL: ${{ secrets.QA_DIRECT_URL }}
         run: |
-          printf 'DELETE FROM "SiteSettings" WHERE key = '"'"'eula_accepted'"'"';\nDELETE FROM "User";' \
-            | npx prisma db execute --stdin
-          echo "✅ QA state reset (EULA + users cleared)"
+          npx prisma db execute --stdin <<'SQL'
+          DELETE FROM "Order";
+          DELETE FROM "SiteSettings" WHERE key = 'eula_accepted';
+          DELETE FROM "User";
+          SQL
+          echo "✅ QA state reset (orders, EULA + users cleared)"
 
       - name: Run QA agent
         env:
