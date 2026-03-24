@@ -33,7 +33,7 @@ const STEPS = [
 
 export function SetupLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="h-screen flex flex-col lg:flex-row overflow-hidden">
       {/* Left sidebar — 1/4 width, hidden on mobile */}
       <div className="hidden lg:flex lg:w-1/4 shrink-0 relative flex-col justify-between p-8">
         {/* Full-bleed coffee background */}
@@ -86,8 +86,8 @@ export function SetupLayout({ children }: { children: ReactNode }) {
         </div>
       </div>
 
-      {/* Right — 3/4 content area */}
-      <div className="flex-1 flex flex-col bg-background overflow-y-auto min-h-screen lg:min-h-0">
+      {/* Right — 3/4 content area, scrollable */}
+      <div className="flex-1 flex flex-col bg-background overflow-y-auto">
         {/* Mobile: platform logo strip */}
         <div className="lg:hidden flex items-center gap-2.5 px-6 pt-6 pb-4 border-b">
           <Image
