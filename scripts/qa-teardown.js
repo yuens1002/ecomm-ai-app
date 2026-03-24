@@ -45,6 +45,22 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
+// Safety guard — must match install-test.yml's QA_DB_ENDPOINT check.
+// Add QA_DB_ENDPOINT to .env.local (e.g. ep-cool-name-123456) to allow teardown.
+const QA_DB_ENDPOINT = process.env.QA_DB_ENDPOINT;
+if (!QA_DB_ENDPOINT) {
+  console.error("❌  QA_DB_ENDPOINT is not set. Refusing to run against an unverified database.");
+  console.error("   Add QA_DB_ENDPOINT=<your-neon-endpoint-id> to .env.local");
+  console.error("   (e.g. ep-tiny-river-amvxfuod — find it in your Neon project dashboard)");
+  process.exit(1);
+}
+if (!process.env.DATABASE_URL.includes(QA_DB_ENDPOINT)) {
+  console.error(`❌  DATABASE_URL does not contain the expected QA endpoint (${QA_DB_ENDPOINT}).`);
+  console.error("   This guard prevents accidental wipes of the production database. Aborting.");
+  process.exit(1);
+}
+console.log(`✅  QA database endpoint verified (${QA_DB_ENDPOINT})`);
+
 // Use prisma db execute to avoid PrismaClient ESM init issues in standalone scripts
 const sql = [
   `DELETE FROM "SiteSettings" WHERE key = 'eula_accepted';`,
