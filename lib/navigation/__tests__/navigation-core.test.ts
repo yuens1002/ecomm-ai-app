@@ -615,7 +615,7 @@ describe("navigation-core", () => {
     it("should return 4 navigable children for admin.support", () => {
       const children = getNavigableChildren("admin.support");
       const labels = children.map((c) => c.label);
-      expect(labels).toEqual(["Submit Ticket", "Plans", "License & Privacy", "Add-Ons"]);
+      expect(labels).toEqual(["Submit Ticket", "Plans", "Add-Ons", "License & Privacy"]);
     });
   });
 });
