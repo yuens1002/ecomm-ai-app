@@ -107,9 +107,9 @@ instead of calling the platform. Client reads `?demo=success` query param and fi
 
 ---
 
-## Ops Tasks (Vercel — manual, not code)
+## Ops Tasks (manual, not code)
 
-These are infrastructure steps outside the codebase:
+### Vercel
 
 | # | Task | Status |
 |---|------|--------|
@@ -117,6 +117,26 @@ These are infrastructure steps outside the codebase:
 | 2 | Add `artisanroast.app` to platform Vercel project | Pending |
 | 3 | Set `NEXT_PUBLIC_APP_URL=https://demo.artisanroast.app` on demo deployment env vars | Pending |
 | 4 | `dev.artisanroast.app` aliased to platform `dev` branch | Done |
+
+### OAuth (GitHub + Google)
+
+| # | Task | Status |
+|---|------|--------|
+| 5 | Add `https://demo.artisanroast.app/api/auth/callback/github` to GitHub OAuth app allowed callbacks | Pending |
+| 6 | Add `https://demo.artisanroast.app/api/auth/callback/google` to Google OAuth app allowed redirects | Pending |
+
+### Stripe
+
+| # | Task | Status |
+|---|------|--------|
+| 7 | Update Stripe webhook endpoint from `artisanroast.app` to `demo.artisanroast.app` | Pending |
+
+### Google Analytics
+
+| # | Task | Status |
+|---|------|--------|
+| 8 | Update data stream URL in GA4: Admin → Data Streams → change from `artisanroast.app` to `demo.artisanroast.app` (cosmetic — same `G-XXXXXXXX` measurement ID, no code change needed) | Pending |
+| 9 | Add annotation in GA4 on cutover date so historical hostname split (`artisanroast.app` → `demo.artisanroast.app`) is documented in reports | Pending |
 
 ---
 
