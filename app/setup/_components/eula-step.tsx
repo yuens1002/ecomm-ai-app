@@ -118,7 +118,7 @@ export function EulaStep({ docs, onAccepted }: EulaStepProps) {
         {isAccepting ? (
           <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Just a moment...</>
         ) : (
-          "Looks good, let\u2019s continue"
+          "Looks good, let's continue"
         )}
       </Button>
     </SetupLayout>

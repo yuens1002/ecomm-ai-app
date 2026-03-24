@@ -5,7 +5,7 @@
  * Usage: npx tsx scripts/take-responsive-screenshots.ts [before|after]
  */
 
-import puppeteer from "puppeteer";
+import { chromium as puppeteer } from "playwright";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -46,10 +46,10 @@ async function takeScreenshots(prefix = "before") {
       console.log(`\n📱 ${bp.name} (${bp.width}x${bp.height})`);
 
       const page = await browser.newPage();
-      await page.setViewport({ width: bp.width, height: bp.height });
+      await page.setViewportSize({ width: bp.width, height: bp.height });
 
       // Navigate to homepage
-      await page.goto(BASE_URL, { waitUntil: "networkidle2", timeout: 30000 });
+      await page.goto(BASE_URL, { waitUntil: "networkidle", timeout: 30000 });
       await new Promise((r) => setTimeout(r, 1000)); // Let animations settle
 
       // Screenshot 1: Homepage ProductCards (featured section)
@@ -64,7 +64,7 @@ async function takeScreenshots(prefix = "before") {
       // Screenshot 2: Product detail page (top)
       console.log("  - Product page...");
       await page.goto(`${BASE_URL}/products/ethiopian-yirgacheffe`, {
-        waitUntil: "networkidle2",
+        waitUntil: "networkidle",
         timeout: 30000,
       });
       await new Promise((r) => setTimeout(r, 1000));
@@ -96,7 +96,7 @@ async function takeScreenshots(prefix = "before") {
       }
 
       // Go back to homepage for remaining screenshots
-      await page.goto(BASE_URL, { waitUntil: "networkidle2", timeout: 30000 });
+      await page.goto(BASE_URL, { waitUntil: "networkidle", timeout: 30000 });
       await new Promise((r) => setTimeout(r, 500));
 
       // Screenshot 3: Footer (scroll to bottom)

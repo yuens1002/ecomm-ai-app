@@ -70,9 +70,9 @@ jobs:
               '',
               'This PR adds or modifies ACs in `VERIFICATION.md` but does not update `scripts/qa-agent.js`.',
               '',
-              'Every AC row in `VERIFICATION.md` must have a corresponding test block in `runVerification()` in `scripts/qa-agent.js`. Missing test blocks automatically **FAIL** the install-test run (they are not skipped).',
+              'The QA agent reads all ACs from `VERIFICATION.md` automatically. If the new or changed AC involves tricky interactions (scroll gates, redirect chains, session clears, non-obvious button targets), add an entry to the `AC_HINTS` map in `scripts/qa-agent.js` to guide the agent.',
               '',
-              'Please add or update the relevant AC block in `scripts/qa-agent.js`, or remove the AC from `VERIFICATION.md` if it is not yet implemented.',
+              'If the AC is straightforward (navigate → assert text), no hint is needed — but please verify by running `npm run qa:teardown && npm run qa:install` locally before merging.',
             ].join('\n');
 
             await github.rest.issues.createComment({

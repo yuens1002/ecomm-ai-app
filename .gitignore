@@ -86,3 +86,4 @@ nul
 scratchpad/
 .archive/
 /scripts/backups/
+.env*.local

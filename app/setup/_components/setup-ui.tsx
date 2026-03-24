@@ -38,7 +38,7 @@ export function SetupLayout({ children }: { children: ReactNode }) {
       <div className="hidden lg:flex lg:w-1/4 shrink-0 relative flex-col justify-between p-8">
         {/* Full-bleed coffee background */}
         <Image
-          src="/images/sergey-kotenev-ayFB837en48-unsplash.jpg"
+          src="https://images.unsplash.com/photo-1690983325598-dd23fcf8f835?w=800&q=80"
           alt="Coffee"
           fill
           sizes="25vw"

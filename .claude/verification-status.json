@@ -220,6 +220,14 @@
       "tasks": [],
       "acs_doc": "docs/plans/install-assurance-ACs.md",
       "notes": "13/13 ACs verified via code review sub-agent. 1 iteration: AC-FN-3 scroll DOM logic replaced with page.mouse.wheel."
+    },
+    "feat/qa-agent-playwright": {
+      "status": "verified",
+      "acs_passed": 16,
+      "acs_total": 16,
+      "tasks": [],
+      "acs_doc": "VERIFICATION.md",
+      "notes": "16/16 ACs verified locally. Playwright + Claude Agent SDK (Haiku). Per-AC agent loop, tool filtering, AC_HINTS. Key fixes: exact-first click (avoid demo buttons), EULA apostrophe, pressSequentially for React inputs, tail truncation for long aria snapshots, wait_for_text URL path matching. 138K tokens / 300K budget."
     }
   }
 }

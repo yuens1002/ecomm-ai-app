@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.96.13 - 2026-03-23
+
+### Changed
+
+- **QA agent**: Rewrote `scripts/qa-agent.js` — Playwright + Claude Agent SDK replaces Puppeteer; per-AC agent loop reads the accessibility tree, no CSS selectors or fixed timeouts; AC_HINTS + tool filtering guide the agent through tricky interactions
+- **QA agent**: `qa-nightly.yml` cron workflow (6am UTC) runs the agent against the settled QA deployment; `install-test.yml` now handles only DB reset + redeploy on push to main
+- **QA agent**: All Claude calls route through Vercel AI Gateway (Max subscription billing); `ANTHROPIC_API_KEY` replaced with `VERCEL_AI_GATEWAY_BASE_URL` + `VERCEL_AI_GATEWAY_TOKEN` in CI secrets
+- **QA agent**: Added `scripts/qa-teardown.js` (`npm run qa:teardown`) — resets local/QA DB to fresh-install state without `prisma migrate reset --force`; enables zero-intervention local QA iteration
+- **Docs**: Updated `docs/features/app-qa/README.md`, `VERIFICATION.md`, `spec-drift.yml` comment, and root `README.md` to reflect new Playwright + Agent SDK methodology
+
 ## 0.96.12 - 2026-03-22
 
 ### Fixed

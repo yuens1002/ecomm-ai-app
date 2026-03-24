@@ -1,6 +1,6 @@
 {
   "name": "artisan-roast",
-  "version": "0.96.12",
+  "version": "0.96.13",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -18,6 +18,7 @@
     "check:backup-models": "node -e \"const { execSync } = require('child_process'); const fs = require('fs'); const script = 'dev-tools/check-backup-models.ts'; if (fs.existsSync(script)) { execSync('npx tsx ' + script, { stdio: 'inherit' }); } else { console.log('Skipping backup model check (', script, 'not present).'); }\"",
     "seed": "tsx prisma/seed/index.ts",
     "qa:install": "node scripts/qa-agent.js",
+    "qa:teardown": "node scripts/qa-teardown.js",
     "reset:demo": "tsx scripts/reset-demo-data.ts",
     "build:safe": "npm run check:backup-models && npm run db:backup && npm run build",
     "test": "jest --watch",
@@ -139,7 +140,6 @@
     "localtunnel": "^2.0.2",
     "markdownlint-cli2": "^0.21.0",
     "prisma": "^7.5.0",
-    "puppeteer": "^24.37.2",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.5",
     "tsx": "^4.20.6",

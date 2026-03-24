@@ -4,8 +4,9 @@
 > Any hosted PostgreSQL accepting standard Prisma connection strings is supported,
 > but results are only guaranteed on the reference stack.
 >
-> Verified on every merge to main against a fresh install:
-> empty Neon database + dedicated QA Vercel deployment.
+> Verified nightly against a fresh install: empty Neon database + dedicated QA Vercel deployment.
+> Push to `main` triggers DB reset + redeployment (`install-test.yml`); browser verification
+> runs the following morning at 6am UTC (`qa-nightly.yml`) via Claude Agent SDK + Playwright.
 > Known values are injected from CI secrets — never hardcoded in this file.
 
 ---
@@ -14,12 +15,12 @@
 
 | AC | What | Verification | Pass |
 |----|------|-------------|------|
-| AC-IF-1 | /setup accessible on fresh install | Navigate to /setup; assert URL, EULA heading text, absence of "Setup Already Complete" | Page loads; EULA heading visible; no "Setup Already Complete" |
-| AC-IF-2 | Accept button is scroll-gated | Assert `aria-disabled="true"` on accept button; assert scroll hint text visible | "I Accept" button is disabled; scroll hint shown |
-| AC-IF-3 | Accept button enables after scrolling to bottom | Scroll EULA pane to bottom; assert `aria-disabled` removed from accept button | "I Accept" button is enabled |
-| AC-IF-4 | EULA acceptance advances to Store Setup step | Click accept button; assert "Store Setup" text visible and name input present | Step indicator shows Store Setup active; form fields visible |
+| AC-IF-1 | /setup accessible on fresh install | Navigate to /setup; assert URL, EULA heading text, absence of "You're all set" | Page loads; EULA heading visible; no "You're all set" message |
+| AC-IF-2 | Accept button is scroll-gated | Assert accept button is disabled; assert "Scroll to the bottom" hint text visible | "Looks good, let's continue" button is disabled; scroll hint shown |
+| AC-IF-3 | Accept button enables after scrolling to bottom | Scroll EULA pane to bottom using scroll_to_bottom tool; assert accept button becomes enabled | "Looks good, let's continue" button is enabled |
+| AC-IF-4 | EULA acceptance advances to Store Setup step | Click "Looks good, let's continue"; assert "Your Store" step visible and name input present | Step indicator shows Your Store active; form fields visible |
 | AC-IF-5 | Admin account creation succeeds with known values | Fill Full Name=$QA_ADMIN_NAME, Email=$QA_ADMIN_EMAIL, Password=$QA_ADMIN_PASSWORD, Confirm=$QA_ADMIN_PASSWORD; submit; handle redirect chain; sign in if needed | Browser reaches /admin |
-| AC-IF-6 | /setup is locked out after admin exists | Navigate to /setup; assert "Setup Already Complete" text; assert name input absent | "Setup Already Complete" shown; no form visible |
+| AC-IF-6 | /setup is locked out after admin exists | Navigate to /setup; assert "You're all set" text; assert name input absent | "You're all set" shown; no form visible |
 
 ## Known Value Round-Trips
 
