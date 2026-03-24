@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.96.18 - 2026-03-24
+
+### Fixed
+
+- **Release script**: `npm run release:patch` no longer creates a redundant version-bump PR when `package.json` is already pre-bumped in the feature branch — detects the pre-bump and uses it as the tag version directly, making the release a fast tag+push with no extra CI run
+
 ## 0.96.17 - 2026-03-24
 
 ### Fixed

@@ -119,6 +119,14 @@ function bumpVersion(version: string, type: BumpType): string {
   }
 }
 
+function semverGt(a: string, b: string): boolean {
+  const [aMaj, aMin, aPat] = a.split(".").map(Number);
+  const [bMaj, bMin, bPat] = b.split(".").map(Number);
+  if (aMaj !== bMaj) return aMaj > bMaj;
+  if (aMin !== bMin) return aMin > bMin;
+  return aPat > bPat;
+}
+
 function getLastTag(): string | null {
   const tags = exec("git tag -l v* --sort=-v:refname");
   if (!tags) return null;
@@ -378,13 +386,19 @@ async function main() {
 
   const lastTag = getLastTag();
   const currentVersion = getVersionFromTag(lastTag);
-  const newVersion = bumpVersion(currentVersion, bumpType as BumpType);
+  const pkgVersion = getPackageVersion();
+
+  // If package.json is already pre-bumped ahead of the last tag (set in the feature branch PR),
+  // use it directly — no sync PR needed. Otherwise, compute the bump from the tag.
+  const computedNewVersion = bumpVersion(currentVersion, bumpType as BumpType);
+  const preBumped = semverGt(pkgVersion, currentVersion);
+  const newVersion = preBumped ? pkgVersion : computedNewVersion;
   const newTag = `v${newVersion}`;
 
   console.log("\n📦 Release Script (tag-only)");
   console.log("─".repeat(50));
   console.log(`Current tag:     ${lastTag || "(none)"}`);
-  console.log(`New tag:         ${newTag} (${bumpType})`);
+  console.log(`New tag:         ${newTag} (${preBumped ? "pre-bumped in package.json" : bumpType})`);
   console.log(`Mode:            ${flags.yes ? "non-interactive" : "interactive"}`);
 
   // Show commits since last tag
