@@ -42,6 +42,7 @@ export function SetupLayout({ children }: { children: ReactNode }) {
           alt="Coffee"
           fill
           sizes="25vw"
+          loading="eager"
           className="object-cover object-center"
         />
         <div className="absolute inset-0 bg-black/55" />
