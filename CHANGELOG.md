@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.96.16 - 2026-03-24
+
+### Fixed
+
+- **Admin nav**: Support & Services items now appear in the same order as the header menu (Submit Ticket → Plans → Add-Ons → License & Privacy)
+
 ## 0.96.15 - 2026-03-24
 
 ### Fixed
