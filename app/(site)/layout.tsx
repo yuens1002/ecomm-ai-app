@@ -56,7 +56,7 @@ export default async function SiteLayout({
       )}
       <div data-site="" className="relative flex min-h-screen flex-col">
         {/* Demo banner - only shows when NEXT_PUBLIC_DEMO_MODE=true */}
-        <DemoBanner isAuthenticated={!!session?.user} />
+        {isDemoMode && <DemoBanner isAuthenticated={!!session?.user} />}
 
         {/* Banner portal - renders above header when active */}
         <SiteBannerPortal />
