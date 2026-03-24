@@ -5,6 +5,8 @@
 ### Fixed
 
 - **Admin nav**: Support & Services items now appear in the same order as the header menu (Submit Ticket → Plans → Add-Ons → License & Privacy)
+- **Demo banner**: `DemoBanner` and all its hooks (`useSession`, `useEffect`, `useState`) are now completely excluded from the React tree on self-hosted instances — gated by a module-scope `IS_DEMO` constant in `SiteLayout` so zero overhead for non-demo builds
+- **QA nightly**: Nightly workflow now resets the QA database itself (deletes Orders, EULA record, and Users) before running the agent — no longer depends on `install-test.yml` having run first; includes the same `QA_DB_ENDPOINT` endpoint guard to prevent accidental production wipes
 
 ## 0.96.15 - 2026-03-24
 
