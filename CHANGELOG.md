@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.96.14 - 2026-03-23
+
+### Fixed
+
+- **Admin dashboard**: Setup checklist no longer shows on `artisanroast.app` — all setup status flags respect `NEXT_PUBLIC_DEMO_MODE=true` so the checklist is hidden when the store is fully configured in demo mode
+- **Add-ons page**: Breadcrumb now correctly shows "Add-Ons" stub — `/admin/support/add-ons` was missing from the route registry
+- **Add-ons page**: Demo add-on packages now display on `artisanroast.app` — when in demo mode with no license key, two sample packages are injected so the page is not empty
+
 ## 0.96.13 - 2026-03-23
 
 ### Changed
