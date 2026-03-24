@@ -45,6 +45,7 @@ export default async function Home() {
         personalizedHeading={settings.homepageRecommendationsPersonalizedHeading}
         trendingHeading={settings.homepageRecommendationsTrendingHeading}
         trendingDescription={settings.homepageRecommendationsTrendingDescription}
+        priorityCount={aiConfigured && chatEnabled ? 0 : 3}
       />
 
       <FeaturedProducts

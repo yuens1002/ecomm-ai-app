@@ -14,6 +14,8 @@ interface RecommendationsSectionProps {
   personalizedHeading: string;
   trendingHeading: string;
   trendingDescription: string;
+  /** Number of product images to eagerly load (above-the-fold LCP). Caller decides based on page layout. */
+  priorityCount?: number;
 }
 
 export default function RecommendationsSection({
@@ -23,6 +25,7 @@ export default function RecommendationsSection({
   personalizedHeading,
   trendingHeading,
   trendingDescription,
+  priorityCount = 0,
 }: RecommendationsSectionProps) {
   if (products.length === 0) {
     return null;
@@ -77,7 +80,7 @@ export default function RecommendationsSection({
                 product={product}
                 showPurchaseOptions={true}
                 hoverRevealFooter={true}
-                priority={index === 0}
+                priority={index < priorityCount}
               />
             </ScrollReveal>
           ))}
