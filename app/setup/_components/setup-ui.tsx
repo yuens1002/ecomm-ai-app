@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useEffect, type ReactNode } from "react";
 import Image from "next/image";
 import { ChevronRight, ScrollText, Store } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -32,6 +32,12 @@ const STEPS = [
 // ─── Split layout — 1/4 branded sidebar | 3/4 content ────────────────────────
 
 export function SetupLayout({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   return (
     <div className="h-screen flex flex-col lg:flex-row overflow-hidden">
       {/* Left sidebar — 1/4 width, hidden on mobile */}
