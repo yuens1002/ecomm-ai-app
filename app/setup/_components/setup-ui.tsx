@@ -33,7 +33,10 @@ const STEPS = [
 
 export function SetupLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="fixed inset-0 flex flex-col lg:flex-row overflow-hidden">
+    <>
+      {/* Suppress page scrollbar — setup occupies the full viewport */}
+      <style>{`html { overflow: hidden; }`}</style>
+      <div className="fixed inset-0 flex flex-col lg:flex-row overflow-hidden">
       {/* Left sidebar — 1/4 width, hidden on mobile */}
       <div className="hidden lg:flex lg:w-1/4 shrink-0 relative flex-col justify-between p-8">
         {/* Full-bleed coffee background */}
@@ -106,6 +109,7 @@ export function SetupLayout({ children }: { children: ReactNode }) {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
