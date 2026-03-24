@@ -6,7 +6,6 @@ import { SiteBannerProvider } from "@/app/(site)/_hooks/useSiteBanner";
 import { SiteBannerPortal } from "@/app/(site)/_components/layout/SiteBannerPortal";
 import { DemoBanner } from "@/app/(site)/_components/content/DemoBanner";
 import { getStorefrontTheme } from "@/lib/config/app-settings";
-import { auth } from "@/auth";
 
 /** Read the Google Fonts URL for the active theme from the manifest */
 async function getThemeFontsUrl(
@@ -38,11 +37,7 @@ export default async function SiteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-  const [theme, session] = await Promise.all([
-    getStorefrontTheme(),
-    isDemoMode ? auth() : Promise.resolve(null),
-  ]);
+  const theme = await getStorefrontTheme();
   const fontsUrl =
     theme && theme !== "default" ? await getThemeFontsUrl(theme) : null;
 
@@ -56,7 +51,7 @@ export default async function SiteLayout({
       )}
       <div data-site="" className="relative flex min-h-screen flex-col">
         {/* Demo banner - only shows when NEXT_PUBLIC_DEMO_MODE=true */}
-        <DemoBanner isAuthenticated={!!session?.user} />
+        <DemoBanner />
 
         {/* Banner portal - renders above header when active */}
         <SiteBannerPortal />

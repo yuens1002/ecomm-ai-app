@@ -17,6 +17,8 @@ interface CategoryClientPageProps {
   categorySlug: string;
   products: CategoryProduct[];
   showPurchaseOptions: boolean;
+  /** Number of product images to eagerly load (above-the-fold LCP). Caller decides based on page layout. */
+  priorityCount?: number;
 }
 
 export default function CategoryClientPage({
@@ -24,6 +26,7 @@ export default function CategoryClientPage({
   categorySlug,
   products,
   showPurchaseOptions,
+  priorityCount = 0,
 }: CategoryClientPageProps) {
   return (
     <div className="container mx-auto px-4 md:px-8 py-8">
@@ -61,6 +64,7 @@ export default function CategoryClientPage({
                 showPurchaseOptions={showPurchaseOptions}
                 categorySlug={categorySlug}
                 sizes="(max-width: 768px) calc(100vw - 2rem), (max-width: 1200px) calc(50vw - 2rem), 400px"
+                priority={index < priorityCount}
               />
             </ScrollReveal>
           ))}

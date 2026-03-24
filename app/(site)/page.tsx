@@ -45,6 +45,7 @@ export default async function Home() {
         personalizedHeading={settings.homepageRecommendationsPersonalizedHeading}
         trendingHeading={settings.homepageRecommendationsTrendingHeading}
         trendingDescription={settings.homepageRecommendationsTrendingDescription}
+        priorityCount={1}
       />
 
       <FeaturedProducts

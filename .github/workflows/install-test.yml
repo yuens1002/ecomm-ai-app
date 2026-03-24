@@ -50,6 +50,26 @@ jobs:
         run: curl -s -X POST "${{ secrets.QA_VERCEL_DEPLOY_HOOK }}"
 
       # ── Reset QA database (fresh install equivalent) ─────────────────────
+      - name: Validate QA database URL
+        env:
+          QA_DATABASE_URL: ${{ secrets.QA_DATABASE_URL }}
+          QA_DB_ENDPOINT: ${{ secrets.QA_DB_ENDPOINT }}
+        run: |
+          if [ -z "$QA_DATABASE_URL" ]; then
+            echo "❌ QA_DATABASE_URL secret is not set. Refusing to reset an unknown database."
+            exit 1
+          fi
+          if [ -z "$QA_DB_ENDPOINT" ]; then
+            echo "❌ QA_DB_ENDPOINT secret is not set. Cannot verify target database identity."
+            echo "   Set QA_DB_ENDPOINT to the Neon endpoint ID from your QA project (e.g. ep-cool-name-123456)."
+            exit 1
+          fi
+          if ! echo "$QA_DATABASE_URL" | grep -qF "$QA_DB_ENDPOINT"; then
+            echo "❌ QA_DATABASE_URL does not contain the expected QA endpoint ($QA_DB_ENDPOINT). Aborting reset."
+            exit 1
+          fi
+          echo "✅ QA database endpoint verified"
+
       - name: Reset QA database
         env:
           DATABASE_URL: ${{ secrets.QA_DATABASE_URL }}

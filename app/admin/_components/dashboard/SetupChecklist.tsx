@@ -41,7 +41,6 @@ export interface SetupStatus {
   hasProducts: boolean;
   hasPayments: boolean;
   hasEmail: boolean;
-  hasBranding: boolean;
 }
 
 const checks = [
@@ -68,8 +67,10 @@ const checks = [
     icon: Mail,
     external: true,
   },
+];
+
+const suggestions = [
   {
-    key: "hasBranding" as const,
     label: "Customize your store branding",
     href: "/admin/settings",
     linkText: "Settings",
@@ -89,10 +90,8 @@ export function SetupChecklist({ status }: { status: SetupStatus }) {
   }, []);
 
   const completedCount = checks.filter((c) => status[c.key]).length;
-  const allComplete = completedCount === checks.length;
 
-  // Don't show if dismissed or all complete
-  if (dismissed || allComplete) return null;
+  if (dismissed) return null;
 
   return (
     <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-5 dark:border-amber-800 dark:bg-amber-950">
@@ -147,6 +146,22 @@ export function SetupChecklist({ status }: { status: SetupStatus }) {
                   {check.linkText}
                 </Link>
               )}
+            </li>
+          );
+        })}
+        {suggestions.map((s) => {
+          const Icon = s.icon;
+          return (
+            <li key={s.href} className="flex items-center gap-3 text-sm">
+              <Circle className="h-4 w-4 shrink-0 text-amber-400 dark:text-amber-500" />
+              <Icon className="h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300" />
+              <span className="text-amber-900 dark:text-amber-100">{s.label}</span>
+              <Link
+                href={s.href}
+                className="ml-auto text-xs font-medium text-amber-700 underline hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100"
+              >
+                {s.linkText}
+              </Link>
             </li>
           );
         })}
