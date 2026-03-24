@@ -9,7 +9,7 @@
 [**Try the Live Demo**](https://demo.artisanroast.app/) | [Self-Host Guide](./INSTALLATION.md) | [Documentation](./docs/)
 
 [![Build](https://github.com/yuens1002/artisan-roast/actions/workflows/build-safe-main.yml/badge.svg)](https://github.com/yuens1002/artisan-roast/actions/workflows/build-safe-main.yml)
-[![Install Verified](https://github.com/yuens1002/artisan-roast/actions/workflows/install-test.yml/badge.svg)](https://github.com/yuens1002/artisan-roast/actions/workflows/install-test.yml)
+[![Nightly QA](https://github.com/yuens1002/artisan-roast/actions/workflows/qa-nightly.yml/badge.svg)](https://github.com/yuens1002/artisan-roast/actions/workflows/qa-nightly.yml)
 
 ---
 
@@ -163,9 +163,9 @@ Every merge to `main` is verified by two automated pipelines:
 | Check | What it guarantees |
 |-------|--------------------|
 | **Build** (every PR + merge) | TypeScript compiles, ESLint passes, 1,000+ unit tests pass, production build succeeds |
-| **Install Verified** (every merge) | A real fresh install — empty database, deployed to Vercel — passes all 16 acceptance criteria end-to-end |
+| **Nightly QA** (nightly cron) | A real fresh install — empty database, deployed to Vercel — passes all 16 acceptance criteria end-to-end |
 
-The install verification resets a dedicated QA database, redeploys the app, then walks a Puppeteer script through the full setup flow, known-value round-trips, and initial app state checks. Any regression in the self-host experience opens a GitHub issue automatically.
+On merge to `main`, the QA database is reset and the QA deployment is refreshed. The following morning, a Claude Agent SDK + Playwright script walks through the full setup flow, known-value round-trips, and initial app state checks — using the accessibility tree instead of CSS selectors. Any regression opens a GitHub issue automatically.
 
 → [How it works](./docs/features/app-qa/README.md) · [Acceptance criteria](./VERIFICATION.md)
 

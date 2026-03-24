@@ -4,8 +4,9 @@
 > Any hosted PostgreSQL accepting standard Prisma connection strings is supported,
 > but results are only guaranteed on the reference stack.
 >
-> Verified on every merge to main against a fresh install:
-> empty Neon database + dedicated QA Vercel deployment.
+> Verified nightly against a fresh install: empty Neon database + dedicated QA Vercel deployment.
+> Push to `main` triggers DB reset + redeployment (`install-test.yml`); browser verification
+> runs the following morning at 6am UTC (`qa-nightly.yml`) via Claude Agent SDK + Playwright.
 > Known values are injected from CI secrets — never hardcoded in this file.
 
 ---
