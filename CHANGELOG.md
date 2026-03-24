@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.96.15 - 2026-03-24
+
+### Fixed
+
+- **Setup page**: Left sidebar is now fixed full-height with the right pane scrolling independently — eliminates double scrollbar on Firefox and all browsers
+- **Setup page**: Sidebar background image now eager-loads (LCP fix)
+- **Add-ons page**: Real platform add-on packages now display for all installs — fetched from the public `/api/add-ons` platform endpoint; no longer requires a license key to show available packages
+- **QA safety**: `qa-teardown.js` now requires `QA_DB_ENDPOINT` in `.env.local` and verifies `DATABASE_URL` contains it before deleting any data — prevents accidental production database wipes
+- **QA safety**: `install-test.yml` validates `QA_DATABASE_URL` contains the expected Neon endpoint fragment (`QA_DB_ENDPOINT` secret) before running `prisma migrate reset --force`
+- **Demo banner**: No longer shows on local dev when `NEXT_PUBLIC_DEMO_MODE` is removed from `.env.local` without restarting the dev server — banner render is now gated server-side; auth state managed client-side via `useSession()`, removing a per-request `auth()` call from the site layout
+- **Setup checklist**: Branding is no longer a blocking check — checklist completes when products, payments, and email are configured; a permanent "Customize your store branding" link row directs attention to settings without blocking completion
+- **Setup checklist**: Checklist now stays visible until manually dismissed (X button) — no longer auto-hides on completion, ensuring the branding suggestion remains accessible
+
+### Performance
+
+- **Product images**: First product card on homepage, category, and search pages now eager-loads via `priority` prop — fixes LCP warning for above-the-fold images; `priorityCount` prop lets callers control how many images get priority based on page layout
+
 ## 0.96.14 - 2026-03-23
 
 ### Fixed
