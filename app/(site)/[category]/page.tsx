@@ -52,6 +52,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       categorySlug={categorySlug}
       products={products}
       showPurchaseOptions={category.showPurchaseOptions}
+      priorityCount={3}
     />
   );
 }
