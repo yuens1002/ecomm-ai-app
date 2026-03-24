@@ -153,10 +153,10 @@ Set `QA_MODEL=claude-haiku-4-5-20251001` in `.env.local` for cheap local runs (~
 | `QA_ADMIN_EMAIL` | Known admin email |
 | `QA_ADMIN_PASSWORD` | Known admin password |
 | `QA_STORE_NAME` | Expected store name post-setup |
-| `VERCEL_AI_GATEWAY_BASE_URL` | Vercel AI Gateway base URL (routes Claude calls through Max subscription) |
-| `VERCEL_AI_GATEWAY_TOKEN` | Vercel OIDC token — replaces `ANTHROPIC_API_KEY` |
+| `VERCEL_AI_GATEWAY_BASE_URL` | Vercel AI Gateway base URL — set as `ANTHROPIC_BASE_URL` in CI |
+| `VERCEL_AI_GATEWAY_TOKEN` | Vercel OIDC token — set as `ANTHROPIC_API_KEY` in CI (not a real Anthropic key) |
 
-> `ANTHROPIC_API_KEY` is **not** used in CI. All Claude API calls route through `VERCEL_AI_GATEWAY_BASE_URL` with `VERCEL_AI_GATEWAY_TOKEN`, billing against your Anthropic Max subscription via the Vercel AI Gateway.
+> In CI, the Anthropic SDK's `ANTHROPIC_BASE_URL` is set to the Vercel AI Gateway URL, and `ANTHROPIC_API_KEY` is set to the Vercel OIDC token. Calls are billed against your Anthropic Max subscription via the gateway — no direct Anthropic API charges.
 
 ---
 

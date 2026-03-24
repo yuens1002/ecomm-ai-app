@@ -28,7 +28,7 @@
  *
  * Optional env:
  *   QA_MODEL                   Claude model (default: claude-sonnet-4-6)
- *   QA_TOKEN_BUDGET            Hard token abort limit (default: 150000)
+ *   QA_TOKEN_BUDGET            Hard token abort limit (default: 300000)
  *
  * Exit codes:
  *   0  All ACs passed
@@ -38,7 +38,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import { chromium } from "playwright";
+import { chromium } from "@playwright/test";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
