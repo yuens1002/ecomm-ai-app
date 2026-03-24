@@ -44,12 +44,13 @@ export function DemoBanner() {
   }, []);
 
   useEffect(() => {
+    if (isDismissed || isAuthenticated) return;
     const interval = setInterval(cycle, 4000);
     return () => {
       clearInterval(interval);
       cancelAnimationFrame(rafRef.current);
     };
-  }, [cycle]);
+  }, [cycle, isDismissed, isAuthenticated]);
 
   // Hide when dismissed or logged in
   if (isDismissed || isAuthenticated) {

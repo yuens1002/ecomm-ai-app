@@ -7,7 +7,7 @@ import { SiteBannerPortal } from "@/app/(site)/_components/layout/SiteBannerPort
 import { DemoBanner } from "@/app/(site)/_components/content/DemoBanner";
 import { getStorefrontTheme } from "@/lib/config/app-settings";
 
-// Evaluated once at module load — false for all self-hosted instances.
+// Evaluated once at module load based on NEXT_PUBLIC_DEMO_MODE.
 // DemoBanner and its hooks never enter the React tree unless this is true.
 const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
