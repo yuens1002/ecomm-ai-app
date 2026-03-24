@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { ArrowRight, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
 
 const CTA_OPTIONS = [
   "Try Admin Dashboard",
@@ -17,11 +18,9 @@ type Phase = "idle" | "exit" | "enter";
  * Only renders when NEXT_PUBLIC_DEMO_MODE env var is set to "true" and user is not logged in.
  * CTA text cycles with a slide-up ticker animation.
  */
-interface DemoBannerProps {
-  isAuthenticated: boolean;
-}
-
-export function DemoBanner({ isAuthenticated }: DemoBannerProps) {
+export function DemoBanner() {
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
   const [isDismissed, setIsDismissed] = useState(false);
   const [ctaIndex, setCtaIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("idle");
