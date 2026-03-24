@@ -341,6 +341,14 @@ const routeEntries: RouteEntry[] = [
     parentId: "admin.support",
     isNavigable: true,
   },
+  {
+    id: "admin.support.addons",
+    pathname: "/admin/support/add-ons",
+    matchMode: "exact",
+    label: "Add-Ons",
+    parentId: "admin.support",
+    isNavigable: true,
+  },
 
   // ==================== TERMS & CONDITIONS ====================
   {

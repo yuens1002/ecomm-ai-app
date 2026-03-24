@@ -53,11 +53,12 @@ export default async function AdminDashboardPage({
       .then((s) => s?.value ?? ""),
   ]);
 
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
   const setupStatus: SetupStatus = {
-    hasProducts: productCount > 0,
-    hasPayments: isStripeConfigured(),
-    hasEmail: isResendConfigured(),
-    hasBranding: !!storeName && storeName !== "Artisan Roast",
+    hasProducts: isDemoMode || productCount > 0,
+    hasPayments: isDemoMode || isStripeConfigured(),
+    hasEmail: isDemoMode || isResendConfigured(),
+    hasBranding: isDemoMode || (!!storeName && storeName !== "Artisan Roast"),
   };
 
   return (
