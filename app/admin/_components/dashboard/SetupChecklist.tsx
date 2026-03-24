@@ -9,7 +9,6 @@ import {
   CreditCard,
   Mail,
   Package,
-  Palette,
   X,
 } from "lucide-react";
 
@@ -41,7 +40,6 @@ export interface SetupStatus {
   hasProducts: boolean;
   hasPayments: boolean;
   hasEmail: boolean;
-  hasBranding: boolean;
 }
 
 const checks = [
@@ -67,13 +65,6 @@ const checks = [
     linkText: "Setup guide",
     icon: Mail,
     external: true,
-  },
-  {
-    key: "hasBranding" as const,
-    label: "Customize your store branding",
-    href: "/admin/settings",
-    linkText: "Settings",
-    icon: Palette,
   },
 ];
 
