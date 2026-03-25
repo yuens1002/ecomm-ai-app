@@ -12,6 +12,7 @@ export function middleware(request: NextRequest) {
       { status: 403 }
     );
   }
+  return NextResponse.next();
 }
 
 export const config = {
