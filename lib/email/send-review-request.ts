@@ -29,7 +29,9 @@ export async function sendReviewRequest(
   if (!resend) return;
 
   await resend.emails.send({
-    from: fromName ? `${fromName} <${fromEmail}>` : fromEmail || "noreply@example.com",
+    from: fromEmail
+      ? (fromName ? `${fromName} <${fromEmail}>` : fromEmail)
+      : "noreply@example.com",
     to: data.customerEmail,
     subject: "How was your coffee? Share a Brew Report!",
     html,

@@ -176,9 +176,9 @@ export async function POST() {
       );
     }
 
-    const from = fromName
-      ? `${fromName} <${fromEmail}>`
-      : fromEmail || "noreply@example.com";
+    const from = fromEmail
+      ? (fromName ? `${fromName} <${fromEmail}>` : fromEmail)
+      : "noreply@example.com";
 
     await resend.emails.send({
       from,

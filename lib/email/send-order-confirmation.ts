@@ -42,7 +42,9 @@ export async function sendOrderConfirmation(
     if (!resend) return { success: true };
 
     await resend.emails.send({
-      from: fromName ? `${fromName} <${fromEmail}>` : fromEmail || "orders@artisan-roast.com",
+      from: fromEmail
+        ? (fromName ? `${fromName} <${fromEmail}>` : fromEmail)
+        : "orders@artisan-roast.com",
       to: firstOrder.customerEmail,
       subject: `Order Confirmation - ${orderNumbers}`,
       react: OrderConfirmationEmail({

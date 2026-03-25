@@ -428,11 +428,12 @@ export interface EmailProviderSettings {
   apiKey: string;
   fromEmail: string;
   fromName: string;
+  contactEmail: string;
 }
 
 /**
  * Get email provider settings. DB values take precedence over env vars.
- * fromEmail falls back to contactEmail in DB, then env var, then empty.
+ * fromEmail falls back to RESEND_FROM_EMAIL env var, then contactEmail in DB, then empty.
  * fromName falls back to store_name in DB, then "Artisan Roast".
  */
 export async function getEmailProviderSettings(): Promise<EmailProviderSettings> {
@@ -466,6 +467,7 @@ export async function getEmailProviderSettings(): Promise<EmailProviderSettings>
       map[APP_SETTINGS_KEYS.EMAIL_FROM_NAME] ||
       map["store_name"] ||
       "Artisan Roast",
+    contactEmail: map["contactEmail"] || "",
   };
 }
 

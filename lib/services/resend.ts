@@ -11,9 +11,11 @@ let _resendKey: string | null = null;
 export function getResend(apiKey?: string): Resend | null {
   const key = apiKey || process.env.RESEND_API_KEY;
   if (!key) return null;
-  // Return fresh client if key differs from cached (DB key updated)
+  // Update cache if key differs (DB key changed)
   if (apiKey && apiKey !== _resendKey) {
-    return new Resend(apiKey);
+    _resend = new Resend(apiKey);
+    _resendKey = apiKey;
+    return _resend;
   }
   if (!_resend) {
     _resend = new Resend(key);

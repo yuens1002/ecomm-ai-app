@@ -1,7 +1,6 @@
 import { logger } from "@/lib/logger";
 import { getResend } from "@/lib/services/resend";
 import { getEmailBranding, getEmailProviderSettings } from "@/lib/config/app-settings";
-import { prisma } from "@/lib/prisma";
 import MerchantOrderNotification from "@/emails/MerchantOrderNotification";
 import type { SendMerchantNotificationParams, EmailSendResult } from "./types";
 import {
@@ -19,23 +18,20 @@ export async function sendMerchantNotification(
 ): Promise<EmailSendResult> {
   const { order, isRecurringOrder = false, deliverySchedule } = params;
 
-  const contactEmailRow = await prisma.siteSettings.findUnique({
-    where: { key: "contactEmail" },
-  });
-  const merchantEmail =
-    process.env.RESEND_MERCHANT_EMAIL ||
-    process.env.MERCHANT_EMAIL ||
-    contactEmailRow?.value ||
-    "";
-
-  if (!merchantEmail) return { success: true };
-
   try {
     const emailItems = buildOrderEmailItems(order.items);
     const shippingAddressData = buildShippingAddressForEmail(order);
     const orderNumber = formatOrderNumber(order.id);
     const { logoUrl } = await getEmailBranding();
-    const { apiKey, fromEmail, fromName } = await getEmailProviderSettings();
+    const { apiKey, fromEmail, fromName, contactEmail } = await getEmailProviderSettings();
+
+    const merchantEmail =
+      process.env.RESEND_MERCHANT_EMAIL ||
+      process.env.MERCHANT_EMAIL ||
+      contactEmail ||
+      "";
+
+    if (!merchantEmail) return { success: true };
 
     // Determine subject based on order type
     const subject = isRecurringOrder
@@ -46,7 +42,9 @@ export async function sendMerchantNotification(
     if (!resend) return { success: true };
 
     await resend.emails.send({
-      from: fromName ? `${fromName} <${fromEmail}>` : fromEmail || "orders@artisan-roast.com",
+      from: fromEmail
+        ? (fromName ? `${fromName} <${fromEmail}>` : fromEmail)
+        : "orders@artisan-roast.com",
       to: merchantEmail,
       subject,
       react: MerchantOrderNotification({
