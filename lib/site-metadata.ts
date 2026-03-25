@@ -1,7 +1,8 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { defaultSettings } from "@/lib/site-settings";
 
-export async function getSiteMetadata() {
+export const getSiteMetadata = cache(async function getSiteMetadata() {
   const settings = await prisma.siteSettings.findMany({
     where: {
       key: {
@@ -31,4 +32,4 @@ export async function getSiteMetadata() {
     storeLogoUrl: settingsMap.store_logo_url || "/logo.svg",
     storeFaviconUrl: settingsMap.store_favicon_url || "/favicon.ico",
   };
-}
+});
