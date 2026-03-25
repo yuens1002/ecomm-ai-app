@@ -30,9 +30,9 @@ export async function PATCH(request: Request) {
       );
     }
 
-    // Protect demo accounts from email changes
+    // Protect demo account emails from being changed — name changes are allowed
     const DEMO_EMAILS = ["admin@artisanroast.com", "demo@artisanroast.com"];
-    if (DEMO_EMAILS.includes(session.user.email)) {
+    if (DEMO_EMAILS.includes(session.user.email) && email !== session.user.email) {
       return NextResponse.json(
         { error: "Demo accounts cannot be modified" },
         { status: 403 }

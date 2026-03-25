@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 // .claude/hooks/verify-before-commit-node.js
 //
-// Claude Code PreToolUse hook (Node.js, cross-platform) — blocks `git commit`
-// unless the current branch has "verified" status in verification-status.json.
+// Claude Code PreToolUse hook (Node.js, cross-platform) — gates `git commit`
+// based on branch verification status in verification-status.json.
+//
+// Allowed: verified, implementing, planned, planning, unregistered, pending, partial
+// (pending/partial are allowed to support the autonomous iterate loop — the Stop
+// hook is the real gate preventing session completion without a verified status)
+// Blocked: any unrecognised status value
 //
 // Exit code 0 = allow, exit code 2 = block (reason on stderr).
 

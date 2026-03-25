@@ -28,10 +28,10 @@
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|-----|----------|
-| AC-FN-1 | `middleware.ts` exists at repo root with correct matcher | Code review: `middleware.ts` | File exports `middleware` function + `config.matcher = ["/api/admin/:path*"]` | PASS — `export function middleware(...)` at middleware.ts:5; `config.matcher = ["/api/admin/:path*"]` at middleware.ts:17-19 | PASS — file created at repo root; matcher covers all `/api/admin/**` routes via Next.js path pattern | |
+| AC-FN-1 | `middleware.ts` exists at repo root with correct matcher | Code review: `middleware.ts` | File exports `middleware` function + `config.matcher` covers `/api/admin/:path*` and `/api/user/:path*` | PASS — `export function middleware(...)` at middleware.ts:5; `config.matcher = ["/api/admin/:path*", "/api/user/:path*"]` at middleware.ts:18-21 | PASS — matcher covers both admin and user API routes; `/api/user/:path*` added to block profile/password mutations in demo mode | |
 | AC-FN-2 | Middleware blocks mutating methods in demo mode | Code review: `middleware.ts` | `POST`, `PUT`, `PATCH`, `DELETE` to `/api/admin/**` return `403 { error: "Changes are disabled in demo mode" }` when `NEXT_PUBLIC_DEMO_MODE === "true"` | PASS — middleware.ts:3-14 checks `process.env.NEXT_PUBLIC_DEMO_MODE === "true"` and `MUTATING.has(request.method)`, returns `NextResponse.json({ error: "Changes are disabled in demo mode" }, { status: 403 })`. Live-tested: `curl -X POST /api/admin/settings/ai` → HTTP 403 `{"error":"Changes are disabled in demo mode"}` | PASS — live curl against running server returned HTTP 403 with exact error message; middleware.ts:6-13 logic is correct | |
 | AC-FN-3 | Middleware passes `GET` requests through | Code review: `middleware.ts` | Only mutating methods are in the blocked set; `GET` is not present | PASS — middleware.ts:3: `new Set(["POST", "PUT", "PATCH", "DELETE"])` — GET absent | PASS — `MUTATING` set at middleware.ts:3 contains exactly 4 verbs; GET/HEAD/OPTIONS are not present and will fall through to no-op return | |
-| AC-FN-4 | `AdminDemoBanner` renders null when demo mode is off | Code review: `app/admin/_components/shared/AdminDemoBanner.tsx` | Component returns `null` when `NEXT_PUBLIC_DEMO_MODE !== "true"` | PASS — AdminDemoBanner.tsx:3-6: `const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true"; if (!IS_DEMO) return null;` | PASS — early `return null` at line 6 means self-hosters (no env var) render nothing; no extra DOM nodes injected | |
+| AC-FN-4 | `AdminDemoBanner` is excluded from the React tree when demo mode is off | Code review: `app/admin/_components/dashboard/AdminShell.tsx` | Banner is conditionally mounted via `IS_DEMO` constant — not rendered at all for self-hosters | PASS — AdminShell.tsx:52: `{IS_DEMO && <AdminDemoBanner />}` where `IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true"` at module scope | PASS — demo mode gating is in AdminShell (not the component itself); `IS_DEMO` is evaluated once at module load so the component never enters the React tree on self-hosted instances | |
 | AC-FN-5 | `AdminShell` renders banner as first child of `<main>` | Code review: `app/admin/_components/dashboard/AdminShell.tsx` | `<AdminDemoBanner />` rendered inside `<main>` before `<AdminBreadcrumb />` | PASS — AdminShell.tsx:52-54: `<main ...>{IS_DEMO && <AdminDemoBanner />}<AdminBreadcrumb />` — banner is first child of main | PASS — AdminShell.tsx:52 confirms order: banner → breadcrumb → UpdateBanner → children; banner spans full content width | |
 
 ## Regression Acceptance Criteria
@@ -54,7 +54,7 @@
 - Demo admin sign-in button text: "Sign in as AdminFull dashboard access" — clicked successfully, landed on `/admin`.
 - Screenshot paths: `.screenshots/demo-mode-verify/desktop-ai-settings.png`, `.screenshots/demo-mode-verify/desktop-ai-banner.png`, `.screenshots/demo-mode-verify/desktop-contact-settings.png`
 - AC-REG-4 note: the `url` values are full paths (`/admin/support/add-ons?demo=success` and `/admin/support/plans?demo=success`), not bare `?demo=success`. This satisfies the intent of the pass criterion (both include `?demo=success`).
-- All 13 ACs: PASS. Overall: PASS.
+- All 12 ACs: PASS. Overall: PASS.
 
 ## QC Notes
 
