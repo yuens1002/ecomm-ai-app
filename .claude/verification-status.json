@@ -228,6 +228,14 @@
       "tasks": [],
       "acs_doc": "VERIFICATION.md",
       "notes": "16/16 ACs verified locally. Playwright + Claude Agent SDK (Haiku). Per-AC agent loop, tool filtering, AC_HINTS. Key fixes: exact-first click (avoid demo buttons), EULA apostrophe, pressSequentially for React inputs, tail truncation for long aria snapshots, wait_for_text URL path matching. 138K tokens / 300K budget."
+    },
+    "feature/email-provider-settings": {
+      "status": "planned",
+      "acs_passed": 0,
+      "acs_total": 17,
+      "tasks": [],
+      "acs_doc": "docs/plans/email-provider-settings-ACs.md",
+      "notes": "5 UI + 8 FN + 4 REG ACs. DB layer done (getEmailProviderSettings, setEmailProviderSettings, getResend(apiKey?)). 4 commits: wire send functions, contact settings UI, setup flow store name, QA agent Morning Roast."
     }
   }
 }

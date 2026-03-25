@@ -113,30 +113,33 @@ instead of calling the platform. Client reads `?demo=success` query param and fi
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | Remove `artisanroast.app` from OSS store Vercel project | Pending |
-| 2 | Add `artisanroast.app` to platform Vercel project | Pending |
-| 3 | Set `NEXT_PUBLIC_APP_URL=https://demo.artisanroast.app` on demo deployment env vars | Pending |
-| 4 | `dev.artisanroast.app` aliased to platform `dev` branch | Done |
+| 1 | Add `demo` CNAME record → `cname.vercel-dns.com` in Vercel DNS | Done |
+| 2 | Add `demo.artisanroast.app` to OSS store Vercel project | Done |
+| 3 | Remove `artisanroast.app` from OSS store Vercel project | Done |
+| 4 | Add `artisanroast.app` to platform Vercel project | Done |
+| 5 | Set `NEXT_PUBLIC_APP_URL=https://demo.artisanroast.app` on demo deployment env vars | Done |
+| 6 | `dev.artisanroast.app` aliased to platform `dev` branch | Done |
+| 7 | (Platform repo) Add middleware: redirect `manage.artisanroast.app/` → `artisanroast.app/` | Pending |
 
 ### OAuth (GitHub + Google)
 
 | # | Task | Status |
 |---|------|--------|
-| 5 | Add `https://demo.artisanroast.app/api/auth/callback/github` to GitHub OAuth app allowed callbacks | Pending |
-| 6 | Add `https://demo.artisanroast.app/api/auth/callback/google` to Google OAuth app allowed redirects | Pending |
+| 5 | Add `https://demo.artisanroast.app/api/auth/callback/github` to GitHub OAuth app allowed callbacks | Done |
+| 6 | Add `https://demo.artisanroast.app/api/auth/callback/google` to Google OAuth app allowed redirects | Done |
 
 ### Stripe
 
 | # | Task | Status |
 |---|------|--------|
-| 7 | Update Stripe webhook endpoint from `artisanroast.app` to `demo.artisanroast.app` | Pending |
+| 7 | Update Stripe webhook endpoint from `artisanroast.app` to `demo.artisanroast.app` | Done |
 
 ### Google Analytics
 
 | # | Task | Status |
 |---|------|--------|
-| 8 | Update data stream URL in GA4: Admin → Data Streams → change from `artisanroast.app` to `demo.artisanroast.app` (cosmetic — same `G-XXXXXXXX` measurement ID, no code change needed) | Pending |
-| 9 | Add annotation in GA4 on cutover date so historical hostname split (`artisanroast.app` → `demo.artisanroast.app`) is documented in reports | Pending |
+| 8 | Update data stream URL in GA4: Admin → Data Streams → change from `artisanroast.app` to `demo.artisanroast.app` (cosmetic — same `G-XXXXXXXX` measurement ID, no code change needed) | Done |
+| 9 | Add annotation in GA4 on cutover date so historical hostname split (`artisanroast.app` → `demo.artisanroast.app`) is documented in reports | Done |
 
 ---
 
