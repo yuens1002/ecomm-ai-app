@@ -25,6 +25,10 @@ const APP_SETTINGS_KEYS = {
   AI_CHAT_ENABLED: "ai.chatEnabled",
   AI_RECOMMEND_ENABLED: "ai.recommendEnabled",
   AI_ABOUT_ASSIST_ENABLED: "ai.aboutAssistEnabled",
+  // Email provider configuration (Resend)
+  EMAIL_API_KEY: "email.apiKey",
+  EMAIL_FROM: "email.fromEmail",
+  EMAIL_FROM_NAME: "email.fromName",
 } as const;
 
 /**
@@ -403,6 +407,84 @@ export async function setAISettings(
       key: APP_SETTINGS_KEYS.AI_ABOUT_ASSIST_ENABLED,
       value: String(values.aboutAssistEnabled),
     });
+  }
+
+  await Promise.all(
+    updates.map(({ key, value }) =>
+      prisma.siteSettings.upsert({
+        where: { key },
+        update: { value },
+        create: { key, value },
+      })
+    )
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Email provider settings (Resend)
+// ---------------------------------------------------------------------------
+
+export interface EmailProviderSettings {
+  apiKey: string;
+  fromEmail: string;
+  fromName: string;
+}
+
+/**
+ * Get email provider settings. DB values take precedence over env vars.
+ * fromEmail falls back to contactEmail in DB, then env var, then empty.
+ * fromName falls back to store_name in DB, then "Artisan Roast".
+ */
+export async function getEmailProviderSettings(): Promise<EmailProviderSettings> {
+  const rows = await prisma.siteSettings.findMany({
+    where: {
+      key: {
+        in: [
+          APP_SETTINGS_KEYS.EMAIL_API_KEY,
+          APP_SETTINGS_KEYS.EMAIL_FROM,
+          APP_SETTINGS_KEYS.EMAIL_FROM_NAME,
+          "contactEmail",
+          "store_name",
+        ],
+      },
+    },
+  });
+
+  const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+
+  return {
+    apiKey:
+      map[APP_SETTINGS_KEYS.EMAIL_API_KEY] ||
+      process.env.RESEND_API_KEY ||
+      "",
+    fromEmail:
+      map[APP_SETTINGS_KEYS.EMAIL_FROM] ||
+      process.env.RESEND_FROM_EMAIL ||
+      map["contactEmail"] ||
+      "",
+    fromName:
+      map[APP_SETTINGS_KEYS.EMAIL_FROM_NAME] ||
+      map["store_name"] ||
+      "Artisan Roast",
+  };
+}
+
+/**
+ * Update email provider settings. Only writes keys that are provided.
+ */
+export async function setEmailProviderSettings(
+  values: Partial<EmailProviderSettings>
+): Promise<void> {
+  const updates: Array<{ key: string; value: string }> = [];
+
+  if (values.apiKey !== undefined) {
+    updates.push({ key: APP_SETTINGS_KEYS.EMAIL_API_KEY, value: values.apiKey });
+  }
+  if (values.fromEmail !== undefined) {
+    updates.push({ key: APP_SETTINGS_KEYS.EMAIL_FROM, value: values.fromEmail });
+  }
+  if (values.fromName !== undefined) {
+    updates.push({ key: APP_SETTINGS_KEYS.EMAIL_FROM_NAME, value: values.fromName });
   }
 
   await Promise.all(
