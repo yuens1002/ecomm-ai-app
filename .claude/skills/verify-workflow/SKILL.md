@@ -82,7 +82,7 @@ Only after all 4 checks pass does planning begin.
 
 1. **Plan committed**: `git commit --no-verify -m "docs: add plan for {feature}"`
 2. **ACs doc created**: Extract ACs from plan into `docs/plans/{feature}-ACs.md` using the template at `docs/templates/acs-template.md`. All What/How/Pass columns filled, Agent/QC/Reviewer columns empty.
-3. **Status updated**: Update entry from `"planning"` → `"planned"` with `acs_total` set to actual AC count:
+3. **Status updated** (via Edit tool on `.claude/verification-status.json`): Update entry from `"planning"` → `"planned"` with `acs_total` set to actual AC count:
 
    ```jsonc
    // .claude/verification-status.json → branches["{branch}"]
@@ -96,14 +96,14 @@ Only after all 4 checks pass does planning begin.
    ```
 
 4. **Verify status clean**: Confirm the current branch is in `"planned"` state. If it's in `"pending"` or `"partial"`, a previous iteration was interrupted — resume from there instead of restarting.
-5. **When coding begins**, update status to `"implementing"`
-6. **When all code is written + precheck passes**, update status to `"pending"`
+5. **When coding begins**, update status to `"implementing"` (Edit tool)
+6. **When all code is written + precheck passes**, update status to `"pending"` (Edit tool)
 
 This activates the enforcement hooks: SessionStart will inject workflow context, Stop will block premature completion, and the commit gate will allow intermediate commits.
 
 ### Step 1: Implement
 
-Execute the approved plan. Track progress with TaskCreate/TaskUpdate.
+Execute the approved plan. Track progress with TodoWrite.
 
 Follow the **commit schedule** defined in the plan — commit logical chunks as you go (status must be `"planned"` or `"implementing"` for intermediate commits).
 
@@ -113,7 +113,7 @@ Follow the **commit schedule** defined in the plan — commit logical chunks as 
 npm run precheck
 ```
 
-Fix any TS/ESLint errors, then update verification-status to `"pending"` before proceeding to verification.
+Fix any TS/ESLint errors, then update `verification-status.json` to `"pending"` (Edit tool) before proceeding to verification.
 
 ### Step 2: Verify (sub-agent delegation)
 

@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 // Constants
 // ---------------------------------------------------------------------------
 
-const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 const PLATFORM_URL = (
   process.env.PLATFORM_URL || "https://manage.artisanroast.app"
@@ -52,7 +52,7 @@ export async function startCheckout(
     return { success: false, error: "Invalid plan" };
   }
 
-  if (DEMO_MODE) {
+  if (IS_DEMO) {
     return { success: true, url: "/admin/support/plans?demo=success" };
   }
 

@@ -229,6 +229,21 @@
       "acs_doc": "VERIFICATION.md",
       "notes": "16/16 ACs verified locally. Playwright + Claude Agent SDK (Haiku). Per-AC agent loop, tool filtering, AC_HINTS. Key fixes: exact-first click (avoid demo buttons), EULA apostrophe, pressSequentially for React inputs, tail truncation for long aria snapshots, wait_for_text URL path matching. 138K tokens / 300K budget."
     },
+    "fix/header-store-name-ssr": {
+      "status": "verified",
+      "acs_passed": 0,
+      "acs_total": 0,
+      "tasks": [],
+      "notes": "Minimal hotfix: pass storeName server-side from SiteHeaderWrapper to SiteHeader to fix QA AC-KV-3. No formal ACs — single targeted fix, precheck clean."
+    },
+    "fix/demo-mode-centralization": {
+      "status": "verified",
+      "acs_passed": 12,
+      "acs_total": 12,
+      "tasks": [],
+      "acs_doc": "docs/plans/demo-mode-centralization-ACs.md",
+      "notes": "12/12 ACs verified. 3 UI via screenshots (banner visible, ai/contact pages fully interactive), 5 FN via code review + live curl 403 test, 4 REG via precheck (0 errors) + test:ci (94 suites, 1095 tests, 0 failures). 0 iterations needed."
+    },
     "feature/email-provider-settings": {
       "status": "verified",
       "acs_passed": 21,

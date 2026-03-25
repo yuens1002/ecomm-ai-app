@@ -21,8 +21,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { AI_PROVIDER_PRESETS } from "@/lib/ai-provider-presets";
 
-const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-
 interface AISettingsData {
   baseUrl: string;
   apiKey: string;
@@ -175,7 +173,7 @@ export default function AISettingsPage() {
         {/* Provider preset */}
         <Field>
           <FormHeading label="Quick Setup" />
-          <Select onValueChange={handlePreset} disabled={DEMO_MODE}>
+          <Select onValueChange={handlePreset}>
             <SelectTrigger className="w-full max-w-xs">
               <SelectValue placeholder="Choose a provider preset..." />
             </SelectTrigger>
@@ -207,7 +205,6 @@ export default function AISettingsPage() {
               setSettings((prev) => ({ ...prev, baseUrl: e.target.value }));
               setTestStatus("idle");
             }}
-            disabled={DEMO_MODE}
             className={`max-w-[72ch] ${settings.baseUrl !== original.baseUrl ? "border-amber-500" : ""}`}
           />
           <FieldDescription>
@@ -225,36 +222,31 @@ export default function AISettingsPage() {
           <div className="relative max-w-sm">
             <Input
               id="ai-api-key"
-              type={showApiKey && !DEMO_MODE ? "text" : "password"}
+              type={showApiKey ? "text" : "password"}
               placeholder={settings.hasApiKey ? "••••••••(saved)" : "Enter API key"}
               value={settings.apiKey}
               onChange={(e) => {
                 setSettings((prev) => ({ ...prev, apiKey: e.target.value }));
                 setTestStatus("idle");
               }}
-              disabled={DEMO_MODE}
               className={settings.apiKey !== original.apiKey ? "border-amber-500 pr-10" : "pr-10"}
             />
-            {!DEMO_MODE && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                onClick={() => setShowApiKey((v) => !v)}
-              >
-                {showApiKey ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
-            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+              onClick={() => setShowApiKey((v) => !v)}
+            >
+              {showApiKey ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </Button>
           </div>
           <FieldDescription>
-            {DEMO_MODE
-              ? "Provider settings are locked in demo mode"
-              : "Optional for local providers (e.g., Ollama)"}
+            Optional for local providers (e.g., Ollama)
           </FieldDescription>
         </Field>
 
@@ -273,7 +265,6 @@ export default function AISettingsPage() {
               setSettings((prev) => ({ ...prev, model: e.target.value }));
               setTestStatus("idle");
             }}
-            disabled={DEMO_MODE}
             className={`max-w-xs ${settings.model !== original.model ? "border-amber-500" : ""}`}
           />
           <FieldDescription>
@@ -295,7 +286,7 @@ export default function AISettingsPage() {
           </Button>
           <Button
             onClick={handleSave}
-            disabled={DEMO_MODE || !isDirty || isSaving}
+            disabled={!isDirty || isSaving}
           >
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save

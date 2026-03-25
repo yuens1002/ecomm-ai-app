@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 
+const STORAGE_KEY = "demo-banner-dismissed";
+
 const CTA_OPTIONS = [
   "Try Admin Dashboard",
   "See User Account",
@@ -21,8 +23,11 @@ type Phase = "idle" | "exit" | "enter";
  */
 export function DemoBanner() {
   const { status } = useSession();
-  const isAuthenticated = status === "authenticated";
-  const [isDismissed, setIsDismissed] = useState(false);
+  // Treat "loading" same as authenticated — prevents flash during sign-out transition
+  const isAuthenticated = status !== "unauthenticated";
+  const [isDismissed, setIsDismissed] = useState(
+    () => typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY) === "true"
+  );
   const [ctaIndex, setCtaIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("idle");
   const rafRef = useRef(0);
@@ -89,7 +94,10 @@ export function DemoBanner() {
           <ArrowRight className="h-4 w-4 ml-1 shrink-0" aria-hidden="true" />
         </Link>
         <button
-          onClick={() => setIsDismissed(true)}
+          onClick={() => {
+            localStorage.setItem(STORAGE_KEY, "true");
+            setIsDismissed(true);
+          }}
           className={cn("p-1 rounded hover:bg-white/20 transition-colors ml-auto sm:ml-0")}
           aria-label="Dismiss banner"
         >
