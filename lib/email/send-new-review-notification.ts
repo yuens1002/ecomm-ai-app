@@ -1,6 +1,6 @@
 import { getResend } from "@/lib/services/resend";
 import { render } from "@react-email/render";
-import { getEmailBranding } from "@/lib/config/app-settings";
+import { getEmailBranding, getEmailProviderSettings } from "@/lib/config/app-settings";
 import NewReviewNotification from "@/emails/NewReviewNotification";
 
 interface NewReviewNotificationData {
@@ -13,13 +13,16 @@ interface NewReviewNotificationData {
 export async function sendNewReviewNotification(
   data: NewReviewNotificationData
 ): Promise<void> {
+  const { logoUrl } = await getEmailBranding();
+  const { apiKey, fromEmail, fromName, contactEmail } = await getEmailProviderSettings();
+
   const merchantEmail =
     process.env.RESEND_MERCHANT_EMAIL ||
-    process.env.MERCHANT_EMAIL;
+    process.env.MERCHANT_EMAIL ||
+    contactEmail ||
+    "";
 
   if (!merchantEmail) return;
-
-  const { logoUrl } = await getEmailBranding();
 
   const html = await render(
     NewReviewNotification({
@@ -31,12 +34,13 @@ export async function sendNewReviewNotification(
     })
   );
 
-  const resend = getResend();
+  const resend = getResend(apiKey || undefined);
   if (!resend) return;
 
   await resend.emails.send({
-    from:
-      process.env.RESEND_FROM_EMAIL ?? "noreply@example.com",
+    from: fromEmail
+      ? (fromName ? `${fromName} <${fromEmail}>` : fromEmail)
+      : "noreply@example.com",
     to: merchantEmail,
     subject: `New review: ${data.productName} (${data.rating}/5)`,
     html,

@@ -19,7 +19,7 @@
 | AC-IF-2 | Accept button is scroll-gated | Assert accept button is disabled; assert "Scroll to the bottom" hint text visible | "Looks good, let's continue" button is disabled; scroll hint shown |
 | AC-IF-3 | Accept button enables after scrolling to bottom | Scroll EULA pane to bottom using scroll_to_bottom tool; assert accept button becomes enabled | "Looks good, let's continue" button is enabled |
 | AC-IF-4 | EULA acceptance advances to Store Setup step | Click "Looks good, let's continue"; assert "Your Store" step visible and name input present | Step indicator shows Your Store active; form fields visible |
-| AC-IF-5 | Admin account creation succeeds with known values | Fill Full Name=$QA_ADMIN_NAME, Email=$QA_ADMIN_EMAIL, Password=$QA_ADMIN_PASSWORD, Confirm=$QA_ADMIN_PASSWORD; submit; handle redirect chain; sign in if needed | Browser reaches /admin |
+| AC-IF-5 | Admin account creation and store name seeding succeed with known values | Fill Store Name=$QA_STORE_NAME first, then Full Name=$QA_ADMIN_NAME, Email=$QA_ADMIN_EMAIL, Password=$QA_ADMIN_PASSWORD, Confirm=$QA_ADMIN_PASSWORD; submit; handle redirect chain; sign in if needed | Browser reaches /admin; $QA_STORE_NAME seeded in DB |
 | AC-IF-6 | /setup is locked out after admin exists | Navigate to /setup; assert "You're all set" text; assert name input absent | "You're all set" shown; no form visible |
 
 ## Known Value Round-Trips
@@ -28,7 +28,7 @@
 |----|------|-------------|------|
 | AC-KV-1 | Admin name visible in admin UI | Navigate to /admin; assert $QA_ADMIN_NAME in page text | $QA_ADMIN_NAME appears on screen |
 | AC-KV-2 | Admin email and password authenticate | Clear session (cookies + localStorage); navigate to /auth/admin-signin; sign in with $QA_ADMIN_EMAIL + $QA_ADMIN_PASSWORD | Login succeeds; redirected to /admin |
-| AC-KV-3 | Store name appears on storefront | Navigate to / (homepage); assert $QA_STORE_NAME in page text | $QA_STORE_NAME visible in page header or title |
+| AC-KV-3 | Store name appears in storefront header and footer | Navigate to / (homepage); call read_page; assert $QA_STORE_NAME appears in both the header/nav area and the footer section of the page | $QA_STORE_NAME visible in header AND footer |
 | AC-KV-4 | Store name appears in admin settings | Navigate to /admin/settings; assert $QA_STORE_NAME in page text (including input values) | $QA_STORE_NAME visible in store settings section |
 
 ## Initial App State

@@ -1,6 +1,6 @@
 import { getResend } from "@/lib/services/resend";
 import { render } from "@react-email/render";
-import { getEmailBranding } from "@/lib/config/app-settings";
+import { getEmailBranding, getEmailProviderSettings } from "@/lib/config/app-settings";
 import ReviewRequestEmail from "@/emails/ReviewRequestEmail";
 
 interface ReviewRequestEmailData {
@@ -14,6 +14,7 @@ export async function sendReviewRequest(
   data: ReviewRequestEmailData
 ): Promise<void> {
   const { logoUrl } = await getEmailBranding();
+  const { apiKey, fromEmail, fromName } = await getEmailProviderSettings();
 
   const html = await render(
     ReviewRequestEmail({
@@ -24,11 +25,13 @@ export async function sendReviewRequest(
     })
   );
 
-  const resend = getResend();
+  const resend = getResend(apiKey || undefined);
   if (!resend) return;
 
   await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL ?? "noreply@example.com",
+    from: fromEmail
+      ? (fromName ? `${fromName} <${fromEmail}>` : fromEmail)
+      : "noreply@example.com",
     to: data.customerEmail,
     subject: "How was your coffee? Share a Brew Report!",
     html,

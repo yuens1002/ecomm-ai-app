@@ -397,13 +397,21 @@ const AC_HINTS = {
 
   "AC-IF-5": [
     "The browser is already on the account creation step — do NOT call navigate yet.",
-    "Fill these 4 fields in order using the known values:",
-    "  fill('Your name', Admin name), fill('Email address', Admin email),",
+    "Fill these 5 fields in order using the known values:",
+    "  fill('Store name', Store name), fill('Your name', Admin name),",
+    "  fill('Email address', Admin email),",
     "  fill('Password', Admin password), fill('Confirm password', Admin password).",
     "Then click('Take me to my store').",
     "IMPORTANT: After clicking submit, navigate to '/auth/admin-signin' (the admin sign-in page).",
     "On that page: fill 'Email' with Admin email, fill 'Password' with Admin password, then click 'Sign In'.",
     "Call read_page. PASS if URL path is /admin (does NOT contain /auth).",
+  ].join(" "),
+
+  "AC-KV-3": [
+    "Navigate to / (homepage). Call read_page.",
+    "The accessibility tree snapshot includes both the header/nav area at the top and the footer section at the bottom.",
+    "PASS only if Store name text appears in BOTH the header/navigation area AND in the footer section.",
+    "FAIL if the name appears in only one location, or does not appear at all.",
   ].join(" "),
 
   "AC-KV-2": [
@@ -448,8 +456,8 @@ async function runSingleAC(page, client, ac, tokenState) {
   const currentUrl = page.url();
   console.log(`\n  ▶ ${ac.id}: ${ac.what}`);
   const messages = [{ role: "user", content: "Verify the AC." }];
-  // AC-IF-5 has more steps: fill×4 + click + navigate + fill×2 + click + read_page
-  const MAX_TURNS = ac.id === "AC-IF-5" ? 15 : 10;
+  // AC-IF-5 has more steps: fill×5 + click + navigate + fill×2 + click + read_page
+  const MAX_TURNS = ac.id === "AC-IF-5" ? 18 : 10;
   const tools = getToolsForAC(ac);
   let turns = 0;
 

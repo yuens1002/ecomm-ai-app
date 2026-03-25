@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, password, name } = await req.json();
+    const { email, password, name, storeName } = await req.json();
 
     // Validate inputs
     if (!email || typeof email !== "string" || !email.includes("@")) {
@@ -99,6 +99,28 @@ export async function POST(req: NextRequest) {
     });
 
     console.log("✅ Initial admin account created:", adminUser.email);
+
+    // Seed store settings from setup form when storeName is provided
+    if (storeName && typeof storeName === "string" && storeName.trim().length > 0) {
+      const trimmed = storeName.trim();
+      await Promise.all([
+        prisma.siteSettings.upsert({
+          where: { key: "store_name" },
+          update: { value: trimmed },
+          create: { key: "store_name", value: trimmed },
+        }),
+        prisma.siteSettings.upsert({
+          where: { key: "email.fromName" },
+          update: { value: trimmed },
+          create: { key: "email.fromName", value: trimmed },
+        }),
+        prisma.siteSettings.upsert({
+          where: { key: "email.fromEmail" },
+          update: { value: "" },
+          create: { key: "email.fromEmail", value: "" },
+        }),
+      ]);
+    }
 
     return NextResponse.json({
       message: "Admin account created successfully. You can now sign in.",

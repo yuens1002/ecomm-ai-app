@@ -1,6 +1,6 @@
 import { logger } from "@/lib/logger";
 import { getResend } from "@/lib/services/resend";
-import { getEmailBranding } from "@/lib/config/app-settings";
+import { getEmailBranding, getEmailProviderSettings } from "@/lib/config/app-settings";
 import OrderConfirmationEmail from "@/emails/OrderConfirmationEmail";
 import type { SendOrderConfirmationParams, EmailSendResult } from "./types";
 import {
@@ -36,12 +36,15 @@ export async function sendOrderConfirmation(
       calculateCombinedTotals(orders);
     const orderNumbers = formatOrderNumbers(orders);
     const { logoUrl } = await getEmailBranding();
+    const { apiKey, fromEmail, fromName } = await getEmailProviderSettings();
 
-    const resend = getResend();
+    const resend = getResend(apiKey || undefined);
     if (!resend) return { success: true };
 
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "orders@artisan-roast.com",
+      from: fromEmail
+        ? (fromName ? `${fromName} <${fromEmail}>` : fromEmail)
+        : "orders@artisan-roast.com",
       to: firstOrder.customerEmail,
       subject: `Order Confirmation - ${orderNumbers}`,
       react: OrderConfirmationEmail({
