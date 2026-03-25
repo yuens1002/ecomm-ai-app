@@ -81,6 +81,7 @@ export function SetupFlow({ docs }: SetupFlowProps) {
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const name = formData.get("name") as string;
+    const storeName = (formData.get("storeName") as string | null)?.trim() ?? "";
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -99,7 +100,7 @@ export function SetupFlow({ docs }: SetupFlowProps) {
       const response = await fetch("/api/admin/setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({ email, password, name, storeName }),
       });
 
       const data = await response.json();
@@ -166,6 +167,17 @@ export function SetupFlow({ docs }: SetupFlowProps) {
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
+
+        <div className="space-y-2">
+          <Label htmlFor="storeName">Store name</Label>
+          <Input
+            id="storeName"
+            name="storeName"
+            type="text"
+            placeholder="Morning Roast"
+            disabled={isLoading}
+          />
+        </div>
 
         <div className="space-y-2">
           <Label htmlFor="name">Your name</Label>
