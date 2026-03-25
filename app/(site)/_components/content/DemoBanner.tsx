@@ -3,10 +3,16 @@
 import { cn } from "@/lib/utils";
 import { ArrowRight, X, Zap } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useSession } from "next-auth/react";
 
 const STORAGE_KEY = "demo-banner-dismissed";
+
+function subscribeDismiss(cb: () => void) {
+  const handler = (e: StorageEvent) => { if (e.key === STORAGE_KEY) cb(); };
+  window.addEventListener("storage", handler);
+  return () => window.removeEventListener("storage", handler);
+}
 
 const CTA_OPTIONS = [
   "Try Admin Dashboard",
@@ -25,9 +31,17 @@ export function DemoBanner() {
   const { status } = useSession();
   // Treat "loading" same as authenticated — prevents flash during sign-out transition
   const isAuthenticated = status !== "unauthenticated";
-  const [isDismissed, setIsDismissed] = useState(
-    () => typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY) === "true"
+  // useSyncExternalStore: server snapshot = false (matches initial client render),
+  // client snapshot reads localStorage. React transitions safely after hydration —
+  // no hydration mismatch, no setState-in-effect lint error.
+  const storedDismissed = useSyncExternalStore(
+    subscribeDismiss,
+    () => localStorage.getItem(STORAGE_KEY) === "true",
+    () => false
   );
+  // Session-only dismiss — hides immediately in current tab before storage event fires
+  const [sessionDismissed, setSessionDismissed] = useState(false);
+  const isDismissed = storedDismissed || sessionDismissed;
   const [ctaIndex, setCtaIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("idle");
   const rafRef = useRef(0);
@@ -96,7 +110,7 @@ export function DemoBanner() {
         <button
           onClick={() => {
             localStorage.setItem(STORAGE_KEY, "true");
-            setIsDismissed(true);
+            setSessionDismissed(true);
           }}
           className={cn("p-1 rounded hover:bg-white/20 transition-colors ml-auto sm:ml-0")}
           aria-label="Dismiss banner"
