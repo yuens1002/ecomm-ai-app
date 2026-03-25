@@ -25,7 +25,10 @@ If on a feature branch with uncommitted or committed changes:
 2. **Update package.json** with the next version (required for Vercel)
 3. **Commit** the version changes
 4. **Push** and create PR
-5. After PR merges, run `/release` again to create the tag
+5. **Watch CI**: `gh pr checks <pr> --watch` — wait until all checks pass
+6. **Resolve review threads**: get unresolved thread IDs via GraphQL, resolve each one
+7. **Merge**: `gh pr merge <pr> --squash --delete-branch --admin`
+8. **Tag**: `npm run release:patch -- -y --push --sync-package` (on main after merge)
 
 ### Scenario B: On Main Branch After Merge (Tag Creation)
 
@@ -80,15 +83,39 @@ Before creating the PR, ensure:
 3. [ ] Changes committed with conventional commit message
 4. [ ] Branch pushed to origin
 
-### Step 4: Create Tag (if on main after merge)
+### Step 4: Watch, Merge, and Tag (continuation of Scenario A)
+
+After creating the PR, continue autonomously — do NOT stop and ask the user to run `/release` again:
 
 ```bash
-# Run the release script
-npm run release:patch -- -y --push --sync-package
+# 4a. Watch CI — blocks until all checks pass or fail
+gh pr checks <pr-number> --watch
 
-# Or for minor with GitHub release
-npm run release:minor -- -y --push --sync-package --github-release
+# 4b. Resolve all unresolved review threads (required by branch ruleset)
+gh api graphql -f query='{
+  repository(owner: "yuens1002", name: "artisan-roast") {
+    pullRequest(number: <pr-number>) {
+      reviewThreads(first: 20) {
+        nodes { id isResolved }
+      }
+    }
+  }
+}' --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | .id'
+
+# Then resolve each:
+gh api graphql -f query="mutation { resolveReviewThread(input: { threadId: \"<id>\" }) { thread { isResolved } } }"
+
+# 4c. Merge
+gh pr merge <pr-number> --squash --delete-branch --admin \
+  --subject "<same title as PR>"
+
+# 4d. Tag
+npm run release:patch -- -y --push --sync-package
 ```
+
+**If any CI check fails:** fix the issue, push a new commit, re-run step 4a.
+
+**If review threads have actionable comments:** address them with code changes, push, re-run from step 4a.
 
 ### Step 5: Verify Release
 
