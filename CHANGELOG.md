@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.96.20 - 2026-03-25
+
+### Added
+
+- **Email provider settings**: New "Email Sending (Resend)" section on Contact Settings page — configure API key (masked), from email, and from name via the admin UI. Values are stored in DB and take precedence over environment variables
+- **Test email button**: Send a test email from the Contact Settings page to verify your Resend configuration
+- **Setup store name**: Optional Store Name field on the setup flow — seeds `store_name`, `email.fromName`, and `email.fromEmail` in the DB on first install
+
+### Changed
+
+- **Email send functions**: All four transactional email functions (`send-order-confirmation`, `send-merchant-notification`, `send-review-request`, `send-new-review-notification`) now read from-name and API key from DB settings with env var fallback — no restart required after changing email settings
+
 ## 0.96.19 - 2026-03-24
 
 ### Fixed
