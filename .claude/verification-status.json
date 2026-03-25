@@ -230,12 +230,12 @@
       "notes": "16/16 ACs verified locally. Playwright + Claude Agent SDK (Haiku). Per-AC agent loop, tool filtering, AC_HINTS. Key fixes: exact-first click (avoid demo buttons), EULA apostrophe, pressSequentially for React inputs, tail truncation for long aria snapshots, wait_for_text URL path matching. 138K tokens / 300K budget."
     },
     "feature/email-provider-settings": {
-      "status": "implementing",
-      "acs_passed": 0,
+      "status": "partial",
+      "acs_passed": 21,
       "acs_total": 23,
       "tasks": [],
       "acs_doc": "docs/plans/email-provider-settings-ACs.md",
-      "notes": "5 UI + 8 FN + 4 REG + 6 QA ACs. DB layer done. Commit 4 done (VERIFICATION.md + qa-agent.js). Commits 1-3 pending: wire send functions, contact settings UI, setup flow store name."
+      "notes": "21/23 ACs verified. 5 UI (screenshots + code review), 8 FN (code review), 4 REG (precheck 0 errors + 94 suites/1095 tests), 4 QA (code review). 2 DEFERRED: AC-QA-5/6 require CI workflow_dispatch on qa-nightly.yml after PR merge (QA DB reset + agent run against QA_BASE_URL with QA_STORE_NAME=Morning Roast)."
     }
   }
 }
