@@ -25,6 +25,7 @@
     "test:ci": "jest --ci",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:e2e:pre-pr": "npm run precheck && npm run test:ci && npm run test:e2e",
     "db:backup": "tsx scripts/backup-database.ts",
     "db:restore": "tsx scripts/restore-database.ts",
     "db:safe-migrate": "tsx scripts/safe-migrate.ts",
