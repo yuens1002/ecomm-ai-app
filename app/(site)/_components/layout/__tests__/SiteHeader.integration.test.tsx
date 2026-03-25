@@ -230,6 +230,48 @@ describe("SiteHeader - Category Menu Integration", () => {
     });
   });
 
+  describe("storeName prop (SSR override)", () => {
+    it("renders server-provided storeName instead of hook value", () => {
+      render(
+        <SiteHeader
+          categoryGroups={{}}
+          user={null}
+          pages={[]}
+          storeName="Morning Roast"
+        />
+      );
+
+      // Hook returns "Test Coffee" but prop should win
+      expect(screen.getAllByText("Morning Roast")[0]).toBeInTheDocument();
+      expect(screen.queryByText("Test Coffee")).not.toBeInTheDocument();
+    });
+
+    it("uses server storeName in logo alt text", () => {
+      render(
+        <SiteHeader
+          categoryGroups={{}}
+          user={null}
+          pages={[]}
+          storeName="Morning Roast"
+        />
+      );
+
+      expect(screen.getByAltText("Morning Roast Logo")).toBeInTheDocument();
+    });
+
+    it("falls back to hook storeName when prop is not provided", () => {
+      render(
+        <SiteHeader
+          categoryGroups={{}}
+          user={null}
+          pages={[]}
+        />
+      );
+
+      expect(screen.getAllByText("Test Coffee")[0]).toBeInTheDocument();
+    });
+  });
+
   describe("Props Validation", () => {
     it("handles empty categoryGroups", () => {
       render(<SiteHeader categoryGroups={{}} user={null} pages={[]} />);

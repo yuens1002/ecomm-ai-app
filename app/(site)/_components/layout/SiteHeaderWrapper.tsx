@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import SiteHeader from "@/app/(site)/_components/layout/SiteHeader";
 import { getPagesForHeader } from "@/app/actions";
 import { getProductMenuSettings } from "@/lib/product-menu-settings";
+import { getSiteMetadata } from "@/lib/site-metadata";
 
 /**
  * SiteHeaderWrapper is a Server Component responsible for fetching global,
@@ -12,9 +13,14 @@ import { getProductMenuSettings } from "@/lib/product-menu-settings";
  */
 export default async function SiteHeaderWrapper() {
   // Fetch all data for the navigation menu in parallel
-  const [labels, session, headerPages, productMenuSettings] = await Promise.all(
-    [getCategoryLabels(), auth(), getPagesForHeader(), getProductMenuSettings()]
-  );
+  const [labels, session, headerPages, productMenuSettings, siteMetadata] =
+    await Promise.all([
+      getCategoryLabels(),
+      auth(),
+      getPagesForHeader(),
+      getProductMenuSettings(),
+      getSiteMetadata(),
+    ]);
 
   // Handle case where no categories are found (e.g., first deployment/empty DB)
   if (!labels || labels.length === 0) {
@@ -25,6 +31,7 @@ export default async function SiteHeaderWrapper() {
         pages={headerPages}
         productMenuIcon={productMenuSettings.icon}
         productMenuText={productMenuSettings.text}
+        storeName={siteMetadata.storeName}
       />
     );
   }
@@ -66,6 +73,7 @@ export default async function SiteHeaderWrapper() {
       pages={headerPages}
       productMenuIcon={productMenuSettings.icon}
       productMenuText={productMenuSettings.text}
+      storeName={siteMetadata.storeName}
     />
   );
 }
