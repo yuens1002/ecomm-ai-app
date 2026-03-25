@@ -232,10 +232,10 @@
     "feature/email-provider-settings": {
       "status": "planned",
       "acs_passed": 0,
-      "acs_total": 17,
+      "acs_total": 23,
       "tasks": [],
       "acs_doc": "docs/plans/email-provider-settings-ACs.md",
-      "notes": "5 UI + 8 FN + 4 REG ACs. DB layer done (getEmailProviderSettings, setEmailProviderSettings, getResend(apiKey?)). 4 commits: wire send functions, contact settings UI, setup flow store name, QA agent Morning Roast."
+      "notes": "5 UI + 8 FN + 4 REG + 6 QA ACs. DB layer done. Commit 4 done (VERIFICATION.md + qa-agent.js). Commits 1-3 pending: wire send functions, contact settings UI, setup flow store name."
     }
   }
 }

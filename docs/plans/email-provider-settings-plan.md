@@ -148,17 +148,45 @@ const merchantEmail =
 - On success: upsert `store_name`, `email.fromName` (= storeName if provided), `email.fromEmail` (= "" — admin configures later via settings)
 - Upsert only if `storeName` is non-empty to avoid overwriting existing DB values on re-run
 
-### Commit 4: QA agent update
+### Commit 4: QA agent update + dry run
+
+**`VERIFICATION.md`:**
+
+- AC-IF-5: Add "Fill Store Name=$QA_STORE_NAME first" as the first fill step before Full Name
+- AC-KV-3: Change pass condition from "page header or title" → "header AND footer"
 
 **`scripts/qa-agent.js`:**
 
-- Update `AC_HINTS["AC-IF-5"]` to include store name fill step using `KNOWN.storeName`
-- `KNOWN.storeName` already populated from `QA_STORE_NAME` env var
-- Updated hint fills: store name → admin name → email → password → confirm password → submit
+- Update `AC_HINTS["AC-IF-5"]`: 5 fields, store name first; `MAX_TURNS` 15 → 18
+- Add `AC_HINTS["AC-KV-3"]`: instructs agent to check both header/nav and footer sections; FAIL if only one location
+
+**Dry run (local verification of AC-QA-5 + AC-QA-6):**
+
+Pre-conditions:
+- Commits 1–3 merged on this branch
+- `.env.local` has: `QA_STORE_NAME=Morning Roast`, `QA_ADMIN_NAME`, `QA_ADMIN_EMAIL`,
+  `QA_ADMIN_PASSWORD`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`
+- Dev server running on `localhost:3000`
+
+Steps:
+```bash
+npx prisma migrate reset --force
+npm run dev  # wait for "Ready"
+# in a second terminal:
+BASE_URL=http://localhost:3000 QA_MODEL=claude-haiku-4-5-20251001 node scripts/qa-agent.js
+```
+
+Expected output for the two gated ACs:
+```
+✅  AC-IF-5    PASS   URL path is /admin
+✅  AC-KV-3    PASS   Morning Roast visible in header and footer
+```
+
+Full run passes when all 16 ACs show PASS and token count stays under budget.
 
 ---
 
-## Files Changed (9 modified, 0 new)
+## Files Changed (10 modified, 0 new)
 
 | File | Commit | Notes |
 |------|--------|-------|
@@ -170,7 +198,8 @@ const merchantEmail =
 | `app/admin/settings/contact/page.tsx` | 2 | add Email Sending section |
 | `app/setup/_components/setup-flow.tsx` | 3 | optional store name field |
 | `app/api/admin/setup/route.ts` | 3 | seed store_name + email defaults |
-| `scripts/qa-agent.js` | 4 | AC-IF-5 hint + Morning Roast |
+| `VERIFICATION.md` | 4 | AC-IF-5 store name fill + AC-KV-3 header+footer |
+| `scripts/qa-agent.js` | 4 | AC_HINTS update + MAX_TURNS 18 |
 
 ---
 
@@ -179,7 +208,7 @@ const merchantEmail =
 After plan approval:
 
 1. Commit plan to branch
-2. Register `verification-status.json`: `{ status: "planned", acs_total: 17 }`
+2. Register `verification-status.json`: `{ status: "planned", acs_total: 23 }`
 3. Extract ACs into `docs/plans/email-provider-settings-ACs.md` using the ACs template
 4. Transition to `"implementing"` when coding begins
 

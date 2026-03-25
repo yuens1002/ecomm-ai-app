@@ -3,6 +3,7 @@
 **Branch:** `feature/email-provider-settings`
 **Commits:** 4
 **Iterations:** 0
+**Total ACs:** 23 (5 UI + 8 FN + 4 REG + 6 QA)
 
 ---
 
@@ -56,6 +57,27 @@
 | AC-REG-2 | `npm run test:ci` passes (0 failures) | Run `npm run test:ci` | 0 test failures | | | |
 | AC-REG-3 | Existing `contactEmail` field on contact settings page still saves correctly | Code review: PUT handler in `app/api/admin/settings/email/route.ts` | `contactEmail` upsert preserved alongside new email provider writes | | | |
 | AC-REG-4 | Email send functions work when no DB settings exist (env var fallback) | Code review: `getEmailProviderSettings()` fallback chain in `lib/config/app-settings.ts` | Chain: DB value → `RESEND_FROM_EMAIL` env → hardcoded default; no crash when DB empty | | | |
+
+## QA Dry Run Acceptance Criteria
+
+> These ACs verify Commit 4 — that VERIFICATION.md and `scripts/qa-agent.js` were updated
+> correctly, and that a local dry run against a fresh DB confirms end-to-end store name seeding.
+>
+> **Dry run command (run after `npx prisma migrate reset --force` + `npm run dev`):**
+> ```bash
+> BASE_URL=http://localhost:3000 QA_MODEL=claude-haiku-4-5-20251001 node scripts/qa-agent.js
+> ```
+> Required env in `.env.local`: `QA_ADMIN_NAME`, `QA_ADMIN_EMAIL`, `QA_ADMIN_PASSWORD`,
+> `QA_STORE_NAME=Morning Roast`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`.
+
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-QA-1 | `VERIFICATION.md` AC-IF-5 includes store name as the first fill step | Code review: `VERIFICATION.md` AC-IF-5 row | Row reads "Fill Store Name=$QA_STORE_NAME first, then Full Name=…" before other fields | | | |
+| AC-QA-2 | `VERIFICATION.md` AC-KV-3 requires store name in both header AND footer | Code review: `VERIFICATION.md` AC-KV-3 row | Pass condition reads "$QA_STORE_NAME visible in header AND footer" | | | |
+| AC-QA-3 | `qa-agent.js` AC_HINTS["AC-IF-5"] fills 5 fields with store name first; MAX_TURNS = 18 | Code review: `scripts/qa-agent.js` AC_HINTS["AC-IF-5"] + MAX_TURNS line | Hint lists 5 fills starting with `fill('Store name', Store name)`; MAX_TURNS for AC-IF-5 is 18 | | | |
+| AC-QA-4 | `qa-agent.js` AC_HINTS["AC-KV-3"] added, instructs agent to check header and footer | Code review: `scripts/qa-agent.js` AC_HINTS["AC-KV-3"] | Hint present; instructs PASS only if store name found in both locations | | | |
+| AC-QA-5 | Local dry run — AC-IF-5 PASS: agent fills "Morning Roast" as store name, setup completes, `/admin` reached | Dry run: run qa-agent.js locally; observe AC-IF-5 result line | `✅ AC-IF-5 PASS` in output; "Morning Roast" confirmed as filled value in agent log | | | |
+| AC-QA-6 | Local dry run — AC-KV-3 PASS: "Morning Roast" visible in both storefront header and footer | Dry run: observe AC-KV-3 result line | `✅ AC-KV-3 PASS` in output; evidence line confirms header and footer match | | | |
 
 ---
 
