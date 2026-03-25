@@ -162,27 +162,32 @@ const merchantEmail =
 
 **Dry run (local verification of AC-QA-5 + AC-QA-6):**
 
-Pre-conditions:
-- Commits 1–3 merged on this branch
-- `.env.local` has: `QA_STORE_NAME=Morning Roast`, `QA_ADMIN_NAME`, `QA_ADMIN_EMAIL`,
-  `QA_ADMIN_PASSWORD`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`
-- Dev server running on `localhost:3000`
+The QA database is managed entirely by CI — never run `prisma migrate reset` manually against
+`.env.local`, as that would wipe the demo store DB. Two safe options:
 
-Steps:
+**Option A — `workflow_dispatch` on `qa-nightly.yml` (recommended)**
+
+Trigger from GitHub Actions → Nightly QA Verification → Run workflow. The workflow:
+1. Validates `QA_DATABASE_URL` contains the `QA_DB_ENDPOINT` endpoint ID (safety guard)
+2. Partial-resets the QA DB (deletes Orders, EULA, Users only)
+3. Runs `node scripts/qa-agent.js` against `QA_BASE_URL` with all secrets injected
+
+**Option B — local Postgres (not demo store DB)**
+
+Only if `DATABASE_URL` in the shell explicitly points to a local or throwaway DB:
 ```bash
-npx prisma migrate reset --force
-npm run dev  # wait for "Ready"
-# in a second terminal:
+DATABASE_URL="postgresql://localhost/artisan_qa" npx prisma migrate reset --force
+npm run dev  # wait for "Ready" on localhost:3000
 BASE_URL=http://localhost:3000 QA_MODEL=claude-haiku-4-5-20251001 node scripts/qa-agent.js
 ```
 
-Expected output for the two gated ACs:
+Expected output for the two key ACs:
 ```
 ✅  AC-IF-5    PASS   URL path is /admin
 ✅  AC-KV-3    PASS   Morning Roast visible in header and footer
 ```
 
-Full run passes when all 16 ACs show PASS and token count stays under budget.
+Full run passes when all 16 VERIFICATION.md ACs show PASS and token count stays under budget.
 
 ---
 
