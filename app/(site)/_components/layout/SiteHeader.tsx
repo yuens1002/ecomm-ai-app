@@ -113,6 +113,7 @@ interface SiteHeaderProps {
   banner?: BannerConfig;
   productMenuIcon?: string;
   productMenuText?: string;
+  storeName?: string;
 }
 
 /**
@@ -127,6 +128,7 @@ export default function SiteHeader({
   banner,
   productMenuIcon = "ShoppingBag",
   productMenuText = "Shop",
+  storeName: serverStoreName,
 }: SiteHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -512,13 +514,13 @@ export default function SiteHeader({
           >
             <Image
               src={settings.storeLogoUrl}
-              alt={`${settings.storeName} Logo`}
+              alt={`${serverStoreName ?? settings.storeName} Logo`}
               width={32}
               height={32}
               className="w-8 h-8"
             />
             <span className="hidden text-[10px] md:text-lg lg:text-xl md:inline md:normal-case tracking-wide md:tracking-normal font-medium md:font-bold">
-              {settings.storeName}
+              {serverStoreName ?? settings.storeName}
             </span>
           </Link>
         </div>
