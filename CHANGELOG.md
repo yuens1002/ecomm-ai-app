@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- **Banner hydration error**: Both demo banners used `typeof window !== "undefined"` in `useState` lazy initializers — a known React hydration mismatch pattern. Replaced with `useState(false)` + `useEffect` to read `localStorage` after mount so server and client render identically on first paint
+- **Banner hydration error**: Both demo banners used `typeof window !== "undefined"` in `useState` lazy initializers — a known React hydration mismatch pattern. Replaced with `useSyncExternalStore` (`getServerSnapshot: () => false` matches initial client render; `getSnapshot` reads `localStorage` post-hydration). Storage events are filtered by key to avoid spurious re-renders
 - **Middleware scope reverted**: `middleware.ts` matcher rolled back to `/api/admin/:path*` only — the broader `/api/user/:path*` addition in v0.97.2 was causing instability; user-API route protection will be re-added in a follow-up once fully validated
 
 ## 0.97.2 - 2026-03-25

@@ -6,8 +6,9 @@ import { useState, useSyncExternalStore } from "react";
 const STORAGE_KEY = "demo-banner-dismissed";
 
 function subscribeDismiss(cb: () => void) {
-  window.addEventListener("storage", cb);
-  return () => window.removeEventListener("storage", cb);
+  const handler = (e: StorageEvent) => { if (e.key === STORAGE_KEY) cb(); };
+  window.addEventListener("storage", handler);
+  return () => window.removeEventListener("storage", handler);
 }
 
 export function AdminDemoBanner() {
