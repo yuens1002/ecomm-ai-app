@@ -44,8 +44,35 @@ export default function ContactSettingsPage() {
 
       <SettingsSection
         title="Email Configuration"
-        description="Configure your store's primary contact email"
+        description="Configure your contact email address and outgoing mail credentials (Resend)"
       >
+        <SettingsField
+          endpoint="/api/admin/settings/email"
+          field="apiKey"
+          label="API Key"
+          description="Your Resend API key. Masked on load — enter a new value to replace it."
+          input={(value, onChange, isDirty) => (
+            <>
+              <InputGroupInput
+                type={showApiKey ? "text" : "password"}
+                value={value as string}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder="re_••••••••••••••••"
+                autoComplete="off"
+                className={isDirty ? "border-amber-500" : ""}
+              />
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  onClick={() => setShowApiKey((v) => !v)}
+                  aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                >
+                  {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </InputGroupButton>
+              </InputGroupAddon>
+            </>
+          )}
+        />
+
         <SettingsField
           endpoint="/api/admin/settings/email"
           field="contactEmail"
@@ -60,6 +87,53 @@ export default function ContactSettingsPage() {
             />
           )}
         />
+
+        <SettingsField
+          endpoint="/api/admin/settings/email"
+          field="fromEmail"
+          label="From Email"
+          description="The address emails are sent from (e.g. hello@yourdomain.com)"
+          input={(value, onChange, isDirty) => (
+            <InputGroupInput
+              type="email"
+              value={value as string}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="hello@yourstore.com"
+              className={isDirty ? "border-amber-500" : ""}
+            />
+          )}
+        />
+
+        <SettingsField
+          endpoint="/api/admin/settings/email"
+          field="fromName"
+          label="From Name"
+          description="The sender name shown in email clients (e.g. Morning Roast)"
+          input={(value, onChange, isDirty) => (
+            <InputGroupInput
+              type="text"
+              value={value as string}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="Your Store Name"
+              className={isDirty ? "border-amber-500" : ""}
+            />
+          )}
+        />
+
+        <div className="flex flex-col gap-1 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleTestSend}
+            disabled={isSendingTest}
+            className="w-fit"
+          >
+            {isSendingTest ? "Sending…" : "Send Test Email"}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Sends a test email to your configured contact email address.
+          </p>
+        </div>
       </SettingsSection>
 
       <SettingsSection
@@ -148,84 +222,6 @@ export default function ContactSettingsPage() {
         />
       </SettingsSection>
 
-      <SettingsSection
-        title="Email Sending (Resend)"
-        description="API credentials for outgoing transactional emails. DB values take precedence over environment variables."
-      >
-        <SettingsField
-          endpoint="/api/admin/settings/email"
-          field="apiKey"
-          label="API Key"
-          description="Your Resend API key. Masked on load — enter a new value to replace it."
-          input={(value, onChange, isDirty) => (
-            <>
-              <InputGroupInput
-                type={showApiKey ? "text" : "password"}
-                value={value as string}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder="re_••••••••••••••••"
-                autoComplete="off"
-                className={isDirty ? "border-amber-500" : ""}
-              />
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton
-                  onClick={() => setShowApiKey((v) => !v)}
-                  aria-label={showApiKey ? "Hide API key" : "Show API key"}
-                >
-                  {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </InputGroupButton>
-              </InputGroupAddon>
-            </>
-          )}
-        />
-
-        <SettingsField
-          endpoint="/api/admin/settings/email"
-          field="fromEmail"
-          label="From Email"
-          description="The address emails are sent from (e.g. hello@yourdomain.com)"
-          input={(value, onChange, isDirty) => (
-            <InputGroupInput
-              type="email"
-              value={value as string}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder="hello@yourstore.com"
-              className={isDirty ? "border-amber-500" : ""}
-            />
-          )}
-        />
-
-        <SettingsField
-          endpoint="/api/admin/settings/email"
-          field="fromName"
-          label="From Name"
-          description="The sender name shown in email clients (e.g. Morning Roast)"
-          input={(value, onChange, isDirty) => (
-            <InputGroupInput
-              type="text"
-              value={value as string}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder="Your Store Name"
-              className={isDirty ? "border-amber-500" : ""}
-            />
-          )}
-        />
-
-        <div className="flex flex-col gap-1 pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleTestSend}
-            disabled={isSendingTest}
-            className="w-fit"
-          >
-            {isSendingTest ? "Sending…" : "Send Test Email"}
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            Sends a test email to your configured contact email address.
-          </p>
-        </div>
-      </SettingsSection>
     </div>
   );
 }
