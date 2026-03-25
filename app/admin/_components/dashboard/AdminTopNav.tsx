@@ -198,12 +198,10 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
 
             <Link
               href="/"
-              target="_blank"
-              rel="noopener noreferrer"
               className="hidden lg:flex items-center text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeftIcon className="h-4 w-4" />
-              <span className="sr-only">Open public site</span>
+              <span className="sr-only">Back to store</span>
             </Link>
 
             {/* Logo/Brand - desktop only (in left section) */}

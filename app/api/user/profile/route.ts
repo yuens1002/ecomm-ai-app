@@ -30,6 +30,15 @@ export async function PATCH(request: Request) {
       );
     }
 
+    // Protect demo accounts from email changes
+    const DEMO_EMAILS = ["admin@artisanroast.com", "demo@artisanroast.com"];
+    if (DEMO_EMAILS.includes(session.user.email)) {
+      return NextResponse.json(
+        { error: "Demo accounts cannot be modified" },
+        { status: 403 }
+      );
+    }
+
     // Check if email is already taken by another user
     if (email !== session.user.email) {
       const existingUser = await prisma.user.findUnique({

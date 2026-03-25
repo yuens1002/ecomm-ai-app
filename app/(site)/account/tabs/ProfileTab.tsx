@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { signOut } from "next-auth/react";
 import { getErrorMessage } from "@/lib/error-utils";
 import {
   Card,
@@ -72,14 +73,11 @@ export default function ProfileTab({ user, onUpdate }: ProfileTabProps) {
       onUpdate(data.user);
       setMessage({ type: "success", text: "Profile updated successfully!" });
 
-      // If email changed, suggest signing in again
+      // If email changed, sign out so the new email takes effect on next login
       if (email !== user.email) {
         setTimeout(() => {
-          setMessage({
-            type: "success",
-            text: "Email updated! Please sign in again to refresh your session.",
-          });
-        }, 2000);
+          signOut({ callbackUrl: "/auth/signin" });
+        }, 1500);
       }
     } catch (error: unknown) {
       setMessage({ type: "error", text: getErrorMessage(error, "Failed to update profile") });

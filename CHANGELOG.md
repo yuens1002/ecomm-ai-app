@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.97.2 - 2026-03-25
+
+### Fixed
+
+- **Demo banner persistence**: Dismissed state for both the public site banner and admin banner now persists across sign-in/sign-out via `localStorage` — previously reset on every remount
+- **Demo banner flash on sign-out**: Public site banner no longer flashes during the auth session transition when signing out — hidden during `"loading"` state as well as `"authenticated"`
+- **Admin demo banner dismiss**: Banner now actually hides when dismissed — previous cookie approach set a cookie but never read it, so the banner never disappeared
+- **Demo mode API guard**: Middleware extended to cover `/api/user/:path*` — profile and password updates are now blocked in demo mode alongside admin mutations
+- **Demo account protection**: `admin@artisanroast.com` and `demo@artisanroast.com` are protected from email changes at the API level — returns 403 instead of allowing the change
+- **Email change session loop**: Changing email on the account profile page now auto-signs out after success — prevents the 307 redirect loop caused by a stale JWT session referencing the old email
+- **Admin "Back to store" link**: Removed `target="_blank"` — link now navigates in the same tab, eliminating the momentary blank tab flash
+- **CI node version**: Build workflow updated to Node 24 to match `engines.node >=24`
+- **CI build trigger**: `package.json` excluded from the build-safe paths filter — version-bump-only PRs no longer trigger a full CI build
+
 ## 0.97.1 - 2026-03-25
 
 ### Fixed
