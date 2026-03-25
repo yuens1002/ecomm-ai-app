@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.97.1 - 2026-03-25
+
+### Fixed
+
+- **Store name SSR**: Storefront header now renders the configured store name on first paint — eliminates flash of default "Artisan Roast" before client-side settings fetch resolves (QA AC-KV-3)
+- **E2E tests**: Moved Playwright E2E from PR gate to nightly cron — PRs no longer block on E2E runtime; `npm run test:e2e:pre-pr` available for local pre-PR validation
+
 ## 0.97.0 - 2026-03-25
 
 ### Added
