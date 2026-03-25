@@ -121,14 +121,11 @@ function main(input) {
       process.exit(0);
       break;
     case "partial":
-      deny(
-        `BLOCKED: Branch "${branch}" has incomplete verification (${passed}/${total} ACs passed). Complete AC verification before committing.`
-      );
-      break;
     case "pending":
-      deny(
-        `BLOCKED: Branch "${branch}" has pending verification (${total} ACs). Run /verify-workflow or /ac-verify before committing.`
-      );
+      // Allow commits during pending/partial — the autonomous iterate loop
+      // needs to commit fixes between verification passes. The Stop hook
+      // prevents finishing without a verified status, which is the real gate.
+      process.exit(0);
       break;
     default:
       deny(

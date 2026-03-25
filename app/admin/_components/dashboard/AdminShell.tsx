@@ -7,6 +7,9 @@ import { AdminBreadcrumb } from "./AdminBreadcrumb";
 import { BreadcrumbProvider } from "./BreadcrumbContext";
 import { NavigationProvider } from "@/lib/contexts/NavigationContext";
 import { UpdateBanner } from "@/app/admin/_components/shared/UpdateBanner";
+import { AdminDemoBanner } from "@/app/admin/_components/shared/AdminDemoBanner";
+
+const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 interface SocialLink {
   platform: string;
@@ -47,6 +50,7 @@ export function AdminShell({
             />
 
             <main className="flex-1 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-6">
+              {IS_DEMO && <AdminDemoBanner />}
               <AdminBreadcrumb />
               <UpdateBanner />
               {children}

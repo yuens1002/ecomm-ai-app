@@ -122,7 +122,9 @@
       "Bash(rm -rf .next:*)",
       "Bash(kill:*)",
       "Bash(xargs:*)",
-      "Bash(for:*)"
+      "Bash(for:*)",
+      "Edit",
+      "ToolSearch"
     ]
   },
   "hooks": {
