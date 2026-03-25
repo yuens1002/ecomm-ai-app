@@ -7,7 +7,7 @@ import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { InputGroupInput } from "@/components/ui/forms/InputGroup";
+import { InputGroupInput, InputGroupAddon, InputGroupButton } from "@/components/ui/forms/InputGroup";
 import { FormTextArea } from "@/components/ui/forms/FormTextArea";
 import { Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -158,28 +158,24 @@ export default function ContactSettingsPage() {
           label="API Key"
           description="Your Resend API key. Masked on load — enter a new value to replace it."
           input={(value, onChange, isDirty) => (
-            <div className="relative flex items-center">
+            <>
               <InputGroupInput
                 type={showApiKey ? "text" : "password"}
                 value={value as string}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="re_••••••••••••••••"
                 autoComplete="off"
-                className={`pr-10 ${isDirty ? "border-amber-500" : ""}`}
+                className={isDirty ? "border-amber-500" : ""}
               />
-              <button
-                type="button"
-                onClick={() => setShowApiKey((v) => !v)}
-                className="absolute right-3 text-muted-foreground hover:text-foreground"
-                aria-label={showApiKey ? "Hide API key" : "Show API key"}
-              >
-                {showApiKey ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
-              </button>
-            </div>
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  onClick={() => setShowApiKey((v) => !v)}
+                  aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                >
+                  {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </InputGroupButton>
+              </InputGroupAddon>
+            </>
           )}
         />
 
