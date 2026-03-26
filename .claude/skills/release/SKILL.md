@@ -92,36 +92,41 @@ After creating the PR, continue autonomously — do NOT stop and ask the user to
 gh pr checks <pr-number> --watch
 
 # 4b. Resolve all unresolved review threads (required by branch ruleset)
-gh api graphql -f query='{
-  repository(owner: "yuens1002", name: "artisan-roast") {
+#     Uses gh repo view to avoid hard-coding owner/name
+REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+gh api graphql -f query="{
+  repository(owner: \"${REPO%/*}\", name: \"${REPO#*/}\") {
     pullRequest(number: <pr-number>) {
-      reviewThreads(first: 20) {
+      reviewThreads(first: 100) {
         nodes { id isResolved }
       }
     }
   }
-}' --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | .id'
+}" --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | .id' \
+  | while read id; do
+      gh api graphql -f query="mutation { resolveReviewThread(input: { threadId: \"$id\" }) { thread { isResolved } } }"
+    done
 
-# Then resolve each:
-gh api graphql -f query="mutation { resolveReviewThread(input: { threadId: \"<id>\" }) { thread { isResolved } } }"
+# 4c. Merge — try standard merge first; use --admin only if branch protection blocks it
+gh pr merge <pr-number> --squash --delete-branch \
+  --subject "<same title as PR>" \
+  || gh pr merge <pr-number> --squash --delete-branch --admin \
+       --subject "<same title as PR>"
 
-# 4c. Merge
-gh pr merge <pr-number> --squash --delete-branch --admin \
-  --subject "<same title as PR>"
-
-# 4d. Tag
+# 4d. Switch to main and tag
+git checkout main && git pull
 npm run release:patch -- -y --push --sync-package
 ```
 
 **If any CI check fails:** fix the issue, push a new commit, re-run step 4a.
 
-**If review threads have actionable comments:** address them with code changes, push, re-run from step 4a.
+**If review threads have actionable comments:** address them with code changes, push, re-run from step 4a. Non-actionable comments (style suggestions, questions) can be resolved without code changes.
 
 ### Step 5: Verify Release
 
 After release:
 
-1. Check GitHub for new tag: `https://github.com/yuens1002/ecomm-ai-app/tags`
+1. Check GitHub for new tag: `gh browse --repo $(gh repo view --json nameWithOwner -q .nameWithOwner) releases`
 2. Verify Vercel deployment triggered
 3. If GitHub Release created, check upgrade notice in app
 
