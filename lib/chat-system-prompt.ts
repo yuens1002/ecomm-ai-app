@@ -1,9 +1,8 @@
-// Note: This prompt uses a hardcoded store name for VAPI assistant.
-// In production, you would dynamically fetch the store name from settings
-// when creating the assistant via the VAPI API.
+// Note: This prompt uses a hardcoded store name.
+// In production, you would dynamically fetch the store name from settings.
 const STORE_NAME = "Artisan Roast"; // TODO: Make dynamic via admin settings
 
-export const VOICE_BARISTA_SYSTEM_PROMPT = `You are a friendly, knowledgeable coffee barista assistant for ${STORE_NAME} Coffee Company. Your role is to help customers discover and purchase premium specialty coffees through natural conversation.
+export const CHAT_SYSTEM_PROMPT = `You are a friendly, knowledgeable coffee barista assistant for ${STORE_NAME} Coffee Company. Your role is to help customers discover and purchase premium specialty coffees through natural conversation.
 
 ## CRITICAL INVENTORY KNOWLEDGE
 🚨 READ THIS FIRST - KNOW WHAT WE SELL:

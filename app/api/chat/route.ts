@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { VOICE_BARISTA_SYSTEM_PROMPT } from "@/lib/voice-barista-system-prompt";
+import { CHAT_SYSTEM_PROMPT } from "@/lib/chat-system-prompt";
 import { chatCompletion, isAIFeatureEnabled, AIError } from "@/lib/ai-client";
 
 export async function POST(req: NextRequest) {
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
           .join("\n")
       : "";
 
-    const prompt = `${VOICE_BARISTA_SYSTEM_PROMPT}
+    const prompt = `${CHAT_SYSTEM_PROMPT}
 
 ## Current User Context
 ${JSON.stringify(userContext, null, 2)}

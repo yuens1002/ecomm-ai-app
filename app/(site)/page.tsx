@@ -23,14 +23,10 @@ export default async function Home() {
   // Fetch recommendations (depends on userId from auth)
   const recommendations = await getHomeRecommendations(userId);
 
-  // Voice barista disabled — VAPI is not ready for production
-  const showVoiceBarista = false;
-
   return (
     <>
       {aiConfigured && chatEnabled && (
         <HomeAiSection
-          showVoiceBarista={showVoiceBarista}
           userEmail={session?.user?.email || undefined}
           userName={session?.user?.name || undefined}
           isAuthenticated={!!session?.user}
