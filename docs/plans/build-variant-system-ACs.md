@@ -37,7 +37,7 @@
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|-----|----------|
-| AC-FN-1 | `lib/demo.ts` exports `IS_DEMO`, `useDemoDeleteGuard`, `demoBypassAction`, `useDemoProtectedAction` | Code review: `lib/demo.ts` | All 4 exports present with correct signatures | | | |
+| AC-FN-1 | `lib/demo.ts` exports `IS_DEMO` + `demoBypassAction`; `lib/demo-hooks.ts` exports `useDemoDeleteGuard` + `useDemoProtectedAction` | Code review: `lib/demo.ts`, `lib/demo-hooks.ts` | All 4 exports present with correct signatures (split for Next.js server/client boundary) | | | |
 | AC-FN-2 | `middleware.ts` deleted from repo | Code review: repo root | File does not exist | | | |
 | AC-FN-3 | `NEXT_PUBLIC_BUILD_VARIANT` replaces `NEXT_PUBLIC_DEMO_MODE` everywhere | Code review: grep for `NEXT_PUBLIC_DEMO_MODE` | Zero occurrences in source files (`.env.example`, `playwright.config.ts`, seeds, etc.) | | | |
 | AC-FN-4 | All 10 delete actions wired to `useDemoDeleteGuard` | Code review: `AddressesTab.tsx`, `DangerZoneTab.tsx`, `ProductManagementClient.tsx`, `VariantsSection.tsx`, `ReviewModerationClient.tsx`, `EditPageClient.tsx`, CMS block components, `SocialLinksManagement.tsx`, `MenuBuilder.tsx` | Each delete handler passes through `useDemoDeleteGuard` | | | |

@@ -41,6 +41,7 @@ import { WizardAnswers } from "@/lib/api-schemas/generate-about";
 
 import { SaveButton } from "@/app/admin/_components/forms/SaveButton";
 import { useToast } from "@/hooks/use-toast";
+import { IS_DEMO } from "@/lib/demo";
 import { addBlock, updateBlock, deleteBlock } from "@/lib/blocks/actions";
 import { PendingBlockDialog } from "@/app/admin/_components/cms/blocks/PendingBlockDialog";
 
@@ -234,6 +235,7 @@ export function PageEditor({
   };
 
   const handleDeleteBlock = async (blockId: string) => {
+    if (IS_DEMO) { toast({ title: "This action is disabled in demo mode." }); return; }
     const blockToDelete = blocks.find((b) => b.id === blockId);
     if (!blockToDelete) return;
 

@@ -2,12 +2,12 @@
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
     "feat/build-variant-system": {
-      "status": "implementing",
+      "status": "pending",
       "acs_passed": 0,
       "acs_total": 26,
       "tasks": [],
       "acs_doc": "docs/plans/build-variant-system-ACs.md",
-      "notes": "Plan approved. 10 UI + 11 FN + 5 REG ACs. VAPI removal, middleware delete, lib/demo.ts, auth swap, delete guards, checkout bypass, protected writes, env var rename, additional bugs (T&C, account CTA)."
+      "notes": "Implementation complete. Precheck 0 errors. Ready for verification."
     },
     "feature/fix-alacarte-checkout-demo-guard": {
       "status": "implementing",

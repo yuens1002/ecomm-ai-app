@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useTransition } from "react";
 import {
+  AlertCircle,
   Check,
+  CheckCircle2,
   ExternalLink,
   Eye,
   EyeOff,
@@ -149,8 +151,46 @@ function LicenseKeyTab({
     ? plans.find((p) => p.slug === license.plan!.slug) ?? null
     : null;
 
+  const legal = license.legal;
+  const hasPending = (legal?.pendingAcceptance?.length ?? 0) > 0;
+  const acceptedDocs = Object.entries(legal?.acceptedAt ?? {});
+
   return (
     <>
+      {legal && (
+        <div className="flex items-center gap-2 text-sm">
+          {hasPending ? (
+            <>
+              <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+              <span className="text-muted-foreground">
+                Service terms acceptance required for some features.
+              </span>
+            </>
+          ) : acceptedDocs.length > 0 ? (
+            <>
+              <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+              <span className="text-muted-foreground">
+                Service terms accepted on{" "}
+                <span className="text-foreground font-medium">
+                  {new Date(acceptedDocs[0][1]).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </span>
+              </span>
+            </>
+          ) : (
+            <>
+              <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-muted-foreground">
+                Service terms not yet accepted.
+              </span>
+            </>
+          )}
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2">
         {/* Open Source License */}
         <div className="flex flex-col rounded-lg border p-6 space-y-4">

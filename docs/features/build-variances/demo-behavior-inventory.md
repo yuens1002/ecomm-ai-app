@@ -1,189 +1,145 @@
-# Build Variant Strategy — Demo Behavior Inventory
+# Build Variant System — Demo Behavior Reference
 
-> **Reviewing this doc?** Add your notes as HTML comments in the source editor — they won't appear in the preview.
-> Format: `<!-- COMMENT: your note here -->`
-> Open preview alongside: `Ctrl+K V` (split) or `Ctrl+Shift+V` (tab)
-
----
-
-## Pre-Planning Context
-
-### How We Got Here
-
-This document captures the rationale, discovery process, and design decisions made before formal planning began on the build variant feature.
-
-The conversation started from a simple observation: Artisan Roast serves two fundamentally different audiences from what is currently a single codebase with a single deployment model:
-
-1. **The demo site** (`demo.artisanroast.app`) — a public showcase for prospective store owners. Its job is to let anyone explore the platform freely, with guardrails to prevent real data mutations.
-2. **Self-hosted stores** — actual store owners running their own instance in production. These deployments have no use for demo infrastructure, and shipping that code creates unnecessary surface area.
-
-The trigger for this work was a set of instabilities introduced by the demo mutation-blocking middleware (`middleware.ts`). The middleware was added to protect the demo site from destructive actions, but its presence in all builds caused unpredictable runtime behavior — some of which may not have fully surfaced yet. This made the cost of the current "one codebase, one build" model concrete.
-
-### What the Audit Found
-
-We performed a full audit of the codebase and found **20+ demo-mode checks**, all implemented as runtime guards:
-
-```ts
-process.env.NEXT_PUBLIC_DEMO_MODE === "true"
-```
-
-Next.js inlines `NEXT_PUBLIC_*` variables at build time (constant folding), so these branches become dead code in live builds — **but only for inline expressions**. Because module imports are unconditional and hoisted, demo-only components (`DemoBanner`, `AdminDemoBanner`, `DemoSignInButtons`) and fake checkout logic still land in every bundle regardless of the env var. A live store build today ships demo credentials, fake payment bypass logic, and a mutation-blocking middleware that serves no purpose.
-
-### Why Two Builds
-
-<!-- COMMENT: -->
-
-**The goal is zero cross-contamination:**
-
-- A **demo build** contains all demo infrastructure. It is the only context where fake checkouts, demo sign-in buttons, and mutation guards make sense.
-- A **live store build** contains none of it. No dormant components, no dead branches, no demo credentials in server actions, no middleware that shouldn't be there.
-
-This isn't just about bundle size. It's about correctness: live store code should not contain logic paths that were never meant to run there.
-
-### Decisions Made in Pre-Planning
-
-| Decision | Rationale |
-|---|---|
-| Remove `middleware.ts` from live build entirely | The entire file is demo-specific (mutation guard). Live stores have no use for it and it caused runtime instabilities. |
-| Omit demo sign-in + fake checkout from live build | No stubs needed. These features have no live equivalent — they simply don't exist. |
-| Remove VAPI from both builds | Already globally disabled (`showVoiceBarista = false`). Cost-prohibitive for real stores. The AI chat feature already tells the AI integration story. Remove now, revisit if economics change. |
-| Use `NEXT_PUBLIC_BUILD_VARIANT` (pending naming decision) | Cleaner signal than `NEXT_PUBLIC_DEMO_MODE=true`. Leaves room for future variants (e.g. `staging`). Naming not yet finalized. |
-
-<!-- COMMENT: -->
+> **Reference doc** — describes the implemented build variant system as of v0.98.0.
+> For the implementation plan and rationale, see `C:\Users\yuens\.claude\plans\fancy-soaring-wilkes.md`.
 
 ---
 
-## Demo Behavior Inventory
+## Build Variant Signal
 
-The following is a complete catalog of every demo-specific behavior, organized by pattern type. This is the source of truth for what belongs in the demo build and what is absent from the live build.
-
----
-
-### Pattern 1 — Demo-Only Components
-
-> These components and files have no live equivalent. They are absent from the live build entirely.
-
-<!-- COMMENT: -->
-
-| Component / File | Location | What It Does |
+| Env Var | Value | Result |
 |---|---|---|
-| `DemoBanner` | `app/(site)/_components/content/DemoBanner.tsx` | Purple gradient banner on all storefront pages. "This is a live demo. No signup required." Animated CTA cycles "Try Admin Dashboard" ↔ "See User Account" every 4s. Dismissible via localStorage. Hides when user is authenticated. |
-| `AdminDemoBanner` | `app/admin/_components/shared/AdminDemoBanner.tsx` | Amber warning bar in admin shell. "Demo mode — Changes are disabled in this environment." Dismissible. Shares localStorage key with `DemoBanner` so dismissal syncs across both. |
-| `DemoSignInButtons` | `components/auth/DemoSignInButtons.tsx` | Two one-click buttons on both sign-in pages: "Sign in as Admin" and "Sign in as Demo Customer". Uses hardcoded credentials (server-side only, never exposed to client). |
-| `middleware.ts` | `middleware.ts` | Blanket HTTP 403 on all `POST / PUT / PATCH / DELETE` requests to `/api/admin/*`. Entire file is demo-specific — no other routing logic lives here. |
-| `reset-cache` route | `app/api/test/reset-cache/route.ts` | Clears license/plan cache and forces FREE tier. Used by E2E tests. Gated by `NEXT_PUBLIC_DEMO_MODE`. |
-| `demoSignIn` action | `app/auth/actions.ts` (partial) | Server action that authenticates using hardcoded demo credentials. Not present in live build. |
+| `NEXT_PUBLIC_BUILD_VARIANT` | *(unset)* or `LIVE` | Live store — zero demo code |
+| `NEXT_PUBLIC_BUILD_VARIANT` | `DEMO` or `demo` | Demo build — all demo infrastructure |
 
 ---
 
-### Pattern 2 — Fake Action + Informational Toast
+## What Each Build Contains
 
-> The user triggers a real-looking action. The demo build bypasses the real side effect and redirects to a fake success URL with an explanatory toast. No live equivalent.
+### Absent from live build entirely
 
-<!-- COMMENT: -->
-
-| Page | URL | User Action | Demo Behavior | Toast Message |
-|---|---|---|---|---|
-| Support Plans | `/admin/support/plans` | Clicks "Subscribe" on a paid plan | Returns `{ url: "/admin/support/plans?demo=success" }` instead of calling Stripe | "Purchase complete — Demo mode, no charge made." |
-| Add-Ons | `/admin/support/add-ons` | Clicks "Purchase" on an add-on package | Returns `{ url: "/admin/support/add-ons?demo=success" }` instead of calling Stripe | "Purchase complete — Demo mode, no charge made." |
-
-**Note on customer checkout:** The customer-facing Stripe checkout (`/api/checkout`) is **not blocked** in demo mode — the middleware matcher only covers `/api/admin/*`. Real purchases can be made on the demo site. This is intentional (demonstrates the full purchase flow) but worth revisiting.
-
-<!-- COMMENT: -->
-
----
-
-### Pattern 3 — Read-Only / Disabled UI
-
-> The user sees a form or action that is visually disabled. The middleware would block the mutation anyway, but the UI signals intent proactively.
-
-<!-- COMMENT: -->
-
-| Page | URL | Element | Demo Behavior |
-|---|---|---|---|
-| Admin Profile | `/admin/profile` | Display name + email inputs, save buttons | Inputs are `readOnly`. Buttons are `disabled` with `opacity-50 cursor-not-allowed`. Description text appended: "(demo - read-only)". |
-| Admin Nav (dropdown) | `/admin` | "Password" menu item | Item is `disabled`. Badge shows "(demo - disabled)". Cannot navigate to password change. |
-
----
-
-### Pattern 4 — Hidden / Replaced UI
-
-> UI elements are swapped or suppressed based on demo context. One-offs — no shared abstraction needed.
-
-<!-- COMMENT: -->
-
-| Page | URL | Element | Demo Behavior |
-|---|---|---|---|
-| Account — Danger Zone | `/account` → Danger Zone tab | Delete Account button | Button replaced with: "Account deletion is not available for demo accounts. This is a demonstration account used to showcase the platform features." Detection is email-based: `email.includes('demo')`. |
-| Admin Dashboard | `/admin` | Setup Checklist | All 3 items (products, payments, email) shown as complete regardless of actual configuration. Prevents the onboarding prompt from showing on the demo site. |
-
----
-
-### Pattern 5 — OG / Metadata Override
-
-> The demo build surfaces platform marketing copy rather than store-specific branding in social sharing and SEO metadata.
-
-<!-- COMMENT: -->
-
-| File | What Changes |
+| File | Why |
 |---|---|
-| `app/layout.tsx` | OG title → platform pitch copy. OG description → platform tagline. Page `<title>` → "Artisan Roast" (not store name). |
-| `app/opengraph-image.tsx` | "LIVE DEMO" badge rendered on the OG card image. Alt text and subtitle use platform copy. |
-| `app/(site)/features/opengraph-image.tsx` | "LIVE DEMO" badge. |
-| `app/(site)/about/opengraph-image.tsx` | "LIVE DEMO" badge. |
+| `app/(site)/_components/content/DemoBanner.tsx` | Demo-only banner |
+| `app/admin/_components/shared/AdminDemoBanner.tsx` | Demo-only admin banner |
+| `components/auth/DemoSignInButtons.tsx` | One-click demo sign-in |
+| `demoSignIn` server action in `app/auth/actions.ts` | Hardcoded demo credentials |
+| `lib/demo.ts`, `lib/demo-hooks.ts` | Demo utilities |
+
+### Present in both builds (but gated by `IS_DEMO`)
+
+| File | Demo behavior |
+|---|---|
+| `app/api/test/reset-cache/route.ts` | Returns 403 unless `NEXT_PUBLIC_BUILD_VARIANT=DEMO` |
+| All delete/write handlers | Intercepted — see behavior tables below |
 
 ---
 
-## Proposed Utility Set
+## Auth Page Swap
 
-Three utilities cover all repeating patterns. Everything else is either a one-off inline or an absent file.
+| Page | Demo build | Live build |
+|---|---|---|
+| `/auth/signin` | `DemoSignInButtons` only (no email form, no OAuth) | Email form + OAuth (no demo buttons) |
+| `/auth/admin-signin` | `DemoSignInButtons` only (no email form) | Email form only (no demo buttons) |
 
-<!-- COMMENT: -->
+---
 
-### `lib/demo.ts` — Single source of truth (demo build only)
+## Demo Behavior Tables
+
+### Checkout bypass (fake redirect + toast)
+
+| Page | URL | User Action | Demo Behavior |
+|---|---|---|---|
+| Support Plans | `/admin/support/plans` | Subscribe to paid plan | Redirects to `?demo=success` · toast: "Purchase complete — Demo mode, no charge made." |
+| Add-Ons | `/admin/support/add-ons` | Purchase add-on | Redirects to `?demo=success` · toast: "Purchase complete — Demo mode, no charge made." Per-button loading state (not shared). |
+
+### DELETE guard (toast, no execution)
+
+| Page | URL | Action |
+|---|---|---|
+| Account — Addresses | `/account?tab=addresses` | Delete address |
+| Account — Danger Zone | `/account?tab=danger` | Delete My Account |
+| Admin — Products | `/admin/products` | Delete product |
+| Admin — Products | `/admin/products/[id]` | Delete variant |
+| Admin — Products | `/admin/products/[id]` | Delete purchase option |
+| Admin — Reviews | `/admin/reviews` | Delete review |
+| Admin — Social Links | `/admin/social-links` | Delete link |
+| Admin — CMS | `/admin/pages/edit/[id]` | Delete CMS block |
+| Admin — Menu Builder | `/admin/product-menu` | Delete menu item(s) |
+
+Toast: "This action is disabled in demo mode."
+
+### Protected write guard (toast, no execution)
+
+| Page | URL | Action |
+|---|---|---|
+| Admin Profile | `/admin/profile` | Save display name / email |
+| Admin Nav dropdown | `/admin` (avatar) | Password (shows toast — feature not yet built) |
+| Admin Settings: Store | `/admin/settings` | Store name, logo |
+| Admin Settings: Location | `/admin/settings/location` | Location type radio |
+| Admin Settings: AI | `/admin/settings/ai` | Save AI settings |
+| Admin Settings: Contact | `/admin/settings/contact` | Contact email, From email, Footer email |
+| Admin Social Links | `/admin/social-links` | Create link, Edit link |
+| Admin Support | `/admin/support` | Submit ticket |
+| Account — Profile | `/account?tab=profile` | Save name / email |
+| Account — Security | `/account?tab=security` | Change / Set password |
+| Account — Connected Accounts | `/account?tab=accounts` | Connect Google / GitHub |
+
+Toast: "Changes are disabled in demo mode."
+
+### Real writes (execute normally in demo)
+
+| Area | Actions that go through |
+|---|---|
+| Products | Create, edit (name, price, stock, images, variants, options) |
+| Orders | All status updates, shipping edits, refunds |
+| Reviews | Approve, flag, reply |
+| CMS / Pages | Create, edit blocks, publish/unpublish |
+| Menu Builder | Reorder, toggle visibility, inline rename, add items |
+| Users | Toggle admin status |
+| Subscriptions | Skip, resume, cancel |
+| Addresses | Create new, set default |
+| Newsletter | Export CSV |
+| Analytics | All filters and exports |
+
+---
+
+## Utility Set (`lib/demo.ts` + `lib/demo-hooks.ts`)
+
+### `lib/demo.ts` (server-safe)
 
 ```ts
-// 1. Build-time constant
-//    Next.js inlines this at build time. Dead branch elimination applies to all
-//    inline usages. Import elimination requires dynamic imports (see implementation plan).
-export const IS_DEMO = process.env.NEXT_PUBLIC_BUILD_VARIANT === "demo"
+// Build-time constant — inlined by Next.js
+export const IS_DEMO: boolean
 
-// 2. Server action bypass
-//    Wraps any server action that should be a no-op in demo mode.
-//    Returns a fake redirect path and queues a standardized toast.
-//    Covers: plans checkout, add-ons checkout, any future paywall action.
-export function demoBypassAction(fakeRedirectPath: string): ActionResult
-
-// 3. Read-only field props
-//    Returns HTML input props that visually disable a field in demo mode.
-//    Covers: admin profile, any future editable admin form.
-export function demoFieldProps(): {
-  readOnly: boolean
-  disabled: boolean
-  "aria-disabled": boolean
-}
+// Checkout bypass — server actions only
+// Returns fake redirect result, or null in live builds
+export function demoBypassAction(fakeRedirectPath: string): DemoBypassResult | null
 ```
 
-### What doesn't need a utility
+### `lib/demo-hooks.ts` ("use client" only)
 
-| Pattern | Why no utility |
-|---|---|
-| Demo-only components (Pattern 1) | Absent from live build entirely — no abstraction needed |
-| Hidden/replaced UI (Pattern 4) | Two unique one-offs with different logic and copy — inline is clearer |
-| OG metadata (Pattern 5) | File-level constants, no shared logic to extract |
+```ts
+// Wraps any delete handler — shows toast instead in demo mode
+export function useDemoDeleteGuard<T extends (...args: unknown[]) => void>(handler: T): T
 
----
+// Wraps any write handler — shows toast instead in demo mode
+export function useDemoProtectedAction<T extends (...args: unknown[]) => void>(handler: T): T
+```
 
-## Open Questions
+### `SettingsField` prop
 
-<!-- COMMENT: -->
-
-1. **Variant signal naming** — Keep `NEXT_PUBLIC_DEMO_MODE=true` or rename to `NEXT_PUBLIC_BUILD_VARIANT=demo`? Renaming is cleaner but touches every check.
-2. **Implementation mechanism** — Module aliases in `next.config.ts` (surgical, webpack-level) vs. dynamic imports (simpler, no config). Given ~10 files in scope, dynamic imports may be sufficient.
-3. **Server action coverage** — Which admin mutations go through `/api/admin/*` routes vs. call Prisma directly via server actions? Any direct-Prisma server actions are unguarded by middleware and would need `demoBypassAction` wrappers.
-4. **Customer checkout in demo** — Currently unblocked (intentional). Worth a decision on whether to document this explicitly or add a soft UI note to demo users.
-5. **VAPI removal scope** — Remove in this PR or separate cleanup PR? 5 source files + docs.
+```tsx
+// Add to any SettingsField to block saves in demo mode
+<SettingsField ... demoBlock />
+```
 
 ---
 
-*Pre-planning conversation: 2026-03-26 | Author: Claude Code (transcribed from design session)*
+## OG / Metadata
+
+In demo build, all OG images and page metadata use platform marketing copy instead of store-specific branding.
+
+---
+
+Last updated: 2026-03-27 | Implemented: v0.98.0

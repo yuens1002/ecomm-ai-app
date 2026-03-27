@@ -2,7 +2,7 @@
  * Test-only route: clears the in-memory license/plans cache and removes
  * the license key from DB so tests start from a clean FREE state.
  *
- * Only available when NEXT_PUBLIC_DEMO_MODE=true.
+ * Only available when NEXT_PUBLIC_BUILD_VARIANT=DEMO.
  */
 
 import { NextResponse } from "next/server";
@@ -11,7 +11,7 @@ import { invalidatePlansCache } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 
 export async function POST() {
-  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
+  if (process.env.NEXT_PUBLIC_BUILD_VARIANT !== "demo" && process.env.NEXT_PUBLIC_BUILD_VARIANT !== "DEMO") {
     return NextResponse.json({ error: "Not available" }, { status: 403 });
   }
   forceFreeTierForTest();

@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { IS_DEMO } from "@/lib/demo";
 // SelectedEntityKind type available from "../../types/builder-state" if needed
 
 /**
@@ -101,6 +102,11 @@ export function useDeleteConfirmation({
   );
 
   const confirmDelete = useCallback(async () => {
+    if (IS_DEMO) {
+      toast({ title: "This action is disabled in demo mode." });
+      setDeleteConfirmation({ open: false, targetIds: [], entityKind: "label" });
+      return;
+    }
     const { targetIds, entityKind } = deleteConfirmation;
     if (!targetIds || targetIds.length === 0) return;
 

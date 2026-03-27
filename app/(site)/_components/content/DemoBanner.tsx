@@ -23,7 +23,7 @@ type Phase = "idle" | "exit" | "enter";
 
 /**
  * Demo banner that invites users to try the admin dashboard.
- * Only mounted by SiteLayout when NEXT_PUBLIC_DEMO_MODE=true — never runs on self-hosted instances.
+ * Only mounted by SiteLayout when NEXT_PUBLIC_BUILD_VARIANT=demo — never runs on self-hosted instances.
  * Hides itself when dismissed or when user is authenticated.
  * CTA text cycles with a slide-up ticker animation.
  */

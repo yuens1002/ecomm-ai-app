@@ -81,7 +81,7 @@ const cache = new Map<string, CacheEntry<unknown>>();
  * Test-only flag: when true, validateLicense() returns FREE_DEFAULT immediately.
  * Uses globalThis so the flag is visible across all Next.js module instances
  * (route handlers and server components run in separate webpack chunks).
- * Only honoured when NEXT_PUBLIC_DEMO_MODE=true.
+ * Only honoured when NEXT_PUBLIC_BUILD_VARIANT=demo.
  */
 const g = globalThis as Record<string, unknown>;
 
@@ -132,7 +132,7 @@ export async function getLicenseKey(): Promise<string> {
 export async function validateLicense(): Promise<LicenseInfo> {
   // Test-only: force FREE tier when the reset-cache endpoint was called.
   // Uses globalThis so it works across separate Next.js module instances.
-  if (g.__testForceFree === true && process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+  if (g.__testForceFree === true && (process.env.NEXT_PUBLIC_BUILD_VARIANT === "demo" || process.env.NEXT_PUBLIC_BUILD_VARIANT === "DEMO")) {
     g.__testForceFree = false; // consume once
     return FREE_DEFAULT;
   }

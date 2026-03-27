@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { getErrorMessage } from "@/lib/error-utils";
+import { IS_DEMO } from "@/lib/demo";
+import { useToast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -33,6 +35,7 @@ interface SecurityTabProps {
  * - Password changes require current password verification
  */
 export default function SecurityTab({ hasPassword }: SecurityTabProps) {
+  const { toast } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -47,6 +50,10 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (IS_DEMO) {
+      toast({ title: "Changes are disabled in demo mode." });
+      return;
+    }
     setIsLoading(true);
     setMessage(null);
 

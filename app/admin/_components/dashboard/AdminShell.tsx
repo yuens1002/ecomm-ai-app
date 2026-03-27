@@ -9,7 +9,7 @@ import { NavigationProvider } from "@/lib/contexts/NavigationContext";
 import { UpdateBanner } from "@/app/admin/_components/shared/UpdateBanner";
 import { AdminDemoBanner } from "@/app/admin/_components/shared/AdminDemoBanner";
 
-const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+import { IS_DEMO } from "@/lib/demo";
 
 interface SocialLink {
   platform: string;

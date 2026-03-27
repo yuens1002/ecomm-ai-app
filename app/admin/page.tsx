@@ -50,7 +50,7 @@ export default async function AdminDashboardPage({
     prisma.product.count(),
   ]);
 
-  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  const isDemoMode = process.env.NEXT_PUBLIC_BUILD_VARIANT === "demo" || process.env.NEXT_PUBLIC_BUILD_VARIANT === "DEMO";
   const setupStatus: SetupStatus = {
     hasProducts: isDemoMode || productCount > 0,
     hasPayments: isDemoMode || isStripeConfigured(),

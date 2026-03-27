@@ -6,6 +6,7 @@ import { FormHeading } from "@/components/ui/forms/FormHeading";
 import { FormInputField } from "@/components/ui/forms/FormInputField";
 import { useToast } from "@/hooks/use-toast";
 import { InputGroupInput } from "@/components/ui/forms/InputGroup";
+import { IS_DEMO } from "@/lib/demo";
 
 interface SettingsFieldProps<T = string> {
   /** API endpoint to fetch/save (e.g., "/api/admin/settings/branding") */
@@ -43,6 +44,8 @@ interface SettingsFieldProps<T = string> {
   showCharCount?: boolean;
   /** Hide external Save button if input handles its own (default: false) */
   saveButtonInInput?: boolean;
+  /** Block save in demo mode — shows toast instead of persisting */
+  demoBlock?: boolean;
 }
 
 /**
@@ -102,6 +105,7 @@ export function SettingsField<T = string>({
   maxLength,
   showCharCount = true,
   saveButtonInInput = false,
+  demoBlock = false,
 }: SettingsFieldProps<T>) {
   const { toast } = useToast();
   const [value, setValue] = useState<T>(defaultValue);
@@ -151,6 +155,10 @@ export function SettingsField<T = string>({
   }, [endpoint, field, transformLoad, toast]);
 
   const handleSave = useCallback(async () => {
+    if (IS_DEMO && demoBlock) {
+      toast({ title: "Changes are disabled in demo mode." });
+      return;
+    }
     // If nothing changed, surface a friendly status and skip network
     if (!isLoading && value === originalValue) {
       clearStatusMessage();
@@ -193,6 +201,7 @@ export function SettingsField<T = string>({
   }, [
     allSettings,
     clearStatusMessage,
+    demoBlock,
     endpoint,
     field,
     isLoading,

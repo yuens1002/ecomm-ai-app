@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 import { OG_SIZE, renderOgLayout, loadOgFonts } from "../../_og/og-layout";
 
-const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+const isDemoMode = process.env.NEXT_PUBLIC_BUILD_VARIANT === "demo" || process.env.NEXT_PUBLIC_BUILD_VARIANT === "DEMO";
 
 export const size = OG_SIZE;
 export const contentType = "image/png";

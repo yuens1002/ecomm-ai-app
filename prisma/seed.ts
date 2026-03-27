@@ -144,7 +144,7 @@ async function main() {
     update: {},
     create: {
       key: "store_name",
-      value: process.env.NEXT_PUBLIC_DEMO_MODE === "true" ? "Artisan Roast Demo" : "Artisan Roast",
+      value: (process.env.NEXT_PUBLIC_BUILD_VARIANT === "demo" || process.env.NEXT_PUBLIC_BUILD_VARIANT === "DEMO") ? "Artisan Roast Demo" : "Artisan Roast",
     },
   });
 

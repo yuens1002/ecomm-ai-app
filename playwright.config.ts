@@ -52,7 +52,7 @@ export default defineConfig({
       timeout: 60_000,
       env: {
         PLATFORM_URL: "http://localhost:9999",
-        NEXT_PUBLIC_DEMO_MODE: "true",
+        NEXT_PUBLIC_BUILD_VARIANT: "DEMO",
         // Prevent .env.local dev overrides from leaking into the test server
         MOCK_LICENSE_TIER: "",
         LICENSE_KEY: "",

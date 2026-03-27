@@ -4,12 +4,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/admin";
 import { getInstanceId } from "@/lib/telemetry";
 import { prisma } from "@/lib/prisma";
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+import { demoBypassAction } from "@/lib/demo";
 
 const PLATFORM_URL = (
   process.env.PLATFORM_URL || "https://manage.artisanroast.app"
@@ -52,9 +47,8 @@ export async function startAlaCarteCheckout(
     return { success: false, error: "Invalid package" };
   }
 
-  if (IS_DEMO) {
-    return { success: true, url: "/admin/support/add-ons?demo=success" };
-  }
+  const bypass = demoBypassAction("/admin/support/add-ons?demo=success");
+  if (bypass) return bypass;
 
   try {
     const instanceId = await getInstanceId(prisma);

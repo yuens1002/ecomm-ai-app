@@ -30,6 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { IS_DEMO } from "@/lib/demo";
 import {
   Plus,
   Pencil,
@@ -92,6 +93,7 @@ export default function SocialLinksManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (IS_DEMO) { toast({ title: "Changes are disabled in demo mode." }); return; }
 
     try {
       const url = editingLink
@@ -125,6 +127,7 @@ export default function SocialLinksManagement() {
   };
 
   const handleDelete = async (id: string) => {
+    if (IS_DEMO) { toast({ title: "This action is disabled in demo mode." }); return; }
     if (!confirm("Are you sure you want to delete this social link?")) return;
 
     try {

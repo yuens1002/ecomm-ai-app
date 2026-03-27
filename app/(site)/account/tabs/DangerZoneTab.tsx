@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { IS_DEMO } from "@/lib/demo";
 import { getErrorMessage } from "@/lib/error-utils";
 import {
   Card,
@@ -49,11 +51,16 @@ interface DangerZoneTabProps {
 export default function DangerZoneTab({
   userEmail,
 }: DangerZoneTabProps) {
+  const { toast } = useToast();
   const [confirmEmail, setConfirmEmail] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleDelete = async () => {
+    if (IS_DEMO) {
+      toast({ title: "This action is disabled in demo mode." });
+      return;
+    }
     if (confirmEmail !== userEmail) {
       setError("Email does not match. Please try again.");
       return;
@@ -123,13 +130,7 @@ export default function DangerZoneTab({
             </p>
           </div>
 
-          {userEmail?.includes('demo') ? (
-            <div className="bg-muted rounded-md p-3 text-sm text-muted-foreground">
-              <p>Account deletion is not available for demo accounts.</p>
-              <p className="mt-1 text-xs">This is a demonstration account used to showcase the platform features.</p>
-            </div>
-          ) : (
-            <AlertDialog>
+          <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" className="w-full sm:w-auto">
                   <AlertTriangle className="w-4 h-4 mr-2" />
@@ -198,7 +199,6 @@ export default function DangerZoneTab({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          )}
         </div>
 
         {/* Alternative: Export Data */}
