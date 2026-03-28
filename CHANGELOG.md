@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.97.7 - 2026-03-28
+
+### Fixed
+
+- **AC-KV-2**: QA agent hint corrected from `"Email address"` to `"Email"` — label mismatch caused silent fill failure, preventing sign-in redirect and exhausting turn budget on retry
+
+### Added
+
+- **`npm run qa:reset`**: New local QA reset script — reads `QA_DATABASE_URL` from `.env.local`, auto-extracts Neon endpoint ID, calls teardown without manual env setup
+- **`STOP_AFTER` env var**: Run the full install flow and stop after a specific AC (e.g. `STOP_AFTER=AC-KV-2`) — useful for targeted local fixes that need prerequisite state
+- **`RUN_ONLY` env var**: Run a single AC standalone, bypassing install flow and blocker gates
+- **Runbook local reproduction**: Updated `docs/internal/runbook-qa-nightly.md` with accurate local test instructions and a table explaining when to use each run mode
+
 ## 0.97.6 - 2026-03-28
 
 ### Fixed
