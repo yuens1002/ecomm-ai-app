@@ -82,6 +82,22 @@ jobs:
           QA_TOKEN_BUDGET: "300000"
         run: node scripts/qa-agent.js
 
+      - name: Close resolved QA issues on success
+        if: success()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN=$(gh issue list --label "install-assurance" --state open --json number -q '.[].number')
+          if [ -z "$OPEN" ]; then
+            echo "No open install-assurance issues to close."
+          else
+            for n in $OPEN; do
+              gh issue close "$n" --comment "Resolved — nightly QA passed on run ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} (commit \`${{ github.sha }}\`)."
+              echo "Closed #$n"
+            done
+          fi
+
       - name: Open GitHub issue on failure
         if: failure()
         env:
