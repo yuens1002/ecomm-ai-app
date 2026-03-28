@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.97.5 - 2026-03-28
+
+### Fixed
+
+- **ESLint warnings**: Removed unused `passed`/`total` vars from commit hook; added missing `original` dependency to `useCallback` in AI settings page
+
 ## 0.97.4 - 2026-03-28
 
 ### Added
