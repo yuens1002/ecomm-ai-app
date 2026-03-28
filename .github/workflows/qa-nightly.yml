@@ -11,6 +11,9 @@ on:
       model:
         description: "Claude model override"
         default: "claude-haiku-4-5-20251001"
+      fixture_results:
+        description: "JSON string to inject as qa-results.json (skips QA agent run, exercises self-heal pipeline only)"
+        required: false
 
 concurrency:
   group: qa-nightly
@@ -38,7 +41,12 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install chromium --with-deps
 
+      - name: Inject fixture results (fixture mode)
+        if: ${{ inputs.fixture_results != '' }}
+        run: echo '${{ inputs.fixture_results }}' > qa-results.json
+
       - name: Validate QA database URL
+        if: ${{ inputs.fixture_results == '' }}
         env:
           QA_DATABASE_URL: ${{ secrets.QA_DATABASE_URL }}
           QA_DB_ENDPOINT: ${{ secrets.QA_DB_ENDPOINT }}
@@ -58,6 +66,7 @@ jobs:
           echo "✅ QA database endpoint verified"
 
       - name: Reset QA state
+        if: ${{ inputs.fixture_results == '' }}
         env:
           DATABASE_URL: ${{ secrets.QA_DATABASE_URL }}
           DIRECT_URL: ${{ secrets.QA_DIRECT_URL }}
@@ -70,6 +79,7 @@ jobs:
           echo "✅ QA state reset (orders, EULA + users cleared)"
 
       - name: Run QA agent
+        if: ${{ inputs.fixture_results == '' }}
         env:
           BASE_URL: ${{ inputs.base_url || secrets.QA_BASE_URL }}
           ANTHROPIC_BASE_URL: ${{ secrets.VERCEL_AI_GATEWAY_BASE_URL }}
@@ -81,6 +91,15 @@ jobs:
           QA_MODEL: ${{ inputs.model || 'claude-haiku-4-5-20251001' }}
           QA_TOKEN_BUDGET: "300000"
         run: node scripts/qa-agent.js
+
+      - name: Upload QA results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-results
+          path: qa-results.json
+          retention-days: 3
+          if-no-files-found: ignore
 
       - name: Close resolved QA issues on success
         if: success()
