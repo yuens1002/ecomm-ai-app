@@ -106,7 +106,7 @@ export default function AISettingsPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [settings, toast]);
+  }, [settings, original, toast]);
 
   const handleTest = useCallback(async () => {
     setTestStatus("testing");

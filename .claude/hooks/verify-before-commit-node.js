@@ -87,8 +87,6 @@ function main(input) {
   }
 
   const status = entry.status || "pending";
-  const passed = entry.acs_passed || 0;
-  const total = entry.acs_total || 0;
 
   switch (status) {
     case "verified": {
