@@ -76,9 +76,11 @@ if (!process.env.ANTHROPIC_BASE_URL) {
 
 // ── Config ──────────────────────────────────────────────────────────────────
 
-const BASE_URL = process.env.BASE_URL?.replace(/\/$/, "");
-const MODEL    = process.env.QA_MODEL || "claude-sonnet-4-6";
-const BUDGET   = parseInt(process.env.QA_TOKEN_BUDGET || "300000", 10);
+const BASE_URL  = process.env.BASE_URL?.replace(/\/$/, "");
+const MODEL     = process.env.QA_MODEL || "claude-sonnet-4-6";
+const BUDGET    = parseInt(process.env.QA_TOKEN_BUDGET || "300000", 10);
+const RUN_ONLY   = process.env.RUN_ONLY  || null; // e.g. RUN_ONLY=AC-KV-2 (standalone, skips blockers)
+const STOP_AFTER = process.env.STOP_AFTER || null; // e.g. STOP_AFTER=AC-KV-2 (runs full flow up to + including this AC)
 
 const REQUIRED = [
   "BASE_URL", "ANTHROPIC_API_KEY",
@@ -417,7 +419,7 @@ const AC_HINTS = {
   "AC-KV-2": [
     "Call clear_session first (clears cookies + localStorage to log out).",
     "Call navigate('/auth/admin-signin').",
-    "Fill 'Email address' with the known Admin email, fill 'Password' with the known Admin password.",
+    "Fill 'Email' with the known Admin email, fill 'Password' with the known Admin password.",
     "Click 'Sign In'. Call read_page. PASS if URL path is /admin (not /auth).",
   ].join(" "),
 };
@@ -539,7 +541,12 @@ async function main() {
     process.exit(3);
   }
 
-  const acs    = parseVerificationMd();
+  const allAcs = parseVerificationMd();
+  const acs    = RUN_ONLY ? allAcs.filter((ac) => ac.id === RUN_ONLY) : allAcs;
+  if (RUN_ONLY && acs.length === 0) {
+    console.error(`❌  RUN_ONLY="${RUN_ONLY}" did not match any AC in VERIFICATION.md`);
+    process.exit(3);
+  }
   const groups = groupACs(acs);
   const client = new Anthropic(); // reads ANTHROPIC_BASE_URL + ANTHROPIC_API_KEY from env
   const tokenState = { total: 0 };
@@ -578,7 +585,7 @@ async function main() {
     for (const [groupKey, groupACs] of Object.entries(groups)) {
       console.log(`\n━━━ ${GROUP_LABELS[groupKey]} ━━━`);
       const blockKey = GROUP_BLOCK_KEY[groupKey];
-      if (blockKey && blocked.has(blockKey)) {
+      if (!RUN_ONLY && blockKey && blocked.has(blockKey)) {
         groupACs.forEach((ac) =>
           allResults.push(skipAC(ac.id, "blocked — install flow did not complete"))
         );
@@ -593,7 +600,12 @@ async function main() {
         for (const key of (BLOCKERS[r.id] ?? [])) {
           if (r.status === "FAIL") blocked.add(key);
         }
+        if (STOP_AFTER && ac.id === STOP_AFTER) {
+          console.log(`\n  (stopping after ${STOP_AFTER})`);
+          break;
+        }
       }
+      if (STOP_AFTER && allResults.some((r) => r.id === STOP_AFTER)) break;
     }
   } finally {
     await browser.close();

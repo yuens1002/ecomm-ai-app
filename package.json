@@ -1,6 +1,6 @@
 {
   "name": "artisan-roast",
-  "version": "0.97.6",
+  "version": "0.97.7",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -19,6 +19,7 @@
     "seed": "tsx prisma/seed/index.ts",
     "qa:install": "node scripts/qa-agent.js",
     "qa:teardown": "node scripts/qa-teardown.js",
+    "qa:reset": "node scripts/qa-reset.js",
     "reset:demo": "tsx scripts/reset-demo-data.ts",
     "build:safe": "npm run check:backup-models && npm run db:backup && npm run build",
     "test": "jest --watch",

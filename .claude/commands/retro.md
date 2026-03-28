@@ -52,6 +52,7 @@ For each layer identified:
 2. **Draft the change** — add rules, constraints, or guidance that would have prevented the gap
 3. **Apply the edit** — make it concrete and actionable, not vague
 4. **Add tests** if the change is to a validator (update `test-qc-validator.js`)
+5. **If the fix changes how a process is run** (commands, tools, environment setup, test flow) — update the workflow doc or runbook that describes that process **as part of this fix, not as a follow-up**. A process fix without a doc update is incomplete.
 
 ### Step 4: Verify the Fix
 
@@ -116,3 +117,4 @@ This is the founding example that motivated this skill:
 3. **Concrete, not aspirational.** Changes should be enforceable rules, not "try to remember" guidance.
 4. **Test the enforcement.** If you add a validator rule, add a test. If you add a skill rule, trace through a scenario.
 5. **Log everything.** The retro log is how future sessions know what was learned and why.
+6. **Document the process change immediately.** If a fix changes how a process is run, the doc update ships in the same commit. A process fix with a "TODO: update docs" is not done.
