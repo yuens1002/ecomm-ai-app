@@ -117,26 +117,34 @@ Fix any TS/ESLint errors, then update `verification-status.json` to `"pending"` 
 
 ### Step 2: Verify (sub-agent delegation)
 
-Spawn a verification sub-agent using the `/ac-verify` skill template. The sub-agent fills the **Agent** column in the ACs tracking doc (`docs/plans/{feature}-ACs.md`):
+**Mandatory and automatic.** After precheck passes, immediately read the ACs doc and spawn the verification sub-agent. Do NOT pause, do NOT ask the user "should I run verification?" — just proceed.
+
+**How to build the sub-agent prompt:**
+
+1. Read the ACs doc (`docs/features/{feature}/ACs.md` or `docs/plans/{feature}-ACs.md`) to extract the full AC list
+2. Check for `--skip-ui` flag or CI/backend-only note in the plan → omit PAGES_TO_SCREENSHOT and set DEV_SERVER to "N/A"
+3. Spawn immediately:
 
 ```text
 Task(subagent_type="general-purpose", prompt="""
-Run the AC verification protocol from .claude/skills/ac-verify/SKILL.md.
+Run the AC verification protocol from .claude/commands/ac-verify.md.
 
 BRANCH: {current branch name}
-DEV_SERVER: http://localhost:3000
-ACS_DOC: docs/plans/{feature}-ACs.md
+DEV_SERVER: http://localhost:3000   ← set to "N/A" for CI/backend-only features
+ACS_DOC: docs/features/{feature}/ACs.md
 
 ACS:
-{paste the AC list from the approved plan}
+{paste the full AC list from the ACs doc — all What/How/Pass columns}
 
 PAGES_TO_SCREENSHOT:
-{list pages and interaction steps}
+{list pages and interaction steps — omit entirely for --skip-ui features}
 
 CONTEXT:
-{relevant file paths and behavioral notes}
+{relevant file paths and behavioral notes from the plan}
 """)
 ```
+
+**`--skip-ui` features (CI/backend-only):** Omit PAGES_TO_SCREENSHOT. Sub-agent verifies all ACs by code review + `npm run test:ci` only. No dev server or screenshots needed.
 
 **Parallelism option:** For large features, spawn UI verification and test suite as separate sub-agents:
 

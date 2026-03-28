@@ -261,12 +261,12 @@
       "notes": "21/21 pre-merge ACs verified. 5 UI (screenshots + code review), 8 FN (code review), 4 REG (precheck 0 errors + 94 suites/1095 tests), 4 QA code-review ACs. 2 additional post-merge CI ACs (AC-QA-5/6) tracked as DEFERRED in ACs doc — require qa-nightly.yml workflow_dispatch after merge to confirm Morning Roast fills in setup and appears in header+footer."
     },
     "feat/qa-self-heal": {
-      "status": "planned",
-      "acs_passed": 0,
+      "status": "verified",
+      "acs_passed": 16,
       "acs_total": 16,
       "tasks": [],
       "acs_doc": "docs/features/qa-self-healing/ACs.md",
-      "notes": "12 FN + 4 REG ACs. CI/backend only — no UI. 4 commits: (1) enrich qa-agent output, (2) classifier + fixture mode, (3) issue enrichment + self-heal job B/C, (4) repair agent + Category A wiring."
+      "notes": "16/16 ACs verified via code review sub-agent. 12 FN + 4 REG. 15/15 Jest tests pass. Precheck 0 errors. 0 iterations needed."
     }
   }
 }
