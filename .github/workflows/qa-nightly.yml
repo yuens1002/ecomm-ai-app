@@ -44,7 +44,9 @@ jobs:
 
       - name: Inject fixture results (fixture mode)
         if: ${{ inputs.fixture_results != '' }}
-        run: echo '${{ inputs.fixture_results }}' > qa-results.json
+        env:
+          FIXTURE_RESULTS: ${{ inputs.fixture_results }}
+        run: node -e "require('fs').writeFileSync('qa-results.json', process.env.FIXTURE_RESULTS ?? '', 'utf8');"
 
       - name: Simulate QA failure for self-heal testing (fixture mode)
         if: ${{ inputs.fixture_results != '' }}
@@ -191,7 +193,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ISSUE_NUMBER=$(gh issue list --label "install-assurance" --state open --json number --limit 1 -q '.[0].number')
+          ISSUE_NUMBER=$(gh issue list --label "install-assurance" --state open --json number --limit 1 -q '.[0].number // ""')
           echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
           echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
           echo "ℹ️  Open issue: ${ISSUE_NUMBER:-none}"

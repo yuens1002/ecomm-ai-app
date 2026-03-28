@@ -255,6 +255,14 @@ async function main() {
   try {
     for (const ac of failedAcs) {
       const { id: acId, currentHintText } = ac;
+
+      // Validate acId to prevent command injection from malformed fixture input
+      if (!/^AC-[A-Z]+-\d+$/.test(acId)) {
+        console.error(`❌  Invalid AC id format: "${acId}" — skipping`);
+        anyRepairFailed = true;
+        continue;
+      }
+
       const branchName = `fix/qa-self-heal-${acId.toLowerCase()}`;
 
       console.log(`\n── Repairing ${acId} ${"─".repeat(Math.max(0, 50 - acId.length))}`);
