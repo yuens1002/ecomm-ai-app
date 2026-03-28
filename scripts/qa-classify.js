@@ -30,16 +30,6 @@ function getArg(name) {
 
 const resultsFile = getArg("--results-file") || "qa-results.json";
 
-// ── Load results ──────────────────────────────────────────────────────────────
-
-let runResult;
-try {
-  runResult = JSON.parse(fs.readFileSync(resultsFile, "utf8"));
-} catch (e) {
-  output({ category: "C", failedAcs: [], reason: `Cannot read results file: ${e.message}`, repairable: false });
-  process.exit(0);
-}
-
 // ── Extract AC_HINTS keys from qa-agent.js source ─────────────────────────────
 // Identifies which ACs have machine-readable hints — Category A is only possible for these.
 
@@ -197,5 +187,12 @@ module.exports = { classify, hasASignal, extractHintKeys, extractHintTexts };
 
 // ── CLI entrypoint ────────────────────────────────────────────────────────────
 if (require.main === module) {
+  let runResult;
+  try {
+    runResult = JSON.parse(fs.readFileSync(resultsFile, "utf8"));
+  } catch (e) {
+    output({ category: "C", failedAcs: [], reason: `Cannot read results file: ${e.message}`, repairable: false });
+    process.exit(0);
+  }
   output(classify(runResult, hintKeys, hintTexts));
 }
