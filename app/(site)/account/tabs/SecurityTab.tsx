@@ -51,7 +51,11 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (IS_DEMO) {
-      toast({ title: "Changes are disabled in demo mode." });
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setMessage(null);
       return;
     }
     setIsLoading(true);

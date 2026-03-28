@@ -290,7 +290,7 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
                       title: IS_DEMO
                         ? "Changes are disabled in demo mode."
                         : "Password change coming soon.",
-                      variant: "demo",
+                      ...(IS_DEMO && { variant: "demo" }),
                     })
                   }
                 >

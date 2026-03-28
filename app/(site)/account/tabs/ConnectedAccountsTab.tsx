@@ -70,7 +70,7 @@ export default function ConnectedAccountsTab({
 
   const handleConnect = async (provider: string) => {
     if (IS_DEMO) {
-      toast({ title: "Changes are disabled in demo mode." });
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
       return;
     }
     await signIn(provider, { callbackUrl: "/account?tab=accounts" });
