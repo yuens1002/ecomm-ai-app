@@ -84,6 +84,7 @@ jobs:
 
       - name: Close resolved QA issues on success
         if: success()
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
