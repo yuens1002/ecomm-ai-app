@@ -186,6 +186,10 @@ jobs:
           echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
           echo "ℹ️  Open issue: ${ISSUE_NUMBER:-none}"
 
+      - name: Install Playwright browser (Category A)
+        if: env.CATEGORY == 'A'
+        run: npx playwright install chromium --with-deps
+
       - name: Repair (Category A)
         if: env.CATEGORY == 'A'
         env:
