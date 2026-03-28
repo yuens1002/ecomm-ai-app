@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.97.6 - 2026-03-28
+
+### Fixed
+
+- **Demo toasts**: `variant: "demo"` applied to ConnectedAccountsTab, AddressesTab, DangerZoneTab, SecurityTab — was missing from storefront account page guards
+- **Security tab state reset**: Password fields and message cleared when demo guard fires
+- **Addresses tab state reset**: `deleteId` cleared when demo guard fires — prevents confirmation UI staying armed
+- **AdminTopNav password toast**: Amber variant now only applied in demo mode; live build uses default toast
+- **demo-actions.ts**: Removed false `"Something went wrong"` return after successful redirect
+- **license.ts comment**: Updated to reflect both `"demo"` and `"DEMO"` as accepted values
+- **Demo behavior inventory doc**: Fixed local Windows path reference and wrong version claim
+
 ## 0.97.5 - 2026-03-28
 
 ### Fixed
