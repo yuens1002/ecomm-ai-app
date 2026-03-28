@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { IS_DEMO } from "@/lib/demo";
 import {
   DataTable,
   DataTableActionBar,
@@ -199,7 +198,6 @@ export default function ReviewModerationClient() {
   };
 
   const confirmDelete = async () => {
-    if (IS_DEMO) { toast({ title: "This action is disabled in demo mode." }); return; }
     if (!selectedReview) return;
     try {
       const res = await fetch(`/api/admin/reviews/${selectedReview.id}`, {

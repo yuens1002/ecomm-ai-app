@@ -57,7 +57,9 @@ export default function ProfileTab({ user, onUpdate }: ProfileTabProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (IS_DEMO) {
-      toast({ title: "Changes are disabled in demo mode." });
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      setName(user.name || "");
+      setEmail(user.email || "");
       return;
     }
     setIsLoading(true);

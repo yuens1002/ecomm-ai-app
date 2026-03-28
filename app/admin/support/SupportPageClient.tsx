@@ -188,7 +188,13 @@ function TicketFormCard({
     (ticketType === "normal" || !config.priorityDisabled);
 
   function handleSubmit() {
-    if (IS_DEMO) { toast({ title: "Changes are disabled in demo mode." }); return; }
+    if (IS_DEMO) {
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      setTitle("");
+      setSteps("");
+      setExpected("");
+      return;
+    }
     if (!canSubmit) return;
 
     if (config.hasKey && config.showTypeSelector) {

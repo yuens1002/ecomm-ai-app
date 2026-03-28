@@ -209,13 +209,27 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
 
             {/* Logo/Brand - desktop only (in left section) */}
             <div className="hidden lg:flex items-center">
-              <StoreBrand storeName={storeName} storeLogoUrl={storeLogoUrl} />
+              <span className="relative inline-flex">
+                <StoreBrand storeName={storeName} storeLogoUrl={storeLogoUrl} />
+                {IS_DEMO && (
+                  <span className="absolute -top-2 -right-1 translate-x-full text-[9px] font-bold leading-none tracking-widest uppercase px-1 py-0.5 rounded bg-warning text-warning-foreground">
+                    demo
+                  </span>
+                )}
+              </span>
             </div>
           </div>
 
           {/* Center: Store branding for mobile/tablet - absolutely positioned */}
           <div className="absolute left-1/2 -translate-x-1/2 lg:hidden">
-            <StoreBrand storeName={storeName} storeLogoUrl={storeLogoUrl} />
+            <span className="relative inline-flex">
+              <StoreBrand storeName={storeName} storeLogoUrl={storeLogoUrl} />
+              {IS_DEMO && (
+                <span className="absolute -top-2 -right-1 translate-x-full text-[9px] font-bold leading-none tracking-widest uppercase px-1 py-0.5 rounded bg-warning text-warning-foreground">
+                  demo
+                </span>
+              )}
+            </span>
           </div>
 
           {/* Center: Navigation menu - desktop only */}
@@ -276,6 +290,7 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
                       title: IS_DEMO
                         ? "Changes are disabled in demo mode."
                         : "Password change coming soon.",
+                      variant: "demo",
                     })
                   }
                 >

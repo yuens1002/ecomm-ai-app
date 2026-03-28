@@ -207,7 +207,7 @@ export default function ProductManagementClient({
   );
 
   const handleDeleteConfirm = useCallback(async () => {
-    if (IS_DEMO) { toast({ title: "This action is disabled in demo mode." }); return; }
+    if (IS_DEMO) { toast({ title: "This action is disabled in demo mode.", variant: "demo" }); return; }
     if (!deleteTarget) return;
     const result = await deleteProduct(deleteTarget.id);
     if (result.ok) {

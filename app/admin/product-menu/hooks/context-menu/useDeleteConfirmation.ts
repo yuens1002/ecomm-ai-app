@@ -103,7 +103,7 @@ export function useDeleteConfirmation({
 
   const confirmDelete = useCallback(async () => {
     if (IS_DEMO) {
-      toast({ title: "This action is disabled in demo mode." });
+      toast({ title: "This action is disabled in demo mode.", variant: "demo" });
       setDeleteConfirmation({ open: false, targetIds: [], entityKind: "label" });
       return;
     }

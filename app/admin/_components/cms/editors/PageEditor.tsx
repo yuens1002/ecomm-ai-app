@@ -235,7 +235,7 @@ export function PageEditor({
   };
 
   const handleDeleteBlock = async (blockId: string) => {
-    if (IS_DEMO) { toast({ title: "This action is disabled in demo mode." }); return; }
+    if (IS_DEMO) { toast({ title: "This action is disabled in demo mode.", variant: "demo" }); return; }
     const blockToDelete = blocks.find((b) => b.id === blockId);
     if (!blockToDelete) return;
 

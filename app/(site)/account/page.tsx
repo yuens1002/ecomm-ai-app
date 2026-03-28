@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -51,5 +52,9 @@ export default async function AccountPage() {
     redirect("/auth/signin");
   }
 
-  return <AccountPageClient user={user} />;
+  return (
+    <Suspense>
+      <AccountPageClient user={user} />
+    </Suspense>
+  );
 }

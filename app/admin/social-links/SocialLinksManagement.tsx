@@ -93,7 +93,12 @@ export default function SocialLinksManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (IS_DEMO) { toast({ title: "Changes are disabled in demo mode." }); return; }
+    if (IS_DEMO) {
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      setIsDialogOpen(false);
+      resetForm();
+      return;
+    }
 
     try {
       const url = editingLink
@@ -127,7 +132,7 @@ export default function SocialLinksManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    if (IS_DEMO) { toast({ title: "This action is disabled in demo mode." }); return; }
+    if (IS_DEMO) { toast({ title: "This action is disabled in demo mode.", variant: "demo" }); return; }
     if (!confirm("Are you sure you want to delete this social link?")) return;
 
     try {

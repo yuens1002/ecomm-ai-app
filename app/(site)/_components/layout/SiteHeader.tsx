@@ -1,6 +1,7 @@
 "use client";
 
 import { ShoppingCart } from "@/app/(site)/_components/cart/ShoppingCart";
+import { IS_DEMO } from "@/lib/demo";
 import { UserMenu } from "@/app/(site)/_components/navigation/UserMenu";
 import { DynamicIcon, type IconName } from "@/components/shared/icons/DynamicIcon";
 import { Button } from "@/components/ui/button";
@@ -512,13 +513,20 @@ export default function SiteHeader({
             href="/"
             className="flex flex-col md:flex-row items-center gap-1 md:gap-2 text-foreground"
           >
-            <Image
-              src={settings.storeLogoUrl}
-              alt={`${serverStoreName ?? settings.storeName} Logo`}
-              width={32}
-              height={32}
-              className="w-8 h-8"
-            />
+            <span className="relative inline-flex">
+              <Image
+                src={settings.storeLogoUrl}
+                alt={`${serverStoreName ?? settings.storeName} Logo`}
+                width={32}
+                height={32}
+                className="w-8 h-8"
+              />
+              {IS_DEMO && (
+                <span className="absolute -top-2 -right-1 translate-x-full text-[9px] font-bold leading-none tracking-widest uppercase px-1 py-0.5 rounded bg-warning text-warning-foreground">
+                  demo
+                </span>
+              )}
+            </span>
             <span className="hidden text-[10px] md:text-lg lg:text-xl md:inline md:normal-case tracking-wide md:tracking-normal font-medium md:font-bold">
               {serverStoreName ?? settings.storeName}
             </span>

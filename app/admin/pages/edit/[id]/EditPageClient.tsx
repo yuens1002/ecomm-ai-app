@@ -99,7 +99,7 @@ export default function EditPageClient({ page }: EditPageClientProps) {
 
   const handleDelete = async () => {
     if (IS_DEMO) {
-      toast({ title: "This action is disabled in demo mode." });
+      toast({ title: "This action is disabled in demo mode.", variant: "demo" });
       return;
     }
     if (

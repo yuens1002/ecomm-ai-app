@@ -79,7 +79,7 @@ export default function AISettingsPage() {
     settings.model !== original.model;
 
   const handleSave = useCallback(async () => {
-    if (IS_DEMO) { toast({ title: "Changes are disabled in demo mode." }); return; }
+    if (IS_DEMO) { toast({ title: "Changes are disabled in demo mode.", variant: "demo" }); setSettings(original); return; }
     setIsSaving(true);
     try {
       const res = await fetch("/api/admin/settings/ai", {

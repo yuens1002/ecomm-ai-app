@@ -156,7 +156,8 @@ export function SettingsField<T = string>({
 
   const handleSave = useCallback(async () => {
     if (IS_DEMO && demoBlock) {
-      toast({ title: "Changes are disabled in demo mode." });
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      setValue(originalValue);
       return;
     }
     // If nothing changed, surface a friendly status and skip network

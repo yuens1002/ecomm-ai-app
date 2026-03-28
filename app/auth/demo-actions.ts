@@ -12,7 +12,7 @@ const DEMO_CREDENTIALS = {
   customer: {
     email: "demo@artisanroast.com",
     password: "ixcF8ZV3FnGaBJ&#8j",
-    redirectTo: "/",
+    redirectTo: "/account",
   },
 } as const;
 
