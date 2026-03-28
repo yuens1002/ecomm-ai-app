@@ -142,4 +142,4 @@ In demo build, all OG images and page metadata use platform marketing copy inste
 
 ---
 
-Last updated: 2026-03-27 | Implemented: v0.98.0
+Last updated: 2026-03-28 | Implemented: v0.97.4
