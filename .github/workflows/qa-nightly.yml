@@ -186,9 +186,28 @@ jobs:
           echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
           echo "ℹ️  Open issue: ${ISSUE_NUMBER:-none}"
 
-      - name: Repair (Category A — placeholder)
+      - name: Repair (Category A)
         if: env.CATEGORY == 'A'
-        run: echo "ℹ️  Category A repair not yet implemented (coming in next commit)"
+        env:
+          BASE_URL: ${{ inputs.base_url || secrets.QA_BASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.VERCEL_AI_GATEWAY_TOKEN }}
+          ANTHROPIC_BASE_URL: ${{ secrets.VERCEL_AI_GATEWAY_BASE_URL }}
+          QA_ADMIN_NAME: ${{ secrets.QA_ADMIN_NAME }}
+          QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
+          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
+          QA_STORE_NAME: ${{ secrets.QA_STORE_NAME }}
+          QA_MODEL: ${{ inputs.model || 'claude-haiku-4-5-20251001' }}
+          QA_REPAIR_TOKEN_BUDGET: "10000"
+          DATABASE_URL: ${{ secrets.QA_DATABASE_URL }}
+          QA_DB_ENDPOINT: ${{ secrets.QA_DB_ENDPOINT }}
+          DIRECT_URL: ${{ secrets.QA_DIRECT_URL }}
+          QA_CLASSIFICATION_JSON: classification.json
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          node scripts/qa-repair-agent.js
 
       - name: Enrich issue (Category B / C)
         if: env.CATEGORY != 'A' && env.ISSUE_NUMBER != ''
