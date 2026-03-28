@@ -46,6 +46,16 @@ jobs:
         if: ${{ inputs.fixture_results != '' }}
         run: echo '${{ inputs.fixture_results }}' > qa-results.json
 
+      - name: Simulate QA failure for self-heal testing (fixture mode)
+        if: ${{ inputs.fixture_results != '' }}
+        run: |
+          EXIT_CODE=$(node -e "try{const r=require('./qa-results.json');process.stdout.write(String(r.exitCode));}catch{process.stdout.write('0');}")
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "ℹ️  Fixture exitCode=$EXIT_CODE — failing qa job to trigger self-heal pipeline"
+            exit "$EXIT_CODE"
+          fi
+          echo "ℹ️  Fixture exitCode=0 — qa job will pass (no self-heal triggered)"
+
       - name: Validate QA database URL
         if: ${{ inputs.fixture_results == '' }}
         env:
@@ -119,7 +129,7 @@ jobs:
           fi
 
       - name: Open GitHub issue on failure
-        if: failure()
+        if: failure() && inputs.fixture_results == ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
