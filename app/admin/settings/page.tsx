@@ -24,6 +24,7 @@ export default function GeneralSettingsPage() {
           label="Store Name"
           description="Your store's name as shown in the header, footer, and browser title"
           maxLength={60}
+          demoBlock
         />
 
         <SettingsField
@@ -62,6 +63,7 @@ export default function GeneralSettingsPage() {
           label="Store Logo"
           description="Upload your logo (SVG, PNG, or JPG). Displayed in the site header, footer, and outgoing emails."
           autoSave
+          demoBlock
           input={(value, onChange) => (
             <FileUpload
               linkId="store-logo"

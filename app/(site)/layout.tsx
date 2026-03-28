@@ -7,9 +7,9 @@ import { SiteBannerPortal } from "@/app/(site)/_components/layout/SiteBannerPort
 import { DemoBanner } from "@/app/(site)/_components/content/DemoBanner";
 import { getStorefrontTheme } from "@/lib/config/app-settings";
 
-// Evaluated once at module load based on NEXT_PUBLIC_DEMO_MODE.
+// Evaluated once at module load based on NEXT_PUBLIC_BUILD_VARIANT.
 // DemoBanner and its hooks never enter the React tree unless this is true.
-const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+import { IS_DEMO } from "@/lib/demo";
 
 /** Read the Google Fonts URL for the active theme from the manifest */
 async function getThemeFontsUrl(
@@ -54,7 +54,7 @@ export default async function SiteLayout({
         </>
       )}
       <div data-site="" className="relative flex min-h-screen flex-col">
-        {/* Demo banner - only mounts on demo instances (NEXT_PUBLIC_DEMO_MODE=true) */}
+        {/* Demo banner - only mounts on demo instances (NEXT_PUBLIC_BUILD_VARIANT=demo) */}
         {IS_DEMO && <DemoBanner />}
 
         {/* Banner portal - renders above header when active */}

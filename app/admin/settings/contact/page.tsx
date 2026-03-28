@@ -78,6 +78,7 @@ export default function ContactSettingsPage() {
           field="contactEmail"
           label="Contact Email"
           description="Primary email address for customer inquiries and notifications"
+          demoBlock
           input={(value, onChange, isDirty) => (
             <InputGroupInput
               type="email"
@@ -93,6 +94,7 @@ export default function ContactSettingsPage() {
           field="fromEmail"
           label="From Email"
           description="The address emails are sent from (e.g. hello@yourdomain.com)"
+          demoBlock
           input={(value, onChange, isDirty) => (
             <InputGroupInput
               type="email"
@@ -167,6 +169,7 @@ export default function ContactSettingsPage() {
           field="email"
           label="Footer Email Address"
           description="Email address displayed in the site footer"
+          demoBlock
           input={(value, onChange, isDirty) => (
             <InputGroupInput
               type="email"

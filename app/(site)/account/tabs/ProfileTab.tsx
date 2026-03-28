@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { getErrorMessage } from "@/lib/error-utils";
+import { IS_DEMO } from "@/lib/demo";
+import { useToast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -41,6 +43,7 @@ interface ProfileTabProps {
  * - Update session after email change
  */
 export default function ProfileTab({ user, onUpdate }: ProfileTabProps) {
+  const { toast } = useToast();
   const [name, setName] = useState(user.name || "");
   const [email, setEmail] = useState(user.email || "");
   const [isLoading, setIsLoading] = useState(false);
@@ -53,6 +56,12 @@ export default function ProfileTab({ user, onUpdate }: ProfileTabProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (IS_DEMO) {
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      setName(user.name || "");
+      setEmail(user.email || "");
+      return;
+    }
     setIsLoading(true);
     setMessage(null);
 

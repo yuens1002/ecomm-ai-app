@@ -2,6 +2,25 @@
 
 ## High Priority
 
+### Admin Password Change
+
+**Status**: TODO
+**Priority**: High
+**Location**: `app/admin/_components/dashboard/AdminTopNav.tsx:272`
+
+**Description**: The Password item in the admin user dropdown currently shows a "coming soon" toast instead of navigating anywhere. Admin needs the ability to change their password.
+
+**Current behaviour**: Clicking Password fires a toast — `"Password change coming soon."` (or `"Changes are disabled in demo mode."` in demo).
+
+**Proposed solution**: Convert the `DropdownMenuItem` to a `Link` that navigates to `/admin/profile?tab=security` (or a dedicated `/admin/profile/password` page) with a change-password form. Reuse the existing `SecurityTab` pattern from the storefront account page — current password, new password, confirm fields with Zod validation and bcrypt on the server action.
+
+**Notes**:
+
+- Demo guard already in place — keep `IS_DEMO` toast behaviour as-is
+- Admin profile page at `/admin/profile` already exists — extending it with a password tab is likely the least-effort path
+
+---
+
 ### Admin Breadcrumb Navigation (Bug Fix)
 
 **Status**: TODO

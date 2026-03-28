@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // Card components not used in this file
 import { User, Shield, Link2, MapPin, Trash2, Repeat } from "lucide-react";
@@ -76,8 +77,14 @@ interface AccountPageClientProps {
  * - Order history
  * - Account deletion
  */
+const VALID_TABS = ["profile", "security", "accounts", "addresses", "subscriptions", "danger"];
+
 export default function AccountPageClient({ user }: AccountPageClientProps) {
   const [userData, setUserData] = useState(user);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const tabParam = searchParams.get("tab");
+  const activeTab = tabParam && VALID_TABS.includes(tabParam) ? tabParam : "profile";
 
   return (
     <PageContainer>
@@ -90,7 +97,11 @@ export default function AccountPageClient({ user }: AccountPageClientProps) {
         </p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={(tab) => router.push(`/account?tab=${tab}`)}
+        className="space-y-6"
+      >
         <TabsList className="flex w-full overflow-x-auto [&::-webkit-scrollbar]:hidden px-1">
           <TabsTrigger value="profile" className="flex items-center gap-1.5 px-3 md:px-4 shrink-0">
             <User className="w-4 h-4" />

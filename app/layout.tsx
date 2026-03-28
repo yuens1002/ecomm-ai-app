@@ -21,7 +21,7 @@ const inter = Inter({
 });
 
 // Demo mode: OG positions the site as a platform demo, not a store
-const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+const isDemoMode = process.env.NEXT_PUBLIC_BUILD_VARIANT === "demo" || process.env.NEXT_PUBLIC_BUILD_VARIANT === "DEMO";
 
 // Generate metadata dynamically from database
 export async function generateMetadata(): Promise<Metadata> {

@@ -32,6 +32,7 @@ export default function LocationSettingsPage() {
           label="Single or Multiple Locations"
           description="Choose whether your business operates from a single location or multiple locations"
           autoSave
+          demoBlock
           input={(value, onChange) => (
             <OptionCardGroup
               value={(value as string) || "SINGLE"}

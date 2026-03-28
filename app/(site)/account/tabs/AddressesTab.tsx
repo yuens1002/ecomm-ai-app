@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { getErrorMessage } from "@/lib/error-utils";
+import { useToast } from "@/hooks/use-toast";
+import { IS_DEMO } from "@/lib/demo";
 import {
   Card,
   CardAction,
@@ -61,6 +63,7 @@ export default function AddressesTab({
   addresses = [],
   onUpdate,
 }: AddressesTabProps) {
+  const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -142,6 +145,10 @@ export default function AddressesTab({
   };
 
   const handleDelete = async () => {
+    if (IS_DEMO) {
+      toast({ title: "This action is disabled in demo mode." });
+      return;
+    }
     if (!deleteId) return;
 
     setIsLoading(true);

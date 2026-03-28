@@ -10,7 +10,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Github, Mail } from "lucide-react";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { FormField } from "@/components/ui/forms/FormField";
+import { IS_DEMO } from "@/lib/demo";
+import { useToast } from "@/hooks/use-toast";
 
 // Custom Google icon since lucide-react doesn't have it
 function GoogleIcon({ className }: { className?: string }) {
@@ -61,10 +64,15 @@ interface ConnectedAccountsTabProps {
 export default function ConnectedAccountsTab({
   accounts,
 }: ConnectedAccountsTabProps) {
+  const { toast } = useToast();
   const hasGoogle = accounts.some((acc) => acc.provider === "google");
   const hasGithub = accounts.some((acc) => acc.provider === "github");
 
   const handleConnect = async (provider: string) => {
+    if (IS_DEMO) {
+      toast({ title: "Changes are disabled in demo mode." });
+      return;
+    }
     await signIn(provider, { callbackUrl: "/account?tab=accounts" });
   };
 
@@ -139,7 +147,7 @@ export default function ConnectedAccountsTab({
               </div>
             </div>
             <Button variant="ghost" asChild>
-              <a href="#security">Go to Security</a>
+              <Link href="/account?tab=security">Go to Security</Link>
             </Button>
           </div>
 

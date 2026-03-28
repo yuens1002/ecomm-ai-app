@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { AI_PROVIDER_PRESETS } from "@/lib/ai-provider-presets";
+import { IS_DEMO } from "@/lib/demo";
 
 interface AISettingsData {
   baseUrl: string;
@@ -78,6 +79,7 @@ export default function AISettingsPage() {
     settings.model !== original.model;
 
   const handleSave = useCallback(async () => {
+    if (IS_DEMO) { toast({ title: "Changes are disabled in demo mode.", variant: "demo" }); setSettings(original); return; }
     setIsSaving(true);
     try {
       const res = await fetch("/api/admin/settings/ai", {

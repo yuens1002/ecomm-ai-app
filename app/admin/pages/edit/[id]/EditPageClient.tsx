@@ -16,6 +16,7 @@ import {
   COMMON_PAGE_ICONS,
 } from "@/components/shared/icons/DynamicIcon";
 import { useToast } from "@/hooks/use-toast";
+import { IS_DEMO } from "@/lib/demo";
 import {
   Select,
   SelectContent,
@@ -97,6 +98,10 @@ export default function EditPageClient({ page }: EditPageClientProps) {
   };
 
   const handleDelete = async () => {
+    if (IS_DEMO) {
+      toast({ title: "This action is disabled in demo mode.", variant: "demo" });
+      return;
+    }
     if (
       !confirm(
         "Are you sure you want to delete this page? This action cannot be undone."

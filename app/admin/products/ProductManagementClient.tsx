@@ -26,6 +26,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { useToast } from "@/hooks/use-toast";
+import { IS_DEMO } from "@/lib/demo";
 import { ProductType } from "@prisma/client";
 import { Filter, Package, Plus, Search } from "lucide-react";
 import Link from "next/link";
@@ -206,6 +207,7 @@ export default function ProductManagementClient({
   );
 
   const handleDeleteConfirm = useCallback(async () => {
+    if (IS_DEMO) { toast({ title: "This action is disabled in demo mode.", variant: "demo" }); return; }
     if (!deleteTarget) return;
     const result = await deleteProduct(deleteTarget.id);
     if (result.ok) {

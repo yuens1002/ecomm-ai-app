@@ -10,8 +10,19 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { DemoSignInButtons } from "@/components/auth/DemoSignInButtons";
 import { signInPublic } from "@/app/auth/actions";
 import { Spinner } from "@/components/ui/spinner";
+import { IS_DEMO } from "@/lib/demo";
 
-function SignInContentInner() {
+// Demo build: one-click sign-in only — no email form, no OAuth
+function DemoSignInContent() {
+  return (
+    <div className="space-y-4">
+      <DemoSignInButtons />
+    </div>
+  );
+}
+
+// Live build: email form + OAuth
+function LiveSignInContentInner() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/account";
 
@@ -39,11 +50,6 @@ function SignInContentInner() {
           {checkoutNotice}
         </div>
       )}
-
-      {/* Demo sign-in buttons - only visible when NEXT_PUBLIC_DEMO_MODE=true */}
-      <DemoSignInButtons />
-
-      {process.env.NEXT_PUBLIC_DEMO_MODE === "true" && <Separator className="my-4" />}
 
       <LoginForm signInAction={signInPublic} redirectTo={callbackUrl} />
 
@@ -114,6 +120,10 @@ function SignInContentInner() {
 }
 
 export function SignInContent() {
+  if (IS_DEMO) {
+    return <DemoSignInContent />;
+  }
+
   return (
     <Suspense
       fallback={
@@ -122,7 +132,7 @@ export function SignInContent() {
         </div>
       }
     >
-      <SignInContentInner />
+      <LiveSignInContentInner />
     </Suspense>
   );
 }

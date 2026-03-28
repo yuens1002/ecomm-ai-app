@@ -132,7 +132,7 @@ Run before any commit: `npm run precheck` (TypeScript + ESLint)
 
 - NEVER use `fullPage: true` — produces huge images that freeze the session when read. Use viewport-only (`fullPage: false` or omit) or element screenshots (`element.screenshot()`)
 - Prefer element screenshots for targeted verification: `const el = await page.$(selector); await el?.screenshot({ path })`
-- Use demo sign-in buttons (not hardcoded credentials) when `NEXT_PUBLIC_DEMO_MODE=true`
+- Use demo sign-in buttons (not hardcoded credentials) when `NEXT_PUBLIC_BUILD_VARIANT=DEMO`
 
 ---
 

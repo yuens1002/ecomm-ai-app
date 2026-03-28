@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, ShieldCheck, User } from "lucide-react";
-import { demoSignIn } from "@/app/auth/actions";
+import { demoSignIn } from "@/app/auth/demo-actions";
 
 // Display config only — credentials are kept server-side in the action
 const DEMO_ACCOUNTS = {
@@ -23,14 +23,17 @@ type AccountType = keyof typeof DEMO_ACCOUNTS;
 
 /**
  * Demo sign-in buttons that auto-authenticate without exposing passwords.
- * Only renders when NEXT_PUBLIC_DEMO_MODE=true
+ * Only renders when NEXT_PUBLIC_BUILD_VARIANT=demo
  */
 export function DemoSignInButtons() {
   const [loading, setLoading] = useState<AccountType | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Only show in demo mode
-  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
+  // Only show in demo build
+  if (
+    process.env.NEXT_PUBLIC_BUILD_VARIANT !== "demo" &&
+    process.env.NEXT_PUBLIC_BUILD_VARIANT !== "DEMO"
+  ) {
     return null;
   }
 

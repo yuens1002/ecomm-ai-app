@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
@@ -25,7 +25,8 @@ export function AddOnsPageClient({ license }: AddOnsPageClientProps) {
   const packages = license.alaCarte;
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  // Track pending state per package to avoid all buttons entering loading state together
+  const [pendingSlug, setPendingSlug] = useState<string | null>(null);
 
   useEffect(() => {
     if (searchParams.get("demo") === "success") {
@@ -34,11 +35,12 @@ export function AddOnsPageClient({ license }: AddOnsPageClientProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handlePurchase(alaCarteSlug: string) {
+  async function handlePurchase(alaCarteSlug: string) {
+    setPendingSlug(alaCarteSlug);
     const formData = new FormData();
     formData.set("alaCarteSlug", alaCarteSlug);
 
-    startTransition(async () => {
+    try {
       const result = await startAlaCarteCheckout(formData);
       if (result.success && result.url) {
         window.location.href = result.url;
@@ -48,8 +50,12 @@ export function AddOnsPageClient({ license }: AddOnsPageClientProps) {
           description: result.error,
           variant: "destructive",
         });
+        setPendingSlug(null);
       }
-    });
+    } catch {
+      toast({ title: "Checkout failed", variant: "destructive" });
+      setPendingSlug(null);
+    }
   }
 
   return (
@@ -72,10 +78,10 @@ export function AddOnsPageClient({ license }: AddOnsPageClientProps) {
                 <div className="flex items-center justify-between mt-auto">
                   <Button
                     size="sm"
-                    disabled={isPending}
+                    disabled={pendingSlug === pkg.id}
                     onClick={() => handlePurchase(pkg.id)}
                   >
-                    {isPending && (
+                    {pendingSlug === pkg.id && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
                     Purchase

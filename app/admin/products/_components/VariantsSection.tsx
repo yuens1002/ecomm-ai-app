@@ -34,6 +34,7 @@ import {
   X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { IS_DEMO } from "@/lib/demo";
 import {
   createVariant,
   updateVariant,
@@ -604,6 +605,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
   };
 
   const handleDeleteVariant = async (variantId: string) => {
+    if (IS_DEMO) { toast({ title: "This action is disabled in demo mode.", variant: "demo" }); return; }
     if (isNewProduct) {
       const newVariants = variants.filter((v) => v.id !== variantId);
       onVariantsChange(newVariants);
@@ -749,6 +751,7 @@ export const VariantsSection = forwardRef<VariantsSectionRef, VariantsSectionPro
   };
 
   const handleDeleteOption = async (optionId: string, variantId: string) => {
+    if (IS_DEMO) { toast({ title: "This action is disabled in demo mode.", variant: "demo" }); return; }
     if (isNewProduct) {
       const updated = variants.map((v) =>
         v.id === variantId

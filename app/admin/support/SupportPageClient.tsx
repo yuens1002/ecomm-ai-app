@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { IS_DEMO } from "@/lib/demo";
 import { UsageBar } from "./UsageBar";
 import { usePaidAction } from "./_hooks/usePaidAction";
 import { TermsNotice } from "./_components/TermsNotice";
@@ -187,6 +188,13 @@ function TicketFormCard({
     (ticketType === "normal" || !config.priorityDisabled);
 
   function handleSubmit() {
+    if (IS_DEMO) {
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      setTitle("");
+      setSteps("");
+      setExpected("");
+      return;
+    }
     if (!canSubmit) return;
 
     if (config.hasKey && config.showTypeSelector) {

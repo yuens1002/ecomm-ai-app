@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.97.4 - 2026-03-28
+
+### Added
+
+- **Demo badge**: Amber "DEMO" superscript badge next to store logo in both the storefront header and admin top nav — visible indicator without a disruptive banner
+- **Warning theme token**: `--warning` CSS variable (oklch) with dark mode variant — used by the demo toast and badge
+
+### Fixed
+
+- **Demo toast color**: All IS_DEMO toast guards now use `variant: "demo"` (amber) across admin and storefront — previously rendered as default white toast
+- **Demo form state reset**: Profile, AI settings, social links, support ticket, and SettingsField forms now reset to original values when the demo guard fires
+- **Account tab navigation**: Tabs no longer ignore client-side navigation — switched to controlled Radix Tabs with URL sync via `useRouter` and `Suspense` boundary
+- **Demo customer redirect**: Signing in as demo customer now lands on `/account` instead of `/`
+- **Review moderation**: IS_DEMO guard removed — reviews work normally in demo mode and are reset via cron reseed
+- **Project skills**: Moved from `.claude/skills/*/SKILL.md` to `.claude/commands/*.md` so slash commands are correctly resolved by Claude Code
+
 ## 0.97.3 - 2026-03-25
 
 ### Fixed

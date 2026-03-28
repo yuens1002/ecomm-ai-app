@@ -1,6 +1,14 @@
 {
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
+    "feat/build-variant-system": {
+      "status": "verified",
+      "acs_passed": 26,
+      "acs_total": 26,
+      "tasks": [],
+      "acs_doc": "docs/plans/build-variant-system-ACs.md",
+      "notes": "26/26 ACs verified. 10 UI (code review) + 11 FN (code review) + 5 REG (precheck 0 errors + 1098 tests + code review). AC-FN-4 and AC-FN-7 overridden PASS: inline IS_DEMO guards chosen over hook wrappers due to TypeScript parameter contravariance. 0 iterations needed."
+    },
     "feature/fix-alacarte-checkout-demo-guard": {
       "status": "implementing",
       "acs_passed": 0,

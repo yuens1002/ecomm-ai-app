@@ -20,7 +20,7 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DIRECT_URL: ${{ secrets.DIRECT_URL }}
       PLATFORM_URL: http://localhost:9999
-      NEXT_PUBLIC_DEMO_MODE: "true"
+      NEXT_PUBLIC_BUILD_VARIANT: "DEMO"
       AUTH_SECRET: ${{ secrets.AUTH_SECRET != '' && secrets.AUTH_SECRET || 'e2e-ci-placeholder-secret-min32chars!!' }}
     steps:
       - name: Checkout
