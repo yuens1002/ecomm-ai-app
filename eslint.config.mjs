@@ -13,8 +13,9 @@ const eslintConfig = defineConfig([
       "out/**",
       "build/**",
       "next-env.d.ts",
-      // Development tooling scripts
+      // Development and CI tooling scripts (Node.js — not Next.js app code)
       "dev-tools/**",
+      "scripts/**",
       // Test coverage reports
       "coverage/**",
       // Documentation

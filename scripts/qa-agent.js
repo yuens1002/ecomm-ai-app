@@ -82,6 +82,23 @@ const BUDGET    = parseInt(process.env.QA_TOKEN_BUDGET || "300000", 10);
 const RUN_ONLY   = process.env.RUN_ONLY  || null; // e.g. RUN_ONLY=AC-KV-2 (standalone, skips blockers)
 const STOP_AFTER = process.env.STOP_AFTER || null; // e.g. STOP_AFTER=AC-KV-2 (runs full flow up to + including this AC)
 
+// ── Structured results (written to qa-results.json on exit) ──────────────────
+
+const runState = {
+  runId:      process.env.GITHUB_RUN_ID || String(Date.now()),
+  timestamp:  new Date().toISOString(),
+  exitCode:   0,
+  baseUrl:    BASE_URL,
+  model:      MODEL,
+  totalTokens: 0,
+  infraError: null,
+  results:    [],
+};
+// process.on('exit') fires synchronously on every process.exit() call — safe to use fs.writeFileSync
+process.on("exit", () => {
+  fs.writeFileSync("qa-results.json", JSON.stringify(runState, null, 2));
+});
+
 const REQUIRED = [
   "BASE_URL", "ANTHROPIC_API_KEY",
   "QA_ADMIN_NAME", "QA_ADMIN_EMAIL", "QA_ADMIN_PASSWORD", "QA_STORE_NAME",
@@ -89,6 +106,8 @@ const REQUIRED = [
 const missing = REQUIRED.filter((k) => !process.env[k]);
 if (missing.length) {
   console.error(`❌  Missing required env vars: ${missing.join(", ")}`);
+  runState.exitCode = 3;
+  runState.infraError = `Missing required env vars: ${missing.join(", ")}`;
   process.exit(3);
 }
 
@@ -462,6 +481,7 @@ async function runSingleAC(page, client, ac, tokenState) {
   const MAX_TURNS = ac.id === "AC-IF-5" ? 18 : 10;
   const tools = getToolsForAC(ac);
   let turns = 0;
+  const toolCallTrace = [];
 
   while (turns < MAX_TURNS) {
     turns++;
@@ -477,6 +497,8 @@ async function runSingleAC(page, client, ac, tokenState) {
     console.log(`    [tokens] +${response.usage?.input_tokens + response.usage?.output_tokens} → ${tokenState.total}`);
 
     if (tokenState.total > BUDGET) {
+      runState.exitCode = 2;
+      runState.totalTokens = tokenState.total;
       console.error(`\n❌  Token budget exceeded (${tokenState.total} > ${BUDGET}). Aborting.`);
       process.exit(2);
     }
@@ -485,7 +507,8 @@ async function runSingleAC(page, client, ac, tokenState) {
 
     if (response.stop_reason === "end_turn") {
       console.warn("  ⚠️  Agent ended without calling done");
-      return { id: ac.id, status: "FAIL", evidence: "agent ended without verdict" };
+      const { url: finalPageUrl, text: finalPageSnapshot } = await readPage(page);
+      return { id: ac.id, status: "FAIL", evidence: "agent ended without verdict", turnCount: turns, toolCallTrace, finalPageSnapshot, finalPageUrl };
     }
 
     const toolResults = [];
@@ -493,6 +516,8 @@ async function runSingleAC(page, client, ac, tokenState) {
 
     for (const block of response.content) {
       if (block.type !== "tool_use") continue;
+
+      toolCallTrace.push(block.name);
 
       if (block.name === "done") {
         doneResult = { id: ac.id, status: block.input.status, evidence: block.input.evidence };
@@ -508,17 +533,28 @@ async function runSingleAC(page, client, ac, tokenState) {
       });
     }
 
-    if (doneResult) return doneResult;
+    if (doneResult) {
+      let finalPageSnapshot = null;
+      let finalPageUrl = null;
+      if (doneResult.status === "FAIL") {
+        const snap = await readPage(page);
+        finalPageSnapshot = snap.text;
+        finalPageUrl = snap.url;
+      }
+      return { ...doneResult, turnCount: turns, toolCallTrace, finalPageSnapshot, finalPageUrl };
+    }
     if (toolResults.length) messages.push({ role: "user", content: toolResults });
   }
-  return { id: ac.id, status: "FAIL", evidence: "exceeded max turns — agent did not reach a verdict" };
+
+  const { url: finalPageUrl, text: finalPageSnapshot } = await readPage(page);
+  return { id: ac.id, status: "FAIL", evidence: "exceeded max turns — agent did not reach a verdict", turnCount: turns, toolCallTrace, finalPageSnapshot, finalPageUrl };
 }
 
 // ── Result helpers ────────────────────────────────────────────────────────────
 
 function skipAC(id, reason) {
   console.log(`  ⏭️  ${id} SKIP — ${reason}`);
-  return { id, status: "SKIP", evidence: reason };
+  return { id, status: "SKIP", evidence: reason, turnCount: null, toolCallTrace: null, finalPageSnapshot: null, finalPageUrl: null };
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -538,6 +574,8 @@ async function main() {
     console.log(`✅  Health check passed\n`);
   } catch (e) {
     console.error(`❌  Cannot reach ${BASE_URL}: ${e.message}`);
+    runState.exitCode = 3;
+    runState.infraError = `Cannot reach ${BASE_URL}: ${e.message}`;
     process.exit(3);
   }
 
@@ -545,12 +583,13 @@ async function main() {
   const acs    = RUN_ONLY ? allAcs.filter((ac) => ac.id === RUN_ONLY) : allAcs;
   if (RUN_ONLY && acs.length === 0) {
     console.error(`❌  RUN_ONLY="${RUN_ONLY}" did not match any AC in VERIFICATION.md`);
+    runState.exitCode = 3;
+    runState.infraError = `RUN_ONLY="${RUN_ONLY}" did not match any AC in VERIFICATION.md`;
     process.exit(3);
   }
   const groups = groupACs(acs);
   const client = new Anthropic(); // reads ANTHROPIC_BASE_URL + ANTHROPIC_API_KEY from env
   const tokenState = { total: 0 };
-  const allResults = [];
 
   const browser = await chromium.launch({ headless: true });
   const page    = await browser.newPage();
@@ -586,15 +625,16 @@ async function main() {
       console.log(`\n━━━ ${GROUP_LABELS[groupKey]} ━━━`);
       const blockKey = GROUP_BLOCK_KEY[groupKey];
       if (!RUN_ONLY && blockKey && blocked.has(blockKey)) {
-        groupACs.forEach((ac) =>
-          allResults.push(skipAC(ac.id, "blocked — install flow did not complete"))
-        );
+        groupACs.forEach((ac) => {
+          const r = skipAC(ac.id, "blocked — install flow did not complete");
+          runState.results.push(r);
+        });
         continue;
       }
 
       for (const ac of groupACs) {
         const r = await runSingleAC(page, client, ac, tokenState);
-        allResults.push(r);
+        runState.results.push(r);
         console.log(`  ${r.status === "PASS" ? "✅" : "❌"} ${r.id} ${r.status} — ${r.evidence}`);
         // Gate downstream groups on critical failures
         for (const key of (BLOCKERS[r.id] ?? [])) {
@@ -605,29 +645,33 @@ async function main() {
           break;
         }
       }
-      if (STOP_AFTER && allResults.some((r) => r.id === STOP_AFTER)) break;
+      if (STOP_AFTER && runState.results.some((r) => r.id === STOP_AFTER)) break;
     }
   } finally {
     await browser.close();
   }
 
   // ── Summary ───────────────────────────────────────────────────────────────
-  const failed  = allResults.filter((r) => r.status === "FAIL");
-  const skipped = allResults.filter((r) => r.status === "SKIP");
-  const checked = allResults.length - skipped.length;
+  const failed  = runState.results.filter((r) => r.status === "FAIL");
+  const skipped = runState.results.filter((r) => r.status === "SKIP");
+  const checked = runState.results.length - skipped.length;
 
   console.log("\n━━━ Summary ━━━");
-  for (const r of allResults) {
+  for (const r of runState.results) {
     const icon = r.status === "PASS" ? "✅" : r.status === "SKIP" ? "⏭️ " : "❌";
     console.log(`${icon}  ${r.id.padEnd(10)} ${r.status.padEnd(5)}  ${r.evidence}`);
   }
   console.log(`\n${failed.length === 0 ? "✅" : "❌"}  ${checked} checked  •  ${failed.length} failed  •  ${skipped.length} skipped`);
   console.log(`   Tokens: ${tokenState.total.toLocaleString()} / ${BUDGET.toLocaleString()}`);
 
+  runState.exitCode = failed.length > 0 ? 1 : 0;
+  runState.totalTokens = tokenState.total;
   process.exit(failed.length > 0 ? 1 : 0);
 }
 
 main().catch((e) => {
+  runState.exitCode = 3;
+  runState.infraError = `Unexpected error: ${e.message}`;
   console.error("❌  Unexpected error:", e);
   process.exit(3);
 });

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.98.0 - 2026-03-28
+
+### Added
+
+- **QA self-healing pipeline**: When the nightly QA run fails, a `self-heal` job now automatically classifies the failure and takes action:
+  - **Category A** (stale `AC_HINTS` label) — repair agent navigates to the failing page, asks Claude to propose a corrected hint, verifies the fix with `STOP_AFTER=<acId>`, and opens a PR if the AC passes
+  - **Category B** (app regression) — posts recent git commits on relevant paths to the open GitHub issue
+  - **Category C** (infra / budget) — probes the health endpoint and posts the result to the open issue
+- **`qa-results.json`**: `qa-agent.js` now writes a structured results file on every exit path (exit 0/1/2/3) — captures per-AC `toolCallTrace`, `turnCount`, `finalPageSnapshot`, and `finalPageUrl`
+- **`qa-classify.js`**: Failure classifier with conservative Category A detection — requires hint key + interaction tool in trace + element-not-found evidence; any ambiguous AC resolves to B
+- **Fixture mode** (`workflow_dispatch fixture_results=...`): Inject a pre-built results JSON to test each self-heal pipeline path without triggering a real nightly failure
+- **`qa-enrich-issue.js`**: B/C diagnostic commenter — health probe for infra failures, `git log` on relevant paths for regressions; 24h noise guard
+- **`qa-repair-agent.js`**: Claude SDK + Playwright repair loop — proposes, applies, and verifies `AC_HINTS` fixes; opens PR on pass, reverts on fail; duplicate-PR guard
+
 ## 0.97.7 - 2026-03-28
 
 ### Fixed

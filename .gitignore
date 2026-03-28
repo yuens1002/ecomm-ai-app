@@ -19,6 +19,7 @@ npm-audit*.json
 /playwright-report/
 /blob-report/
 /test-results/
+qa-results.json
 e2e/.auth/
 
 # next.js

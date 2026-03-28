@@ -11,14 +11,18 @@ on:
       model:
         description: "Claude model override"
         default: "claude-haiku-4-5-20251001"
+      fixture_results:
+        description: "JSON string to inject as qa-results.json (skips QA agent run, exercises self-heal pipeline only)"
+        required: false
 
 concurrency:
   group: qa-nightly
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   issues: write
+  pull-requests: write
 
 jobs:
   qa:
@@ -38,7 +42,24 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install chromium --with-deps
 
+      - name: Inject fixture results (fixture mode)
+        if: ${{ inputs.fixture_results != '' }}
+        env:
+          FIXTURE_RESULTS: ${{ inputs.fixture_results }}
+        run: node -e "require('fs').writeFileSync('qa-results.json', process.env.FIXTURE_RESULTS ?? '', 'utf8');"
+
+      - name: Simulate QA failure for self-heal testing (fixture mode)
+        if: ${{ inputs.fixture_results != '' }}
+        run: |
+          EXIT_CODE=$(node -e "try{const r=require('./qa-results.json');process.stdout.write(String(r.exitCode));}catch{process.stdout.write('0');}")
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "ℹ️  Fixture exitCode=$EXIT_CODE — failing qa job to trigger self-heal pipeline"
+            exit "$EXIT_CODE"
+          fi
+          echo "ℹ️  Fixture exitCode=0 — qa job will pass (no self-heal triggered)"
+
       - name: Validate QA database URL
+        if: ${{ inputs.fixture_results == '' }}
         env:
           QA_DATABASE_URL: ${{ secrets.QA_DATABASE_URL }}
           QA_DB_ENDPOINT: ${{ secrets.QA_DB_ENDPOINT }}
@@ -58,6 +79,7 @@ jobs:
           echo "✅ QA database endpoint verified"
 
       - name: Reset QA state
+        if: ${{ inputs.fixture_results == '' }}
         env:
           DATABASE_URL: ${{ secrets.QA_DATABASE_URL }}
           DIRECT_URL: ${{ secrets.QA_DIRECT_URL }}
@@ -70,6 +92,7 @@ jobs:
           echo "✅ QA state reset (orders, EULA + users cleared)"
 
       - name: Run QA agent
+        if: ${{ inputs.fixture_results == '' }}
         env:
           BASE_URL: ${{ inputs.base_url || secrets.QA_BASE_URL }}
           ANTHROPIC_BASE_URL: ${{ secrets.VERCEL_AI_GATEWAY_BASE_URL }}
@@ -81,6 +104,15 @@ jobs:
           QA_MODEL: ${{ inputs.model || 'claude-haiku-4-5-20251001' }}
           QA_TOKEN_BUDGET: "300000"
         run: node scripts/qa-agent.js
+
+      - name: Upload QA results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-results
+          path: qa-results.json
+          retention-days: 3
+          if-no-files-found: ignore
 
       - name: Close resolved QA issues on success
         if: success()
@@ -99,7 +131,7 @@ jobs:
           fi
 
       - name: Open GitHub issue on failure
-        if: failure()
+        if: failure() && inputs.fixture_results == ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -112,3 +144,94 @@ jobs:
           Commit: \`${{ github.sha }}\`
 
           Check the run log for the per-AC breakdown."
+
+  self-heal:
+    needs: [qa]
+    if: failure() && needs.qa.result == 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download QA results artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: qa-results
+        continue-on-error: true
+
+      - name: Classify failure
+        run: node scripts/qa-classify.js --results-file qa-results.json > classification.json
+        continue-on-error: true
+
+      - name: Set CATEGORY from classification
+        id: category
+        run: |
+          if [ -f classification.json ]; then
+            CATEGORY=$(node -e "const c = require('./classification.json'); process.stdout.write(c.category)")
+          else
+            CATEGORY="C"
+          fi
+          echo "CATEGORY=$CATEGORY" >> $GITHUB_ENV
+          echo "category=$CATEGORY" >> $GITHUB_OUTPUT
+          echo "ℹ️  Failure category: $CATEGORY"
+
+      - name: Get open install-assurance issue number
+        id: issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUMBER=$(gh issue list --label "install-assurance" --state open --json number --limit 1 -q '.[0].number // ""')
+          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+          echo "ℹ️  Open issue: ${ISSUE_NUMBER:-none}"
+
+      - name: Install Playwright browser (Category A)
+        if: env.CATEGORY == 'A'
+        run: npx playwright install chromium --with-deps
+
+      - name: Repair (Category A)
+        if: env.CATEGORY == 'A'
+        env:
+          BASE_URL: ${{ inputs.base_url || secrets.QA_BASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.VERCEL_AI_GATEWAY_TOKEN }}
+          ANTHROPIC_BASE_URL: ${{ secrets.VERCEL_AI_GATEWAY_BASE_URL }}
+          QA_ADMIN_NAME: ${{ secrets.QA_ADMIN_NAME }}
+          QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
+          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
+          QA_STORE_NAME: ${{ secrets.QA_STORE_NAME }}
+          QA_MODEL: ${{ inputs.model || 'claude-haiku-4-5-20251001' }}
+          QA_REPAIR_TOKEN_BUDGET: "10000"
+          DATABASE_URL: ${{ secrets.QA_DATABASE_URL }}
+          QA_DB_ENDPOINT: ${{ secrets.QA_DB_ENDPOINT }}
+          DIRECT_URL: ${{ secrets.QA_DIRECT_URL }}
+          QA_CLASSIFICATION_JSON: classification.json
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          node scripts/qa-repair-agent.js
+
+      - name: Enrich issue (Category B / C)
+        if: env.CATEGORY != 'A' && env.ISSUE_NUMBER != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QA_CLASSIFICATION_JSON: classification.json
+          GITHUB_ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
+          BASE_URL: ${{ inputs.base_url || secrets.QA_BASE_URL }}
+        run: node scripts/qa-enrich-issue.js
