@@ -1,7 +1,7 @@
 # Build Variant System — Demo Behavior Reference
 
-> **Reference doc** — describes the implemented build variant system as of v0.98.0.
-> For the implementation plan and rationale, see `C:\Users\yuens\.claude\plans\fancy-soaring-wilkes.md`.
+> **Reference doc** — describes the implemented build variant system as of v0.97.4.
+> For the implementation plan and rationale, see `docs/plans/build-variant-system-ACs.md`.
 
 ---
 
@@ -142,4 +142,4 @@ In demo build, all OG images and page metadata use platform marketing copy inste
 
 ---
 
-Last updated: 2026-03-27 | Implemented: v0.98.0
+Last updated: 2026-03-28 | Implemented: v0.97.4

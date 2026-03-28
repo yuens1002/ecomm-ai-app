@@ -81,7 +81,7 @@ const cache = new Map<string, CacheEntry<unknown>>();
  * Test-only flag: when true, validateLicense() returns FREE_DEFAULT immediately.
  * Uses globalThis so the flag is visible across all Next.js module instances
  * (route handlers and server components run in separate webpack chunks).
- * Only honoured when NEXT_PUBLIC_BUILD_VARIANT=demo.
+ * Only honoured when NEXT_PUBLIC_BUILD_VARIANT is "demo" or "DEMO".
  */
 const g = globalThis as Record<string, unknown>;
 

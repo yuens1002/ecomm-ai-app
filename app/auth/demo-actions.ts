@@ -48,5 +48,5 @@ export async function demoSignIn(
     throw error;
   }
 
-  return { error: "Something went wrong" };
+  return {};
 }
