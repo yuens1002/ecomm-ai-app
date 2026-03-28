@@ -20,8 +20,9 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   issues: write
+  pull-requests: write
 
 jobs:
   qa:
@@ -131,3 +132,71 @@ jobs:
           Commit: \`${{ github.sha }}\`
 
           Check the run log for the per-AC breakdown."
+
+  self-heal:
+    needs: [qa]
+    if: failure() && needs.qa.result == 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download QA results artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: qa-results
+        continue-on-error: true
+
+      - name: Classify failure
+        run: node scripts/qa-classify.js --results-file qa-results.json > classification.json
+        continue-on-error: true
+
+      - name: Set CATEGORY from classification
+        id: category
+        run: |
+          if [ -f classification.json ]; then
+            CATEGORY=$(node -e "const c = require('./classification.json'); process.stdout.write(c.category)")
+          else
+            CATEGORY="C"
+          fi
+          echo "CATEGORY=$CATEGORY" >> $GITHUB_ENV
+          echo "category=$CATEGORY" >> $GITHUB_OUTPUT
+          echo "ℹ️  Failure category: $CATEGORY"
+
+      - name: Get open install-assurance issue number
+        id: issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUMBER=$(gh issue list --label "install-assurance" --state open --json number --limit 1 -q '.[0].number')
+          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+          echo "ℹ️  Open issue: ${ISSUE_NUMBER:-none}"
+
+      - name: Repair (Category A — placeholder)
+        if: env.CATEGORY == 'A'
+        run: echo "ℹ️  Category A repair not yet implemented (coming in next commit)"
+
+      - name: Enrich issue (Category B / C)
+        if: env.CATEGORY != 'A' && env.ISSUE_NUMBER != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QA_CLASSIFICATION_JSON: classification.json
+          GITHUB_ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
+          BASE_URL: ${{ inputs.base_url || secrets.QA_BASE_URL }}
+        run: node scripts/qa-enrich-issue.js
