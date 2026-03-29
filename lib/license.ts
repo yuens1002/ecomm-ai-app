@@ -132,7 +132,9 @@ export async function getLicenseKey(): Promise<string> {
 export async function validateLicense(): Promise<LicenseInfo> {
   // Test-only: force FREE tier when the reset-cache endpoint was called.
   // Uses globalThis so it works across separate Next.js module instances.
-  if (g.__testForceFree === true && (process.env.NEXT_PUBLIC_BUILD_VARIANT === "demo" || process.env.NEXT_PUBLIC_BUILD_VARIANT === "DEMO")) {
+  // No build-variant guard needed — __testForceFree is only set by the
+  // /api/test/reset-cache endpoint which is unavailable in production.
+  if (g.__testForceFree === true) {
     g.__testForceFree = false; // consume once
     return FREE_DEFAULT;
   }
