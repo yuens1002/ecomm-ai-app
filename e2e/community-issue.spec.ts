@@ -42,10 +42,11 @@ test("Submit normal ticket shows success toast", async ({
   await expect(submitButton).toBeEnabled();
   await submitButton.click();
 
-  // Verify success toast appears (title depends on submission path)
+  // Verify success toast appears (title depends on submission path / build variant)
+  // In demo mode the form is blocked and shows "Changes are disabled in demo mode."
   // Use .first() to avoid strict mode — aria-live span also matches the pattern
   await expect(
-    page.getByText(/Issue created|Issue #\d+ created/i).first()
+    page.getByText(/Issue created|Issue #\d+ created|Changes are disabled in demo mode/i).first()
   ).toBeVisible({ timeout: 10_000 });
 
   // Form should be cleared after successful submission
