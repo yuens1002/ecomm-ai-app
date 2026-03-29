@@ -14,6 +14,10 @@ const authFile = path.join(__dirname, ".auth/admin.json");
 const email = process.env.E2E_ADMIN_EMAIL ?? "admin@artisanroast.com";
 const password = process.env.E2E_ADMIN_PASSWORD ?? "";
 
+if (!password) {
+  throw new Error("E2E_ADMIN_PASSWORD is not set. Add it to .env.local or pass it via the environment.");
+}
+
 setup("authenticate as admin", async ({ page }) => {
   // Navigate to admin sign-in page
   await page.goto("/auth/admin-signin");

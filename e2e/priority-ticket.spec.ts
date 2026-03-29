@@ -49,6 +49,6 @@ test("Submit priority ticket appears in list", async ({
     timeout: 10_000,
   });
 
-  // Verify the ticket appears in the tickets list
-  await expect(page.getByText("Dashboard loading slowly")).toBeVisible();
+  // Verify the ticket appears in the tickets list (async refresh — explicit timeout)
+  await expect(page.getByText("Dashboard loading slowly")).toBeVisible({ timeout: 10_000 });
 });
