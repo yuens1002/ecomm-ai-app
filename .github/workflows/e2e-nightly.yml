@@ -38,11 +38,11 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: Seed demo admin for e2e tests
-        run: npm run create-admin -- "--email=$DEMO_ADMIN_EMAIL" "--password=$DEMO_ADMIN_PASSWORD" "--name=Admin"
+        run: npm run create-admin -- "--email=$E2E_ADMIN_EMAIL" "--password=$E2E_ADMIN_PASSWORD" "--name=Admin"
         env:
           DATABASE_URL: ${{ secrets.DIRECT_URL }}
-          DEMO_ADMIN_EMAIL: admin@artisanroast.com
-          DEMO_ADMIN_PASSWORD: ${{ secrets.E2E_DEMO_ADMIN_PASSWORD }}
+          E2E_ADMIN_EMAIL: admin@artisanroast.com
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_DEMO_ADMIN_PASSWORD }}
 
       - name: Run E2E tests
         env:
