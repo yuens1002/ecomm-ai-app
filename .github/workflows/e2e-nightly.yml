@@ -45,6 +45,9 @@ jobs:
           DEMO_ADMIN_PASSWORD: ${{ secrets.E2E_DEMO_ADMIN_PASSWORD }}
 
       - name: Run E2E tests
+        env:
+          E2E_ADMIN_EMAIL: admin@artisanroast.com
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_DEMO_ADMIN_PASSWORD }}
         run: npm run test:e2e
 
       - name: Upload Playwright report
