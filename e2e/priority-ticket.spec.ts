@@ -2,7 +2,7 @@
  * AC-E2E-5: Submit priority ticket
  *
  * Navigate to Support page (with priority-support feature)
- * → fill title → Submit → verify success toast appears.
+ * → fill title → Submit → verify ticket appears in list.
  */
 
 import { test, expect } from "@playwright/test";
@@ -12,7 +12,7 @@ test.beforeEach(async ({ request }) => {
   await request.post("http://localhost:9999/__reset");
 });
 
-test("Submit priority ticket shows success toast", async ({
+test("Submit priority ticket appears in list", async ({
   page,
 }) => {
   await page.goto("/admin/support");
@@ -43,12 +43,12 @@ test("Submit priority ticket shows success toast", async ({
   await expect(submitButton).toBeEnabled();
   await submitButton.click();
 
-  // Verify success toast (title depends on build variant)
-  // In demo mode the form is blocked and shows "Changes are disabled in demo mode."
+  // Verify success toast
   // Use .first() to avoid strict mode — aria-live span also matches the pattern
-  await expect(
-    page.getByText(/Ticket created|Issue created|Changes are disabled in demo mode/i).first()
-  ).toBeVisible({
+  await expect(page.getByText(/Ticket created|Issue created/i).first()).toBeVisible({
     timeout: 10_000,
   });
+
+  // Verify the ticket appears in the tickets list
+  await expect(page.getByText("Dashboard loading slowly")).toBeVisible();
 });
