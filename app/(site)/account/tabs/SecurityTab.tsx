@@ -19,6 +19,7 @@ import { FormField } from "@/components/ui/forms/FormField";
 
 interface SecurityTabProps {
   hasPassword: boolean;
+  bare?: boolean;
 }
 
 /**
@@ -34,7 +35,7 @@ interface SecurityTabProps {
  * - They can add a password to enable email/password signin
  * - Password changes require current password verification
  */
-export default function SecurityTab({ hasPassword }: SecurityTabProps) {
+export default function SecurityTab({ hasPassword, bare = false }: SecurityTabProps) {
   const { toast } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -106,17 +107,7 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
     }
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Security Settings</CardTitle>
-        <CardDescription>
-          {hasPassword
-            ? "Change your password to keep your account secure."
-            : "Set a password to enable email/password sign-in alongside your OAuth accounts."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+  const form = (
         <form onSubmit={handleSubmit} className="space-y-6">
           {hasPassword && (
             <FormField>
@@ -243,7 +234,21 @@ export default function SecurityTab({ hasPassword }: SecurityTabProps) {
               : "Set Password"}
           </Button>
         </form>
-      </CardContent>
+  );
+
+  if (bare) return form;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Security Settings</CardTitle>
+        <CardDescription>
+          {hasPassword
+            ? "Change your password to keep your account secure."
+            : "Set a password to enable email/password sign-in alongside your OAuth accounts."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>{form}</CardContent>
     </Card>
   );
 }

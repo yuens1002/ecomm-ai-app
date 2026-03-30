@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.98.1 - 2026-03-29
+
+### Added
+
+- feat(profile): add admin password change via SecurityTab reuse
+
 ## 0.98.0 - 2026-03-28
 
 ### Added

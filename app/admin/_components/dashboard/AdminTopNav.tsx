@@ -23,7 +23,6 @@ import { AdminMobileDrawer } from "./AdminMobileDrawer";
 import { StoreBrand } from "./StoreBrand";
 import { useUnreadReviews } from "./useUnreadReviews";
 import { IS_DEMO } from "@/lib/demo";
-import { useToast } from "@/hooks/use-toast";
 
 interface AdminTopNavProps {
   user: {
@@ -157,8 +156,7 @@ function NavDropdown({ item, unreadCount }: { item: NavItem; unreadCount: number
 
 export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps) {
   const { theme, setTheme } = useTheme();
-  const { toast } = useToast();
-  const { visible: visibleNavItems, overflow: overflowNavItem } = React.useMemo(
+const { visible: visibleNavItems, overflow: overflowNavItem } = React.useMemo(
     () => getDesktopNavConfig(),
     []
   );
@@ -283,19 +281,11 @@ export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps)
                     Profile
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="gap-2 cursor-pointer"
-                  onClick={() =>
-                    toast({
-                      title: IS_DEMO
-                        ? "Changes are disabled in demo mode."
-                        : "Password change coming soon.",
-                      ...(IS_DEMO && { variant: "demo" }),
-                    })
-                  }
-                >
-                  <KeyRound className="h-4 w-4" />
-                  Password
+                <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+                  <Link href="/admin/profile">
+                    <KeyRound className="h-4 w-4" />
+                    Password
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
