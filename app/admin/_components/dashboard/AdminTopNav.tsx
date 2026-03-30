@@ -156,7 +156,7 @@ function NavDropdown({ item, unreadCount }: { item: NavItem; unreadCount: number
 
 export function AdminTopNav({ user, storeName, storeLogoUrl }: AdminTopNavProps) {
   const { theme, setTheme } = useTheme();
-const { visible: visibleNavItems, overflow: overflowNavItem } = React.useMemo(
+  const { visible: visibleNavItems, overflow: overflowNavItem } = React.useMemo(
     () => getDesktopNavConfig(),
     []
   );

@@ -12,7 +12,13 @@ test.beforeEach(async ({ request }) => {
 });
 
 test("Password nav item links to profile page", async ({ page }) => {
-  await page.goto("/admin/profile");
+  await page.goto("/admin");
+
+  // Open the user dropdown (circular avatar/initials button in top-right)
+  await page.locator("header").getByRole("button").filter({ hasText: /^[A-Z]{1,2}$/ }).click();
+
+  // Click the Password item
+  await page.getByRole("menuitem", { name: /Password/i }).click();
 
   await expect(page).toHaveURL("/admin/profile");
   await expect(page.getByText("Security")).toBeVisible({ timeout: 10_000 });
