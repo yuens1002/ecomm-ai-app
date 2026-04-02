@@ -5,7 +5,7 @@ This guide explains how to set up and run the VAPI Voice Assistant locally. Due 
 ## Prerequisites
 
 - **Node.js** (v18+)
-- **Localtunnel** (installed via `npm install -D localtunnel`)
+- **A tunneling tool** (e.g., [ngrok](https://ngrok.com/) or `npx localtunnel`) — `localtunnel` was removed from devDependencies in v0.98.3; use any tunnel that exposes localhost to a public URL
 - **VAPI Account** (optional, if you want to manage assistants via dashboard, but we use ephemeral config)
 
 ## 1. The Challenge: Webhooks & Localhost
@@ -58,16 +58,15 @@ export const VAPI_ASSISTANT_CONFIG = {
 
    ```bash
    npm run dev
-
-```
+   ```
 
 2. **Start the Tunnel (if not running):**
 
    ```bash
    npx localtunnel --port 3000 --subdomain stupid-cases-joke
-```
+   ```
 
-1. **Access the App:**
+3. **Access the App:**
    - Open `http://localhost:3000` (for your own browsing).
    - The Voice Assistant will internally use the `https://stupid-cases-joke.loca.lt` URL to communicate with VAPI.
 
