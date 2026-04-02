@@ -4,9 +4,9 @@
 
 ### Security
 
-- Patched 20 npm vulnerabilities (1 critical, 13 high, 6 moderate) via `npm audit fix`
-- Upgraded `@anthropic-ai/sdk` from 0.80.0 to 0.82.0
-- Removed unused `localtunnel` dev dependency (carried vulnerable `axios` 0.21.4)
+- Patched 17 npm vulnerabilities (1 critical, 13 high, 6 moderate) via `npm audit fix`
+- Upgraded `@anthropic-ai/sdk` from 0.80.0 to 0.82.0 (moderate severity fix)
+- Removed `localtunnel` from devDependencies (carried vulnerable `axios` 0.21.4)
 
 ## 0.98.2 - 2026-04-01
 
