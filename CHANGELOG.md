@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.98.2 - 2026-04-01
+
+### Added
+
+- **Terms page acceptance dates**: `acceptedAt` and `acceptedVersions` from platform license validation now render on each Terms doc page — shows accepted version + date, or Accept button for pending docs
+- **Ticket reply thread**: Priority support tickets now open a detail sheet with the full conversation thread and a reply form — store owners can reply without leaving the admin
+
 ## 0.98.1 - 2026-03-29
 
 ### Added
