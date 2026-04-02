@@ -1,6 +1,14 @@
 {
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
+    "feat/platform-wiring-complete": {
+      "status": "verified",
+      "acs_passed": 13,
+      "acs_total": 13,
+      "tasks": [],
+      "acs_doc": "docs/plans/platform-wiring-complete-ACs.md",
+      "notes": "13/13 ACs verified. 4 UI via Playwright screenshots (MOCK_LICENSE_TIER), 2 UI via code review (no mock for empty/closed states), 5 FN via code review, 5 TST via test run (7 tests pass), 2 REG via precheck (0 errors) + test:ci (1127 tests). 0 iterations needed."
+    },
     "feat/build-variant-system": {
       "status": "verified",
       "acs_passed": 26,
