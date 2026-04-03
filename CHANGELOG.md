@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.98.4 - 2026-04-03
+
+### Changed
+
+- Excluded `docs/internal/` from TypeScript compilation — local dev scripts were causing spurious `tsc` errors
+- Removed stale `dev-tools/` scripts (backfill-add-on-links, backup-database, check-backup-models, restore-database)
+- Marked Product Reviews Tier 1 roadmap as fully shipped
+
 ## 0.98.3 - 2026-04-02
 
 ### Security
