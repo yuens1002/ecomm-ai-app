@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Search, Loader2 } from "lucide-react";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
 
@@ -46,6 +47,11 @@ interface SearchResponse {
   products: SearchProduct[];
   query: string;
   count: number;
+  intent: string | null;
+  filtersExtracted: Record<string, unknown> | null;
+  explanation: string | null;
+  followUps: string[];
+  context: { sessionId: string; turnCount: number };
 }
 
 // Generate a session ID for tracking
@@ -58,6 +64,18 @@ function getSessionId() {
     sessionStorage.setItem("artisan_session_id", sessionId);
   }
   return sessionId;
+}
+
+function getAndIncrementTurnCount(): number {
+  if (typeof window === "undefined") return 0;
+
+  const current = parseInt(
+    sessionStorage.getItem("artisan_search_turn_count") ?? "0",
+    10
+  );
+  const next = current + 1;
+  sessionStorage.setItem("artisan_search_turn_count", String(next));
+  return current;
 }
 
 export default function SearchResults() {
@@ -94,11 +112,13 @@ export default function SearchResults() {
       setError(null);
 
       const sessionId = getSessionId();
+      const turnCount = getAndIncrementTurnCount();
       const params = new URLSearchParams();
       if (searchQuery) params.append("q", searchQuery);
       if (roast) params.append("roast", roast);
       if (origin) params.append("origin", origin);
       if (sessionId) params.append("sessionId", sessionId);
+      params.append("turnCount", String(turnCount));
 
       const response = await fetch(`/api/search?${params.toString()}`);
 
@@ -121,6 +141,10 @@ export default function SearchResults() {
     if (query.trim()) {
       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
     }
+  }
+
+  function handleFollowUp(followUpText: string) {
+    router.push(`/search?q=${encodeURIComponent(followUpText)}`);
   }
 
   // Helper to generate title based on active filters
@@ -148,7 +172,7 @@ export default function SearchResults() {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
-          placeholder="Search for products..."
+          placeholder="Try 'smooth Ethiopian for V60'..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="pl-10"
@@ -173,6 +197,13 @@ export default function SearchResults() {
       {/* Results */}
       {results && !isLoading && (
         <>
+          {/* Agentic explanation */}
+          {results.explanation && (
+            <p className="text-sm text-muted-foreground italic">
+              {results.explanation}
+            </p>
+          )}
+
           <div className="text-muted-foreground">
             {results.count === 0 ? (
               <p>No results found for {getResultsTitle()}</p>
@@ -184,6 +215,22 @@ export default function SearchResults() {
               </p>
             )}
           </div>
+
+          {/* Follow-up chips */}
+          {results.followUps.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {results.followUps.map((followUp, i) => (
+                <Button
+                  key={i}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleFollowUp(followUp)}
+                >
+                  {followUp}
+                </Button>
+              ))}
+            </div>
+          )}
 
           {results.count > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
