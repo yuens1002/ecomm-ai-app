@@ -34,6 +34,7 @@
   "exclude": [
     "node_modules",
     "dev-tools",
+    "docs/internal",
     "prisma/seed-full-original.ts",
     "app/admin/pages/edit",
     "app/admin/pages/new/wizard",
