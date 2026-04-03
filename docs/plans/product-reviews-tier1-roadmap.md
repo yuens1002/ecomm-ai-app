@@ -1,6 +1,7 @@
 # Product Reviews Tier 1 — Roadmap
 
-**Branch:** `feat/product-reviews-tier1`
+**Status:** ✅ All phases shipped (v0.91.x)
+**Branch:** `feat/product-reviews-tier1` (merged)
 **Spec:** `docs/features/product-reviews/product-reviews-tier1.md`
 **Companion:** `docs/internal/product-reviews-tier2.md` (AI Roast Master — local only, gitignored)
 
