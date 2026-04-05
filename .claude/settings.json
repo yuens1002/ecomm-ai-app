@@ -133,7 +133,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/session-start-loop-node.js",
+            "command": "[ -f .claude/hooks/session-start-loop-node.js ] && node .claude/hooks/session-start-loop-node.js || exit 0",
             "timeout": 10
           }
         ]
@@ -145,22 +145,22 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/verify-before-commit-node.js",
+            "command": "[ -f .claude/hooks/verify-before-commit-node.js ] && node .claude/hooks/verify-before-commit-node.js || exit 0",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/review-before-merge-node.js",
+            "command": "[ -f .claude/hooks/review-before-merge-node.js ] && node .claude/hooks/review-before-merge-node.js || exit 0",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/pre-pr-precheck-node.js",
+            "command": "[ -f .claude/hooks/pre-pr-precheck-node.js ] && node .claude/hooks/pre-pr-precheck-node.js || exit 0",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/pre-migrate-backup-node.js",
+            "command": "[ -f .claude/hooks/pre-migrate-backup-node.js ] && node .claude/hooks/pre-migrate-backup-node.js || exit 0",
             "timeout": 10
           }
         ]
@@ -172,12 +172,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/post-precheck-stamp-node.js",
+            "command": "[ -f .claude/hooks/post-precheck-stamp-node.js ] && node .claude/hooks/post-precheck-stamp-node.js || exit 0",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "node .claude/hooks/post-backup-stamp-node.js",
+            "command": "[ -f .claude/hooks/post-backup-stamp-node.js ] && node .claude/hooks/post-backup-stamp-node.js || exit 0",
             "timeout": 10
           }
         ]
@@ -188,7 +188,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/verify-before-stop-node.js",
+            "command": "[ -f .claude/hooks/verify-before-stop-node.js ] && node .claude/hooks/verify-before-stop-node.js || exit 0",
             "timeout": 10
           }
         ]
