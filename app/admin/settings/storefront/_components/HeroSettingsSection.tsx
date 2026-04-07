@@ -62,7 +62,7 @@ export function HeroSettingsSection() {
   } = useMultiImageUpload({
     currentImages: savedSettings?.homepageHeroSlides ?? [],
     minImages: 1,
-    maxImages: 6,
+    maxImages: 10,
   });
 
   // Poster image (deferred upload)
@@ -271,19 +271,19 @@ export function HeroSettingsSection() {
                 <p className="text-xs text-muted-foreground">
                   {imageMode === "single"
                     ? "A single image fills the hero area. Use high-quality landscape images (1920×600 px recommended)."
-                    : "2–6 images rotate automatically every 5 seconds. Visitors can navigate using the dots. Same size recommendations apply."}
+                    : "2–10 images rotate automatically every 5 seconds. Visitors can navigate using the dots. Same size recommendations apply."}
                 </p>
 
                 <ImageListField
                   label={
-                    imageMode === "single" ? "Hero image" : "Slides (2–6)"
+                    imageMode === "single" ? "Hero image" : "Slides (2–10)"
                   }
                   images={imageListFieldImages}
                   onChange={handleImageListFieldChange}
                   pendingFiles={pendingFilesMap}
                   onFileSelect={handleImageListFieldFileSelect}
                   minImages={1}
-                  maxImages={imageMode === "single" ? 1 : 6}
+                  maxImages={imageMode === "single" ? 1 : 10}
                   showAltText
                 />
               </TabsContent>
