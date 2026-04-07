@@ -22,6 +22,7 @@ export interface SiteSettings {
   productAddOnsSectionTitle: string;
   cartAddOnsSectionTitle: string;
   // Homepage Hero
+  homepageHeroEnabled: boolean;
   homepageHeroType: "image" | "carousel" | "video";
   homepageHeroSlides: HeroSlide[];
   homepageHeroVideoUrl: string;
@@ -50,6 +51,7 @@ export const defaultSettings: SiteSettings = {
   productAddOnsSectionTitle: "Save on a Bundle",
   cartAddOnsSectionTitle: "You May Also Like",
   // Homepage Hero defaults
+  homepageHeroEnabled: true,
   homepageHeroType: "image",
   homepageHeroSlides: [],
   homepageHeroVideoUrl: "",
@@ -108,6 +110,7 @@ export function mapSettingsRecord(
       record.cart_addons_section_title ||
       defaultSettings.cartAddOnsSectionTitle,
     // Homepage Hero
+    homepageHeroEnabled: record.homepage_hero_enabled !== "false",
     homepageHeroType:
       (record.homepage_hero_type as SiteSettings["homepageHeroType"]) ||
       defaultSettings.homepageHeroType,

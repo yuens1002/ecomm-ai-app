@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { ImageField } from "@/app/admin/_components/cms/fields/ImageField";
 import { ImageListField } from "@/app/admin/_components/cms/fields/ImageListField";
 import {
@@ -8,21 +8,24 @@ import {
   useMultiImageUpload,
 } from "@/app/admin/_hooks/useImageUpload";
 import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { OptionCardGroup } from "@/app/admin/_components/forms/OptionCardGroup";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ImageIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ImageIcon, Loader2, Save, Trash2, Upload } from "lucide-react";
 import { Hero } from "@/app/(site)/_components/content/Hero";
 import { useToast } from "@/hooks/use-toast";
+import { IS_DEMO } from "@/lib/demo";
+import { cn } from "@/lib/utils";
 import type { HeroSlide } from "@/lib/site-settings";
 
 type HeroType = "image" | "carousel" | "video";
 type ImageMode = "single" | "slideshow";
-type ActiveTab = "image-slides" | "video";
+type MediaType = "image-slides" | "video";
 
 interface HeroSettings {
+  homepageHeroEnabled: boolean;
   homepageHeroType: HeroType;
   homepageHeroSlides: HeroSlide[];
   homepageHeroVideoUrl: string;
@@ -31,18 +34,33 @@ interface HeroSettings {
   homepageHeroTagline: string;
 }
 
+const MEDIA_OPTIONS = [
+  {
+    value: "image-slides" as MediaType,
+    title: "Image or Slideshow",
+    description:
+      "Upload 1 image for a static hero or 2–10 for a rotating slideshow. Mode is detected automatically.",
+  },
+  {
+    value: "video" as MediaType,
+    title: "Video",
+    description:
+      "A short looping background video (MP4, max 100 MB). A poster image is required.",
+  },
+];
+
 export function HeroSettingsSection() {
   const { toast } = useToast();
 
   // Server state
-  const [savedSettings, setSavedSettings] = useState<HeroSettings | null>(
-    null
-  );
+  const [savedSettings, setSavedSettings] = useState<HeroSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   // UI state
-  const [activeTab, setActiveTab] = useState<ActiveTab>("image-slides");
+  const [heroEnabled, setHeroEnabled] = useState(true);
+  // mediaType drives both the editing panel and heroType on save
+  const [mediaType, setMediaType] = useState<MediaType>("image-slides");
   const [imageMode, setImageMode] = useState<ImageMode>("single");
   const [heading, setHeading] = useState("");
   const [tagline, setTagline] = useState("");
@@ -61,7 +79,7 @@ export function HeroSettingsSection() {
     uploadAll: uploadAllSlides,
   } = useMultiImageUpload({
     currentImages: savedSettings?.homepageHeroSlides ?? [],
-    minImages: 1,
+    minImages: 0,
     maxImages: 10,
   });
 
@@ -72,6 +90,7 @@ export function HeroSettingsSection() {
     displayUrl: posterDisplayUrl,
     handleFileSelect: handlePosterFileSelect,
     uploadFile: uploadPosterFile,
+    reset: resetPosterFile,
   } = useImageUpload({
     currentUrl: savedSettings?.homepageHeroVideoPosterUrl ?? "",
   });
@@ -82,23 +101,24 @@ export function HeroSettingsSection() {
       .then((res) => res.json())
       .then((data: HeroSettings) => {
         setSavedSettings(data);
+        setHeroEnabled(data.homepageHeroEnabled);
         setHeading(data.homepageHeroHeading);
         setTagline(data.homepageHeroTagline);
         setSavedVideoUrl(data.homepageHeroVideoUrl);
-        if (data.homepageHeroType === "video") {
-          setActiveTab("video");
-        } else {
-          setActiveTab("image-slides");
-          setImageMode(
-            data.homepageHeroType === "carousel" ? "slideshow" : "single"
-          );
-        }
+        setMediaType(data.homepageHeroType === "video" ? "video" : "image-slides");
+        setImageMode(data.homepageHeroType === "carousel" ? "slideshow" : "single");
       })
       .catch(() => {
         toast({ title: "Failed to load hero settings", variant: "destructive" });
       })
       .finally(() => setIsLoading(false));
   }, [toast]);
+
+  // Auto-switch single ↔ slideshow based on image count
+  useEffect(() => {
+    if (isLoading) return;
+    setImageMode(imageListFieldImages.length > 1 ? "slideshow" : "single");
+  }, [imageListFieldImages.length, isLoading]);
 
   const handleVideoFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,10 +130,7 @@ export function HeroSettingsSection() {
         return;
       }
       if (file.size > 100 * 1024 * 1024) {
-        toast({
-          title: "Video must be under 100 MB",
-          variant: "destructive",
-        });
+        toast({ title: "Video must be under 100 MB", variant: "destructive" });
         return;
       }
 
@@ -125,6 +142,14 @@ export function HeroSettingsSection() {
   );
 
   const handleSave = useCallback(async () => {
+    if (IS_DEMO) {
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      return;
+    }
+    if (mediaType === "video" && !videoFile && !savedVideoUrl) {
+      toast({ title: "A video file is required", variant: "destructive" });
+      return;
+    }
     setIsSaving(true);
     try {
       // 1. Upload all pending slide images
@@ -158,9 +183,10 @@ export function HeroSettingsSection() {
         if (uploaded) finalPosterUrl = uploaded;
       }
 
-      // 4. Determine hero type from active tab + image mode radio
+      // 4. Determine hero type: mediaType drives the top-level choice;
+      //    image count auto-selects carousel vs single image.
       const heroType: HeroType =
-        activeTab === "video"
+        mediaType === "video"
           ? "video"
           : imageMode === "slideshow"
             ? "carousel"
@@ -171,6 +197,7 @@ export function HeroSettingsSection() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          homepageHeroEnabled: heroEnabled,
           homepageHeroType: heroType,
           homepageHeroSlides: uploadedSlides,
           homepageHeroVideoUrl: finalVideoUrl,
@@ -192,7 +219,8 @@ export function HeroSettingsSection() {
       setIsSaving(false);
     }
   }, [
-    activeTab,
+    heroEnabled,
+    mediaType,
     imageMode,
     heading,
     tagline,
@@ -206,9 +234,109 @@ export function HeroSettingsSection() {
     toast,
   ]);
 
+  /** Delete the saved video from blob and clear it from DB immediately. */
+  const handleDeleteVideo = useCallback(async () => {
+    if (IS_DEMO) {
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      return;
+    }
+
+    if (videoFile && !savedVideoUrl) {
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+      setVideoFile(null);
+      setVideoPreviewUrl(null);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (savedVideoUrl) {
+        const res = await fetch(
+          `/api/upload/video?path=${encodeURIComponent(savedVideoUrl)}`,
+          { method: "DELETE" }
+        );
+        if (!res.ok) throw new Error("Failed to delete video");
+      }
+
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+      setVideoFile(null);
+      setVideoPreviewUrl(null);
+      setSavedVideoUrl("");
+
+      const putRes = await fetch("/api/admin/settings/hero-media", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          homepageHeroEnabled: savedSettings?.homepageHeroEnabled ?? true,
+          homepageHeroType: savedSettings?.homepageHeroType ?? "image",
+          homepageHeroSlides: savedSettings?.homepageHeroSlides ?? [],
+          homepageHeroVideoUrl: "",
+          homepageHeroVideoPosterUrl: savedSettings?.homepageHeroVideoPosterUrl ?? "",
+          homepageHeroHeading: heading,
+          homepageHeroTagline: tagline,
+        }),
+      });
+      if (!putRes.ok) throw new Error("Failed to update settings");
+      setSavedSettings((await putRes.json()) as HeroSettings);
+
+      toast({ title: "Video removed" });
+    } catch {
+      toast({ title: "Failed to remove video", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [videoFile, videoPreviewUrl, savedVideoUrl, savedSettings, heading, tagline, toast]);
+
+  /** Delete the saved poster from blob and clear it from DB immediately. */
+  const handleClearPoster = useCallback(async () => {
+    if (IS_DEMO) {
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      return;
+    }
+
+    if (pendingPosterFile) {
+      resetPosterFile();
+      return;
+    }
+
+    const posterUrl = savedSettings?.homepageHeroVideoPosterUrl;
+    if (!posterUrl) return;
+
+    setIsSaving(true);
+    try {
+      const res = await fetch(
+        `/api/upload?path=${encodeURIComponent(posterUrl)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) throw new Error("Failed to delete poster");
+
+      const putRes = await fetch("/api/admin/settings/hero-media", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          homepageHeroEnabled: savedSettings?.homepageHeroEnabled ?? true,
+          homepageHeroType: savedSettings?.homepageHeroType ?? "image",
+          homepageHeroSlides: savedSettings?.homepageHeroSlides ?? [],
+          homepageHeroVideoUrl: savedVideoUrl,
+          homepageHeroVideoPosterUrl: "",
+          homepageHeroHeading: heading,
+          homepageHeroTagline: tagline,
+        }),
+      });
+      if (!putRes.ok) throw new Error("Failed to update settings");
+      setSavedSettings((await putRes.json()) as HeroSettings);
+
+      toast({ title: "Poster image removed" });
+    } catch {
+      toast({ title: "Failed to remove poster image", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [pendingPosterFile, savedSettings, savedVideoUrl, heading, tagline, resetPosterFile, toast]);
+
   // Derive preview values from current form state
   const previewType: HeroType =
-    activeTab === "video"
+    mediaType === "video"
       ? "video"
       : imageMode === "slideshow"
         ? "carousel"
@@ -218,14 +346,57 @@ export function HeroSettingsSection() {
   const previewVideoUrl = videoPreviewUrl ?? savedVideoUrl;
   const previewPosterUrl = posterPreviewUrl ?? posterDisplayUrl;
 
+  const hasVideo = !!(videoFile || savedVideoUrl);
+
+  const isDirty = useMemo(() => {
+    if (!savedSettings || isLoading) return false;
+    const savedMediaType = savedSettings.homepageHeroType === "video" ? "video" : "image-slides";
+    return (
+      heroEnabled !== savedSettings.homepageHeroEnabled ||
+      mediaType !== savedMediaType ||
+      heading !== savedSettings.homepageHeroHeading ||
+      tagline !== savedSettings.homepageHeroTagline ||
+      videoFile !== null ||
+      pendingPosterFile !== null ||
+      pendingFilesMap.size > 0 ||
+      imageListFieldImages.length !== savedSettings.homepageHeroSlides.length
+    );
+  }, [
+    savedSettings,
+    isLoading,
+    heroEnabled,
+    mediaType,
+    heading,
+    tagline,
+    videoFile,
+    pendingPosterFile,
+    pendingFilesMap,
+    imageListFieldImages.length,
+  ]);
+
   return (
     <SettingsSection
       icon={<ImageIcon className="h-5 w-5" />}
       title="Homepage Hero"
-      description="Configure the hero displayed at the top of your homepage. Choose between a static image, a rotating slideshow, or a looping video."
+      description="Choose a media type to display at the top of your homepage. The selected type is what visitors see."
       action={
-        <Button onClick={handleSave} disabled={isSaving || isLoading}>
-          {isSaving ? "Saving…" : "Save changes"}
+        <Button
+          size="sm"
+          onClick={isDirty ? handleSave : undefined}
+          disabled={isSaving || isLoading}
+        >
+          {isSaving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          <span className="ml-2">{isSaving ? "Saving" : "Save"}</span>
+          <span
+            className={cn(
+              "ml-2 size-2 rounded-full",
+              isDirty ? "bg-amber-400" : "bg-green-400"
+            )}
+          />
         </Button>
       }
     >
@@ -233,87 +404,69 @@ export function HeroSettingsSection() {
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : (
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[2fr_3fr]">
-          {/* ── Form panel (40%) ── */}
+          {/* ── Form panel ── */}
           <div className="space-y-6">
-            <Tabs
-              value={activeTab}
-              onValueChange={(v) => setActiveTab(v as ActiveTab)}
-            >
-              <TabsList>
-                <TabsTrigger value="image-slides">Image / Slides</TabsTrigger>
-                <TabsTrigger value="video">Video</TabsTrigger>
-              </TabsList>
 
-              {/* Image / Slides tab */}
-              <TabsContent value="image-slides" className="mt-4 space-y-4">
-                <RadioGroup
-                  value={imageMode}
-                  onValueChange={(v) => setImageMode(v as ImageMode)}
-                  className="flex gap-6"
-                >
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="single" id="mode-single" />
-                    <Label htmlFor="mode-single" className="cursor-pointer">
-                      Single image
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="slideshow" id="mode-slideshow" />
-                    <Label
-                      htmlFor="mode-slideshow"
-                      className="cursor-pointer"
-                    >
-                      Slideshow
-                    </Label>
-                  </div>
-                </RadioGroup>
-
+            {/* Enable / disable toggle */}
+            <div className="flex items-center justify-between gap-4 rounded-lg border px-4 py-3">
+              <div>
+                <p className="text-sm font-medium">Show hero on homepage</p>
                 <p className="text-xs text-muted-foreground">
-                  {imageMode === "single"
-                    ? "A single image fills the hero area. Use high-quality landscape images (1920×600 px recommended)."
-                    : "2–10 images rotate automatically every 5 seconds. Visitors can navigate using the dots. Same size recommendations apply."}
+                  When off, the hero section is hidden for all visitors.
                 </p>
+              </div>
+              <Switch
+                checked={heroEnabled}
+                onCheckedChange={setHeroEnabled}
+              />
+            </div>
 
+            {/* Media type selector */}
+            <OptionCardGroup
+              value={mediaType}
+              onValueChange={(v) => setMediaType(v as MediaType)}
+              options={MEDIA_OPTIONS}
+              wrapperClassName="w-full"
+            />
+
+            {/* Image / Slideshow editing UI */}
+            {mediaType === "image-slides" && (
+              <div className="space-y-4">
                 <ImageListField
-                  label={
-                    imageMode === "single" ? "Hero image" : "Slides (2–10)"
-                  }
+                  label={imageMode === "single" ? "Hero image" : "Slides (2–10)"}
                   images={imageListFieldImages}
                   onChange={handleImageListFieldChange}
                   pendingFiles={pendingFilesMap}
                   onFileSelect={handleImageListFieldFileSelect}
-                  minImages={1}
-                  maxImages={imageMode === "single" ? 1 : 10}
-                  showAltText
+                  minImages={0}
+                  maxImages={10}
                 />
-              </TabsContent>
+              </div>
+            )}
 
-              {/* Video tab */}
-              <TabsContent value="video" className="mt-4 space-y-4">
-                <p className="text-xs text-muted-foreground">
-                  Upload a short, looping background video (MP4 recommended,
-                  max 100 MB). Keep it under 30 seconds — it loops silently.{" "}
-                  <strong>A poster image is required</strong>: it displays
-                  before the video loads and prevents layout shift on slow
-                  connections.
-                </p>
-
+            {/* Video editing UI */}
+            {mediaType === "video" && (
+              <div className="space-y-4">
                 {/* Video file input */}
                 <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">Video file</Label>
+                  <Label className="text-sm font-medium">
+                    Video file <span className="text-destructive">*</span>
+                  </Label>
                   <div className="flex items-center gap-2">
                     <Input
                       readOnly
                       value={
                         videoFile?.name ??
-                        (savedVideoUrl ? "Current video" : "")
+                        (savedVideoUrl
+                          ? decodeURIComponent(savedVideoUrl.split("/").pop() ?? "")
+                          : "")
                       }
                       placeholder="No video selected"
                       className="flex-1 text-sm"
                     />
-                    <Button variant="outline" size="sm" asChild>
-                      <label className="cursor-pointer">
-                        Upload
+                    <Button variant="outline" size="icon" asChild>
+                      <label className="cursor-pointer" title="Upload video">
+                        <Upload className="h-4 w-4" />
                         <input
                           type="file"
                           accept="video/*"
@@ -321,6 +474,16 @@ export function HeroSettingsSection() {
                           onChange={handleVideoFileSelect}
                         />
                       </label>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      type="button"
+                      title="Remove video"
+                      disabled={!hasVideo || isSaving}
+                      onClick={handleDeleteVideo}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
                 </div>
@@ -333,13 +496,14 @@ export function HeroSettingsSection() {
                   pendingFile={pendingPosterFile}
                   previewUrl={posterPreviewUrl}
                   onFileSelect={handlePosterFileSelect}
+                  onClear={handleClearPoster}
                   placeholder="No poster selected"
                 />
-              </TabsContent>
-            </Tabs>
+              </div>
+            )}
 
-            {/* Shared: heading + tagline */}
-            <div className="space-y-4 border-t pt-4">
+            {/* Heading + tagline — image/slideshow only */}
+            {mediaType === "image-slides" && <div className="space-y-4 border-t pt-4">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Heading</Label>
                 <Input
@@ -361,23 +525,19 @@ export function HeroSettingsSection() {
                   maxLength={200}
                 />
               </div>
-            </div>
+            </div>}
           </div>
 
-          {/* ── Preview panel (60%) ── */}
+          {/* ── Preview panel ── */}
           <div className="space-y-2">
             <p className="text-sm font-medium">Preview</p>
             <div className="overflow-hidden rounded-lg border">
               <Hero
-                heading={heading || "Your Store"}
+                heading={heading || undefined}
                 tagline={tagline || undefined}
                 type={previewType}
                 slides={previewSlides}
-                imageUrl={
-                  previewType === "image"
-                    ? previewSlides[0]?.url
-                    : undefined
-                }
+                imageUrl={previewType === "image" ? previewSlides[0]?.url : undefined}
                 imageAlt="Hero preview"
                 videoUrl={previewVideoUrl || undefined}
                 videoPosterUrl={previewPosterUrl || undefined}

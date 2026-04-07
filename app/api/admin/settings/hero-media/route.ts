@@ -9,6 +9,7 @@ const heroSlideSchema = z.object({
 });
 
 const heroMediaSchema = z.object({
+  homepageHeroEnabled: z.boolean(),
   homepageHeroType: z.enum(["image", "carousel", "video"]),
   homepageHeroSlides: z.array(heroSlideSchema),
   homepageHeroVideoUrl: z.string(),
@@ -18,6 +19,7 @@ const heroMediaSchema = z.object({
 });
 
 const KEYS = {
+  enabled: "homepage_hero_enabled",
   type: "homepage_hero_type",
   slides: "homepage_hero_slides",
   videoUrl: "homepage_hero_video_url",
@@ -48,6 +50,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
+      homepageHeroEnabled: record[KEYS.enabled] !== "false",
       homepageHeroType: (record[KEYS.type] as "image" | "carousel" | "video") || "image",
       homepageHeroSlides: slides,
       homepageHeroVideoUrl: record[KEYS.videoUrl] || "",
@@ -82,6 +85,7 @@ export async function PUT(request: Request) {
     }
 
     const {
+      homepageHeroEnabled,
       homepageHeroType,
       homepageHeroSlides,
       homepageHeroVideoUrl,
@@ -91,6 +95,11 @@ export async function PUT(request: Request) {
     } = parsed.data;
 
     await Promise.all([
+      prisma.siteSettings.upsert({
+        where: { key: KEYS.enabled },
+        update: { value: String(homepageHeroEnabled) },
+        create: { key: KEYS.enabled, value: String(homepageHeroEnabled) },
+      }),
       prisma.siteSettings.upsert({
         where: { key: KEYS.type },
         update: { value: homepageHeroType },
@@ -124,6 +133,7 @@ export async function PUT(request: Request) {
     ]);
 
     return NextResponse.json({
+      homepageHeroEnabled,
       homepageHeroType,
       homepageHeroSlides,
       homepageHeroVideoUrl,
