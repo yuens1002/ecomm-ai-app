@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.99.0 - 2026-04-07
+
+### Added
+
+- **Agentic product search**: Natural-language queries (e.g. "something smooth for a V60") are classified by a heuristic and optionally processed by an LLM that extracts structured intent (roast level, origin, brew method, flavor profile). Results include a plain-English explanation and 2–3 follow-up suggestion chips. Keyword queries bypass the LLM entirely for speed.
+- **Homepage hero**: Configurable full-width hero section supporting image, image carousel, and video modes. Admins can upload media, set heading/tagline, and enable/disable the hero from the storefront settings page. Replaces the legacy ChatBarista floating widget with a "Find Your Coffee" CTA linking to the new agentic search.
+
 ## 0.98.5 - 2026-04-07
 
 ### Fixed
