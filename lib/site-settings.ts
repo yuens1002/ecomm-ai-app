@@ -63,7 +63,8 @@ export const defaultSettings: SiteSettings = {
 function safeParseJSON<T>(raw: string | undefined, fallback: T): T {
   if (!raw) return fallback;
   try {
-    return JSON.parse(raw) as T;
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed != null ? (parsed as T) : fallback;
   } catch {
     return fallback;
   }
@@ -111,9 +112,11 @@ export function mapSettingsRecord(
       defaultSettings.cartAddOnsSectionTitle,
     // Homepage Hero
     homepageHeroEnabled: record.homepage_hero_enabled !== "false",
-    homepageHeroType:
-      (record.homepage_hero_type as SiteSettings["homepageHeroType"]) ||
-      defaultSettings.homepageHeroType,
+    homepageHeroType: (["image", "carousel", "video"] as const).includes(
+      record.homepage_hero_type as SiteSettings["homepageHeroType"]
+    )
+      ? (record.homepage_hero_type as SiteSettings["homepageHeroType"])
+      : defaultSettings.homepageHeroType,
     homepageHeroSlides: safeParseJSON<HeroSlide[]>(
       record.homepage_hero_slides,
       defaultSettings.homepageHeroSlides

@@ -26,8 +26,7 @@ export function VideoHero({ videoUrl, posterUrl, heading, tagline }: VideoHeroPr
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
-      video.play();
-      setPlaying(true);
+      video.play().then(() => setPlaying(true)).catch(() => {/* autoplay blocked — leave state unchanged */});
     } else {
       video.pause();
       setPlaying(false);

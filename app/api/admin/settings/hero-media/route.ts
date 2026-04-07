@@ -11,7 +11,7 @@ const heroSlideSchema = z.object({
 const heroMediaSchema = z.object({
   homepageHeroEnabled: z.boolean(),
   homepageHeroType: z.enum(["image", "carousel", "video"]),
-  homepageHeroSlides: z.array(heroSlideSchema),
+  homepageHeroSlides: z.array(heroSlideSchema).max(10),
   homepageHeroVideoUrl: z.string(),
   homepageHeroVideoPosterUrl: z.string(),
   homepageHeroHeading: z.string().max(120),
@@ -44,14 +44,23 @@ export async function GET() {
 
     let slides: z.infer<typeof heroSlideSchema>[] = [];
     try {
-      slides = JSON.parse(record[KEYS.slides] || "[]");
+      const parsed = JSON.parse(record[KEYS.slides] || "[]");
+      const validated = z.array(heroSlideSchema).safeParse(parsed);
+      slides = validated.success ? validated.data : [];
     } catch {
       slides = [];
     }
 
+    const validHeroTypes = ["image", "carousel", "video"] as const;
+    const rawType = record[KEYS.type];
+    const heroType: "image" | "carousel" | "video" =
+      validHeroTypes.includes(rawType as "image" | "carousel" | "video")
+        ? (rawType as "image" | "carousel" | "video")
+        : "image";
+
     return NextResponse.json({
       homepageHeroEnabled: record[KEYS.enabled] !== "false",
-      homepageHeroType: (record[KEYS.type] as "image" | "carousel" | "video") || "image",
+      homepageHeroType: heroType,
       homepageHeroSlides: slides,
       homepageHeroVideoUrl: record[KEYS.videoUrl] || "",
       homepageHeroVideoPosterUrl: record[KEYS.videoPosterUrl] || "",

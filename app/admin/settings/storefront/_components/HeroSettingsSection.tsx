@@ -98,8 +98,11 @@ export function HeroSettingsSection() {
   // Load settings on mount
   useEffect(() => {
     fetch("/api/admin/settings/hero-media")
-      .then((res) => res.json())
-      .then((data: HeroSettings) => {
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to load (${res.status})`);
+        return res.json() as Promise<HeroSettings>;
+      })
+      .then((data) => {
         setSavedSettings(data);
         setHeroEnabled(data.homepageHeroEnabled);
         setHeading(data.homepageHeroHeading);
@@ -148,6 +151,10 @@ export function HeroSettingsSection() {
     }
     if (mediaType === "video" && !videoFile && !savedVideoUrl) {
       toast({ title: "A video file is required", variant: "destructive" });
+      return;
+    }
+    if (mediaType === "video" && !pendingPosterFile && !savedSettings?.homepageHeroVideoPosterUrl) {
+      toast({ title: "A poster image is required for video hero", variant: "destructive" });
       return;
     }
     setIsSaving(true);
@@ -267,8 +274,8 @@ export function HeroSettingsSection() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          homepageHeroEnabled: savedSettings?.homepageHeroEnabled ?? true,
-          homepageHeroType: savedSettings?.homepageHeroType ?? "image",
+          homepageHeroEnabled: heroEnabled,
+          homepageHeroType: imageMode === "slideshow" ? "carousel" : "image",
           homepageHeroSlides: savedSettings?.homepageHeroSlides ?? [],
           homepageHeroVideoUrl: "",
           homepageHeroVideoPosterUrl: savedSettings?.homepageHeroVideoPosterUrl ?? "",
@@ -314,8 +321,8 @@ export function HeroSettingsSection() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          homepageHeroEnabled: savedSettings?.homepageHeroEnabled ?? true,
-          homepageHeroType: savedSettings?.homepageHeroType ?? "image",
+          homepageHeroEnabled: heroEnabled,
+          homepageHeroType: "video",
           homepageHeroSlides: savedSettings?.homepageHeroSlides ?? [],
           homepageHeroVideoUrl: savedVideoUrl,
           homepageHeroVideoPosterUrl: "",
@@ -332,7 +339,7 @@ export function HeroSettingsSection() {
     } finally {
       setIsSaving(false);
     }
-  }, [pendingPosterFile, savedSettings, savedVideoUrl, heading, tagline, resetPosterFile, toast]);
+  }, [heroEnabled, pendingPosterFile, savedSettings, savedVideoUrl, heading, tagline, resetPosterFile, toast]);
 
   // Derive preview values from current form state
   const previewType: HeroType =
@@ -382,8 +389,8 @@ export function HeroSettingsSection() {
       action={
         <Button
           size="sm"
-          onClick={isDirty ? handleSave : undefined}
-          disabled={isSaving || isLoading}
+          onClick={handleSave}
+          disabled={isSaving || isLoading || !isDirty}
         >
           {isSaving ? (
             <Loader2 className="h-4 w-4 animate-spin" />
