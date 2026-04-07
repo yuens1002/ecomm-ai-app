@@ -856,6 +856,12 @@ const publicSettingsKeys = [
   "product_related_heading",
   "product_addons_section_title",
   "cart_addons_section_title",
+  "homepage_hero_type",
+  "homepage_hero_slides",
+  "homepage_hero_video_url",
+  "homepage_hero_video_poster_url",
+  "homepage_hero_heading",
+  "homepage_hero_tagline",
 ] as const;
 
 /**

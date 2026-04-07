@@ -277,7 +277,7 @@
       "notes": "Plan approved and committed. 6 UI + 7 FN + 6 REG ACs."
     },
     "feat/homepage-hero-settings": {
-      "status": "planned",
+      "status": "implementing",
       "acs_passed": 0,
       "acs_total": 26,
       "tasks": [],
