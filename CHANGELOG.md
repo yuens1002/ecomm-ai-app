@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.98.5 - 2026-04-07
+
+### Fixed
+
+- Admin signin card now centers correctly on soft navigation (signout, session redirect) — switched from `min-h-screen` to `fixed inset-0` to escape any parent layout constraints during route transitions
+
 ## 0.98.4 - 2026-04-03
 
 ### Changed
