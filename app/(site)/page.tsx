@@ -22,15 +22,17 @@ export default async function Home() {
 
   return (
     <>
-      <HomeHero
-        storeName={settings.storeName}
-        heroType={settings.homepageHeroType}
-        heroSlides={settings.homepageHeroSlides}
-        heroVideoUrl={settings.homepageHeroVideoUrl}
-        heroVideoPosterUrl={settings.homepageHeroVideoPosterUrl}
-        heroHeading={settings.homepageHeroHeading}
-        heroTagline={settings.homepageHeroTagline}
-      />
+      {settings.homepageHeroEnabled && (
+        <HomeHero
+          storeName={settings.storeName}
+          heroType={settings.homepageHeroType}
+          heroSlides={settings.homepageHeroSlides}
+          heroVideoUrl={settings.homepageHeroVideoUrl}
+          heroVideoPosterUrl={settings.homepageHeroVideoPosterUrl}
+          heroHeading={settings.homepageHeroHeading}
+          heroTagline={settings.homepageHeroTagline}
+        />
+      )}
 
       <RecommendationsSection
         products={recommendations.products}

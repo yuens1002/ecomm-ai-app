@@ -30,7 +30,7 @@ export function HomeHero({
   return (
     <section>
       <Hero
-        heading={heroHeading || storeName}
+        heading={heroHeading || undefined}
         tagline={heroTagline}
         imageUrl={imageUrl}
         imageAlt={`${storeName} — Specialty Coffee`}

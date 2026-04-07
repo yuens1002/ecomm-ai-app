@@ -52,3 +52,35 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const auth = await requireAdminApi();
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
+    const { searchParams } = request.nextUrl;
+    const path = searchParams.get("path");
+
+    if (!path) {
+      return NextResponse.json({ error: "path is required" }, { status: 400 });
+    }
+
+    if (!isBlobUrl(path)) {
+      return NextResponse.json(
+        { error: "Can only delete blob-stored files" },
+        { status: 400 }
+      );
+    }
+
+    await deleteFromBlob(path);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Video delete error:", error);
+    return NextResponse.json(
+      { error: "Failed to delete video" },
+      { status: 500 }
+    );
+  }
+}

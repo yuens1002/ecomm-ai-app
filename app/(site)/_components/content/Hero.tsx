@@ -3,6 +3,7 @@
 import Image from "next/image";
 import type { HeroSlide } from "@/lib/site-settings";
 import { HeroCarousel } from "./HeroCarousel";
+import { VideoHero } from "./VideoHero";
 
 interface HeroProps {
   heading?: string;
@@ -47,31 +48,12 @@ export function Hero({
   if (type === "video" && videoUrl) {
     return (
       <figure className={className}>
-        <div className="relative h-64 w-full overflow-hidden sm:h-48 md:h-96 lg:h-128">
-          <video
-            src={videoUrl}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="none"
-            poster={videoPosterUrl || undefined}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/30" />
-          {(heading || tagline) && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
-              {heading && (
-                <h1 className="text-5xl font-bold text-white md:text-7xl">
-                  {heading}
-                </h1>
-              )}
-              {tagline && (
-                <p className="text-lg text-white/90 md:text-2xl">{tagline}</p>
-              )}
-            </div>
-          )}
-        </div>
+        <VideoHero
+          videoUrl={videoUrl}
+          posterUrl={videoPosterUrl || undefined}
+          heading={heading}
+          tagline={tagline}
+        />
         {caption && (
           <figcaption className="text-sm text-muted-foreground text-right mt-2 pr-4 italic">
             {caption}
