@@ -73,7 +73,11 @@ precedence over AI-extracted values (user intent wins).
 `SearchResults.tsx` maintains two sessionStorage values:
 
 - `artisan_session_id` — UUID, persists for the browser session
+<<<<<<< HEAD
 - `artisan_search_turn_count` — increments per search query, sent as `turnCount` to the API
+=======
+- `artisan_turn_count` — increments per search query, sent as `turnCount` to the API
+>>>>>>> 0441880 (docs: add feature docs for agentic-search)
 
 Both are included in every API call. The `turnCount` is echoed back in `context` so future
 phases can adjust behaviour based on conversation depth.
