@@ -1,3 +1,8 @@
+export interface HeroSlide {
+  url: string;
+  alt: string;
+}
+
 export interface SiteSettings {
   storeName: string;
   storeTagline: string;
@@ -16,6 +21,14 @@ export interface SiteSettings {
   // Add-ons Section Titles
   productAddOnsSectionTitle: string;
   cartAddOnsSectionTitle: string;
+  // Homepage Hero
+  homepageHeroEnabled: boolean;
+  homepageHeroType: "image" | "carousel" | "video";
+  homepageHeroSlides: HeroSlide[];
+  homepageHeroVideoUrl: string;
+  homepageHeroVideoPosterUrl: string;
+  homepageHeroHeading: string;
+  homepageHeroTagline: string;
 }
 
 export const defaultSettings: SiteSettings = {
@@ -37,7 +50,25 @@ export const defaultSettings: SiteSettings = {
   // Add-ons defaults
   productAddOnsSectionTitle: "Save on a Bundle",
   cartAddOnsSectionTitle: "You May Also Like",
+  // Homepage Hero defaults
+  homepageHeroEnabled: true,
+  homepageHeroType: "image",
+  homepageHeroSlides: [],
+  homepageHeroVideoUrl: "",
+  homepageHeroVideoPosterUrl: "",
+  homepageHeroHeading: "",
+  homepageHeroTagline: "",
 };
+
+function safeParseJSON<T>(raw: string | undefined, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed != null ? (parsed as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 /** Maps a DB key-value record to a SiteSettings object with defaults */
 export function mapSettingsRecord(
@@ -79,5 +110,25 @@ export function mapSettingsRecord(
     cartAddOnsSectionTitle:
       record.cart_addons_section_title ||
       defaultSettings.cartAddOnsSectionTitle,
+    // Homepage Hero
+    homepageHeroEnabled: record.homepage_hero_enabled !== "false",
+    homepageHeroType: (["image", "carousel", "video"] as const).includes(
+      record.homepage_hero_type as SiteSettings["homepageHeroType"]
+    )
+      ? (record.homepage_hero_type as SiteSettings["homepageHeroType"])
+      : defaultSettings.homepageHeroType,
+    homepageHeroSlides: safeParseJSON<HeroSlide[]>(
+      record.homepage_hero_slides,
+      defaultSettings.homepageHeroSlides
+    ),
+    homepageHeroVideoUrl:
+      record.homepage_hero_video_url || defaultSettings.homepageHeroVideoUrl,
+    homepageHeroVideoPosterUrl:
+      record.homepage_hero_video_poster_url ||
+      defaultSettings.homepageHeroVideoPosterUrl,
+    homepageHeroHeading:
+      record.homepage_hero_heading || defaultSettings.homepageHeroHeading,
+    homepageHeroTagline:
+      record.homepage_hero_tagline || defaultSettings.homepageHeroTagline,
   };
 }

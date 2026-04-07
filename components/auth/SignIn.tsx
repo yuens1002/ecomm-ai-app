@@ -26,8 +26,7 @@ export function SignIn({
   children,
 }: SignInProps) {
   return (
-    <div className="fixed inset-0 overflow-y-auto bg-background">
-      <div className="flex min-h-full items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4">
           <div className="flex justify-center">
@@ -60,7 +59,6 @@ export function SignIn({
         </CardHeader>
         <CardContent>{children}</CardContent>
       </Card>
-      </div>
     </div>
   );
 }

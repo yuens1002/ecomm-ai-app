@@ -200,6 +200,55 @@ async function main() {
     },
   });
 
+  // Homepage Hero defaults
+  // Set SEED_HERO_VIDEO_URL and SEED_HERO_POSTER_URL env vars to point to Vercel Blob assets.
+  // Demo build uses "video" hero type when a video URL is provided; otherwise defaults to "image".
+  const IS_DEMO_SEED =
+    process.env.NEXT_PUBLIC_BUILD_VARIANT === "demo" ||
+    process.env.NEXT_PUBLIC_BUILD_VARIANT === "DEMO";
+  const heroVideoUrl = process.env.SEED_HERO_VIDEO_URL ?? "";
+  const heroPosterUrl = process.env.SEED_HERO_POSTER_URL ?? "";
+
+  await prisma.siteSettings.upsert({
+    where: { key: "homepage_hero_enabled" },
+    update: {},
+    create: { key: "homepage_hero_enabled", value: "true" },
+  });
+  await prisma.siteSettings.upsert({
+    where: { key: "homepage_hero_type" },
+    update: {},
+    create: {
+      key: "homepage_hero_type",
+      value: IS_DEMO_SEED && heroVideoUrl ? "video" : "image",
+    },
+  });
+  await prisma.siteSettings.upsert({
+    where: { key: "homepage_hero_video_url" },
+    update: {},
+    create: { key: "homepage_hero_video_url", value: heroVideoUrl },
+  });
+  await prisma.siteSettings.upsert({
+    where: { key: "homepage_hero_video_poster_url" },
+    update: {},
+    create: { key: "homepage_hero_video_poster_url", value: heroPosterUrl },
+  });
+  await prisma.siteSettings.upsert({
+    where: { key: "homepage_hero_slides" },
+    update: {},
+    create: { key: "homepage_hero_slides", value: "[]" },
+  });
+  await prisma.siteSettings.upsert({
+    where: { key: "homepage_hero_heading" },
+    update: {},
+    create: { key: "homepage_hero_heading", value: "" },
+  });
+  await prisma.siteSettings.upsert({
+    where: { key: "homepage_hero_tagline" },
+    update: {},
+    create: { key: "homepage_hero_tagline", value: "" },
+  });
+  console.log(`✓ Homepage hero defaults seeded (type: ${IS_DEMO_SEED && heroVideoUrl ? "video" : "image"})`);
+
   // Marketing Content Settings
   await prisma.siteSettings.upsert({
     where: { key: "homepage_featured_heading" },

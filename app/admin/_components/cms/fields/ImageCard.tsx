@@ -134,14 +134,14 @@ export const ImageCard = forwardRef<HTMLDivElement, ImageCardProps>(
             {onRemove && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive"
+                className="h-8 w-8"
                 onClick={onRemove}
                 disabled={!canDelete}
                 title={`Remove ${label.toLowerCase()}`}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             )}
           </div>
