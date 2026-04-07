@@ -277,7 +277,7 @@
       "notes": "19/19 ACs verified. 4 UI via screenshots (hero, ChatBarista removal, keyword search, dialog placeholder), 2 UI via code path (NL explanation + chips — AI unconfigured in dev), 7 FN via code review, 6 REG via precheck (0 errors) + test:ci (1139 tests, 0 failures) + screenshots. 0 iterations needed."
     },
     "feat/homepage-hero-settings": {
-      "status": "planned",
+      "status": "implementing",
       "acs_passed": 0,
       "acs_total": 26,
       "tasks": [],
