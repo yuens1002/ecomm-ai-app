@@ -292,7 +292,7 @@ export function HeroSettingsSection() {
     } finally {
       setIsSaving(false);
     }
-  }, [videoFile, videoPreviewUrl, savedVideoUrl, savedSettings, heading, tagline, toast]);
+  }, [heroEnabled, imageMode, videoFile, videoPreviewUrl, savedVideoUrl, savedSettings, heading, tagline, toast]);
 
   /** Delete the saved poster from blob and clear it from DB immediately. */
   const handleClearPoster = useCallback(async () => {
