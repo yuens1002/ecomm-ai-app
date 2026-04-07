@@ -276,6 +276,14 @@
       "acs_doc": "docs/plans/agentic-search-phase-a-ACs.md",
       "notes": "Plan approved and committed. 6 UI + 7 FN + 6 REG ACs."
     },
+    "feat/homepage-hero-settings": {
+      "status": "planned",
+      "acs_passed": 0,
+      "acs_total": 26,
+      "tasks": [],
+      "acs_doc": "docs/plans/homepage-hero-settings-ACs.md",
+      "notes": "11 UI + 11 FN + 4 REG ACs. Branched from feat/agentic-search. Image/Slides vs Video modes (mutually exclusive). Video requires poster image for LCP. 5 commits: data layer, API routes, Hero component, HeroSettingsSection admin UI, wiring."
+    },
     "feat/qa-self-heal": {
       "status": "verified",
       "acs_passed": 16,
