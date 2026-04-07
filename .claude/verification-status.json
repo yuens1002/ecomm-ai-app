@@ -268,22 +268,6 @@
       "acs_doc": "docs/plans/email-provider-settings-ACs.md",
       "notes": "21/21 pre-merge ACs verified. 5 UI (screenshots + code review), 8 FN (code review), 4 REG (precheck 0 errors + 94 suites/1095 tests), 4 QA code-review ACs. 2 additional post-merge CI ACs (AC-QA-5/6) tracked as DEFERRED in ACs doc — require qa-nightly.yml workflow_dispatch after merge to confirm Morning Roast fills in setup and appears in header+footer."
     },
-    "feat/agentic-search": {
-      "status": "verified",
-      "acs_passed": 19,
-      "acs_total": 19,
-      "tasks": [],
-      "acs_doc": "docs/plans/agentic-search-phase-a-ACs.md",
-      "notes": "19/19 ACs verified. 4 UI via screenshots (hero, ChatBarista removal, keyword search, dialog placeholder), 2 UI via code path (NL explanation + chips — AI unconfigured in dev), 7 FN via code review, 6 REG via precheck (0 errors) + test:ci (1139 tests, 0 failures) + screenshots. 0 iterations needed."
-    },
-    "feat/homepage-hero-settings": {
-      "status": "verified",
-      "acs_passed": 26,
-      "acs_total": 32,
-      "tasks": [],
-      "acs_doc": "docs/plans/homepage-hero-settings-ACs.md",
-      "notes": "Session 1: 26/26 ACs verified (11 UI + 11 FN + 4 REG). Session 2 UX refinements: +6 new ACs (AC-UI-12–16, AC-FN-12–16, AC-REG-5 minus original verified count) added post-verification. New: OptionCardGroup, auto-detect slideshow, delete buttons, VideoHero controls, demo guard, auto alt text, seed data, hero enable/disable toggle. Core feature verified; session 2 ACs need re-verify before final reviewer sign-off."
-    },
     "feat/qa-self-heal": {
       "status": "verified",
       "acs_passed": 16,
