@@ -60,7 +60,7 @@ function buildExtractionPrompt(query: string): string {
   "followUps": ["short clarifying question 1", "short clarifying question 2"]
 }
 
-Query: "${query}"`;
+Query: ${JSON.stringify(query)}`;
 }
 
 async function extractAgenticFilters(
@@ -76,8 +76,49 @@ async function extractAgenticFilters(
       temperature: 0.2,
     });
 
-    const parsed = JSON.parse(result.text) as AgenticExtraction;
-    return parsed;
+    const raw = JSON.parse(result.text) as Record<string, unknown>;
+
+    // Validate/normalize critical fields so downstream code can't throw on bad LLM output
+    const validIntents: AgenticIntent[] = [
+      "product_discovery",
+      "recommendation",
+      "how_to",
+      "reorder",
+    ];
+    const intent: AgenticIntent =
+      typeof raw.intent === "string" && validIntents.includes(raw.intent as AgenticIntent)
+        ? (raw.intent as AgenticIntent)
+        : "product_discovery";
+
+    const rawFilters =
+      raw.filtersExtracted && typeof raw.filtersExtracted === "object"
+        ? (raw.filtersExtracted as Record<string, unknown>)
+        : {};
+
+    const validRoastLevels = ["light", "medium", "dark"];
+    const roastLevel =
+      typeof rawFilters.roastLevel === "string" &&
+      validRoastLevels.includes(rawFilters.roastLevel.toLowerCase())
+        ? rawFilters.roastLevel.toLowerCase()
+        : undefined;
+
+    const filtersExtracted: FiltersExtracted = {
+      brewMethod:
+        typeof rawFilters.brewMethod === "string" ? rawFilters.brewMethod : undefined,
+      roastLevel,
+      flavorProfile: Array.isArray(rawFilters.flavorProfile)
+        ? rawFilters.flavorProfile.filter((v) => typeof v === "string")
+        : undefined,
+      origin: typeof rawFilters.origin === "string" ? rawFilters.origin : undefined,
+    };
+
+    const explanation =
+      typeof raw.explanation === "string" ? raw.explanation : "";
+    const followUps = Array.isArray(raw.followUps)
+      ? raw.followUps.filter((v) => typeof v === "string")
+      : [];
+
+    return { intent, filtersExtracted, explanation, followUps };
   } catch {
     // LLM failure is non-fatal — fall back to standard keyword search
     return null;
@@ -95,7 +136,8 @@ export async function GET(request: NextRequest) {
     const roast = searchParams.get("roast");
     const origin = searchParams.get("origin");
     const sessionId = searchParams.get("sessionId") ?? "";
-    const turnCount = parseInt(searchParams.get("turnCount") ?? "0", 10);
+    const parsedTurnCount = parseInt(searchParams.get("turnCount") ?? "0", 10);
+    const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = { isDisabled: false };
