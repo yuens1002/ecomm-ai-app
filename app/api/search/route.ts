@@ -2,6 +2,132 @@ import { NextRequest, NextResponse } from "next/server";
 import { ProductType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { chatCompletion, isAIConfigured } from "@/lib/ai-client";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type AgenticIntent =
+  | "product_discovery"
+  | "recommendation"
+  | "how_to"
+  | "reorder";
+
+interface FiltersExtracted {
+  brewMethod?: string;
+  roastLevel?: string;
+  flavorProfile?: string[];
+  origin?: string;
+}
+
+interface AgenticExtraction {
+  intent: AgenticIntent;
+  filtersExtracted: FiltersExtracted;
+  explanation: string;
+  followUps: string[];
+}
+
+// ---------------------------------------------------------------------------
+// NL heuristic — gates AI calls to avoid cost on simple keyword queries
+// ---------------------------------------------------------------------------
+
+export function isNaturalLanguageQuery(query: string): boolean {
+  if (query.trim().split(/\s+/).length < 3) return false;
+  const nlIndicators =
+    /\b(for|like|something|want|need|smooth|fruity|bright|bold|light|dark|morning|recommend|looking|find|help|my|with)\b/i;
+  return nlIndicators.test(query);
+}
+
+// ---------------------------------------------------------------------------
+// AI extraction step
+// ---------------------------------------------------------------------------
+
+const EXTRACTION_SYSTEM_PROMPT = `You are a coffee product search assistant. Extract structured intent from user queries.
+Always return valid JSON only — no markdown, no explanation outside the JSON.`;
+
+function buildExtractionPrompt(query: string): string {
+  return `Extract coffee search intent and return JSON only:
+{
+  "intent": "product_discovery" | "recommendation" | "how_to" | "reorder",
+  "filtersExtracted": {
+    "brewMethod": string | undefined,
+    "roastLevel": "light" | "medium" | "dark" | undefined,
+    "flavorProfile": string[] | undefined,
+    "origin": string | undefined
+  },
+  "explanation": "one sentence why these results match the query",
+  "followUps": ["short clarifying question 1", "short clarifying question 2"]
+}
+
+Query: ${JSON.stringify(query)}`;
+}
+
+async function extractAgenticFilters(
+  query: string
+): Promise<AgenticExtraction | null> {
+  try {
+    const result = await chatCompletion({
+      messages: [
+        { role: "system", content: EXTRACTION_SYSTEM_PROMPT },
+        { role: "user", content: buildExtractionPrompt(query) },
+      ],
+      maxTokens: 300,
+      temperature: 0.2,
+    });
+
+    const raw = JSON.parse(result.text) as Record<string, unknown>;
+
+    // Validate/normalize critical fields so downstream code can't throw on bad LLM output
+    const validIntents: AgenticIntent[] = [
+      "product_discovery",
+      "recommendation",
+      "how_to",
+      "reorder",
+    ];
+    const intent: AgenticIntent =
+      typeof raw.intent === "string" && validIntents.includes(raw.intent as AgenticIntent)
+        ? (raw.intent as AgenticIntent)
+        : "product_discovery";
+
+    const rawFilters =
+      raw.filtersExtracted && typeof raw.filtersExtracted === "object"
+        ? (raw.filtersExtracted as Record<string, unknown>)
+        : {};
+
+    const validRoastLevels = ["light", "medium", "dark"];
+    const roastLevel =
+      typeof rawFilters.roastLevel === "string" &&
+      validRoastLevels.includes(rawFilters.roastLevel.toLowerCase())
+        ? rawFilters.roastLevel.toLowerCase()
+        : undefined;
+
+    const filtersExtracted: FiltersExtracted = {
+      brewMethod:
+        typeof rawFilters.brewMethod === "string" ? rawFilters.brewMethod : undefined,
+      roastLevel,
+      flavorProfile: Array.isArray(rawFilters.flavorProfile)
+        ? rawFilters.flavorProfile.filter((v) => typeof v === "string")
+        : undefined,
+      origin: typeof rawFilters.origin === "string" ? rawFilters.origin : undefined,
+    };
+
+    const explanation =
+      typeof raw.explanation === "string" ? raw.explanation : "";
+    const followUps = Array.isArray(raw.followUps)
+      ? raw.followUps.filter((v) => typeof v === "string")
+      : [];
+
+    return { intent, filtersExtracted, explanation, followUps };
+  } catch {
+    // LLM failure is non-fatal — fall back to standard keyword search
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Route handler
+// ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,9 +135,10 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get("q");
     const roast = searchParams.get("roast");
     const origin = searchParams.get("origin");
-    const sessionId = searchParams.get("sessionId");
+    const sessionId = searchParams.get("sessionId") ?? "";
+    const parsedTurnCount = parseInt(searchParams.get("turnCount") ?? "0", 10);
+    const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
 
-    // Build the where clause dynamically
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = { isDisabled: false };
     let searchQuery = "";
@@ -21,35 +148,64 @@ export async function GET(request: NextRequest) {
       whereClause.OR = [
         { name: { contains: searchQuery, mode: "insensitive" } },
         { description: { contains: searchQuery, mode: "insensitive" } },
-        { origin: { hasSome: [searchQuery] } }, // Case sensitive for arrays usually, but let's try
+        { origin: { hasSome: [searchQuery] } },
         { tastingNotes: { hasSome: [searchQuery] } },
       ];
     }
 
+    // Explicit roast/origin URL params take precedence over AI extraction
     if (roast) {
       const roastSlug = roast.toLowerCase().endsWith("-roast")
         ? roast.toLowerCase()
         : `${roast.toLowerCase()}-roast`;
 
       whereClause.categories = {
-        some: {
-          category: {
-            slug: roastSlug,
-          },
-        },
+        some: { category: { slug: roastSlug } },
       };
-
-      // Roast filters are coffee-only
       whereClause.type = ProductType.COFFEE;
     }
 
     if (origin) {
-      // If origin is "Blend", we look for it in the array
-      // If origin is a country, we look for it
       whereClause.origin = { has: origin };
     }
 
-    // Track search activity only if there's a text query
+    // -------------------------------------------------------------------------
+    // Agentic step — NL extraction (skipped for keyword queries or if AI off)
+    // -------------------------------------------------------------------------
+
+    let agenticData: AgenticExtraction | null = null;
+
+    if (
+      query &&
+      isNaturalLanguageQuery(query) &&
+      (await isAIConfigured())
+    ) {
+      agenticData = await extractAgenticFilters(query);
+
+      if (agenticData?.filtersExtracted) {
+        const { roastLevel, origin: extractedOrigin } =
+          agenticData.filtersExtracted;
+
+        // Apply extracted roastLevel only if no explicit roast param
+        if (roastLevel && !roast) {
+          const roastSlug = `${roastLevel.toLowerCase()}-roast`;
+          whereClause.categories = {
+            some: { category: { slug: roastSlug } },
+          };
+          whereClause.type = ProductType.COFFEE;
+        }
+
+        // Apply extracted origin only if no explicit origin param
+        if (extractedOrigin && !origin) {
+          whereClause.origin = { has: extractedOrigin };
+        }
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Track search activity
+    // -------------------------------------------------------------------------
+
     const session = await auth();
     if (sessionId && query) {
       try {
@@ -62,40 +218,32 @@ export async function GET(request: NextRequest) {
           },
         });
       } catch (error) {
-        // Log but don't fail the search if activity tracking fails
         console.error("Failed to track search activity:", error);
       }
     }
 
-    // Search products
+    // -------------------------------------------------------------------------
+    // Execute Prisma query
+    // -------------------------------------------------------------------------
+
     const products = await prisma.product.findMany({
       where: whereClause,
       include: {
         categories: {
           include: {
             category: {
-              select: {
-                name: true,
-                slug: true,
-              },
+              select: { name: true, slug: true },
             },
           },
-          where: {
-            isPrimary: true,
-          },
+          where: { isPrimary: true },
           take: 1,
         },
         variants: {
           where: { isDisabled: false },
           include: {
             images: {
-              select: {
-                url: true,
-                altText: true,
-              },
-              orderBy: {
-                order: "asc" as const,
-              },
+              select: { url: true, altText: true },
+              orderBy: { order: "asc" as const },
               take: 1,
             },
             purchaseOptions: {
@@ -117,6 +265,11 @@ export async function GET(request: NextRequest) {
       products,
       query: searchQuery,
       count: products.length,
+      intent: agenticData?.intent ?? null,
+      filtersExtracted: agenticData?.filtersExtracted ?? null,
+      explanation: agenticData?.explanation ?? null,
+      followUps: agenticData?.followUps ?? [],
+      context: { sessionId, turnCount },
     });
   } catch (error) {
     console.error("Error searching products:", error);
