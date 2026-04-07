@@ -6,6 +6,7 @@ import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { ShoppingBag } from "lucide-react";
 import { IconPicker } from "@/app/admin/_components/cms/fields/IconPicker";
 import { InputGroupInput } from "@/components/ui/forms/InputGroup";
+import { HeroSettingsSection } from "./_components/HeroSettingsSection";
 
 /**
  * Store Front Settings Page
@@ -18,6 +19,8 @@ export default function StoreFrontSettingsPage() {
         title="Store Front Settings"
         subtitle="Customize your product menu and shopping experience"
       />
+
+      <HeroSettingsSection />
 
       <SettingsSection
         icon={<ShoppingBag className="h-5 w-5" />}
