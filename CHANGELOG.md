@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.99.1 - 2026-04-08
+
+### Fixed
+
+- **Video hero**: switched to `aspect-[3/1]` container with `object-contain` so videos are letterboxed rather than cropped; added 3:1 ratio hint in admin settings
+- **Hero overlay**: dark overlay now only renders when a heading or tagline is present (image, carousel, and video variants)
+- **Homepage**: removed "Find Your Coffee" CTA section under the hero
+- **Search — NL fallback**: tokenized keyword fallback for natural-language queries when AI is not configured (e.g. "what's good with v60" now returns results by searching meaningful tokens)
+- **Search — AI extraction**: strips markdown code fences that some models add despite instructions; bumped `maxTokens` 300 → 500 to prevent truncated JSON
+- **Search — follow-up chips**: AI now generates short action labels ("Light roast", "Ethiopian") instead of clarifying questions; chips preserve AI mode when clicked
+- **Search — roast + terms**: mixed queries like "dark roast Ethiopia" now apply both the roast category filter and a token search for remaining terms
+- **Demo mode**: setup checklist hidden in demo mode; demo banner removed from admin shell
+
+### Added
+
+- **Ask AI toggle**: search page shows an "Ask AI" button (only when AI keys are configured) that switches the input into conversational mode — different placeholder, AI extraction forced, synced from URL for deep-linking
+
 ## 0.99.0 - 2026-04-07
 
 ### Added
