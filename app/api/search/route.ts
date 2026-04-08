@@ -32,6 +32,24 @@ interface AgenticExtraction {
 // NL heuristic — gates AI calls to avoid cost on simple keyword queries
 // ---------------------------------------------------------------------------
 
+const NL_STOP_WORDS = new Set([
+  "what", "whats", "is", "are", "good", "best", "great", "any",
+  "with", "for", "a", "an", "the", "and", "or", "but", "in", "on",
+  "at", "to", "of", "me", "my", "some", "something", "anything",
+  "that", "this", "which", "can", "i", "you", "us", "we", "do",
+  "does", "would", "like", "looking", "find", "help", "need", "want",
+  "show", "get", "give", "have", "over", "up", "out", "about",
+]);
+
+/** Strip stop words and punctuation — returns meaningful search tokens. */
+function tokenizeNLQuery(q: string): string[] {
+  return q
+    .toLowerCase()
+    .replace(/[?!']/g, "")
+    .split(/\s+/)
+    .filter((t) => t.length > 1 && !NL_STOP_WORDS.has(t));
+}
+
 export function isNaturalLanguageQuery(query: string): boolean {
   if (query.trim().split(/\s+/).length < 3) return false;
   const nlIndicators =
@@ -158,6 +176,20 @@ export async function GET(request: NextRequest) {
           some: { category: { slug: `${level}-roast` } },
         };
         whereClause.type = ProductType.COFFEE;
+      } else if (isNaturalLanguageQuery(searchQuery)) {
+        // NL query without AI: tokenize to get meaningful words and search
+        // each individually. This handles "what's good with v60 pour over?"
+        // → ["v60", "pour"] → matches products mentioning V60/pour in any field.
+        const tokens = tokenizeNLQuery(searchQuery);
+        if (tokens.length > 0) {
+          whereClause.OR = tokens.flatMap((token) => [
+            { name: { contains: token, mode: "insensitive" } },
+            { description: { contains: token, mode: "insensitive" } },
+            { origin: { hasSome: [token] } },
+            { tastingNotes: { hasSome: [token] } },
+          ]);
+        }
+        // no tokens left after stripping → no OR clause → returns all products
       } else {
         whereClause.OR = [
           { name: { contains: searchQuery, mode: "insensitive" } },
