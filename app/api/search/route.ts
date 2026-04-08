@@ -75,8 +75,10 @@ function buildExtractionPrompt(query: string): string {
     "origin": string | undefined
   },
   "explanation": "one sentence why these results match the query",
-  "followUps": ["short clarifying question 1", "short clarifying question 2"]
+  "followUps": ["short filter label e.g. 'Light roast' or 'Ethiopian' or 'V60 friendly'", "another short label"]
 }
+
+followUps must be 2–3 short action labels (2–4 words each) the user can tap to refine results — NOT questions. Examples: "Light roast", "Single origin", "Fruity notes", "Under $30", "Espresso friendly".
 
 Query: ${JSON.stringify(query)}`;
 }
@@ -90,11 +92,13 @@ async function extractAgenticFilters(
         { role: "system", content: EXTRACTION_SYSTEM_PROMPT },
         { role: "user", content: buildExtractionPrompt(query) },
       ],
-      maxTokens: 300,
+      maxTokens: 500,
       temperature: 0.2,
     });
 
-    const raw = JSON.parse(result.text) as Record<string, unknown>;
+    // Strip markdown code fences that some models (e.g. Gemini) add despite instructions
+    const stripped = result.text.trim().replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+    const raw = JSON.parse(stripped) as Record<string, unknown>;
 
     // Validate/normalize critical fields so downstream code can't throw on bad LLM output
     const validIntents: AgenticIntent[] = [
@@ -137,8 +141,9 @@ async function extractAgenticFilters(
       : [];
 
     return { intent, filtersExtracted, explanation, followUps };
-  } catch {
+  } catch (err) {
     // LLM failure is non-fatal — fall back to standard keyword search
+    console.error("[agentic-search] AI extraction failed:", err);
     return null;
   }
 }
@@ -153,6 +158,7 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get("q");
     const roast = searchParams.get("roast");
     const origin = searchParams.get("origin");
+    const forceAI = searchParams.get("ai") === "1";
     const sessionId = searchParams.get("sessionId") ?? "";
     const parsedTurnCount = parseInt(searchParams.get("turnCount") ?? "0", 10);
     const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
@@ -224,7 +230,7 @@ export async function GET(request: NextRequest) {
 
     if (
       query &&
-      isNaturalLanguageQuery(query) &&
+      (forceAI || isNaturalLanguageQuery(query)) &&
       (await isAIConfigured())
     ) {
       agenticData = await extractAgenticFilters(query);

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2, Sparkles } from "lucide-react";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
+import { cn } from "@/lib/utils";
 
 interface SearchProduct {
   id: string;
@@ -78,10 +79,11 @@ function getAndIncrementTurnCount(): number {
   return current;
 }
 
-export default function SearchResults() {
+export default function SearchResults({ aiConfigured = false }: { aiConfigured?: boolean }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [query, setQuery] = useState(searchParams.get("q") || "");
+  const [aiMode, setAiMode] = useState(false);
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,16 +98,17 @@ export default function SearchResults() {
 
     // Perform search if any param exists
     if (q || roast || origin) {
-      performSearch(q, roast, origin);
+      performSearch(q, roast, origin, aiMode);
     } else {
       setResults(null);
     }
-  }, [searchParams]);
+  }, [searchParams, aiMode]);
 
   async function performSearch(
     searchQuery: string | null,
     roast: string | null,
-    origin: string | null
+    origin: string | null,
+    useAI?: boolean
   ) {
     try {
       setIsLoading(true);
@@ -119,6 +122,7 @@ export default function SearchResults() {
       if (origin) params.append("origin", origin);
       if (sessionId) params.append("sessionId", sessionId);
       params.append("turnCount", String(turnCount));
+      if (useAI) params.append("ai", "1");
 
       const response = await fetch(`/api/search?${params.toString()}`);
 
@@ -139,7 +143,10 @@ export default function SearchResults() {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     if (query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+      const url = new URL("/search", window.location.origin);
+      url.searchParams.set("q", query.trim());
+      if (aiMode) url.searchParams.set("ai", "1");
+      router.push(url.pathname + url.search);
     }
   }
 
@@ -167,18 +174,36 @@ export default function SearchResults() {
 
   return (
     <div className="space-y-6">
-      {/* Search Input */}
-      <form onSubmit={handleSearch} className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Try 'smooth Ethiopian for V60'..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="pl-10"
-          autoFocus
-        />
-      </form>
+      {/* Search Input + Ask AI toggle */}
+      <div className="flex items-center gap-3 max-w-md">
+        <form onSubmit={handleSearch} className="relative flex-1">
+          {aiMode ? (
+            <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+          ) : (
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          )}
+          <Input
+            type="text"
+            placeholder={aiMode ? "Ask anything about our coffee..." : "Search products..."}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className={cn("pl-10", aiMode && "border-primary/50 focus-visible:ring-primary/30")}
+            autoFocus
+          />
+        </form>
+        {aiConfigured && (
+          <Button
+            type="button"
+            variant={aiMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => setAiMode((v) => !v)}
+            className="shrink-0 gap-1.5"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Ask AI
+          </Button>
+        )}
+      </div>
 
       {/* Loading State */}
       {isLoading && (
