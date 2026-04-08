@@ -32,6 +32,24 @@ interface AgenticExtraction {
 // NL heuristic — gates AI calls to avoid cost on simple keyword queries
 // ---------------------------------------------------------------------------
 
+const NL_STOP_WORDS = new Set([
+  "what", "whats", "is", "are", "good", "best", "great", "any",
+  "with", "for", "a", "an", "the", "and", "or", "but", "in", "on",
+  "at", "to", "of", "me", "my", "some", "something", "anything",
+  "that", "this", "which", "can", "i", "you", "us", "we", "do",
+  "does", "would", "like", "looking", "find", "help", "need", "want",
+  "show", "get", "give", "have", "over", "up", "out", "about",
+]);
+
+/** Strip stop words and punctuation — returns meaningful search tokens. */
+export function tokenizeNLQuery(q: string): string[] {
+  return q
+    .toLowerCase()
+    .replace(/[^\w\s]+/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length > 1 && !NL_STOP_WORDS.has(t));
+}
+
 export function isNaturalLanguageQuery(query: string): boolean {
   if (query.trim().split(/\s+/).length < 3) return false;
   const nlIndicators =
@@ -57,8 +75,10 @@ function buildExtractionPrompt(query: string): string {
     "origin": string | undefined
   },
   "explanation": "one sentence why these results match the query",
-  "followUps": ["short clarifying question 1", "short clarifying question 2"]
+  "followUps": ["short filter label e.g. 'Light roast' or 'Ethiopian' or 'V60 friendly'", "another short label"]
 }
+
+followUps must be 2–3 short action labels (2–4 words each) the user can tap to refine results — NOT questions. Examples: "Light roast", "Single origin", "Fruity notes", "Under $30", "Espresso friendly".
 
 Query: ${JSON.stringify(query)}`;
 }
@@ -72,11 +92,13 @@ async function extractAgenticFilters(
         { role: "system", content: EXTRACTION_SYSTEM_PROMPT },
         { role: "user", content: buildExtractionPrompt(query) },
       ],
-      maxTokens: 300,
+      maxTokens: 500,
       temperature: 0.2,
     });
 
-    const raw = JSON.parse(result.text) as Record<string, unknown>;
+    // Strip markdown code fences that some models (e.g. Gemini) add despite instructions
+    const stripped = result.text.trim().replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+    const raw = JSON.parse(stripped) as Record<string, unknown>;
 
     // Validate/normalize critical fields so downstream code can't throw on bad LLM output
     const validIntents: AgenticIntent[] = [
@@ -119,8 +141,9 @@ async function extractAgenticFilters(
       : [];
 
     return { intent, filtersExtracted, explanation, followUps };
-  } catch {
+  } catch (err) {
     // LLM failure is non-fatal — fall back to standard keyword search
+    console.error("[agentic-search] AI extraction failed:", err);
     return null;
   }
 }
@@ -135,6 +158,7 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get("q");
     const roast = searchParams.get("roast");
     const origin = searchParams.get("origin");
+    const forceAI = searchParams.get("ai") === "1";
     const sessionId = searchParams.get("sessionId") ?? "";
     const parsedTurnCount = parseInt(searchParams.get("turnCount") ?? "0", 10);
     const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
@@ -145,12 +169,66 @@ export async function GET(request: NextRequest) {
 
     if (query && query.trim().length > 0) {
       searchQuery = query.trim().toLowerCase();
-      whereClause.OR = [
-        { name: { contains: searchQuery, mode: "insensitive" } },
-        { description: { contains: searchQuery, mode: "insensitive" } },
-        { origin: { hasSome: [searchQuery] } },
-        { tastingNotes: { hasSome: [searchQuery] } },
-      ];
+
+      // Detect roast-level pattern before building text OR clause —
+      // "light roast", "medium roast", "dark roast" map to category filters
+      // rather than substring matches (which would return nothing useful).
+      const roastPatternMatch = searchQuery.match(
+        /\b(light|medium|dark)\s*roast\b/i
+      );
+      if (roastPatternMatch && !roast) {
+        const level = roastPatternMatch[1].toLowerCase();
+        whereClause.categories = {
+          some: { category: { slug: `${level}-roast` } },
+        };
+        whereClause.type = ProductType.COFFEE;
+
+        // Also apply text search for remaining terms so mixed queries like
+        // "light roast Ethiopia" or "best light roast for V60" don't lose relevance.
+        const remainingQuery = searchQuery
+          .replace(/\b(light|medium|dark)\s*roast\b/i, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (remainingQuery.length > 0) {
+          const tokens = tokenizeNLQuery(remainingQuery);
+          if (tokens.length > 0) {
+            whereClause.OR = tokens.flatMap((token) => [
+              { name: { contains: token, mode: "insensitive" } },
+              { description: { contains: token, mode: "insensitive" } },
+              { origin: { hasSome: [token] } },
+              { tastingNotes: { hasSome: [token] } },
+            ]);
+          }
+        }
+      } else if (isNaturalLanguageQuery(searchQuery)) {
+        // NL query without AI: tokenize to get meaningful words and search
+        // each individually. This handles "what's good with v60 pour over?"
+        // → ["v60", "pour"] → matches products mentioning V60/pour in any field.
+        const tokens = tokenizeNLQuery(searchQuery);
+        if (tokens.length > 0) {
+          whereClause.OR = tokens.flatMap((token) => [
+            { name: { contains: token, mode: "insensitive" } },
+            { description: { contains: token, mode: "insensitive" } },
+            { origin: { hasSome: [token] } },
+            { tastingNotes: { hasSome: [token] } },
+          ]);
+        } else {
+          // All tokens were stop words — fall back to substring search
+          whereClause.OR = [
+            { name: { contains: searchQuery, mode: "insensitive" } },
+            { description: { contains: searchQuery, mode: "insensitive" } },
+            { origin: { hasSome: [searchQuery] } },
+            { tastingNotes: { hasSome: [searchQuery] } },
+          ];
+        }
+      } else {
+        whereClause.OR = [
+          { name: { contains: searchQuery, mode: "insensitive" } },
+          { description: { contains: searchQuery, mode: "insensitive" } },
+          { origin: { hasSome: [searchQuery] } },
+          { tastingNotes: { hasSome: [searchQuery] } },
+        ];
+      }
     }
 
     // Explicit roast/origin URL params take precedence over AI extraction
@@ -177,7 +255,7 @@ export async function GET(request: NextRequest) {
 
     if (
       query &&
-      isNaturalLanguageQuery(query) &&
+      (forceAI || isNaturalLanguageQuery(query)) &&
       (await isAIConfigured())
     ) {
       agenticData = await extractAgenticFilters(query);

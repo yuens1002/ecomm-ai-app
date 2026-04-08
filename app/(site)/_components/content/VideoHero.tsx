@@ -34,7 +34,7 @@ export function VideoHero({ videoUrl, posterUrl, heading, tagline }: VideoHeroPr
   };
 
   return (
-    <div className="relative h-64 w-full overflow-hidden sm:h-48 md:h-96 lg:h-128">
+    <div className="relative w-full aspect-[3/1] overflow-hidden bg-black">
       <video
         ref={videoRef}
         src={videoUrl}
@@ -44,9 +44,11 @@ export function VideoHero({ videoUrl, posterUrl, heading, tagline }: VideoHeroPr
         playsInline
         preload="none"
         poster={posterUrl}
-        className="absolute inset-0 h-full w-full object-cover"
+        className="absolute inset-0 h-full w-full object-contain"
       />
-      <div className="absolute inset-0 bg-black/30" />
+      {(heading || tagline) && (
+        <div className="absolute inset-0 bg-black/30" />
+      )}
 
       {(heading || tagline) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">

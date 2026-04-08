@@ -447,6 +447,7 @@ export function HeroSettingsSection() {
                   onFileSelect={handleImageListFieldFileSelect}
                   minImages={0}
                   maxImages={10}
+                  showAltText={false}
                 />
               </div>
             )}
@@ -454,6 +455,9 @@ export function HeroSettingsSection() {
             {/* Video editing UI */}
             {mediaType === "video" && (
               <div className="space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  The video is displayed at full viewport width. For best results, use a <strong>3:1 aspect ratio</strong> (e.g. 1920&times;640). Taller videos will be letterboxed with black bars.
+                </p>
                 {/* Video file input */}
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium">

@@ -42,12 +42,14 @@ interface AdminDashboardClientProps {
   userName: string;
   data: DashboardResponse;
   setupStatus: SetupStatus;
+  isDemoMode?: boolean;
 }
 
 export default function AdminDashboardClient({
   userName,
   data,
   setupStatus,
+  isDemoMode = false,
 }: AdminDashboardClientProps) {
   const { kpis, comparisonKpis } = data;
 
@@ -87,8 +89,8 @@ export default function AdminDashboardClient({
         </Suspense>
       </DashboardToolbar>
 
-      {/* Setup checklist for new installs */}
-      <SetupChecklist status={setupStatus} />
+      {/* Setup checklist for new installs — hidden in demo mode */}
+      {!isDemoMode && <SetupChecklist status={setupStatus} />}
 
       {/* Alerts */}
       <AlertStrip alerts={data.alerts} />
