@@ -83,7 +83,7 @@ export default function SearchResults({ aiConfigured = false }: { aiConfigured?:
   const searchParams = useSearchParams();
   const router = useRouter();
   const [query, setQuery] = useState(searchParams.get("q") || "");
-  const [aiMode, setAiMode] = useState(false);
+  const [aiMode, setAiMode] = useState(searchParams.get("ai") === "1");
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,7 +151,10 @@ export default function SearchResults({ aiConfigured = false }: { aiConfigured?:
   }
 
   function handleFollowUp(followUpText: string) {
-    router.push(`/search?q=${encodeURIComponent(followUpText)}`);
+    const url = new URL("/search", window.location.origin);
+    url.searchParams.set("q", followUpText);
+    if (aiMode) url.searchParams.set("ai", "1");
+    router.push(url.pathname + url.search);
   }
 
   // Helper to generate title based on active filters

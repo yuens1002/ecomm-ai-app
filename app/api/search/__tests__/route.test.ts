@@ -1,7 +1,7 @@
 /** @jest-environment node */
 
 import { NextRequest } from "next/server";
-import { GET, isNaturalLanguageQuery } from "../route";
+import { GET, isNaturalLanguageQuery, tokenizeNLQuery } from "../route";
 
 const productFindManyMock = jest.fn();
 const userActivityCreateMock = jest.fn();
@@ -15,7 +15,7 @@ jest.mock("@/auth", () => ({
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     product: {
-      findMany: () => productFindManyMock(),
+      findMany: (...args: unknown[]) => productFindManyMock(...args),
     },
     userActivity: {
       create: () => userActivityCreateMock(),
@@ -256,5 +256,91 @@ describe("isNaturalLanguageQuery", () => {
 
   it("returns true for NL query with 'recommend'", () => {
     expect(isNaturalLanguageQuery("recommend a good morning coffee")).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// tokenizeNLQuery unit tests
+// ---------------------------------------------------------------------------
+
+describe("tokenizeNLQuery", () => {
+  it("strips stop words and returns meaningful tokens", () => {
+    expect(tokenizeNLQuery("what is good for v60")).toEqual(["v60"]);
+  });
+
+  it("strips all punctuation, not just selected chars", () => {
+    const tokens = tokenizeNLQuery("v60, pour-over. fruity!");
+    expect(tokens).toContain("fruity");
+    // commas and periods stripped — "v60" and "pour" should survive
+    expect(tokens.some((t) => t.includes(","))).toBe(false);
+    expect(tokens.some((t) => t.includes("."))).toBe(false);
+  });
+
+  it("returns empty array when all tokens are stop words", () => {
+    expect(tokenizeNLQuery("what is that for me")).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Roast pattern detection
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — roast pattern", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(false);
+  });
+
+  it("maps 'light roast' query to category slug filter", async () => {
+    const request = new NextRequest("http://localhost:3000/api/search?q=light+roast");
+    await GET(request);
+    const call = productFindManyMock.mock.calls[0][0];
+    expect(call?.where?.categories?.some?.category?.slug).toBe("light-roast");
+  });
+
+  it("maps 'dark roast Ethiopia' to roast category + remaining term OR filter", async () => {
+    const request = new NextRequest("http://localhost:3000/api/search?q=dark+roast+ethiopia");
+    await GET(request);
+    const call = productFindManyMock.mock.calls[0][0];
+    expect(call?.where?.categories?.some?.category?.slug).toBe("dark-roast");
+    // OR clause should exist for the remaining "ethiopia" term
+    expect(call?.where?.OR).toBeDefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ai=1 forceAI override
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — ai=1 override", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        explanation: "Showing all coffees.",
+        followUps: ["Light roast", "Single origin"],
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+    });
+  });
+
+  it("forces AI extraction for a keyword query when ai=1 is set", async () => {
+    const request = new NextRequest("http://localhost:3000/api/search?q=ethiopia&ai=1");
+    const response = await GET(request);
+    const data = await response.json();
+    expect(chatCompletionMock).toHaveBeenCalledTimes(1);
+    expect(data.intent).toBe("product_discovery");
+  });
+
+  it("does not call AI for keyword query without ai=1", async () => {
+    const request = new NextRequest("http://localhost:3000/api/search?q=ethiopia");
+    await GET(request);
+    expect(chatCompletionMock).not.toHaveBeenCalled();
   });
 });

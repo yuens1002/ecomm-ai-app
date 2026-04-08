@@ -42,10 +42,10 @@ const NL_STOP_WORDS = new Set([
 ]);
 
 /** Strip stop words and punctuation — returns meaningful search tokens. */
-function tokenizeNLQuery(q: string): string[] {
+export function tokenizeNLQuery(q: string): string[] {
   return q
     .toLowerCase()
-    .replace(/[?!']/g, "")
+    .replace(/[^\w\s]+/g, " ")
     .split(/\s+/)
     .filter((t) => t.length > 1 && !NL_STOP_WORDS.has(t));
 }
@@ -182,6 +182,24 @@ export async function GET(request: NextRequest) {
           some: { category: { slug: `${level}-roast` } },
         };
         whereClause.type = ProductType.COFFEE;
+
+        // Also apply text search for remaining terms so mixed queries like
+        // "light roast Ethiopia" or "best light roast for V60" don't lose relevance.
+        const remainingQuery = searchQuery
+          .replace(/\b(light|medium|dark)\s*roast\b/i, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (remainingQuery.length > 0) {
+          const tokens = tokenizeNLQuery(remainingQuery);
+          if (tokens.length > 0) {
+            whereClause.OR = tokens.flatMap((token) => [
+              { name: { contains: token, mode: "insensitive" } },
+              { description: { contains: token, mode: "insensitive" } },
+              { origin: { hasSome: [token] } },
+              { tastingNotes: { hasSome: [token] } },
+            ]);
+          }
+        }
       } else if (isNaturalLanguageQuery(searchQuery)) {
         // NL query without AI: tokenize to get meaningful words and search
         // each individually. This handles "what's good with v60 pour over?"
@@ -194,8 +212,15 @@ export async function GET(request: NextRequest) {
             { origin: { hasSome: [token] } },
             { tastingNotes: { hasSome: [token] } },
           ]);
+        } else {
+          // All tokens were stop words — fall back to substring search
+          whereClause.OR = [
+            { name: { contains: searchQuery, mode: "insensitive" } },
+            { description: { contains: searchQuery, mode: "insensitive" } },
+            { origin: { hasSome: [searchQuery] } },
+            { tastingNotes: { hasSome: [searchQuery] } },
+          ];
         }
-        // no tokens left after stripping → no OR clause → returns all products
       } else {
         whereClause.OR = [
           { name: { contains: searchQuery, mode: "insensitive" } },
