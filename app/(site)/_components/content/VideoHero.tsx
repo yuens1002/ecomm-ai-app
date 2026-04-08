@@ -34,7 +34,7 @@ export function VideoHero({ videoUrl, posterUrl, heading, tagline }: VideoHeroPr
   };
 
   return (
-    <div className="relative w-full aspect-video overflow-hidden bg-black">
+    <div className="relative w-full aspect-[3/1] overflow-hidden bg-black">
       <video
         ref={videoRef}
         src={videoUrl}
