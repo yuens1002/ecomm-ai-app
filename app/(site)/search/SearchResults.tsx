@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, Sparkles } from "lucide-react";
 import ProductCard from "@/app/(site)/_components/product/ProductCard";
 
 interface SearchProduct {
@@ -197,24 +197,27 @@ export default function SearchResults() {
       {/* Results */}
       {results && !isLoading && (
         <>
+          {/* Results count + Smart Search badge */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <p className="text-muted-foreground">
+              {results.count === 0
+                ? `No results found for ${getResultsTitle()}`
+                : `Found ${results.count} ${results.count === 1 ? "result" : "results"} for ${getResultsTitle()}`}
+            </p>
+            {results.intent && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                <Sparkles className="h-3 w-3" />
+                Smart Search
+              </span>
+            )}
+          </div>
+
           {/* Agentic explanation */}
           {results.explanation && (
             <p className="text-sm text-muted-foreground italic">
               {results.explanation}
             </p>
           )}
-
-          <div className="text-muted-foreground">
-            {results.count === 0 ? (
-              <p>No results found for {getResultsTitle()}</p>
-            ) : (
-              <p>
-                Found {results.count}{" "}
-                {results.count === 1 ? "result" : "results"} for{" "}
-                {getResultsTitle()}
-              </p>
-            )}
-          </div>
 
           {/* Follow-up chips */}
           {results.followUps.length > 0 && (

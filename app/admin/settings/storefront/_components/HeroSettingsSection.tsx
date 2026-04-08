@@ -447,6 +447,7 @@ export function HeroSettingsSection() {
                   onFileSelect={handleImageListFieldFileSelect}
                   minImages={0}
                   maxImages={10}
+                  showAltText={false}
                 />
               </div>
             )}

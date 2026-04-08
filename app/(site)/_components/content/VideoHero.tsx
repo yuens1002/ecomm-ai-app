@@ -46,7 +46,9 @@ export function VideoHero({ videoUrl, posterUrl, heading, tagline }: VideoHeroPr
         poster={posterUrl}
         className="absolute inset-0 h-full w-full object-cover"
       />
-      <div className="absolute inset-0 bg-black/30" />
+      {(heading || tagline) && (
+        <div className="absolute inset-0 bg-black/30" />
+      )}
 
       {(heading || tagline) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">

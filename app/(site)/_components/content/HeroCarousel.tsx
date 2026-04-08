@@ -54,8 +54,10 @@ export function HeroCarousel({ slides, heading, tagline }: HeroCarouselProps) {
         </div>
       </div>
 
-      {/* Overlay */}
-      <div className="pointer-events-none absolute inset-0 bg-black/30" />
+      {/* Overlay — only when text is present */}
+      {(heading || tagline) && (
+        <div className="pointer-events-none absolute inset-0 bg-black/30" />
+      )}
 
       {/* Heading + tagline */}
       {(heading || tagline) && (

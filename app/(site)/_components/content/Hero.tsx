@@ -78,7 +78,9 @@ export function Hero({
         ) : (
           <div className="absolute inset-0 bg-linear-to-br from-gray-800 to-gray-900" />
         )}
-        <div className="absolute inset-0 bg-black/30" />
+        {(heading || tagline) && (
+          <div className="absolute inset-0 bg-black/30" />
+        )}
         {(heading || tagline) && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
             {heading && (

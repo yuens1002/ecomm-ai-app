@@ -145,12 +145,27 @@ export async function GET(request: NextRequest) {
 
     if (query && query.trim().length > 0) {
       searchQuery = query.trim().toLowerCase();
-      whereClause.OR = [
-        { name: { contains: searchQuery, mode: "insensitive" } },
-        { description: { contains: searchQuery, mode: "insensitive" } },
-        { origin: { hasSome: [searchQuery] } },
-        { tastingNotes: { hasSome: [searchQuery] } },
-      ];
+
+      // Detect roast-level pattern before building text OR clause —
+      // "light roast", "medium roast", "dark roast" map to category filters
+      // rather than substring matches (which would return nothing useful).
+      const roastPatternMatch = searchQuery.match(
+        /\b(light|medium|dark)\s*roast\b/i
+      );
+      if (roastPatternMatch && !roast) {
+        const level = roastPatternMatch[1].toLowerCase();
+        whereClause.categories = {
+          some: { category: { slug: `${level}-roast` } },
+        };
+        whereClause.type = ProductType.COFFEE;
+      } else {
+        whereClause.OR = [
+          { name: { contains: searchQuery, mode: "insensitive" } },
+          { description: { contains: searchQuery, mode: "insensitive" } },
+          { origin: { hasSome: [searchQuery] } },
+          { tastingNotes: { hasSome: [searchQuery] } },
+        ];
+      }
     }
 
     // Explicit roast/origin URL params take precedence over AI extraction
