@@ -2,12 +2,12 @@
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
     "feat/smart-search-ux": {
-      "status": "implementing",
+      "status": "pending",
       "acs_passed": 0,
       "acs_total": 43,
       "tasks": [],
       "acs_doc": "docs/plans/smart-search-ux-ACs.md",
-      "notes": "Workflow initiated. Plan approved. 9 tasks: voice persona settings, admin UI, reframe API, SmartSearchIcon, Zustand store, header swap, layout panel, extended search filters, ChatPanel UI."
+      "notes": "Implementation complete. 2 commits: (1) site settings, admin voice persona UI, SmartSearchIcon, Zustand store, header swap; (2) voice persona injection, extended filters, ChatPanel, layout, tests. 38 Jest tests pass. Precheck clean. Ready for verification."
     },
     "feat/platform-wiring-complete": {
       "status": "verified",
