@@ -83,7 +83,7 @@ export default function SearchResults({ aiConfigured = false }: { aiConfigured?:
   const searchParams = useSearchParams();
   const router = useRouter();
   const [query, setQuery] = useState(searchParams.get("q") || "");
-  const [aiMode, setAiMode] = useState(searchParams.get("ai") === "1");
+  const [aiMode, setAiMode] = useState(searchParams.get("ai") === "true");
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,7 +122,7 @@ export default function SearchResults({ aiConfigured = false }: { aiConfigured?:
       if (origin) params.append("origin", origin);
       if (sessionId) params.append("sessionId", sessionId);
       params.append("turnCount", String(turnCount));
-      if (useAI) params.append("ai", "1");
+      if (useAI) params.append("ai", "true");
 
       const response = await fetch(`/api/search?${params.toString()}`);
 
@@ -145,7 +145,7 @@ export default function SearchResults({ aiConfigured = false }: { aiConfigured?:
     if (query.trim()) {
       const url = new URL("/search", window.location.origin);
       url.searchParams.set("q", query.trim());
-      if (aiMode) url.searchParams.set("ai", "1");
+      if (aiMode) url.searchParams.set("ai", "true");
       router.push(url.pathname + url.search);
     }
   }
@@ -153,7 +153,7 @@ export default function SearchResults({ aiConfigured = false }: { aiConfigured?:
   function handleFollowUp(followUpText: string) {
     const url = new URL("/search", window.location.origin);
     url.searchParams.set("q", followUpText);
-    if (aiMode) url.searchParams.set("ai", "1");
+    if (aiMode) url.searchParams.set("ai", "true");
     router.push(url.pathname + url.search);
   }
 

@@ -3,6 +3,7 @@ import { ProductType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { chatCompletion, isAIConfigured } from "@/lib/ai-client";
+import { getPublicSiteSettings } from "@/lib/data";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,10 +16,18 @@ type AgenticIntent =
   | "reorder";
 
 interface FiltersExtracted {
+  // Phase A
   brewMethod?: string;
   roastLevel?: string;
   flavorProfile?: string[];
   origin?: string;
+  // Extended
+  isOrganic?: boolean;
+  processing?: string;
+  variety?: string;
+  priceMaxCents?: number;
+  priceMinCents?: number;
+  sortBy?: "newest" | "price_asc" | "price_desc" | "top_rated";
 }
 
 interface AgenticExtraction {
@@ -61,8 +70,12 @@ export function isNaturalLanguageQuery(query: string): boolean {
 // AI extraction step
 // ---------------------------------------------------------------------------
 
-const EXTRACTION_SYSTEM_PROMPT = `You are a coffee product search assistant. Extract structured intent from user queries.
-Always return valid JSON only — no markdown, no explanation outside the JSON.`;
+function buildSystemPrompt(aiVoicePersona: string): string {
+  const personaSection = aiVoicePersona.trim()
+    ? `You are the voice of this coffee shop. Embody the shop owner's character exactly:\n"${aiVoicePersona}"\n\n`
+    : `You are a knowledgeable coffee shop assistant. Speak with genuine expertise and warmth.\n\n`;
+  return `${personaSection}Extract coffee search intent from user queries and return valid JSON only — no markdown, no explanation outside the JSON.`;
+}
 
 function buildExtractionPrompt(query: string): string {
   return `Extract coffee search intent and return JSON only:
@@ -72,7 +85,13 @@ function buildExtractionPrompt(query: string): string {
     "brewMethod": string | undefined,
     "roastLevel": "light" | "medium" | "dark" | undefined,
     "flavorProfile": string[] | undefined,
-    "origin": string | undefined
+    "origin": string | undefined,
+    "isOrganic": true | false | undefined,
+    "processing": "washed" | "natural" | "honey" | "anaerobic" | string | undefined,
+    "variety": string | undefined,
+    "priceMaxCents": number (cents, e.g. 3000 for "under $30") | undefined,
+    "priceMinCents": number | undefined,
+    "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined
   },
   "explanation": "one sentence why these results match the query",
   "followUps": ["short filter label e.g. 'Light roast' or 'Ethiopian' or 'V60 friendly'", "another short label"]
@@ -84,12 +103,13 @@ Query: ${JSON.stringify(query)}`;
 }
 
 async function extractAgenticFilters(
-  query: string
+  query: string,
+  systemPrompt: string
 ): Promise<AgenticExtraction | null> {
   try {
     const result = await chatCompletion({
       messages: [
-        { role: "system", content: EXTRACTION_SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: buildExtractionPrompt(query) },
       ],
       maxTokens: 500,
@@ -124,6 +144,9 @@ async function extractAgenticFilters(
         ? rawFilters.roastLevel.toLowerCase()
         : undefined;
 
+    const validSortBy = ["newest", "price_asc", "price_desc", "top_rated"] as const;
+    type SortBy = (typeof validSortBy)[number];
+
     const filtersExtracted: FiltersExtracted = {
       brewMethod:
         typeof rawFilters.brewMethod === "string" ? rawFilters.brewMethod : undefined,
@@ -132,6 +155,24 @@ async function extractAgenticFilters(
         ? rawFilters.flavorProfile.filter((v) => typeof v === "string")
         : undefined,
       origin: typeof rawFilters.origin === "string" ? rawFilters.origin : undefined,
+      isOrganic: typeof rawFilters.isOrganic === "boolean" ? rawFilters.isOrganic : undefined,
+      processing:
+        typeof rawFilters.processing === "string" ? rawFilters.processing : undefined,
+      variety:
+        typeof rawFilters.variety === "string" ? rawFilters.variety : undefined,
+      priceMaxCents:
+        typeof rawFilters.priceMaxCents === "number" && rawFilters.priceMaxCents > 0
+          ? rawFilters.priceMaxCents
+          : undefined,
+      priceMinCents:
+        typeof rawFilters.priceMinCents === "number" && rawFilters.priceMinCents > 0
+          ? rawFilters.priceMinCents
+          : undefined,
+      sortBy:
+        typeof rawFilters.sortBy === "string" &&
+        validSortBy.includes(rawFilters.sortBy as SortBy)
+          ? (rawFilters.sortBy as SortBy)
+          : undefined,
     };
 
     const explanation =
@@ -158,7 +199,7 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get("q");
     const roast = searchParams.get("roast");
     const origin = searchParams.get("origin");
-    const forceAI = searchParams.get("ai") === "1";
+    const forceAI = searchParams.get("ai") === "true";
     const sessionId = searchParams.get("sessionId") ?? "";
     const parsedTurnCount = parseInt(searchParams.get("turnCount") ?? "0", 10);
     const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
@@ -183,8 +224,6 @@ export async function GET(request: NextRequest) {
         };
         whereClause.type = ProductType.COFFEE;
 
-        // Also apply text search for remaining terms so mixed queries like
-        // "light roast Ethiopia" or "best light roast for V60" don't lose relevance.
         const remainingQuery = searchQuery
           .replace(/\b(light|medium|dark)\s*roast\b/i, " ")
           .replace(/\s+/g, " ")
@@ -197,13 +236,13 @@ export async function GET(request: NextRequest) {
               { description: { contains: token, mode: "insensitive" } },
               { origin: { hasSome: [token] } },
               { tastingNotes: { hasSome: [token] } },
+              { processing: { contains: token, mode: "insensitive" } },
+              { variety: { contains: token, mode: "insensitive" } },
+              { altitude: { contains: token, mode: "insensitive" } },
             ]);
           }
         }
       } else if (isNaturalLanguageQuery(searchQuery)) {
-        // NL query without AI: tokenize to get meaningful words and search
-        // each individually. This handles "what's good with v60 pour over?"
-        // → ["v60", "pour"] → matches products mentioning V60/pour in any field.
         const tokens = tokenizeNLQuery(searchQuery);
         if (tokens.length > 0) {
           whereClause.OR = tokens.flatMap((token) => [
@@ -211,14 +250,19 @@ export async function GET(request: NextRequest) {
             { description: { contains: token, mode: "insensitive" } },
             { origin: { hasSome: [token] } },
             { tastingNotes: { hasSome: [token] } },
+            { processing: { contains: token, mode: "insensitive" } },
+            { variety: { contains: token, mode: "insensitive" } },
+            { altitude: { contains: token, mode: "insensitive" } },
           ]);
         } else {
-          // All tokens were stop words — fall back to substring search
           whereClause.OR = [
             { name: { contains: searchQuery, mode: "insensitive" } },
             { description: { contains: searchQuery, mode: "insensitive" } },
             { origin: { hasSome: [searchQuery] } },
             { tastingNotes: { hasSome: [searchQuery] } },
+            { processing: { contains: searchQuery, mode: "insensitive" } },
+            { variety: { contains: searchQuery, mode: "insensitive" } },
+            { altitude: { contains: searchQuery, mode: "insensitive" } },
           ];
         }
       } else {
@@ -227,6 +271,9 @@ export async function GET(request: NextRequest) {
           { description: { contains: searchQuery, mode: "insensitive" } },
           { origin: { hasSome: [searchQuery] } },
           { tastingNotes: { hasSome: [searchQuery] } },
+          { processing: { contains: searchQuery, mode: "insensitive" } },
+          { variety: { contains: searchQuery, mode: "insensitive" } },
+          { altitude: { contains: searchQuery, mode: "insensitive" } },
         ];
       }
     }
@@ -252,17 +299,29 @@ export async function GET(request: NextRequest) {
     // -------------------------------------------------------------------------
 
     let agenticData: AgenticExtraction | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let orderBy: any = undefined;
 
     if (
       query &&
       (forceAI || isNaturalLanguageQuery(query)) &&
       (await isAIConfigured())
     ) {
-      agenticData = await extractAgenticFilters(query);
+      const { aiVoicePersona } = await getPublicSiteSettings();
+      const systemPrompt = buildSystemPrompt(aiVoicePersona);
+      agenticData = await extractAgenticFilters(query, systemPrompt);
 
       if (agenticData?.filtersExtracted) {
-        const { roastLevel, origin: extractedOrigin } =
-          agenticData.filtersExtracted;
+        const {
+          roastLevel,
+          origin: extractedOrigin,
+          isOrganic,
+          processing,
+          variety,
+          priceMaxCents,
+          priceMinCents,
+          sortBy,
+        } = agenticData.filtersExtracted;
 
         // Apply extracted roastLevel only if no explicit roast param
         if (roastLevel && !roast) {
@@ -276,6 +335,47 @@ export async function GET(request: NextRequest) {
         // Apply extracted origin only if no explicit origin param
         if (extractedOrigin && !origin) {
           whereClause.origin = { has: extractedOrigin };
+        }
+
+        // Apply organic filter
+        if (isOrganic !== undefined) {
+          whereClause.isOrganic = isOrganic;
+        }
+
+        // Apply processing method filter (substring match via related variants)
+        if (processing) {
+          whereClause.processing = { contains: processing, mode: "insensitive" };
+        }
+
+        // Apply variety filter
+        if (variety) {
+          whereClause.variety = { contains: variety, mode: "insensitive" };
+        }
+
+        // Apply price range filters via variants.purchaseOptions
+        if (priceMaxCents !== undefined || priceMinCents !== undefined) {
+          const priceFilter: Record<string, number> = {};
+          if (priceMinCents !== undefined) priceFilter.gte = priceMinCents;
+          if (priceMaxCents !== undefined) priceFilter.lte = priceMaxCents;
+          whereClause.variants = {
+            some: {
+              isDisabled: false,
+              purchaseOptions: {
+                some: { priceInCents: priceFilter },
+              },
+            },
+          };
+        }
+
+        // Apply sortBy mapping
+        if (sortBy) {
+          const sortMap: Record<string, object> = {
+            newest: { createdAt: "desc" },
+            price_asc: { variants: { _min: { purchaseOptions: { _min: { priceInCents: "asc" } } } } },
+            price_desc: { variants: { _min: { purchaseOptions: { _min: { priceInCents: "desc" } } } } },
+            top_rated: { createdAt: "desc" }, // fallback: no rating field yet
+          };
+          orderBy = sortMap[sortBy];
         }
       }
     }
@@ -306,6 +406,7 @@ export async function GET(request: NextRequest) {
 
     const products = await prisma.product.findMany({
       where: whereClause,
+      ...(orderBy ? { orderBy } : {}),
       include: {
         categories: {
           include: {

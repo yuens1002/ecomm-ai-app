@@ -6,6 +6,8 @@ import { SiteBannerProvider } from "@/app/(site)/_hooks/useSiteBanner";
 import { SiteBannerPortal } from "@/app/(site)/_components/layout/SiteBannerPortal";
 import { DemoBanner } from "@/app/(site)/_components/content/DemoBanner";
 import { getStorefrontTheme } from "@/lib/config/app-settings";
+import { isAIConfigured } from "@/lib/ai-client";
+import { ChatPanel } from "@/app/(site)/_components/ai/ChatPanel";
 
 // Evaluated once at module load based on NEXT_PUBLIC_BUILD_VARIANT.
 // DemoBanner and its hooks never enter the React tree unless this is true.
@@ -41,7 +43,10 @@ export default async function SiteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const theme = await getStorefrontTheme();
+  const [theme, aiConfigured] = await Promise.all([
+    getStorefrontTheme(),
+    isAIConfigured(),
+  ]);
   const fontsUrl =
     theme && theme !== "default" ? await getThemeFontsUrl(theme) : null;
 
@@ -53,21 +58,28 @@ export default async function SiteLayout({
           <link rel="stylesheet" href={`/themes/${theme}.css`} />
         </>
       )}
-      <div data-site="" className="relative flex min-h-screen flex-col">
-        {/* Demo banner - only mounts on demo instances (NEXT_PUBLIC_BUILD_VARIANT=demo) */}
-        {IS_DEMO && <DemoBanner />}
+      {/* Outer flex row: left column (header + content + footer) + right panel */}
+      <div data-site="" className="relative flex min-h-screen">
+        {/* Left column — scrolls normally */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          {/* Demo banner - only mounts on demo instances (NEXT_PUBLIC_BUILD_VARIANT=demo) */}
+          {IS_DEMO && <DemoBanner />}
 
-        {/* Banner portal - renders above header when active */}
-        <SiteBannerPortal />
+          {/* Banner portal - renders above header when active */}
+          <SiteBannerPortal />
 
-        {/* Site header */}
-        <SiteHeaderWrapper />
+          {/* Site header */}
+          <SiteHeaderWrapper />
 
-        {/* Page content */}
-        <main className="flex-1 w-full">{children}</main>
+          {/* Page content */}
+          <main className="flex-1 w-full">{children}</main>
 
-        {/* Site footer */}
-        <SiteFooter />
+          {/* Site footer */}
+          <SiteFooter />
+        </div>
+
+        {/* Right column: full-height sticky chat panel (desktop) + fixed bottom sheet (mobile) */}
+        {aiConfigured && <ChatPanel />}
       </div>
     </SiteBannerProvider>
   );

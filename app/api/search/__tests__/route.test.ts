@@ -7,6 +7,7 @@ const productFindManyMock = jest.fn();
 const userActivityCreateMock = jest.fn();
 const chatCompletionMock = jest.fn();
 const isAIConfiguredMock = jest.fn();
+const getPublicSiteSettingsMock = jest.fn();
 
 jest.mock("@/auth", () => ({
   auth: jest.fn(() => Promise.resolve(null)),
@@ -28,6 +29,10 @@ jest.mock("@/lib/ai-client", () => ({
   isAIConfigured: () => isAIConfiguredMock(),
 }));
 
+jest.mock("@/lib/data", () => ({
+  getPublicSiteSettings: () => getPublicSiteSettingsMock(),
+}));
+
 // Silence console noise in tests
 jest.spyOn(console, "error").mockImplementation(() => undefined);
 
@@ -36,6 +41,7 @@ describe("GET /api/search", () => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(false);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
   });
 
   it("should return 200 with empty query when q param is missing", async () => {
@@ -167,6 +173,7 @@ describe("GET /api/search", () => {
 
   it("should call AI and return agentic fields for NL queries when AI is configured", async () => {
     isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
     chatCompletionMock.mockResolvedValue({
       text: JSON.stringify({
         intent: "product_discovery",
@@ -210,6 +217,7 @@ describe("GET /api/search", () => {
 
   it("should fall back gracefully when AI call fails", async () => {
     isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
     chatCompletionMock.mockRejectedValue(new Error("LLM timeout"));
 
     const request = new NextRequest(
@@ -290,6 +298,7 @@ describe("GET /api/search — roast pattern", () => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(false);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
   });
 
   it("maps 'light roast' query to category slug filter", async () => {
@@ -310,10 +319,49 @@ describe("GET /api/search — roast pattern", () => {
 });
 
 // ---------------------------------------------------------------------------
-// ai=1 forceAI override
+// ai=true forceAI override (TST-2)
 // ---------------------------------------------------------------------------
 
-describe("GET /api/search — ai=1 override", () => {
+describe("GET /api/search — ai=true override", () => {
+  const nlResponse = {
+    text: JSON.stringify({
+      intent: "product_discovery",
+      filtersExtracted: {},
+      explanation: "Showing all coffees.",
+      followUps: ["Light roast", "Single origin"],
+    }),
+    finishReason: "stop",
+    usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+  };
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    chatCompletionMock.mockResolvedValue(nlResponse);
+  });
+
+  it("forces AI extraction for a keyword query when ai=true is set", async () => {
+    const request = new NextRequest("http://localhost:3000/api/search?q=ethiopia&ai=true");
+    const response = await GET(request);
+    const data = await response.json();
+    expect(chatCompletionMock).toHaveBeenCalledTimes(1);
+    expect(data.intent).toBe("product_discovery");
+  });
+
+  it("does not call AI for keyword query without ai=true", async () => {
+    const request = new NextRequest("http://localhost:3000/api/search?q=ethiopia");
+    await GET(request);
+    expect(chatCompletionMock).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TST-1: Voice persona injected into system prompt
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — voice persona injection (TST-1)", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
@@ -322,25 +370,117 @@ describe("GET /api/search — ai=1 override", () => {
       text: JSON.stringify({
         intent: "product_discovery",
         filtersExtracted: {},
-        explanation: "Showing all coffees.",
-        followUps: ["Light roast", "Single origin"],
+        explanation: "Great picks.",
+        followUps: [],
       }),
       finishReason: "stop",
       usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
     });
   });
 
-  it("forces AI extraction for a keyword query when ai=1 is set", async () => {
-    const request = new NextRequest("http://localhost:3000/api/search?q=ethiopia&ai=1");
-    const response = await GET(request);
-    const data = await response.json();
+  it("includes aiVoicePersona text in the system prompt passed to chatCompletion", async () => {
+    const persona = "I am Brew, a laid-back barista who loves bold coffees.";
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: persona });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=smooth+morning+coffee+for+V60&ai=true"
+    );
+    await GET(request);
+
     expect(chatCompletionMock).toHaveBeenCalledTimes(1);
-    expect(data.intent).toBe("product_discovery");
+    const callArgs = chatCompletionMock.mock.calls[0][0] as { messages: Array<{ role: string; content: string }> };
+    const systemMessage = callArgs.messages.find((m) => m.role === "system");
+    expect(systemMessage?.content).toContain(persona);
   });
 
-  it("does not call AI for keyword query without ai=1", async () => {
-    const request = new NextRequest("http://localhost:3000/api/search?q=ethiopia");
+  it("uses default system prompt when aiVoicePersona is empty", async () => {
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=smooth+morning+coffee+for+V60&ai=true"
+    );
     await GET(request);
-    expect(chatCompletionMock).not.toHaveBeenCalled();
+
+    const callArgs = chatCompletionMock.mock.calls[0][0] as { messages: Array<{ role: string; content: string }> };
+    const systemMessage = callArgs.messages.find((m) => m.role === "system");
+    expect(systemMessage?.content).toContain("knowledgeable coffee shop assistant");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TST-3: isOrganic filter applied to whereClause
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — isOrganic filter (TST-3)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+  });
+
+  it("applies isOrganic: true to whereClause when extracted by AI", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { isOrganic: true },
+        explanation: "Organic coffees for you.",
+        followUps: [],
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=organic+light+roast+coffee&ai=true"
+    );
+    await GET(request);
+
+    const call = productFindManyMock.mock.calls[0][0] as { where: Record<string, unknown> };
+    expect(call.where.isOrganic).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TST-4: priceMaxCents filter applied to whereClause
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — priceMaxCents filter (TST-4)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+  });
+
+  it("applies priceMaxCents via variants.purchaseOptions filter when extracted by AI", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { priceMaxCents: 3000 },
+        explanation: "Coffees under $30.",
+        followUps: [],
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=coffee+under+30+dollars&ai=true"
+    );
+    await GET(request);
+
+    const call = productFindManyMock.mock.calls[0][0] as {
+      where: {
+        variants?: {
+          some?: {
+            purchaseOptions?: {
+              some?: { priceInCents?: { lte?: number } };
+            };
+          };
+        };
+      };
+    };
+    expect(call.where.variants?.some?.purchaseOptions?.some?.priceInCents?.lte).toBe(3000);
   });
 });
