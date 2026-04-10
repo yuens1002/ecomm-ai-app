@@ -187,16 +187,19 @@ function PanelContent() {
         <span className="sr-only">Close panel</span>
       </Button>
 
-      {/* Messages — scrollable only when content overflows */}
-      <div className="flex-1 overflow-y-auto px-4 pt-8 pb-3 space-y-4 min-h-0">
-        {messages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            msg={msg}
-            onChipClick={(chip) => void sendQuery(chip)}
-          />
-        ))}
-        <div ref={messagesEndRef} />
+      {/* Messages — anchored to bottom; spacer pushes up when few messages */}
+      <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
+        <div className="flex-1" />
+        <div className="px-4 pb-3 pt-2 space-y-4">
+          {messages.map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              msg={msg}
+              onChipClick={(chip) => void sendQuery(chip)}
+            />
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* Input */}
