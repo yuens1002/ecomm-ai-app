@@ -1,5 +1,3 @@
-"use client";
-
 import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
 import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
@@ -7,12 +5,16 @@ import { ShoppingBag } from "lucide-react";
 import { IconPicker } from "@/app/admin/_components/cms/fields/IconPicker";
 import { InputGroupInput } from "@/components/ui/forms/InputGroup";
 import { HeroSettingsSection } from "./_components/HeroSettingsSection";
+import { AISearchSettingsSection } from "./_components/AISearchSettingsSection";
+import { isAIConfigured } from "@/lib/ai-client";
 
 /**
  * Store Front Settings Page
  * Product menu, add-ons, display preferences
  */
-export default function StoreFrontSettingsPage() {
+export default async function StoreFrontSettingsPage() {
+  const aiConfigured = await isAIConfigured();
+
   return (
     <div className="space-y-8">
       <PageTitle
@@ -21,6 +23,8 @@ export default function StoreFrontSettingsPage() {
       />
 
       <HeroSettingsSection />
+
+      {aiConfigured && <AISearchSettingsSection />}
 
       <SettingsSection
         icon={<ShoppingBag className="h-5 w-5" />}
