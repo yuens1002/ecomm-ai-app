@@ -484,3 +484,243 @@ describe("GET /api/search — priceMaxCents filter (TST-4)", () => {
     expect(call.where.variants?.some?.purchaseOptions?.some?.priceInCents?.lte).toBe(3000);
   });
 });
+
+// ---------------------------------------------------------------------------
+// BUG-1: type=COFFEE locked when any coffee-specific semantic filter extracted
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — type=COFFEE lock (BUG-1)", () => {
+  const baseSetup = () => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+  };
+
+  const aiResponse = (filtersExtracted: Record<string, unknown>) => ({
+    text: JSON.stringify({
+      intent: "product_discovery",
+      filtersExtracted,
+      explanation: "Great picks.",
+      followUps: [],
+    }),
+    finishReason: "stop",
+    usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+  });
+
+  // AC-TST-1
+  it("sets type=COFFEE when AI extracts flavorProfile only", async () => {
+    baseSetup();
+    chatCompletionMock.mockResolvedValue(aiResponse({ flavorProfile: ["citrus"] }));
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=morning+cup+with+light+citrus+notes&ai=true"
+    );
+    await GET(request);
+
+    const call = productFindManyMock.mock.calls[0][0] as { where: Record<string, unknown> };
+    expect(call.where.type).toBe("COFFEE");
+  });
+
+  // AC-TST-2
+  it("does NOT set type when AI extracts no coffee-specific filters", async () => {
+    baseSetup();
+    chatCompletionMock.mockResolvedValue(aiResponse({}));
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=morning+cup+with+citrus&ai=true"
+    );
+    await GET(request);
+
+    const call = productFindManyMock.mock.calls[0][0] as { where: Record<string, unknown> };
+    expect(call.where.type).toBeUndefined();
+  });
+
+  it("sets type=COFFEE when AI extracts isOrganic only (no roastLevel)", async () => {
+    baseSetup();
+    chatCompletionMock.mockResolvedValue(aiResponse({ isOrganic: true }));
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=organic+coffee&ai=true"
+    );
+    await GET(request);
+
+    const call = productFindManyMock.mock.calls[0][0] as { where: Record<string, unknown> };
+    expect(call.where.type).toBe("COFFEE");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// BUG-2: flavorProfile expands OR clause (description + tastingNotes)
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — flavorProfile OR expansion (BUG-2)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { flavorProfile: ["citrus"] },
+        explanation: "Bright citrus picks.",
+        followUps: [],
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+    });
+  });
+
+  // AC-TST-3
+  it("adds description case-insensitive contains for each flavor term to OR clause", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=morning+coffee+with+citrus+notes&ai=true"
+    );
+    await GET(request);
+
+    const call = productFindManyMock.mock.calls[0][0] as {
+      where: { OR?: Array<Record<string, unknown>> };
+    };
+    const orEntries = call.where.OR ?? [];
+    const descriptionEntry = orEntries.find(
+      (e) =>
+        e.description &&
+        typeof e.description === "object" &&
+        (e.description as Record<string, unknown>).contains === "citrus" &&
+        (e.description as Record<string, unknown>).mode === "insensitive"
+    );
+    expect(descriptionEntry).toBeDefined();
+  });
+
+  // AC-TST-4
+  it("adds Title Case tastingNotes hasSome entry to OR clause", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=morning+coffee+with+citrus+notes&ai=true"
+    );
+    await GET(request);
+
+    const call = productFindManyMock.mock.calls[0][0] as {
+      where: { OR?: Array<Record<string, unknown>> };
+    };
+    const orEntries = call.where.OR ?? [];
+    const tastingEntry = orEntries.find(
+      (e) =>
+        e.tastingNotes &&
+        typeof e.tastingNotes === "object" &&
+        Array.isArray((e.tastingNotes as Record<string, unknown>).hasSome) &&
+        ((e.tastingNotes as Record<string, string[]>).hasSome as string[]).includes("Citrus")
+    );
+    expect(tastingEntry).toBeDefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// BUG-3: OR clause removed when hard DB filters (roastLevel / origin) present
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — OR clause cleared by hard DB filters (BUG-3)", () => {
+  const baseSetup = () => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+  };
+
+  // AC-TST-5
+  it("deletes whereClause.OR when roastLevel is extracted", async () => {
+    baseSetup();
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { roastLevel: "light" },
+        explanation: "Light roasts for you.",
+        followUps: [],
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=light+morning+coffee+for+V60&ai=true"
+    );
+    await GET(request);
+
+    const call = productFindManyMock.mock.calls[0][0] as { where: Record<string, unknown> };
+    expect(call.where.OR).toBeUndefined();
+  });
+
+  // AC-TST-6
+  it("deletes whereClause.OR when origin is extracted", async () => {
+    baseSetup();
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { origin: "Ethiopia" },
+        explanation: "Ethiopian beauties.",
+        followUps: [],
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=looking+for+Ethiopian+single+origin&ai=true"
+    );
+    await GET(request);
+
+    const call = productFindManyMock.mock.calls[0][0] as { where: Record<string, unknown> };
+    expect(call.where.OR).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// BUG-4 / BUG-5: Prompt quality — first-person explanation + 1 follow-up cap
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — prompt quality constraints (BUG-4, BUG-5)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        explanation: "These are great picks.",
+        followUps: [],
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+    });
+  });
+
+  // AC-TST-7
+  it("user prompt contains third-person prohibition for explanation (BUG-4)", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=morning+coffee+with+citrus&ai=true"
+    );
+    await GET(request);
+
+    const callArgs = chatCompletionMock.mock.calls[0][0] as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const userMessage = callArgs.messages.find((m) => m.role === "user");
+    expect(userMessage?.content).toContain("Never use");
+  });
+
+  // AC-TST-8
+  it("user prompt contains AT MOST ONE follow-up cap (BUG-5)", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=morning+coffee+with+citrus&ai=true"
+    );
+    await GET(request);
+
+    const callArgs = chatCompletionMock.mock.calls[0][0] as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const userMessage = callArgs.messages.find((m) => m.role === "user");
+    expect(userMessage?.content).toContain("AT MOST ONE");
+  });
+});
