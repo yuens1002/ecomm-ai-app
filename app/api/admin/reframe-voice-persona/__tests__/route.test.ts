@@ -34,6 +34,14 @@ describe("POST /api/admin/reframe-voice-persona", () => {
       body: JSON.stringify(body),
     });
 
+  const mockConversationResponse = JSON.stringify({
+    answers: [
+      "I'd start you with the Ethiopian Yirgacheffe — it's bright, citrusy, and it'll change how you think about light roasts.",
+      "Oh, you're after fruity and bright — you want the Kenya AA. It's like sipping on a blackcurrant jam.",
+      "For French press, I always point people to the Sumatra — it's full-bodied with a chocolatey finish that holds up beautifully.",
+    ],
+  });
+
   // TST-5: unauthenticated request returns 401
   it("returns 401 when not authenticated (TST-5)", async () => {
     requireAdminApiMock.mockResolvedValue({ authorized: false, error: "Unauthorized" });
@@ -44,23 +52,24 @@ describe("POST /api/admin/reframe-voice-persona", () => {
     expect(chatCompletionMock).not.toHaveBeenCalled();
   });
 
-  // TST-6: authenticated request returns reframedPersona
-  it("returns reframedPersona on success (TST-6)", async () => {
+  // TST-6: authenticated request returns conversations array
+  it("returns conversations array on success (TST-6)", async () => {
     requireAdminApiMock.mockResolvedValue({ authorized: true });
     chatCompletionMock.mockResolvedValue({
-      text: "  I am your knowledgeable coffee guide, passionate about bold, full-bodied roasts.  ",
+      text: mockConversationResponse,
       finishReason: "stop",
-      usage: { promptTokens: 50, completionTokens: 80, totalTokens: 130 },
+      usage: { promptTokens: 80, completionTokens: 120, totalTokens: 200 },
     });
 
     const response = await POST(postRequest({ rawPersona: "I love bold coffees." }));
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data).toHaveProperty("reframedPersona");
-    expect(data.reframedPersona).toBe(
-      "I am your knowledgeable coffee guide, passionate about bold, full-bodied roasts."
-    );
+    expect(data).toHaveProperty("conversations");
+    expect(Array.isArray(data.conversations)).toBe(true);
+    expect(data.conversations).toHaveLength(3);
+    expect(data.conversations[0]).toHaveProperty("question");
+    expect(data.conversations[0]).toHaveProperty("answer");
     expect(chatCompletionMock).toHaveBeenCalledTimes(1);
   });
 

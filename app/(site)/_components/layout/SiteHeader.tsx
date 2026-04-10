@@ -128,6 +128,7 @@ export default function SiteHeader({
 }: SiteHeaderProps) {
   const pathname = usePathname();
   const togglePanel = useChatPanelStore((s) => s.toggle);
+  const isPanelOpen = useChatPanelStore((s) => s.isOpen);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
@@ -270,7 +271,12 @@ export default function SiteHeader({
                         <SheetClose asChild>
                           <button
                             onClick={togglePanel}
-                            className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                            className={cn(
+                              "inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                              isPanelOpen
+                                ? "text-primary bg-primary/10"
+                                : "text-foreground hover:text-primary hover:bg-accent"
+                            )}
                           >
                             <SmartSearchIcon className="w-5 h-5" />
                             <span className="text-[10px] uppercase tracking-wide font-medium">
@@ -540,10 +546,13 @@ export default function SiteHeader({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hidden md:flex"
+                  className={cn(
+                    "hidden md:flex",
+                    isPanelOpen && "bg-primary/10 text-primary"
+                  )}
                   onClick={togglePanel}
                 >
-                  <SmartSearchIcon className="h-5 w-5" />
+                  <SmartSearchIcon className={cn("h-5 w-5", isPanelOpen && "text-primary")} />
                   <span className="sr-only">Search — ask about our coffee</span>
                 </Button>
               ) : (

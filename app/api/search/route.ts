@@ -97,7 +97,7 @@ function buildExtractionPrompt(query: string): string {
   "followUps": ["short filter label e.g. 'Light roast' or 'Ethiopian' or 'V60 friendly'", "another short label"]
 }
 
-followUps must be 2–3 short action labels (2–4 words each) the user can tap to refine results — NOT questions. Examples: "Light roast", "Single origin", "Fruity notes", "Under $30", "Espresso friendly".
+followUps must be 2–3 short conversational questions (5–8 words) the customer might naturally ask next — framed as the shop owner speaking. Examples: "Something with fruity notes?", "Looking for a light roast?", "Perfect for espresso?", "Anything under $30?", "Single origin only?".
 
 Query: ${JSON.stringify(query)}`;
 }
