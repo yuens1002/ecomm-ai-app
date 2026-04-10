@@ -2,12 +2,12 @@
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
     "feat/smart-search-ux": {
-      "status": "pending",
-      "acs_passed": 0,
+      "status": "verified",
+      "acs_passed": 43,
       "acs_total": 43,
       "tasks": [],
       "acs_doc": "docs/plans/smart-search-ux-ACs.md",
-      "notes": "Implementation complete. 2 commits: (1) site settings, admin voice persona UI, SmartSearchIcon, Zustand store, header swap; (2) voice persona injection, extended filters, ChatPanel, layout, tests. 38 Jest tests pass. Precheck clean. Ready for verification."
+      "notes": "43/43 ACs verified. 16 UI (screenshots + code review), 16 FN (code review), 7 TST (test run — 38 tests pass), 4 REG (1173 tests pass, precheck clean). 1 fix: RSC boundary crash on admin storefront settings page — extracted ProductMenuSettingsSection into 'use client'. AC-FN-12 top_rated fallback documented as Phase B item. AC-UI-13 persistence confirmed via code review; Puppeteer full-reload limitation prevents screenshot. 1 iteration."
     },
     "feat/platform-wiring-complete": {
       "status": "verified",
