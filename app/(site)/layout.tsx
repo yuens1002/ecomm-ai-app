@@ -58,10 +58,10 @@ export default async function SiteLayout({
           <link rel="stylesheet" href={`/themes/${theme}.css`} />
         </>
       )}
-      {/* Outer flex row: left column (header + content + footer) + right panel */}
-      <div data-site="" className="relative flex min-h-screen">
-        {/* Left column — scrolls normally */}
-        <div className="flex-1 min-w-0 flex flex-col">
+      {/* Outer flex row — locked to viewport height so left column owns the scrollbar */}
+      <div data-site="" className="relative flex h-screen overflow-hidden">
+        {/* Left column — scrolls on its own; scrollbar sits between content and panel */}
+        <div id="site-scroll" className="flex-1 min-w-0 flex flex-col overflow-y-auto">
           {/* Demo banner - only mounts on demo instances (NEXT_PUBLIC_BUILD_VARIANT=demo) */}
           {IS_DEMO && <DemoBanner />}
 

@@ -155,11 +155,13 @@ export default function SiteHeader({
     }
   }, []);
 
-  const handleScroll = useCallback(() => {
+  const handleScroll = useCallback((e: Event) => {
     // Keep navbar always visible on mobile (< md breakpoint)
     if (window.innerWidth < 768) return;
 
-    const currentScrollY = window.scrollY;
+    const target = e.currentTarget as HTMLElement | Window;
+    const currentScrollY =
+      target instanceof Window ? target.scrollY : (target as HTMLElement).scrollTop;
     const threshold = 10;
 
     // Always show header when at top of page
@@ -189,7 +191,12 @@ export default function SiteHeader({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    // Attach scroll listener to the left column scroll container (#site-scroll)
+    // so that the scrollbar stays between the content area and the chat panel.
+    // Falls back to window if the element isn't found (e.g., non-panel pages).
+    const scrollTarget: EventTarget =
+      document.getElementById("site-scroll") ?? window;
+    scrollTarget.addEventListener("scroll", handleScroll as EventListener, { passive: true });
 
     // Re-show header when resizing into mobile (scroll hide is desktop-only)
     const mql = window.matchMedia("(max-width: 767px)");
@@ -199,7 +206,7 @@ export default function SiteHeader({
     mql.addEventListener("change", onBreakpoint);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      scrollTarget.removeEventListener("scroll", handleScroll as EventListener);
       mql.removeEventListener("change", onBreakpoint);
     };
   }, [handleScroll]);
