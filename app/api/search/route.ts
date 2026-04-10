@@ -70,14 +70,20 @@ export function isNaturalLanguageQuery(query: string): boolean {
 // AI extraction step
 // ---------------------------------------------------------------------------
 
-function buildSystemPrompt(aiVoicePersona: string): string {
+function buildSystemPrompt(aiVoicePersona: string, pageContext?: string): string {
   const personaSection = aiVoicePersona.trim()
     ? `You are the voice of this coffee shop. Embody the shop owner's character exactly:\n"${aiVoicePersona}"\n\n`
     : `You are a knowledgeable coffee shop assistant. Speak with genuine expertise and warmth.\n\n`;
-  return `${personaSection}Extract coffee search intent from user queries and return valid JSON only — no markdown, no explanation outside the JSON.`;
+  const contextSection = pageContext
+    ? `The customer is currently viewing "${pageContext}". When they say "this" or "it", they mean "${pageContext}".\n\n`
+    : "";
+  return `${personaSection}${contextSection}Extract coffee search intent from user queries and return valid JSON only — no markdown, no explanation outside the JSON.`;
 }
 
-function buildExtractionPrompt(query: string): string {
+function buildExtractionPrompt(query: string, pageContext?: string): string {
+  const contextNote = pageContext
+    ? `\n\nPage context: the customer is viewing "${pageContext}". Resolve "this", "it", or "this one" as "${pageContext}". When they ask a question about the product they're viewing (e.g. brew method, taste, roast suitability), the explanation must directly answer that question with specific knowledge about "${pageContext}". Include "${pageContext}" in the product results if it is relevant.`
+    : "";
   return `Extract coffee search intent and return JSON only:
 {
   "intent": "product_discovery" | "recommendation" | "how_to" | "reorder",
@@ -93,24 +99,29 @@ function buildExtractionPrompt(query: string): string {
     "priceMinCents": number | undefined,
     "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined
   },
-  "explanation": "one sentence why these results match the query",
-  "followUps": ["short filter label e.g. 'Light roast' or 'Ethiopian' or 'V60 friendly'", "another short label"]
+  "explanation": "one sentence spoken directly to the customer in first person — describe what makes these a good match, not what the customer asked for. E.g., 'These hit that bright citrus note perfectly — light and lively for mornings.' Never use 'The customer is...' or third-person phrasing.",
+  "followUps": ["single most useful follow-up question (5–7 words) — or empty array if query is already specific"]
 }
 
-followUps must be 2–3 short conversational questions (5–8 words) the customer might naturally ask next — framed as the shop owner speaking. Examples: "Something with fruity notes?", "Looking for a light roast?", "Perfect for espresso?", "Anything under $30?", "Single origin only?".
+followUps rules:
+- Return AT MOST ONE item in the array, or an empty array [] if the query already has enough detail
+- NEVER ask about anything the customer already mentioned (e.g. if they said "light" do NOT ask "Do you prefer a light roast?")
+- Ask only the single most useful next clarification that would significantly improve results
+- If no clarification is needed, return []
 
-Query: ${JSON.stringify(query)}`;
+Query: ${JSON.stringify(query)}${contextNote}`;
 }
 
 async function extractAgenticFilters(
   query: string,
-  systemPrompt: string
+  systemPrompt: string,
+  pageContext?: string
 ): Promise<AgenticExtraction | null> {
   try {
     const result = await chatCompletion({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: buildExtractionPrompt(query) },
+        { role: "user", content: buildExtractionPrompt(query, pageContext) },
       ],
       maxTokens: 500,
       temperature: 0.2,
@@ -203,6 +214,7 @@ export async function GET(request: NextRequest) {
     const sessionId = searchParams.get("sessionId") ?? "";
     const parsedTurnCount = parseInt(searchParams.get("turnCount") ?? "0", 10);
     const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
+    const pageTitle = searchParams.get("pageTitle") ?? undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = { isDisabled: false };
@@ -308,13 +320,14 @@ export async function GET(request: NextRequest) {
       (await isAIConfigured())
     ) {
       const { aiVoicePersona } = await getPublicSiteSettings();
-      const systemPrompt = buildSystemPrompt(aiVoicePersona);
-      agenticData = await extractAgenticFilters(query, systemPrompt);
+      const systemPrompt = buildSystemPrompt(aiVoicePersona, pageTitle);
+      agenticData = await extractAgenticFilters(query, systemPrompt, pageTitle);
 
       if (agenticData?.filtersExtracted) {
         const {
           roastLevel,
           origin: extractedOrigin,
+          flavorProfile,
           isOrganic,
           processing,
           variety,
@@ -329,7 +342,6 @@ export async function GET(request: NextRequest) {
           whereClause.categories = {
             some: { category: { slug: roastSlug } },
           };
-          whereClause.type = ProductType.COFFEE;
         }
 
         // Apply extracted origin only if no explicit origin param
@@ -337,12 +349,24 @@ export async function GET(request: NextRequest) {
           whereClause.origin = { has: extractedOrigin };
         }
 
+        // BUG-2: Apply flavor profile — expand OR clause with case-insensitive description
+        // search and Title Case tastingNotes hasSome. Prisma hasSome is case-sensitive and
+        // the DB stores notes as Title Case ("Citrus Zest"), so we capitalize the first letter.
+        // Description contains (mode: insensitive) handles multi-word notes like "Citrus Zest".
+        if (flavorProfile && flavorProfile.length > 0) {
+          const flavorEntries = flavorProfile.flatMap((f) => [
+            { description: { contains: f, mode: "insensitive" as const } },
+            { tastingNotes: { hasSome: [f.charAt(0).toUpperCase() + f.slice(1)] } },
+          ]);
+          whereClause.OR = [...(whereClause.OR ?? []), ...flavorEntries];
+        }
+
         // Apply organic filter
         if (isOrganic !== undefined) {
           whereClause.isOrganic = isOrganic;
         }
 
-        // Apply processing method filter (substring match via related variants)
+        // Apply processing method filter
         if (processing) {
           whereClause.processing = { contains: processing, mode: "insensitive" };
         }
@@ -376,6 +400,28 @@ export async function GET(request: NextRequest) {
             top_rated: { createdAt: "desc" }, // fallback: no rating field yet
           };
           orderBy = sortMap[sortBy];
+        }
+
+        // Lock to COFFEE type when any coffee-specific semantic filter was extracted.
+        // This prevents gear/accessories from matching generic words like "cup" or "coffee".
+        const hasCoffeeFilters = !!(
+          roastLevel ||
+          extractedOrigin ||
+          (flavorProfile && flavorProfile.length > 0) ||
+          isOrganic !== undefined ||
+          processing ||
+          variety
+        );
+        if (hasCoffeeFilters) {
+          whereClause.type = ProductType.COFFEE;
+        }
+
+        // Remove text token OR clause only when hard DB-filterable constraints exist
+        // (roastLevel, origin, variety, processing). For flavor-only queries, keep the
+        // OR clause so description text search can find citrus/chocolate etc. notes.
+        const hasHardDBFilters = !!(roastLevel || extractedOrigin || variety || processing);
+        if (hasHardDBFilters) {
+          delete whereClause.OR;
         }
       }
     }
