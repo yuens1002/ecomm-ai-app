@@ -292,5 +292,14 @@
       "acs_doc": "docs/features/qa-self-healing/ACs.md",
       "notes": "16/16 ACs verified via code review sub-agent. 12 FN + 4 REG. 15/15 Jest tests pass. Precheck 0 errors. 0 iterations needed."
     }
+  },
+    "fix/search-quality": {
+      "status": "planned",
+      "acs_passed": 0,
+      "acs_total": 16,
+      "tasks": [],
+      "acs_doc": "docs/features/smart-search-ux/hotfix-search-quality/ACs.md",
+      "notes": "Plan approved in prior session. 3 FN + 2 UI + 8 TST + 3 REG ACs."
+    }
   }
 }
