@@ -272,12 +272,16 @@ function MessageBubble({
     );
   }
 
-  // Assistant loading
+  // Assistant loading — animated waiting filler from voice surfaces
   if (msg.isLoading) {
+    const waitingText = useChatPanelStore.getState().voiceSurfaces.waiting;
     return (
-      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-        <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
-        <span className="text-xs">Searching…</span>
+      <div className="flex items-start gap-2 text-muted-foreground text-sm">
+        <MessageSquareDot className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary/50" />
+        <span className="text-xs">
+          {waitingText}
+          <span className="waiting-dots" />
+        </span>
       </div>
     );
   }
