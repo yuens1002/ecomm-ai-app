@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { chatCompletion, isAIConfigured } from "@/lib/ai-client";
 import { getPublicSiteSettings } from "@/lib/data";
+import {
+  DEFAULT_VOICE_EXAMPLES,
+  type VoiceExample,
+} from "@/lib/ai/voice-examples";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -113,14 +117,33 @@ export function isNaturalLanguageQuery(query: string): boolean {
 // AI extraction step
 // ---------------------------------------------------------------------------
 
-function buildSystemPrompt(aiVoicePersona: string, pageContext?: string): string {
-  const personaSection = aiVoicePersona.trim()
-    ? `You are the voice of this coffee shop. Embody the shop owner's character exactly:\n"${aiVoicePersona}"\n\n`
-    : `You are a knowledgeable coffee shop assistant. Speak with genuine expertise and warmth.\n\n`;
+function buildSystemPrompt(
+  voiceExamples: VoiceExample[],
+  aiVoicePersona: string,
+  pageContext?: string
+): string {
+  let voiceSection: string;
+
+  if (voiceExamples.length > 0) {
+    // Few-shot examples are the primary voice signal
+    const examplePairs = voiceExamples
+      .map((e) => `Customer: "${e.question}"\nOwner: "${e.answer}"`)
+      .join("\n\n");
+    voiceSection = `You are the voice of this coffee shop. Here is how the owner speaks — match this voice exactly:\n\n${examplePairs}\n\n`;
+    // Persona is supplemental context when examples exist
+    if (aiVoicePersona.trim()) {
+      voiceSection += `Additional shop context: "${aiVoicePersona}"\n\n`;
+    }
+  } else if (aiVoicePersona.trim()) {
+    voiceSection = `You are the voice of this coffee shop. Embody the shop owner's character exactly:\n"${aiVoicePersona}"\n\n`;
+  } else {
+    voiceSection = `You are a knowledgeable coffee shop assistant. Speak with genuine expertise and warmth.\n\n`;
+  }
+
   const contextSection = pageContext
     ? `The customer is currently viewing "${pageContext}". When they say "this" or "it", they mean "${pageContext}".\n\n`
     : "";
-  return `${personaSection}${contextSection}Extract coffee search intent from user queries and return valid JSON only — no markdown, no explanation outside the JSON.`;
+  return `${voiceSection}${contextSection}Extract coffee search intent from user queries and return valid JSON only — no markdown, no explanation outside the JSON.`;
 }
 
 function buildExtractionPrompt(query: string, pageContext?: string): string {
@@ -361,8 +384,10 @@ export async function GET(request: NextRequest) {
       (forceAI || isNaturalLanguageQuery(query)) &&
       (await isAIConfigured())
     ) {
-      const { aiVoicePersona } = await getPublicSiteSettings();
-      const systemPrompt = buildSystemPrompt(aiVoicePersona, pageTitle);
+      const { aiVoicePersona, aiVoiceExamples } = await getPublicSiteSettings();
+      const voiceExamples =
+        aiVoiceExamples.length > 0 ? aiVoiceExamples : DEFAULT_VOICE_EXAMPLES;
+      const systemPrompt = buildSystemPrompt(voiceExamples, aiVoicePersona, pageTitle);
       agenticData = await extractAgenticFilters(query, systemPrompt, pageTitle);
 
       if (agenticData?.filtersExtracted) {

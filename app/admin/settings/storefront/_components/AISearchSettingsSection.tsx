@@ -1,11 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, RotateCcw, Check, ChevronLeft } from "lucide-react";
+import { Sparkles, RotateCcw, Check, ChevronLeft, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SmartSearchIcon } from "@/components/shared/icons/SmartSearchIcon";
+import {
+  DEFAULT_VOICE_EXAMPLES,
+  VOICE_EXAMPLE_QUESTIONS,
+  type VoiceExample,
+} from "@/lib/ai/voice-examples";
 
 interface Conversation {
   question: string;
@@ -24,15 +29,39 @@ export function AISearchSettingsSection() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Voice examples state — answers only (questions are fixed)
+  const [voiceAnswers, setVoiceAnswers] = useState<string[]>(
+    DEFAULT_VOICE_EXAMPLES.map((e) => e.answer)
+  );
+  const [savedVoiceAnswers, setSavedVoiceAnswers] = useState<string[]>(
+    DEFAULT_VOICE_EXAMPLES.map((e) => e.answer)
+  );
+  const [savingExamples, setSavingExamples] = useState(false);
+  const [savedExamples, setSavedExamples] = useState(false);
+
   useEffect(() => {
     fetch("/api/admin/settings/ai-search")
       .then((r) => r.json())
-      .then((data: { aiVoicePersona?: string }) => {
-        const value = data.aiVoicePersona ?? "";
-        setPersona(value);
-        setSavedPersona(value);
-        setLoading(false);
-      })
+      .then(
+        (data: { aiVoicePersona?: string; voiceExamples?: VoiceExample[] }) => {
+          const value = data.aiVoicePersona ?? "";
+          setPersona(value);
+          setSavedPersona(value);
+
+          // If owner has saved custom answers, use those; otherwise keep defaults
+          if (data.voiceExamples && data.voiceExamples.length > 0) {
+            const answers = VOICE_EXAMPLE_QUESTIONS.map((q, i) => {
+              const stored = data.voiceExamples!.find(
+                (e) => e.question === q
+              );
+              return stored?.answer ?? DEFAULT_VOICE_EXAMPLES[i].answer;
+            });
+            setVoiceAnswers(answers);
+            setSavedVoiceAnswers(answers);
+          }
+          setLoading(false);
+        }
+      )
       .catch(() => setLoading(false));
   }, []);
 
@@ -75,12 +104,53 @@ export function AISearchSettingsSection() {
     }
   };
 
-  const isDirty = persona !== savedPersona;
+  const handleSaveExamples = async () => {
+    setSavingExamples(true);
+    try {
+      const examples: VoiceExample[] = VOICE_EXAMPLE_QUESTIONS.map((q, i) => ({
+        question: q,
+        answer: voiceAnswers[i],
+      }));
+      const res = await fetch("/api/admin/settings/ai-search", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voiceExamples: examples }),
+      });
+      if (res.ok) {
+        setSavedVoiceAnswers([...voiceAnswers]);
+        setSavedExamples(true);
+        setTimeout(() => setSavedExamples(false), 2500);
+      }
+    } finally {
+      setSavingExamples(false);
+    }
+  };
+
+  const handleResetAnswer = (index: number) => {
+    setVoiceAnswers((prev) => {
+      const next = [...prev];
+      next[index] = DEFAULT_VOICE_EXAMPLES[index].answer;
+      return next;
+    });
+  };
+
+  const handleAnswerChange = (index: number, value: string) => {
+    setVoiceAnswers((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  const isPersonaDirty = persona !== savedPersona;
+  const isExamplesDirty = voiceAnswers.some(
+    (a, i) => a !== savedVoiceAnswers[i]
+  );
 
   if (loading) return null;
 
   return (
-    <div className="rounded-lg border p-6 space-y-6">
+    <div className="rounded-lg border p-6 space-y-8">
       <div>
         <h3 className="text-base font-semibold">Smart Search</h3>
         <p className="text-sm text-muted-foreground mt-1">
@@ -120,7 +190,7 @@ export function AISearchSettingsSection() {
               {previewing ? "Generating preview…" : "See how I sound"}
             </Button>
 
-            {isDirty && (
+            {isPersonaDirty && (
               <Button
                 size="sm"
                 onClick={handleSave}
@@ -137,6 +207,73 @@ export function AISearchSettingsSection() {
                   "Save Voice"
                 )}
               </Button>
+            )}
+          </div>
+
+          {/* ── Voice Examples ────────────────────────────────────── */}
+          <div className="space-y-4 border-t pt-6">
+            <div>
+              <h4 className="text-sm font-medium">Voice Examples</h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                These Q&amp;A pairs teach the AI how you actually talk. Edit the
+                answers to match your voice — questions are fixed.
+              </p>
+            </div>
+
+            <div className="space-y-5 max-w-[72ch]">
+              {VOICE_EXAMPLE_QUESTIONS.map((question, i) => {
+                const isDefault =
+                  voiceAnswers[i] === DEFAULT_VOICE_EXAMPLES[i].answer;
+                return (
+                  <div key={i} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor={`voice-example-${i}`}
+                        className="text-xs font-medium text-muted-foreground"
+                      >
+                        &ldquo;{question}&rdquo;
+                      </Label>
+                      {!isDefault && (
+                        <button
+                          type="button"
+                          onClick={() => handleResetAnswer(i)}
+                          className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Undo2 className="h-3 w-3" />
+                          Reset to default
+                        </button>
+                      )}
+                    </div>
+                    <Textarea
+                      id={`voice-example-${i}`}
+                      value={voiceAnswers[i]}
+                      onChange={(e) => handleAnswerChange(i, e.target.value)}
+                      className="text-sm min-h-[80px] resize-y"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {isExamplesDirty && (
+              <div className="flex items-center gap-3">
+                <Button
+                  size="sm"
+                  onClick={handleSaveExamples}
+                  disabled={savingExamples}
+                >
+                  {savedExamples ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 mr-1.5" />
+                      Saved
+                    </>
+                  ) : savingExamples ? (
+                    "Saving…"
+                  ) : (
+                    "Save Examples"
+                  )}
+                </Button>
+              </div>
             )}
           </div>
         </>
