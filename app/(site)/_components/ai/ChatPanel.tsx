@@ -35,6 +35,8 @@ interface SearchProduct {
 interface SearchResponse {
   products: SearchProduct[];
   explanation: string | null;
+  acknowledgment: string | null;
+  followUpQuestion: string | null;
   followUps: string[];
   intent: string | null;
   aiFailed?: boolean;
@@ -165,7 +167,7 @@ function PanelContent() {
 
       // Determine response content — never go silent. Uses voice surfaces
       // (owner's voice) for recovery messages.
-      let content = data.explanation || "";
+      let content = data.acknowledgment || data.explanation || "";
       if (!content && data.aiFailed) {
         content = voiceSurfaces.aiFailed;
       } else if (!content && !hasProducts) {
@@ -175,7 +177,10 @@ function PanelContent() {
       updateLastMessage({
         id: assistantMsgId,
         content,
+        acknowledgment: data.acknowledgment ?? undefined,
+        followUpQuestion: data.followUpQuestion ?? undefined,
         products,
+        // Cadence rule: follow-ups only shown when >3 products (enforced in render)
         followUps: data.followUps ?? [],
         isLoading: false,
       });
@@ -288,8 +293,16 @@ function MessageBubble({
 
   const isGreeting = msg.id === GREETING_ID;
   const hasProducts = msg.products && msg.products.length > 0;
-  const hasFollowUps = msg.followUps && msg.followUps.length > 0;
+  const productCount = msg.products?.length ?? 0;
   const hasContent = !!msg.content;
+
+  // Cadence rules (deterministic, code-enforced):
+  // 1. Acknowledgment always first
+  // 2. Products after acknowledgment
+  // 3. Follow-up question + chips ONLY when products > 3
+  // 4. Chips only alongside a follow-up question
+  const showFollowUp =
+    productCount > 3 && !!msg.followUpQuestion && msg.followUps && msg.followUps.length > 0;
 
   const visibleProducts = hasProducts
     ? showAll
@@ -298,9 +311,12 @@ function MessageBubble({
     : [];
   const extraCount = hasProducts ? msg.products!.length - 3 : 0;
 
+  // No-results message from voice surfaces
+  const noResultsSurface = useChatPanelStore.getState().voiceSurfaces.noResults;
+
   return (
     <div className="space-y-2.5">
-      {/* Explanation */}
+      {/* 1. Acknowledgment (always first when present) */}
       {hasContent && (
         <div className="flex items-start gap-2">
           <MessageSquareDot className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary/50" />
@@ -308,7 +324,7 @@ function MessageBubble({
         </div>
       )}
 
-      {/* Product cards — individual bordered cards; More/Less overlays the last card's bottom border */}
+      {/* 2. Product cards after acknowledgment */}
       {hasProducts && (
         <div className={extraCount > 0 ? "relative pb-3" : ""}>
           <div className="space-y-1.5">
@@ -334,26 +350,29 @@ function MessageBubble({
         </div>
       )}
 
-      {/* No results — suppressed when follow-ups exist */}
-      {!hasProducts && !msg.isLoading && !isGreeting && hasContent && !hasFollowUps && (
+      {/* No results — voice surface message */}
+      {!hasProducts && !msg.isLoading && !isGreeting && hasContent && (
         <p className="text-xs text-muted-foreground pl-5">
-          Hmm, nothing quite lining up — tell me a bit more about what you like?
+          {noResultsSurface}
         </p>
       )}
 
-      {/* Follow-up chips */}
-      {hasFollowUps && (
-        <div className="flex flex-wrap gap-1.5">
-          {msg.followUps!.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              onClick={() => onChipClick(chip)}
-              className="text-xs px-3 py-1.5 rounded-full border border-border/60 hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-colors text-primary"
-            >
-              {chip}
-            </button>
-          ))}
+      {/* 3. Follow-up question + chips (only when products > 3) */}
+      {showFollowUp && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground pl-5">{msg.followUpQuestion}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {msg.followUps!.map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => onChipClick(chip)}
+                className="text-xs px-3 py-1.5 rounded-full border border-border/60 hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-colors text-primary"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

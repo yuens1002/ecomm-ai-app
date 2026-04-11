@@ -37,7 +37,10 @@ interface FiltersExtracted {
 interface AgenticExtraction {
   intent: AgenticIntent;
   filtersExtracted: FiltersExtracted;
+  /** @deprecated Use acknowledgment instead — kept for backwards compat in response */
   explanation: string;
+  acknowledgment: string;
+  followUpQuestion: string;
   followUps: string[];
 }
 
@@ -166,15 +169,17 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
     "priceMinCents": number | undefined,
     "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined
   },
-  "explanation": "1–2 sentences spoken directly to the customer in first person. If intent is open-ended, end with a natural question to narrow it down — the options (followUps) are the choices the customer picks from. E.g. 'Sounds like you want something approachable — what kind of roast are you usually after?' Never use 'The customer is...' or third-person phrasing.",
-  "followUps": ["2-4 word option label the customer might choose — e.g. 'Light & bright', 'Medium & smooth', 'Dark & bold'. Return 2–3 options when intent is open-ended; empty array if intent is specific enough. Never use question marks — these are clickable answer choices, not questions."]
+  "acknowledgment": "1 sentence spoken directly to the customer — acknowledge what they're looking for. Use second person: 'you're looking for...', 'you want...'. ALWAYS present. Never third-person ('The customer...'). Never repeat the customer's exact words back.",
+  "followUpQuestion": "1 sentence narrowing question based on what the customer hasn't specified yet. Pick the most useful dimension to narrow (roast level, brew method, flavor, origin). Empty string if the query is already specific enough.",
+  "followUps": ["2-4 word option label the customer might choose — e.g. 'Light & bright', 'Medium & smooth', 'Dark & bold'. Return 2–3 options when followUpQuestion is non-empty; empty array otherwise. Never use question marks — these are clickable answer choices, not questions."]
 }
 
-followUps rules:
-- Return 2–3 short option labels when the query is open-ended and options would help narrow the intent
-- Each label must be 2–4 words, no question marks — they are clickable answer choices
-- NEVER repeat anything the customer already specified (e.g. if they said "light" do NOT offer "Light roast" as a choice)
-- If the query is already specific enough, return []
+Rules:
+- Speak directly to the customer: use "you", "your" — never third person
+- acknowledgment is ALWAYS required — it validates you understood the customer
+- followUpQuestion picks the most useful narrowing dimension based on what the customer hasn't told you yet — no fixed category order
+- followUps are only provided when followUpQuestion is non-empty
+- NEVER repeat anything the customer already specified (e.g. if they said "light" do NOT offer "Light roast")
 
 Query: ${JSON.stringify(query)}${contextNote}`;
 }
@@ -270,13 +275,18 @@ async function extractAgenticFilters(
           : undefined,
     };
 
+    const acknowledgment =
+      typeof raw.acknowledgment === "string" ? raw.acknowledgment : "";
+    const followUpQuestion =
+      typeof raw.followUpQuestion === "string" ? raw.followUpQuestion : "";
+    // Backwards compat: fall back to legacy explanation field
     const explanation =
-      typeof raw.explanation === "string" ? raw.explanation : "";
+      acknowledgment || (typeof raw.explanation === "string" ? raw.explanation : "");
     const followUps = Array.isArray(raw.followUps)
       ? raw.followUps.filter((v) => typeof v === "string")
       : [];
 
-    return { intent, filtersExtracted, explanation, followUps };
+    return { intent, filtersExtracted, explanation, acknowledgment, followUpQuestion, followUps };
   } catch (err) {
     // LLM failure is non-fatal — fall back to standard keyword search
     console.error("[agentic-search] AI extraction failed:", err);
@@ -603,6 +613,8 @@ export async function GET(request: NextRequest) {
       intent: agenticData?.intent ?? null,
       filtersExtracted: agenticData?.filtersExtracted ?? null,
       explanation: agenticData?.explanation ?? null,
+      acknowledgment: agenticData?.acknowledgment ?? null,
+      followUpQuestion: agenticData?.followUpQuestion ?? null,
       followUps: agenticData?.followUps ?? [],
       aiFailed,
       context: { sessionId, turnCount },
