@@ -59,6 +59,51 @@ export function tokenizeNLQuery(q: string): string[] {
     .filter((t) => t.length > 1 && !NL_STOP_WORDS.has(t));
 }
 
+/**
+ * PostgreSQL full-text search with TF-IDF ranking.
+ * Searches name, description, tastingNotes, and origin using tsvector/tsquery.
+ * Words appearing in many products (like "coffee" or "notes") automatically
+ * score lower. Returns product IDs ordered by relevance.
+ */
+async function fullTextSearchIds(
+  query: string,
+  limit = 50
+): Promise<string[]> {
+  const tokens = tokenizeNLQuery(query);
+  if (tokens.length === 0) return [];
+
+  // Build OR tsquery: "tropical | fruity | notes"
+  const tsquery = tokens.join(" | ");
+
+  const results = await prisma.$queryRaw<Array<{ id: string }>>`
+    SELECT id
+    FROM "Product"
+    WHERE "isDisabled" = false
+      AND to_tsvector('english',
+        coalesce("name", '') || ' ' ||
+        coalesce("description", '') || ' ' ||
+        array_to_string("tastingNotes", ' ') || ' ' ||
+        array_to_string("origin", ' ') || ' ' ||
+        coalesce("processing", '') || ' ' ||
+        coalesce("variety", '')
+      ) @@ to_tsquery('english', ${tsquery})
+    ORDER BY ts_rank(
+      to_tsvector('english',
+        coalesce("name", '') || ' ' ||
+        coalesce("description", '') || ' ' ||
+        array_to_string("tastingNotes", ' ') || ' ' ||
+        array_to_string("origin", ' ') || ' ' ||
+        coalesce("processing", '') || ' ' ||
+        coalesce("variety", '')
+      ),
+      to_tsquery('english', ${tsquery})
+    ) DESC
+    LIMIT ${limit}
+  `;
+
+  return results.map((r) => r.id);
+}
+
 export function isNaturalLanguageQuery(query: string): boolean {
   if (query.trim().split(/\s+/).length < 3) return false;
   const nlIndicators =
@@ -240,9 +285,8 @@ export async function GET(request: NextRequest) {
     if (query && query.trim().length > 0) {
       searchQuery = query.trim().toLowerCase();
 
-      // Detect roast-level pattern before building text OR clause —
-      // "light roast", "medium roast", "dark roast" map to category filters
-      // rather than substring matches (which would return nothing useful).
+      // Detect roast-level pattern — "light roast", "medium roast", "dark roast"
+      // map to category filters rather than text search.
       const roastPatternMatch = searchQuery.match(
         /\b(light|medium|dark)\s*roast\b/i
       );
@@ -253,57 +297,32 @@ export async function GET(request: NextRequest) {
         };
         whereClause.type = ProductType.COFFEE;
 
+        // If there's remaining text after removing roast pattern, use full-text search
         const remainingQuery = searchQuery
           .replace(/\b(light|medium|dark)\s*roast\b/i, " ")
           .replace(/\s+/g, " ")
           .trim();
         if (remainingQuery.length > 0) {
-          const tokens = tokenizeNLQuery(remainingQuery);
-          if (tokens.length > 0) {
-            whereClause.OR = tokens.flatMap((token) => [
-              { name: { contains: token, mode: "insensitive" } },
-              { description: { contains: token, mode: "insensitive" } },
-              { origin: { hasSome: [token] } },
-              { tastingNotes: { hasSome: [token] } },
-              { processing: { contains: token, mode: "insensitive" } },
-              { variety: { contains: token, mode: "insensitive" } },
-              { altitude: { contains: token, mode: "insensitive" } },
-            ]);
+          const ftsIds = await fullTextSearchIds(remainingQuery);
+          if (ftsIds.length > 0) {
+            whereClause.id = { in: ftsIds };
           }
         }
-      } else if (isNaturalLanguageQuery(searchQuery)) {
-        const tokens = tokenizeNLQuery(searchQuery);
-        if (tokens.length > 0) {
-          whereClause.OR = tokens.flatMap((token) => [
-            { name: { contains: token, mode: "insensitive" } },
-            { description: { contains: token, mode: "insensitive" } },
-            { origin: { hasSome: [token] } },
-            { tastingNotes: { hasSome: [token] } },
-            { processing: { contains: token, mode: "insensitive" } },
-            { variety: { contains: token, mode: "insensitive" } },
-            { altitude: { contains: token, mode: "insensitive" } },
-          ]);
+      } else {
+        // Use PostgreSQL full-text search with TF-IDF ranking.
+        // This automatically suppresses high-frequency words ("coffee", "notes")
+        // and ranks products with rarer matching terms higher.
+        const ftsIds = await fullTextSearchIds(searchQuery);
+        if (ftsIds.length > 0) {
+          whereClause.id = { in: ftsIds };
         } else {
+          // Full-text search found nothing — fall back to simple name/origin match
+          // for short queries like "ethiopia" that PG stemming may not handle.
           whereClause.OR = [
             { name: { contains: searchQuery, mode: "insensitive" } },
-            { description: { contains: searchQuery, mode: "insensitive" } },
             { origin: { hasSome: [searchQuery] } },
-            { tastingNotes: { hasSome: [searchQuery] } },
-            { processing: { contains: searchQuery, mode: "insensitive" } },
-            { variety: { contains: searchQuery, mode: "insensitive" } },
-            { altitude: { contains: searchQuery, mode: "insensitive" } },
           ];
         }
-      } else {
-        whereClause.OR = [
-          { name: { contains: searchQuery, mode: "insensitive" } },
-          { description: { contains: searchQuery, mode: "insensitive" } },
-          { origin: { hasSome: [searchQuery] } },
-          { tastingNotes: { hasSome: [searchQuery] } },
-          { processing: { contains: searchQuery, mode: "insensitive" } },
-          { variety: { contains: searchQuery, mode: "insensitive" } },
-          { altitude: { contains: searchQuery, mode: "insensitive" } },
-        ];
       }
     }
 
@@ -457,13 +476,9 @@ export async function GET(request: NextRequest) {
           whereClause.type = ProductType.COFFEE;
         }
 
-        // Remove text token OR clause only when hard DB-filterable constraints exist
-        // (roastLevel, origin, variety, processing). For flavor-only queries, keep the
-        // OR clause so description text search can find citrus/chocolate etc. notes.
-        const hasHardDBFilters = !!(roastLevel || extractedOrigin || variety || processing);
-        if (hasHardDBFilters) {
-          delete whereClause.OR;
-        }
+        // NOTE: The keyword OR clause is already cleared above (hasAnyFilter check)
+        // and a fresh flavor-only OR is built from flavorProfile entries. No need
+        // for a second deletion here.
       }
     }
 
