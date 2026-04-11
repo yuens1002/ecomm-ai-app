@@ -10,12 +10,12 @@
       "notes": "22/22 ACs verified. Shipped in v0.100.0. Iter 3 closed."
     },
     "feat/phase2-voice-cadence": {
-      "status": "planning",
+      "status": "planned",
       "acs_passed": 0,
       "acs_total": 45,
       "tasks": [],
       "acs_doc": "docs/features/smart-search-ux/phase-2-voice-admin/ACs.md",
-      "notes": "Workflow initiated. Plan and ACs under review."
+      "notes": "Plan approved. 7 tasks, 45 ACs. Ready for implementation."
     },
     "feat/smart-search-ux": {
       "status": "verified",
