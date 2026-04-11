@@ -105,11 +105,16 @@ Session-scoped turn context — in-memory only, never persisted:
 
 ### B1: User Context Aggregation
 
-New data layer functions (`lib/data.ts`):
-- `getUserPurchaseHistory(userId)` — past orders with product details
-- `getUserRecentViews(userId, limit)` — last N `PRODUCT_VIEW` activities
-- `getUserSearchHistory(userId, limit)` — last N `SEARCH` activities
-- `getUserRecommendationContext(userId?)` — aggregated object for prompt injection
+Reuse and expand the existing data layer functions in `lib/data.ts`:
+- `getUserPurchaseHistory(userId)` — reuse for past orders with product details; extend only if additional joins/fields are needed for ranking or explanations
+- `getUserRecentViews(userId, limit)` — reuse for last N `PRODUCT_VIEW` activities; tune limits/windowing if needed for prompt quality
+- `getUserSearchHistory(userId, limit)` — reuse for last N `SEARCH` activities; tune limits/windowing if needed for prompt quality
+- `getUserRecommendationContext(userId?)` — reuse as the primary aggregated object for prompt injection and personalized ranking inputs
+
+Phase B gaps to add (if not already covered):
+- Normalize the aggregated payload shape for agentic search prompt injection
+- Include inferred preferences/summaries derived from purchases, views, and searches
+- Apply authenticated/platform-tier gating at the consumption layer
 
 ### B2: Personalized Search Ranking
 

@@ -41,7 +41,7 @@ _Nothing in progress. v0.98.4 just shipped._
 
 | Priority | Feature | Spec / Notes |
 |----------|---------|--------------|
-| P1 | Reviews Tier 2 — AI Roast Master | [`docs/internal/product-reviews-tier2.md`](internal/product-reviews-tier2.md) — depends on Phase B data |
+| P1 | Reviews Tier 2 — AI Roast Master | `docs/internal/product-reviews-tier2.md` — depends on Phase B data |
 | P2 | A1: AI Assist Tests | `app/admin/(cms)/pages/[id]/ai-assist/` — unit + component tests |
 | P3 | Agentic search Phase B + Reviews Tier 2 integration | Platform search uses review utility scores |
 
@@ -86,7 +86,7 @@ _Nothing in progress. v0.98.4 just shipped._
 ## Convention
 
 - **Before starting a feature:** add it to Next or Backlog with a link to its spec
-- **When planning a sprint:** create `docs/features/<name>/spec.md` and `docs/plans/<name>-plan.md`
+- **When planning a sprint:** ensure `docs/features/<name>/spec.md` exists and create `docs/plans/<name>-plan.md`
 - **When shipping:** move the item from Next/Backlog to Shipped, bump the version row
 - **`docs/plans/`** — per-sprint ACs and implementation plans (granular, created at sprint start)
 - **`docs/features/`** — durable feature specs (created when feature is first planned, updated as it evolves)
