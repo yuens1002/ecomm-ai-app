@@ -1,6 +1,14 @@
 {
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
+    "feat/agentic-search": {
+      "status": "planned",
+      "acs_passed": 0,
+      "acs_total": 19,
+      "tasks": [],
+      "acs_doc": "docs/features/smart-search-ux/chatpanel-corrections/ACs.md",
+      "notes": "ChatPanel corrections: Drawer overlay (C2), MessageSquareDot icon (C1), follow-up option labels (C4), no-results suppression (C4), context color (C5), more/less products (C6)."
+    },
     "feat/smart-search-ux": {
       "status": "verified",
       "acs_passed": 43,
