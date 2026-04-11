@@ -483,7 +483,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      take: forceAI ? 3 : 50,
+      take: 50,
     });
 
     return NextResponse.json({
