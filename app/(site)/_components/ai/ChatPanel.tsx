@@ -98,6 +98,25 @@ function PanelContent() {
 
   const contextTitle = pageContext?.title ?? prettifyPathname(pathname);
 
+  // Detect page type from pathname for context-aware greetings
+  const getContextGreeting = (): string => {
+    const surfaces = useChatPanelStore.getState().voiceSurfaces;
+    // Product page: /products/<slug>
+    const productMatch = pathname.match(/^\/products\/([^/]+)$/);
+    if (productMatch) {
+      const productName = prettifyPathname(`/${productMatch[1]}`);
+      return surfaces["greeting.product"].replace("{product}", productName);
+    }
+    // Category page: /categories/<slug> or /coffee, /merch, etc.
+    const categoryMatch = pathname.match(/^\/categor(?:y|ies)\/([^/]+)$/);
+    if (categoryMatch) {
+      const categoryName = prettifyPathname(`/${categoryMatch[1]}`);
+      return surfaces["greeting.category"].replace("{category}", categoryName);
+    }
+    // Homepage or other pages — open-ended greeting
+    return surfaces["greeting.home"];
+  };
+
   // Load voice surfaces on first open
   useEffect(() => {
     if (isOpen) void loadSurfaces();
@@ -112,12 +131,12 @@ function PanelContent() {
         addMessage({
           id: GREETING_ID,
           role: "assistant",
-          content: state.voiceSurfaces["greeting.home"],
+          content: getContextGreeting(),
           isLoading: false,
         });
       }
     }
-  }, [isOpen, addMessage]);
+  }, [isOpen, addMessage, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -156,7 +175,7 @@ function PanelContent() {
         sessionId: sessionId.current,
         turnCount: String(turnCount),
       });
-      if (contextTitle) {
+      if (contextTitle && contextTitle !== "Home") {
         params.set("pageTitle", contextTitle);
       }
       const res = await fetch(`/api/search?${params.toString()}`);
