@@ -3,6 +3,7 @@ import { ProductType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { chatCompletion, isAIConfigured } from "@/lib/ai-client";
+import { getPublicSiteSettings } from "@/lib/data";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,10 +16,18 @@ type AgenticIntent =
   | "reorder";
 
 interface FiltersExtracted {
+  // Phase A
   brewMethod?: string;
   roastLevel?: string;
   flavorProfile?: string[];
   origin?: string;
+  // Extended
+  isOrganic?: boolean;
+  processing?: string;
+  variety?: string;
+  priceMaxCents?: number;
+  priceMinCents?: number;
+  sortBy?: "newest" | "price_asc" | "price_desc" | "top_rated";
 }
 
 interface AgenticExtraction {
@@ -61,10 +70,20 @@ export function isNaturalLanguageQuery(query: string): boolean {
 // AI extraction step
 // ---------------------------------------------------------------------------
 
-const EXTRACTION_SYSTEM_PROMPT = `You are a coffee product search assistant. Extract structured intent from user queries.
-Always return valid JSON only — no markdown, no explanation outside the JSON.`;
+function buildSystemPrompt(aiVoicePersona: string, pageContext?: string): string {
+  const personaSection = aiVoicePersona.trim()
+    ? `You are the voice of this coffee shop. Embody the shop owner's character exactly:\n"${aiVoicePersona}"\n\n`
+    : `You are a knowledgeable coffee shop assistant. Speak with genuine expertise and warmth.\n\n`;
+  const contextSection = pageContext
+    ? `The customer is currently viewing "${pageContext}". When they say "this" or "it", they mean "${pageContext}".\n\n`
+    : "";
+  return `${personaSection}${contextSection}Extract coffee search intent from user queries and return valid JSON only — no markdown, no explanation outside the JSON.`;
+}
 
-function buildExtractionPrompt(query: string): string {
+function buildExtractionPrompt(query: string, pageContext?: string): string {
+  const contextNote = pageContext
+    ? `\n\nPage context: the customer is viewing "${pageContext}". Resolve "this", "it", or "this one" as "${pageContext}". When they ask a question about the product they're viewing (e.g. brew method, taste, roast suitability), the explanation must directly answer that question with specific knowledge about "${pageContext}". Include "${pageContext}" in the product results if it is relevant.`
+    : "";
   return `Extract coffee search intent and return JSON only:
 {
   "intent": "product_discovery" | "recommendation" | "how_to" | "reorder",
@@ -72,32 +91,61 @@ function buildExtractionPrompt(query: string): string {
     "brewMethod": string | undefined,
     "roastLevel": "light" | "medium" | "dark" | undefined,
     "flavorProfile": string[] | undefined,
-    "origin": string | undefined
+    "origin": string | undefined,
+    "isOrganic": true | false | undefined,
+    "processing": "washed" | "natural" | "honey" | "anaerobic" | string | undefined,
+    "variety": string | undefined,
+    "priceMaxCents": number (cents, e.g. 3000 for "under $30") | undefined,
+    "priceMinCents": number | undefined,
+    "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined
   },
-  "explanation": "one sentence why these results match the query",
-  "followUps": ["short filter label e.g. 'Light roast' or 'Ethiopian' or 'V60 friendly'", "another short label"]
+  "explanation": "1–2 sentences spoken directly to the customer in first person. If intent is open-ended, end with a natural question to narrow it down — the options (followUps) are the choices the customer picks from. E.g. 'Sounds like you want something approachable — what kind of roast are you usually after?' Never use 'The customer is...' or third-person phrasing.",
+  "followUps": ["2-4 word option label the customer might choose — e.g. 'Light & bright', 'Medium & smooth', 'Dark & bold'. Return 2–3 options when intent is open-ended; empty array if intent is specific enough. Never use question marks — these are clickable answer choices, not questions."]
 }
 
-followUps must be 2–3 short action labels (2–4 words each) the user can tap to refine results — NOT questions. Examples: "Light roast", "Single origin", "Fruity notes", "Under $30", "Espresso friendly".
+followUps rules:
+- Return 2–3 short option labels when the query is open-ended and options would help narrow the intent
+- Each label must be 2–4 words, no question marks — they are clickable answer choices
+- NEVER repeat anything the customer already specified (e.g. if they said "light" do NOT offer "Light roast" as a choice)
+- If the query is already specific enough, return []
 
-Query: ${JSON.stringify(query)}`;
+Query: ${JSON.stringify(query)}${contextNote}`;
 }
 
 async function extractAgenticFilters(
-  query: string
+  query: string,
+  systemPrompt: string,
+  pageContext?: string
 ): Promise<AgenticExtraction | null> {
   try {
     const result = await chatCompletion({
       messages: [
-        { role: "system", content: EXTRACTION_SYSTEM_PROMPT },
-        { role: "user", content: buildExtractionPrompt(query) },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: buildExtractionPrompt(query, pageContext) },
       ],
-      maxTokens: 500,
+      maxTokens: 1024,
       temperature: 0.2,
     });
 
     // Strip markdown code fences that some models (e.g. Gemini) add despite instructions
-    const stripped = result.text.trim().replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+    let stripped = result.text.trim().replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+
+    // Attempt to repair truncated JSON (model hit token limit mid-response)
+    if (result.finishReason === "length" || result.finishReason === "max_tokens") {
+      // Close any open strings and brackets
+      const openBraces = (stripped.match(/{/g) || []).length;
+      const closeBraces = (stripped.match(/}/g) || []).length;
+      const openBrackets = (stripped.match(/\[/g) || []).length;
+      const closeBrackets = (stripped.match(/\]/g) || []).length;
+      // Trim trailing partial values (comma, colon, incomplete string)
+      stripped = stripped.replace(/,\s*$/, "").replace(/:\s*$/, ': ""');
+      // If inside an unclosed string, close it
+      const quoteCount = (stripped.match(/(?<!\\)"/g) || []).length;
+      if (quoteCount % 2 !== 0) stripped += '"';
+      for (let i = 0; i < openBrackets - closeBrackets; i++) stripped += "]";
+      for (let i = 0; i < openBraces - closeBraces; i++) stripped += "}";
+    }
+
     const raw = JSON.parse(stripped) as Record<string, unknown>;
 
     // Validate/normalize critical fields so downstream code can't throw on bad LLM output
@@ -124,6 +172,9 @@ async function extractAgenticFilters(
         ? rawFilters.roastLevel.toLowerCase()
         : undefined;
 
+    const validSortBy = ["newest", "price_asc", "price_desc", "top_rated"] as const;
+    type SortBy = (typeof validSortBy)[number];
+
     const filtersExtracted: FiltersExtracted = {
       brewMethod:
         typeof rawFilters.brewMethod === "string" ? rawFilters.brewMethod : undefined,
@@ -132,6 +183,24 @@ async function extractAgenticFilters(
         ? rawFilters.flavorProfile.filter((v) => typeof v === "string")
         : undefined,
       origin: typeof rawFilters.origin === "string" ? rawFilters.origin : undefined,
+      isOrganic: typeof rawFilters.isOrganic === "boolean" ? rawFilters.isOrganic : undefined,
+      processing:
+        typeof rawFilters.processing === "string" ? rawFilters.processing : undefined,
+      variety:
+        typeof rawFilters.variety === "string" ? rawFilters.variety : undefined,
+      priceMaxCents:
+        typeof rawFilters.priceMaxCents === "number" && rawFilters.priceMaxCents > 0
+          ? rawFilters.priceMaxCents
+          : undefined,
+      priceMinCents:
+        typeof rawFilters.priceMinCents === "number" && rawFilters.priceMinCents > 0
+          ? rawFilters.priceMinCents
+          : undefined,
+      sortBy:
+        typeof rawFilters.sortBy === "string" &&
+        validSortBy.includes(rawFilters.sortBy as SortBy)
+          ? (rawFilters.sortBy as SortBy)
+          : undefined,
     };
 
     const explanation =
@@ -158,10 +227,11 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get("q");
     const roast = searchParams.get("roast");
     const origin = searchParams.get("origin");
-    const forceAI = searchParams.get("ai") === "1";
+    const forceAI = searchParams.get("ai") === "true";
     const sessionId = searchParams.get("sessionId") ?? "";
     const parsedTurnCount = parseInt(searchParams.get("turnCount") ?? "0", 10);
     const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
+    const pageTitle = searchParams.get("pageTitle") ?? undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = { isDisabled: false };
@@ -183,8 +253,6 @@ export async function GET(request: NextRequest) {
         };
         whereClause.type = ProductType.COFFEE;
 
-        // Also apply text search for remaining terms so mixed queries like
-        // "light roast Ethiopia" or "best light roast for V60" don't lose relevance.
         const remainingQuery = searchQuery
           .replace(/\b(light|medium|dark)\s*roast\b/i, " ")
           .replace(/\s+/g, " ")
@@ -197,13 +265,13 @@ export async function GET(request: NextRequest) {
               { description: { contains: token, mode: "insensitive" } },
               { origin: { hasSome: [token] } },
               { tastingNotes: { hasSome: [token] } },
+              { processing: { contains: token, mode: "insensitive" } },
+              { variety: { contains: token, mode: "insensitive" } },
+              { altitude: { contains: token, mode: "insensitive" } },
             ]);
           }
         }
       } else if (isNaturalLanguageQuery(searchQuery)) {
-        // NL query without AI: tokenize to get meaningful words and search
-        // each individually. This handles "what's good with v60 pour over?"
-        // → ["v60", "pour"] → matches products mentioning V60/pour in any field.
         const tokens = tokenizeNLQuery(searchQuery);
         if (tokens.length > 0) {
           whereClause.OR = tokens.flatMap((token) => [
@@ -211,14 +279,19 @@ export async function GET(request: NextRequest) {
             { description: { contains: token, mode: "insensitive" } },
             { origin: { hasSome: [token] } },
             { tastingNotes: { hasSome: [token] } },
+            { processing: { contains: token, mode: "insensitive" } },
+            { variety: { contains: token, mode: "insensitive" } },
+            { altitude: { contains: token, mode: "insensitive" } },
           ]);
         } else {
-          // All tokens were stop words — fall back to substring search
           whereClause.OR = [
             { name: { contains: searchQuery, mode: "insensitive" } },
             { description: { contains: searchQuery, mode: "insensitive" } },
             { origin: { hasSome: [searchQuery] } },
             { tastingNotes: { hasSome: [searchQuery] } },
+            { processing: { contains: searchQuery, mode: "insensitive" } },
+            { variety: { contains: searchQuery, mode: "insensitive" } },
+            { altitude: { contains: searchQuery, mode: "insensitive" } },
           ];
         }
       } else {
@@ -227,6 +300,9 @@ export async function GET(request: NextRequest) {
           { description: { contains: searchQuery, mode: "insensitive" } },
           { origin: { hasSome: [searchQuery] } },
           { tastingNotes: { hasSome: [searchQuery] } },
+          { processing: { contains: searchQuery, mode: "insensitive" } },
+          { variety: { contains: searchQuery, mode: "insensitive" } },
+          { altitude: { contains: searchQuery, mode: "insensitive" } },
         ];
       }
     }
@@ -252,17 +328,30 @@ export async function GET(request: NextRequest) {
     // -------------------------------------------------------------------------
 
     let agenticData: AgenticExtraction | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let orderBy: any = undefined;
 
     if (
       query &&
       (forceAI || isNaturalLanguageQuery(query)) &&
       (await isAIConfigured())
     ) {
-      agenticData = await extractAgenticFilters(query);
+      const { aiVoicePersona } = await getPublicSiteSettings();
+      const systemPrompt = buildSystemPrompt(aiVoicePersona, pageTitle);
+      agenticData = await extractAgenticFilters(query, systemPrompt, pageTitle);
 
       if (agenticData?.filtersExtracted) {
-        const { roastLevel, origin: extractedOrigin } =
-          agenticData.filtersExtracted;
+        const {
+          roastLevel,
+          origin: extractedOrigin,
+          flavorProfile,
+          isOrganic,
+          processing,
+          variety,
+          priceMaxCents,
+          priceMinCents,
+          sortBy,
+        } = agenticData.filtersExtracted;
 
         // Apply extracted roastLevel only if no explicit roast param
         if (roastLevel && !roast) {
@@ -270,12 +359,86 @@ export async function GET(request: NextRequest) {
           whereClause.categories = {
             some: { category: { slug: roastSlug } },
           };
-          whereClause.type = ProductType.COFFEE;
         }
 
         // Apply extracted origin only if no explicit origin param
         if (extractedOrigin && !origin) {
           whereClause.origin = { has: extractedOrigin };
+        }
+
+        // BUG-2: Apply flavor profile — expand OR clause with case-insensitive description
+        // search and Title Case tastingNotes hasSome. Prisma hasSome is case-sensitive and
+        // the DB stores notes as Title Case ("Citrus Zest"), so we capitalize the first letter.
+        // Description contains (mode: insensitive) handles multi-word notes like "Citrus Zest".
+        if (flavorProfile && flavorProfile.length > 0) {
+          const flavorEntries = flavorProfile.flatMap((f) => [
+            { description: { contains: f, mode: "insensitive" as const } },
+            { tastingNotes: { hasSome: [f.charAt(0).toUpperCase() + f.slice(1)] } },
+          ]);
+          whereClause.OR = [...(whereClause.OR ?? []), ...flavorEntries];
+        }
+
+        // Apply organic filter
+        if (isOrganic !== undefined) {
+          whereClause.isOrganic = isOrganic;
+        }
+
+        // Apply processing method filter
+        if (processing) {
+          whereClause.processing = { contains: processing, mode: "insensitive" };
+        }
+
+        // Apply variety filter
+        if (variety) {
+          whereClause.variety = { contains: variety, mode: "insensitive" };
+        }
+
+        // Apply price range filters via variants.purchaseOptions
+        if (priceMaxCents !== undefined || priceMinCents !== undefined) {
+          const priceFilter: Record<string, number> = {};
+          if (priceMinCents !== undefined) priceFilter.gte = priceMinCents;
+          if (priceMaxCents !== undefined) priceFilter.lte = priceMaxCents;
+          whereClause.variants = {
+            some: {
+              isDisabled: false,
+              purchaseOptions: {
+                some: { priceInCents: priceFilter },
+              },
+            },
+          };
+        }
+
+        // Apply sortBy mapping
+        if (sortBy) {
+          const sortMap: Record<string, object> = {
+            newest: { createdAt: "desc" },
+            price_asc: { variants: { _min: { purchaseOptions: { _min: { priceInCents: "asc" } } } } },
+            price_desc: { variants: { _min: { purchaseOptions: { _min: { priceInCents: "desc" } } } } },
+            top_rated: { createdAt: "desc" }, // fallback: no rating field yet
+          };
+          orderBy = sortMap[sortBy];
+        }
+
+        // Lock to COFFEE type when any coffee-specific semantic filter was extracted.
+        // This prevents gear/accessories from matching generic words like "cup" or "coffee".
+        const hasCoffeeFilters = !!(
+          roastLevel ||
+          extractedOrigin ||
+          (flavorProfile && flavorProfile.length > 0) ||
+          isOrganic !== undefined ||
+          processing ||
+          variety
+        );
+        if (hasCoffeeFilters) {
+          whereClause.type = ProductType.COFFEE;
+        }
+
+        // Remove text token OR clause only when hard DB-filterable constraints exist
+        // (roastLevel, origin, variety, processing). For flavor-only queries, keep the
+        // OR clause so description text search can find citrus/chocolate etc. notes.
+        const hasHardDBFilters = !!(roastLevel || extractedOrigin || variety || processing);
+        if (hasHardDBFilters) {
+          delete whereClause.OR;
         }
       }
     }
@@ -306,6 +469,7 @@ export async function GET(request: NextRequest) {
 
     const products = await prisma.product.findMany({
       where: whereClause,
+      ...(orderBy ? { orderBy } : {}),
       include: {
         categories: {
           include: {
@@ -339,6 +503,10 @@ export async function GET(request: NextRequest) {
       take: 50,
     });
 
+    // When AI was requested but extraction failed, surface it so the UI can
+    // tell the user instead of silently showing dumb keyword results.
+    const aiFailed = forceAI && !agenticData;
+
     return NextResponse.json({
       products,
       query: searchQuery,
@@ -347,6 +515,7 @@ export async function GET(request: NextRequest) {
       filtersExtracted: agenticData?.filtersExtracted ?? null,
       explanation: agenticData?.explanation ?? null,
       followUps: agenticData?.followUps ?? [],
+      aiFailed,
       context: { sessionId, turnCount },
     });
   } catch (error) {

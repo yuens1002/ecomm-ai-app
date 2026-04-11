@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.100.0 - 2026-04-11
+
+### Added
+
+- **Smart search chat panel**: Conversational product search drawer (vaul Drawer, right side overlay) with AI-powered explanations, product cards, and follow-up chips
+- **AI voice persona**: Admin-configurable AI personality for search responses with conversation preview
+- **Search quality**: AI extraction with structured intent, roast/origin/flavor filters, and type-safe product matching (COFFEE vs merch)
+- **AI failure handling**: Friendly fallback message when AI extraction fails; `aiFailed` flag surfaced to UI so junk keyword results are suppressed
+
+### Fixed
+
+- **Double scrollbar**: Site pages now use `html:has([data-site]) { overflow-y: auto }` to eliminate the useless viewport scrollbar alongside `#site-scroll`; admin pages retain `overflow-y: scroll` for layout stability
+- **Drawer scroll lock**: `#site-scroll` locked when drawer opens; stale vaul body styles (`pointer-events`, `overflow`) cleaned up after close animation
+- **AI truncated JSON**: Bumped extraction `maxTokens` 500 → 1024 and added JSON repair for truncated model responses
+- **Product images in chat**: Uses `getPlaceholderImage()` fallback (same as ProductCard and shopping cart) instead of showing blank thumbnails
+- **Drawer accessibility**: Added `DrawerDescription` (sr-only) to fix missing aria-describedby warning; removed focus outline on drawer click
+
+### Changed
+
+- **Search icons**: Replaced custom SmartSearchIcon with `MessageSquareDot` (lucide) across header, mobile menu, and chat panel
+- **Chat panel layout**: Mounted outside flex row as portal overlay; page content stays full-width when panel is open
+- **Follow-up chips**: Now 2–4 word option labels (not question strings); question embedded in explanation text
+- **Product display**: 3 products shown by default with "More/Less" badge toggle on last card border
+
 ## 0.99.1 - 2026-04-08
 
 ### Fixed

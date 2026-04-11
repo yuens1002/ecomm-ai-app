@@ -187,17 +187,18 @@ If no ACs doc exists yet, produce the report inline in this format:
 
 ## Important Rules
 
-1. **Read, don't write.** The sub-agent verifies — it does NOT fix code or make edits.
+1. **Read, don't write — ever.** The sub-agent verifies only. It does NOT edit source files, create plan documents, create ACs docs, or write any file outside of `.screenshots/` and the scratchpad. If you find yourself about to edit a `.tsx`, `.ts`, `.md`, or any project file, STOP. You are out of scope.
 2. **Evidence-based.** Every PASS/FAIL must reference a screenshot or file:line.
 3. **Complete coverage.** Verify ALL ACs, don't skip any.
 4. **Screenshot every breakpoint.** Even if an AC seems desktop-only, capture all three.
-5. **Clean scratchpad.** Write Puppeteer scripts to the scratchpad, not `scripts/`.
-6. **Report everything.** Include test output, screenshot paths, and code references.
-7. **Combine interaction + evidence.** When an AC requires UI interaction before verification, write a single Puppeteer flow that interacts and captures evidence in sequence. Do not split interaction and screenshot into separate scripts.
-8. **Exercise cautiously.** For ACs requiring form submission or data mutation, verify the UI response (toast, state change) — do not verify database state directly.
-9. **Check Pass criteria literally.** Do not interpret — the Pass column is the contract. If it says "no red text visible" and you see red text, it's FAIL regardless of context.
-10. **How column is the contract.** The How column dictates the verification method. If How says `Screenshot:`, you MUST take a screenshot — do not substitute code review. The QC validator will reject mismatched evidence.
-11. **Screenshot-method ACs need `.png` evidence.** Your Agent column entry for any `Screenshot:`/`Interactive:`/`Exercise:` AC must reference a `.png` file path (e.g., `.screenshots/verify-desktop-plans.png`). Without it, the QC validator will flag the AC.
+5. **Screenshots go to `.screenshots/{feature-name}/` only.** NEVER save screenshots inside `docs/`, `app/`, `lib/`, or any other project directory. `.screenshots/` is gitignored — subdirectories outside it are not and will be committed to the repo. A screenshot saved anywhere else is a bug.
+6. **Clean scratchpad.** Write Puppeteer scripts to the scratchpad, not `scripts/`.
+7. **Report everything.** Include test output, screenshot paths, and code references.
+8. **Combine interaction + evidence.** When an AC requires UI interaction before verification, write a single Puppeteer flow that interacts and captures evidence in sequence. Do not split interaction and screenshot into separate scripts.
+9. **Exercise cautiously.** For ACs requiring form submission or data mutation, verify the UI response (toast, state change) — do not verify database state directly.
+10. **Check Pass criteria literally.** Do not interpret — the Pass column is the contract. If it says "no red text visible" and you see red text, it's FAIL regardless of context.
+11. **How column is the contract.** The How column dictates the verification method. If How says `Screenshot:`, you MUST take a screenshot — do not substitute code review. The QC validator will reject mismatched evidence.
+12. **Screenshot-method ACs need `.png` evidence.** Your Agent column entry for any `Screenshot:`/`Interactive:`/`Exercise:` AC must reference a `.png` file path (e.g., `.screenshots/verify/verify-desktop-plans.png`). Without it, the QC validator will flag the AC.
 
 ## Puppeteer Hard Rules
 
@@ -233,7 +234,9 @@ import path from "path";
 import fs from "fs";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
-const OUTPUT_DIR = path.join(process.cwd(), ".screenshots");
+// MANDATORY: All screenshots MUST go inside .screenshots/ — it is gitignored.
+// NEVER save to docs/, app/, lib/, or any other project directory.
+const OUTPUT_DIR = path.join(process.cwd(), ".screenshots", "verify-{feature-name}");
 
 const BREAKPOINTS = [
   { name: "mobile", width: 375, height: 812 },

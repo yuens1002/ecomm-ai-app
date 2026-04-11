@@ -29,6 +29,8 @@ export interface SiteSettings {
   homepageHeroVideoPosterUrl: string;
   homepageHeroHeading: string;
   homepageHeroTagline: string;
+  // AI Search
+  aiVoicePersona: string;
 }
 
 export const defaultSettings: SiteSettings = {
@@ -58,6 +60,8 @@ export const defaultSettings: SiteSettings = {
   homepageHeroVideoPosterUrl: "",
   homepageHeroHeading: "",
   homepageHeroTagline: "",
+  // AI Search
+  aiVoicePersona: "",
 };
 
 function safeParseJSON<T>(raw: string | undefined, fallback: T): T {
@@ -130,5 +134,7 @@ export function mapSettingsRecord(
       record.homepage_hero_heading || defaultSettings.homepageHeroHeading,
     homepageHeroTagline:
       record.homepage_hero_tagline || defaultSettings.homepageHeroTagline,
+    // AI Search
+    aiVoicePersona: record.ai_voice_persona ?? defaultSettings.aiVoicePersona,
   };
 }

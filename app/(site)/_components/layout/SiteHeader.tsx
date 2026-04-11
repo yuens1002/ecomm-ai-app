@@ -6,20 +6,11 @@ import { UserMenu } from "@/app/(site)/_components/navigation/UserMenu";
 import { DynamicIcon, type IconName } from "@/components/shared/icons/DynamicIcon";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -41,11 +32,12 @@ import {
 import { useNavOverflow } from "@/hooks/useNavOverflow";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
-import { ChevronDown, CircleUserRound, FileText, Home, LogIn, LogOut, Menu, MoreHorizontal, PackageSearch, Search, User } from "lucide-react";
+import { ChevronDown, CircleUserRound, FileText, Home, LogIn, LogOut, Menu, MessageSquareDot, MoreHorizontal, PackageSearch, Search, User } from "lucide-react";
+import { useChatPanelStore } from "@/stores/chat-panel-store";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import * as React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CategoryMenuColumns } from "../navigation/CategoryMenuColumns";
@@ -115,6 +107,7 @@ interface SiteHeaderProps {
   productMenuIcon?: string;
   productMenuText?: string;
   storeName?: string;
+  aiConfigured?: boolean;
 }
 
 /**
@@ -130,11 +123,11 @@ export default function SiteHeader({
   productMenuIcon = "ShoppingBag",
   productMenuText = "Shop",
   storeName: serverStoreName,
+  aiConfigured = false,
 }: SiteHeaderProps) {
-  const router = useRouter();
   const pathname = usePathname();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const togglePanel = useChatPanelStore((s) => s.toggle);
+  const isPanelOpen = useChatPanelStore((s) => s.isOpen);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
@@ -161,11 +154,13 @@ export default function SiteHeader({
     }
   }, []);
 
-  const handleScroll = useCallback(() => {
+  const handleScroll = useCallback((e: Event) => {
     // Keep navbar always visible on mobile (< md breakpoint)
     if (window.innerWidth < 768) return;
 
-    const currentScrollY = window.scrollY;
+    const target = e.currentTarget as HTMLElement | Window;
+    const currentScrollY =
+      target instanceof Window ? target.scrollY : (target as HTMLElement).scrollTop;
     const threshold = 10;
 
     // Always show header when at top of page
@@ -195,7 +190,12 @@ export default function SiteHeader({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true);
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    // Attach scroll listener to the left column scroll container (#site-scroll)
+    // so that the scrollbar stays between the content area and the chat panel.
+    // Falls back to window if the element isn't found (e.g., non-panel pages).
+    const scrollTarget: EventTarget =
+      document.getElementById("site-scroll") ?? window;
+    scrollTarget.addEventListener("scroll", handleScroll as EventListener, { passive: true });
 
     // Re-show header when resizing into mobile (scroll hide is desktop-only)
     const mql = window.matchMedia("(max-width: 767px)");
@@ -205,19 +205,10 @@ export default function SiteHeader({
     mql.addEventListener("change", onBreakpoint);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      scrollTarget.removeEventListener("scroll", handleScroll as EventListener);
       mql.removeEventListener("change", onBreakpoint);
     };
   }, [handleScroll]);
-
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      setIsSearchOpen(false);
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery("");
-    }
-  }
 
   return (
     <header
@@ -282,17 +273,36 @@ export default function SiteHeader({
                           </span>
                         </Link>
                       </SheetClose>
-                      <SheetClose asChild>
-                        <Link
-                          href="/search"
-                          className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        >
-                          <Search className="w-5 h-5" />
-                          <span className="text-[10px] uppercase tracking-wide font-medium">
-                            Search
-                          </span>
-                        </Link>
-                      </SheetClose>
+                      {aiConfigured ? (
+                        <SheetClose asChild>
+                          <button
+                            onClick={togglePanel}
+                            className={cn(
+                              "inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                              isPanelOpen
+                                ? "text-primary bg-primary/10"
+                                : "text-foreground hover:text-primary hover:bg-accent"
+                            )}
+                          >
+                            <MessageSquareDot className="w-5 h-5" />
+                            <span className="text-[10px] uppercase tracking-wide font-medium">
+                              Search
+                            </span>
+                          </button>
+                        </SheetClose>
+                      ) : (
+                        <SheetClose asChild>
+                          <Link
+                            href="/search"
+                            className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          >
+                            <Search className="w-5 h-5" />
+                            <span className="text-[10px] uppercase tracking-wide font-medium">
+                              Search
+                            </span>
+                          </Link>
+                        </SheetClose>
+                      )}
                       <SheetClose asChild>
                         <Link
                           href="/orders"
@@ -537,34 +547,28 @@ export default function SiteHeader({
         <div className="order-3 flex items-center gap-4">
           {isClient ? (
             <>
-              {/* Search - desktop only */}
-              <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="hidden md:flex">
+              {/* Search - desktop only: SmartSearch when AI configured, keyword search otherwise */}
+              {aiConfigured ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "hidden md:flex",
+                    isPanelOpen && "bg-primary/10 text-primary"
+                  )}
+                  onClick={togglePanel}
+                >
+                  <MessageSquareDot className={cn("h-5 w-5", isPanelOpen && "text-primary")} />
+                  <span className="sr-only">Search — ask about our coffee</span>
+                </Button>
+              ) : (
+                <Button variant="ghost" size="icon" asChild className="hidden md:flex">
+                  <Link href="/search">
                     <Search className="h-5 w-5" />
                     <span className="sr-only">Search products</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Search Products</DialogTitle>
-                    <DialogDescription>
-                      Search for your favorite specialty coffees
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleSearch} className="relative mt-4">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Try 'smooth morning coffee for V60'..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                      autoFocus
-                    />
-                  </form>
-                </DialogContent>
-              </Dialog>
+                  </Link>
+                </Button>
+              )}
 
               {/* Account - desktop only */}
               <div className="hidden md:flex">

@@ -82,6 +82,7 @@ nul
 .screenshot/
 .screenshots/
 .screenshots
+**/screenshots/
 .scratch/
 .scratchpad/
 scratchpad/
