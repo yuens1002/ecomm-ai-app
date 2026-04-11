@@ -172,7 +172,7 @@ async function extractAgenticFilters(
         ? rawFilters.roastLevel.toLowerCase()
         : undefined;
 
-    const validSortBy = ["newest", "price_asc", "price_desc", "top_rated"] as const;
+    const validSortBy = ["newest", "top_rated"] as const;
     type SortBy = (typeof validSortBy)[number];
 
     const filtersExtracted: FiltersExtracted = {

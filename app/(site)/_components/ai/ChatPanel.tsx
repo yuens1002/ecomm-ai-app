@@ -376,9 +376,14 @@ function ProductCard({ product }: { product: ProductSummary }) {
 
 export function ChatPanel() {
   const { isOpen, close, open, clearMessages, addMessage } = useChatPanelStore();
+  const bodyCleanupRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Lock #site-scroll when drawer is open and clean up stale vaul body styles on close.
   useEffect(() => {
+    if (bodyCleanupRef.current !== null) {
+      clearTimeout(bodyCleanupRef.current);
+      bodyCleanupRef.current = null;
+    }
     if (!isOpen) return;
     const siteScroll = document.getElementById("site-scroll");
     if (siteScroll) siteScroll.style.overflow = "hidden";
@@ -387,7 +392,8 @@ export function ChatPanel() {
       // Vaul direction="right" leaves stale pointer-events/overflow on body
       // after its close animation. Only clear if Vaul is no longer scroll-locking
       // so we don't interfere with other overlays that may still be open.
-      setTimeout(() => {
+      bodyCleanupRef.current = setTimeout(() => {
+        bodyCleanupRef.current = null;
         if (document.body.hasAttribute("data-scroll-locked")) return;
         if (document.body.style.pointerEvents === "none") {
           document.body.style.pointerEvents = "";
