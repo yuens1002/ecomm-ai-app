@@ -30,7 +30,7 @@ const config = {
     "/e2e/",
     "/app/api/(?!.*__tests__/)", // Ignore API route files but allow co-located route tests
     "/lib/__tests__/data", // Skip data tests (require live database)
-    "/__tests__/fixtures\\.ts$", // Fixture files are not test suites
+    "/__tests__/fixtures([/\\\\]|\\.ts$)", // Fixture files and directories are not test suites
   ],
 };
 
