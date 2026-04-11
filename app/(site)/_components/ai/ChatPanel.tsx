@@ -5,13 +5,16 @@ import { X, Loader2, ArrowUp, RotateCcw, FileText, MessageSquareDot } from "luci
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Drawer,
   DrawerContent,
   DrawerTitle,
+  DrawerDescription,
 } from "@/components/ui/drawer";
+import { Badge } from "@/components/ui/badge";
 import { useChatPanelStore, type ChatMessage, type ProductSummary } from "@/stores/chat-panel-store";
 
 // ---------------------------------------------------------------------------
@@ -34,6 +37,7 @@ interface SearchResponse {
   explanation: string | null;
   followUps: string[];
   intent: string | null;
+  aiFailed?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -49,7 +53,7 @@ function mapProduct(p: SearchProduct): ProductSummary {
     name: p.name,
     slug: p.slug,
     priceInCents: oneTime?.priceInCents ?? anyOption?.priceInCents ?? null,
-    imageUrl: firstVariant?.images[0]?.url ?? null,
+    imageUrl: firstVariant?.images[0]?.url || getPlaceholderImage(p.name, 400),
     categorySlug: p.categories[0]?.category.slug ?? null,
   };
 }
@@ -143,10 +147,14 @@ function PanelContent() {
       const res = await fetch(`/api/search?${params.toString()}`);
       const data = (await res.json()) as SearchResponse;
 
+      const fallbackMsg = data.aiFailed
+        ? "Ah sorry, I spaced out for a sec — what were you looking for again?"
+        : "";
+
       updateLastMessage({
         id: assistantMsgId,
-        content: data.explanation ?? "",
-        products: (data.products ?? []).map(mapProduct),
+        content: data.explanation || fallbackMsg,
+        products: data.aiFailed ? [] : (data.products ?? []).map(mapProduct),
         followUps: data.followUps ?? [],
         isLoading: false,
       });
@@ -277,24 +285,25 @@ function MessageBubble({
 
       {/* Product cards — individual bordered cards; More/Less overlays the last card's bottom border */}
       {hasProducts && (
-        <div>
+        <div className={extraCount > 0 ? "relative pb-3" : ""}>
           <div className="space-y-1.5">
             {visibleProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
           {extraCount > 0 && (
-            <div className="relative -mt-px flex items-center">
-              <div className="flex-1 border-t border-border/50" aria-hidden="true" />
-              <button
-                type="button"
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+              <Badge
+                variant="outline"
+                role="button"
+                tabIndex={0}
                 onClick={() => setShowAll((s) => !s)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowAll((s) => !s); } }}
                 aria-label={showAll ? "Show fewer products" : `Show ${extraCount} more products`}
-                className="px-2.5 text-[11px] font-medium text-primary bg-background hover:text-primary/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+                className="cursor-pointer text-muted-foreground font-normal bg-background hover:bg-accent hover:text-foreground transition-colors focus:ring-0 focus:ring-offset-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 {showAll ? "Less" : "More"}
-              </button>
-              <div className="flex-1 border-t border-border/50" aria-hidden="true" />
+              </Badge>
             </div>
           )}
         </div>
@@ -336,17 +345,16 @@ function ProductCard({ product }: { product: ProductSummary }) {
       href={`/products/${product.slug}`}
       className="flex items-center gap-2.5 rounded-xl border border-border/50 p-2.5 hover:bg-accent hover:border-border transition-colors group"
     >
-      {product.imageUrl ? (
-        <Image
-          src={product.imageUrl}
-          alt={product.name}
-          width={40}
-          height={40}
-          className="w-10 h-10 object-cover rounded-lg shrink-0"
-        />
-      ) : (
-        <div className="w-10 h-10 rounded-lg bg-muted shrink-0" />
-      )}
+      <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
+        {product.imageUrl && (
+          <Image
+            src={product.imageUrl}
+            alt={product.name}
+            fill
+            className="object-cover"
+          />
+        )}
+      </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium truncate group-hover:text-primary transition-colors">
           {product.name}
@@ -366,13 +374,19 @@ function ProductCard({ product }: { product: ProductSummary }) {
 export function ChatPanel() {
   const { isOpen, close, open, clearMessages, addMessage } = useChatPanelStore();
 
-  // Lock the site scroll container when drawer is open to eliminate double scrollbar
+  // Lock #site-scroll when drawer is open and clean up stale vaul body styles on close.
   useEffect(() => {
+    if (!isOpen) return;
     const siteScroll = document.getElementById("site-scroll");
-    if (!siteScroll) return;
-    siteScroll.style.overflow = isOpen ? "hidden" : "";
+    if (siteScroll) siteScroll.style.overflow = "hidden";
     return () => {
-      siteScroll.style.overflow = "";
+      if (siteScroll) siteScroll.style.overflow = "";
+      // Vaul direction="right" leaves stale pointer-events/overflow on body
+      // after its close animation. Clean up after animation completes.
+      setTimeout(() => {
+        document.body.style.pointerEvents = "";
+        document.body.style.overflow = "";
+      }, 500);
     };
   }, [isOpen]);
 
@@ -388,14 +402,18 @@ export function ChatPanel() {
         if (o) open(); else close();
       }}
       direction="right"
+      shouldScaleBackground={false}
     >
-      <DrawerContent className="inset-y-0 right-0 left-auto h-full w-[85vw] sm:w-[min(25vw,360px)] rounded-none border-l border-t-0 border-b-0">
+      <DrawerContent className="inset-y-0 right-0 left-auto h-full w-[85vw] sm:w-[min(25vw,360px)] rounded-none border-l border-t-0 border-b-0 focus:outline-none">
         {/* Header row — title left, reset + close right */}
-        <div className="shrink-0 border-b border-border/50 px-4 py-2 flex items-center gap-2">
+        <div className="shrink-0 px-4 py-2 flex items-center gap-2">
           <MessageSquareDot className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
           <DrawerTitle className="flex-1 text-sm font-medium">
             Product Search
           </DrawerTitle>
+          <DrawerDescription className="sr-only">
+            Search and discover products with AI assistance
+          </DrawerDescription>
           <Button
             variant="ghost"
             size="icon"
@@ -409,7 +427,7 @@ export function ChatPanel() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+            className="h-7 w-7 -mr-2 rounded-full text-muted-foreground hover:text-foreground"
             onClick={close}
             aria-label="Close"
           >

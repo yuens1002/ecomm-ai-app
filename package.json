@@ -1,6 +1,6 @@
 {
   "name": "artisan-roast",
-  "version": "0.99.1",
+  "version": "0.100.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -113,6 +113,7 @@
     "swr": "^2.3.8",
     "tailwind-merge": "^3.4.0",
     "uuid": "^13.0.0",
+    "vaul": "^1.1.2",
     "ws": "^8.18.3",
     "zod": "^4.1.12",
     "zustand": "^5.0.8"

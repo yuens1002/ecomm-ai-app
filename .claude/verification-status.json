@@ -2,12 +2,12 @@
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
     "feat/agentic-search": {
-      "status": "planned",
-      "acs_passed": 0,
-      "acs_total": 19,
+      "status": "verified",
+      "acs_passed": 22,
+      "acs_total": 22,
       "tasks": [],
       "acs_doc": "docs/features/smart-search-ux/chatpanel-corrections/ACs.md",
-      "notes": "ChatPanel corrections: Drawer overlay (C2), MessageSquareDot icon (C1), follow-up option labels (C4), no-results suppression (C4), context color (C5), more/less products (C6)."
+      "notes": "22/22 ACs verified. 11 UI (Puppeteer screenshots + code review), 6 FN (code review), 2 TST (code review + test run — 37 tests pass), 4 REG (precheck 0 errors, 1182 tests pass). AC-UI-10/11 code-pass only — API enforces take:3 with ai=true so Show more button is correct in code but never triggered via live UI. Screenshots at .screenshots/chatpanel-corrections/. 0 iterations needed."
     },
     "feat/smart-search-ux": {
       "status": "verified",

@@ -123,12 +123,29 @@ async function extractAgenticFilters(
         { role: "system", content: systemPrompt },
         { role: "user", content: buildExtractionPrompt(query, pageContext) },
       ],
-      maxTokens: 500,
+      maxTokens: 1024,
       temperature: 0.2,
     });
 
     // Strip markdown code fences that some models (e.g. Gemini) add despite instructions
-    const stripped = result.text.trim().replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+    let stripped = result.text.trim().replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+
+    // Attempt to repair truncated JSON (model hit token limit mid-response)
+    if (result.finishReason === "length" || result.finishReason === "max_tokens") {
+      // Close any open strings and brackets
+      const openBraces = (stripped.match(/{/g) || []).length;
+      const closeBraces = (stripped.match(/}/g) || []).length;
+      const openBrackets = (stripped.match(/\[/g) || []).length;
+      const closeBrackets = (stripped.match(/\]/g) || []).length;
+      // Trim trailing partial values (comma, colon, incomplete string)
+      stripped = stripped.replace(/,\s*$/, "").replace(/:\s*$/, ': ""');
+      // If inside an unclosed string, close it
+      const quoteCount = (stripped.match(/(?<!\\)"/g) || []).length;
+      if (quoteCount % 2 !== 0) stripped += '"';
+      for (let i = 0; i < openBrackets - closeBrackets; i++) stripped += "]";
+      for (let i = 0; i < openBraces - closeBraces; i++) stripped += "}";
+    }
+
     const raw = JSON.parse(stripped) as Record<string, unknown>;
 
     // Validate/normalize critical fields so downstream code can't throw on bad LLM output
@@ -486,6 +503,10 @@ export async function GET(request: NextRequest) {
       take: 50,
     });
 
+    // When AI was requested but extraction failed, surface it so the UI can
+    // tell the user instead of silently showing dumb keyword results.
+    const aiFailed = forceAI && !agenticData;
+
     return NextResponse.json({
       products,
       query: searchQuery,
@@ -494,6 +515,7 @@ export async function GET(request: NextRequest) {
       filtersExtracted: agenticData?.filtersExtracted ?? null,
       explanation: agenticData?.explanation ?? null,
       followUps: agenticData?.followUps ?? [],
+      aiFailed,
       context: { sessionId, turnCount },
     });
   } catch (error) {
