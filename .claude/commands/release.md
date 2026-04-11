@@ -10,8 +10,13 @@ This skill guides you through the proper release workflow for this project, ensu
 ## Arguments
 
 - `$1` - Version bump type: `patch` (default), `minor`, or `major`
-- `--github-release` - Also create a GitHub Release (triggers upgrade notice in app)
+- `--github-release` - Also create a GitHub Release (triggers upgrade notice in app). **Automatically applied for `minor` and `major` bumps — do not omit it.**
 - `--docs-only` - Skip version changes (for documentation-only PRs)
+
+## Rules
+
+- **Every `minor` or `major` bump MUST create a GitHub Release.** Do not run `npm run release:minor` or `npm run release:major` without `--github-release`. This is not optional — GitHub Releases trigger the upgrade notice banner.
+- **`patch` bumps do NOT create a GitHub Release** unless explicitly requested.
 
 ## Workflow Overview
 
@@ -72,8 +77,8 @@ grep '"version"' package.json
 Based on the bump type ($ARGUMENTS or default to patch):
 
 - **patch**: 0.82.5 → 0.82.6
-- **minor**: 0.82.5 → 0.83.0
-- **major**: 0.82.5 → 1.0.0
+- **minor**: 0.82.5 → 0.83.0 ← GitHub Release is **mandatory**
+- **major**: 0.82.5 → 1.0.0 ← GitHub Release is **mandatory**
 
 ### Step 3: Pre-PR Checklist (if on feature branch)
 
@@ -121,7 +126,15 @@ gh pr merge <pr-number> --squash --delete-branch \
 
 # 4e. Switch to main and tag
 git checkout main && git pull
+
+# For patch:
 npm run release:patch -- -y --push --sync-package
+
+# For minor (GitHub Release is MANDATORY):
+npm run release:minor -- -y --push --sync-package --github-release
+
+# For major (GitHub Release is MANDATORY):
+npm run release:major -- -y --push --sync-package --github-release
 ```
 
 **If any CI check fails:** fix the issue, push a new commit, re-run step 4a.
@@ -141,11 +154,14 @@ After release:
 ## Common Commands
 
 ```bash
-# Quick patch (most common)
+# Quick patch (most common) — no GitHub Release
 npm run release:patch -- -y --push --sync-package
 
-# Minor release with announcement
+# Minor release — GitHub Release is MANDATORY
 npm run release:minor -- -y --push --sync-package --github-release
+
+# Major release — GitHub Release is MANDATORY
+npm run release:major -- -y --push --sync-package --github-release
 
 # Check what would be released
 npm run release:patch

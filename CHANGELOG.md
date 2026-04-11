@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.100.0 - 2026-04-11
+
+### Added
+
+- **Smart search chat panel**: Conversational product search drawer (vaul Drawer, right side overlay) with AI-powered explanations, product cards, and follow-up chips
+- **AI voice persona**: Admin-configurable AI personality for search responses with conversation preview
+- **Search quality**: AI extraction with structured intent, roast/origin/flavor filters, and type-safe product matching (COFFEE vs merch)
+- **AI failure handling**: Friendly fallback message when AI extraction fails; `aiFailed` flag surfaced to UI so junk keyword results are suppressed
+
+### Fixed
+
+- **Double scrollbar**: Site pages now use `html:has([data-site]) { overflow-y: auto }` to eliminate the useless viewport scrollbar alongside `#site-scroll`; admin pages retain `overflow-y: scroll` for layout stability
+- **Drawer scroll lock**: `#site-scroll` locked when drawer opens; stale vaul body styles (`pointer-events`, `overflow`) cleaned up after close animation
+- **AI truncated JSON**: Bumped extraction `maxTokens` 500 → 1024 and added JSON repair for truncated model responses
+- **Product images in chat**: Uses `getPlaceholderImage()` fallback (same as ProductCard and shopping cart) instead of showing blank thumbnails
+- **Drawer accessibility**: Added `DrawerDescription` (sr-only) to fix missing aria-describedby warning; removed focus outline on drawer click
+
+### Changed
+
+- **Search icons**: Replaced custom SmartSearchIcon with `MessageSquareDot` (lucide) across header, mobile menu, and chat panel
+- **Chat panel layout**: Mounted outside flex row as portal overlay; page content stays full-width when panel is open
+- **Follow-up chips**: Now 2–4 word option labels (not question strings); question embedded in explanation text
+- **Product display**: 3 products shown by default with "More/Less" badge toggle on last card border
+
+## 0.99.1 - 2026-04-08
+
+### Fixed
+
+- **Video hero**: switched to `aspect-[3/1]` container with `object-contain` so videos are letterboxed rather than cropped; added 3:1 ratio hint in admin settings
+- **Hero overlay**: dark overlay now only renders when a heading or tagline is present (image, carousel, and video variants)
+- **Homepage**: removed "Find Your Coffee" CTA section under the hero
+- **Search — NL fallback**: tokenized keyword fallback for natural-language queries when AI is not configured (e.g. "what's good with v60" now returns results by searching meaningful tokens)
+- **Search — AI extraction**: strips markdown code fences that some models add despite instructions; bumped `maxTokens` 300 → 500 to prevent truncated JSON
+- **Search — follow-up chips**: AI now generates short action labels ("Light roast", "Ethiopian") instead of clarifying questions; chips preserve AI mode when clicked
+- **Search — roast + terms**: mixed queries like "dark roast Ethiopia" now apply both the roast category filter and a token search for remaining terms
+- **Demo mode**: setup checklist hidden in demo mode; demo banner removed from admin shell
+
+### Added
+
+- **Ask AI toggle**: search page shows an "Ask AI" button (only when AI keys are configured) that switches the input into conversational mode — different placeholder, AI extraction forced, synced from URL for deep-linking
+
+## 0.99.0 - 2026-04-07
+
+### Added
+
+- **Agentic product search**: Natural-language queries (e.g. "something smooth for a V60") are classified by a heuristic and optionally processed by an LLM that extracts structured intent (roast level, origin, brew method, flavor profile). Results include a plain-English explanation and 2–3 follow-up suggestion chips. Keyword queries bypass the LLM entirely for speed.
+- **Homepage hero**: Configurable full-width hero section supporting image, image carousel, and video modes. Admins can upload media, set heading/tagline, and enable/disable the hero from the storefront settings page. Replaces the legacy ChatBarista floating widget with a "Find Your Coffee" CTA linking to the new agentic search.
+
+## 0.98.5 - 2026-04-07
+
+### Fixed
+
+- Admin signin card now centers correctly on soft navigation (signout, session redirect) — switched from `min-h-screen` to `fixed inset-0` to escape any parent layout constraints during route transitions
+
 ## 0.98.4 - 2026-04-03
 
 ### Changed

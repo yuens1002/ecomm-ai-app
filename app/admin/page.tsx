@@ -62,6 +62,7 @@ export default async function AdminDashboardPage({
       userName={user.name || user.email || "Admin"}
       data={data}
       setupStatus={setupStatus}
+      isDemoMode={isDemoMode}
     />
   );
 }

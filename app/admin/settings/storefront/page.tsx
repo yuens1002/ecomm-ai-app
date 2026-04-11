@@ -1,17 +1,16 @@
-"use client";
-
-import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
-import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
-import { ShoppingBag } from "lucide-react";
-import { IconPicker } from "@/app/admin/_components/cms/fields/IconPicker";
-import { InputGroupInput } from "@/components/ui/forms/InputGroup";
+import { HeroSettingsSection } from "./_components/HeroSettingsSection";
+import { AISearchSettingsSection } from "./_components/AISearchSettingsSection";
+import { ProductMenuSettingsSection } from "./_components/ProductMenuSettingsSection";
+import { isAIConfigured } from "@/lib/ai-client";
 
 /**
  * Store Front Settings Page
  * Product menu, add-ons, display preferences
  */
-export default function StoreFrontSettingsPage() {
+export default async function StoreFrontSettingsPage() {
+  const aiConfigured = await isAIConfigured();
+
   return (
     <div className="space-y-8">
       <PageTitle
@@ -19,71 +18,11 @@ export default function StoreFrontSettingsPage() {
         subtitle="Customize your product menu and shopping experience"
       />
 
-      <SettingsSection
-        icon={<ShoppingBag className="h-5 w-5" />}
-        title="Product Menu"
-        description="Customize the icon and text for your product navigation"
-      >
-        <SettingsField
-          endpoint="/api/admin/settings/product-menu"
-          field="icon"
-          label="Menu Icon"
-          description="Icon displayed next to the product menu text in navigation"
-          defaultValue="ShoppingBag"
-          method="PATCH"
-          autoSave
-          input={(value, onChange, isDirty) => (
-            <div className="w-fit">
-              <IconPicker
-                value={value}
-                onValueChange={onChange}
-                placeholder="Pick an icon..."
-                className={isDirty ? "border-amber-500" : ""}
-              />
-            </div>
-          )}
-        />
+      <HeroSettingsSection />
 
-        <SettingsField
-          endpoint="/api/admin/settings/product-menu"
-          field="text"
-          label="Menu Text"
-          description="Text label for the product menu (max 20 characters)"
-          maxLength={20}
-          defaultValue="Shop"
-          method="PATCH"
-          input={(value, onChange, isDirty) => (
-            <InputGroupInput
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              className={isDirty ? "border-amber-500" : ""}
-            />
-          )}
-        />
-      </SettingsSection>
+      {aiConfigured && <AISearchSettingsSection />}
 
-      <SettingsSection
-        title="Add-Ons Section Headings"
-        description="Customize headings for product add-ons and cart suggestions"
-      >
-        <SettingsField
-          endpoint="/api/admin/settings/add-ons"
-          field="productAddOnsSectionTitle"
-          label="Product Page Add-Ons Title"
-          description="Shown on individual product pages to introduce complementary products."
-          maxLength={120}
-          defaultValue="Complete Your Order"
-        />
-
-        <SettingsField
-          endpoint="/api/admin/settings/add-ons"
-          field="cartAddOnsSectionTitle"
-          label="Shopping Cart Add-Ons Title"
-          description="Shown in the shopping cart to suggest additional products before checkout."
-          maxLength={120}
-          defaultValue="You Might Also Like"
-        />
-      </SettingsSection>
+      <ProductMenuSettingsSection />
     </div>
   );
 }

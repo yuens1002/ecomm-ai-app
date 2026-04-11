@@ -553,6 +553,13 @@ export function useMultiImageUpload({
 
   const handleImageListFieldFileSelect = useCallback(
     (index: number, file: File, previewUrl: string) => {
+      // Auto-generate alt text from the filename — strip extension, replace
+      // separators with spaces, capitalise the first word.
+      const autoAlt = file.name
+        .replace(/\.[^.]+$/, "")
+        .replace(/[-_.]+/g, " ")
+        .replace(/^\w/, (c) => c.toUpperCase());
+
       setImages((prev) => {
         const updated = [...prev];
         const item = updated[index];
@@ -566,6 +573,7 @@ export function useMultiImageUpload({
           ...item,
           pendingFile: file,
           previewUrl,
+          alt: autoAlt,
         };
         return updated;
       });

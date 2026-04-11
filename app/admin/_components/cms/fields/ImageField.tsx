@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 import Image from "next/image";
-import { Upload, ImageIcon } from "lucide-react";
+import { Upload, ImageIcon, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup } from "@/components/ui/field";
@@ -49,6 +49,8 @@ interface ImageFieldProps {
   altTextError?: string;
   /** Hide the label (useful when used inside ImageListField) */
   hideLabel?: boolean;
+  /** Called when the clear/remove button is clicked. Button only renders when this prop is provided. */
+  onClear?: () => void;
 }
 
 /**
@@ -110,6 +112,7 @@ export function ImageField({
   altTextMaxLength = 125,
   altTextError,
   hideLabel = false,
+  onClear,
 }: ImageFieldProps) {
   const generatedId = useId();
   const fieldId = id || generatedId;
@@ -192,6 +195,18 @@ export function ImageField({
           >
             <Upload className="h-4 w-4" />
           </Button>
+          {onClear && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onClear}
+              type="button"
+              title="Remove image"
+              disabled={!value && !pendingFile}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          )}
           <input
             id={fileInputId}
             type="file"
