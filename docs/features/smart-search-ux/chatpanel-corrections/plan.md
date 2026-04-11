@@ -61,11 +61,13 @@ revealed several UX regressions and design gaps in the ChatPanel:
 ### C1 — Icon: MessageSquareDot everywhere
 
 **Files:**
+
 - `app/(site)/_components/layout/SiteHeader.tsx`
 - `app/(site)/_components/ai/ChatPanel.tsx`
 
 **What to change:** Replace ALL uses of `SmartSearchIcon` in smart search UI with
 `MessageSquareDot` from lucide-react:
+
 - Desktop header toggle button
 - Mobile menu search item
 - In-panel message avatar (beside AI responses)
@@ -80,6 +82,7 @@ a customer-facing smart search instance.
 ### C2 — ChatPanel as shadcn Drawer overlay
 
 **Files:**
+
 - `components/ui/drawer.tsx` (new — vaul-based shadcn Drawer)
 - `app/(site)/_components/ai/ChatPanel.tsx` (restructure)
 - `app/(site)/layout.tsx` (remove flex sibling, mount as standalone)
@@ -96,6 +99,7 @@ DrawerHeader, DrawerFooter, DrawerTitle, DrawerDescription`
 text "Smart product search".
 
 Restructure `ChatPanel.tsx`:
+
 - Remove the `<aside>` (desktop sidebar) and the `fixed bottom-0` mobile div
 - Wrap in `<Drawer open={isOpen} onOpenChange={...} direction="right">` for desktop
 - Mobile remains bottom-sheet behavior (vaul default with `direction` omitted or overridden
@@ -104,6 +108,7 @@ Restructure `ChatPanel.tsx`:
 - No width-transition animation needed — vaul handles slide-in/out
 
 Update `layout.tsx`:
+
 - Remove `{aiConfigured && <ChatPanel />}` from inside the flex row
 - Place it AFTER the flex row (still inside `SiteBannerProvider`) so it renders as a portal
   outside the layout flow
@@ -113,27 +118,32 @@ Update `layout.tsx`:
 ### C4 — Follow-up UX: option labels + suppress no-results fallback
 
 **Files:**
+
 - `app/api/search/route.ts` (extraction prompt)
 - `app/(site)/_components/ai/ChatPanel.tsx` (MessageBubble)
 
 **Extraction prompt change** (`buildExtractionPrompt`):
 
 Current `followUps` instruction:
+
 ```
 "followUps": ["single most useful follow-up question (5–7 words) — or empty array if query already has enough detail"]
 ```
 
 New instruction:
+
 ```
 "followUps": ["2-4 word option label the customer might choose — e.g. 'Light & bright', 'Medium & smooth', 'Dark & bold'. Return 2–3 options when intent is open-ended; empty array if intent is specific enough. Never use question marks — these are clickable answer choices, not questions."]
 ```
 
 Also update `explanation` instruction to embed the clarifying question:
+
 ```
 "explanation": "1–2 sentences spoken directly to the customer in first person. If intent is open-ended, end with a natural question to narrow it down — the options (followUps) are the choices the customer picks from. E.g. 'Sounds like you want something approachable — what kind of roast are you usually after?'"
 ```
 
 **ChatPanel MessageBubble change:**
+
 - Suppress `No matching products found` when `msg.followUps?.length > 0`
 - The chip button styling stays the same; the text inside will now be short labels
 
@@ -142,6 +152,7 @@ Also update `explanation` instruction to embed the clarifying question:
 ### C5 — Context strip color
 
 **Files:**
+
 - `app/(site)/_components/ai/ChatPanel.tsx`
 
 `text-muted-foreground/50` → `text-muted-foreground` on the context row.
@@ -151,9 +162,11 @@ Also update `explanation` instruction to embed the clarifying question:
 ### C6 — Products: show 3, more/less toggle
 
 **Files:**
+
 - `app/(site)/_components/ai/ChatPanel.tsx`
 
 Add `showAll` local state (default `false`) to `MessageBubble`.
+
 - When `showAll` is false: render `msg.products.slice(0, 3)`
 - When `showAll` is true: render all products
 - Show "Show N more" / "Show less" button only when `products.length > 3`

@@ -39,7 +39,7 @@
 | AC-FN-2 | Feature gated by `isAIConfigured()` — no separate toggle | Code review: `app/(site)/layout.tsx`, `app/(site)/_components/layout/SiteHeaderWrapper.tsx` | Both call `isAIConfigured()` to gate the feature; no reference to `aiSearchEnabled` | PASS — `layout.tsx` line 9: `import { isAIConfigured }`, line 46: `isAIConfigured()` in `Promise.all`. `SiteHeaderWrapper.tsx` line 7: `import { isAIConfigured }`, line 24: `isAIConfigured()` in `Promise.all`. No `aiSearchEnabled` reference in either file. | | |
 | AC-FN-3 | One search icon — mutually exclusive by AI config | Code review: `app/(site)/_components/layout/SiteHeader.tsx` | Conditional renders SmartSearchIcon (toggles panel) when `aiConfigured`, or `<Search>` link to `/search` when not — never both; no Dialog imports or JSX | PASS — `SiteHeader.tsx` lines 539–556: `{aiConfigured ? <Button onClick={togglePanel}><SmartSearchIcon/></Button> : <Button asChild><Link href="/search"><Search/></Link></Button>}`. No Dialog import. | | |
 | AC-FN-4 | SmartSearchIcon toggles panel — no navigation | Code review: `app/(site)/_components/layout/SiteHeader.tsx` | SmartSearchIcon button has `onClick` calling store `toggle()`; no `Link` wrapper, no `href` | PASS — Line 130: `const togglePanel = useChatPanelStore((s) => s.toggle)`. Button at line 540 has `onClick={togglePanel}`, no Link wrapper, no href. | | |
-| AC-FN-5 | Chat panel store: `isOpen`, `messages`, `pageContext` fields | Code review: `stores/chat-panel-store.ts` | All three fields in store interface; `open`, `close`, `toggle`, `setPageContext` actions present | PASS — `stores/chat-panel-store.ts`: `isOpen: boolean`, `messages: ChatMessage[]`, `pageContext: PageContext | null`, `isLoading: boolean`. Actions: `open`, `close`, `toggle`, `setPageContext`, `addMessage`, `updateLastMessage`, `setLoading`, `clearMessages`. | | |
+| AC-FN-5 | Chat panel store: `isOpen`, `messages`, `pageContext` fields | Code review: `stores/chat-panel-store.ts` | All three fields in store interface; `open`, `close`, `toggle`, `setPageContext` actions present | PASS — `stores/chat-panel-store.ts`: `isOpen: boolean`, `messages: ChatMessage[]`, `pageContext: PageContext | null`,`isLoading: boolean`. Actions:`open`,`close`,`toggle`,`setPageContext`,`addMessage`,`updateLastMessage`,`setLoading`,`clearMessages`. | | |
 | AC-FN-6 | Panel persists across route changes | Code review: `app/(site)/layout.tsx` | `ChatPanel` mounted once in layout (not per-page); store not reset on navigation | PASS — `layout.tsx` line 82: `{aiConfigured && <ChatPanel />}` — mounted once in site layout, not in page-level components. `chat-panel-store.ts` has no `useEffect` clearing messages. | | |
 | AC-FN-7 | Panel is full-height sticky column alongside left column | Code review: `app/(site)/layout.tsx` | Outer wrapper is `flex min-h-screen`; panel aside has `sticky top-0 h-screen`; left column is `flex-1 min-w-0 flex flex-col` containing header + main + footer | PASS — `layout.tsx` line 62: `className="relative flex min-h-screen"`. Left column line 64: `className="flex-1 min-w-0 flex flex-col"`. `ChatPanel.tsx` aside line 334: `className="... sticky top-0 h-screen flex-shrink-0 overflow-hidden"`. | | |
 | AC-FN-8 | Context strip reads `pageContext` from store | Code review: `app/(site)/_components/ai/ChatPanel.tsx` | Context strip renders `{pageContext.icon} {pageContext.title}` when set; falls back to prettified pathname when null | PASS — `ChatPanel.tsx` line 88: `const context = pageContext ?? getPathnameContext(pathname)`. Line 205-208: renders `{context.icon} {context.title}` in the context strip. | | |
@@ -80,11 +80,13 @@
 ---
 
 ## Agent Notes
+
 _Filled by verification sub-agent during `/ac-verify`_
 
 **Verification run:** 2026-04-10
 
 **Summary:**
+
 - 16/16 UI ACs pass (AC-UI-15 and AC-UI-16 re-verified after RSC fix — both now PASS)
 - 15/16 Functional ACs pass (AC-FN-12 partial — `top_rated` maps to `createdAt desc` not `averageRating desc`)
 - 7/7 Test ACs pass
@@ -93,22 +95,27 @@ _Filled by verification sub-agent during `/ac-verify`_
 **Bugs found:**
 
 **BUG-1 (RESOLVED): Admin Storefront Settings page crashes with RSC Runtime Error**
+
 - Affects: AC-UI-15, AC-UI-16
 - Fix applied: Extracted SettingsField function render props into a new `"use client"` component (`ProductMenuSettingsSection.tsx`), resolving the RSC boundary violation.
 - Re-verified 2026-04-10: Page loads cleanly. Smart Search section renders. Reframe flow completes end-to-end.
 
 **BUG-2 (MINOR): `sortBy: "top_rated"` maps to `createdAt desc` instead of `averageRating desc`**
+
 - Affects: AC-FN-12 (partial)
 - File: `app/api/search/route.ts` line 376
 - Note: Code comment acknowledges "fallback: no rating field yet". This is a known limitation, not a regression. The AC spec expected `averageRating desc` but the schema doesn't have this field yet. Should be tracked as a known limitation.
 
 **NOTE — AC-UI-13 (Panel persistence):**
+
 - Could not fully verify in Puppeteer because `page.goto()` triggers a full page reload which resets React/Zustand state. Client-side navigation via `Link` components preserves Zustand state. Code review confirms `ChatPanel` is mounted once at layout level with no reset logic, so persistence should work in real usage. Recommend human verification with live browser.
 
 **Screenshots saved to:** `.screenshots/smart-search-verify/`
 
 ## QC Notes
+
 _Filled by main thread after reading sub-agent report_
 
 ## Reviewer Feedback
+
 _Filled by human during final review_

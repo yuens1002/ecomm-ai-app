@@ -78,9 +78,12 @@ precedence over AI-extracted values (user intent wins).
 - `artisan_search_turn_count` — increments per search query, sent as `turnCount` to the API
 =======
 - `artisan_turn_count` — increments per search query, sent as `turnCount` to the API
+
 >>>>>>> 0441880 (docs: add feature docs for agentic-search)
 =======
+
 - `artisan_search_turn_count` — increments per search query, sent as `turnCount` to the API
+
 >>>>>>> bd0f642 (fix(search): address Copilot review comments on agentic search route)
 
 Both are included in every API call. The `turnCount` is echoed back in `context` so future

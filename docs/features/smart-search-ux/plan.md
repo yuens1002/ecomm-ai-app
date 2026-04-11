@@ -73,6 +73,7 @@ model set). The shop owner controls it by whether they configure AI integration.
 ## Task 2: Admin UI — Voice Persona with AI Reframing
 
 **Files:**
+
 - `app/admin/settings/storefront/_components/AISearchSettingsSection.tsx` ← new
 - `app/admin/settings/storefront/page.tsx` ← register section (only when AI is configured)
 
@@ -92,6 +93,7 @@ Hint text:
 **AI Reframing flow**
 
 Below the textarea: a **"Reframe with AI"** button. When clicked:
+
 1. Calls `POST /api/admin/reframe-voice-persona` with the current textarea value
 2. Shows a loading state on the button
 3. On success: displays AI-reframed version in a preview panel beneath the textarea
@@ -108,6 +110,7 @@ Below the textarea: a **"Reframe with AI"** button. When clicked:
 **Files:** `app/api/admin/reframe-voice-persona/route.ts` ← new
 
 `POST` handler:
+
 - Auth-gated: session must have admin role
 - Body: `{ rawPersona: string }`
 - Calls `chatCompletion()` with a rewriting prompt
@@ -176,6 +179,7 @@ localStorage — messages are in-memory for the session. Closing the browser tab
 ## Task 6: Header — SmartSearchIcon Replaces Search, Remove Search Dialog
 
 **Files:**
+
 - `app/(site)/_components/layout/SiteHeaderWrapper.tsx` ← pass `aiConfigured`
 - `app/(site)/_components/layout/SiteHeader.tsx` ← toggle + remove Dialog + remove keyword Search button
 
@@ -230,6 +234,7 @@ Remove all Dialog-related imports no longer needed.
 ## Task 7: Site Layout — Panel Slot + Animated Reflow
 
 **Files:**
+
 - `app/(site)/layout.tsx` ← replace stacked layout with 2-column flex
 - `app/(site)/_components/ai/ChatPanel.tsx` ← new (full panel UI)
 
@@ -449,6 +454,7 @@ const SYSTEM_PROMPT = `${personaSection}Extract coffee search intent from user q
 ### ChatPanel UI (adapted from ChatBarista)
 
 **Reuse from ChatBarista:**
+
 - Message state (delegated to Zustand store)
 - Visual viewport handling for mobile keyboard
 - Scroll-to-bottom behavior
@@ -457,11 +463,13 @@ const SYSTEM_PROMPT = `${personaSection}Extract coffee search intent from user q
 - Animated gradient or subtle background
 
 **Adapt:**
+
 - Remove `isActive` / expand-collapse behavior — panel open/close is controlled by the store
 - API: `GET /api/search?q=...&ai=true&sessionId=...&turnCount=...`
 - Response: map `explanation` + `products[]` + `followUps[]` into message thread
 
 **Message rendering:**
+
 - User message: right-aligned pill bubble (`bg-primary text-primary-foreground`)
 - Assistant response card: SmartSearchIcon + explanation + follow-up chips + product cards
 - Product cards: compact variant (title + price + image + link to PDP)
@@ -491,6 +499,7 @@ fires new search, shows new assistant card.
 | `app/(site)/search/SearchResults.tsx` | Update `ai=1` → `ai=true` references |
 
 **Removed (not created):**
+
 - `app/(site)/ask/page.tsx` — no dedicated `/ask` route; panel is the interface
 - `app/(site)/ask/AskPage.tsx` — same
 

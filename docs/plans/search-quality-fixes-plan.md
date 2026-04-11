@@ -77,6 +77,7 @@ The agentic search backbone (`feat/smart-search-ux`) shipped with five quality b
 **File:** `app/api/search/route.ts`
 
 **BUG-1 — `hasCoffeeFilters` block (after all filter applications):**
+
 ```ts
 const hasCoffeeFilters = !!(
   roastLevel ||
@@ -92,6 +93,7 @@ if (hasCoffeeFilters) {
 ```
 
 **BUG-2 — Expand OR clause with flavor terms:**
+
 ```ts
 if (flavorProfile && flavorProfile.length > 0) {
   const flavorEntries = flavorProfile.flatMap((f) => [
@@ -101,9 +103,11 @@ if (flavorProfile && flavorProfile.length > 0) {
   whereClause.OR = [...(whereClause.OR ?? []), ...flavorEntries];
 }
 ```
+
 Note: `hasSome` is case-sensitive; Title Case covers the common case ("citrus" → "Citrus"). Description `contains` with `mode: "insensitive"` handles multi-word notes like "Citrus Zest".
 
 **BUG-3 — Delete OR when hard DB filters present:**
+
 ```ts
 const hasHardDBFilters = !!(roastLevel || extractedOrigin || variety || processing);
 if (hasHardDBFilters) {
@@ -116,6 +120,7 @@ if (hasHardDBFilters) {
 **File:** `app/api/search/route.ts` → `buildExtractionPrompt`
 
 Replace the explanation and followUps sections:
+
 ```
 "explanation": "one sentence spoken directly to the customer in first person. Never use 'The customer is...' or any third-person phrasing. Good example: 'These hit that bright citrus note you're after — light and perfect for mornings.'",
 "followUps": []

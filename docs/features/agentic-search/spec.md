@@ -65,6 +65,7 @@ interface AgenticSearchResponse {
 ### A0: Homepage Hero Swap
 
 Replace the AI-Barista hero section with a video (preferred) or image slides:
+
 - Video: roasting footage, pour-over process, origin farm — autoplay muted
 - Slides: seasonal offerings, featured origins, new arrivals — CMS-controlled
 - Search bar becomes prominent below or overlaid on the hero
@@ -94,6 +95,7 @@ Target: under 800ms total. Flash is fast enough — no streaming needed for sear
 ### A3: Conversational Follow-ups
 
 Session-scoped turn context — in-memory only, never persisted:
+
 - `sessionId` generated client-side on first query
 - `turnCount` passed back so server knows conversation depth
 - `followUps` in response surface as quick-tap chips in the search UI
@@ -106,12 +108,14 @@ Session-scoped turn context — in-memory only, never persisted:
 ### B1: User Context Aggregation
 
 Reuse and expand the existing data layer functions in `lib/data.ts`:
+
 - `getUserPurchaseHistory(userId)` — reuse for past orders with product details; extend only if additional joins/fields are needed for ranking or explanations
 - `getUserRecentViews(userId, limit)` — reuse for last N `PRODUCT_VIEW` activities; tune limits/windowing if needed for prompt quality
 - `getUserSearchHistory(userId, limit)` — reuse for last N `SEARCH` activities; tune limits/windowing if needed for prompt quality
 - `getUserRecommendationContext(userId?)` — reuse as the primary aggregated object for prompt injection and personalized ranking inputs
 
 Phase B gaps to add (if not already covered):
+
 - Normalize the aggregated payload shape for agentic search prompt injection
 - Include inferred preferences/summaries derived from purchases, views, and searches
 - Apply authenticated/platform-tier gating at the consumption layer
@@ -119,6 +123,7 @@ Phase B gaps to add (if not already covered):
 ### B2: Personalized Search Ranking
 
 When authenticated, inject user context into the agentic search prompt:
+
 ```typescript
 // Added to system prompt for Platform-tier users
 USER CONTEXT:
