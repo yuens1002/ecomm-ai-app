@@ -1,4 +1,5 @@
 import type { VoiceExample } from "@/lib/ai/voice-examples";
+import type { VoiceSurfaces } from "@/lib/ai/voice-surfaces";
 
 export interface HeroSlide {
   url: string;
@@ -34,6 +35,7 @@ export interface SiteSettings {
   // AI Search
   aiVoicePersona: string;
   aiVoiceExamples: VoiceExample[];
+  aiVoiceSurfaces: VoiceSurfaces | null;
 }
 
 export const defaultSettings: SiteSettings = {
@@ -66,6 +68,7 @@ export const defaultSettings: SiteSettings = {
   // AI Search
   aiVoicePersona: "",
   aiVoiceExamples: [],
+  aiVoiceSurfaces: null,
 };
 
 function safeParseJSON<T>(raw: string | undefined, fallback: T): T {
@@ -143,6 +146,10 @@ export function mapSettingsRecord(
     aiVoiceExamples: safeParseJSON<VoiceExample[]>(
       record.ai_voice_examples,
       defaultSettings.aiVoiceExamples
+    ),
+    aiVoiceSurfaces: safeParseJSON<VoiceSurfaces | null>(
+      record.ai_voice_surfaces,
+      defaultSettings.aiVoiceSurfaces
     ),
   };
 }

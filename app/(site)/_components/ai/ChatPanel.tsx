@@ -70,8 +70,6 @@ function prettifyPathname(pathname: string): string {
 }
 
 const GREETING_ID = "panel-greeting";
-const GREETING =
-  "What are you in the mood for? Tell me how you like to brew, what flavors you enjoy, or just ask — I'm here to help you find the perfect coffee.";
 
 // ---------------------------------------------------------------------------
 // Inner panel content
@@ -83,9 +81,11 @@ function PanelContent() {
     messages,
     pageContext,
     isLoading,
+    voiceSurfaces,
     addMessage,
     updateLastMessage,
     setLoading,
+    loadSurfaces,
   } = useChatPanelStore();
   const pathname = usePathname();
   const [input, setInput] = useState("");
@@ -96,13 +96,23 @@ function PanelContent() {
 
   const contextTitle = pageContext?.title ?? prettifyPathname(pathname);
 
+  // Load voice surfaces on first open
+  useEffect(() => {
+    if (isOpen) void loadSurfaces();
+  }, [isOpen, loadSurfaces]);
+
   // Add opening greeting the first time the panel opens with no messages
   useEffect(() => {
     if (isOpen && !hasGreeted.current) {
       hasGreeted.current = true;
-      const current = useChatPanelStore.getState().messages;
-      if (current.length === 0) {
-        addMessage({ id: GREETING_ID, role: "assistant", content: GREETING, isLoading: false });
+      const state = useChatPanelStore.getState();
+      if (state.messages.length === 0) {
+        addMessage({
+          id: GREETING_ID,
+          role: "assistant",
+          content: state.voiceSurfaces["greeting.home"],
+          isLoading: false,
+        });
       }
     }
   }, [isOpen, addMessage]);
@@ -153,12 +163,13 @@ function PanelContent() {
       const products = data.aiFailed ? [] : (data.products ?? []).map(mapProduct);
       const hasProducts = products.length > 0;
 
-      // Determine response content — never go silent
+      // Determine response content — never go silent. Uses voice surfaces
+      // (owner's voice) for recovery messages.
       let content = data.explanation || "";
       if (!content && data.aiFailed) {
-        content = "Ah sorry, I spaced out for a sec — what were you looking for again?";
+        content = voiceSurfaces.aiFailed;
       } else if (!content && !hasProducts) {
-        content = "Hmm, I'm not sure we have exactly what you're after — could you tell me more about how you like your coffee?";
+        content = voiceSurfaces.noResults;
       }
 
       updateLastMessage({
@@ -171,7 +182,7 @@ function PanelContent() {
     } catch {
       updateLastMessage({
         id: assistantMsgId,
-        content: "Something went wrong — please try again.",
+        content: voiceSurfaces.error,
         isLoading: false,
       });
     } finally {
@@ -414,7 +425,13 @@ export function ChatPanel() {
 
   const handleReset = () => {
     clearMessages();
-    addMessage({ id: GREETING_ID, role: "assistant", content: GREETING, isLoading: false });
+    const surfaces = useChatPanelStore.getState().voiceSurfaces;
+    addMessage({
+      id: GREETING_ID,
+      role: "assistant",
+      content: surfaces["greeting.home"],
+      isLoading: false,
+    });
   };
 
   return (

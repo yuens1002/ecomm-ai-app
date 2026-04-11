@@ -5,6 +5,8 @@ import { NextRequest } from "next/server";
 const requireAdminApiMock = jest.fn();
 const siteSettingsFindManyMock = jest.fn();
 const siteSettingsUpsertMock = jest.fn();
+const isAIConfiguredMock = jest.fn();
+const generateVoiceSurfacesMock = jest.fn();
 
 jest.mock("@/lib/admin", () => ({
   requireAdminApi: () => requireAdminApiMock(),
@@ -17,6 +19,14 @@ jest.mock("@/lib/prisma", () => ({
       upsert: (...args: unknown[]) => siteSettingsUpsertMock(...args),
     },
   },
+}));
+
+jest.mock("@/lib/ai-client", () => ({
+  isAIConfigured: () => isAIConfiguredMock(),
+}));
+
+jest.mock("@/lib/ai/voice-surfaces", () => ({
+  generateVoiceSurfaces: (...args: unknown[]) => generateVoiceSurfacesMock(...args),
 }));
 
 jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -34,6 +44,7 @@ describe("GET + PUT /api/admin/settings/ai-search (TST-7)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     requireAdminApiMock.mockResolvedValue({ authorized: true });
+    isAIConfiguredMock.mockResolvedValue(false);
   });
 
   const putRequest = (body: Record<string, unknown>) =>
