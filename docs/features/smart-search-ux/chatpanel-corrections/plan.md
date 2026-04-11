@@ -49,21 +49,31 @@ revealed several UX regressions and design gaps in the ChatPanel:
   label becomes the user's next message (e.g. "Light & bright" triggers a new search).
 - **Suppress no-results fallback** when `followUps.length > 0` — the AI conversational response
   is the UX recovery, not a generic error string.
-- **SmartSearchIcon stays** as the in-panel avatar icon beside AI messages. Only the header
-  toggle button changes to `MessageSquareDot`.
+- **MessageSquareDot everywhere**: All smart search instances use `MessageSquareDot` from
+  lucide-react — header toggle (desktop + mobile), in-panel message avatar, drawer title.
+  `SmartSearchIcon` (custom magnifying glass) is retired from all smart search UI.
+- **Drawer title**: The panel header reads `MessageSquareDot` icon + "Smart product search".
 
 ---
 
 ## Scope
 
-### C1 — Icon: MessageSquareDot in header toggle
+### C1 — Icon: MessageSquareDot everywhere
 
 **Files:**
 - `app/(site)/_components/layout/SiteHeader.tsx`
+- `app/(site)/_components/ai/ChatPanel.tsx`
 
-**What to change:** Both the desktop icon button and the mobile menu item that toggle the panel
-currently use `SmartSearchIcon`. Swap to `MessageSquareDot` from lucide-react. The active state
-highlight stays (`text-primary` when `isPanelOpen`).
+**What to change:** Replace ALL uses of `SmartSearchIcon` in smart search UI with
+`MessageSquareDot` from lucide-react:
+- Desktop header toggle button
+- Mobile menu search item
+- In-panel message avatar (beside AI responses)
+- Drawer title (see C2)
+
+The `SmartSearchIcon` import is removed from all three files. The icon in the admin voice
+preview (`AISearchSettingsSection.tsx`) can keep SmartSearchIcon — that is a settings UI, not
+a customer-facing smart search instance.
 
 ---
 
@@ -81,6 +91,9 @@ Install vaul: `npm install vaul`
 Create `components/ui/drawer.tsx` following the shadcn Drawer template. Export:
 `Drawer, DrawerPortal, DrawerOverlay, DrawerTrigger, DrawerClose, DrawerContent,
 DrawerHeader, DrawerFooter, DrawerTitle, DrawerDescription`
+
+**Drawer title:** `DrawerHeader` contains `DrawerTitle` with a `MessageSquareDot` icon and the
+text "Smart product search".
 
 Restructure `ChatPanel.tsx`:
 - Remove the `<aside>` (desktop sidebar) and the `fixed bottom-0` mobile div

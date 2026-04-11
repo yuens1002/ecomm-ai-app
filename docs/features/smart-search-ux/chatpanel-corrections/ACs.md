@@ -9,8 +9,10 @@
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|----|----------|
-| AC-UI-1 | Desktop header: toggle button shows MessageSquareDot icon | Screenshot: homepage desktop, icon area in header | `MessageSquareDot` icon visible; no magnifying-glass SmartSearchIcon on the toggle | | | |
-| AC-UI-2 | Mobile menu: search item shows MessageSquareDot icon | Screenshot: homepage mobile, hamburger menu open | `MessageSquareDot` icon visible in mobile nav | | | |
+| AC-UI-1 | Desktop header: toggle button shows MessageSquareDot icon | Screenshot: homepage desktop, icon area in header | `MessageSquareDot` icon visible; no custom SmartSearchIcon on the toggle | | | |
+| AC-UI-2 | Mobile menu: search item shows MessageSquareDot icon | Screenshot: homepage mobile, hamburger menu open | `MessageSquareDot` icon visible in mobile nav search item | | | |
+| AC-UI-2b | Drawer title shows MessageSquareDot + "Smart product search" | Screenshot: panel open, drawer header | Title row visible with MessageSquareDot icon and "Smart product search" text | | | |
+| AC-UI-2c | In-panel AI message avatar uses MessageSquareDot | Screenshot: panel open after sending a query | MessageSquareDot icon appears beside each AI response; no magnifying-glass icon | | | |
 | AC-UI-3 | Page content stays full-width when panel is open | Screenshot: homepage desktop with panel open | Left content area occupies full viewport width; no layout shift | | | |
 | AC-UI-4 | Panel opens as overlay drawer (right side, desktop) | Interactive: click header toggle → panel opens | Panel slides in from right over page content; background content still visible behind panel | | | |
 | AC-UI-5 | Explanation text shows directly above products (no toggle) | Interactive: submit a query that returns products | Explanation sentence visible above product cards without clicking anything | | | |
@@ -35,6 +37,13 @@
 | AC-FN-6 | No-results fallback gated on followUps | Code review: `ChatPanel.tsx` → `MessageBubble` | fallback string renders only when `!hasProducts && !hasFollowUps && !isGreeting && hasContent` | | | |
 
 ---
+
+## Test Acceptance Criteria
+
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|----|----------|
+| AC-TST-1 | `buildExtractionPrompt` followUps instruction specifies option labels | Code review: `app/api/search/route.ts` → `buildExtractionPrompt` | followUps instruction says "2-4 word option label" and explicitly says no question marks | | | |
+| AC-TST-2 | BUG-5 test updated to match new followUps format | Test run: `npm run test:ci` | AC-TST-8 test in `route.test.ts` passes with updated assertion (no longer checks for "AT MOST ONE") | | | |
 
 ## Regression Acceptance Criteria
 
