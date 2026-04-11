@@ -99,15 +99,15 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
     "priceMinCents": number | undefined,
     "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined
   },
-  "explanation": "one sentence spoken directly to the customer in first person — describe what makes these a good match, not what the customer asked for. E.g., 'These hit that bright citrus note perfectly — light and lively for mornings.' Never use 'The customer is...' or third-person phrasing.",
-  "followUps": ["single most useful follow-up question (5–7 words) — or empty array if query is already specific"]
+  "explanation": "1–2 sentences spoken directly to the customer in first person. If intent is open-ended, end with a natural question to narrow it down — the options (followUps) are the choices the customer picks from. E.g. 'Sounds like you want something approachable — what kind of roast are you usually after?' Never use 'The customer is...' or third-person phrasing.",
+  "followUps": ["2-4 word option label the customer might choose — e.g. 'Light & bright', 'Medium & smooth', 'Dark & bold'. Return 2–3 options when intent is open-ended; empty array if intent is specific enough. Never use question marks — these are clickable answer choices, not questions."]
 }
 
 followUps rules:
-- Return AT MOST ONE item in the array, or an empty array [] if the query already has enough detail
-- NEVER ask about anything the customer already mentioned (e.g. if they said "light" do NOT ask "Do you prefer a light roast?")
-- Ask only the single most useful next clarification that would significantly improve results
-- If no clarification is needed, return []
+- Return 2–3 short option labels when the query is open-ended and options would help narrow the intent
+- Each label must be 2–4 words, no question marks — they are clickable answer choices
+- NEVER repeat anything the customer already specified (e.g. if they said "light" do NOT offer "Light roast" as a choice)
+- If the query is already specific enough, return []
 
 Query: ${JSON.stringify(query)}${contextNote}`;
 }
@@ -483,7 +483,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      take: 50,
+      take: forceAI ? 3 : 50,
     });
 
     return NextResponse.json({

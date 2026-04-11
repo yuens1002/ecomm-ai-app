@@ -711,7 +711,7 @@ describe("GET /api/search — prompt quality constraints (BUG-4, BUG-5)", () => 
   });
 
   // AC-TST-8
-  it("user prompt contains AT MOST ONE follow-up cap (BUG-5)", async () => {
+  it("user prompt followUps instruction specifies 2-4 word option labels (BUG-5)", async () => {
     const request = new NextRequest(
       "http://localhost:3000/api/search?q=morning+coffee+with+citrus&ai=true"
     );
@@ -721,6 +721,7 @@ describe("GET /api/search — prompt quality constraints (BUG-4, BUG-5)", () => 
       messages: Array<{ role: string; content: string }>;
     };
     const userMessage = callArgs.messages.find((m) => m.role === "user");
-    expect(userMessage?.content).toContain("AT MOST ONE");
+    expect(userMessage?.content).toContain("2-4 word option label");
+    expect(userMessage?.content).toContain("Never use question marks");
   });
 });
