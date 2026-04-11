@@ -20,6 +20,8 @@ export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  acknowledgment?: string;
+  followUpQuestion?: string;
   products?: ProductSummary[];
   followUps?: string[];
   isLoading?: boolean;
