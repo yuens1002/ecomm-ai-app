@@ -1,3 +1,5 @@
+import type { VoiceExample } from "@/lib/ai/voice-examples";
+
 export interface HeroSlide {
   url: string;
   alt: string;
@@ -31,6 +33,7 @@ export interface SiteSettings {
   homepageHeroTagline: string;
   // AI Search
   aiVoicePersona: string;
+  aiVoiceExamples: VoiceExample[];
 }
 
 export const defaultSettings: SiteSettings = {
@@ -62,6 +65,7 @@ export const defaultSettings: SiteSettings = {
   homepageHeroTagline: "",
   // AI Search
   aiVoicePersona: "",
+  aiVoiceExamples: [],
 };
 
 function safeParseJSON<T>(raw: string | undefined, fallback: T): T {
@@ -136,5 +140,9 @@ export function mapSettingsRecord(
       record.homepage_hero_tagline || defaultSettings.homepageHeroTagline,
     // AI Search
     aiVoicePersona: record.ai_voice_persona ?? defaultSettings.aiVoicePersona,
+    aiVoiceExamples: safeParseJSON<VoiceExample[]>(
+      record.ai_voice_examples,
+      defaultSettings.aiVoiceExamples
+    ),
   };
 }

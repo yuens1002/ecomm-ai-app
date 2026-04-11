@@ -3,7 +3,7 @@
 import { NextRequest } from "next/server";
 
 const requireAdminApiMock = jest.fn();
-const siteSettingsFindUniqueMock = jest.fn();
+const siteSettingsFindManyMock = jest.fn();
 const siteSettingsUpsertMock = jest.fn();
 
 jest.mock("@/lib/admin", () => ({
@@ -13,7 +13,7 @@ jest.mock("@/lib/admin", () => ({
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     siteSettings: {
-      findUnique: (...args: unknown[]) => siteSettingsFindUniqueMock(...args),
+      findMany: (...args: unknown[]) => siteSettingsFindManyMock(...args),
       upsert: (...args: unknown[]) => siteSettingsUpsertMock(...args),
     },
   },
@@ -44,10 +44,9 @@ describe("GET + PUT /api/admin/settings/ai-search (TST-7)", () => {
     });
 
   it("GET returns aiVoicePersona from DB", async () => {
-    siteSettingsFindUniqueMock.mockResolvedValue({
-      key: "ai_voice_persona",
-      value: "I am Brew, a knowledgeable barista.",
-    });
+    siteSettingsFindManyMock.mockResolvedValue([
+      { key: "ai_voice_persona", value: "I am Brew, a knowledgeable barista." },
+    ]);
 
     const response = await GET();
     const data = await response.json();
@@ -57,13 +56,28 @@ describe("GET + PUT /api/admin/settings/ai-search (TST-7)", () => {
   });
 
   it("GET returns empty string when no persona saved", async () => {
-    siteSettingsFindUniqueMock.mockResolvedValue(null);
+    siteSettingsFindManyMock.mockResolvedValue([]);
 
     const response = await GET();
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.aiVoicePersona).toBe("");
+  });
+
+  it("GET returns voice examples when stored", async () => {
+    const examples = [
+      { question: "What should I try first?", answer: "Custom answer!" },
+    ];
+    siteSettingsFindManyMock.mockResolvedValue([
+      { key: "ai_voice_examples", value: JSON.stringify(examples) },
+    ]);
+
+    const response = await GET();
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.voiceExamples).toEqual(examples);
   });
 
   it("GET returns 401 when not authenticated", async () => {
@@ -86,6 +100,25 @@ describe("GET + PUT /api/admin/settings/ai-search (TST-7)", () => {
       expect.objectContaining({
         where: { key: "ai_voice_persona" },
         update: { value: persona },
+      })
+    );
+  });
+
+  it("PUT upserts voiceExamples as JSON", async () => {
+    const examples = [
+      { question: "What should I try first?", answer: "Try our Ethiopian!" },
+    ];
+    siteSettingsUpsertMock.mockResolvedValue({});
+
+    const response = await PUT(putRequest({ voiceExamples: examples }));
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.voiceExamples).toEqual(examples);
+    expect(siteSettingsUpsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { key: "ai_voice_examples" },
+        update: { value: JSON.stringify(examples) },
       })
     );
   });
