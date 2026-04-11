@@ -382,6 +382,34 @@ export async function GET(request: NextRequest) {
     }
 
     // -------------------------------------------------------------------------
+    // Salutation detection — greeting-only input returns surface string, no search
+    // -------------------------------------------------------------------------
+
+    if (query && forceAI) {
+      const trimmed = query.trim().toLowerCase().replace(/[^a-z\s]/g, "").trim();
+      const greetingPattern = /^(hey|hello|hi|howdy|yo|sup|whats up|hiya|good morning|good afternoon|good evening|greetings)$/i;
+      if (greetingPattern.test(trimmed)) {
+        const { aiVoiceSurfaces } = await getPublicSiteSettings();
+        const salutation = aiVoiceSurfaces?.salutation;
+        const { DEFAULT_VOICE_SURFACES } = await import("@/lib/ai/voice-surfaces");
+        return NextResponse.json({
+          products: [],
+          query: searchQuery,
+          count: 0,
+          intent: null,
+          filtersExtracted: null,
+          explanation: null,
+          acknowledgment: salutation ?? DEFAULT_VOICE_SURFACES.salutation,
+          followUpQuestion: null,
+          followUps: [],
+          aiFailed: false,
+          isSalutation: true,
+          context: { sessionId, turnCount },
+        });
+      }
+    }
+
+    // -------------------------------------------------------------------------
     // Agentic step — NL extraction (skipped for keyword queries or if AI off)
     // -------------------------------------------------------------------------
 
