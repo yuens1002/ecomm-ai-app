@@ -38,6 +38,8 @@ export function AISearchSettingsSection() {
   );
   const [savingExamples, setSavingExamples] = useState(false);
   const [savedExamples, setSavedExamples] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenerated, setRegenerated] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/settings/ai-search")
@@ -140,6 +142,22 @@ export function AISearchSettingsSection() {
       next[index] = value;
       return next;
     });
+  };
+
+  const handleRegenerateSurfaces = async () => {
+    setRegenerating(true);
+    try {
+      const res = await fetch(
+        "/api/admin/settings/ai-search/regenerate-surfaces",
+        { method: "POST" }
+      );
+      if (res.ok) {
+        setRegenerated(true);
+        setTimeout(() => setRegenerated(false), 2500);
+      }
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   const isPersonaDirty = persona !== savedPersona;
@@ -255,8 +273,8 @@ export function AISearchSettingsSection() {
               })}
             </div>
 
-            {isExamplesDirty && (
-              <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              {isExamplesDirty && (
                 <Button
                   size="sm"
                   onClick={handleSaveExamples}
@@ -273,8 +291,22 @@ export function AISearchSettingsSection() {
                     "Save Examples"
                   )}
                 </Button>
-              </div>
-            )}
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRegenerateSurfaces}
+                disabled={regenerating}
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                {regenerated
+                  ? "Regenerated!"
+                  : regenerating
+                    ? "Regenerating…"
+                    : "Regenerate surface strings"}
+              </Button>
+            </div>
           </div>
         </>
       ) : (
