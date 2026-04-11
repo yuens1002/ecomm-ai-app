@@ -353,6 +353,26 @@ export async function GET(request: NextRequest) {
           sortBy,
         } = agenticData.filtersExtracted;
 
+        // If AI extracted any structured filter, discard the broad keyword OR
+        // clause. The AI's extraction is more precise than token-level substring
+        // matching which produces false positives (e.g. "coffee" matching every
+        // description, "notes" matching "notes of..."). Keep keyword OR only
+        // when AI returned an empty extraction (all fields undefined).
+        const hasAnyFilter = !!(
+          roastLevel ||
+          extractedOrigin ||
+          (flavorProfile && flavorProfile.length > 0) ||
+          isOrganic !== undefined ||
+          processing ||
+          variety ||
+          priceMaxCents !== undefined ||
+          priceMinCents !== undefined ||
+          sortBy
+        );
+        if (hasAnyFilter) {
+          delete whereClause.OR;
+        }
+
         // Apply extracted roastLevel only if no explicit roast param
         if (roastLevel && !roast) {
           const roastSlug = `${roastLevel.toLowerCase()}-roast`;
@@ -375,7 +395,7 @@ export async function GET(request: NextRequest) {
             { description: { contains: f, mode: "insensitive" as const } },
             { tastingNotes: { hasSome: [f.charAt(0).toUpperCase() + f.slice(1)] } },
           ]);
-          whereClause.OR = [...(whereClause.OR ?? []), ...flavorEntries];
+          whereClause.OR = flavorEntries;
         }
 
         // Apply organic filter
