@@ -150,14 +150,21 @@ function PanelContent() {
       const res = await fetch(`/api/search?${params.toString()}`);
       const data = (await res.json()) as SearchResponse;
 
-      const fallbackMsg = data.aiFailed
-        ? "Ah sorry, I spaced out for a sec — what were you looking for again?"
-        : "";
+      const products = data.aiFailed ? [] : (data.products ?? []).map(mapProduct);
+      const hasProducts = products.length > 0;
+
+      // Determine response content — never go silent
+      let content = data.explanation || "";
+      if (!content && data.aiFailed) {
+        content = "Ah sorry, I spaced out for a sec — what were you looking for again?";
+      } else if (!content && !hasProducts) {
+        content = "Hmm, I'm not sure we have exactly what you're after — could you tell me more about how you like your coffee?";
+      }
 
       updateLastMessage({
         id: assistantMsgId,
-        content: data.explanation || fallbackMsg,
-        products: data.aiFailed ? [] : (data.products ?? []).map(mapProduct),
+        content,
+        products,
         followUps: data.followUps ?? [],
         isLoading: false,
       });
