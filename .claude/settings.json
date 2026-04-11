@@ -128,26 +128,10 @@
     ]
   },
   "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [ -f .claude/hooks/session-start-loop-node.js ]; then node .claude/hooks/session-start-loop-node.js; else exit 0; fi",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
         "hooks": [
-          {
-            "type": "command",
-            "command": "if [ -f .claude/hooks/verify-before-commit-node.js ]; then node .claude/hooks/verify-before-commit-node.js; else exit 0; fi",
-            "timeout": 10
-          },
           {
             "type": "command",
             "command": "if [ -f .claude/hooks/review-before-merge-node.js ]; then node .claude/hooks/review-before-merge-node.js; else exit 0; fi",
@@ -178,17 +162,6 @@
           {
             "type": "command",
             "command": "if [ -f .claude/hooks/post-backup-stamp-node.js ]; then node .claude/hooks/post-backup-stamp-node.js; else exit 0; fi",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [ -f .claude/hooks/verify-before-stop-node.js ]; then node .claude/hooks/verify-before-stop-node.js; else exit 0; fi",
             "timeout": 10
           }
         ]
