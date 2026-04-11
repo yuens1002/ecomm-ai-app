@@ -172,7 +172,7 @@ async function extractAgenticFilters(
         ? rawFilters.roastLevel.toLowerCase()
         : undefined;
 
-    const validSortBy = ["newest", "price_asc", "price_desc", "top_rated"] as const;
+    const validSortBy = ["newest", "top_rated"] as const;
     type SortBy = (typeof validSortBy)[number];
 
     const filtersExtracted: FiltersExtracted = {
@@ -412,11 +412,15 @@ export async function GET(request: NextRequest) {
         if (sortBy) {
           const sortMap: Record<string, object> = {
             newest: { createdAt: "desc" },
-            price_asc: { variants: { _min: { purchaseOptions: { _min: { priceInCents: "asc" } } } } },
-            price_desc: { variants: { _min: { purchaseOptions: { _min: { priceInCents: "desc" } } } } },
-            top_rated: { createdAt: "desc" }, // fallback: no rating field yet
+            top_rated: { averageRating: "desc" },
+            // price_asc/price_desc omitted — current schema requires nested
+            // aggregate orderBy through variants→purchaseOptions which Prisma
+            // doesn't support. Revisit when a denormalized minPrice column exists.
           };
-          orderBy = sortMap[sortBy];
+          const supportedSort = sortMap[sortBy];
+          if (supportedSort) {
+            orderBy = supportedSort;
+          }
         }
 
         // Lock to COFFEE type when any coffee-specific semantic filter was extracted.
