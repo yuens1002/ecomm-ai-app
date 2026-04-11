@@ -144,6 +144,9 @@ function PanelContent() {
         sessionId: sessionId.current,
         turnCount: String(turnCount),
       });
+      if (contextTitle) {
+        params.set("pageTitle", contextTitle);
+      }
       const res = await fetch(`/api/search?${params.toString()}`);
       const data = (await res.json()) as SearchResponse;
 
@@ -382,10 +385,16 @@ export function ChatPanel() {
     return () => {
       if (siteScroll) siteScroll.style.overflow = "";
       // Vaul direction="right" leaves stale pointer-events/overflow on body
-      // after its close animation. Clean up after animation completes.
+      // after its close animation. Only clear if Vaul is no longer scroll-locking
+      // so we don't interfere with other overlays that may still be open.
       setTimeout(() => {
-        document.body.style.pointerEvents = "";
-        document.body.style.overflow = "";
+        if (document.body.hasAttribute("data-scroll-locked")) return;
+        if (document.body.style.pointerEvents === "none") {
+          document.body.style.pointerEvents = "";
+        }
+        if (document.body.style.overflow === "hidden") {
+          document.body.style.overflow = "";
+        }
       }, 500);
     };
   }, [isOpen]);
