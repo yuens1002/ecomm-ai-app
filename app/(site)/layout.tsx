@@ -78,9 +78,10 @@ export default async function SiteLayout({
           <SiteFooter />
         </div>
 
-        {/* Right column: full-height sticky chat panel (desktop) + fixed bottom sheet (mobile) */}
-        {aiConfigured && <ChatPanel />}
       </div>
+
+      {/* Chat panel — rendered as portal overlay outside the flex layout */}
+      {aiConfigured && <ChatPanel />}
     </SiteBannerProvider>
   );
 }

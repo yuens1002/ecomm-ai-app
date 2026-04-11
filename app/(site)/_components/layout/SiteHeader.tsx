@@ -32,8 +32,7 @@ import {
 import { useNavOverflow } from "@/hooks/useNavOverflow";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
-import { ChevronDown, CircleUserRound, FileText, Home, LogIn, LogOut, Menu, MoreHorizontal, PackageSearch, Search, User } from "lucide-react";
-import { SmartSearchIcon } from "@/components/shared/icons/SmartSearchIcon";
+import { ChevronDown, CircleUserRound, FileText, Home, LogIn, LogOut, Menu, MessageSquareDot, MoreHorizontal, PackageSearch, Search, User } from "lucide-react";
 import { useChatPanelStore } from "@/stores/chat-panel-store";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
@@ -285,7 +284,7 @@ export default function SiteHeader({
                                 : "text-foreground hover:text-primary hover:bg-accent"
                             )}
                           >
-                            <SmartSearchIcon className="w-5 h-5" />
+                            <MessageSquareDot className="w-5 h-5" />
                             <span className="text-[10px] uppercase tracking-wide font-medium">
                               Search
                             </span>
@@ -559,7 +558,7 @@ export default function SiteHeader({
                   )}
                   onClick={togglePanel}
                 >
-                  <SmartSearchIcon className={cn("h-5 w-5", isPanelOpen && "text-primary")} />
+                  <MessageSquareDot className={cn("h-5 w-5", isPanelOpen && "text-primary")} />
                   <span className="sr-only">Search — ask about our coffee</span>
                 </Button>
               ) : (

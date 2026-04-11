@@ -1,15 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Send, Loader2, ChevronRight, Home, Coffee, Search, FileText } from "lucide-react";
+import { X, Send, Loader2, Home, Coffee, Search, FileText, MessageSquareDot } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SmartSearchIcon } from "@/components/shared/icons/SmartSearchIcon";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { useChatPanelStore, type ChatMessage, type ProductSummary } from "@/stores/chat-panel-store";
-import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -154,7 +158,7 @@ function PanelContent() {
       updateLastMessage({
         id: assistantMsgId,
         content: data.explanation ?? "",
-        products: (data.products ?? []).slice(0, 6).map(mapProduct),
+        products: (data.products ?? []).map(mapProduct),
         followUps: data.followUps ?? [],
         isLoading: false,
       });
@@ -176,7 +180,7 @@ function PanelContent() {
 
   return (
     <div className="relative flex flex-col h-full">
-      {/* Floating close button — top-right, no header bar */}
+      {/* Floating close button — top-right */}
       <Button
         variant="ghost"
         size="icon"
@@ -230,7 +234,7 @@ function PanelContent() {
 
       {/* Context strip */}
       <div className="shrink-0 px-4 pb-3">
-        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/50">
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           <ContextIcon className="h-3 w-3 shrink-0" />
           <span className="truncate">{contextTitle}</span>
         </div>
@@ -250,7 +254,7 @@ function MessageBubble({
   msg: ChatMessage;
   onChipClick: (chip: string) => void;
 }) {
-  const [showThoughts, setShowThoughts] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   if (msg.role === "user") {
     return (
@@ -274,64 +278,57 @@ function MessageBubble({
 
   const isGreeting = msg.id === GREETING_ID;
   const hasProducts = msg.products && msg.products.length > 0;
+  const hasFollowUps = msg.followUps && msg.followUps.length > 0;
   const hasContent = !!msg.content;
+
+  const visibleProducts = hasProducts
+    ? showAll
+      ? msg.products!
+      : msg.products!.slice(0, 3)
+    : [];
+  const extraCount = hasProducts ? msg.products!.length - 3 : 0;
 
   return (
     <div className="space-y-2.5">
-      {/* Greeting or explanation — shown directly; search thoughts hidden behind toggle */}
+      {/* Explanation — shown directly above products */}
       {hasContent && (
-        <>
-          {isGreeting || !hasProducts ? (
-            <div className="flex items-start gap-2">
-              <SmartSearchIcon className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary/50" />
-              <p className="text-sm text-foreground/80 leading-relaxed">{msg.content}</p>
-            </div>
-          ) : (
-            // Search result with products: explanation goes behind "AI thoughts" toggle
-            <>
-              <button
-                type="button"
-                onClick={() => setShowThoughts(!showThoughts)}
-                className="flex items-center gap-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-              >
-                <ChevronRight
-                  className={cn(
-                    "h-3 w-3 transition-transform duration-150",
-                    showThoughts && "rotate-90"
-                  )}
-                />
-                {showThoughts ? "Hide thoughts" : "AI thoughts"}
-              </button>
-              {showThoughts && (
-                <div className="pl-4 border-l-2 border-muted">
-                  <p className="text-xs text-muted-foreground leading-relaxed">{msg.content}</p>
-                </div>
-              )}
-            </>
-          )}
-        </>
+        <div className="flex items-start gap-2">
+          <MessageSquareDot className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary/50" />
+          <p className="text-sm text-foreground/80 leading-relaxed">{msg.content}</p>
+        </div>
       )}
 
       {/* Product cards */}
       {hasProducts && (
         <div className="space-y-1.5">
-          {msg.products!.map((product) => (
+          {visibleProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
+
+          {/* Show more / Show less */}
+          {extraCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAll((s) => !s)}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors pl-1"
+            >
+              {showAll ? "Show less" : `Show ${extraCount} more`}
+            </button>
+          )}
         </div>
       )}
 
-      {/* No results */}
-      {!hasProducts && !msg.isLoading && !isGreeting && hasContent && (
+      {/* No results — suppressed when follow-ups exist */}
+      {!hasProducts && !msg.isLoading && !isGreeting && hasContent && !hasFollowUps && (
         <p className="text-xs text-muted-foreground pl-5">
           No matching products found — try rephrasing.
         </p>
       )}
 
-      {/* Follow-up chips — question framing from API */}
-      {msg.followUps && msg.followUps.length > 0 && (
+      {/* Follow-up chips */}
+      {hasFollowUps && (
         <div className="flex flex-wrap gap-1.5">
-          {msg.followUps.map((chip) => (
+          {msg.followUps!.map((chip) => (
             <button
               key={chip}
               type="button"
@@ -381,43 +378,31 @@ function ProductCard({ product }: { product: ProductSummary }) {
 }
 
 // ---------------------------------------------------------------------------
-// ChatPanel — desktop sidebar + mobile bottom sheet
+// ChatPanel — vaul Drawer overlay (right side)
 // ---------------------------------------------------------------------------
 
 export function ChatPanel() {
-  const isOpen = useChatPanelStore((s) => s.isOpen);
+  const { isOpen, close, open } = useChatPanelStore();
 
   return (
-    <>
-      {/* Desktop: sticky full-height sidebar — shadow only, no hard border */}
-      <aside
-        className={cn(
-          "hidden md:flex flex-col",
-          "sticky top-0 h-screen flex-shrink-0 overflow-hidden",
-          "bg-background/96 backdrop-blur-sm",
-          "shadow-[-2px_0_20px_rgba(0,0,0,0.07)]",
-          "transition-[width] duration-300 ease-in-out",
-          isOpen ? "w-[25vw] min-w-[280px]" : "w-0"
-        )}
-      >
-        {/* Inner div keeps content at stable width during the collapse animation */}
-        <div className="w-[25vw] min-w-[280px] h-full">
+    <Drawer
+      open={isOpen}
+      onOpenChange={(o) => {
+        if (o) open(); else close();
+      }}
+      direction="right"
+    >
+      <DrawerContent className="inset-y-0 right-0 left-auto h-full w-[85vw] sm:w-[min(25vw,360px)] rounded-none border-l border-t-0 border-b-0">
+        <DrawerHeader className="shrink-0 border-b border-border/50 px-4 py-3">
+          <DrawerTitle className="flex items-center gap-2 text-sm font-medium">
+            <MessageSquareDot className="h-4 w-4 text-primary" />
+            Smart product search
+          </DrawerTitle>
+        </DrawerHeader>
+        <div className="flex-1 min-h-0 overflow-hidden">
           <PanelContent />
         </div>
-      </aside>
-
-      {/* Mobile: fixed bottom sheet — shadow only, no hard top border */}
-      <div
-        className={cn(
-          "fixed bottom-0 inset-x-0 z-50 md:hidden",
-          "h-[50dvh] bg-background/96 backdrop-blur-sm",
-          "shadow-[0_-2px_20px_rgba(0,0,0,0.1)]",
-          "transition-transform duration-300 ease-in-out",
-          isOpen ? "translate-y-0" : "translate-y-full"
-        )}
-      >
-        <PanelContent />
-      </div>
-    </>
+      </DrawerContent>
+    </Drawer>
   );
 }
