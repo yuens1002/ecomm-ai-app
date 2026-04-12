@@ -185,9 +185,9 @@ function PanelContent() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full select-text">
       {/* Messages — anchored to bottom; spacer pushes up when few messages */}
-      <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
+      <div className="flex-1 overflow-y-auto flex flex-col min-h-0 select-text">
         <div className="flex-1" />
         <div className="px-4 pb-3 pt-2 space-y-4">
           {messages.map((msg) => (
