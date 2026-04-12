@@ -168,13 +168,14 @@ export function AISearchSettingsSection() {
 
       {/* ── Voice Examples ────────────────────────────────────── */}
       <div className="space-y-4 border-t pt-6">
-            <div>
-              <h4 className="text-sm font-medium">Voice Examples</h4>
-              <p className="text-xs text-muted-foreground mt-1">
-                These Q&amp;A pairs teach the AI how you actually talk. Edit the
-                answers to match your voice — questions are fixed.
-              </p>
-            </div>
+        <div>
+          <h4 className="text-sm font-medium">Voice Examples</h4>
+          <p className="text-xs text-muted-foreground mt-1 max-w-[72ch]">
+            These Q&amp;A pairs teach the AI how you actually talk. Edit the
+            answers to sound like you — the questions are fixed on purpose so
+            the AI learns your voice from consistent prompts.
+          </p>
+        </div>
 
             <div className="space-y-5 max-w-[72ch]">
               {VOICE_EXAMPLE_QUESTIONS.map((question, i) => {
@@ -239,10 +240,10 @@ export function AISearchSettingsSection() {
               >
                 <Sparkles className="h-3.5 w-3.5 mr-1.5" />
                 {regenerated
-                  ? "Regenerated!"
+                  ? "Updated!"
                   : regenerating
-                    ? "Regenerating…"
-                    : "Regenerate surface strings"}
+                    ? "Updating…"
+                    : "Update how AI sounds"}
               </Button>
         </div>
       </div>
