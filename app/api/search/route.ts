@@ -135,7 +135,8 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
   "filtersExtracted": {
     "brewMethod": string | undefined,
     "roastLevel": "light" | "medium" | "dark" | undefined,
-    "flavorProfile": string[] | undefined,
+    "flavorProfile": string[] | undefined,  // Expand abstract flavor categories into concrete tasting notes a roaster would write. E.g. "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry", "blackcurrant", "currant"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan", "walnut"]; "floral" → ["floral", "jasmine", "lavender", "rose", "honeysuckle"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit", "papaya"]; "spicy" → ["spice", "spicy", "cinnamon", "clove", "cardamom", "pepper"]. Include the original category term AND the concrete notes so both literal and categorical queries match. Keep it scoped — don't expand to unrelated notes.
+
     "origin": string | undefined,
     "isOrganic": true | false | undefined,
     "processing": "washed" | "natural" | "honey" | "anaerobic" | string | undefined,
