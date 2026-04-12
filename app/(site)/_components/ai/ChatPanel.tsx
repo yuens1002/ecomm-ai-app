@@ -322,7 +322,7 @@ function MessageBubble({
       {/* No results — suppressed when follow-ups exist */}
       {!hasProducts && !msg.isLoading && !isGreeting && hasContent && !hasFollowUps && (
         <p className="text-xs text-muted-foreground pl-5">
-          No matching products found — try rephrasing.
+          Hmm, nothing quite lining up — tell me a bit more about what you like?
         </p>
       )}
 
