@@ -28,7 +28,15 @@ const nextConfig: NextConfig = {
   env: {
     APP_VERSION,
   },
-  serverExternalPackages: ["@prisma/client", "prisma"],
+  serverExternalPackages: [
+    "@prisma/client",
+    "prisma",
+    "pg",
+    "ws",
+    "@prisma/adapter-pg",
+    "@prisma/adapter-neon",
+    "@neondatabase/serverless",
+  ],
   images: {
     // We must whitelist the domains we'll be using for our product images.
     // This is a security feature of Next.js Image Optimization.

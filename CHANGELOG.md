@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.100.1 - 2026-04-12
+
+### Fixed
+
+- **Vercel build**: Added `pg`, `ws`, `@prisma/adapter-pg`, `@prisma/adapter-neon`, and `@neondatabase/serverless` to `serverExternalPackages` so Next.js does not attempt to bundle Node.js-native packages, resolving `Module not found: Can't resolve 'net'` build failures
+
 ## 0.100.0 - 2026-04-11
 
 ### Added
