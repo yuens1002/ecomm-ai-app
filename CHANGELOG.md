@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.100.2 - 2026-04-12
+
+### Fixed
+
+- **Search relevance — AI extraction clears keyword OR**: When AI extracts structured filters (flavorProfile, roastLevel, etc.), the broad keyword OR clause from NL tokenization is now discarded before AI filters are applied. Previously, tokens like "coffee" or "notes" matched nearly every product via `description contains`, drowning out the AI's precise intent (e.g. "tropical fruity notes" returned Breakfast Blend/Mexican Altura because of "notes").
+- **Search quality — PostgreSQL full-text search with TF-IDF ranking**: Keyword fallback path now uses `tsvector`/`tsquery` with `ts_rank` instead of Prisma `contains`. High-frequency words like "coffee" and "notes" automatically score lower; rarer discriminating words rank higher.
+- **AI flavor expansion**: Extraction prompt now guides the AI to expand abstract flavor categories into concrete tasting notes (e.g. "citrus" → `["citrus", "lemon", "lime", "bergamot"]`) so products with "Lemon, Bergamot" notes match "bright citrus" queries without requiring literal "citrus" in descriptions.
+- **Silent failure eliminated**: ChatPanel now always renders a response, even when search returns empty. Three-branch fallback: AI explanation → aiFailed recovery → noResults voice surface. Secondary indicator softened from "No matching products found" to inviting "Hmm, nothing quite lining up — tell me a bit more about what you like?"
+- **Sort validation**: Removed `price_asc`/`price_desc` from supported sort options — Prisma doesn't support the nested aggregate orderBy through variants→purchaseOptions needed for these sorts. Revisit when a denormalized minPrice column exists.
+
+### Added
+
+- **Search relevance fixture tests**: 8 new fixture tests (AC-TST-1 through AC-TST-8) verify AI extraction clears keyword OR for various query patterns (fruity, tropical, organic, price-range, chocolate, sort-by-price).
+
 ## 0.100.1 - 2026-04-12
 
 ### Fixed
