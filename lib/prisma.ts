@@ -1,8 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
 import ws from "ws";
 
 // Force node-api engine to avoid data-proxy/"client" engine requirements when no adapter is provided.
@@ -36,6 +34,12 @@ const createAdapter = (connectionString: string) => {
     return new PrismaNeon({ connectionString });
   }
 
+  // Lazy require to prevent Turbopack from statically analyzing pg's Node.js
+  // built-in dependencies (dns, fs, net, tls) during the client bundle phase.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { Pool } = require("pg") as typeof import("pg");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { PrismaPg } = require("@prisma/adapter-pg") as typeof import("@prisma/adapter-pg");
   const pool = new Pool({ connectionString });
   return new PrismaPg(pool);
 };
