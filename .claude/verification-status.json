@@ -294,12 +294,12 @@
     }
   },
     "fix/search-quality": {
-      "status": "planned",
-      "acs_passed": 0,
+      "status": "verified",
+      "acs_passed": 16,
       "acs_total": 16,
       "tasks": [],
       "acs_doc": "docs/features/smart-search-ux/hotfix-search-quality/ACs.md",
-      "notes": "Plan approved in prior session. 3 FN + 2 UI + 8 TST + 3 REG ACs."
+      "notes": "16/16 ACs verified. 3 FN + 2 UI + 8 TST + 3 REG. 1190 tests pass (100 suites), precheck clean. 0 iterations."
     }
   }
 }
