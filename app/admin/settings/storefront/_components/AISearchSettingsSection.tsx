@@ -170,10 +170,12 @@ export function AISearchSettingsSection() {
   return (
     <div className="rounded-lg border p-6 space-y-8">
       <div>
-        <h3 className="text-base font-semibold">Smart Search</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Give your AI search assistant a voice that reflects how you talk about
-          coffee with your customers.
+        <h3 className="text-base font-semibold">Smart Search Assistant</h3>
+        <p className="text-sm text-muted-foreground mt-1 max-w-[72ch]">
+          Give your Smart Search Assistant a voice that reflects how you talk
+          to customers in your shop. The Q&amp;A pairs below teach the AI your
+          tone — edit the answers to match how you&apos;d actually respond at
+          the counter.
         </p>
       </div>
 

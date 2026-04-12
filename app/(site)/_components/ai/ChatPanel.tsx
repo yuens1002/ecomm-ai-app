@@ -490,10 +490,10 @@ export function ChatPanel() {
         <div className="shrink-0 px-4 py-2 flex items-center gap-2">
           <MessageSquareDot className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
           <DrawerTitle className="flex-1 text-sm font-medium">
-            Product Conversation
+            Smart Search Assistant
           </DrawerTitle>
           <DrawerDescription className="sr-only">
-            Discover products through conversation with AI assistance
+            Discover products through conversation with your Smart Search Assistant
           </DrawerDescription>
           <Button
             variant="ghost"
