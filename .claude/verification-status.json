@@ -10,12 +10,12 @@
       "notes": "22/22 ACs verified. Shipped in v0.100.0. Iter 3 closed."
     },
     "feat/phase2-voice-cadence": {
-      "status": "planned",
-      "acs_passed": 0,
+      "status": "verified",
+      "acs_passed": 16,
       "acs_total": 16,
       "tasks": [],
       "acs_doc": "docs/features/smart-search-ux/phase-2-pre-merge/ACs.md",
-      "notes": "Pre-merge iteration on top of original Phase 2 (45 ACs previously verified). Plan approved. 9 UI + 4 FN + 3 REG ACs. 5 commits: rename, toggle, persona deprecation, UI polish, barista voice reframe."
+      "notes": "16/16 ACs verified. 9 UI (7 screenshots + 2 code review) + 4 FN (code review) + 3 REG (test:ci 1224 tests + precheck clean). QC confirmed 2026-04-12. Ready for PR."
     },
     "feat/smart-search-ux": {
       "status": "verified",
