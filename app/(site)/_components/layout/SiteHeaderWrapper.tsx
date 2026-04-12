@@ -79,7 +79,7 @@ export default async function SiteHeaderWrapper() {
       productMenuIcon={productMenuSettings.icon}
       productMenuText={productMenuSettings.text}
       storeName={siteMetadata.storeName}
-      aiConfigured={aiConfigured}
+      aiConfigured={smartSearchActive}
     />
   );
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
 import { DEFAULT_VOICE_EXAMPLES, type VoiceExample } from "@/lib/ai/voice-examples";
-import { generateVoiceSurfaces } from "@/lib/ai/voice-surfaces";
+import { generateVoiceSurfaces } from "@/lib/ai/voice-surfaces.server";
 import { isAIConfigured } from "@/lib/ai-client";
 
 export async function POST() {

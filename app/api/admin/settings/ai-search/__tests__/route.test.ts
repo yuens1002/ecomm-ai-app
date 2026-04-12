@@ -25,7 +25,7 @@ jest.mock("@/lib/ai-client", () => ({
   isAIConfigured: () => isAIConfiguredMock(),
 }));
 
-jest.mock("@/lib/ai/voice-surfaces", () => ({
+jest.mock("@/lib/ai/voice-surfaces.server", () => ({
   generateVoiceSurfaces: (...args: unknown[]) => generateVoiceSurfacesMock(...args),
 }));
 
