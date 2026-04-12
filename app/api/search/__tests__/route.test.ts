@@ -13,6 +13,8 @@ jest.mock("@/auth", () => ({
   auth: jest.fn(() => Promise.resolve(null)),
 }));
 
+const queryRawMock = jest.fn();
+
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     product: {
@@ -21,6 +23,7 @@ jest.mock("@/lib/prisma", () => ({
     userActivity: {
       create: () => userActivityCreateMock(),
     },
+    $queryRaw: (...args: unknown[]) => queryRawMock(...args),
   },
 }));
 
@@ -40,8 +43,9 @@ describe("GET /api/search", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(false);
-    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
   });
 
   it("should return 200 with empty query when q param is missing", async () => {
@@ -69,6 +73,7 @@ describe("GET /api/search", () => {
       images: [{ url: "/image.jpg", altText: "Coffee bag" }],
     };
     productFindManyMock.mockResolvedValue([mockProduct]);
+    queryRawMock.mockResolvedValue([]);
 
     const request = new NextRequest(
       "http://localhost:3000/api/search?q=ethiopian"
@@ -126,6 +131,7 @@ describe("GET /api/search", () => {
       images: [],
     }));
     productFindManyMock.mockResolvedValue(mockProducts);
+    queryRawMock.mockResolvedValue([]);
 
     const request = new NextRequest(
       "http://localhost:3000/api/search?q=coffee"
@@ -173,7 +179,7 @@ describe("GET /api/search", () => {
 
   it("should call AI and return agentic fields for NL queries when AI is configured", async () => {
     isAIConfiguredMock.mockResolvedValue(true);
-    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
     chatCompletionMock.mockResolvedValue({
       text: JSON.stringify({
         intent: "product_discovery",
@@ -217,7 +223,7 @@ describe("GET /api/search", () => {
 
   it("should fall back gracefully when AI call fails", async () => {
     isAIConfiguredMock.mockResolvedValue(true);
-    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
     chatCompletionMock.mockRejectedValue(new Error("LLM timeout"));
 
     const request = new NextRequest(
@@ -297,8 +303,9 @@ describe("GET /api/search — roast pattern", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(false);
-    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
   });
 
   it("maps 'light roast' query to category slug filter", async () => {
@@ -308,13 +315,14 @@ describe("GET /api/search — roast pattern", () => {
     expect(call?.where?.categories?.some?.category?.slug).toBe("light-roast");
   });
 
-  it("maps 'dark roast Ethiopia' to roast category + remaining term OR filter", async () => {
+  it("maps 'dark roast Ethiopia' to roast category + full-text search for remainder", async () => {
+    queryRawMock.mockResolvedValue([{ id: "prod-eth-1" }]);
     const request = new NextRequest("http://localhost:3000/api/search?q=dark+roast+ethiopia");
     await GET(request);
     const call = productFindManyMock.mock.calls[0][0];
     expect(call?.where?.categories?.some?.category?.slug).toBe("dark-roast");
-    // OR clause should exist for the remaining "ethiopia" term
-    expect(call?.where?.OR).toBeDefined();
+    // Remaining "ethiopia" term uses full-text search IDs, not OR clause
+    expect(call?.where?.id?.in).toEqual(["prod-eth-1"]);
   });
 });
 
@@ -337,8 +345,9 @@ describe("GET /api/search — ai=true override", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(true);
-    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
     chatCompletionMock.mockResolvedValue(nlResponse);
   });
 
@@ -365,6 +374,7 @@ describe("GET /api/search — voice persona injection (TST-1)", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(true);
     chatCompletionMock.mockResolvedValue({
       text: JSON.stringify({
@@ -380,7 +390,7 @@ describe("GET /api/search — voice persona injection (TST-1)", () => {
 
   it("includes aiVoicePersona text in the system prompt passed to chatCompletion", async () => {
     const persona = "I am Brew, a laid-back barista who loves bold coffees.";
-    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: persona });
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: persona, aiVoiceExamples: [] });
 
     const request = new NextRequest(
       "http://localhost:3000/api/search?q=smooth+morning+coffee+for+V60&ai=true"
@@ -394,7 +404,7 @@ describe("GET /api/search — voice persona injection (TST-1)", () => {
   });
 
   it("uses default system prompt when aiVoicePersona is empty", async () => {
-    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
 
     const request = new NextRequest(
       "http://localhost:3000/api/search?q=smooth+morning+coffee+for+V60&ai=true"
@@ -415,8 +425,9 @@ describe("GET /api/search — isOrganic filter (TST-3)", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(true);
-    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
   });
 
   it("applies isOrganic: true to whereClause when extracted by AI", async () => {
@@ -449,8 +460,9 @@ describe("GET /api/search — priceMaxCents filter (TST-4)", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(true);
-    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
   });
 
   it("applies priceMaxCents via variants.purchaseOptions filter when extracted by AI", async () => {
@@ -493,8 +505,9 @@ describe("GET /api/search — type=COFFEE lock (BUG-1)", () => {
   const baseSetup = () => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(true);
-    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
   };
 
   const aiResponse = (filtersExtracted: Record<string, unknown>) => ({
@@ -558,8 +571,9 @@ describe("GET /api/search — flavorProfile OR expansion (BUG-2)", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(true);
-    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
     chatCompletionMock.mockResolvedValue({
       text: JSON.stringify({
         intent: "product_discovery",
@@ -623,8 +637,9 @@ describe("GET /api/search — OR clause cleared by hard DB filters (BUG-3)", () 
   const baseSetup = () => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(true);
-    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
   };
 
   // AC-TST-5
@@ -682,8 +697,9 @@ describe("GET /api/search — prompt quality constraints (BUG-4, BUG-5)", () => 
   beforeEach(() => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(true);
-    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "" });
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
     chatCompletionMock.mockResolvedValue({
       text: JSON.stringify({
         intent: "product_discovery",
@@ -723,5 +739,245 @@ describe("GET /api/search — prompt quality constraints (BUG-4, BUG-5)", () => 
     const userMessage = callArgs.messages.find((m) => m.role === "user");
     expect(userMessage?.content).toContain("2-4 word option label");
     expect(userMessage?.content).toContain("Never use question marks");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC-TST: Search relevance fixture tests
+// ---------------------------------------------------------------------------
+
+describe("search relevance — AI extraction clears keyword OR (AC-TST-1–8)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({
+      aiVoicePersona: "",
+      aiVoiceExamples: [],
+    });
+  });
+
+  it("AC-TST-1: 'fruity coffee' — AI flavorProfile clears keyword OR containing 'coffee'", async () => {
+    // AI extracts flavorProfile: ["fruity"] — keyword "coffee" should be discarded
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { flavorProfile: ["fruity"] },
+        acknowledgment: "Looking for fruity coffee!",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=fruity+coffee&ai=true"
+    );
+    await GET(request);
+
+    // Verify findMany was called — the whereClause should NOT have a broad
+    // keyword OR with "coffee" contains. It should have flavor-based OR only.
+    const callArgs = productFindManyMock.mock.calls[0]?.[0];
+    const orClause = callArgs?.where?.OR;
+
+    // OR clause must exist (flavor entries present) and must NOT contain "coffee"
+    expect(orClause).toBeDefined();
+    expect(Array.isArray(orClause)).toBe(true);
+    const hasCoffeeContains = orClause.some(
+      (entry: Record<string, unknown>) =>
+        entry.description &&
+        typeof entry.description === "object" &&
+        (entry.description as Record<string, unknown>).contains === "coffee"
+    );
+    expect(hasCoffeeContains).toBe(false);
+    // Must contain at least one "fruity" entry — the AI flavor
+    const hasFruityEntry = orClause.some(
+      (entry: Record<string, unknown>) =>
+        (entry.description &&
+          typeof entry.description === "object" &&
+          (entry.description as Record<string, unknown>).contains === "fruity") ||
+        (entry.tastingNotes &&
+          typeof entry.tastingNotes === "object" &&
+          Array.isArray((entry.tastingNotes as Record<string, unknown>).hasSome) &&
+          ((entry.tastingNotes as { hasSome: string[] }).hasSome).includes("Fruity"))
+    );
+    expect(hasFruityEntry).toBe(true);
+  });
+
+  it("AC-TST-3: 'tropical fruity notes' — keyword OR cleared, no 'notes' match", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { flavorProfile: ["tropical", "fruity"] },
+        acknowledgment: "Tropical and fruity!",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=tropical+fruity+notes&ai=true"
+    );
+    await GET(request);
+
+    const callArgs = productFindManyMock.mock.calls[0]?.[0];
+    const orClause = callArgs?.where?.OR;
+
+    // OR clause must exist (flavor entries for tropical/fruity) and must NOT have "notes"
+    expect(orClause).toBeDefined();
+    expect(Array.isArray(orClause)).toBe(true);
+    const hasNotesContains = orClause.some(
+      (entry: Record<string, unknown>) =>
+        entry.description &&
+        typeof entry.description === "object" &&
+        (entry.description as Record<string, unknown>).contains === "notes"
+    );
+    expect(hasNotesContains).toBe(false);
+    // Must include at least "tropical" or "fruity" flavor entries
+    const hasFlavorEntry = orClause.some(
+      (entry: Record<string, unknown>) =>
+        entry.description &&
+        typeof entry.description === "object" &&
+        ["tropical", "fruity"].includes(
+          (entry.description as Record<string, unknown>).contains as string
+        )
+    );
+    expect(hasFlavorEntry).toBe(true);
+  });
+
+  it("AC-TST-4: 'most expensive' — AI sortBy extracted, no keyword OR blocks results", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { sortBy: "newest" }, // nearest supported sort
+        acknowledgment: "Let me find the priciest options.",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=most+expensive&ai=true"
+    );
+    await GET(request);
+
+    const callArgs = productFindManyMock.mock.calls[0]?.[0];
+    // When sortBy is extracted, the keyword OR ("expensive", "most") should be cleared
+    expect(callArgs?.where?.OR).toBeUndefined();
+  });
+
+  it("AC-TST-6: 'organic' — AI extracts isOrganic, keyword OR cleared", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { isOrganic: true },
+        acknowledgment: "Organic coffees coming up.",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=organic&ai=true"
+    );
+    await GET(request);
+
+    const callArgs = productFindManyMock.mock.calls[0]?.[0];
+    expect(callArgs?.where?.isOrganic).toBe(true);
+    expect(callArgs?.where?.OR).toBeUndefined();
+  });
+
+  it("AC-TST-5: 'smooth chocolatey' — AI flavorProfile replaces keyword OR", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { flavorProfile: ["chocolate", "smooth"] },
+        acknowledgment: "Smooth and chocolatey!",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=smooth+chocolatey&ai=true"
+    );
+    await GET(request);
+
+    const callArgs = productFindManyMock.mock.calls[0]?.[0];
+    const orClause = callArgs?.where?.OR;
+
+    // Should have flavor entries, not broad keyword entries
+    expect(orClause).toBeDefined();
+    expect(orClause.length).toBe(4); // 2 flavors × 2 entries each (description + tastingNotes)
+    // All entries should be flavor-related
+    orClause.forEach((entry: Record<string, unknown>) => {
+      const isDescription = !!entry.description;
+      const isTastingNotes = !!entry.tastingNotes;
+      expect(isDescription || isTastingNotes).toBe(true);
+    });
+  });
+
+  it("AC-TST-7: 'under $25' — AI priceMaxCents extracted, keyword OR cleared", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { priceMaxCents: 2500 },
+        acknowledgment: "Budget-friendly options!",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=under+%2425&ai=true"
+    );
+    await GET(request);
+
+    const callArgs = productFindManyMock.mock.calls[0]?.[0];
+    expect(callArgs?.where?.OR).toBeUndefined();
+    expect(callArgs?.where?.variants?.some?.purchaseOptions?.some?.priceInCents?.lte).toBe(2500);
+  });
+
+  it("AC-TST-8: empty AI extraction falls back to keyword search", async () => {
+    // AI returns empty filters — keyword search should be preserved
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        acknowledgment: "",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+
+    // Full-text search returns some IDs
+    queryRawMock.mockResolvedValue([{ id: "prod-1" }, { id: "prod-2" }]);
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=something+random&ai=true"
+    );
+    await GET(request);
+
+    const callArgs = productFindManyMock.mock.calls[0]?.[0];
+    // When AI extracts nothing, the full-text search IDs should be used
+    expect(callArgs?.where?.id?.in).toEqual(["prod-1", "prod-2"]);
+  });
+
+  it("AC-FN-3: 'dark roast' — category filter applied, keyword OR not used", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=dark+roast"
+    );
+    await GET(request);
+
+    const callArgs = productFindManyMock.mock.calls[0]?.[0];
+    expect(callArgs?.where?.categories?.some?.category?.slug).toBe("dark-roast");
+    expect(callArgs?.where?.type).toBe("COFFEE");
   });
 });

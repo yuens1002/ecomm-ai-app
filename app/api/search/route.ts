@@ -59,6 +59,49 @@ export function tokenizeNLQuery(q: string): string[] {
     .filter((t) => t.length > 1 && !NL_STOP_WORDS.has(t));
 }
 
+/**
+ * PostgreSQL full-text search with TF-IDF ranking.
+ * Searches name, description, tastingNotes, and origin using tsvector/tsquery.
+ * Words appearing in many products (like "coffee" or "notes") automatically
+ * score lower. Returns product IDs ordered by relevance.
+ */
+async function fullTextSearchIds(
+  query: string,
+  limit = 50
+): Promise<string[]> {
+  const tokens = tokenizeNLQuery(query);
+  if (tokens.length === 0) return [];
+
+  // Build OR tsquery: "tropical | fruity | notes"
+  const tsquery = tokens.join(" | ");
+
+  // Factor tsvector and tsquery into a subquery so they're computed once per
+  // row instead of twice (WHERE + ORDER BY).
+  const results = await prisma.$queryRaw<Array<{ id: string }>>`
+    SELECT id
+    FROM (
+      SELECT
+        id,
+        to_tsvector('english',
+          coalesce("name", '') || ' ' ||
+          coalesce("description", '') || ' ' ||
+          array_to_string("tastingNotes", ' ') || ' ' ||
+          array_to_string("origin", ' ') || ' ' ||
+          coalesce("processing", '') || ' ' ||
+          coalesce("variety", '')
+        ) AS search_vector,
+        to_tsquery('english', ${tsquery}) AS search_query
+      FROM "Product"
+      WHERE "isDisabled" = false
+    ) AS p
+    WHERE p.search_vector @@ p.search_query
+    ORDER BY ts_rank(p.search_vector, p.search_query) DESC
+    LIMIT ${limit}
+  `;
+
+  return results.map((r) => r.id);
+}
+
 export function isNaturalLanguageQuery(query: string): boolean {
   if (query.trim().split(/\s+/).length < 3) return false;
   const nlIndicators =
@@ -90,7 +133,8 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
   "filtersExtracted": {
     "brewMethod": string | undefined,
     "roastLevel": "light" | "medium" | "dark" | undefined,
-    "flavorProfile": string[] | undefined,
+    "flavorProfile": string[] | undefined,  // Expand abstract flavor categories into concrete tasting notes a roaster would write. E.g. "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry", "blackcurrant", "currant"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan", "walnut"]; "floral" → ["floral", "jasmine", "lavender", "rose", "honeysuckle"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit", "papaya"]; "spicy" → ["spice", "spicy", "cinnamon", "clove", "cardamom", "pepper"]. Include the original category term AND the concrete notes so both literal and categorical queries match. Keep it scoped — don't expand to unrelated notes.
+
     "origin": string | undefined,
     "isOrganic": true | false | undefined,
     "processing": "washed" | "natural" | "honey" | "anaerobic" | string | undefined,
@@ -237,12 +281,16 @@ export async function GET(request: NextRequest) {
     const whereClause: any = { isDisabled: false };
     let searchQuery = "";
 
+    // FTS-ordered IDs are preserved here so we can re-sort Prisma results by
+    // ts_rank order after the findMany call. Prisma's `id: { in: [...] }` does
+    // not preserve array order.
+    let ftsOrderedIds: string[] = [];
+
     if (query && query.trim().length > 0) {
       searchQuery = query.trim().toLowerCase();
 
-      // Detect roast-level pattern before building text OR clause —
-      // "light roast", "medium roast", "dark roast" map to category filters
-      // rather than substring matches (which would return nothing useful).
+      // Detect roast-level pattern — "light roast", "medium roast", "dark roast"
+      // map to category filters rather than text search.
       const roastPatternMatch = searchQuery.match(
         /\b(light|medium|dark)\s*roast\b/i
       );
@@ -253,57 +301,34 @@ export async function GET(request: NextRequest) {
         };
         whereClause.type = ProductType.COFFEE;
 
+        // If there's remaining text after removing roast pattern, use full-text search
         const remainingQuery = searchQuery
           .replace(/\b(light|medium|dark)\s*roast\b/i, " ")
           .replace(/\s+/g, " ")
           .trim();
         if (remainingQuery.length > 0) {
-          const tokens = tokenizeNLQuery(remainingQuery);
-          if (tokens.length > 0) {
-            whereClause.OR = tokens.flatMap((token) => [
-              { name: { contains: token, mode: "insensitive" } },
-              { description: { contains: token, mode: "insensitive" } },
-              { origin: { hasSome: [token] } },
-              { tastingNotes: { hasSome: [token] } },
-              { processing: { contains: token, mode: "insensitive" } },
-              { variety: { contains: token, mode: "insensitive" } },
-              { altitude: { contains: token, mode: "insensitive" } },
-            ]);
+          const ftsIds = await fullTextSearchIds(remainingQuery);
+          if (ftsIds.length > 0) {
+            whereClause.id = { in: ftsIds };
+            ftsOrderedIds = ftsIds;
           }
         }
-      } else if (isNaturalLanguageQuery(searchQuery)) {
-        const tokens = tokenizeNLQuery(searchQuery);
-        if (tokens.length > 0) {
-          whereClause.OR = tokens.flatMap((token) => [
-            { name: { contains: token, mode: "insensitive" } },
-            { description: { contains: token, mode: "insensitive" } },
-            { origin: { hasSome: [token] } },
-            { tastingNotes: { hasSome: [token] } },
-            { processing: { contains: token, mode: "insensitive" } },
-            { variety: { contains: token, mode: "insensitive" } },
-            { altitude: { contains: token, mode: "insensitive" } },
-          ]);
+      } else {
+        // Use PostgreSQL full-text search with TF-IDF ranking.
+        // This automatically suppresses high-frequency words ("coffee", "notes")
+        // and ranks products with rarer matching terms higher.
+        const ftsIds = await fullTextSearchIds(searchQuery);
+        if (ftsIds.length > 0) {
+          whereClause.id = { in: ftsIds };
+          ftsOrderedIds = ftsIds;
         } else {
+          // Full-text search found nothing — fall back to simple name/origin match
+          // for short queries like "ethiopia" that PG stemming may not handle.
           whereClause.OR = [
             { name: { contains: searchQuery, mode: "insensitive" } },
-            { description: { contains: searchQuery, mode: "insensitive" } },
             { origin: { hasSome: [searchQuery] } },
-            { tastingNotes: { hasSome: [searchQuery] } },
-            { processing: { contains: searchQuery, mode: "insensitive" } },
-            { variety: { contains: searchQuery, mode: "insensitive" } },
-            { altitude: { contains: searchQuery, mode: "insensitive" } },
           ];
         }
-      } else {
-        whereClause.OR = [
-          { name: { contains: searchQuery, mode: "insensitive" } },
-          { description: { contains: searchQuery, mode: "insensitive" } },
-          { origin: { hasSome: [searchQuery] } },
-          { tastingNotes: { hasSome: [searchQuery] } },
-          { processing: { contains: searchQuery, mode: "insensitive" } },
-          { variety: { contains: searchQuery, mode: "insensitive" } },
-          { altitude: { contains: searchQuery, mode: "insensitive" } },
-        ];
       }
     }
 
@@ -353,6 +378,32 @@ export async function GET(request: NextRequest) {
           sortBy,
         } = agenticData.filtersExtracted;
 
+        // If AI extracted any structured filter, discard the broad keyword OR
+        // clause. The AI's extraction is more precise than token-level substring
+        // matching which produces false positives (e.g. "coffee" matching every
+        // description, "notes" matching "notes of..."). Keep keyword OR only
+        // when AI returned an empty extraction (all fields undefined).
+        const hasAnyFilter = !!(
+          roastLevel ||
+          extractedOrigin ||
+          (flavorProfile && flavorProfile.length > 0) ||
+          isOrganic !== undefined ||
+          processing ||
+          variety ||
+          priceMaxCents !== undefined ||
+          priceMinCents !== undefined ||
+          sortBy
+        );
+        if (hasAnyFilter) {
+          delete whereClause.OR;
+          // Also clear the full-text prefilter — AI extraction is the source of
+          // truth when it succeeds. Leaving `id: { in: ftsIds }` in place would
+          // intersect AI flavor expansion with the initial FTS results and
+          // exclude products the AI would otherwise find.
+          delete whereClause.id;
+          ftsOrderedIds = [];
+        }
+
         // Apply extracted roastLevel only if no explicit roast param
         if (roastLevel && !roast) {
           const roastSlug = `${roastLevel.toLowerCase()}-roast`;
@@ -375,7 +426,7 @@ export async function GET(request: NextRequest) {
             { description: { contains: f, mode: "insensitive" as const } },
             { tastingNotes: { hasSome: [f.charAt(0).toUpperCase() + f.slice(1)] } },
           ]);
-          whereClause.OR = [...(whereClause.OR ?? []), ...flavorEntries];
+          whereClause.OR = flavorEntries;
         }
 
         // Apply organic filter
@@ -437,13 +488,9 @@ export async function GET(request: NextRequest) {
           whereClause.type = ProductType.COFFEE;
         }
 
-        // Remove text token OR clause only when hard DB-filterable constraints exist
-        // (roastLevel, origin, variety, processing). For flavor-only queries, keep the
-        // OR clause so description text search can find citrus/chocolate etc. notes.
-        const hasHardDBFilters = !!(roastLevel || extractedOrigin || variety || processing);
-        if (hasHardDBFilters) {
-          delete whereClause.OR;
-        }
+        // NOTE: The keyword OR clause is already cleared above (hasAnyFilter check)
+        // and a fresh flavor-only OR is built from flavorProfile entries. No need
+        // for a second deletion here.
       }
     }
 
@@ -507,12 +554,25 @@ export async function GET(request: NextRequest) {
       take: 50,
     });
 
+    // Preserve full-text search ranking order. Prisma's `id: { in: [...] }`
+    // does not guarantee deterministic order, and no explicit orderBy was set
+    // when FTS was used. Sort products by their position in ftsOrderedIds.
+    let orderedProducts = products;
+    if (ftsOrderedIds.length > 0 && !orderBy) {
+      const rankByIdMap = new Map(ftsOrderedIds.map((id, idx) => [id, idx]));
+      orderedProducts = [...products].sort((a, b) => {
+        const rankA = rankByIdMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+        const rankB = rankByIdMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+        return rankA - rankB;
+      });
+    }
+
     // When AI was requested but extraction failed, surface it so the UI can
     // tell the user instead of silently showing dumb keyword results.
     const aiFailed = forceAI && !agenticData;
 
     return NextResponse.json({
-      products,
+      products: orderedProducts,
       query: searchQuery,
       count: products.length,
       intent: agenticData?.intent ?? null,
