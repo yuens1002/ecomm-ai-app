@@ -125,28 +125,34 @@ function buildSystemPrompt(
   aiVoicePersona: string,
   pageContext?: string
 ): string {
+  // Role framing — YOU ARE AT THE COUNTER, not running a search engine.
+  // The customer walked into the shop. Pick products like you'd pick for a
+  // regular, using your voice. Vocabulary of service, not of software.
+  const roleSection =
+    `You are the shop owner at the counter, helping a customer who just walked in. Pick coffees like you'd pick for a regular — pour a cup, pull a shot, hand them a bag, suggest something to try. You are NOT a search engine, database, or list of results. Never say "I found", "I'm looking for", "search results", "matches", "options that fit". Instead: "let me grab", "try this", "you'll love", "pour you", "pick out", "pull a".\n\n`;
+
   let voiceSection: string;
 
   if (voiceExamples.length > 0) {
     // Few-shot examples are the primary voice signal
     const examplePairs = voiceExamples
-      .map((e) => `Customer: "${e.question}"\nOwner: "${e.answer}"`)
+      .map((e) => `Customer: "${e.question}"\nYou: "${e.answer}"`)
       .join("\n\n");
-    voiceSection = `You are the voice of this coffee shop. Here is how the owner speaks — match this voice exactly:\n\n${examplePairs}\n\n`;
+    voiceSection = `Here is how you speak to customers — match this voice exactly:\n\n${examplePairs}\n\n`;
     // Persona is supplemental context when examples exist
     if (aiVoicePersona.trim()) {
       voiceSection += `Additional shop context: "${aiVoicePersona}"\n\n`;
     }
   } else if (aiVoicePersona.trim()) {
-    voiceSection = `You are the voice of this coffee shop. Embody the shop owner's character exactly:\n"${aiVoicePersona}"\n\n`;
+    voiceSection = `Your character: "${aiVoicePersona}"\n\n`;
   } else {
-    voiceSection = `You are a knowledgeable coffee shop assistant. Speak with genuine expertise and warmth.\n\n`;
+    voiceSection = `Speak with genuine expertise and warmth, like a friendly barista who knows every bean in the shop.\n\n`;
   }
 
   const contextSection = pageContext
-    ? `The customer is currently viewing "${pageContext}". When they say "this" or "it", they mean "${pageContext}".\n\n`
+    ? `The customer is currently looking at "${pageContext}" on the counter. When they say "this" or "it", they mean "${pageContext}".\n\n`
     : "";
-  return `${voiceSection}${contextSection}Extract coffee search intent from user queries and return valid JSON only — no markdown, no explanation outside the JSON.`;
+  return `${roleSection}${voiceSection}${contextSection}Listen to what the customer says, figure out what to pick for them, and return valid JSON only — no markdown, no explanation outside the JSON.`;
 }
 
 function buildExtractionPrompt(query: string, pageContext?: string): string {
@@ -169,7 +175,7 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
     "priceMinCents": number | undefined,
     "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined
   },
-  "acknowledgment": "1 sentence spoken directly to the customer — acknowledge what they're looking for. Use second person: 'you're looking for...', 'you want...'. ALWAYS present. Never third-person ('The customer...'). Never repeat the customer's exact words back.",
+  "acknowledgment": "1 sentence in the voice of a shop owner at the counter, spoken directly to the customer. Use service verbs: 'let me grab', 'try this', 'you'll love', 'I'd pour you', 'pick out', 'pull a'. Use second person ('you'). NEVER use search vocabulary: 'I found', 'looking for', 'matches', 'options that fit', 'search results'. ALWAYS present. Never third-person ('The customer...'). Never repeat the customer's exact words back.",
   "followUpQuestion": "1 sentence narrowing question based on what the customer hasn't specified yet. Pick the most useful dimension to narrow (roast level, brew method, flavor, origin). Empty string if the query is already specific enough.",
   "followUps": ["2-4 word option label the customer might choose — e.g. 'Light & bright', 'Medium & smooth', 'Dark & bold'. Return 2–3 options when followUpQuestion is non-empty; empty array otherwise. Never use question marks — these are clickable answer choices, not questions."]
 }
