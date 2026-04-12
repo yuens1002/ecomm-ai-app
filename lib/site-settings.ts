@@ -36,6 +36,7 @@ export interface SiteSettings {
   aiVoicePersona: string;
   aiVoiceExamples: VoiceExample[];
   aiVoiceSurfaces: VoiceSurfaces | null;
+  smartSearchEnabled: boolean;
 }
 
 export const defaultSettings: SiteSettings = {
@@ -69,6 +70,7 @@ export const defaultSettings: SiteSettings = {
   aiVoicePersona: "",
   aiVoiceExamples: [],
   aiVoiceSurfaces: null,
+  smartSearchEnabled: true,
 };
 
 function safeParseJSON<T>(raw: string | undefined, fallback: T): T {
@@ -151,5 +153,9 @@ export function mapSettingsRecord(
       record.ai_voice_surfaces,
       defaultSettings.aiVoiceSurfaces
     ),
+    smartSearchEnabled:
+      record.ai_smart_search_enabled != null
+        ? record.ai_smart_search_enabled !== "false"
+        : defaultSettings.smartSearchEnabled,
   };
 }

@@ -16,7 +16,12 @@ export async function GET() {
     const settings = await prisma.siteSettings.findMany({
       where: {
         key: {
-          in: ["ai_voice_persona", "ai_voice_examples", "ai_voice_surfaces"],
+          in: [
+            "ai_voice_persona",
+            "ai_voice_examples",
+            "ai_voice_surfaces",
+            "ai_smart_search_enabled",
+          ],
         },
       },
     });
@@ -44,10 +49,17 @@ export async function GET() {
       }
     }
 
+    // smartSearchEnabled defaults to true when unset
+    const smartSearchEnabled =
+      map.ai_smart_search_enabled != null
+        ? map.ai_smart_search_enabled !== "false"
+        : true;
+
     return NextResponse.json({
       aiVoicePersona: map.ai_voice_persona ?? "",
       voiceExamples,
       voiceSurfaces,
+      smartSearchEnabled,
     });
   } catch (err) {
     console.error("Error fetching AI search settings:", err);
@@ -66,6 +78,7 @@ const voiceExampleSchema = z.object({
 const schema = z.object({
   aiVoicePersona: z.string().max(2000).optional(),
   voiceExamples: z.array(voiceExampleSchema).max(5).optional(),
+  smartSearchEnabled: z.boolean().optional(),
 });
 
 export async function PUT(request: NextRequest) {
@@ -103,6 +116,17 @@ export async function PUT(request: NextRequest) {
           where: { key: "ai_voice_examples" },
           update: { value: json },
           create: { key: "ai_voice_examples", value: json },
+        })
+      );
+    }
+
+    if (parsed.data.smartSearchEnabled !== undefined) {
+      const value = String(parsed.data.smartSearchEnabled);
+      upserts.push(
+        prisma.siteSettings.upsert({
+          where: { key: "ai_smart_search_enabled" },
+          update: { value },
+          create: { key: "ai_smart_search_enabled", value },
         })
       );
     }

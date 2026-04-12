@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Sparkles, RotateCcw, Check, ChevronLeft, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SmartSearchIcon } from "@/components/shared/icons/SmartSearchIcon";
@@ -41,11 +42,19 @@ export function AISearchSettingsSection() {
   const [regenerating, setRegenerating] = useState(false);
   const [regenerated, setRegenerated] = useState(false);
 
+  // Smart Search Assistant enable/disable toggle
+  const [smartSearchEnabled, setSmartSearchEnabled] = useState(true);
+  const [savingToggle, setSavingToggle] = useState(false);
+
   useEffect(() => {
     fetch("/api/admin/settings/ai-search")
       .then((r) => r.json())
       .then(
-        (data: { aiVoicePersona?: string; voiceExamples?: VoiceExample[] }) => {
+        (data: {
+          aiVoicePersona?: string;
+          voiceExamples?: VoiceExample[];
+          smartSearchEnabled?: boolean;
+        }) => {
           const value = data.aiVoicePersona ?? "";
           setPersona(value);
           setSavedPersona(value);
@@ -61,11 +70,29 @@ export function AISearchSettingsSection() {
             setVoiceAnswers(answers);
             setSavedVoiceAnswers(answers);
           }
+
+          if (typeof data.smartSearchEnabled === "boolean") {
+            setSmartSearchEnabled(data.smartSearchEnabled);
+          }
           setLoading(false);
         }
       )
       .catch(() => setLoading(false));
   }, []);
+
+  const handleToggleSmartSearch = async (next: boolean) => {
+    setSavingToggle(true);
+    setSmartSearchEnabled(next);
+    try {
+      await fetch("/api/admin/settings/ai-search", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ smartSearchEnabled: next }),
+      });
+    } finally {
+      setSavingToggle(false);
+    }
+  };
 
   const handlePreview = async () => {
     if (!persona.trim()) return;
@@ -177,6 +204,26 @@ export function AISearchSettingsSection() {
           tone — edit the answers to match how you&apos;d actually respond at
           the counter.
         </p>
+      </div>
+
+      {/* Enable/disable toggle */}
+      <div className="flex items-start justify-between gap-4 max-w-[72ch]">
+        <div className="space-y-1">
+          <Label htmlFor="smart-search-enabled" className="text-sm font-medium">
+            Enable Smart Search Assistant
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            When on, customers see the chat icon in the header and can converse
+            with the assistant. Turn off to hide it from the storefront without
+            losing your voice settings.
+          </p>
+        </div>
+        <Switch
+          id="smart-search-enabled"
+          checked={smartSearchEnabled}
+          onCheckedChange={handleToggleSmartSearch}
+          disabled={savingToggle}
+        />
       </div>
 
       {mode === "edit" ? (
