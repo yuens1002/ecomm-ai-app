@@ -414,6 +414,7 @@ function ProductCard({ product }: { product: ProductSummary }) {
             src={product.imageUrl}
             alt={product.name}
             fill
+            sizes="40px"
             className="object-cover"
           />
         )}
