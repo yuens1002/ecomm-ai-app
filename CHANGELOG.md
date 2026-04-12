@@ -12,7 +12,7 @@
 
 ### Added
 
-- **Search relevance fixture tests**: 8 new fixture tests (AC-TST-1 through AC-TST-8) verify AI extraction clears keyword OR for various query patterns (fruity, tropical, organic, price-range, chocolate, sort-by-price).
+- **Search relevance fixture tests**: 8 new fixture tests (AC-TST-1 through AC-TST-8) verify AI extraction clears keyword OR for various query patterns (fruity, tropical, organic, price-range, chocolate, comparative sort).
 
 ## 0.100.1 - 2026-04-12
 

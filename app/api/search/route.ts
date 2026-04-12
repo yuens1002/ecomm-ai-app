@@ -75,29 +75,27 @@ async function fullTextSearchIds(
   // Build OR tsquery: "tropical | fruity | notes"
   const tsquery = tokens.join(" | ");
 
+  // Factor tsvector and tsquery into a subquery so they're computed once per
+  // row instead of twice (WHERE + ORDER BY).
   const results = await prisma.$queryRaw<Array<{ id: string }>>`
     SELECT id
-    FROM "Product"
-    WHERE "isDisabled" = false
-      AND to_tsvector('english',
-        coalesce("name", '') || ' ' ||
-        coalesce("description", '') || ' ' ||
-        array_to_string("tastingNotes", ' ') || ' ' ||
-        array_to_string("origin", ' ') || ' ' ||
-        coalesce("processing", '') || ' ' ||
-        coalesce("variety", '')
-      ) @@ to_tsquery('english', ${tsquery})
-    ORDER BY ts_rank(
-      to_tsvector('english',
-        coalesce("name", '') || ' ' ||
-        coalesce("description", '') || ' ' ||
-        array_to_string("tastingNotes", ' ') || ' ' ||
-        array_to_string("origin", ' ') || ' ' ||
-        coalesce("processing", '') || ' ' ||
-        coalesce("variety", '')
-      ),
-      to_tsquery('english', ${tsquery})
-    ) DESC
+    FROM (
+      SELECT
+        id,
+        to_tsvector('english',
+          coalesce("name", '') || ' ' ||
+          coalesce("description", '') || ' ' ||
+          array_to_string("tastingNotes", ' ') || ' ' ||
+          array_to_string("origin", ' ') || ' ' ||
+          coalesce("processing", '') || ' ' ||
+          coalesce("variety", '')
+        ) AS search_vector,
+        to_tsquery('english', ${tsquery}) AS search_query
+      FROM "Product"
+      WHERE "isDisabled" = false
+    ) AS p
+    WHERE p.search_vector @@ p.search_query
+    ORDER BY ts_rank(p.search_vector, p.search_query) DESC
     LIMIT ${limit}
   `;
 
@@ -283,6 +281,11 @@ export async function GET(request: NextRequest) {
     const whereClause: any = { isDisabled: false };
     let searchQuery = "";
 
+    // FTS-ordered IDs are preserved here so we can re-sort Prisma results by
+    // ts_rank order after the findMany call. Prisma's `id: { in: [...] }` does
+    // not preserve array order.
+    let ftsOrderedIds: string[] = [];
+
     if (query && query.trim().length > 0) {
       searchQuery = query.trim().toLowerCase();
 
@@ -307,6 +310,7 @@ export async function GET(request: NextRequest) {
           const ftsIds = await fullTextSearchIds(remainingQuery);
           if (ftsIds.length > 0) {
             whereClause.id = { in: ftsIds };
+            ftsOrderedIds = ftsIds;
           }
         }
       } else {
@@ -316,6 +320,7 @@ export async function GET(request: NextRequest) {
         const ftsIds = await fullTextSearchIds(searchQuery);
         if (ftsIds.length > 0) {
           whereClause.id = { in: ftsIds };
+          ftsOrderedIds = ftsIds;
         } else {
           // Full-text search found nothing — fall back to simple name/origin match
           // for short queries like "ethiopia" that PG stemming may not handle.
@@ -391,6 +396,12 @@ export async function GET(request: NextRequest) {
         );
         if (hasAnyFilter) {
           delete whereClause.OR;
+          // Also clear the full-text prefilter — AI extraction is the source of
+          // truth when it succeeds. Leaving `id: { in: ftsIds }` in place would
+          // intersect AI flavor expansion with the initial FTS results and
+          // exclude products the AI would otherwise find.
+          delete whereClause.id;
+          ftsOrderedIds = [];
         }
 
         // Apply extracted roastLevel only if no explicit roast param
@@ -543,12 +554,25 @@ export async function GET(request: NextRequest) {
       take: 50,
     });
 
+    // Preserve full-text search ranking order. Prisma's `id: { in: [...] }`
+    // does not guarantee deterministic order, and no explicit orderBy was set
+    // when FTS was used. Sort products by their position in ftsOrderedIds.
+    let orderedProducts = products;
+    if (ftsOrderedIds.length > 0 && !orderBy) {
+      const rankByIdMap = new Map(ftsOrderedIds.map((id, idx) => [id, idx]));
+      orderedProducts = [...products].sort((a, b) => {
+        const rankA = rankByIdMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+        const rankB = rankByIdMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+        return rankA - rankB;
+      });
+    }
+
     // When AI was requested but extraction failed, surface it so the UI can
     // tell the user instead of silently showing dumb keyword results.
     const aiFailed = forceAI && !agenticData;
 
     return NextResponse.json({
-      products,
+      products: orderedProducts,
       query: searchQuery,
       count: products.length,
       intent: agenticData?.intent ?? null,

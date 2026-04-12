@@ -781,16 +781,28 @@ describe("search relevance — AI extraction clears keyword OR (AC-TST-1–8)", 
     const callArgs = productFindManyMock.mock.calls[0]?.[0];
     const orClause = callArgs?.where?.OR;
 
-    if (orClause) {
-      // OR should only contain flavor-related entries, not "coffee" substring matches
-      const hasCoffeeContains = orClause.some(
-        (entry: Record<string, unknown>) =>
-          entry.description &&
+    // OR clause must exist (flavor entries present) and must NOT contain "coffee"
+    expect(orClause).toBeDefined();
+    expect(Array.isArray(orClause)).toBe(true);
+    const hasCoffeeContains = orClause.some(
+      (entry: Record<string, unknown>) =>
+        entry.description &&
+        typeof entry.description === "object" &&
+        (entry.description as Record<string, unknown>).contains === "coffee"
+    );
+    expect(hasCoffeeContains).toBe(false);
+    // Must contain at least one "fruity" entry — the AI flavor
+    const hasFruityEntry = orClause.some(
+      (entry: Record<string, unknown>) =>
+        (entry.description &&
           typeof entry.description === "object" &&
-          (entry.description as Record<string, unknown>).contains === "coffee"
-      );
-      expect(hasCoffeeContains).toBe(false);
-    }
+          (entry.description as Record<string, unknown>).contains === "fruity") ||
+        (entry.tastingNotes &&
+          typeof entry.tastingNotes === "object" &&
+          Array.isArray((entry.tastingNotes as Record<string, unknown>).hasSome) &&
+          ((entry.tastingNotes as { hasSome: string[] }).hasSome).includes("Fruity"))
+    );
+    expect(hasFruityEntry).toBe(true);
   });
 
   it("AC-TST-3: 'tropical fruity notes' — keyword OR cleared, no 'notes' match", async () => {
@@ -813,15 +825,26 @@ describe("search relevance — AI extraction clears keyword OR (AC-TST-1–8)", 
     const callArgs = productFindManyMock.mock.calls[0]?.[0];
     const orClause = callArgs?.where?.OR;
 
-    if (orClause) {
-      const hasNotesContains = orClause.some(
-        (entry: Record<string, unknown>) =>
-          entry.description &&
-          typeof entry.description === "object" &&
-          (entry.description as Record<string, unknown>).contains === "notes"
-      );
-      expect(hasNotesContains).toBe(false);
-    }
+    // OR clause must exist (flavor entries for tropical/fruity) and must NOT have "notes"
+    expect(orClause).toBeDefined();
+    expect(Array.isArray(orClause)).toBe(true);
+    const hasNotesContains = orClause.some(
+      (entry: Record<string, unknown>) =>
+        entry.description &&
+        typeof entry.description === "object" &&
+        (entry.description as Record<string, unknown>).contains === "notes"
+    );
+    expect(hasNotesContains).toBe(false);
+    // Must include at least "tropical" or "fruity" flavor entries
+    const hasFlavorEntry = orClause.some(
+      (entry: Record<string, unknown>) =>
+        entry.description &&
+        typeof entry.description === "object" &&
+        ["tropical", "fruity"].includes(
+          (entry.description as Record<string, unknown>).contains as string
+        )
+    );
+    expect(hasFlavorEntry).toBe(true);
   });
 
   it("AC-TST-4: 'most expensive' — AI sortBy extracted, no keyword OR blocks results", async () => {
