@@ -117,3 +117,27 @@ Key QC observations:
 ## Reviewer Feedback
 
 {Human writes review feedback here.}
+
+---
+
+## Post-Review Improvements — 2026-04-13
+
+The following improvements were made after all 21 ACs passed verification, based on live testing and reviewer observations. Not re-verified against ACs (all were additive or corrective, no regressions introduced).
+
+| Change | Commit | Notes |
+|--------|--------|-------|
+| Chips left-aligned (`pl-5`) | `9a9b470` | Was center-aligned; now aligns to message indent |
+| Placeholder merge fix | `9a9b470` | DB surfaces generated before `placeholder` key existed now merge with defaults |
+| SmartSearch admin — per-field save | `ce87ec1` | Each Q&A block saves independently; per-block status indicator |
+| SmartSearch admin — InputGroup textarea pattern | `ce87ec1` | Matches Store Description component; no quotes on question labels |
+| SmartSearch admin — card border | `05aee75` | `bg-card rounded-xl border shadow-sm` matches Provider Configuration card |
+| SmartSearch copy — counter phrasing | `05aee75` | "speak with your customers at the counter" |
+| Voice-guided acknowledgment length | `bc23e53` | Removed "1 sentence" cap — voice examples guide natural length |
+| Roast label format | `bc23e53` | `"LIGHT"` → `"Light roast"` on product card second line |
+| Coffee-only search | `bc23e53` | `whereClause.type = COFFEE` always — merch queries return no results |
+| Vague/intent queries show results | `367be72` | Clear keyword OR when AI ran but no filters extracted; broad coffee selection returned so follow-up chips can narrow |
+| Experiential term → flavor expansion | `367be72` | "approachable/smooth" → `[smooth, balanced, caramel, chocolate, mild]`; "bold/intense" → `[dark chocolate, earthy]` |
+| Gift/crowd-pleaser → top_rated sort | `367be72` | "gift", "well-loved", "beginner" signals trigger `sortBy: "top_rated"` |
+| Context-aware follow-up chips | `367be72` | Chips derived from query context, not fixed roast-level defaults |
+| AI guardrails | `cbab0cd` | Never swear; never break character; off-topic redirects in owner voice |
+| Chip border — theme color | `7a02649` | `border-primary/40` — visible in both light and dark mode |
