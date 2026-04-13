@@ -405,7 +405,7 @@ function MessageBubble({
                 key={chip}
                 type="button"
                 onClick={() => onChipClick(chip)}
-                className="text-xs px-3 py-1.5 rounded-full border border-border/60 hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-colors text-primary"
+                className="text-xs px-3 py-1.5 rounded-full border border-primary/40 hover:bg-primary/10 hover:border-primary/70 transition-colors text-primary"
               >
                 {chip}
               </button>
