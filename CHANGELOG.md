@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.100.4 - 2026-04-13
+
+### Fixed
+
+- **Hero aspect ratio on mobile**: VideoHero now uses `aspect-video` (16:9) on xs/sm breakpoints instead of `aspect-[3/1]`, preventing the hero from appearing too narrow on phones
+- **Theme switcher Sun icon**: Added `relative` to the ghost button wrapper so the absolutely-positioned Sun icon anchors correctly within the button bounds; fixes Sun icon not appearing in dark mode
+- **Stepper input border**: Changed `border-border` → `border-input` on the quantity input so it matches the `outline` button variant border on either side (consistent stepper appearance)
+- **Product card image aspect ratio on mobile**: `ProductCard` image now uses `aspect-[2/1]` below md breakpoint (consistent with the PDP image carousel), instead of `aspect-square`; keeps square on md+ grid layouts
+
 ## 0.100.3 - 2026-04-13
 
 ### Added
