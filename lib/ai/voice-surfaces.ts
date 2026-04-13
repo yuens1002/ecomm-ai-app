@@ -26,14 +26,15 @@ export interface VoiceSurfaces {
   noResults: string;
   /** Shown on network/server error */
   error: string;
+  /** Input field placeholder — question or invitation in the owner's voice */
+  placeholder: string;
 }
 
 export type VoiceSurfaceKey = keyof VoiceSurfaces;
 
 /** Hardcoded fallback when no generated surfaces exist */
 export const DEFAULT_VOICE_SURFACES: VoiceSurfaces = {
-  "greeting.home":
-    "What are you in the mood for? Tell me how you like to brew, what flavors you enjoy, or just ask — I'm here to help you find the perfect coffee.",
+  "greeting.home": "What are you in the mood for today?",
   "greeting.product": "Curious about {product}? I can tell you all about it.",
   "greeting.category": "Browsing our {category}? I can help you narrow it down.",
   waiting: "um",
@@ -43,4 +44,5 @@ export const DEFAULT_VOICE_SURFACES: VoiceSurfaces = {
   noResults:
     "Hmm, I'm not sure we have exactly what you're after — could you tell me more about how you like your coffee?",
   error: "Something hiccuped on my end — give it another try?",
+  placeholder: "What are you after today?",
 };

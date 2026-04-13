@@ -39,14 +39,16 @@ export async function generateVoiceSurfaces(
   "salutation": "A natural response to 'hey' or 'hello' — greet back and pivot to helping (1 sentence)",
   "aiFailed": "A casual recovery when you couldn't process the request — ask them to try again (1 sentence)",
   "noResults": "An empathetic message when no products match — encourage rephrasing (1-2 sentences)",
-  "error": "A casual recovery for a technical error — ask them to retry (1 sentence)"
+  "error": "A casual recovery for a technical error — ask them to retry (1 sentence)",
+  "placeholder": "8–12 words, a question or invitation in the owner's voice for the chat input field (e.g. 'What are you after today?' or 'How do you take your coffee?')"
 }
 
 Rules:
 - Speak directly to the customer: use "you", "your" — never third person
 - Match the owner's actual vocabulary and sentence rhythm from the examples
 - Keep it natural — no corporate speak, no exclamation overload
-- The waiting filler should be 1-3 words max, lowercase`,
+- The waiting filler should be 1-3 words max, lowercase
+- The placeholder should be a short question, not a statement`,
       },
     ],
     maxTokens: 1024,
@@ -94,6 +96,10 @@ Rules:
         typeof parsed.error === "string"
           ? parsed.error
           : DEFAULT_VOICE_SURFACES.error,
+      placeholder:
+        typeof parsed.placeholder === "string"
+          ? parsed.placeholder
+          : DEFAULT_VOICE_SURFACES.placeholder,
     };
   } catch {
     console.error(

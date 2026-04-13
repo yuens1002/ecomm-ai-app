@@ -262,7 +262,7 @@ function PanelContent() {
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about our coffee…"
+            placeholder={voiceSurfaces.placeholder}
             disabled={isLoading}
             className="text-sm h-9 rounded-full bg-muted/40 border-muted-foreground/20 focus-visible:bg-background pr-11"
           />
