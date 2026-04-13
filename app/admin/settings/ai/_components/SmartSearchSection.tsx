@@ -3,10 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { Undo2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupTextarea,
+  InputGroupText,
+  InputGroupButton,
+} from "@/components/ui/forms/InputGroup";
 import {
   DEFAULT_VOICE_EXAMPLES,
   VOICE_EXAMPLE_QUESTIONS,
@@ -83,10 +87,11 @@ export function SmartSearchSection() {
     if (isDirty) void saveExamples(currentAnswers);
   };
 
-  const handleResetToDefaults = () => {
-    const defaults = DEFAULT_VOICE_EXAMPLES.map((e) => e.answer);
-    setVoiceAnswers(defaults);
-    void saveExamples(defaults);
+  const handleResetOne = (index: number) => {
+    const next = [...voiceAnswers];
+    next[index] = DEFAULT_VOICE_EXAMPLES[index].answer;
+    setVoiceAnswers(next);
+    void saveExamples(next);
   };
 
   const handleToggleSmartSearch = async (next: boolean) => {
@@ -106,34 +111,24 @@ export function SmartSearchSection() {
   if (loading) return null;
 
   return (
-    <div className="rounded-lg border p-6 space-y-8">
-      {/* Title + description */}
-      <div>
-        <h3 className="text-base font-semibold">Smart Search</h3>
-        <p className="text-sm text-muted-foreground mt-1 max-w-[72ch]">
-          Let customers chat with your store and get product recommendations in
-          your voice. Edit the answers below to teach the AI how you actually
-          talk — questions are fixed so the AI learns from consistent cues.
-          Changes save automatically.
-        </p>
-      </div>
-
-      {/* Enable toggle: title left, Switch right */}
-      <div className="flex items-center justify-between max-w-[72ch]">
-        <div className="space-y-1">
-          <Label htmlFor="smart-search-enabled" className="text-sm font-medium">
-            Enable Smart Search
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            Shows the Counter chat icon in the storefront header.
-          </p>
+    <div className="rounded-lg border p-6 space-y-6">
+      {/* Title row: heading left, toggle right */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold">Smart Search</h3>
+          <Switch
+            id="smart-search-enabled"
+            checked={smartSearchEnabled}
+            onCheckedChange={handleToggleSmartSearch}
+            disabled={savingToggle}
+          />
         </div>
-        <Switch
-          id="smart-search-enabled"
-          checked={smartSearchEnabled}
-          onCheckedChange={handleToggleSmartSearch}
-          disabled={savingToggle}
-        />
+        <p className="text-sm text-muted-foreground max-w-[72ch]">
+          Let customers chat with your store and get product recommendations in
+          your voice. Edit the answers below to teach the AI how you talk —
+          questions are fixed so the AI learns from consistent cues. Changes
+          save automatically.
+        </p>
       </div>
 
       {/* Voice Examples */}
@@ -141,65 +136,67 @@ export function SmartSearchSection() {
         <div>
           <h4 className="text-sm font-medium">Your Voice</h4>
           <p className="text-xs text-muted-foreground mt-1 max-w-[72ch]">
-            These answers teach the AI your tone. Write them the way you&apos;d
-            actually say it at the counter.
+            Write these the way you&apos;d actually say it at the counter.
           </p>
         </div>
 
-        <div className="space-y-5 max-w-[72ch]">
+        <div className="space-y-3 max-w-[72ch]">
           {VOICE_EXAMPLE_QUESTIONS.map((question, i) => (
-            <div key={i} className="space-y-1.5">
-              <Label
-                htmlFor={`voice-example-${i}`}
-                className="text-xs font-medium text-muted-foreground"
-              >
-                &ldquo;{question}&rdquo;
-              </Label>
-              <Textarea
+            <InputGroup key={i}>
+              {/* Block-start: question + reset + status */}
+              <InputGroupAddon align="block-start" className="justify-between">
+                <span className="text-xs text-muted-foreground truncate mr-2">
+                  &ldquo;{question}&rdquo;
+                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {saveStatus !== "idle" && (
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <span
+                        className={cn(
+                          "w-2 h-2 rounded-full",
+                          saveStatus === "saving"
+                            ? "bg-amber-500 animate-pulse"
+                            : "bg-green-500"
+                        )}
+                      />
+                      {saveStatus === "saving" ? "Saving…" : "Saved"}
+                    </span>
+                  )}
+                  <InputGroupButton
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => handleResetOne(i)}
+                    disabled={saveStatus === "saving"}
+                    title="Reset to default"
+                  >
+                    <Undo2 className="h-3 w-3" />
+                    Reset
+                  </InputGroupButton>
+                </div>
+              </InputGroupAddon>
+
+              {/* Textarea */}
+              <InputGroupTextarea
                 id={`voice-example-${i}`}
                 value={voiceAnswers[i]}
                 maxLength={MAX_ANSWER_LENGTH}
+                rows={3}
                 onChange={(e) => {
                   const next = [...voiceAnswers];
                   next[i] = e.target.value;
                   setVoiceAnswers(next);
                 }}
                 onBlur={() => handleBlur(voiceAnswers)}
-                className="text-sm min-h-[80px] resize-y"
               />
-              <p className="text-[11px] text-muted-foreground text-right">
-                {voiceAnswers[i].length}/{MAX_ANSWER_LENGTH}
-              </p>
-            </div>
+
+              {/* Block-end: char count */}
+              <InputGroupAddon align="block-end">
+                <InputGroupText className="text-xs">
+                  {voiceAnswers[i].length}/{MAX_ANSWER_LENGTH}
+                </InputGroupText>
+              </InputGroupAddon>
+            </InputGroup>
           ))}
-        </div>
-
-        {/* Status row: Reset (left) · ● status (right) */}
-        <div className="flex items-center justify-between max-w-[72ch] pt-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleResetToDefaults}
-            disabled={saveStatus === "saving"}
-            className="text-muted-foreground hover:text-foreground -ml-2"
-          >
-            <Undo2 className="h-3.5 w-3.5 mr-1.5" />
-            Reset to defaults
-          </Button>
-
-          {saveStatus !== "idle" && (
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span
-                className={cn(
-                  "w-2 h-2 rounded-full",
-                  saveStatus === "saving"
-                    ? "bg-amber-500 animate-pulse"
-                    : "bg-green-500"
-                )}
-              />
-              {saveStatus === "saving" ? "Saving…" : "Saved"}
-            </span>
-          )}
         </div>
       </div>
     </div>

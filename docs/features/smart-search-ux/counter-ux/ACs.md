@@ -27,6 +27,7 @@
 > | **Code review** | `Code review: {file}` | file:line refs (no screenshot needed) |
 >
 > **Rules:**
+>
 > - At least 50% of UI ACs must use screenshot-based methods.
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
@@ -56,7 +57,7 @@
 | AC-FN-5 | Acknowledgment tone — no physical verbs | Code review: `app/api/search/route.ts` `buildExtractionPrompt` | Instruction uses "I'd go with / I'd say try / personally I'd"; no "grab/pour/pick out/pull" in the instruction | PASS — `route.ts:132` `buildSystemPrompt` roleSection: "I'd go with", "I'd say try", "personally I'd", "if it were me"; explicitly lists banned verbs: "grab", "pour", "pick out", "pull". `buildExtractionPrompt` at line 178 repeats the opinion-framing rule in the acknowledgment instruction. | PASS — confirmed `route.ts:132` all four opinion phrases present; verbs listed as FORBIDDEN in instruction text (their presence is as a prohibition, not a command). | |
 | AC-FN-6 | Smart Search toggle in AI settings endpoint | Code review: `app/admin/settings/ai/page.tsx` | Page fetches `smartSearchEnabled` from `/api/admin/settings/ai-search` and saves back on toggle | PASS — `SmartSearchSection.tsx:35` fetches from `/api/admin/settings/ai-search`; line 47 sets `smartSearchEnabled` from response; line 92-104 `handleToggleSmartSearch` PUTs `{ smartSearchEnabled: next }` to same endpoint | PASS — confirmed `SmartSearchSection.tsx:35` fetch + line 92 PUT. | |
 | AC-FN-7 | AISearchSettingsSection removed from storefront | Code review: `app/admin/settings/storefront/page.tsx` | No import or render of `AISearchSettingsSection`; no reference to voice examples | PASS — `storefront/page.tsx` only imports `HeroSettingsSection` and `ProductMenuSettingsSection`. No `AISearchSettingsSection` import or render. | PASS — confirmed storefront/page.tsx imports only HeroSettingsSection + ProductMenuSettingsSection. File AISearchSettingsSection.tsx deleted. | |
-| AC-FN-8 | Nav active state fix | Code review: `AdminTopNav.tsx` `NavDropdown` | Active check uses pathname-based descendant matching, not `findRouteByHref` with empty parentId | PASS — `AdminTopNav.tsx:73-76` `NavDropdown` uses `useCurrentPathname()` + `item.children?.some(child => pathname === childPath || pathname.startsWith(childPath + "/"))` — pure pathname matching, no `findRouteByHref` | PASS — confirmed `AdminTopNav.tsx:68` `useCurrentPathname()` + lines 73-76 `pathname === childPath \|\| pathname.startsWith(childPath + "/")`. No findRouteByHref. | |
+| AC-FN-8 | Nav active state fix | Code review: `AdminTopNav.tsx` `NavDropdown` | Active check uses pathname-based descendant matching, not `findRouteByHref` with empty parentId | PASS — `AdminTopNav.tsx:73-76` `NavDropdown` uses `useCurrentPathname()` + `item.children?.some(child => pathname === childPath or pathname.startsWith(childPath + "/"))` — pure pathname matching, no `findRouteByHref` | PASS — confirmed `AdminTopNav.tsx:68` `useCurrentPathname()`; lines 73-76 check `pathname === childPath` or `pathname.startsWith(childPath + "/")`. No `findRouteByHref` anywhere in the function. | |
 
 ## Regression Acceptance Criteria
 
@@ -71,11 +72,12 @@
 
 ## Agent Notes
 
-**Iteration 1 — 2026-04-13**
+### Iteration 1 — 2026-04-13
 
 All 21 ACs verified. Overall: PASS.
 
 **Screenshots captured to `.screenshots/counter-ux/`:**
+
 - `01-02-07-counter-panel-open-390px.png` — Counter panel open at mobile 390px (title, full-width, placeholder)
 - `01-02-07-drawer-element.png` — element screenshot of drawer
 - `03-mobile-nav-hamburger-open.png` — mobile hamburger nav with Counter label
@@ -91,6 +93,7 @@ All 21 ACs verified. Overall: PASS.
 - `reg3-cart-drawer-390px.png` — cart drawer regression check
 
 **Key findings:**
+
 - AC-UI-2 confirmed programmatically: drawer.width=390px == viewport 390px (left=0, right=390)
 - AC-UI-6 confirmed programmatically: expanded "More" yields exactly 7 products (3 + 4 more)
 - AC-UI-12 confirmed via DOM inspection: "More" button has `bg-accent text-accent-foreground` classes = active state
@@ -99,11 +102,12 @@ All 21 ACs verified. Overall: PASS.
 
 ## QC Notes
 
-**2026-04-13 — Iteration 1**
+### 2026-04-13 — Iteration 1
 
 All 21 ACs confirmed PASS independently. No fixes needed. 0 iterations.
 
 Key QC observations:
+
 - AC-UI-2: Panel fills 390px edge-to-edge confirmed visually in screenshot (no gap on either side)
 - AC-UI-3: Mobile nav label is "COUNTER" (uppercase CSS styling) — correct, label value is "Counter" in code
 - AC-UI-12: Accent fill styling is subtle in screenshot; DOM class inspection (`bg-accent text-accent-foreground`) is definitive. Code logic at AdminTopNav.tsx:73-76 is also independently verified via grep.

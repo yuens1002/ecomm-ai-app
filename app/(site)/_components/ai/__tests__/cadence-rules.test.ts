@@ -5,7 +5,7 @@
  * The rules define when and how response elements render.
  */
 
-import type { ChatMessage, ProductSummary } from "@/stores/chat-panel-store";
+import type { ChatMessage, ProductSummary } from "@/lib/store/chat-panel-store";
 
 // ---------------------------------------------------------------------------
 // Helpers — replicate the cadence logic from MessageBubble

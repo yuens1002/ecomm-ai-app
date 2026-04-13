@@ -15,7 +15,7 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
-import { useChatPanelStore, type ChatMessage, type ProductSummary } from "@/stores/chat-panel-store";
+import { useChatPanelStore, type ChatMessage, type ProductSummary } from "@/lib/store/chat-panel-store";
 
 // ---------------------------------------------------------------------------
 // Types matching the /api/search response shape
@@ -399,7 +399,7 @@ function MessageBubble({
       {showFollowUp && (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground pl-5">{msg.followUpQuestion}</p>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 pl-5">
             {msg.followUps!.map((chip) => (
               <button
                 key={chip}

@@ -33,7 +33,7 @@ import { useNavOverflow } from "@/hooks/useNavOverflow";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
 import { ChevronDown, CircleUserRound, FileText, Home, LogIn, LogOut, Menu, MessageSquareDot, MoreHorizontal, PackageSearch, Search, User } from "lucide-react";
-import { useChatPanelStore } from "@/stores/chat-panel-store";
+import { useChatPanelStore } from "@/lib/store/chat-panel-store";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";

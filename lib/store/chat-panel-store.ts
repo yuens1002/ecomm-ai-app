@@ -83,7 +83,9 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
     try {
       const res = await fetch("/api/settings/voice-surfaces");
       if (res.ok) {
-        const surfaces = (await res.json()) as VoiceSurfaces;
+        const fetched = (await res.json()) as VoiceSurfaces;
+        // Merge with defaults so keys added after initial generation still have values
+        const surfaces = { ...DEFAULT_VOICE_SURFACES, ...fetched };
         set({ voiceSurfaces: surfaces, surfacesLoaded: true });
       }
     } catch {
