@@ -15,6 +15,9 @@ The search returns irrelevant products for natural language queries. The keyword
 **Conversation & context gaps:**
 The Smart Search Assistant treats each query as independent — no memory of prior turns. A customer asking "something fruity" then "you have a single origin?" expects "fruity single origin," but the AI starts fresh. Greetings don't update when navigating between pages, the input placeholder assumes coffee-only, and the search pipeline only works for coffee products.
 
+**Coffee domain knowledge (new goal for this iteration):**
+The system prompt teaches the AI the owner's voice and the JSON extraction format — but not coffee itself. Without domain knowledge, the AI can't bridge customer language to product attributes: "gift for my mom, something approachable" requires knowing that approachable → smooth/low-acid → Colombian or Brazilian → sort by top-rated. A counter person knows this intuitively; the AI has to be taught it explicitly. A coffee knowledge section in `buildSystemPrompt` should cover: roast level ↔ flavor/body/acidity relationships; origin ↔ flavor profile (Ethiopia = floral/blueberry, Kenya = juicy/wine-like, Sumatra = earthy/full-body); brew method ↔ roast pairing; experiential terms mapped to attributes (approachable, beginner, gift → smooth, medium roast, top-rated); processing method flavor signatures (washed = clean/bright, natural = fruity/winey). This is distinct from voice — voice examples teach personality, domain knowledge teaches expertise.
+
 **Voice cohesion (new goal for this iteration):**
 The five Q&A voice examples function as a single cohesive voice profile — the AI reads all five together to build its model of the owner's tone, vocabulary, and rhythm. If the answers are inconsistent (some formal, some casual, some terse), the AI's output blends those styles into something incoherent. The current per-field auto-save UI doesn't communicate this — each answer feels like an independent setting, not a coordinated whole. Admins have no feedback loop: they save an answer and have no idea what voice it produces until a customer queries the live store.
 
@@ -38,9 +41,10 @@ The primary goal of commit 10 ("admin two-part textarea — voice answer + AI pr
 | 7 | `feat: context-aware input placeholder` | ChatPanel.tsx, store | Low |
 | 8 | `feat: greeting personality — salutation opener` | ChatPanel.tsx, voice-surfaces | Low |
 | 9 | `feat: product-type-aware search extraction` | route.ts, extraction prompt | Medium |
-| 10 | `feat: admin two-part textarea — voice answer + AI preview` | AISearchSettingsSection.tsx | Medium |
-| 11 | `feat: pgvector semantic search — platform value-add with per-store feature flag` | prisma, route.ts, admin UI | High |
-| 12 | `test: search quality + conversation context tests` | tests | Low |
+| 10 | `feat: coffee domain knowledge in system prompt — roast/origin/brew/experiential mappings` | route.ts buildSystemPrompt | Low |
+| 11 | `feat: admin two-part textarea — voice answer + AI preview` | AISearchSettingsSection.tsx | Medium |
+| 12 | `feat: pgvector semantic search — platform value-add with per-store feature flag` | prisma, route.ts, admin UI | High |
+| 13 | `test: search quality + conversation context tests` | tests | Low |
 
 ---
 
@@ -56,7 +60,8 @@ The primary goal of commit 10 ("admin two-part textarea — voice answer + AI pr
 | AC-UI-4 | Greeting opens with personality salutation | Screenshot: panel greeting on homepage | Greeting starts with a warm opener (from salutation surface) before the discovery prompt |
 | AC-UI-5 | Conversation memory — follow-up narrows prior context | Interactive: "something fruity" → "single origin?" | Second response understands "fruity single origin" — returns fruity single-origin coffees |
 | AC-UI-6 | Admin two-part textarea — answer + AI preview | Screenshot: admin AI settings | Each Q&A shows editable answer on top, read-only AI-generated surface below, with regen/reset buttons |
-| AC-UI-7 | Non-coffee query returns relevant products (any type) | Interactive: "do you have mugs?" on homepage | Returns merch products matching the query, not coffee — extraction pipeline product-type-aware |
+| AC-UI-7 | Domain-aware intent resolution | Interactive: "looking for a gift for my mom, something approachable" | Returns smooth/balanced coffees (not zero results); follow-up chips use recipient context ("She loves bold" / "Something smooth") not generic roast labels |
+| AC-UI-7b | Non-coffee query returns relevant products (any type) | Interactive: "do you have mugs?" on homepage | Returns merch products matching the query, not coffee — extraction pipeline product-type-aware |
 | AC-UI-8 | Follow-up chips never lead to zero results | Interactive: click each chip returned by AI | Every chip click returns at least 1 product — no "nothing matches" after chip narrowing |
 | AC-UI-9 | Empty results show owner-voiced recovery — no secondary indicator | Interactive: query guaranteed to return 0 products | Single acknowledgment bubble in owner's voice ("I'm not sure we have that — could you tell me more about..."), no hardcoded "nothing quite lining up" below |
 | AC-UI-10 | Admin toggle to enable/disable semantic search (pgvector) | Screenshot: admin Smart Search Assistant settings | Toggle switch labeled clearly ("Semantic search" or similar), with helper text explaining the tradeoff (better relevance vs. embedding API cost) |
