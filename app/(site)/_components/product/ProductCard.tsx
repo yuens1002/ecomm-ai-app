@@ -112,7 +112,7 @@ export default function ProductCard({
         )}
       >
         {/* 1. Image container. The parent <Card> clips its top corners. */}
-        <CardHeader className="relative w-full aspect-square rounded-t-lg p-0 overflow-hidden">
+        <CardHeader className="relative w-full aspect-[2/1] md:aspect-square rounded-t-lg p-0 overflow-hidden">
           <Image
             src={displayImage}
             alt={altText}
