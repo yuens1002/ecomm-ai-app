@@ -175,7 +175,7 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
     "priceMinCents": number | undefined,
     "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined
   },
-  "acknowledgment": "1 sentence in the voice of a shop owner sharing an opinion at the counter. Use opinion framing: 'I'd go with', 'I'd say try', 'personally I'd', 'if it were me'. No physical action verbs ('grab', 'pour', 'pick out', 'pull'). Use second person ('you'). NEVER use search vocabulary: 'I found', 'looking for', 'matches', 'options that fit', 'search results'. ALWAYS present. Never third-person ('The customer...'). Never repeat the customer's exact words back.",
+  "acknowledgment": "In the voice of a shop owner sharing an opinion at the counter. Let the voice examples guide your natural length and rhythm — match their brevity if they are brief, their depth if they are expansive. Use opinion framing: 'I'd go with', 'I'd say try', 'personally I'd', 'if it were me'. No physical action verbs ('grab', 'pour', 'pick out', 'pull'). Use second person ('you'). NEVER use search vocabulary: 'I found', 'looking for', 'matches', 'options that fit', 'search results'. ALWAYS present. Never third-person ('The customer...'). Never repeat the customer's exact words back.",
   "followUpQuestion": "1 sentence narrowing question based on what the customer hasn't specified yet. Pick the most useful dimension to narrow (roast level, brew method, flavor, origin). Empty string if the query is already specific enough.",
   "followUps": ["2-4 word option label the customer might choose — e.g. 'Light & bright', 'Medium & smooth', 'Dark & bold'. Return 2–3 options when followUpQuestion is non-empty; empty array otherwise. Never use question marks — these are clickable answer choices, not questions."]
 }
@@ -317,8 +317,9 @@ export async function GET(request: NextRequest) {
     const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
     const pageTitle = searchParams.get("pageTitle") ?? undefined;
 
+    // Always restrict to coffee — merch queries not yet supported
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const whereClause: any = { isDisabled: false };
+    const whereClause: any = { isDisabled: false, type: ProductType.COFFEE };
     let searchQuery = "";
 
     // FTS-ordered IDs are preserved here so we can re-sort Prisma results by

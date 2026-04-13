@@ -425,8 +425,11 @@ function ProductCard({ product }: { product: ProductSummary }) {
   const close = useChatPanelStore((s) => s.close);
 
   const isCoffee = product.productType === "COFFEE" || !!product.roastLevel;
+  const roastLabel = product.roastLevel
+    ? product.roastLevel.charAt(0).toUpperCase() + product.roastLevel.slice(1).toLowerCase() + " roast"
+    : null;
   const secondLine = isCoffee
-    ? [product.roastLevel, product.tastingNotes.join(", ")].filter(Boolean).join(" — ")
+    ? [roastLabel, product.tastingNotes.join(", ")].filter(Boolean).join(" — ")
     : (product.description?.slice(0, 60) ?? null);
 
   return (
