@@ -403,7 +403,7 @@ describe("GET /api/search — voice persona injection (TST-1)", () => {
     expect(systemMessage?.content).toContain(persona);
   });
 
-  it("uses default system prompt when aiVoicePersona is empty", async () => {
+  it("uses default voice examples in system prompt when no custom examples stored", async () => {
     getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
 
     const request = new NextRequest(
@@ -413,7 +413,9 @@ describe("GET /api/search — voice persona injection (TST-1)", () => {
 
     const callArgs = chatCompletionMock.mock.calls[0][0] as { messages: Array<{ role: string; content: string }> };
     const systemMessage = callArgs.messages.find((m) => m.role === "system");
-    expect(systemMessage?.content).toContain("knowledgeable coffee shop assistant");
+    // Falls back to DEFAULT_VOICE_EXAMPLES — few-shot Q&A pairs in system prompt
+    expect(systemMessage?.content).toContain("What should I try first?");
+    expect(systemMessage?.content).toContain("Hawaiian Kona");
   });
 });
 
@@ -536,7 +538,7 @@ describe("GET /api/search — type=COFFEE lock (BUG-1)", () => {
   });
 
   // AC-TST-2
-  it("does NOT set type when AI extracts no coffee-specific filters", async () => {
+  it("always sets type=COFFEE even when AI extracts no coffee-specific filters", async () => {
     baseSetup();
     chatCompletionMock.mockResolvedValue(aiResponse({}));
 
@@ -546,7 +548,7 @@ describe("GET /api/search — type=COFFEE lock (BUG-1)", () => {
     await GET(request);
 
     const call = productFindManyMock.mock.calls[0][0] as { where: Record<string, unknown> };
-    expect(call.where.type).toBeUndefined();
+    expect(call.where.type).toBe("COFFEE");
   });
 
   it("sets type=COFFEE when AI extracts isOrganic only (no roastLevel)", async () => {
@@ -737,7 +739,7 @@ describe("GET /api/search — prompt quality constraints (BUG-4, BUG-5)", () => 
       messages: Array<{ role: string; content: string }>;
     };
     const userMessage = callArgs.messages.find((m) => m.role === "user");
-    expect(userMessage?.content).toContain("2-4 word option label");
+    expect(userMessage?.content).toContain("2-4 word clickable answer");
     expect(userMessage?.content).toContain("Never use question marks");
   });
 });

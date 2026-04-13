@@ -1,4 +1,4 @@
-import { getCategoryLabels } from "@/lib/data";
+import { getCategoryLabels, getPublicSiteSettings } from "@/lib/data";
 import { auth } from "@/auth";
 import SiteHeader from "@/app/(site)/_components/layout/SiteHeader";
 import { getPagesForHeader } from "@/app/actions";
@@ -14,7 +14,7 @@ import { isAIConfigured } from "@/lib/ai-client";
  */
 export default async function SiteHeaderWrapper() {
   // Fetch all data for the navigation menu in parallel
-  const [labels, session, headerPages, productMenuSettings, siteMetadata, aiConfigured] =
+  const [labels, session, headerPages, productMenuSettings, siteMetadata, aiConfigured, siteSettings] =
     await Promise.all([
       getCategoryLabels(),
       auth(),
@@ -22,7 +22,9 @@ export default async function SiteHeaderWrapper() {
       getProductMenuSettings(),
       getSiteMetadata(),
       isAIConfigured(),
+      getPublicSiteSettings(),
     ]);
+  const smartSearchActive = aiConfigured && siteSettings.smartSearchEnabled;
 
   // Handle case where no categories are found (e.g., first deployment/empty DB)
   if (!labels || labels.length === 0) {
@@ -34,7 +36,7 @@ export default async function SiteHeaderWrapper() {
         productMenuIcon={productMenuSettings.icon}
         productMenuText={productMenuSettings.text}
         storeName={siteMetadata.storeName}
-        aiConfigured={aiConfigured}
+        aiConfigured={smartSearchActive}
       />
     );
   }
@@ -77,7 +79,7 @@ export default async function SiteHeaderWrapper() {
       productMenuIcon={productMenuSettings.icon}
       productMenuText={productMenuSettings.text}
       storeName={siteMetadata.storeName}
-      aiConfigured={aiConfigured}
+      aiConfigured={smartSearchActive}
     />
   );
 }

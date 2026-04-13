@@ -15,7 +15,7 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
-import { useChatPanelStore, type ChatMessage, type ProductSummary } from "@/stores/chat-panel-store";
+import { useChatPanelStore, type ChatMessage, type ProductSummary } from "@/lib/store/chat-panel-store";
 
 // ---------------------------------------------------------------------------
 // Types matching the /api/search response shape
@@ -25,6 +25,10 @@ interface SearchProduct {
   id: string;
   name: string;
   slug: string;
+  type: "COFFEE" | "MERCH";
+  roastLevel: string | null;
+  tastingNotes: string[];
+  description: string | null;
   categories: Array<{ category: { name: string; slug: string } }>;
   variants: Array<{
     images: Array<{ url: string; altText: string | null }>;
@@ -35,6 +39,8 @@ interface SearchProduct {
 interface SearchResponse {
   products: SearchProduct[];
   explanation: string | null;
+  acknowledgment: string | null;
+  followUpQuestion: string | null;
   followUps: string[];
   intent: string | null;
   aiFailed?: boolean;
@@ -46,20 +52,17 @@ interface SearchResponse {
 
 function mapProduct(p: SearchProduct): ProductSummary {
   const firstVariant = p.variants[0];
-  const oneTime = firstVariant?.purchaseOptions.find((o) => o.type === "ONE_TIME");
-  const anyOption = firstVariant?.purchaseOptions[0];
   return {
     id: p.id,
     name: p.name,
     slug: p.slug,
-    priceInCents: oneTime?.priceInCents ?? anyOption?.priceInCents ?? null,
     imageUrl: firstVariant?.images[0]?.url || getPlaceholderImage(p.name, 400),
     categorySlug: p.categories[0]?.category.slug ?? null,
+    productType: p.type ?? null,
+    roastLevel: p.roastLevel ?? null,
+    tastingNotes: p.tastingNotes ?? [],
+    description: p.description ?? null,
   };
-}
-
-function formatPrice(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
 }
 
 function prettifyPathname(pathname: string): string {
@@ -70,8 +73,6 @@ function prettifyPathname(pathname: string): string {
 }
 
 const GREETING_ID = "panel-greeting";
-const GREETING =
-  "What are you in the mood for? Tell me how you like to brew, what flavors you enjoy, or just ask — I'm here to help you find the perfect coffee.";
 
 // ---------------------------------------------------------------------------
 // Inner panel content
@@ -83,9 +84,11 @@ function PanelContent() {
     messages,
     pageContext,
     isLoading,
+    voiceSurfaces,
     addMessage,
     updateLastMessage,
     setLoading,
+    loadSurfaces,
   } = useChatPanelStore();
   const pathname = usePathname();
   const [input, setInput] = useState("");
@@ -96,16 +99,45 @@ function PanelContent() {
 
   const contextTitle = pageContext?.title ?? prettifyPathname(pathname);
 
+  // Detect page type from pathname for context-aware greetings
+  const getContextGreeting = (): string => {
+    const surfaces = useChatPanelStore.getState().voiceSurfaces;
+    // Product page: /products/<slug>
+    const productMatch = pathname.match(/^\/products\/([^/]+)$/);
+    if (productMatch) {
+      const productName = prettifyPathname(`/${productMatch[1]}`);
+      return surfaces["greeting.product"].replace("{product}", productName);
+    }
+    // Category page: /categories/<slug> or /coffee, /merch, etc.
+    const categoryMatch = pathname.match(/^\/categor(?:y|ies)\/([^/]+)$/);
+    if (categoryMatch) {
+      const categoryName = prettifyPathname(`/${categoryMatch[1]}`);
+      return surfaces["greeting.category"].replace("{category}", categoryName);
+    }
+    // Homepage or other pages — open-ended greeting
+    return surfaces["greeting.home"];
+  };
+
+  // Load voice surfaces on first open
+  useEffect(() => {
+    if (isOpen) void loadSurfaces();
+  }, [isOpen, loadSurfaces]);
+
   // Add opening greeting the first time the panel opens with no messages
   useEffect(() => {
     if (isOpen && !hasGreeted.current) {
       hasGreeted.current = true;
-      const current = useChatPanelStore.getState().messages;
-      if (current.length === 0) {
-        addMessage({ id: GREETING_ID, role: "assistant", content: GREETING, isLoading: false });
+      const state = useChatPanelStore.getState();
+      if (state.messages.length === 0) {
+        addMessage({
+          id: GREETING_ID,
+          role: "assistant",
+          content: getContextGreeting(),
+          isLoading: false,
+        });
       }
     }
-  }, [isOpen, addMessage]);
+  }, [isOpen, addMessage, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -115,6 +147,24 @@ function PanelContent() {
       });
     }
   }, [messages, isOpen]);
+
+  // Scroll to bottom when mobile keyboard opens/closes (visual viewport resize)
+  useEffect(() => {
+    if (!isOpen) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+      });
+    };
+    vv.addEventListener("resize", onResize);
+    vv.addEventListener("scroll", onResize);
+    return () => {
+      vv.removeEventListener("resize", onResize);
+      vv.removeEventListener("scroll", onResize);
+    };
+  }, [isOpen]);
 
   // Focus input when panel opens
   useEffect(() => {
@@ -144,7 +194,7 @@ function PanelContent() {
         sessionId: sessionId.current,
         turnCount: String(turnCount),
       });
-      if (contextTitle) {
+      if (contextTitle && contextTitle !== "Home") {
         params.set("pageTitle", contextTitle);
       }
       const res = await fetch(`/api/search?${params.toString()}`);
@@ -153,25 +203,29 @@ function PanelContent() {
       const products = data.aiFailed ? [] : (data.products ?? []).map(mapProduct);
       const hasProducts = products.length > 0;
 
-      // Determine response content — never go silent
-      let content = data.explanation || "";
+      // Determine response content — never go silent. Uses voice surfaces
+      // (owner's voice) for recovery messages.
+      let content = data.acknowledgment || data.explanation || "";
       if (!content && data.aiFailed) {
-        content = "Ah sorry, I spaced out for a sec — what were you looking for again?";
+        content = voiceSurfaces.aiFailed;
       } else if (!content && !hasProducts) {
-        content = "Hmm, I'm not sure we have exactly what you're after — could you tell me more about how you like your coffee?";
+        content = voiceSurfaces.noResults;
       }
 
       updateLastMessage({
         id: assistantMsgId,
         content,
+        acknowledgment: data.acknowledgment ?? undefined,
+        followUpQuestion: data.followUpQuestion ?? undefined,
         products,
+        // Cadence rule: follow-ups only shown when >3 products (enforced in render)
         followUps: data.followUps ?? [],
         isLoading: false,
       });
     } catch {
       updateLastMessage({
         id: assistantMsgId,
-        content: "Something went wrong — please try again.",
+        content: voiceSurfaces.error,
         isLoading: false,
       });
     } finally {
@@ -208,7 +262,7 @@ function PanelContent() {
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about our coffee…"
+            placeholder={voiceSurfaces.placeholder}
             disabled={isLoading}
             className="text-sm h-9 rounded-full bg-muted/40 border-muted-foreground/20 focus-visible:bg-background pr-11"
           />
@@ -261,20 +315,31 @@ function MessageBubble({
     );
   }
 
-  // Assistant loading
+  // Assistant loading — animated waiting filler from voice surfaces
   if (msg.isLoading) {
+    const waitingText = useChatPanelStore.getState().voiceSurfaces.waiting;
     return (
-      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-        <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
-        <span className="text-xs">Searching…</span>
+      <div className="flex items-start gap-2 text-muted-foreground text-sm">
+        <MessageSquareDot className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary/50" />
+        <span className="text-xs">
+          {waitingText}
+          <span className="waiting-dots" />
+        </span>
       </div>
     );
   }
 
-  const isGreeting = msg.id === GREETING_ID;
   const hasProducts = msg.products && msg.products.length > 0;
-  const hasFollowUps = msg.followUps && msg.followUps.length > 0;
+  const productCount = msg.products?.length ?? 0;
   const hasContent = !!msg.content;
+
+  // Cadence rules (deterministic, code-enforced):
+  // 1. Acknowledgment always first
+  // 2. Products after acknowledgment
+  // 3. Follow-up question + chips ONLY when products > 3
+  // 4. Chips only alongside a follow-up question
+  const showFollowUp =
+    productCount > 3 && !!msg.followUpQuestion && msg.followUps && msg.followUps.length > 0;
 
   const visibleProducts = hasProducts
     ? showAll
@@ -285,7 +350,7 @@ function MessageBubble({
 
   return (
     <div className="space-y-2.5">
-      {/* Explanation */}
+      {/* 1. Acknowledgment (always first when present) */}
       {hasContent && (
         <div className="flex items-start gap-2">
           <MessageSquareDot className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary/50" />
@@ -293,7 +358,7 @@ function MessageBubble({
         </div>
       )}
 
-      {/* Product cards — individual bordered cards; More/Less overlays the last card's bottom border */}
+      {/* 2. Product cards after acknowledgment */}
       {hasProducts && (
         <div className={extraCount > 0 ? "relative pb-3" : ""}>
           <div className="space-y-1.5">
@@ -319,26 +384,22 @@ function MessageBubble({
         </div>
       )}
 
-      {/* No results — suppressed when follow-ups exist */}
-      {!hasProducts && !msg.isLoading && !isGreeting && hasContent && !hasFollowUps && (
-        <p className="text-xs text-muted-foreground pl-5">
-          Hmm, nothing quite lining up — tell me a bit more about what you like?
-        </p>
-      )}
-
-      {/* Follow-up chips */}
-      {hasFollowUps && (
-        <div className="flex flex-wrap gap-1.5">
-          {msg.followUps!.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              onClick={() => onChipClick(chip)}
-              className="text-xs px-3 py-1.5 rounded-full border border-border/60 hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-colors text-primary"
-            >
-              {chip}
-            </button>
-          ))}
+      {/* 3. Follow-up question + chips (only when products > 3) */}
+      {showFollowUp && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground pl-5">{msg.followUpQuestion}</p>
+          <div className="flex flex-wrap gap-1.5 pl-5">
+            {msg.followUps!.map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => onChipClick(chip)}
+                className="text-xs px-3 py-1.5 rounded-full border border-primary/40 hover:bg-primary/10 hover:border-primary/70 transition-colors text-primary"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -350,9 +411,20 @@ function MessageBubble({
 // ---------------------------------------------------------------------------
 
 function ProductCard({ product }: { product: ProductSummary }) {
+  const close = useChatPanelStore((s) => s.close);
+
+  const isCoffee = product.productType === "COFFEE" || !!product.roastLevel;
+  const roastLabel = product.roastLevel
+    ? product.roastLevel.charAt(0).toUpperCase() + product.roastLevel.slice(1).toLowerCase() + " roast"
+    : null;
+  const secondLine = isCoffee
+    ? [roastLabel, product.tastingNotes.join(", ")].filter(Boolean).join(" — ")
+    : (product.description?.slice(0, 60) ?? null);
+
   return (
     <Link
       href={`/products/${product.slug}`}
+      onClick={close}
       className="flex items-center gap-2.5 rounded-xl border border-border/50 p-2.5 hover:bg-accent hover:border-border transition-colors group"
     >
       <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
@@ -361,6 +433,7 @@ function ProductCard({ product }: { product: ProductSummary }) {
             src={product.imageUrl}
             alt={product.name}
             fill
+            sizes="40px"
             className="object-cover"
           />
         )}
@@ -369,8 +442,8 @@ function ProductCard({ product }: { product: ProductSummary }) {
         <p className="text-xs font-medium truncate group-hover:text-primary transition-colors">
           {product.name}
         </p>
-        {product.priceInCents !== null && (
-          <p className="text-xs text-muted-foreground">{formatPrice(product.priceInCents)}</p>
+        {secondLine && (
+          <p className="text-xs text-muted-foreground truncate">{secondLine}</p>
         )}
       </div>
     </Link>
@@ -384,6 +457,23 @@ function ProductCard({ product }: { product: ProductSummary }) {
 export function ChatPanel() {
   const { isOpen, close, open, clearMessages, addMessage } = useChatPanelStore();
   const bodyCleanupRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
+  // Track visual viewport height so the drawer doesn't get obscured by the mobile keyboard
+  useEffect(() => {
+    if (!isOpen) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => setViewportHeight(vv.height);
+    onResize();
+    vv.addEventListener("resize", onResize);
+    vv.addEventListener("scroll", onResize);
+    return () => {
+      vv.removeEventListener("resize", onResize);
+      vv.removeEventListener("scroll", onResize);
+      setViewportHeight(null);
+    };
+  }, [isOpen]);
 
   // Lock #site-scroll when drawer is open and clean up stale vaul body styles on close.
   useEffect(() => {
@@ -414,7 +504,13 @@ export function ChatPanel() {
 
   const handleReset = () => {
     clearMessages();
-    addMessage({ id: GREETING_ID, role: "assistant", content: GREETING, isLoading: false });
+    const surfaces = useChatPanelStore.getState().voiceSurfaces;
+    addMessage({
+      id: GREETING_ID,
+      role: "assistant",
+      content: surfaces["greeting.home"],
+      isLoading: false,
+    });
   };
 
   return (
@@ -426,15 +522,18 @@ export function ChatPanel() {
       direction="right"
       shouldScaleBackground={false}
     >
-      <DrawerContent className="inset-y-0 right-0 left-auto h-full w-[85vw] sm:w-[min(25vw,360px)] rounded-none border-l border-t-0 border-b-0 focus:outline-none">
+      <DrawerContent
+        className="inset-y-0 right-0 left-auto h-full w-full sm:w-[min(25vw,360px)] rounded-none border-l border-t-0 border-b-0 focus:outline-none"
+        style={viewportHeight ? { height: `${viewportHeight}px` } : undefined}
+      >
         {/* Header row — title left, reset + close right */}
         <div className="shrink-0 px-4 py-2 flex items-center gap-2">
           <MessageSquareDot className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
           <DrawerTitle className="flex-1 text-sm font-medium">
-            Product Search
+            Counter
           </DrawerTitle>
           <DrawerDescription className="sr-only">
-            Search and discover products with AI assistance
+            Chat about our products and get personalized recommendations
           </DrawerDescription>
           <Button
             variant="ghost"

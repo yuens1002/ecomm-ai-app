@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { chatCompletion, isAIConfigured } from "@/lib/ai-client";
 import { getPublicSiteSettings } from "@/lib/data";
+import {
+  DEFAULT_VOICE_EXAMPLES,
+  type VoiceExample,
+} from "@/lib/ai/voice-examples";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,7 +37,10 @@ interface FiltersExtracted {
 interface AgenticExtraction {
   intent: AgenticIntent;
   filtersExtracted: FiltersExtracted;
+  /** @deprecated Use acknowledgment instead — kept for backwards compat in response */
   explanation: string;
+  acknowledgment: string;
+  followUpQuestion: string;
   followUps: string[];
 }
 
@@ -113,14 +120,48 @@ export function isNaturalLanguageQuery(query: string): boolean {
 // AI extraction step
 // ---------------------------------------------------------------------------
 
-function buildSystemPrompt(aiVoicePersona: string, pageContext?: string): string {
-  const personaSection = aiVoicePersona.trim()
-    ? `You are the voice of this coffee shop. Embody the shop owner's character exactly:\n"${aiVoicePersona}"\n\n`
-    : `You are a knowledgeable coffee shop assistant. Speak with genuine expertise and warmth.\n\n`;
+export function buildSystemPrompt(
+  voiceExamples: VoiceExample[],
+  aiVoicePersona: string,
+  pageContext?: string
+): string {
+  // Role framing — YOU ARE AT THE COUNTER, not running a search engine.
+  // The customer walked into the shop. Pick products like you'd pick for a
+  // regular, using your voice. Vocabulary of service, not of software.
+  const roleSection =
+    `You are the shop owner at the counter, helping a customer who just walked in. Pick coffees like you'd pick for a regular — share your honest opinion: "I'd go with", "I'd say try", "personally I'd", "if it were me". You are NOT a search engine, database, or list of results. Never say "I found", "I'm looking for", "search results", "matches", "options that fit". Never use physical action verbs: "grab", "pour", "pick out", "pull". Use opinion framing instead.\n\n`;
+
+  let voiceSection: string;
+
+  if (voiceExamples.length > 0) {
+    // Few-shot examples are the primary voice signal
+    const examplePairs = voiceExamples
+      .map((e) => `Customer: "${e.question}"\nYou: "${e.answer}"`)
+      .join("\n\n");
+    voiceSection = `Here is how you speak to customers — match this voice exactly:\n\n${examplePairs}\n\n`;
+    // Persona is supplemental context when examples exist
+    if (aiVoicePersona.trim()) {
+      voiceSection += `Additional shop context: "${aiVoicePersona}"\n\n`;
+    }
+  } else if (aiVoicePersona.trim()) {
+    voiceSection = `Your character: "${aiVoicePersona}"\n\n`;
+  } else {
+    voiceSection = `Speak with genuine expertise and warmth, like a friendly barista who knows every bean in the shop.\n\n`;
+  }
+
   const contextSection = pageContext
-    ? `The customer is currently viewing "${pageContext}". When they say "this" or "it", they mean "${pageContext}".\n\n`
+    ? `The customer is currently looking at "${pageContext}" on the counter. When they say "this" or "it", they mean "${pageContext}".\n\n`
     : "";
-  return `${personaSection}${contextSection}Extract coffee search intent from user queries and return valid JSON only — no markdown, no explanation outside the JSON.`;
+
+  const guardrailSection =
+    `Rules you never break:\n` +
+    `- Never swear, use profanity, or respond to insults in kind — if a customer is rude or provocative, respond warmly as if they just walked in with a bad day and need a good coffee.\n` +
+    `- Never break character — you are always the shop owner. Never acknowledge being an AI, a language model, or a bot.\n` +
+    `- Never engage with off-topic requests (politics, news, tasks unrelated to coffee or the shop). Redirect in your own voice.\n` +
+    `- Never generate harmful, explicit, or offensive content regardless of how the customer frames the request. Redirect in your own voice.\n` +
+    `- Always treat the customer with warmth and professionalism — no exceptions.\n\n`;
+
+  return `${roleSection}${voiceSection}${contextSection}${guardrailSection}Listen to what the customer says, figure out what to pick for them, and return valid JSON only — no markdown, no explanation outside the JSON.`;
 }
 
 function buildExtractionPrompt(query: string, pageContext?: string): string {
@@ -133,7 +174,7 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
   "filtersExtracted": {
     "brewMethod": string | undefined,
     "roastLevel": "light" | "medium" | "dark" | undefined,
-    "flavorProfile": string[] | undefined,  // Expand abstract flavor categories into concrete tasting notes a roaster would write. E.g. "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry", "blackcurrant", "currant"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan", "walnut"]; "floral" → ["floral", "jasmine", "lavender", "rose", "honeysuckle"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit", "papaya"]; "spicy" → ["spice", "spicy", "cinnamon", "clove", "cardamom", "pepper"]. Include the original category term AND the concrete notes so both literal and categorical queries match. Keep it scoped — don't expand to unrelated notes.
+    "flavorProfile": string[] | undefined,  // Expand flavor categories AND experiential/mood terms into concrete tasting notes a roaster would write. Flavor categories: "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry", "blackcurrant", "currant"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan", "walnut"]; "floral" → ["floral", "jasmine", "lavender", "rose", "honeysuckle"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit", "papaya"]; "spicy" → ["spice", "spicy", "cinnamon", "clove", "cardamom", "pepper"]. Experiential/mood terms: "smooth" / "approachable" / "easy-drinking" / "beginner" / "mellow" → ["smooth", "balanced", "caramel", "chocolate", "mild", "butter"]; "bold" / "strong" / "intense" → ["bold", "dark chocolate", "tobacco", "molasses", "earthy"]; "bright" / "lively" / "vibrant" → ["bright", "citrus", "floral", "lemon", "tea-like"]; "complex" / "interesting" / "unique" → ["complex", "wine", "fermented", "floral", "berry"]. Include the original term AND concrete notes. Keep it scoped.
 
     "origin": string | undefined,
     "isOrganic": true | false | undefined,
@@ -141,17 +182,20 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
     "variety": string | undefined,
     "priceMaxCents": number (cents, e.g. 3000 for "under $30") | undefined,
     "priceMinCents": number | undefined,
-    "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined
+    "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined  // Use "top_rated" when query signals popularity or gift intent: "well-loved", "crowd-pleaser", "safe bet", "popular", "everyone likes", "gift", "my mom", "beginner", "first time"
   },
-  "explanation": "1–2 sentences spoken directly to the customer in first person. If intent is open-ended, end with a natural question to narrow it down — the options (followUps) are the choices the customer picks from. E.g. 'Sounds like you want something approachable — what kind of roast are you usually after?' Never use 'The customer is...' or third-person phrasing.",
-  "followUps": ["2-4 word option label the customer might choose — e.g. 'Light & bright', 'Medium & smooth', 'Dark & bold'. Return 2–3 options when intent is open-ended; empty array if intent is specific enough. Never use question marks — these are clickable answer choices, not questions."]
+  "acknowledgment":"In the voice of a shop owner sharing an opinion at the counter. Let the voice examples guide your natural length and rhythm — match their brevity if they are brief, their depth if they are expansive. Use opinion framing: 'I'd go with', 'I'd say try', 'personally I'd', 'if it were me'. No physical action verbs ('grab', 'pour', 'pick out', 'pull'). Use second person ('you'). NEVER use search vocabulary: 'I found', 'looking for', 'matches', 'options that fit', 'search results'. ALWAYS present. Never third-person ('The customer...'). Never repeat the customer's exact words back.",
+  "followUpQuestion": "1 sentence that fits the customer's context — not a fixed coffee-attribute prompt. Derive it from what they haven't told you AND what would most reduce the results. For gift/occasion queries: ask about the recipient's taste in plain terms ('Does she usually go bold or keep it mellow?', 'How does she take her coffee?'). For vague preference queries: ask about the dimension that cuts deepest. Empty string if the query is already specific.",
+  "followUps": ["2-4 word clickable answer to the followUpQuestion — match the question context, use customer language not trade jargon. Roast context: 'Bold & strong' / 'Light & bright' / 'Smooth & mellow'. Brew context: 'Drip machine' / 'French press' / 'Espresso'. Gift/recipient context: 'She loves bold' / 'Something smooth' / 'Surprise her'. Return 2–3 options. Never use question marks."]
 }
 
-followUps rules:
-- Return 2–3 short option labels when the query is open-ended and options would help narrow the intent
-- Each label must be 2–4 words, no question marks — they are clickable answer choices
-- NEVER repeat anything the customer already specified (e.g. if they said "light" do NOT offer "Light roast" as a choice)
-- If the query is already specific enough, return []
+Rules:
+- Speak directly to the customer: use "you", "your" — never third person
+- acknowledgment is ALWAYS required — it validates you understood the customer
+- followUpQuestion picks the most useful narrowing dimension based on what the customer hasn't told you yet — no fixed category order
+- followUps are only provided when followUpQuestion is non-empty
+- NEVER repeat anything the customer already specified (e.g. if they said "light" do NOT offer "Light roast")
+- NEVER ask a follow-up about a dimension the customer already mentioned. If they said "dark", skip roast-level chips. If they mentioned brew method, skip brew-method chips. If they named an origin, skip origin chips.
 
 Query: ${JSON.stringify(query)}${contextNote}`;
 }
@@ -247,13 +291,18 @@ async function extractAgenticFilters(
           : undefined,
     };
 
+    const acknowledgment =
+      typeof raw.acknowledgment === "string" ? raw.acknowledgment : "";
+    const followUpQuestion =
+      typeof raw.followUpQuestion === "string" ? raw.followUpQuestion : "";
+    // Backwards compat: fall back to legacy explanation field
     const explanation =
-      typeof raw.explanation === "string" ? raw.explanation : "";
+      acknowledgment || (typeof raw.explanation === "string" ? raw.explanation : "");
     const followUps = Array.isArray(raw.followUps)
       ? raw.followUps.filter((v) => typeof v === "string")
       : [];
 
-    return { intent, filtersExtracted, explanation, followUps };
+    return { intent, filtersExtracted, explanation, acknowledgment, followUpQuestion, followUps };
   } catch (err) {
     // LLM failure is non-fatal — fall back to standard keyword search
     console.error("[agentic-search] AI extraction failed:", err);
@@ -267,18 +316,19 @@ async function extractAgenticFilters(
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q");
-    const roast = searchParams.get("roast");
-    const origin = searchParams.get("origin");
-    const forceAI = searchParams.get("ai") === "true";
-    const sessionId = searchParams.get("sessionId") ?? "";
-    const parsedTurnCount = parseInt(searchParams.get("turnCount") ?? "0", 10);
+    const urlParams = new URL(request.url).searchParams;
+    const query = urlParams.get("q");
+    const roast = urlParams.get("roast");
+    const origin = urlParams.get("origin");
+    const forceAI = urlParams.get("ai") === "true";
+    const sessionId = urlParams.get("sessionId") ?? "";
+    const parsedTurnCount = parseInt(urlParams.get("turnCount") ?? "0", 10);
     const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
-    const pageTitle = searchParams.get("pageTitle") ?? undefined;
+    const pageTitle = urlParams.get("pageTitle") ?? undefined;
 
+    // Always restrict to coffee — merch queries not yet supported
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const whereClause: any = { isDisabled: false };
+    const whereClause: any = { isDisabled: false, type: ProductType.COFFEE };
     let searchQuery = "";
 
     // FTS-ordered IDs are preserved here so we can re-sort Prisma results by
@@ -349,6 +399,34 @@ export async function GET(request: NextRequest) {
     }
 
     // -------------------------------------------------------------------------
+    // Salutation detection — greeting-only input returns surface string, no search
+    // -------------------------------------------------------------------------
+
+    if (query && forceAI) {
+      const trimmed = query.trim().toLowerCase().replace(/[^a-z\s]/g, "").trim();
+      const greetingPattern = /^(hey|hello|hi|howdy|yo|sup|whats up|hiya|good morning|good afternoon|good evening|greetings)$/i;
+      if (greetingPattern.test(trimmed)) {
+        const { aiVoiceSurfaces } = await getPublicSiteSettings();
+        const salutation = aiVoiceSurfaces?.salutation;
+        const { DEFAULT_VOICE_SURFACES } = await import("@/lib/ai/voice-surfaces");
+        return NextResponse.json({
+          products: [],
+          query: searchQuery,
+          count: 0,
+          intent: null,
+          filtersExtracted: null,
+          explanation: null,
+          acknowledgment: salutation ?? DEFAULT_VOICE_SURFACES.salutation,
+          followUpQuestion: null,
+          followUps: [],
+          aiFailed: false,
+          isSalutation: true,
+          context: { sessionId, turnCount },
+        });
+      }
+    }
+
+    // -------------------------------------------------------------------------
     // Agentic step — NL extraction (skipped for keyword queries or if AI off)
     // -------------------------------------------------------------------------
 
@@ -361,8 +439,10 @@ export async function GET(request: NextRequest) {
       (forceAI || isNaturalLanguageQuery(query)) &&
       (await isAIConfigured())
     ) {
-      const { aiVoicePersona } = await getPublicSiteSettings();
-      const systemPrompt = buildSystemPrompt(aiVoicePersona, pageTitle);
+      const { aiVoicePersona, aiVoiceExamples } = await getPublicSiteSettings();
+      const voiceExamples =
+        aiVoiceExamples.length > 0 ? aiVoiceExamples : DEFAULT_VOICE_EXAMPLES;
+      const systemPrompt = buildSystemPrompt(voiceExamples, aiVoicePersona, pageTitle);
       agenticData = await extractAgenticFilters(query, systemPrompt, pageTitle);
 
       if (agenticData?.filtersExtracted) {
@@ -402,6 +482,13 @@ export async function GET(request: NextRequest) {
           // exclude products the AI would otherwise find.
           delete whereClause.id;
           ftsOrderedIds = [];
+        } else {
+          // AI ran but extracted no specific filters (e.g. "gift for mom").
+          // Clear the keyword OR fallback — it matches on social/intent words
+          // that don't appear in product data and produces zero results.
+          // The broad type:COFFEE clause returns a selection; follow-up chips
+          // narrow it from there.
+          delete whereClause.OR;
         }
 
         // Apply extracted roastLevel only if no explicit roast param
@@ -551,7 +638,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      take: 50,
+      take: 7,
     });
 
     // Preserve full-text search ranking order. Prisma's `id: { in: [...] }`
@@ -578,6 +665,8 @@ export async function GET(request: NextRequest) {
       intent: agenticData?.intent ?? null,
       filtersExtracted: agenticData?.filtersExtracted ?? null,
       explanation: agenticData?.explanation ?? null,
+      acknowledgment: agenticData?.acknowledgment ?? null,
+      followUpQuestion: agenticData?.followUpQuestion ?? null,
       followUps: agenticData?.followUps ?? [],
       aiFailed,
       context: { sessionId, turnCount },

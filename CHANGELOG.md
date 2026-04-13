@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.100.3 - 2026-04-13
+
+### Added
+
+- **Counter panel**: Smart Search Assistant renamed to "Counter" — framed as a conversation at the shop counter, not a search tool
+- **AI guardrails**: System prompt enforces never swearing, never breaking character, and redirecting off-topic or abusive inputs in the owner's voice
+- **Voice pipeline tests**: New fixture tests for `buildSystemPrompt` Q&A embedding and `generateVoiceSurfaces` pipeline (20 new tests, 1244 total)
+
+### Changed
+
+- **Mobile Counter drawer**: Full viewport width on mobile (was 85vw); desktop remains narrow right drawer
+- **Product cards**: Two-liner format — coffee shows `{Roast level} — {tasting notes}`, merch shows truncated description; no price shown; roast label formatted as "Light roast / Medium roast / Dark roast"
+- **Acknowledgment length**: Removed "1 sentence" cap — voice examples guide the natural length and rhythm of each response
+- **Follow-up chips**: Context-aware question and chip labels derived from query intent (gift/occasion/mood), not a fixed roast-level default; chips use customer language not coffee-trade jargon
+- **Experiential term mapping**: Extraction prompt now expands mood/experience terms into flavor notes ("approachable/smooth" → balanced/caramel/chocolate; "bold" → dark chocolate/earthy/tobacco)
+- **Gift/popularity signals**: "gift", "well-loved", "crowd-pleaser", "beginner" triggers `sortBy: "top_rated"`
+- **Search scope**: Always restricts to `type: COFFEE` — merch queries return no results and the `noResults` voice surface handles recovery
+- **Vague queries**: When AI runs but extracts no specific filters (e.g. "gift for my mom"), keyword OR is cleared and a broad coffee selection is returned so follow-up chips can narrow from real results
+- **Voice surfaces placeholder**: Panel input placeholder comes from owner's voice surfaces (generated from Q&A examples), not hardcoded copy
+- **Admin AI settings**: Smart Search section consolidated here; deprecated AI Chat / Coffee Recommender / About Page Assistant toggles removed; per-field auto-save with inline status indicator
+- **Chip border**: `border-primary/40` — visible in both light and dark mode
+- **Settings nav active state**: Overflow dropdown uses pathname-based matching instead of broken `findRouteByHref`
+
+### Fixed
+
+- **Loading animation**: Waiting dots animation now starts from 0 (empty) before cycling
+- **Mobile viewport height**: Restores correct panel height after keyboard dismissal
+- **Click product → close Counter**: Clicking a product card closes the Counter panel before navigating to PDP
+- **Chips alignment**: Follow-up chips left-aligned to message indent (`pl-5`)
+- **Placeholder merge**: Voice surfaces loaded from DB now merge with defaults — keys added after initial generation (e.g. `placeholder`) are always present
+
 ## 0.100.2 - 2026-04-12
 
 ### Fixed

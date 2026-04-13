@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import type { VoiceSurfaces } from "@/lib/ai/voice-surfaces";
+import { DEFAULT_VOICE_SURFACES } from "@/lib/ai/voice-surfaces";
 
 export interface PageContext {
   icon: string;
@@ -9,15 +11,20 @@ export interface ProductSummary {
   id: string;
   name: string;
   slug: string;
-  priceInCents: number | null;
   imageUrl: string | null;
   categorySlug: string | null;
+  productType: "COFFEE" | "MERCH" | null;
+  roastLevel: string | null;
+  tastingNotes: string[];
+  description: string | null;
 }
 
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  acknowledgment?: string;
+  followUpQuestion?: string;
   products?: ProductSummary[];
   followUps?: string[];
   isLoading?: boolean;
@@ -28,6 +35,8 @@ interface ChatPanelState {
   messages: ChatMessage[];
   pageContext: PageContext | null;
   isLoading: boolean;
+  voiceSurfaces: VoiceSurfaces;
+  surfacesLoaded: boolean;
   // Actions
   open: () => void;
   close: () => void;
@@ -37,13 +46,16 @@ interface ChatPanelState {
   updateLastMessage: (updates: Partial<ChatMessage>) => void;
   setLoading: (loading: boolean) => void;
   clearMessages: () => void;
+  loadSurfaces: () => Promise<void>;
 }
 
-export const useChatPanelStore = create<ChatPanelState>()((set) => ({
+export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
   isOpen: false,
   messages: [],
   pageContext: null,
   isLoading: false,
+  voiceSurfaces: DEFAULT_VOICE_SURFACES,
+  surfacesLoaded: false,
 
   open: () => set({ isOpen: true }),
   close: () => set({ isOpen: false }),
@@ -65,4 +77,20 @@ export const useChatPanelStore = create<ChatPanelState>()((set) => ({
   setLoading: (loading) => set({ isLoading: loading }),
 
   clearMessages: () => set({ messages: [] }),
+
+  loadSurfaces: async () => {
+    if (get().surfacesLoaded) return;
+    try {
+      const res = await fetch("/api/settings/voice-surfaces");
+      if (res.ok) {
+        const fetched = (await res.json()) as VoiceSurfaces;
+        // Merge with defaults so keys added after initial generation still have values
+        const surfaces = { ...DEFAULT_VOICE_SURFACES, ...fetched };
+        set({ voiceSurfaces: surfaces, surfacesLoaded: true });
+      }
+    } catch {
+      // Keep defaults on failure
+      set({ surfacesLoaded: true });
+    }
+  },
 }));

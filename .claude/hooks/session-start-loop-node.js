@@ -91,16 +91,51 @@ function main() {
 
     case "pending":
       inject(
-        `WORKFLOW ACTIVE: Branch '${branch}' has ${total} ACs awaiting verification. ` +
-          `Run /verify-workflow or /ac-verify before declaring done. ` +
+        `WORKFLOW ACTIVE: Branch '${branch}' has ${total} ACs awaiting verification.\n` +
+          `\n` +
+          `DO THIS BEFORE ANYTHING ELSE:\n` +
+          `1. Read the ACs doc to get the full AC list and screenshot pages.\n` +
+          `2. Spawn the verification sub-agent. The FIRST LINE of the prompt MUST be exactly:\n` +
+          `   "Run the AC verification protocol from .claude/commands/ac-verify.md."\n` +
+          `\n` +
+          `CRITICAL — omitting that first line causes the sub-agent to improvise conventions:\n` +
+          `  - Screenshots saved to wrong directory (happened on feat/phase2-voice-cadence, 2026-04-12)\n` +
+          `  - Puppeteer scripts written to scripts/ instead of scratchpad (same incident)\n` +
+          `  - These violations required manual cleanup and lost session time.\n` +
+          `\n` +
+          `Sub-agent spawn template (copy verbatim, fill in ACS and PAGES):\n` +
+          `  Run the AC verification protocol from .claude/commands/ac-verify.md.\n` +
+          `  BRANCH: ${branch}\n` +
+          `  DEV_SERVER: http://localhost:3000\n` +
+          `  ACS_DOC: <path from ACs doc>\n` +
+          `  ACS: <paste full AC list>\n` +
+          `  PAGES_TO_SCREENSHOT: <list pages and interaction steps>\n` +
+          `\n` +
           `Status: PENDING VERIFICATION.`
       );
       break;
 
     case "partial":
       inject(
-        `WORKFLOW ACTIVE: Branch '${branch}' has ${passed}/${total} ACs verified. ` +
-          `Complete verification for remaining ACs before declaring done. ` +
+        `WORKFLOW ACTIVE: Branch '${branch}' has ${passed}/${total} ACs verified.\n` +
+          `\n` +
+          `DO THIS BEFORE ANYTHING ELSE:\n` +
+          `1. Read the ACs doc — check which ACs are still unverified (empty Agent column).\n` +
+          `2. Spawn the verification sub-agent. The FIRST LINE of the prompt MUST be exactly:\n` +
+          `   "Run the AC verification protocol from .claude/commands/ac-verify.md."\n` +
+          `\n` +
+          `CRITICAL — omitting that first line causes the sub-agent to improvise conventions:\n` +
+          `  - Screenshots saved to wrong directory (happened on feat/phase2-voice-cadence, 2026-04-12)\n` +
+          `  - Puppeteer scripts written to scripts/ instead of scratchpad (same incident)\n` +
+          `\n` +
+          `Sub-agent spawn template (copy verbatim, fill in ACS and PAGES):\n` +
+          `  Run the AC verification protocol from .claude/commands/ac-verify.md.\n` +
+          `  BRANCH: ${branch}\n` +
+          `  DEV_SERVER: http://localhost:3000\n` +
+          `  ACS_DOC: <path from ACs doc>\n` +
+          `  ACS: <paste full AC list>\n` +
+          `  PAGES_TO_SCREENSHOT: <list pages and interaction steps>\n` +
+          `\n` +
           `Status: PARTIAL.`
       );
       break;

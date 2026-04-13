@@ -864,6 +864,9 @@ const publicSettingsKeys = [
   "homepage_hero_heading",
   "homepage_hero_tagline",
   "ai_voice_persona",
+  "ai_voice_examples",
+  "ai_voice_surfaces",
+  "ai_smart_search_enabled",
 ] as const;
 
 /**

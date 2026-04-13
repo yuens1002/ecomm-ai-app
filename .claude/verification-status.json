@@ -1,13 +1,29 @@
 {
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
+    "feat/counter-ux": {
+      "status": "verified",
+      "acs_passed": 21,
+      "acs_total": 21,
+      "tasks": [],
+      "acs_doc": "docs/features/smart-search-ux/counter-ux/ACs.md",
+      "notes": "21/21 ACs verified. 13 UI (screenshots + DOM inspection) + 8 FN (code review) + 4 REG (1244 tests + precheck). 0 iterations. Agent + QC columns filled."
+    },
     "feat/agentic-search": {
       "status": "verified",
       "acs_passed": 22,
       "acs_total": 22,
       "tasks": [],
       "acs_doc": "docs/features/smart-search-ux/chatpanel-corrections/ACs.md",
-      "notes": "22/22 ACs verified. 11 UI (Puppeteer screenshots + code review), 6 FN (code review), 2 TST (code review + test run — 37 tests pass), 4 REG (precheck 0 errors, 1182 tests pass). AC-UI-10/11 code-pass only — API enforces take:3 with ai=true so Show more button is correct in code but never triggered via live UI. Screenshots at .screenshots/chatpanel-corrections/. 0 iterations needed."
+      "notes": "22/22 ACs verified. Shipped in v0.100.0. Iter 3 closed."
+    },
+    "feat/phase2-voice-cadence": {
+      "status": "verified",
+      "acs_passed": 16,
+      "acs_total": 16,
+      "tasks": [],
+      "acs_doc": "docs/features/smart-search-ux/phase-2-pre-merge/ACs.md",
+      "notes": "16/16 ACs verified. 9 UI (7 screenshots + 2 code review) + 4 FN (code review) + 3 REG (test:ci 1224 tests + precheck clean). QC confirmed 2026-04-12. Ready for PR."
     },
     "feat/smart-search-ux": {
       "status": "verified",

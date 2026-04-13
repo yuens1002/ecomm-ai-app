@@ -125,6 +125,13 @@ Fix any TS/ESLint errors, then update `verification-status.json` to `"pending"` 
 2. Check for `--skip-ui` flag or CI/backend-only note in the plan → omit PAGES_TO_SCREENSHOT and set DEV_SERVER to "N/A"
 3. Spawn immediately:
 
+> **⚠️ CRITICAL — first line is mandatory.** The sub-agent prompt MUST begin with
+> `Run the AC verification protocol from .claude/commands/ac-verify.md.`
+> Without it, the sub-agent has no skill contract and will improvise conventions —
+> wrong screenshot directory, scripts in `scripts/` instead of scratchpad.
+> This happened on `feat/phase2-voice-cadence` (2026-04-12) and required manual cleanup.
+> Do not skip this line.
+
 ```text
 Task(subagent_type="general-purpose", prompt="""
 Run the AC verification protocol from .claude/commands/ac-verify.md.

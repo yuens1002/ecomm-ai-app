@@ -33,7 +33,7 @@ import { useNavOverflow } from "@/hooks/useNavOverflow";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
 import { ChevronDown, CircleUserRound, FileText, Home, LogIn, LogOut, Menu, MessageSquareDot, MoreHorizontal, PackageSearch, Search, User } from "lucide-react";
-import { useChatPanelStore } from "@/stores/chat-panel-store";
+import { useChatPanelStore } from "@/lib/store/chat-panel-store";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -286,7 +286,7 @@ export default function SiteHeader({
                           >
                             <MessageSquareDot className="w-5 h-5" />
                             <span className="text-[10px] uppercase tracking-wide font-medium">
-                              Search
+                              Counter
                             </span>
                           </button>
                         </SheetClose>
@@ -559,7 +559,7 @@ export default function SiteHeader({
                   onClick={togglePanel}
                 >
                   <MessageSquareDot className={cn("h-5 w-5", isPanelOpen && "text-primary")} />
-                  <span className="sr-only">Search — ask about our coffee</span>
+                  <span className="sr-only">Counter — chat about our products</span>
                 </Button>
               ) : (
                 <Button variant="ghost" size="icon" asChild className="hidden md:flex">

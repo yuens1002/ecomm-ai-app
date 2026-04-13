@@ -1,3 +1,6 @@
+import type { VoiceExample } from "@/lib/ai/voice-examples";
+import type { VoiceSurfaces } from "@/lib/ai/voice-surfaces";
+
 export interface HeroSlide {
   url: string;
   alt: string;
@@ -31,6 +34,9 @@ export interface SiteSettings {
   homepageHeroTagline: string;
   // AI Search
   aiVoicePersona: string;
+  aiVoiceExamples: VoiceExample[];
+  aiVoiceSurfaces: VoiceSurfaces | null;
+  smartSearchEnabled: boolean;
 }
 
 export const defaultSettings: SiteSettings = {
@@ -62,6 +68,9 @@ export const defaultSettings: SiteSettings = {
   homepageHeroTagline: "",
   // AI Search
   aiVoicePersona: "",
+  aiVoiceExamples: [],
+  aiVoiceSurfaces: null,
+  smartSearchEnabled: true,
 };
 
 function safeParseJSON<T>(raw: string | undefined, fallback: T): T {
@@ -136,5 +145,17 @@ export function mapSettingsRecord(
       record.homepage_hero_tagline || defaultSettings.homepageHeroTagline,
     // AI Search
     aiVoicePersona: record.ai_voice_persona ?? defaultSettings.aiVoicePersona,
+    aiVoiceExamples: safeParseJSON<VoiceExample[]>(
+      record.ai_voice_examples,
+      defaultSettings.aiVoiceExamples
+    ),
+    aiVoiceSurfaces: safeParseJSON<VoiceSurfaces | null>(
+      record.ai_voice_surfaces,
+      defaultSettings.aiVoiceSurfaces
+    ),
+    smartSearchEnabled:
+      record.ai_smart_search_enabled != null
+        ? record.ai_smart_search_enabled !== "false"
+        : defaultSettings.smartSearchEnabled,
   };
 }
