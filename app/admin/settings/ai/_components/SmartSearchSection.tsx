@@ -29,8 +29,12 @@ export function SmartSearchSection() {
   const [savedVoiceAnswers, setSavedVoiceAnswers] = useState<string[]>(
     DEFAULT_VOICE_EXAMPLES.map((e) => e.answer)
   );
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [saveStatuses, setSaveStatuses] = useState<SaveStatus[]>(
+    DEFAULT_VOICE_EXAMPLES.map(() => "idle")
+  );
+  const timerRefs = useRef<(ReturnType<typeof setTimeout> | null)[]>(
+    DEFAULT_VOICE_EXAMPLES.map(() => null)
+  );
 
   const [smartSearchEnabled, setSmartSearchEnabled] = useState(true);
   const [savingToggle, setSavingToggle] = useState(false);
@@ -57,41 +61,63 @@ export function SmartSearchSection() {
       .catch(() => setLoading(false));
   }, []);
 
-  const saveExamples = async (answers: string[]) => {
-    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-    setSaveStatus("saving");
+  const setFieldStatus = (index: number, status: SaveStatus) => {
+    setSaveStatuses((prev) => {
+      const next = [...prev];
+      next[index] = status;
+      return next;
+    });
+  };
+
+  // Save a single field — sends full array but only field[index] changes
+  const saveField = async (index: number, answer: string) => {
+    if (timerRefs.current[index]) clearTimeout(timerRefs.current[index]);
+    setFieldStatus(index, "saving");
+
+    const examples: VoiceExample[] = VOICE_EXAMPLE_QUESTIONS.map((q, i) => ({
+      question: q,
+      answer: i === index ? answer : savedVoiceAnswers[i],
+    }));
+
     try {
-      const examples: VoiceExample[] = VOICE_EXAMPLE_QUESTIONS.map((q, i) => ({
-        question: q,
-        answer: answers[i],
-      }));
       const res = await fetch("/api/admin/settings/ai-search", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ voiceExamples: examples }),
       });
       if (res.ok) {
-        setSavedVoiceAnswers([...answers]);
-        setSaveStatus("saved");
-        savedTimerRef.current = setTimeout(() => setSaveStatus("idle"), 3000);
+        setSavedVoiceAnswers((prev) => {
+          const next = [...prev];
+          next[index] = answer;
+          return next;
+        });
+        setFieldStatus(index, "saved");
+        timerRefs.current[index] = setTimeout(
+          () => setFieldStatus(index, "idle"),
+          3000
+        );
       } else {
-        setSaveStatus("idle");
+        setFieldStatus(index, "idle");
       }
     } catch {
-      setSaveStatus("idle");
+      setFieldStatus(index, "idle");
     }
   };
 
-  const handleBlur = (currentAnswers: string[]) => {
-    const isDirty = currentAnswers.some((a, i) => a !== savedVoiceAnswers[i]);
-    if (isDirty) void saveExamples(currentAnswers);
+  const handleBlur = (index: number) => {
+    if (voiceAnswers[index] !== savedVoiceAnswers[index]) {
+      void saveField(index, voiceAnswers[index]);
+    }
   };
 
   const handleResetOne = (index: number) => {
-    const next = [...voiceAnswers];
-    next[index] = DEFAULT_VOICE_EXAMPLES[index].answer;
-    setVoiceAnswers(next);
-    void saveExamples(next);
+    const defaultAnswer = DEFAULT_VOICE_EXAMPLES[index].answer;
+    setVoiceAnswers((prev) => {
+      const next = [...prev];
+      next[index] = defaultAnswer;
+      return next;
+    });
+    void saveField(index, defaultAnswer);
   };
 
   const handleToggleSmartSearch = async (next: boolean) => {
@@ -124,80 +150,69 @@ export function SmartSearchSection() {
           />
         </div>
         <p className="text-sm text-muted-foreground max-w-[72ch]">
-          Let customers chat with your store and get product recommendations in
-          your voice. Edit the answers below to teach the AI how you talk —
-          questions are fixed so the AI learns from consistent cues. Changes
-          save automatically.
+          Smart Search lets customers find products by asking questions, with
+          the AI responding in your voice. Your answers below train that voice
+          — write them the way you&apos;d say it at the counter. Questions are
+          fixed; answers are yours. Changes save automatically.
         </p>
       </div>
 
       {/* Voice Examples */}
-      <div className="space-y-4 border-t pt-6">
-        <div>
-          <h4 className="text-sm font-medium">Your Voice</h4>
-          <p className="text-xs text-muted-foreground mt-1 max-w-[72ch]">
-            Write these the way you&apos;d actually say it at the counter.
-          </p>
-        </div>
+      <div className="space-y-3 max-w-[72ch]">
+        {VOICE_EXAMPLE_QUESTIONS.map((question, i) => (
+          <InputGroup key={i}>
+            {/* Block-start: question (left) · status + reset (right) */}
+            <InputGroupAddon align="block-start" className="justify-between">
+              <span className="text-sm truncate mr-2">{question}</span>
+              <div className="flex items-center gap-1 shrink-0">
+                {saveStatuses[i] !== "idle" && (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span
+                      className={cn(
+                        "w-1.5 h-1.5 rounded-full",
+                        saveStatuses[i] === "saving"
+                          ? "bg-amber-500 animate-pulse"
+                          : "bg-green-500"
+                      )}
+                    />
+                    {saveStatuses[i] === "saving" ? "Saving…" : "Saved"}
+                  </span>
+                )}
+                <InputGroupButton
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => handleResetOne(i)}
+                  disabled={saveStatuses[i] === "saving"}
+                  title="Reset to default"
+                >
+                  <Undo2 className="h-3 w-3" />
+                  Reset
+                </InputGroupButton>
+              </div>
+            </InputGroupAddon>
 
-        <div className="space-y-3 max-w-[72ch]">
-          {VOICE_EXAMPLE_QUESTIONS.map((question, i) => (
-            <InputGroup key={i}>
-              {/* Block-start: question + reset + status */}
-              <InputGroupAddon align="block-start" className="justify-between">
-                <span className="text-xs text-muted-foreground truncate mr-2">
-                  &ldquo;{question}&rdquo;
-                </span>
-                <div className="flex items-center gap-2 shrink-0">
-                  {saveStatus !== "idle" && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <span
-                        className={cn(
-                          "w-2 h-2 rounded-full",
-                          saveStatus === "saving"
-                            ? "bg-amber-500 animate-pulse"
-                            : "bg-green-500"
-                        )}
-                      />
-                      {saveStatus === "saving" ? "Saving…" : "Saved"}
-                    </span>
-                  )}
-                  <InputGroupButton
-                    size="xs"
-                    variant="ghost"
-                    onClick={() => handleResetOne(i)}
-                    disabled={saveStatus === "saving"}
-                    title="Reset to default"
-                  >
-                    <Undo2 className="h-3 w-3" />
-                    Reset
-                  </InputGroupButton>
-                </div>
-              </InputGroupAddon>
+            {/* Textarea */}
+            <InputGroupTextarea
+              id={`voice-example-${i}`}
+              value={voiceAnswers[i]}
+              maxLength={MAX_ANSWER_LENGTH}
+              rows={3}
+              onChange={(e) => {
+                const next = [...voiceAnswers];
+                next[i] = e.target.value;
+                setVoiceAnswers(next);
+              }}
+              onBlur={() => handleBlur(i)}
+            />
 
-              {/* Textarea */}
-              <InputGroupTextarea
-                id={`voice-example-${i}`}
-                value={voiceAnswers[i]}
-                maxLength={MAX_ANSWER_LENGTH}
-                rows={3}
-                onChange={(e) => {
-                  const next = [...voiceAnswers];
-                  next[i] = e.target.value;
-                  setVoiceAnswers(next);
-                }}
-                onBlur={() => handleBlur(voiceAnswers)}
-              />
-
-              {/* Block-end: char count */}
-              <InputGroupAddon align="block-end">
-                <InputGroupText className="text-xs">
-                  {voiceAnswers[i].length}/{MAX_ANSWER_LENGTH}
-                </InputGroupText>
-              </InputGroupAddon>
-            </InputGroup>
-          ))}
-        </div>
+            {/* Block-end: char count */}
+            <InputGroupAddon align="block-end">
+              <InputGroupText className="text-xs">
+                {voiceAnswers[i].length}/{MAX_ANSWER_LENGTH}
+              </InputGroupText>
+            </InputGroupAddon>
+          </InputGroup>
+        ))}
       </div>
     </div>
   );
