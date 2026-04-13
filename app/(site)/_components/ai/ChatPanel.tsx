@@ -469,10 +469,7 @@ export function ChatPanel() {
 
   // Track visual viewport height so the drawer doesn't get obscured by the mobile keyboard
   useEffect(() => {
-    if (!isOpen) {
-      setViewportHeight(null);
-      return;
-    }
+    if (!isOpen) return;
     const vv = window.visualViewport;
     if (!vv) return;
     const onResize = () => setViewportHeight(vv.height);
@@ -482,6 +479,7 @@ export function ChatPanel() {
     return () => {
       vv.removeEventListener("resize", onResize);
       vv.removeEventListener("scroll", onResize);
+      setViewportHeight(null);
     };
   }, [isOpen]);
 

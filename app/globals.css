@@ -405,17 +405,17 @@ We define CSS variables for each theme.
   }
 }
 
-/* Chat panel — animated waiting dots (1→2→3→4→5 loop, CSS-only) */
+/* Chat panel — animated waiting dots (0→1→2→3→4 loop, CSS-only) */
 .waiting-dots::after {
-  content: ".";
+  content: "";
   animation: waiting-dots 2.5s steps(1) infinite;
 }
 
 @keyframes waiting-dots {
-  0%  { content: "."; }
-  20% { content: ".."; }
-  40% { content: "..."; }
-  60% { content: "...."; }
-  80% { content: "....."; }
+  0%  { content: ""; }
+  20% { content: "."; }
+  40% { content: ".."; }
+  60% { content: "..."; }
+  80% { content: "...."; }
 }
 

@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
   env: {
     APP_VERSION,
   },
+  ...(process.env.NODE_ENV === "development" &&
+    process.env.ALLOWED_DEV_ORIGIN && {
+      allowedDevOrigins: [process.env.ALLOWED_DEV_ORIGIN],
+    }),
   serverExternalPackages: [
     "@prisma/client",
     "prisma",

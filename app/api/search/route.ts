@@ -120,7 +120,7 @@ export function isNaturalLanguageQuery(query: string): boolean {
 // AI extraction step
 // ---------------------------------------------------------------------------
 
-function buildSystemPrompt(
+export function buildSystemPrompt(
   voiceExamples: VoiceExample[],
   aiVoicePersona: string,
   pageContext?: string
