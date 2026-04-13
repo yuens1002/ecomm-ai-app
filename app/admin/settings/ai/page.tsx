@@ -2,15 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Loader2, CheckCircle2, XCircle, Eye, EyeOff } from "lucide-react";
-import { SettingsField } from "@/app/admin/_components/forms/SettingsField";
 import { SettingsSection } from "@/app/admin/_components/forms/SettingsSection";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { Field, FieldDescription } from "@/components/ui/field";
 import { FormHeading } from "@/components/ui/forms/FormHeading";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SmartSearchSection } from "./_components/SmartSearchSection";
 import {
   Select,
   SelectContent,
@@ -26,9 +24,6 @@ interface AISettingsData {
   baseUrl: string;
   apiKey: string;
   model: string;
-  chatEnabled: boolean;
-  recommendEnabled: boolean;
-  aboutAssistEnabled: boolean;
   hasApiKey: boolean;
 }
 
@@ -42,9 +37,6 @@ export default function AISettingsPage() {
     baseUrl: "",
     apiKey: "",
     model: "",
-    chatEnabled: true,
-    recommendEnabled: true,
-    aboutAssistEnabled: true,
     hasApiKey: false,
   });
   const [original, setOriginal] = useState<AISettingsData>(settings);
@@ -310,88 +302,7 @@ export default function AISettingsPage() {
         </div>
       </SettingsSection>
 
-      <SettingsSection
-        title="Feature Toggles"
-        description="Enable or disable individual AI features. Disabling a feature hides it from users."
-      >
-        <SettingsField<boolean>
-          endpoint="/api/admin/settings/ai"
-          field="chatEnabled"
-          label="AI Chat (Barista)"
-          autoSave
-          defaultValue={true}
-          input={(value, onChange) => (
-            <div className="space-y-1.5">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={Boolean(value)}
-                  onCheckedChange={onChange}
-                />
-                <Label className="text-sm text-muted-foreground">
-                  {value
-                    ? "AI barista chat is enabled"
-                    : "AI barista chat is disabled"}
-                </Label>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                AI-powered coffee barista chat for personalized recommendations
-              </p>
-            </div>
-          )}
-        />
-
-        <SettingsField<boolean>
-          endpoint="/api/admin/settings/ai"
-          field="recommendEnabled"
-          label="Coffee Recommender"
-          autoSave
-          defaultValue={true}
-          input={(value, onChange) => (
-            <div className="space-y-1.5">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={Boolean(value)}
-                  onCheckedChange={onChange}
-                />
-                <Label className="text-sm text-muted-foreground">
-                  {value
-                    ? "Coffee recommendations are enabled"
-                    : "Coffee recommendations are disabled"}
-                </Label>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                AI coffee recommendations based on taste preferences
-              </p>
-            </div>
-          )}
-        />
-
-        <SettingsField<boolean>
-          endpoint="/api/admin/settings/ai"
-          field="aboutAssistEnabled"
-          label="About Page Assistant"
-          autoSave
-          defaultValue={true}
-          input={(value, onChange) => (
-            <div className="space-y-1.5">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={Boolean(value)}
-                  onCheckedChange={onChange}
-                />
-                <Label className="text-sm text-muted-foreground">
-                  {value
-                    ? "About page assistant is enabled"
-                    : "About page assistant is disabled"}
-                </Label>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                AI-generated About page content with multiple style variations
-              </p>
-            </div>
-          )}
-        />
-      </SettingsSection>
+      <SmartSearchSection />
     </div>
   );
 }
