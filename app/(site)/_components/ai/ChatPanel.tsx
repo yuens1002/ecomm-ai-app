@@ -329,7 +329,6 @@ function MessageBubble({
     );
   }
 
-  const isGreeting = msg.id === GREETING_ID;
   const hasProducts = msg.products && msg.products.length > 0;
   const productCount = msg.products?.length ?? 0;
   const hasContent = !!msg.content;
@@ -348,9 +347,6 @@ function MessageBubble({
       : msg.products!.slice(0, 3)
     : [];
   const extraCount = hasProducts ? msg.products!.length - 3 : 0;
-
-  // No-results message from voice surfaces
-  const noResultsSurface = useChatPanelStore.getState().voiceSurfaces.noResults;
 
   return (
     <div className="space-y-2.5">
@@ -386,13 +382,6 @@ function MessageBubble({
             </div>
           )}
         </div>
-      )}
-
-      {/* No results — voice surface message */}
-      {!hasProducts && !msg.isLoading && !isGreeting && hasContent && (
-        <p className="text-xs text-muted-foreground pl-5">
-          {noResultsSurface}
-        </p>
       )}
 
       {/* 3. Follow-up question + chips (only when products > 3) */}

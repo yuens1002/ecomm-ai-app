@@ -39,6 +39,14 @@ export function SmartSearchSection() {
   const [smartSearchEnabled, setSmartSearchEnabled] = useState(true);
   const [savingToggle, setSavingToggle] = useState(false);
 
+  // Clear pending save timers on unmount
+  useEffect(() => {
+    const timers = timerRefs.current;
+    return () => {
+      timers.forEach((t) => { if (t !== null) clearTimeout(t); });
+    };
+  }, []);
+
   useEffect(() => {
     fetch("/api/admin/settings/ai-search")
       .then((r) => r.json())
