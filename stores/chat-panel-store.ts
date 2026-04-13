@@ -11,9 +11,12 @@ export interface ProductSummary {
   id: string;
   name: string;
   slug: string;
-  priceInCents: number | null;
   imageUrl: string | null;
   categorySlug: string | null;
+  productType: "COFFEE" | "MERCH" | null;
+  roastLevel: string | null;
+  tastingNotes: string[];
+  description: string | null;
 }
 
 export interface ChatMessage {

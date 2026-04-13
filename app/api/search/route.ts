@@ -620,7 +620,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      take: 50,
+      take: 7,
     });
 
     // Preserve full-text search ranking order. Prisma's `id: { in: [...] }`

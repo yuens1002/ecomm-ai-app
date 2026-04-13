@@ -16,9 +16,12 @@ function makeSummary(id: string): ProductSummary {
     id,
     name: `Product ${id}`,
     slug: `product-${id}`,
-    priceInCents: 1500,
     imageUrl: "/img.jpg",
     categorySlug: "coffee",
+    productType: "COFFEE",
+    roastLevel: "Medium",
+    tastingNotes: ["chocolate", "citrus"],
+    description: null,
   };
 }
 
