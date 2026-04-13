@@ -137,7 +137,7 @@ export function SmartSearchSection() {
   if (loading) return null;
 
   return (
-    <div className="rounded-lg border p-6 space-y-6">
+    <div className="bg-card text-card-foreground rounded-xl border py-6 shadow-sm px-6 space-y-6">
       {/* Title row: heading left, toggle right */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -152,7 +152,7 @@ export function SmartSearchSection() {
         <p className="text-sm text-muted-foreground max-w-[72ch]">
           Smart Search lets customers find products by asking questions, with
           the AI responding in your voice. Your answers below train that voice
-          — write them the way you&apos;d say it at the counter. Questions are
+          — write them the way you&apos;d speak with your customers at the counter. Questions are
           fixed; answers are yours. Changes save automatically.
         </p>
       </div>
