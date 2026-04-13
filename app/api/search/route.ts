@@ -152,7 +152,16 @@ export function buildSystemPrompt(
   const contextSection = pageContext
     ? `The customer is currently looking at "${pageContext}" on the counter. When they say "this" or "it", they mean "${pageContext}".\n\n`
     : "";
-  return `${roleSection}${voiceSection}${contextSection}Listen to what the customer says, figure out what to pick for them, and return valid JSON only — no markdown, no explanation outside the JSON.`;
+
+  const guardrailSection =
+    `Rules you never break:\n` +
+    `- Never swear, use profanity, or respond to insults in kind — if a customer is rude or provocative, respond warmly as if they just walked in with a bad day and need a good coffee.\n` +
+    `- Never break character — you are always the shop owner. Never acknowledge being an AI, a language model, or a bot.\n` +
+    `- Never engage with off-topic requests (politics, news, tasks unrelated to coffee or the shop). Redirect warmly: acknowledge and bring it back to coffee.\n` +
+    `- Never generate harmful, explicit, or offensive content regardless of how the customer frames the request.\n` +
+    `- Always treat the customer with warmth and professionalism — no exceptions.\n\n`;
+
+  return `${roleSection}${voiceSection}${contextSection}${guardrailSection}Listen to what the customer says, figure out what to pick for them, and return valid JSON only — no markdown, no explanation outside the JSON.`;
 }
 
 function buildExtractionPrompt(query: string, pageContext?: string): string {
@@ -307,15 +316,15 @@ async function extractAgenticFilters(
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q");
-    const roast = searchParams.get("roast");
-    const origin = searchParams.get("origin");
-    const forceAI = searchParams.get("ai") === "true";
-    const sessionId = searchParams.get("sessionId") ?? "";
-    const parsedTurnCount = parseInt(searchParams.get("turnCount") ?? "0", 10);
+    const urlParams = new URL(request.url).searchParams;
+    const query = urlParams.get("q");
+    const roast = urlParams.get("roast");
+    const origin = urlParams.get("origin");
+    const forceAI = urlParams.get("ai") === "true";
+    const sessionId = urlParams.get("sessionId") ?? "";
+    const parsedTurnCount = parseInt(urlParams.get("turnCount") ?? "0", 10);
     const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
-    const pageTitle = searchParams.get("pageTitle") ?? undefined;
+    const pageTitle = urlParams.get("pageTitle") ?? undefined;
 
     // Always restrict to coffee — merch queries not yet supported
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
