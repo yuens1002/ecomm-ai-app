@@ -25,6 +25,10 @@ interface SearchProduct {
   id: string;
   name: string;
   slug: string;
+  type: "COFFEE" | "MERCH";
+  roastLevel: string | null;
+  tastingNotes: string[];
+  description: string | null;
   categories: Array<{ category: { name: string; slug: string } }>;
   variants: Array<{
     images: Array<{ url: string; altText: string | null }>;
@@ -48,20 +52,17 @@ interface SearchResponse {
 
 function mapProduct(p: SearchProduct): ProductSummary {
   const firstVariant = p.variants[0];
-  const oneTime = firstVariant?.purchaseOptions.find((o) => o.type === "ONE_TIME");
-  const anyOption = firstVariant?.purchaseOptions[0];
   return {
     id: p.id,
     name: p.name,
     slug: p.slug,
-    priceInCents: oneTime?.priceInCents ?? anyOption?.priceInCents ?? null,
     imageUrl: firstVariant?.images[0]?.url || getPlaceholderImage(p.name, 400),
     categorySlug: p.categories[0]?.category.slug ?? null,
+    productType: p.type ?? null,
+    roastLevel: p.roastLevel ?? null,
+    tastingNotes: p.tastingNotes ?? [],
+    description: p.description ?? null,
   };
-}
-
-function formatPrice(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
 }
 
 function prettifyPathname(pathname: string): string {
@@ -146,6 +147,24 @@ function PanelContent() {
       });
     }
   }, [messages, isOpen]);
+
+  // Scroll to bottom when mobile keyboard opens/closes (visual viewport resize)
+  useEffect(() => {
+    if (!isOpen) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+      });
+    };
+    vv.addEventListener("resize", onResize);
+    vv.addEventListener("scroll", onResize);
+    return () => {
+      vv.removeEventListener("resize", onResize);
+      vv.removeEventListener("scroll", onResize);
+    };
+  }, [isOpen]);
 
   // Focus input when panel opens
   useEffect(() => {
@@ -403,9 +422,17 @@ function MessageBubble({
 // ---------------------------------------------------------------------------
 
 function ProductCard({ product }: { product: ProductSummary }) {
+  const close = useChatPanelStore((s) => s.close);
+
+  const isCoffee = product.productType === "COFFEE" || !!product.roastLevel;
+  const secondLine = isCoffee
+    ? [product.roastLevel, product.tastingNotes.join(", ")].filter(Boolean).join(" — ")
+    : (product.description?.slice(0, 60) ?? null);
+
   return (
     <Link
       href={`/products/${product.slug}`}
+      onClick={close}
       className="flex items-center gap-2.5 rounded-xl border border-border/50 p-2.5 hover:bg-accent hover:border-border transition-colors group"
     >
       <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
@@ -423,8 +450,8 @@ function ProductCard({ product }: { product: ProductSummary }) {
         <p className="text-xs font-medium truncate group-hover:text-primary transition-colors">
           {product.name}
         </p>
-        {product.priceInCents !== null && (
-          <p className="text-xs text-muted-foreground">{formatPrice(product.priceInCents)}</p>
+        {secondLine && (
+          <p className="text-xs text-muted-foreground truncate">{secondLine}</p>
         )}
       </div>
     </Link>
@@ -438,6 +465,25 @@ function ProductCard({ product }: { product: ProductSummary }) {
 export function ChatPanel() {
   const { isOpen, close, open, clearMessages, addMessage } = useChatPanelStore();
   const bodyCleanupRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
+  // Track visual viewport height so the drawer doesn't get obscured by the mobile keyboard
+  useEffect(() => {
+    if (!isOpen) {
+      setViewportHeight(null);
+      return;
+    }
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => setViewportHeight(vv.height);
+    onResize();
+    vv.addEventListener("resize", onResize);
+    vv.addEventListener("scroll", onResize);
+    return () => {
+      vv.removeEventListener("resize", onResize);
+      vv.removeEventListener("scroll", onResize);
+    };
+  }, [isOpen]);
 
   // Lock #site-scroll when drawer is open and clean up stale vaul body styles on close.
   useEffect(() => {
@@ -486,15 +532,18 @@ export function ChatPanel() {
       direction="right"
       shouldScaleBackground={false}
     >
-      <DrawerContent className="inset-y-0 right-0 left-auto h-full w-[85vw] sm:w-[min(25vw,360px)] rounded-none border-l border-t-0 border-b-0 focus:outline-none">
+      <DrawerContent
+        className="inset-y-0 right-0 left-auto h-full w-full sm:w-[min(25vw,360px)] rounded-none border-l border-t-0 border-b-0 focus:outline-none"
+        style={viewportHeight ? { height: `${viewportHeight}px` } : undefined}
+      >
         {/* Header row — title left, reset + close right */}
         <div className="shrink-0 px-4 py-2 flex items-center gap-2">
           <MessageSquareDot className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
           <DrawerTitle className="flex-1 text-sm font-medium">
-            Smart Search Assistant
+            Counter
           </DrawerTitle>
           <DrawerDescription className="sr-only">
-            Discover products through conversation with your Smart Search Assistant
+            Chat about our products and get personalized recommendations
           </DrawerDescription>
           <Button
             variant="ghost"
