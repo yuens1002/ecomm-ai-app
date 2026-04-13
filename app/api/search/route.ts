@@ -165,7 +165,7 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
   "filtersExtracted": {
     "brewMethod": string | undefined,
     "roastLevel": "light" | "medium" | "dark" | undefined,
-    "flavorProfile": string[] | undefined,  // Expand abstract flavor categories into concrete tasting notes a roaster would write. E.g. "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry", "blackcurrant", "currant"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan", "walnut"]; "floral" → ["floral", "jasmine", "lavender", "rose", "honeysuckle"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit", "papaya"]; "spicy" → ["spice", "spicy", "cinnamon", "clove", "cardamom", "pepper"]. Include the original category term AND the concrete notes so both literal and categorical queries match. Keep it scoped — don't expand to unrelated notes.
+    "flavorProfile": string[] | undefined,  // Expand flavor categories AND experiential/mood terms into concrete tasting notes a roaster would write. Flavor categories: "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry", "blackcurrant", "currant"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan", "walnut"]; "floral" → ["floral", "jasmine", "lavender", "rose", "honeysuckle"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit", "papaya"]; "spicy" → ["spice", "spicy", "cinnamon", "clove", "cardamom", "pepper"]. Experiential/mood terms: "smooth" / "approachable" / "easy-drinking" / "beginner" / "mellow" → ["smooth", "balanced", "caramel", "chocolate", "mild", "butter"]; "bold" / "strong" / "intense" → ["bold", "dark chocolate", "tobacco", "molasses", "earthy"]; "bright" / "lively" / "vibrant" → ["bright", "citrus", "floral", "lemon", "tea-like"]; "complex" / "interesting" / "unique" → ["complex", "wine", "fermented", "floral", "berry"]. Include the original term AND concrete notes. Keep it scoped.
 
     "origin": string | undefined,
     "isOrganic": true | false | undefined,
@@ -173,11 +173,11 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
     "variety": string | undefined,
     "priceMaxCents": number (cents, e.g. 3000 for "under $30") | undefined,
     "priceMinCents": number | undefined,
-    "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined
+    "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined  // Use "top_rated" when query signals popularity or gift intent: "well-loved", "crowd-pleaser", "safe bet", "popular", "everyone likes", "gift", "my mom", "beginner", "first time"
   },
-  "acknowledgment": "In the voice of a shop owner sharing an opinion at the counter. Let the voice examples guide your natural length and rhythm — match their brevity if they are brief, their depth if they are expansive. Use opinion framing: 'I'd go with', 'I'd say try', 'personally I'd', 'if it were me'. No physical action verbs ('grab', 'pour', 'pick out', 'pull'). Use second person ('you'). NEVER use search vocabulary: 'I found', 'looking for', 'matches', 'options that fit', 'search results'. ALWAYS present. Never third-person ('The customer...'). Never repeat the customer's exact words back.",
-  "followUpQuestion": "1 sentence narrowing question based on what the customer hasn't specified yet. Pick the most useful dimension to narrow (roast level, brew method, flavor, origin). Empty string if the query is already specific enough.",
-  "followUps": ["2-4 word option label the customer might choose — e.g. 'Light & bright', 'Medium & smooth', 'Dark & bold'. Return 2–3 options when followUpQuestion is non-empty; empty array otherwise. Never use question marks — these are clickable answer choices, not questions."]
+  "acknowledgment":"In the voice of a shop owner sharing an opinion at the counter. Let the voice examples guide your natural length and rhythm — match their brevity if they are brief, their depth if they are expansive. Use opinion framing: 'I'd go with', 'I'd say try', 'personally I'd', 'if it were me'. No physical action verbs ('grab', 'pour', 'pick out', 'pull'). Use second person ('you'). NEVER use search vocabulary: 'I found', 'looking for', 'matches', 'options that fit', 'search results'. ALWAYS present. Never third-person ('The customer...'). Never repeat the customer's exact words back.",
+  "followUpQuestion": "1 sentence that fits the customer's context — not a fixed coffee-attribute prompt. Derive it from what they haven't told you AND what would most reduce the results. For gift/occasion queries: ask about the recipient's taste in plain terms ('Does she usually go bold or keep it mellow?', 'How does she take her coffee?'). For vague preference queries: ask about the dimension that cuts deepest. Empty string if the query is already specific.",
+  "followUps": ["2-4 word clickable answer to the followUpQuestion — match the question context, use customer language not trade jargon. Roast context: 'Bold & strong' / 'Light & bright' / 'Smooth & mellow'. Brew context: 'Drip machine' / 'French press' / 'Espresso'. Gift/recipient context: 'She loves bold' / 'Something smooth' / 'Surprise her'. Return 2–3 options. Never use question marks."]
 }
 
 Rules:
@@ -473,6 +473,13 @@ export async function GET(request: NextRequest) {
           // exclude products the AI would otherwise find.
           delete whereClause.id;
           ftsOrderedIds = [];
+        } else {
+          // AI ran but extracted no specific filters (e.g. "gift for mom").
+          // Clear the keyword OR fallback — it matches on social/intent words
+          // that don't appear in product data and produces zero results.
+          // The broad type:COFFEE clause returns a selection; follow-up chips
+          // narrow it from there.
+          delete whereClause.OR;
         }
 
         // Apply extracted roastLevel only if no explicit roast param
