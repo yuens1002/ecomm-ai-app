@@ -156,7 +156,39 @@ export async function GET() {
 }
 ```
 
-Note: this route is called on every Counter open. The cost of `isAIConfigured()` is a DB read — acceptable. The `generateVoiceSurfaces` call only runs once (first open with no cached surfaces). After that, the cached DB value is returned immediately.
+**Request lifecycle — keeping initialization minimal:**
+
+```
+First-ever install (surfaces not in DB):
+  Panel open → GET /api/settings/voice-surfaces
+    → surfacesLoaded guard: false → fetch runs
+    → DB: no ai_voice_surfaces → isAIConfigured() → generateVoiceSurfaces() [~500ms, one-time]
+    → writes to DB → returns surfaces
+    → Zustand: voiceSurfaces = result, surfacesLoaded = true
+
+Every subsequent panel open (same session):
+  Panel open → loadSurfaces() → surfacesLoaded: true → returns immediately (no fetch)
+
+After page refresh / new tab (surfaces now in DB):
+  Panel open → GET /api/settings/voice-surfaces
+    → surfacesLoaded guard: false → fetch runs
+    → DB: ai_voice_surfaces exists → returns cached JSON [~30ms]
+    → Zustand: voiceSurfaces = result, surfacesLoaded = true
+
+During a conversation (queries):
+  Every search → POST /api/search (NOT /api/settings/voice-surfaces)
+  → surfaces served from Zustand store → zero network overhead
+```
+
+The `surfacesLoaded` guard in `lib/store/chat-panel-store.ts` (`if (get().surfacesLoaded) return`) already handles in-session deduplication. Commit 1c changes `voiceSurfaces` initial state from `DEFAULT_VOICE_SURFACES` to `null` — the guard stays, only the initial value changes. Skeleton renders while `voiceSurfaces === null`, real content renders once the fetch resolves.
+
+**Responsive while staying in character:**
+The input and submit button are active during skeleton — initialization must not block interaction. If a user types and submits before surfaces resolve:
+- The search response goes to `/api/search` which already has Q&A voice examples in its system prompt → the AI response is in character regardless of surface load state
+- Surface strings (greeting, waiting filler, placeholder) are cosmetic layer — the voice of actual responses never depends on them
+- On the very first install the ~500ms AI generation delay is only felt once, never again. The skeleton makes this feel like loading, not broken.
+
+This separation — surfaces are cosmetic, search voice comes from Q&A examples in the system prompt — means the Counter is always in character from the first query, even if the greeting skeleton is still resolving.
 
 **Commit 1b — Cache bust in PUT `/api/admin/settings/ai-search`**
 
