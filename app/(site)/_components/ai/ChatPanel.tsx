@@ -233,12 +233,7 @@ function PanelContent() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Keep focus synchronously before state updates — prevents keyboard retract on iOS
-    inputRef.current?.focus();
-    void sendQuery(input);
-  };
+  const handleSend = () => void sendQuery(input);
 
   return (
     <div className="flex flex-col h-full">
@@ -257,19 +252,26 @@ function PanelContent() {
         </div>
       </div>
 
-      {/* Input with send button embedded inside */}
-      <form onSubmit={handleSubmit} className="shrink-0 px-4 pb-3 pt-1">
+      {/* Input with send button — no <form> to avoid iOS keyboard retract on submit */}
+      <div className="shrink-0 px-4 pb-3 pt-1">
         <div className="relative">
           <Input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
             placeholder={voiceSurfaces.placeholder}
-            disabled={isLoading}
             className="text-sm h-9 rounded-full bg-muted/40 border-muted-foreground/20 focus-visible:bg-background pr-11"
           />
           <button
-            type="submit"
+            type="button"
+            onClick={handleSend}
+            onPointerDown={(e) => e.preventDefault()}
             disabled={isLoading}
             aria-label="Send message"
             className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -281,7 +283,7 @@ function PanelContent() {
             )}
           </button>
         </div>
-      </form>
+      </div>
 
       {/* Context strip */}
       <div className="shrink-0 px-4 pb-3">
