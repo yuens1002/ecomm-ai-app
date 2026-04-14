@@ -71,11 +71,17 @@ function NavDropdown({ item, unreadCount }: { item: NavItem; unreadCount: number
   // root-prefix edge case where pathname matching would light up Dashboard on every page.
   // For synthetic items (overflow "...More", no routeId), fall back to pathname matching.
   const hasActiveChildByRegistry = useHasActiveDescendant(item.routeId ?? "");
+  // Special case: /admin resolves to route id "admin" (root), not "admin.dashboard" (group).
+  // Both share the same pathname so the registry can't distinguish them. Add an explicit
+  // exact-match check so Dashboard lights up when the user is on the overview page.
+  const isAdminDashboardRootActive = pathname === "/admin" && item.routeId === "admin.dashboard";
   const hasActiveChildByPath = item.children?.some(child => {
     const childPath = child.href.split("?")[0];
     return pathname === childPath || pathname.startsWith(childPath + "/");
   }) ?? false;
-  const hasActiveChild = item.routeId ? hasActiveChildByRegistry : hasActiveChildByPath;
+  const hasActiveChild = item.routeId
+    ? hasActiveChildByRegistry || isAdminDashboardRootActive
+    : hasActiveChildByPath;
 
   // Also need to check direct match for parent items with a direct href
   const directHref = item.href || "";
