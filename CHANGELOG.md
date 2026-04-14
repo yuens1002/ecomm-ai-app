@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.100.5 - 2026-04-14
+
+### Fixed
+
+- **Counter keyboard retention on Android**: Input no longer disabled during AI response — keyboard stays open throughout the conversation
+- **Counter focus steal prevention**: Container-level `onPointerDown` guard replaces per-element handlers — badges, chips, and send button no longer steal focus from the input
+- **More/Less badge context**: Toggling product list now scrolls the badge into view instead of jumping to the bottom of the conversation
+- **Voice surfaces defaults**: Surface strings now always come from DB, not TS constants; seed writes defaults to DB on first install
+- **Voice surfaces generation prompt**: Context-only descriptions — the model derives tone from Q&A examples, not prescriptive copy instructions
+- **Counter drawer viewport offset**: Drawer correctly tracks `visualViewport.offsetTop` so it stays below the nav bar when the keyboard opens on mobile
+- **`crypto.randomUUID` dev fallback**: Non-secure HTTP dev access no longer throws — fallback scoped to `NODE_ENV === "development"` only; production always uses the secure API
+
 ## 0.100.4 - 2026-04-13
 
 ### Fixed
