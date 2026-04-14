@@ -457,21 +457,24 @@ function ProductCard({ product }: { product: ProductSummary }) {
 export function ChatPanel() {
   const { isOpen, close, open, clearMessages, addMessage } = useChatPanelStore();
   const bodyCleanupRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [viewport, setViewport] = useState<{ height: number; offsetTop: number } | null>(null);
 
-  // Track visual viewport height so the drawer doesn't get obscured by the mobile keyboard
+  // Track visual viewport size + offset so the drawer stays within the visible area
+  // when the mobile keyboard opens. offsetTop is non-zero on iOS when the browser
+  // scrolls the page to keep the focused input visible — without it the drawer
+  // drifts up behind the sticky nav bar.
   useEffect(() => {
     if (!isOpen) return;
     const vv = window.visualViewport;
     if (!vv) return;
-    const onResize = () => setViewportHeight(vv.height);
+    const onResize = () => setViewport({ height: vv.height, offsetTop: vv.offsetTop });
     onResize();
     vv.addEventListener("resize", onResize);
     vv.addEventListener("scroll", onResize);
     return () => {
       vv.removeEventListener("resize", onResize);
       vv.removeEventListener("scroll", onResize);
-      setViewportHeight(null);
+      setViewport(null);
     };
   }, [isOpen]);
 
@@ -524,7 +527,7 @@ export function ChatPanel() {
     >
       <DrawerContent
         className="inset-y-0 right-0 left-auto h-full w-full sm:w-[min(25vw,360px)] rounded-none border-l border-t-0 border-b-0 focus:outline-none"
-        style={viewportHeight ? { height: `${viewportHeight}px` } : undefined}
+        style={viewport ? { height: `${viewport.height}px`, top: `${viewport.offsetTop}px` } : undefined}
       >
         {/* Header row — title left, reset + close right */}
         <div className="shrink-0 px-4 py-2 flex items-center gap-2">
