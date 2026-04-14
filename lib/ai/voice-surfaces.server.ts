@@ -25,30 +25,29 @@ export async function generateVoiceSurfaces(
     messages: [
       {
         role: "system",
-        content: `You are a copywriter adapting UI text to match a shop owner's voice. Here is how the owner speaks:\n\n${examplePairs}\n\nWrite every string in the owner's voice — same warmth, vocabulary, and rhythm.`,
+        content: `You are writing UI copy for a shop owner's chat assistant. The copy must sound exactly like this owner — use their vocabulary, sentence rhythm, and personality as shown in these Q&As:\n\n${examplePairs}\n\nDo NOT write polished or corporate copy. Write as if the owner is speaking directly to the customer.`,
       },
       {
         role: "user",
         content: `Generate these UI surface strings in the owner's voice. Return valid JSON only — no markdown, no explanation.
 
 {
-  "greeting.home": "An open-ended welcome that invites the customer to explore (1-2 sentences)",
-  "greeting.product": "A greeting for when the customer is viewing a specific product. Use {product} as the product name placeholder (1 sentence)",
-  "greeting.category": "A greeting for when the customer is browsing a category. Use {category} as the category name placeholder (1 sentence)",
-  "waiting": "A short thinking-out-loud filler word or phrase the owner would say while searching (1-3 words, like 'um' or 'let me think' or 'hmm')",
-  "salutation": "A natural response to 'hey' or 'hello' — greet back and pivot to helping (1 sentence)",
-  "aiFailed": "A casual recovery when you couldn't process the request — ask them to try again (1 sentence)",
-  "noResults": "An empathetic message when no products match — encourage rephrasing (1-2 sentences)",
-  "error": "A casual recovery for a technical error — ask them to retry (1 sentence)",
-  "placeholder": "8–12 words, a question or invitation in the owner's voice for the chat input field (e.g. 'What are you after today?' or 'How do you take your coffee?')"
+  "greeting.home": "How you'd greet someone who just walked in — in your own words, as if you're behind the counter (1-2 sentences)",
+  "greeting.product": "Your reaction when a customer is looking at {product} — natural, like you know the product (1 sentence)",
+  "greeting.category": "A quick word when someone's browsing {category} — steer them a bit, in your voice (1 sentence)",
+  "waiting": "A filler word or phrase you'd say while thinking — 1-3 words, lowercase (e.g. 'um', 'let me think', 'hmm')",
+  "salutation": "Your response to 'hey' or 'hello' — greet back and ask how you can help, in your words (1 sentence)",
+  "aiFailed": "What you'd say if you blanked for a second — casual, ask them to repeat (1 sentence)",
+  "noResults": "What you'd say when nothing matched — ask them to rephrase or tell you more (1-2 sentences)",
+  "error": "A quick recovery after a technical hiccup — casual, ask them to try again (1 sentence)",
+  "placeholder": "A short question or invitation for the chat input — 8-12 words, something you'd actually say at the counter"
 }
 
 Rules:
 - Speak directly to the customer: use "you", "your" — never third person
-- Match the owner's actual vocabulary and sentence rhythm from the examples
-- Keep it natural — no corporate speak, no exclamation overload
+- Use the owner's actual vocabulary, rhythm, and personality from the Q&As above — not generic assistant language
 - The waiting filler should be 1-3 words max, lowercase
-- The placeholder should be a short question, not a statement`,
+- The placeholder should be a question, not a statement`,
       },
     ],
     maxTokens: 1024,

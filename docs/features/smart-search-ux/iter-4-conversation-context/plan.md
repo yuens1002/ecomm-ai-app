@@ -23,6 +23,11 @@ The five Q&A voice examples function as a single cohesive voice profile — the 
 
 The primary goal of commit 10 ("admin two-part textarea — voice answer + AI preview") is to close this loop: every Q&A block shows an AI-generated sample response alongside the owner's answer, so admins can hear their voice in action and tune for consistency before it reaches customers. This reframes the five blocks as a single voice profile edit rather than five independent fields.
 
+**Voice surface initialization (new goal for this iteration):**
+All voice surfaces — greeting, placeholder, salutation, waiting filler, error strings — must come from the same Q&A source. Currently, surfaces are only generated when the admin explicitly saves voice examples. If the admin never touches that page, the ChatPanel falls back to hardcoded TS constants that aren't actually derived from the Q&A examples. This breaks the principle that every surface is one coherent persona.
+
+The fix is lazy initialization: the first time Counter opens with AI configured, `GET /api/settings/voice-surfaces` checks for cached surfaces in DB. If none exist, it calls `generateVoiceSurfaces(storedExamples || DEFAULT_VOICE_EXAMPLES)`, writes the result to `ai_voice_surfaces`, and returns it. Every subsequent open reads the cached version — no re-generation until examples change. When the admin saves new Q&A answers, the PUT handler deletes `ai_voice_surfaces` from DB (only if it already exists — stale surfaces are more harmful than no surfaces). Next Counter open re-initializes from the new examples. The ChatPanel shows a skeleton while the initialization fetch resolves — no flash of TS fallback text before the real voice arrives.
+
 ---
 
 ## Commit Schedule
@@ -32,7 +37,10 @@ The primary goal of commit 10 ("admin two-part textarea — voice answer + AI pr
 | # | Message | Scope | Risk |
 |---|---------|-------|------|
 | 0 | `docs: add plan for conversation context iteration` | — | — |
-| 1 | `feat: pass conversation history to AI extraction` | route.ts, ChatPanel.tsx | Medium |
+| 1a | `feat: lazy voice surface init — GET generates + caches on first Counter open` | voice-surfaces/route.ts | Low |
+| 1b | `fix: cache bust surfaces on example change — delete on PUT when surfaces exist` | ai-search/route.ts | Low |
+| 1c | `feat: Counter skeleton while voice surfaces load — no TS fallback flash` | ChatPanel.tsx | Low |
+| 2 | `feat: pass conversation history to AI extraction` | route.ts, ChatPanel.tsx | Medium |
 | 2 | `fix: reset greeting on page navigation` | ChatPanel.tsx | Low |
 | 3 | `fix: reset button uses context-aware greeting` | ChatPanel.tsx | Low |
 | 4 | `feat: pre-validate follow-up chips — filter zero-result options` | route.ts | Medium |
@@ -54,6 +62,8 @@ The primary goal of commit 10 ("admin two-part textarea — voice answer + AI pr
 
 | AC | What | How | Pass |
 |----|------|-----|------|
+| AC-UI-0a | Counter shows skeleton while surfaces load | Screenshot: Counter open immediately after hard refresh (empty cache) | Skeleton placeholder visible in greeting and input areas — no TS fallback text flash before real voice arrives |
+| AC-UI-0b | Counter greeting matches Q&A voice after init | Interactive: open Counter fresh (no cached surfaces) — wait for init — screenshot | Greeting text is consistent with the persona from DEFAULT_VOICE_EXAMPLES — not generic AI-assistant copy |
 | AC-UI-1 | Greeting updates when navigating to a different page | Interactive: open panel on homepage, navigate to PDP, check greeting | Greeting changes from `greeting.home` to `greeting.product` with product name |
 | AC-UI-2 | Reset button produces context-aware greeting | Interactive: open panel on PDP, click reset | Greeting is product-specific, not homepage greeting |
 | AC-UI-3 | Placeholder text adapts to page context | Screenshot: panel on homepage vs category vs merch page | Homepage: "Ask about our products...", Coffee category: "Ask about our coffee...", Merch: "Ask about our gear..." or similar |
@@ -71,6 +81,10 @@ The primary goal of commit 10 ("admin two-part textarea — voice answer + AI pr
 
 | AC | What | How | Pass |
 |----|------|-----|------|
+| AC-FN-0a | Lazy init fires on first Counter open | Code review: `app/api/settings/voice-surfaces/route.ts` | When `ai_voice_surfaces` absent from DB and AI configured: calls `generateVoiceSurfaces`, upserts result to `ai_voice_surfaces`, returns generated surfaces — not TS fallback |
+| AC-FN-0b | Lazy init uses stored examples or defaults | Code review: same route | Reads `ai_voice_examples` from DB first; falls back to `DEFAULT_VOICE_EXAMPLES` if absent |
+| AC-FN-0c | Surfaces not regenerated eagerly in PUT | Code review: `app/api/admin/settings/ai-search/route.ts` | PUT handler no longer calls `generateVoiceSurfaces` directly; instead deletes `ai_voice_surfaces` when `voiceExamples` field is present in payload and surfaces currently exist in DB |
+| AC-FN-0d | Delete-on-change only when surfaces exist | Code review: same PUT handler | Delete is conditional — `prisma.siteSettings.deleteMany({ where: { key: "ai_voice_surfaces" } })` only after confirming the record exists; no-op on fresh installs |
 | AC-FN-1 | Conversation history passed to extraction prompt | Code review: `route.ts` + `ChatPanel.tsx` | Prior user/assistant turns included in AI extraction call |
 | AC-FN-2 | History limited to last N turns | Code review: `route.ts` | Only last 5 turns sent to avoid token bloat |
 | AC-FN-3 | Greeting message replaced on navigation | Code review: `ChatPanel.tsx` | `pathname` change triggers greeting replacement when panel has only the greeting |
@@ -101,7 +115,108 @@ The primary goal of commit 10 ("admin two-part textarea — voice answer + AI pr
 
 ## Implementation Details
 
-### Commit 1: Clear keyword OR when AI extraction succeeds
+### Commits 1a–1c: Voice Surface Initialization
+
+**Commit 1a — Lazy init in GET `/api/settings/voice-surfaces`**
+
+```ts
+export async function GET() {
+  try {
+    const [surfacesSetting, examplesSetting] = await Promise.all([
+      prisma.siteSettings.findUnique({ where: { key: "ai_voice_surfaces" } }),
+      prisma.siteSettings.findUnique({ where: { key: "ai_voice_examples" } }),
+    ]);
+
+    if (surfacesSetting?.value) {
+      try {
+        return NextResponse.json(JSON.parse(surfacesSetting.value));
+      } catch { /* malformed — fall through to init */ }
+    }
+
+    // No surfaces cached — initialize from examples if AI is available
+    if (await isAIConfigured()) {
+      let examples = DEFAULT_VOICE_EXAMPLES;
+      if (examplesSetting?.value) {
+        try { examples = JSON.parse(examplesSetting.value); } catch { /* use defaults */ }
+      }
+      const surfaces = await generateVoiceSurfaces(examples);
+      await prisma.siteSettings.upsert({
+        where: { key: "ai_voice_surfaces" },
+        update: { value: JSON.stringify(surfaces) },
+        create: { key: "ai_voice_surfaces", value: JSON.stringify(surfaces) },
+      });
+      return NextResponse.json(surfaces);
+    }
+
+    return NextResponse.json(DEFAULT_VOICE_SURFACES);
+  } catch (error) {
+    console.error("Error fetching voice surfaces:", error);
+    return NextResponse.json(DEFAULT_VOICE_SURFACES);
+  }
+}
+```
+
+**Request lifecycle — keeping initialization minimal:**
+
+```
+First-ever install (surfaces not in DB):
+  Panel open → GET /api/settings/voice-surfaces
+    → surfacesLoaded guard: false → fetch runs
+    → DB: no ai_voice_surfaces → isAIConfigured() → generateVoiceSurfaces() [~500ms, one-time]
+    → writes to DB → returns surfaces
+    → Zustand: voiceSurfaces = result, surfacesLoaded = true
+
+Every subsequent panel open (same session):
+  Panel open → loadSurfaces() → surfacesLoaded: true → returns immediately (no fetch)
+
+After page refresh / new tab (surfaces now in DB):
+  Panel open → GET /api/settings/voice-surfaces
+    → surfacesLoaded guard: false → fetch runs
+    → DB: ai_voice_surfaces exists → returns cached JSON [~30ms]
+    → Zustand: voiceSurfaces = result, surfacesLoaded = true
+
+During a conversation (queries):
+  Every search → POST /api/search (NOT /api/settings/voice-surfaces)
+  → surfaces served from Zustand store → zero network overhead
+```
+
+The `surfacesLoaded` guard in `lib/store/chat-panel-store.ts` (`if (get().surfacesLoaded) return`) already handles in-session deduplication. Commit 1c changes `voiceSurfaces` initial state from `DEFAULT_VOICE_SURFACES` to `null` — the guard stays, only the initial value changes. Skeleton renders while `voiceSurfaces === null`, real content renders once the fetch resolves.
+
+**Responsive while staying in character:**
+The input and submit button are active during skeleton — initialization must not block interaction. If a user types and submits before surfaces resolve:
+- The search response goes to `/api/search` which already has Q&A voice examples in its system prompt → the AI response is in character regardless of surface load state
+- Surface strings (greeting, waiting filler, placeholder) are cosmetic layer — the voice of actual responses never depends on them
+- On the very first install the ~500ms AI generation delay is only felt once, never again. The skeleton makes this feel like loading, not broken.
+
+This separation — surfaces are cosmetic, search voice comes from Q&A examples in the system prompt — means the Counter is always in character from the first query, even if the greeting skeleton is still resolving.
+
+**Commit 1b — Cache bust in PUT `/api/admin/settings/ai-search`**
+
+Replace the eager `generateVoiceSurfaces` call with a conditional delete:
+
+```ts
+// When voice examples change, invalidate cached surfaces so next Counter open re-initializes
+if (parsed.data.voiceExamples !== undefined) {
+  const existingSurfaces = await prisma.siteSettings.findUnique({
+    where: { key: "ai_voice_surfaces" },
+  });
+  if (existingSurfaces) {
+    await prisma.siteSettings.delete({ where: { key: "ai_voice_surfaces" } });
+  }
+}
+```
+
+Remove the old `generateVoiceSurfaces` block from this handler entirely. Surfaces are now always initialized lazily.
+
+**Commit 1c — Skeleton in ChatPanel while surfaces load**
+
+`voiceSurfaces` state starts as `null`. While null, render skeleton in place of greeting text and input placeholder. The `loadSurfaces()` call on panel open populates surfaces and triggers a re-render. Once populated, never shown as null again (cached in Zustand store across re-renders within the session).
+
+Skeleton elements match the dimensions of the real content — no layout shift on resolution.
+
+---
+
+### Commit 1 (renumbered → 2): Clear keyword OR when AI extraction succeeds
 
 **File:** `app/api/search/route.ts`
 

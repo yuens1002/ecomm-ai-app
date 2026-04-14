@@ -4,6 +4,8 @@ import {
   sendInstallEvent,
   isTelemetryDisabledByEnv,
 } from "../../lib/telemetry";
+import { DEFAULT_VOICE_EXAMPLES } from "../../lib/ai/voice-examples";
+import { DEFAULT_VOICE_SURFACES } from "../../lib/ai/voice-surfaces";
 
 export async function seedSettings(prisma: PrismaClient) {
   console.log("  📋 Creating site settings...");
@@ -358,6 +360,26 @@ export async function seedSettings(prisma: PrismaClient) {
       },
     });
   }
+
+  // AI voice — seed defaults so the UI always reads from DB, not TS fallbacks.
+  // update: {} means we never overwrite customizations the admin has already saved.
+  await prisma.siteSettings.upsert({
+    where: { key: "ai_voice_examples" },
+    update: {},
+    create: {
+      key: "ai_voice_examples",
+      value: JSON.stringify(DEFAULT_VOICE_EXAMPLES),
+    },
+  });
+
+  await prisma.siteSettings.upsert({
+    where: { key: "ai_voice_surfaces" },
+    update: {},
+    create: {
+      key: "ai_voice_surfaces",
+      value: JSON.stringify(DEFAULT_VOICE_SURFACES),
+    },
+  });
 
   console.log("  ✅ Site settings created");
 }

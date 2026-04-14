@@ -34,15 +34,16 @@ export type VoiceSurfaceKey = keyof VoiceSurfaces;
 
 /** Hardcoded fallback when no generated surfaces exist */
 export const DEFAULT_VOICE_SURFACES: VoiceSurfaces = {
-  "greeting.home": "What are you in the mood for today?",
-  "greeting.product": "Curious about {product}? I can tell you all about it.",
-  "greeting.category": "Browsing our {category}? I can help you narrow it down.",
+  "greeting.home":
+    "Hey! What are you in the mood for today — light and fruity, or something darker and cozy?",
+  "greeting.product": "Good eye on {product} — want to know what I think?",
+  "greeting.category":
+    "Browsing {category}? Tell me what you're after and I'll point you somewhere good.",
   waiting: "um",
-  salutation: "Hey! What can I help you find today?",
-  aiFailed:
-    "Ah sorry, I spaced out for a sec — what were you looking for again?",
+  salutation: "Hey! What are you after?",
+  aiFailed: "Ah sorry, I blanked for a sec — what were you looking for again?",
   noResults:
-    "Hmm, I'm not sure we have exactly what you're after — could you tell me more about how you like your coffee?",
+    "Hmm, nothing's jumping out for that — can you tell me a bit more about what you're after?",
   error: "Something hiccuped on my end — give it another try?",
   placeholder: "What are you after today?",
 };

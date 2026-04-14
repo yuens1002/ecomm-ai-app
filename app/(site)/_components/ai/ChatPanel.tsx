@@ -233,13 +233,19 @@ function PanelContent() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    void sendQuery(input);
+  const handleSend = () => void sendQuery(input);
+
+  // Prevent any button inside the panel from stealing focus from the input.
+  // Attached to the container so we don't need per-element onPointerDown handlers.
+  // Scrolling and input taps are unaffected — only button targets are intercepted.
+  const preventFocusSteal = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('button, [role="button"]')) {
+      e.preventDefault();
+    }
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" onPointerDown={preventFocusSteal}>
       {/* Messages — anchored to bottom; spacer pushes up when few messages */}
       <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
         <div className="flex-1" />
@@ -255,19 +261,25 @@ function PanelContent() {
         </div>
       </div>
 
-      {/* Input with send button embedded inside */}
-      <form onSubmit={handleSubmit} className="shrink-0 px-4 pb-3 pt-1">
+      {/* Input with send button — no <form> to avoid iOS keyboard retract on submit */}
+      <div className="shrink-0 px-4 pb-3 pt-1">
         <div className="relative">
           <Input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
             placeholder={voiceSurfaces.placeholder}
-            disabled={isLoading}
             className="text-sm h-9 rounded-full bg-muted/40 border-muted-foreground/20 focus-visible:bg-background pr-11"
           />
           <button
-            type="submit"
+            type="button"
+            onClick={handleSend}
             disabled={isLoading}
             aria-label="Send message"
             className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -279,7 +291,7 @@ function PanelContent() {
             )}
           </button>
         </div>
-      </form>
+      </div>
 
       {/* Context strip */}
       <div className="shrink-0 px-4 pb-3">
@@ -304,6 +316,14 @@ function MessageBubble({
   onChipClick: (chip: string) => void;
 }) {
   const [showAll, setShowAll] = useState(false);
+  const badgeRef = useRef<HTMLDivElement>(null);
+
+  const handleToggle = () => {
+    setShowAll((s) => !s);
+    requestAnimationFrame(() => {
+      badgeRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  };
 
   if (msg.role === "user") {
     return (
@@ -367,13 +387,13 @@ function MessageBubble({
             ))}
           </div>
           {extraCount > 0 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+            <div ref={badgeRef} className="absolute bottom-3 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
               <Badge
                 variant="outline"
                 role="button"
                 tabIndex={0}
-                onClick={() => setShowAll((s) => !s)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowAll((s) => !s); } }}
+                onClick={handleToggle}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleToggle(); } }}
                 aria-label={showAll ? "Show fewer products" : `Show ${extraCount} more products`}
                 className="cursor-pointer text-muted-foreground font-normal bg-background hover:bg-accent hover:text-foreground transition-colors focus:ring-0 focus:ring-offset-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
@@ -457,21 +477,24 @@ function ProductCard({ product }: { product: ProductSummary }) {
 export function ChatPanel() {
   const { isOpen, close, open, clearMessages, addMessage } = useChatPanelStore();
   const bodyCleanupRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [viewport, setViewport] = useState<{ height: number; offsetTop: number } | null>(null);
 
-  // Track visual viewport height so the drawer doesn't get obscured by the mobile keyboard
+  // Track visual viewport size + offset so the drawer stays within the visible area
+  // when the mobile keyboard opens. offsetTop is non-zero on iOS when the browser
+  // scrolls the page to keep the focused input visible — without it the drawer
+  // drifts up behind the sticky nav bar.
   useEffect(() => {
     if (!isOpen) return;
     const vv = window.visualViewport;
     if (!vv) return;
-    const onResize = () => setViewportHeight(vv.height);
+    const onResize = () => setViewport({ height: vv.height, offsetTop: vv.offsetTop });
     onResize();
     vv.addEventListener("resize", onResize);
     vv.addEventListener("scroll", onResize);
     return () => {
       vv.removeEventListener("resize", onResize);
       vv.removeEventListener("scroll", onResize);
-      setViewportHeight(null);
+      setViewport(null);
     };
   }, [isOpen]);
 
@@ -524,7 +547,7 @@ export function ChatPanel() {
     >
       <DrawerContent
         className="inset-y-0 right-0 left-auto h-full w-full sm:w-[min(25vw,360px)] rounded-none border-l border-t-0 border-b-0 focus:outline-none"
-        style={viewportHeight ? { height: `${viewportHeight}px` } : undefined}
+        style={viewport ? { height: `${viewport.height}px`, top: `${viewport.offsetTop}px` } : undefined}
       >
         {/* Header row — title left, reset + close right */}
         <div className="shrink-0 px-4 py-2 flex items-center gap-2">
