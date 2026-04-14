@@ -377,6 +377,7 @@ function MessageBubble({
                 role="button"
                 tabIndex={0}
                 onClick={() => setShowAll((s) => !s)}
+                onPointerDown={(e) => e.preventDefault()}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowAll((s) => !s); } }}
                 aria-label={showAll ? "Show fewer products" : `Show ${extraCount} more products`}
                 className="cursor-pointer text-muted-foreground font-normal bg-background hover:bg-accent hover:text-foreground transition-colors focus:ring-0 focus:ring-offset-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
