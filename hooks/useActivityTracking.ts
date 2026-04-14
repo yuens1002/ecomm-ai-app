@@ -15,9 +15,15 @@ function getSessionId(): string {
 
   let sessionId = sessionStorage.getItem("artisan_session_id");
   if (!sessionId) {
-    // crypto.randomUUID() requires a secure context (HTTPS); fall back for HTTP dev access
-    sessionId = crypto.randomUUID?.() ??
-      `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+    // crypto.randomUUID() requires HTTPS (secure context).
+    // In dev, allow HTTP local-network access with a non-cryptographic fallback.
+    // In production this always runs over HTTPS so randomUUID() is always available.
+    if (process.env.NODE_ENV === "development") {
+      sessionId = crypto.randomUUID?.() ??
+        `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+    } else {
+      sessionId = crypto.randomUUID();
+    }
     sessionStorage.setItem("artisan_session_id", sessionId);
   }
   return sessionId;
