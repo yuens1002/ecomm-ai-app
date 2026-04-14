@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getDesktopNavConfig, NavChild, NavItem } from "@/lib/config/admin-nav";
-import { useIsHrefActive, useCurrentPathname } from "@/lib/navigation/hooks";
+import { useIsHrefActive, useCurrentPathname, useHasActiveDescendant } from "@/lib/navigation/hooks";
 import { cn } from "@/lib/utils";
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
 import { ArrowLeftIcon, ChevronDown, KeyRound, LogOut, Moon, Sun, User } from "lucide-react";
@@ -67,13 +67,15 @@ function NavChildLink({ child, showBadge }: { child: NavChild; showBadge?: boole
 function NavDropdown({ item, unreadCount }: { item: NavItem; unreadCount: number }) {
   const pathname = useCurrentPathname();
 
-  // Check if any child is active using pathname-based matching.
-  // Handles both exact matches and nested routes (e.g. /admin/settings/ai/x matches /admin/settings/ai).
-  // Query strings are stripped before comparison since pathname doesn't include them.
-  const hasActiveChild = item.children?.some(child => {
+  // For items with a routeId, use the route registry — accurate, handles the /admin
+  // root-prefix edge case where pathname matching would light up Dashboard on every page.
+  // For synthetic items (overflow "...More", no routeId), fall back to pathname matching.
+  const hasActiveChildByRegistry = useHasActiveDescendant(item.routeId ?? "");
+  const hasActiveChildByPath = item.children?.some(child => {
     const childPath = child.href.split("?")[0];
     return pathname === childPath || pathname.startsWith(childPath + "/");
   }) ?? false;
+  const hasActiveChild = item.routeId ? hasActiveChildByRegistry : hasActiveChildByPath;
 
   // Also need to check direct match for parent items with a direct href
   const directHref = item.href || "";

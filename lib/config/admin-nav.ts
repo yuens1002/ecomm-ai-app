@@ -28,6 +28,7 @@ export type NavItem = {
   label: string;
   icon: LucideIcon;
   href?: string; // Direct link (no dropdown)
+  routeId?: string; // Route registry ID for accurate active-state via useHasActiveDescendant
   children?: NavChild[];
 };
 
@@ -35,6 +36,7 @@ export const adminNavConfig: NavItem[] = [
   {
     label: "Dashboard",
     icon: LayoutDashboard,
+    routeId: "admin.dashboard",
     children: [
       { label: ADMIN_PAGES.overview.label, href: ADMIN_PAGES.overview.href },
       { label: ADMIN_PAGES.sales.label, description: ADMIN_PAGES.sales.description, href: ADMIN_PAGES.sales.href, icon: DollarSign },
@@ -44,6 +46,7 @@ export const adminNavConfig: NavItem[] = [
   {
     label: "Products",
     icon: Package,
+    routeId: "admin.products",
     children: [
       { label: "Coffees", href: "/admin/products" },
       { label: "Merch", href: "/admin/merch" },
@@ -55,6 +58,7 @@ export const adminNavConfig: NavItem[] = [
   {
     label: "Orders",
     icon: ClipboardList,
+    routeId: "admin.orders",
     children: [
       { label: "All Orders", href: "/admin/orders" },
       { label: "Subscriptions", href: "/admin/subscriptions" },
@@ -63,6 +67,7 @@ export const adminNavConfig: NavItem[] = [
   {
     label: "Pages",
     icon: FileText,
+    routeId: "admin.pages",
     children: [
       { label: "About", href: "/admin/pages/about" },
       { label: "Cafe", href: "/admin/pages/cafe" },
@@ -72,6 +77,7 @@ export const adminNavConfig: NavItem[] = [
   {
     label: "Management",
     icon: Users,
+    routeId: "admin.management",
     children: [
       { label: "All Users", href: "/admin/users" },
       { label: "Newsletter", href: "/admin/newsletter" },
@@ -81,6 +87,7 @@ export const adminNavConfig: NavItem[] = [
   {
     label: "Settings",
     icon: Settings,
+    routeId: "admin.settings",
     children: [
       { label: "General", href: "/admin/settings" },
       { label: "Store Front", href: "/admin/settings/storefront" },
@@ -98,6 +105,7 @@ export const adminNavConfig: NavItem[] = [
   {
     label: "Support & Services",
     icon: LifeBuoy,
+    routeId: "admin.support",
     children: [
       { label: "Submit Ticket", href: "/admin/support" },
       { label: "Plans", href: "/admin/support/plans" },
