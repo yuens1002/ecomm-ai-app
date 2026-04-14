@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.100.6 - 2026-04-14
+
+### Fixed
+
+- **Admin nav active state**: Dashboard no longer highlights on every admin page — nav items now use the route registry (`useHasActiveDescendant`) instead of a naive pathname-prefix check that matched `/admin` against all admin routes
+
 ## 0.100.5 - 2026-04-14
 
 ### Fixed
