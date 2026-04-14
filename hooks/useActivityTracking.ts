@@ -15,7 +15,9 @@ function getSessionId(): string {
 
   let sessionId = sessionStorage.getItem("artisan_session_id");
   if (!sessionId) {
-    sessionId = crypto.randomUUID();
+    // crypto.randomUUID() requires a secure context (HTTPS); fall back for HTTP dev access
+    sessionId = crypto.randomUUID?.() ??
+      `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
     sessionStorage.setItem("artisan_session_id", sessionId);
   }
   return sessionId;
