@@ -316,6 +316,14 @@ function MessageBubble({
   onChipClick: (chip: string) => void;
 }) {
   const [showAll, setShowAll] = useState(false);
+  const badgeRef = useRef<HTMLDivElement>(null);
+
+  const handleToggle = () => {
+    setShowAll((s) => !s);
+    requestAnimationFrame(() => {
+      badgeRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  };
 
   if (msg.role === "user") {
     return (
@@ -379,13 +387,13 @@ function MessageBubble({
             ))}
           </div>
           {extraCount > 0 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+            <div ref={badgeRef} className="absolute bottom-3 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
               <Badge
                 variant="outline"
                 role="button"
                 tabIndex={0}
-                onClick={() => setShowAll((s) => !s)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowAll((s) => !s); } }}
+                onClick={handleToggle}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleToggle(); } }}
                 aria-label={showAll ? "Show fewer products" : `Show ${extraCount} more products`}
                 className="cursor-pointer text-muted-foreground font-normal bg-background hover:bg-accent hover:text-foreground transition-colors focus:ring-0 focus:ring-offset-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
