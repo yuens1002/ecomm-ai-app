@@ -235,6 +235,8 @@ function PanelContent() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Keep focus synchronously before state updates — prevents keyboard retract on iOS
+    inputRef.current?.focus();
     void sendQuery(input);
   };
 
