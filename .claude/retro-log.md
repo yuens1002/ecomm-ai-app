@@ -120,3 +120,18 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 - `CLAUDE.md` — Added "Re-read before editing" rule as the first item under Must-have: if a file was modified earlier in the session (by agent or linter), always re-read before the next edit. Never edit from stale context.
 
 **Prevented by:** The rule is in CLAUDE.md (always loaded) and positioned as the first code quality rule for visibility. The agent must re-read any previously-modified file before editing it again.
+
+---
+
+## 2026-04-14 — Admin nav active state regressed from naive pathname-prefix fix
+
+**Gap:** A fix applied during `feat/counter-ux` (commit `37b29e4`) replaced `useHasActiveDescendant` with a direct pathname prefix check. The new check used `pathname.startsWith(childPath + "/")` — which is correct for most nav items but catastrophically wrong for Dashboard, whose Overview child has `href: "/admin"`. Since every admin page starts with `/admin/`, Dashboard lit up as active on every admin page. The regression shipped to main as part of a broader UX commit and wasn't caught until the next session.
+
+**Root cause:** The navigation system docs (`docs/navigation/`) were not consulted before implementing the fix. The route registry and `useHasActiveDescendant` hook exist specifically to handle the `/admin` root-prefix edge case — but the fixer didn't know this and wrote a simpler (broken) alternative. The fix also didn't read `AdminTopNav.tsx` in context of the full navigation system.
+
+**Fix applied to:**
+- `lib/config/admin-nav.ts` — Added `routeId?: string` to `NavItem` type; wired `routeId` to route registry IDs for all 7 `adminNavConfig` items (e.g. `"admin.dashboard"`, `"admin.settings"`)
+- `app/admin/_components/dashboard/AdminTopNav.tsx` — `NavDropdown` now uses `useHasActiveDescendant(item.routeId)` when `routeId` is present; falls back to pathname matching only for synthetic overflow "...More" item (no registry entry)
+- `CLAUDE.md` — Added `docs/navigation/` to Critical Files section with explicit "Read before any admin nav change" instruction and warning about the Dashboard regression
+
+**Prevented by:** `docs/navigation/` is now listed in CLAUDE.md Critical Files. The route registry + `useHasActiveDescendant` pattern is the canonical solution documented there — any nav fix that reads this doc will find the right approach before writing code.
