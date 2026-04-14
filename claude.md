@@ -160,6 +160,7 @@ Rollback: `npm run db:restore`
 - `middleware.ts` — Route protection
 - `app/admin/(product-menu)/constants/action-bar-config.ts` — Menu Builder actions
 - `app/admin/(product-menu)/constants/view-configs.ts` — Menu Builder views
+- `docs/navigation/` — **Read before any admin nav change** (`README.md`, `architecture.md`, `route-registry.md`). The system uses a route registry + pub/sub hooks — naive pathname-prefix fixes cause regressions (e.g. Dashboard lighting up on every admin page)
 
 **Never modify directly:**
 
