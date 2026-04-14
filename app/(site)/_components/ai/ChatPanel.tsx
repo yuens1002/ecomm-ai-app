@@ -235,8 +235,17 @@ function PanelContent() {
 
   const handleSend = () => void sendQuery(input);
 
+  // Prevent any button inside the panel from stealing focus from the input.
+  // Attached to the container so we don't need per-element onPointerDown handlers.
+  // Scrolling and input taps are unaffected — only button targets are intercepted.
+  const preventFocusSteal = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('button, [role="button"]')) {
+      e.preventDefault();
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" onPointerDown={preventFocusSteal}>
       {/* Messages — anchored to bottom; spacer pushes up when few messages */}
       <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
         <div className="flex-1" />
@@ -271,7 +280,6 @@ function PanelContent() {
           <button
             type="button"
             onClick={handleSend}
-            onPointerDown={(e) => e.preventDefault()}
             disabled={isLoading}
             aria-label="Send message"
             className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -377,7 +385,6 @@ function MessageBubble({
                 role="button"
                 tabIndex={0}
                 onClick={() => setShowAll((s) => !s)}
-                onPointerDown={(e) => e.preventDefault()}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowAll((s) => !s); } }}
                 aria-label={showAll ? "Show fewer products" : `Show ${extraCount} more products`}
                 className="cursor-pointer text-muted-foreground font-normal bg-background hover:bg-accent hover:text-foreground transition-colors focus:ring-0 focus:ring-offset-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -399,7 +406,6 @@ function MessageBubble({
                 key={chip}
                 type="button"
                 onClick={() => onChipClick(chip)}
-                onPointerDown={(e) => e.preventDefault()}
                 className="text-xs px-3 py-1.5 rounded-full border border-primary/40 hover:bg-primary/10 hover:border-primary/70 transition-colors text-primary"
               >
                 {chip}
