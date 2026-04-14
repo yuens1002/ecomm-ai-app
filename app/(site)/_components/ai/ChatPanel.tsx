@@ -398,6 +398,7 @@ function MessageBubble({
                 key={chip}
                 type="button"
                 onClick={() => onChipClick(chip)}
+                onPointerDown={(e) => e.preventDefault()}
                 className="text-xs px-3 py-1.5 rounded-full border border-primary/40 hover:bg-primary/10 hover:border-primary/70 transition-colors text-primary"
               >
                 {chip}
