@@ -32,6 +32,8 @@ interface FiltersExtracted {
   priceMaxCents?: number;
   priceMinCents?: number;
   sortBy?: "newest" | "price_asc" | "price_desc" | "top_rated";
+  /** "coffee" uses all flavor/roast filters; "merch" uses name/description only; "any" is unspecified */
+  productType?: "coffee" | "merch" | "any";
 }
 
 interface AgenticExtraction {
@@ -42,6 +44,8 @@ interface AgenticExtraction {
   acknowledgment: string;
   followUpQuestion: string;
   followUps: string[];
+  /** When the AI names a specific product, include the exact name for result reconciliation */
+  recommendedProductName?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -307,23 +311,24 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
   const contextNote = pageContext
     ? `\n\nPage context: the customer is viewing "${pageContext}". Resolve "this", "it", or "this one" as "${pageContext}". When they ask a question about the product they're viewing (e.g. brew method, taste, roast suitability), the explanation must directly answer that question with specific knowledge about "${pageContext}". Include "${pageContext}" in the product results if it is relevant.`
     : "";
-  return `Extract coffee search intent and return JSON only:
+  return `Extract search intent and return JSON only:
 {
   "intent": "product_discovery" | "recommendation" | "how_to" | "reorder",
   "filtersExtracted": {
-    "brewMethod": string | undefined,
-    "roastLevel": "light" | "medium" | "dark" | undefined,
-    "flavorProfile": string[] | undefined,  // Expand flavor categories AND experiential/mood terms into concrete tasting notes a roaster would write. Flavor categories: "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry", "blackcurrant", "currant"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan", "walnut"]; "floral" → ["floral", "jasmine", "lavender", "rose", "honeysuckle"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit", "papaya"]; "spicy" → ["spice", "spicy", "cinnamon", "clove", "cardamom", "pepper"]. Experiential/mood terms: "smooth" / "approachable" / "easy-drinking" / "beginner" / "mellow" → ["smooth", "balanced", "caramel", "chocolate", "mild", "butter"]; "bold" / "strong" / "intense" → ["bold", "dark chocolate", "tobacco", "molasses", "earthy"]; "bright" / "lively" / "vibrant" → ["bright", "citrus", "floral", "lemon", "tea-like"]; "complex" / "interesting" / "unique" → ["complex", "wine", "fermented", "floral", "berry"]. Include the original term AND concrete notes. Keep it scoped.
-
-    "origin": string | undefined,
-    "isOrganic": true | false | undefined,
-    "processing": "washed" | "natural" | "honey" | "anaerobic" | string | undefined,
-    "variety": string | undefined,
+    "productType": "coffee" | "merch" | "any",  // "merch" for non-coffee items (mugs, gear, accessories); "coffee" for coffee queries; "any" when unclear
+    "brewMethod": string | undefined,  // Coffee only
+    "roastLevel": "light" | "medium" | "dark" | undefined,  // Coffee only
+    "flavorProfile": string[] | undefined,  // Coffee only — Expand flavor categories AND experiential/mood terms into concrete tasting notes a roaster would write. Flavor categories: "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry", "blackcurrant", "currant"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan", "walnut"]; "floral" → ["floral", "jasmine", "lavender", "rose", "honeysuckle"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit", "papaya"]; "spicy" → ["spice", "spicy", "cinnamon", "clove", "cardamom", "pepper"]. Experiential/mood terms: "smooth" / "approachable" / "easy-drinking" / "beginner" / "mellow" → ["smooth", "balanced", "caramel", "chocolate", "mild", "butter"]; "bold" / "strong" / "intense" → ["bold", "dark chocolate", "tobacco", "molasses", "earthy"]; "bright" / "lively" / "vibrant" → ["bright", "citrus", "floral", "lemon", "tea-like"]; "complex" / "interesting" / "unique" → ["complex", "wine", "fermented", "floral", "berry"]. Include the original term AND concrete notes. Keep it scoped.
+    "origin": string | undefined,  // Coffee only
+    "isOrganic": true | false | undefined,  // Coffee only
+    "processing": "washed" | "natural" | "honey" | "anaerobic" | string | undefined,  // Coffee only
+    "variety": string | undefined,  // Coffee only
     "priceMaxCents": number (cents, e.g. 3000 for "under $30") | undefined,
     "priceMinCents": number | undefined,
     "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined  // Use "top_rated" when query signals popularity or gift intent: "well-loved", "crowd-pleaser", "safe bet", "popular", "everyone likes", "gift", "my mom", "beginner", "first time"
   },
   "acknowledgment":"In the voice of a shop owner sharing an opinion at the counter. Let the voice examples guide your natural length and rhythm — match their brevity if they are brief, their depth if they are expansive. Use opinion framing: 'I'd go with', 'I'd say try', 'personally I'd', 'if it were me'. No physical action verbs ('grab', 'pour', 'pick out', 'pull'). Use second person ('you'). NEVER use search vocabulary: 'I found', 'looking for', 'matches', 'options that fit', 'search results'. ALWAYS present. Never third-person ('The customer...'). Never repeat the customer's exact words back.",
+  "recommendedProductName": "Exact product name from the catalog if you are naming a specific product in the acknowledgment (e.g. 'I'd go with the Ethiopian Yirgacheffe'). Must match the product name EXACTLY as it appears in the catalog. Omit if you are not naming a specific product.",
   "followUpQuestion": "1 sentence that fits the customer's context — not a fixed coffee-attribute prompt. Derive it from what they haven't told you AND what would most reduce the results. For gift/occasion queries: ask about the recipient's taste in plain terms ('Does she usually go bold or keep it mellow?', 'How does she take her coffee?'). For vague preference queries: ask about the dimension that cuts deepest. Empty string if the query is already specific.",
   "followUps": ["2-4 word clickable answer to the followUpQuestion — match the question context, use customer language not trade jargon. Roast context: 'Bold & strong' / 'Light & bright' / 'Smooth & mellow'. Brew context: 'Drip machine' / 'French press' / 'Espresso'. Gift/recipient context: 'She loves bold' / 'Something smooth' / 'Surprise her'. Return 2–3 options. Never use question marks."]
 }
@@ -331,6 +336,7 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
 Rules:
 - Speak directly to the customer: use "you", "your" — never third person
 - acknowledgment is ALWAYS required — it validates you understood the customer
+- For merch queries (mugs, gear, accessories): set productType "merch", omit coffee-specific filters
 - followUpQuestion picks the most useful narrowing dimension based on what the customer hasn't told you yet — no fixed category order
 - followUps are only provided when followUpQuestion is non-empty
 - NEVER repeat anything the customer already specified (e.g. if they said "light" do NOT offer "Light roast")
@@ -404,7 +410,16 @@ async function extractAgenticFilters(
     const validSortBy = ["newest", "top_rated"] as const;
     type SortBy = (typeof validSortBy)[number];
 
+    const validProductTypes = ["coffee", "merch", "any"] as const;
+    type ProductType_ = (typeof validProductTypes)[number];
+    const productType: FiltersExtracted["productType"] =
+      typeof rawFilters.productType === "string" &&
+      validProductTypes.includes(rawFilters.productType as ProductType_)
+        ? (rawFilters.productType as ProductType_)
+        : undefined;
+
     const filtersExtracted: FiltersExtracted = {
+      productType,
       brewMethod:
         typeof rawFilters.brewMethod === "string" ? rawFilters.brewMethod : undefined,
       roastLevel,
@@ -442,8 +457,12 @@ async function extractAgenticFilters(
     const followUps = Array.isArray(raw.followUps)
       ? raw.followUps.filter((v) => typeof v === "string")
       : [];
+    const recommendedProductName =
+      typeof raw.recommendedProductName === "string" && raw.recommendedProductName.trim()
+        ? raw.recommendedProductName.trim()
+        : undefined;
 
-    return { intent, filtersExtracted, explanation, acknowledgment, followUpQuestion, followUps };
+    return { intent, filtersExtracted, explanation, acknowledgment, followUpQuestion, followUps, recommendedProductName };
   } catch (err) {
     // LLM failure is non-fatal — fall back to standard keyword search
     console.error("[agentic-search] AI extraction failed:", err);
@@ -727,18 +746,39 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // Lock to COFFEE type when any coffee-specific semantic filter was extracted.
-        // This prevents gear/accessories from matching generic words like "cup" or "coffee".
-        const hasCoffeeFilters = !!(
-          roastLevel ||
-          extractedOrigin ||
-          (flavorProfile && flavorProfile.length > 0) ||
-          isOrganic !== undefined ||
-          processing ||
-          variety
-        );
-        if (hasCoffeeFilters) {
-          whereClause.type = ProductType.COFFEE;
+        // Product-type-aware routing:
+        // - "merch" → skip all coffee-specific filters, search by name/description only
+        // - coffee filters present → lock to COFFEE type
+        // - default → COFFEE (maintains backwards compat for queries without productType)
+        if (agenticData.filtersExtracted.productType === "merch") {
+          // Merch query: remove coffee-type lock, use name/description search only
+          delete whereClause.type;
+          delete whereClause.categories;
+          delete whereClause.origin;
+          delete whereClause.OR;
+          delete whereClause.id;
+          ftsOrderedIds = [];
+          // Re-add name/description search for the merch query
+          if (query) {
+            whereClause.OR = [
+              { name: { contains: query, mode: "insensitive" as const } },
+              { description: { contains: query, mode: "insensitive" as const } },
+            ];
+          }
+        } else {
+          // Lock to COFFEE type when any coffee-specific semantic filter was extracted.
+          // This prevents gear/accessories from matching generic words like "cup" or "coffee".
+          const hasCoffeeFilters = !!(
+            roastLevel ||
+            extractedOrigin ||
+            (flavorProfile && flavorProfile.length > 0) ||
+            isOrganic !== undefined ||
+            processing ||
+            variety
+          );
+          if (hasCoffeeFilters) {
+            whereClause.type = ProductType.COFFEE;
+          }
         }
 
         // NOTE: The keyword OR clause is already cleared above (hasAnyFilter check)
