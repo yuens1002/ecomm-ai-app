@@ -39,6 +39,7 @@ _Patch release — plan detail quota label fix + plans page ACs spec closure. Cl
 | P3 | Phase B3 — "Recommended For You" carousel | Authenticated; falls back to trending for anon |
 | P4 | Reviews Tier 2 — AI Roast Master | `docs/internal/product-reviews-tier2.md` — depends on Phase B data |
 | P5 | Phase B4 — Reviews + search integration | Utility scores in agentic results (BLOCKED on Reviews Tier 2) |
+| P6 | Counter — service tier (platform premium) | Extend Counter beyond product discovery to service queries: order lookup, reorder from history, return initiation. Requires order data access + auth context. Counter redirects these in-character until this ships. |
 
 ---
 
