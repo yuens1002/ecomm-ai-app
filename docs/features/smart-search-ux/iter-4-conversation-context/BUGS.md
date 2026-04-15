@@ -34,4 +34,24 @@ Discovered during post-ship testing. Each bug needs its own AC/verification befo
 
 ---
 
-## BUG-3: (placeholder — add any others found during testing)
+## OBS-1: greeting.home defaults to transactional "get started" tone
+
+**Reported:** 2026-04-15
+**Type:** Observation / design issue — not a crash
+
+**Symptom:** AI-generated `greeting.home` surface came out as "Hey there, welcome in! What can I get started for you?" — order-taking stance, not product discovery.
+
+**Area:** Generation prompt in `voice-surfaces.server.ts` — the `greeting.home` description doesn't constrain the tone away from transactional language. Also: `DEFAULT_VOICE_SURFACES` carries Artisan Roast-specific voice copy that can bleed into other stores.
+
+**To address:** Update generation prompt to guide toward discovery-oriented phrasing. Separately, evaluate whether DEFAULT_VOICE_SURFACES should be replaced with neutral placeholders (the lazy-init hydration is the real source of truth; defaults are only a safety net for unconfigured AI).
+
+---
+
+## OBS-2: DEFAULT_VOICE_SURFACES are too opinionated for a multi-store default
+
+**Reported:** 2026-04-15
+**Type:** Observation / design issue
+
+**Symptom:** The defaults ("Hey! What are you in the mood for — something bright and fruity, or more of a cozy, earthy cup?") sound like a specific coffee shop, not a generic fallback. The `loadSurfaces` merge (`{ ...DEFAULT_VOICE_SURFACES, ...fetched }`) can blend this voice into any AI-generated surfaces that are missing keys.
+
+**Desired behavior:** Defaults should be neutral placeholders. In normal operation, the lazy-init hydration generates owner-voiced surfaces and replaces all of them — defaults should never be visible to end customers.
