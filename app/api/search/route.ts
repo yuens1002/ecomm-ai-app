@@ -860,6 +860,20 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Result reconciliation: when the AI names a specific product in the acknowledgment,
+    // promote that product to position 1. Ensures the AI's stated recommendation is
+    // always the first card the customer sees (grounded RAG proof).
+    const recommendedName = agenticData?.recommendedProductName;
+    if (recommendedName && orderedProducts.length > 1) {
+      const recIdx = orderedProducts.findIndex(
+        (p) => p.name.toLowerCase() === recommendedName.toLowerCase()
+      );
+      if (recIdx > 0) {
+        const [rec] = orderedProducts.splice(recIdx, 1);
+        orderedProducts = [rec, ...orderedProducts];
+      }
+    }
+
     // When AI was requested but extraction failed, surface it so the UI can
     // tell the user instead of silently showing dumb keyword results.
     const aiFailed = forceAI && !agenticData;
@@ -874,6 +888,7 @@ export async function GET(request: NextRequest) {
       acknowledgment: agenticData?.acknowledgment ?? null,
       followUpQuestion: agenticData?.followUpQuestion ?? null,
       followUps: agenticData?.followUps ?? [],
+      recommendedProductName: agenticData?.recommendedProductName ?? null,
       aiFailed,
       context: { sessionId, turnCount },
     });
