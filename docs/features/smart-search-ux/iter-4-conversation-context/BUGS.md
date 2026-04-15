@@ -82,6 +82,27 @@ Discovered during post-ship testing. Each bug needs its own AC/verification befo
 
 ---
 
+## BUG-4: Regression — vague query bypasses AI cadence (no acknowledgment, no follow-ups, 7+ results)
+
+**Reported:** 2026-04-15
+**Type:** Regression — scripted cadence broken
+
+**Query:** "what's good today?" (post-reset, on Origami Air Dripper product page)
+**Expected:** AI acknowledges ("Here's what I'd recommend today…"), returns 3–5 curated results, follow-up chips
+**Actual:** 7 medium-roast products dumped with no acknowledgment text, no follow-up chips. A "Less" pagination control visible — raw search mode, not AI cadence.
+
+**Symptoms:**
+- More than the configured result limit returned
+- No `acknowledgment` field in response (or not rendered)
+- No `followUps` chips rendered
+- Looks like the AI extraction path either failed silently and fell through to raw FTS/keyword search, or the response shape changed
+
+**Suspected area:** The AI extraction call may be timing out or failing for open-ended vague queries ("what's good today?" has no extractable filters), causing a fallback to the unguided search path which has no result cap or cadence enforcement.
+
+**To investigate:** Check route.ts fallback path when extraction returns no filters — does it still enforce the result limit and generate acknowledgment? Or does it skip those steps?
+
+---
+
 ## OBS-3: AI hallucinates stock availability
 
 **Reported:** 2026-04-15
