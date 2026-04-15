@@ -40,7 +40,7 @@ export const DEFAULT_VOICE_SURFACES: VoiceSurfaces = {
   "greeting.category":
     "Browsing {category}? Tell me what you're after and I'll point you somewhere good.",
   waiting: "um",
-  salutation: "Hey! What are you after?",
+  salutation: "What are you after?",
   aiFailed: "Ah sorry, I blanked for a sec — what were you looking for again?",
   noResults:
     "Hmm, nothing's jumping out for that — can you tell me a bit more about what you're after?",

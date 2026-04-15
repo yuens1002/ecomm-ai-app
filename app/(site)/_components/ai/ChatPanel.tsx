@@ -126,18 +126,30 @@ function PanelContent() {
 
   // Add opening greeting once surfaces are loaded — deferred so we never flash TS defaults.
   // voiceSurfaces starts null; this effect fires once it transitions to non-null.
+  // On first open: shows full greeting (once per session).
+  // On re-opens with no conversation: shows salutation (short in-character connector).
   useEffect(() => {
-    if (isOpen && voiceSurfaces !== null && !hasGreeted.current) {
+    if (!isOpen || voiceSurfaces === null) return;
+    const state = useChatPanelStore.getState();
+    if (state.messages.length > 0) return; // Conversation in progress — no greeting
+
+    if (!hasGreeted.current) {
+      // First open this session — show full greeting
       hasGreeted.current = true;
-      const state = useChatPanelStore.getState();
-      if (state.messages.length === 0) {
-        addMessage({
-          id: GREETING_ID,
-          role: "assistant",
-          content: getContextGreeting(),
-          isLoading: false,
-        });
-      }
+      addMessage({
+        id: GREETING_ID,
+        role: "assistant",
+        content: getContextGreeting(),
+        isLoading: false,
+      });
+    } else {
+      // Re-open with empty messages (prior conversation was reset or cleared)
+      addMessage({
+        id: GREETING_ID,
+        role: "assistant",
+        content: voiceSurfaces.salutation,
+        isLoading: false,
+      });
     }
   }, [isOpen, voiceSurfaces, addMessage, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -552,10 +564,11 @@ export function ChatPanel() {
     clearMessages();
     const surfaces = useChatPanelStore.getState().voiceSurfaces;
     if (!surfaces) return;
+    // Show salutation (short in-character connector) after reset — not the full greeting
     addMessage({
       id: GREETING_ID,
       role: "assistant",
-      content: surfaces["greeting.home"],
+      content: surfaces.salutation,
       isLoading: false,
     });
   };
