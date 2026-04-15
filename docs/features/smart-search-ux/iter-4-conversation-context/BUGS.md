@@ -4,6 +4,31 @@ Discovered during post-ship testing. Each bug needs its own AC/verification befo
 
 ---
 
+## Testing Gap: Neither unit tests nor AC verification catches Counter cadence regressions
+
+**Observed:** 2026-04-15
+
+**What wasn't caught:**
+- BUG-4 (`isNaturalLanguageQuery` silently gating Counter traffic) — no unit test asserts that `ai=true` queries always reach the agentic path regardless of NL heuristic result
+- BUG-3 (merch product not found) — no E2E or integration test fires a real merch query against real data
+- OBS-3 (stock hallucination) — no test asserts that the AI prompt does NOT claim stock availability
+- The full conversational cadence (acknowledge → results → follow-ups) — no test verifies all three are present in a single response
+
+**Why it wasn't caught:**
+1. **Unit tests mock the AI layer** — they assert that mocked extraction output is handled correctly downstream, but never test whether a real Counter query actually reaches extraction. The `isNaturalLanguageQuery` gate is tested only implicitly.
+2. **AC verification deferred all interactive AI ACs** — AC-UI-5, UI-6d–8, REG-4, REG-5 were all marked DEFERRED because they required live AI queries. These are precisely the scenarios where the regressions live.
+3. **No golden-path E2E test** — there's no test that sends a representative set of Counter query types (open-ended, vague, stock question, merch query) and asserts cadence shape: `acknowledgment` non-null, `followUps` non-empty, `products.length <= 7`.
+
+**What's needed:**
+- A route-level integration test (or expanded unit test) that asserts `ai=true` always invokes the agentic path — regardless of `isNaturalLanguageQuery` result
+- A set of representative Counter query fixtures covering: open-ended, vague, merch, stock question
+- Cadence shape assertions: `acknowledgment` present, `followUps` array, result count within limit
+- Consider whether DEFERRED interactive ACs should block merge in future iterations — the current workflow allows too many AI-path ACs to defer
+
+---
+
+---
+
 ## BUG-1: Test Counter shows stale voice surfaces after editing Q&A answers
 
 **Reported:** 2026-04-15
