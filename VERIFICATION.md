@@ -40,4 +40,5 @@
 | AC-IS-3 | Orders section shows empty state | Navigate to /admin/orders; assert URL and "No orders" text | Empty state message shown; no orders listed |
 | AC-IS-4 | Settings page loads without error | Navigate to /admin/settings; assert URL reached (no redirect) | Page renders without error |
 | AC-IS-5 | Storefront homepage loads without error | Navigate to /; assert URL reached (no redirect) | Page renders without error |
-| AC-IS-6 | Admin navigation links are all reachable | Navigate directly to /admin/products, /admin/orders, /admin/settings; assert URL for each | No 404 or 500 on Products, Orders, Settings |
+| AC-IS-6 | Admin navigation links are all reachable | Navigate directly to /admin/products, /admin/orders, /admin/settings, /admin/support/plans; assert URL for each | No 404 or 500 on Products, Orders, Settings, Plans |
+| AC-IS-7 | Plans page renders without error on fresh install | Navigate to /admin/support/plans; assert page loads (plan cards or empty-state message visible; no `[object Object]` text) | Page renders; no raw object strings visible |
