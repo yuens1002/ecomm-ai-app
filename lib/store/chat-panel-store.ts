@@ -35,7 +35,8 @@ interface ChatPanelState {
   messages: ChatMessage[];
   pageContext: PageContext | null;
   isLoading: boolean;
-  voiceSurfaces: VoiceSurfaces;
+  /** null while the initial lazy-init fetch is in flight; populated once loaded */
+  voiceSurfaces: VoiceSurfaces | null;
   surfacesLoaded: boolean;
   // Actions
   open: () => void;
@@ -54,7 +55,7 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
   messages: [],
   pageContext: null,
   isLoading: false,
-  voiceSurfaces: DEFAULT_VOICE_SURFACES,
+  voiceSurfaces: null,
   surfacesLoaded: false,
 
   open: () => set({ isOpen: true }),
@@ -87,10 +88,12 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
         // Merge with defaults so keys added after initial generation still have values
         const surfaces = { ...DEFAULT_VOICE_SURFACES, ...fetched };
         set({ voiceSurfaces: surfaces, surfacesLoaded: true });
+      } else {
+        set({ voiceSurfaces: DEFAULT_VOICE_SURFACES, surfacesLoaded: true });
       }
     } catch {
-      // Keep defaults on failure
-      set({ surfacesLoaded: true });
+      // Keep defaults on fetch failure so the UI is never stuck on null
+      set({ voiceSurfaces: DEFAULT_VOICE_SURFACES, surfacesLoaded: true });
     }
   },
 }));

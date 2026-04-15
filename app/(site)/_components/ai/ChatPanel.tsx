@@ -102,6 +102,7 @@ function PanelContent() {
   // Detect page type from pathname for context-aware greetings
   const getContextGreeting = (): string => {
     const surfaces = useChatPanelStore.getState().voiceSurfaces;
+    if (!surfaces) return "";
     // Product page: /products/<slug>
     const productMatch = pathname.match(/^\/products\/([^/]+)$/);
     if (productMatch) {
@@ -123,9 +124,10 @@ function PanelContent() {
     if (isOpen) void loadSurfaces();
   }, [isOpen, loadSurfaces]);
 
-  // Add opening greeting the first time the panel opens with no messages
+  // Add opening greeting once surfaces are loaded — deferred so we never flash TS defaults.
+  // voiceSurfaces starts null; this effect fires once it transitions to non-null.
   useEffect(() => {
-    if (isOpen && !hasGreeted.current) {
+    if (isOpen && voiceSurfaces !== null && !hasGreeted.current) {
       hasGreeted.current = true;
       const state = useChatPanelStore.getState();
       if (state.messages.length === 0) {
@@ -137,7 +139,7 @@ function PanelContent() {
         });
       }
     }
-  }, [isOpen, addMessage, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, voiceSurfaces, addMessage, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -207,9 +209,9 @@ function PanelContent() {
       // (owner's voice) for recovery messages.
       let content = data.acknowledgment || data.explanation || "";
       if (!content && data.aiFailed) {
-        content = voiceSurfaces.aiFailed;
+        content = voiceSurfaces?.aiFailed ?? "";
       } else if (!content && !hasProducts) {
-        content = voiceSurfaces.noResults;
+        content = voiceSurfaces?.noResults ?? "";
       }
 
       updateLastMessage({
@@ -225,7 +227,7 @@ function PanelContent() {
     } catch {
       updateLastMessage({
         id: assistantMsgId,
-        content: voiceSurfaces.error,
+        content: voiceSurfaces?.error ?? "",
         isLoading: false,
       });
     } finally {
@@ -250,6 +252,16 @@ function PanelContent() {
       <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
         <div className="flex-1" />
         <div className="px-4 pb-3 pt-2 space-y-4">
+          {/* Skeleton — shown while voice surfaces are loading on first open */}
+          {voiceSurfaces === null && messages.length === 0 && (
+            <div className="flex items-start gap-2 animate-pulse">
+              <div className="h-3.5 w-3.5 mt-0.5 rounded-full bg-muted shrink-0" />
+              <div className="space-y-1.5">
+                <div className="h-3 w-44 rounded bg-muted" />
+                <div className="h-3 w-32 rounded bg-muted" />
+              </div>
+            </div>
+          )}
           {messages.map((msg) => (
             <MessageBubble
               key={msg.id}
@@ -274,7 +286,7 @@ function PanelContent() {
                 handleSend();
               }
             }}
-            placeholder={voiceSurfaces.placeholder}
+            placeholder={voiceSurfaces?.placeholder ?? ""}
             className="text-sm h-9 rounded-full bg-muted/40 border-muted-foreground/20 focus-visible:bg-background pr-11"
           />
           <button
@@ -337,7 +349,7 @@ function MessageBubble({
 
   // Assistant loading — animated waiting filler from voice surfaces
   if (msg.isLoading) {
-    const waitingText = useChatPanelStore.getState().voiceSurfaces.waiting;
+    const waitingText = useChatPanelStore.getState().voiceSurfaces?.waiting ?? "...";
     return (
       <div className="flex items-start gap-2 text-muted-foreground text-sm">
         <MessageSquareDot className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary/50" />
@@ -528,6 +540,7 @@ export function ChatPanel() {
   const handleReset = () => {
     clearMessages();
     const surfaces = useChatPanelStore.getState().voiceSurfaces;
+    if (!surfaces) return;
     addMessage({
       id: GREETING_ID,
       role: "assistant",
