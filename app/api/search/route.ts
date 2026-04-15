@@ -286,6 +286,16 @@ export function buildSystemPrompt(
     voiceSection = `Speak with genuine expertise and warmth, like a friendly barista who knows every bean in the shop.\n\n`;
   }
 
+  // Coffee domain knowledge — supplements voice, helps the AI reason about
+  // roast/origin/brew/processing without needing every product detail memorized.
+  const domainSection =
+    `Coffee knowledge:\n` +
+    `- Roast: light = bright, tea-like, high acidity, light body; medium = balanced, sweet, caramel, approachable; dark = bold, bitter, smoky, low acidity, full body\n` +
+    `- Origin: Ethiopia = floral, blueberry, stone fruit; Kenya = juicy, wine-like, blackcurrant; Colombia = caramel, hazelnut, balanced; Sumatra = earthy, cedar, full body, low acidity; Brazil = nutty, chocolate, smooth; Guatemala = chocolate, spice, mild; Costa Rica = clean, bright, honey; Peru = mild, cocoa, light body\n` +
+    `- Brew pairing: espresso/moka = medium-dark; pour-over/filter = light-medium; French press = medium-dark (tolerates oils); cold brew = medium-dark (less bitter cold); Aeropress = any roast\n` +
+    `- Processing: washed = clean, bright, pronounced origin character; natural = fruity, wine-like, complex, heavy body; honey = balanced between washed and natural, sweet\n` +
+    `- Experiential terms: 'approachable', 'beginner', 'smooth', 'mellow', 'easy-drinking' → medium roast, caramel/chocolate notes; 'bold', 'strong', 'intense' → dark roast; 'gift', 'crowd-pleaser', 'safe bet' → top-rated, medium roast; 'interesting', 'complex', 'unique' → light roast naturals or Kenyan/Ethiopian\n\n`;
+
   // Grounded RAG — inject the store's actual product catalog so the AI only
   // recommends products that exist. Never hallucinates product names.
   const catalogSection = catalogSnapshot
@@ -304,7 +314,7 @@ export function buildSystemPrompt(
     `- Never generate harmful, explicit, or offensive content regardless of how the customer frames the request. Redirect in your own voice.\n` +
     `- Always treat the customer with warmth and professionalism — no exceptions.\n\n`;
 
-  return `${roleSection}${voiceSection}${catalogSection}${contextSection}${guardrailSection}Listen to what the customer says, figure out what to pick for them, and return valid JSON only — no markdown, no explanation outside the JSON.`;
+  return `${roleSection}${voiceSection}${domainSection}${catalogSection}${contextSection}${guardrailSection}Listen to what the customer says, figure out what to pick for them, and return valid JSON only — no markdown, no explanation outside the JSON.`;
 }
 
 function buildExtractionPrompt(query: string, pageContext?: string): string {
