@@ -316,6 +316,14 @@
       "acs_doc": "docs/features/smart-search-ux/hotfix-search-quality/ACs.md",
       "notes": "16/16 ACs verified. 3 FN + 2 UI + 8 TST + 3 REG. 1190 tests pass (100 suites), precheck clean. 0 iterations."
     },
+    "feat/counter-iter5": {
+      "status": "planning",
+      "acs_passed": 0,
+      "acs_total": 0,
+      "tasks": [],
+      "acs_doc": "docs/features/smart-search-ux/iter-5-context-grounding/acs.md",
+      "notes": "Workflow initiated. Entering plan mode. Addressing bugs logged in iter-4 post-ship testing."
+    },
     "feat/conversation-context": {
       "status": "verified",
       "acs_passed": 46,
