@@ -788,6 +788,51 @@ export async function GET(request: NextRequest) {
     }
 
     // -------------------------------------------------------------------------
+    // Intent classification — gate routing before DB query
+    // -------------------------------------------------------------------------
+
+    if (agenticData) {
+      if (agenticData.intent === "how_to") {
+        // Conversational/informational query — text-only response, no product search
+        return NextResponse.json({
+          products: [],
+          query: searchQuery,
+          count: 0,
+          intent: agenticData.intent,
+          filtersExtracted: null,
+          explanation: agenticData.explanation || null,
+          acknowledgment: agenticData.acknowledgment || null,
+          followUpQuestion: agenticData.followUpQuestion || null,
+          followUps: agenticData.followUps ?? [],
+          recommendedProductName: null,
+          aiFailed: false,
+          context: { sessionId, turnCount },
+        });
+      }
+
+      if (agenticData.intent === "reorder") {
+        // Service/reorder query — in-character redirect, no product search
+        const redirect =
+          agenticData.acknowledgment ||
+          "For orders and account stuff, you'd want to head to your account page — I'm really just here for the coffee.";
+        return NextResponse.json({
+          products: [],
+          query: searchQuery,
+          count: 0,
+          intent: agenticData.intent,
+          filtersExtracted: null,
+          explanation: redirect,
+          acknowledgment: redirect,
+          followUpQuestion: null,
+          followUps: [],
+          recommendedProductName: null,
+          aiFailed: false,
+          context: { sessionId, turnCount },
+        });
+      }
+    }
+
+    // -------------------------------------------------------------------------
     // Track search activity
     // -------------------------------------------------------------------------
 
