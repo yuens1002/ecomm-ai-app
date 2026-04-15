@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Undo2 } from "lucide-react";
+import { Undo2, MessageSquareDot } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   InputGroup,
@@ -16,6 +17,8 @@ import {
   VOICE_EXAMPLE_QUESTIONS,
   type VoiceExample,
 } from "@/lib/ai/voice-examples";
+import { useChatPanelStore } from "@/lib/store/chat-panel-store";
+import { ChatPanel } from "@/app/(site)/_components/ai/ChatPanel";
 
 type SaveStatus = "idle" | "saving" | "saved";
 
@@ -142,6 +145,9 @@ export function SmartSearchSection() {
     }
   };
 
+  const isPanelOpen = useChatPanelStore((s) => s.isOpen);
+  const togglePanel = useChatPanelStore((s) => s.toggle);
+
   if (loading) return null;
 
   return (
@@ -162,6 +168,21 @@ export function SmartSearchSection() {
           the AI responding in your voice. Your answers below train that voice
           — write them the way you&apos;d speak with your customers at the counter. Questions are
           fixed; answers are yours. Changes save automatically.
+        </p>
+      </div>
+
+      {/* Test Counter */}
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          onClick={togglePanel}
+          className={cn(isPanelOpen && "border-primary text-primary")}
+        >
+          <MessageSquareDot className="h-4 w-4 mr-2" />
+          {isPanelOpen ? "Close Counter" : "Test Counter"}
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          Open the Counter to test your voice settings as a customer would experience them.
         </p>
       </div>
 
@@ -222,6 +243,9 @@ export function SmartSearchSection() {
           </InputGroup>
         ))}
       </div>
+
+      {/* Counter drawer — rendered here so admin can test voice without leaving the page */}
+      <ChatPanel />
     </div>
   );
 }
