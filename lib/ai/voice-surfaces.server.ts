@@ -32,7 +32,7 @@ export async function generateVoiceSurfaces(
         content: `Generate these UI surface strings in the owner's voice. Return valid JSON only — no markdown, no explanation.
 
 {
-  "greeting.home": "How you'd greet someone who just walked in and open a conversation about what they're looking for — invite them to explore, not place an order. Curious and discovery-oriented, not transactional (1-2 sentences)",
+  "greeting.home": "How you'd greet someone who just walked in — in your own words, as if you're behind the counter (1-2 sentences)",
   "greeting.product": "Your reaction when a customer is looking at {product} — natural, like you know the product (1 sentence)",
   "greeting.category": "A quick word when someone's browsing {category} — steer them a bit, in your voice (1 sentence)",
   "waiting": "A filler word or phrase you'd say while thinking — 1-3 words, lowercase (e.g. 'um', 'let me think', 'hmm')",

@@ -33,7 +33,7 @@ export type VoiceSurfaceKey = keyof VoiceSurfaces;
 /** Hardcoded fallback when no generated surfaces exist */
 export const DEFAULT_VOICE_SURFACES: VoiceSurfaces = {
   "greeting.home":
-    "Hey! What are you in the mood for — something bright and fruity, or more of a cozy, earthy cup?",
+    "Hey! What are you in the mood for today — light and fruity, or something darker and cozy?",
   "greeting.product": "Good eye on {product} — want to know what I think?",
   "greeting.category":
     "Browsing {category}? Tell me what you're after and I'll point you somewhere good.",
