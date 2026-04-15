@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- 2026-04-15 — fix(plans): render quota labels correctly from array shape — eliminated `[object Object] / month` on the plan detail page by aligning `PlanDetails.quotas` type with the actual API shape (array of `{icon, slug, label, limit}` objects) and updating the renderer to use `quota.label` / `quota.limit`; removed dead `formatQuotaLabel` helper
+
 ## 0.100.6 - 2026-04-14
 
 ### Fixed
