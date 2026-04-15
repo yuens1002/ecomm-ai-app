@@ -24,7 +24,8 @@ interface FiltersExtracted {
   brewMethod?: string;
   roastLevel?: string;
   flavorProfile?: string[];
-  origin?: string;
+  /** Single country ("Ethiopia") or array for regional queries (["Guatemala", "Costa Rica"]) */
+  origin?: string | string[];
   // Extended
   isOrganic?: boolean;
   processing?: string;
@@ -359,7 +360,7 @@ export function buildExtractionPrompt(query: string, pageContext?: string): stri
     "brewMethod": string | undefined,  // Coffee only
     "roastLevel": "light" | "medium" | "dark" | undefined,  // Coffee only
     "flavorProfile": string[] | undefined,  // Coffee only — Expand flavor categories AND experiential/mood terms into concrete tasting notes a roaster would write. Flavor categories: "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry", "blackcurrant", "currant"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan", "walnut"]; "floral" → ["floral", "jasmine", "lavender", "rose", "honeysuckle"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit", "papaya"]; "spicy" → ["spice", "spicy", "cinnamon", "clove", "cardamom", "pepper"]. Experiential/mood terms: "smooth" / "approachable" / "easy-drinking" / "beginner" / "mellow" → ["smooth", "balanced", "caramel", "chocolate", "mild", "butter"]; "bold" / "strong" / "intense" → ["bold", "dark chocolate", "tobacco", "molasses", "earthy"]; "bright" / "lively" / "vibrant" → ["bright", "citrus", "floral", "lemon", "tea-like"]; "complex" / "interesting" / "unique" → ["complex", "wine", "fermented", "floral", "berry"]. Include the original term AND concrete notes. Keep it scoped.
-    "origin": string | undefined,  // Coffee only
+    "origin": string | string[] | undefined,  // Coffee only. Single country: use a string ("Ethiopia", "Colombia"). Regional term: expand to an array of countries — Central America → ["Guatemala", "Costa Rica", "Honduras", "El Salvador"]; East Africa → ["Ethiopia", "Kenya", "Rwanda", "Tanzania", "Burundi"]; South America → ["Colombia", "Brazil", "Peru", "Bolivia", "Ecuador"]; West Africa → ["Ghana", "Ivory Coast"]; Asia-Pacific → ["Indonesia", "Vietnam", "Papua New Guinea", "India", "Myanmar"]
     "isOrganic": true | false | undefined,  // Coffee only
     "processing": "washed" | "natural" | "honey" | "anaerobic" | string | undefined,  // Coffee only
     "variety": string | undefined,  // Coffee only
@@ -447,7 +448,7 @@ async function extractAgenticFilters(
         ? rawFilters.roastLevel.toLowerCase()
         : undefined;
 
-    const validSortBy = ["newest", "top_rated"] as const;
+    const validSortBy = ["newest", "top_rated", "price_asc", "price_desc"] as const;
     type SortBy = (typeof validSortBy)[number];
 
     const validProductTypes = ["coffee", "merch", "any"] as const;
@@ -466,7 +467,11 @@ async function extractAgenticFilters(
       flavorProfile: Array.isArray(rawFilters.flavorProfile)
         ? rawFilters.flavorProfile.filter((v) => typeof v === "string")
         : undefined,
-      origin: typeof rawFilters.origin === "string" ? rawFilters.origin : undefined,
+      origin: Array.isArray(rawFilters.origin)
+        ? (rawFilters.origin as unknown[]).filter((v): v is string => typeof v === "string")
+        : typeof rawFilters.origin === "string"
+          ? rawFilters.origin
+          : undefined,
       isOrganic: typeof rawFilters.isOrganic === "boolean" ? rawFilters.isOrganic : undefined,
       processing:
         typeof rawFilters.processing === "string" ? rawFilters.processing : undefined,
@@ -525,12 +530,6 @@ export async function GET(request: NextRequest) {
     const parsedTurnCount = parseInt(urlParams.get("turnCount") ?? "0", 10);
     const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
     const pageTitle = urlParams.get("pageTitle") ?? undefined;
-    const pageFrom = urlParams.get("from") ?? undefined;
-    // Extract category slug when on a category page (e.g. from=categories/central-america).
-    // Used to pre-scope the Prisma where clause before AI extraction runs — categories are
-    // schema-backed, the slug maps directly through the CategoriesOnProducts relation.
-    const categorySlug = pageFrom?.match(/^categories\/([^/]+)$/)?.[1];
-
     // Conversation history — last N turns sent by the client, capped at 5 turns (10 messages)
     let conversationHistory: Array<{ role: "user" | "assistant"; content: string }> = [];
     const historyParam = urlParams.get("history");
@@ -729,9 +728,13 @@ export async function GET(request: NextRequest) {
           };
         }
 
-        // Apply extracted origin only if no explicit origin param
+        // Apply extracted origin only if no explicit origin param.
+        // Array origins (regional queries like Central America → ["Guatemala", "Costa Rica"...])
+        // use hasSome; single-country strings use has.
         if (extractedOrigin && !origin) {
-          whereClause.origin = { has: extractedOrigin };
+          whereClause.origin = Array.isArray(extractedOrigin)
+            ? { hasSome: extractedOrigin }
+            : { has: extractedOrigin };
         }
 
         // BUG-2: Apply flavor profile — expand OR clause with case-insensitive description
@@ -874,29 +877,6 @@ export async function GET(request: NextRequest) {
           aiFailed: false,
           context: { sessionId, turnCount },
         });
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // Category page pre-scope — applied as a hard constraint after all AI
-    // extraction and keyword where-clause building. Ensures Counter queries on
-    // a category page never return out-of-category products regardless of what
-    // the AI extracted (origin="central america" matches nothing; the category
-    // relation is the source of truth). If the roast-pattern detector already
-    // set whereClause.categories, combine both with AND so neither is lost.
-    // -------------------------------------------------------------------------
-    if (categorySlug) {
-      const categoryFilter = { some: { category: { slug: categorySlug } } };
-      if (whereClause.categories) {
-        // Roast pattern set a categories filter — keep both with AND
-        whereClause.AND = [
-          ...(Array.isArray(whereClause.AND) ? whereClause.AND : []),
-          { categories: whereClause.categories },
-          { categories: categoryFilter },
-        ];
-        delete whereClause.categories;
-      } else {
-        whereClause.categories = categoryFilter;
       }
     }
 

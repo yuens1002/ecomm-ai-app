@@ -327,38 +327,68 @@ describe("acknowledgment in agentic response (AC-TST-2)", () => {
 // AC-TST-3: Category slug from `from` param scopes Prisma where
 // ---------------------------------------------------------------------------
 
-describe("category pre-scope from 'from' param (AC-TST-3)", () => {
+// AC-TST-3: origin-based filtering — schema-first, not categories
+// (category pre-scope removed — origin[] field is reliable; categories are user-defined)
+describe("origin-based filtering — schema-first (AC-TST-3)", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
     productCountMock.mockResolvedValue(1);
     queryRawMock.mockResolvedValue([]);
-    isAIConfiguredMock.mockResolvedValue(false);
+    isAIConfiguredMock.mockResolvedValue(true);
     getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
   });
 
-  it("adds categories.some.category.slug filter when from=categories/{slug}", async () => {
+  it("regional origin extraction uses hasSome for array origins", async () => {
+    // Simulate AI returning an array of countries for a regional query
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { origin: ["Guatemala", "Costa Rica", "Honduras"] },
+        acknowledgment: "Here are the Central American coffees.",
+        followUps: [],
+        followUpQuestion: "",
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+
     const request = new NextRequest(
-      "http://localhost:3000/api/search?q=coffee&from=categories/central-america"
+      "http://localhost:3000/api/search?q=coffee+from+central+america&ai=true"
     );
     await GET(request);
 
     expect(productFindManyMock).toHaveBeenCalled();
     const callArgs = productFindManyMock.mock.calls[0][0];
-    // The where clause should contain categories filter
+    // Array origin → hasSome operator on the String[] origin field
     expect(callArgs.where).toMatchObject({
-      categories: { some: { category: { slug: "central-america" } } },
+      origin: { hasSome: ["Guatemala", "Costa Rica", "Honduras"] },
     });
   });
 
-  it("does not add categories filter when from param is absent", async () => {
+  it("single-country origin extraction uses has", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { origin: "Ethiopia" },
+        acknowledgment: "Ethiopian coffees coming up.",
+        followUps: [],
+        followUpQuestion: "",
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+
     const request = new NextRequest(
-      "http://localhost:3000/api/search?q=coffee"
+      "http://localhost:3000/api/search?q=ethiopian+coffee&ai=true"
     );
     await GET(request);
 
     const callArgs = productFindManyMock.mock.calls[0][0];
-    expect(callArgs.where?.categories).toBeUndefined();
+    // Single string origin → has operator
+    expect(callArgs.where).toMatchObject({
+      origin: { has: "Ethiopia" },
+    });
   });
 });
 
