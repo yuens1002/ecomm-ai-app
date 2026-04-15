@@ -47,6 +47,28 @@ Discovered during post-ship testing. Each bug needs its own AC/verification befo
 
 ---
 
+## BUG-3: Merch product not found + wrong acknowledgment for equipment queries
+
+**Reported:** 2026-04-15
+**Type:** Search miss + response grounding gap
+
+**Query:** "need a pour over coffee maker, you have one?" (from homepage, 3-turn conversation)
+**Request:** `GET /api/search?q=need+a+pour+over+coffee+maker%2C+you+have+one%3F&ai=true`
+**Expected:** Returns the Origami Air Dripper (exists at `/products/origami-air-dripper`) with appropriate acknowledgment
+**Actual:** No products returned. AI responds "Oh, a pour-over coffee maker! We do have a few different styles that I think you'd appreciate." — confidently hallucinating catalog width without any results.
+
+**Two separate issues:**
+
+1. **Search miss**: "pour over coffee maker" should extract `productType: "merch"` and find brewing equipment via name/description search. Either the productType extraction is wrong (classifying as coffee?) or the merch whereClause isn't finding equipment products by the right terms.
+
+2. **Acknowledgment/redirection mismatch**: When no products return for a merch query, the fallback acknowledgment still sounds like a product recommendation ("we have a few different styles") rather than a redirect. The `noResults` surface or the intent routing needs to handle the merch-not-found case differently from coffee-not-found.
+
+**Context:** User was on `/products/origami-air-dripper?from=brewing` — the product exists in the catalog.
+
+**To address:** Debug extraction prompt for equipment queries. Investigate merch FTS / name-description search coverage. Decide what the AI should say when merch search returns zero results.
+
+---
+
 ## OBS-3: AI hallucinates stock availability
 
 **Reported:** 2026-04-15
