@@ -145,8 +145,22 @@ export function SmartSearchSection() {
     }
   };
 
+  const [testKey, setTestKey] = useState(0);
   const isPanelOpen = useChatPanelStore((s) => s.isOpen);
-  const togglePanel = useChatPanelStore((s) => s.toggle);
+  const openPanel = useChatPanelStore((s) => s.open);
+  const closePanel = useChatPanelStore((s) => s.close);
+  const resetSurfaces = useChatPanelStore((s) => s.resetSurfaces);
+
+  const handleTestCounter = () => {
+    if (isPanelOpen) {
+      closePanel();
+    } else {
+      // Force surfaces reload so the latest voice settings are reflected
+      resetSurfaces();
+      setTestKey((k) => k + 1);
+      openPanel();
+    }
+  };
 
   if (loading) return null;
 
@@ -175,7 +189,7 @@ export function SmartSearchSection() {
       <div className="flex items-center gap-3">
         <Button
           variant="outline"
-          onClick={togglePanel}
+          onClick={handleTestCounter}
           className={cn(isPanelOpen && "border-primary text-primary")}
         >
           <MessageSquareDot className="h-4 w-4 mr-2" />
@@ -244,8 +258,8 @@ export function SmartSearchSection() {
         ))}
       </div>
 
-      {/* Counter drawer — rendered here so admin can test voice without leaving the page */}
-      <ChatPanel />
+      {/* Counter drawer — key resets the component on each "Test Counter" open so hasGreeted ref is fresh */}
+      <ChatPanel key={testKey} />
     </div>
   );
 }

@@ -48,6 +48,8 @@ interface ChatPanelState {
   setLoading: (loading: boolean) => void;
   clearMessages: () => void;
   loadSurfaces: () => Promise<void>;
+  /** Clears cached surfaces + messages so the next open re-fetches from the API */
+  resetSurfaces: () => void;
 }
 
 export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
@@ -78,6 +80,9 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
   setLoading: (loading) => set({ isLoading: loading }),
 
   clearMessages: () => set({ messages: [] }),
+
+  resetSurfaces: () =>
+    set({ surfacesLoaded: false, voiceSurfaces: null, messages: [] }),
 
   loadSurfaces: async () => {
     if (get().surfacesLoaded) return;
