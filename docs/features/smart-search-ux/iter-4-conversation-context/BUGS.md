@@ -121,6 +121,8 @@ Discovered during post-ship testing. Each bug needs its own AC/verification befo
 
 **Impact:** Any vague/open-ended Counter query ("what's popular?", "surprise me", "anything good?", "what do you recommend?") currently hits this dead end. This is a meaningful degradation from the pre-iter-4 experience.
 
+**Note:** The intent taxonomy (`product_discovery`, `recommendation`, `how_to`, `reorder`) is correctly designed and handles these cases — the problem is the gate prevents those queries from ever reaching intent classification. Vague queries are the ones that most need intent routing, yet the gate excludes them first.
+
 ---
 
 ## BUG-2: Reset shows salutation instead of a passive "standing by" message
