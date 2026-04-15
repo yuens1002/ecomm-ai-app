@@ -162,7 +162,13 @@ Discovered during post-ship testing. Each bug needs its own AC/verification befo
 
 **Root cause direction:** Category page context should pre-scope the search (filter to products in that category) OR the catalog snapshot should indicate which products are visible on the current page. Neither happens today — the AI extracts freely and the DB query may not match any product origin/category.
 
-**To investigate:** What does extraction return for this query? Does `origin` get set? Does the DB have a "Central America" origin value that matches?
+**Root cause confirmed (from actual request URL):**
+
+`pageTitle=Central America` is a **category name**, not a product origin. The extraction schema only has an `origin` field (maps to country-level strings: "Guatemala", "Costa Rica", "Honduras", etc.) — there is no `category` field in the schema. So "from central america" gets extracted as `origin: "central america"`, which matches zero products because no product has that string as its origin. The category slug `central-america` has no path through the extraction schema to the `whereClause`.
+
+**Structural gap:** When the customer is on a category page, the category slug is known from `pageTitle` — but the extraction prompt has no mechanism to use it as a filter. The AI's only regional option is `origin`, which is country-level. "Central America" as a region doesn't exist in the product data model at the origin field level.
+
+**Fix direction:** Either (a) add a `categorySlug` field to `filtersExtracted` that maps to the Prisma `categories` relation, or (b) pre-scope the whereClause from `pageTitle` when it matches a known category slug, before extraction runs.
 
 ---
 
