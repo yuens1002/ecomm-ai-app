@@ -243,6 +243,199 @@ describe("GET /api/search", () => {
 });
 
 // ---------------------------------------------------------------------------
+// AC-TST-1: ai=true always reaches agentic path regardless of NL heuristic
+// ---------------------------------------------------------------------------
+
+describe("ai=true routing gate (AC-TST-1)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    productCountMock.mockResolvedValue(1);
+    queryRawMock.mockResolvedValue([]);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
+    isAIConfiguredMock.mockResolvedValue(true);
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        acknowledgment: "Let me see what I can find for you.",
+        followUps: ["Bold", "Light"],
+        followUpQuestion: "What roast level?",
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+  });
+
+  it("ai=true invokes extractAgenticFilters even for non-NL single-word query", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=xyz&ai=true"
+    );
+    await GET(request);
+    expect(chatCompletionMock).toHaveBeenCalled();
+  });
+
+  it("ai=false non-NL query skips agentic path even when AI is configured", async () => {
+    // AI is configured (from beforeEach) but ai=false + non-NL query → agentic path skipped
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=xyz&ai=false"
+    );
+    await GET(request);
+    expect(chatCompletionMock).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC-TST-2: Open-ended Counter query returns acknowledgment in response
+// ---------------------------------------------------------------------------
+
+describe("acknowledgment in agentic response (AC-TST-2)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    productCountMock.mockResolvedValue(1);
+    queryRawMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
+  });
+
+  it("returns acknowledgment non-null when extraction provides it", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        acknowledgment: "Here's what I'd try today.",
+        followUps: ["Bold", "Light"],
+        followUpQuestion: "How do you take your coffee?",
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=what+is+good+today&ai=true"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.acknowledgment).toBeTruthy();
+    expect(data.acknowledgment).toContain("today");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC-TST-3: Category slug from `from` param scopes Prisma where
+// ---------------------------------------------------------------------------
+
+describe("category pre-scope from 'from' param (AC-TST-3)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    productCountMock.mockResolvedValue(1);
+    queryRawMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(false);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
+  });
+
+  it("adds categories.some.category.slug filter when from=categories/{slug}", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=coffee&from=categories/central-america"
+    );
+    await GET(request);
+
+    expect(productFindManyMock).toHaveBeenCalled();
+    const callArgs = productFindManyMock.mock.calls[0][0];
+    // The where clause should contain categories filter
+    expect(callArgs.where).toMatchObject({
+      categories: { some: { category: { slug: "central-america" } } },
+    });
+  });
+
+  it("does not add categories filter when from param is absent", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=coffee"
+    );
+    await GET(request);
+
+    const callArgs = productFindManyMock.mock.calls[0][0];
+    expect(callArgs.where?.categories).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC-TST-4 + AC-TST-5: Cadence enforcement — followUps based on result count
+// ---------------------------------------------------------------------------
+
+describe("cadence enforcement — followUps (AC-TST-4, AC-TST-5)", () => {
+  const makeProducts = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `prod-${i}`,
+      name: `Coffee ${i}`,
+      slug: `coffee-${i}`,
+      categories: [],
+      variants: [{ id: `v-${i}`, purchaseOptions: [{ id: `po-${i}`, type: "ONE_TIME", priceInCents: 1500 }] }],
+      images: [],
+    }));
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
+    queryRawMock.mockResolvedValue([]);
+    productCountMock.mockResolvedValue(0); // chips fail validation → [] — proves cadence enforcement, not chip validator
+  });
+
+  it("AC-TST-4: ≤3 results zeroes followUps", async () => {
+    productFindManyMock.mockResolvedValue(makeProducts(2));
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        acknowledgment: "Here you go.",
+        followUps: ["Bold", "Light", "Smooth"],
+        followUpQuestion: "What roast?",
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=bolivian+single+origin&ai=true"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.products).toHaveLength(2);
+    expect(data.followUps).toEqual([]);
+  });
+
+  it("AC-TST-5: ≥4 results allows followUps through", async () => {
+    productFindManyMock.mockResolvedValue(makeProducts(5));
+    productCountMock.mockResolvedValue(5); // chips pass validation
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        acknowledgment: "Lots of good options.",
+        followUps: ["Bold", "Light", "Smooth"],
+        followUpQuestion: "What roast level?",
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=good+coffee&ai=true"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.products).toHaveLength(5);
+    expect(data.followUps.length).toBeGreaterThan(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // isNaturalLanguageQuery unit tests
 // ---------------------------------------------------------------------------
 
