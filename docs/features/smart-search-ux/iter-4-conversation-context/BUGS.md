@@ -146,6 +146,21 @@ Discovered during post-ship testing. Each bug needs its own AC/verification befo
 
 ---
 
+## BUG-5: Greeting ignores page context — shows generic salutation on product/category pages
+
+**Reported:** 2026-04-15
+**Type:** Regression / context-awareness gap
+
+**Symptom:** On `/products/origami-air-dripper`, the Counter opens with "Hey back! What can I help you find today?" — a generic homepage-style salutation. Expected: a context-aware opener referencing the product being viewed, e.g. "Curious about the Origami Air Dripper?"
+
+**Design intent:** `greeting.product` surface exists specifically for this: `"Good eye on {product} — want to know what I think?"`. The page context (product name, slug) is available at the bottom of the drawer ("Origami Air Dripper" label is visible in the screenshot).
+
+**What broke:** The salutation (`greeting.salutation`) is shown instead of `greeting.product` because this is a post-reset re-open (not a first open). The salutation surface has no `{product}` substitution — it's a flat string. Context-aware greetings only fire on *first open* via `getContextGreeting()`. After reset, the salutation overwrites regardless of page context.
+
+**To address:** Post-reset and re-open surfaces should also be context-sensitive. Either: (a) make the salutation surface context-aware (`salutation.product`, `salutation.category`, `salutation.home`), or (b) use `getContextGreeting()` for re-opens too, with a shorter variant. Design decision needed.
+
+---
+
 ## OBS-3: AI hallucinates stock availability
 
 **Reported:** 2026-04-15
