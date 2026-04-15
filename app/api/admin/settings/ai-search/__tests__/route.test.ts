@@ -4,9 +4,9 @@ import { NextRequest } from "next/server";
 
 const requireAdminApiMock = jest.fn();
 const siteSettingsFindManyMock = jest.fn();
+const siteSettingsFindUniqueMock = jest.fn();
 const siteSettingsUpsertMock = jest.fn();
-const isAIConfiguredMock = jest.fn();
-const generateVoiceSurfacesMock = jest.fn();
+const siteSettingsDeleteMock = jest.fn();
 
 jest.mock("@/lib/admin", () => ({
   requireAdminApi: () => requireAdminApiMock(),
@@ -16,17 +16,11 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     siteSettings: {
       findMany: (...args: unknown[]) => siteSettingsFindManyMock(...args),
+      findUnique: (...args: unknown[]) => siteSettingsFindUniqueMock(...args),
       upsert: (...args: unknown[]) => siteSettingsUpsertMock(...args),
+      delete: (...args: unknown[]) => siteSettingsDeleteMock(...args),
     },
   },
-}));
-
-jest.mock("@/lib/ai-client", () => ({
-  isAIConfigured: () => isAIConfiguredMock(),
-}));
-
-jest.mock("@/lib/ai/voice-surfaces.server", () => ({
-  generateVoiceSurfaces: (...args: unknown[]) => generateVoiceSurfacesMock(...args),
 }));
 
 jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -34,7 +28,7 @@ jest.spyOn(console, "error").mockImplementation(() => undefined);
 let GET: typeof import("../route").GET;
 let PUT: typeof import("../route").PUT;
 
-describe("GET + PUT /api/admin/settings/ai-search (TST-7)", () => {
+describe("GET + PUT /api/admin/settings/ai-search", () => {
   beforeAll(async () => {
     const mod = await import("../route");
     GET = mod.GET;
@@ -44,7 +38,9 @@ describe("GET + PUT /api/admin/settings/ai-search (TST-7)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     requireAdminApiMock.mockResolvedValue({ authorized: true });
-    isAIConfiguredMock.mockResolvedValue(false);
+    // Default: no cached surfaces (cache bust is a no-op)
+    siteSettingsFindUniqueMock.mockResolvedValue(null);
+    siteSettingsDeleteMock.mockResolvedValue({});
   });
 
   const putRequest = (body: Record<string, unknown>) =>
