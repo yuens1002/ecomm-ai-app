@@ -203,12 +203,14 @@ Query: ${JSON.stringify(query)}${contextNote}`;
 async function extractAgenticFilters(
   query: string,
   systemPrompt: string,
-  pageContext?: string
+  pageContext?: string,
+  history: Array<{ role: "user" | "assistant"; content: string }> = []
 ): Promise<AgenticExtraction | null> {
   try {
     const result = await chatCompletion({
       messages: [
         { role: "system", content: systemPrompt },
+        ...history,
         { role: "user", content: buildExtractionPrompt(query, pageContext) },
       ],
       maxTokens: 1024,
@@ -325,6 +327,30 @@ export async function GET(request: NextRequest) {
     const parsedTurnCount = parseInt(urlParams.get("turnCount") ?? "0", 10);
     const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
     const pageTitle = urlParams.get("pageTitle") ?? undefined;
+
+    // Conversation history — last N turns sent by the client, capped at 5 turns (10 messages)
+    let conversationHistory: Array<{ role: "user" | "assistant"; content: string }> = [];
+    const historyParam = urlParams.get("history");
+    if (historyParam) {
+      try {
+        const parsed = JSON.parse(historyParam) as unknown;
+        if (Array.isArray(parsed)) {
+          conversationHistory = (parsed as Array<Record<string, unknown>>)
+            .filter(
+              (h) =>
+                h &&
+                typeof h === "object" &&
+                (h.role === "user" || h.role === "assistant") &&
+                typeof h.content === "string" &&
+                h.content.length > 0
+            )
+            .map((h) => ({ role: h.role as "user" | "assistant", content: h.content as string }))
+            .slice(-10); // Cap at 5 turns (10 messages)
+        }
+      } catch {
+        // Ignore malformed history
+      }
+    }
 
     // Always restrict to coffee — merch queries not yet supported
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -443,7 +469,7 @@ export async function GET(request: NextRequest) {
       const voiceExamples =
         aiVoiceExamples.length > 0 ? aiVoiceExamples : DEFAULT_VOICE_EXAMPLES;
       const systemPrompt = buildSystemPrompt(voiceExamples, aiVoicePersona, pageTitle);
-      agenticData = await extractAgenticFilters(query, systemPrompt, pageTitle);
+      agenticData = await extractAgenticFilters(query, systemPrompt, pageTitle, conversationHistory);
 
       if (agenticData?.filtersExtracted) {
         const {

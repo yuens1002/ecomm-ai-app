@@ -199,6 +199,17 @@ function PanelContent() {
       if (contextTitle && contextTitle !== "Home") {
         params.set("pageTitle", contextTitle);
       }
+
+      // Conversation history — last 5 turns (10 messages) of real prior exchanges.
+      // Excludes loading messages. Sent so AI can build on prior context.
+      const historyMessages = messages
+        .filter((m) => !m.isLoading && m.content.length > 0)
+        .slice(-10)
+        .map((m) => ({ role: m.role, content: m.content }));
+      if (historyMessages.length > 0) {
+        params.set("history", JSON.stringify(historyMessages));
+      }
+
       const res = await fetch(`/api/search?${params.toString()}`);
       const data = (await res.json()) as SearchResponse;
 
