@@ -107,6 +107,12 @@ export function SmartSearchSection() {
           () => setFieldStatus(index, "idle"),
           3000
         );
+        // Eager surface regen — fire-and-forget so the next Counter open
+        // reflects the new voice without waiting for on-demand generation.
+        void fetch("/api/admin/settings/ai-search/regenerate-surfaces", {
+          method: "POST",
+        });
+        resetSurfaces();
       } else {
         setFieldStatus(index, "idle");
       }

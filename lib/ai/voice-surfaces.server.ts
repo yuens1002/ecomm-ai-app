@@ -37,6 +37,7 @@ export async function generateVoiceSurfaces(
   "greeting.category": "A quick word when someone's browsing {category} — steer them a bit, in your voice (1 sentence)",
   "waiting": "A filler word or phrase you'd say while thinking — 1-3 words, lowercase (e.g. 'um', 'let me think', 'hmm')",
   "salutation": "Your response to 'hey' or 'hello' — greet back and ask how you can help, in your words (1 sentence)",
+  "standby": "What you'd say when the customer has already been greeted — passive, acknowledges you're available without prompting them. No question mark. No greeting. Just presence. Something like 'I'm here if anything comes to mind.' (1 sentence)",
   "aiFailed": "What you'd say if you blanked for a second — casual, ask them to repeat (1 sentence)",
   "noResults": "What you'd say when nothing matched — ask them to rephrase or tell you more (1-2 sentences)",
   "error": "A quick recovery after a technical hiccup — casual, ask them to try again (1 sentence)"
@@ -81,6 +82,10 @@ Rules:
         typeof parsed.salutation === "string"
           ? parsed.salutation
           : DEFAULT_VOICE_SURFACES.salutation,
+      standby:
+        typeof parsed.standby === "string"
+          ? parsed.standby
+          : DEFAULT_VOICE_SURFACES.standby,
       aiFailed:
         typeof parsed.aiFailed === "string"
           ? parsed.aiFailed
