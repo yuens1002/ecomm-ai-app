@@ -116,7 +116,10 @@ const MOCK_PLANS: Plan[] = [
         responseTime: "48 hours",
         availability: "Business days (Mon\u2013Fri)",
       },
-      quotas: { SupportTickets: 5, OneOnOneSessions: 1 },
+      quotas: [
+        { icon: "ticket", slug: "tickets", label: "Priority Tickets", limit: 5 },
+        { icon: "calendar", slug: "one-on-one", label: "1:1 Sessions", limit: 1 },
+      ],
       scope: [
         "Setup & configuration",
         "Troubleshooting",

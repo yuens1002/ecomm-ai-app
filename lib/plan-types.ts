@@ -48,8 +48,8 @@ export interface PlanDetails {
   scope?: string[];
   /** Billing terms and conditions */
   terms?: string[];
-  /** Usage quotas (e.g. tickets-per-month: 5) */
-  quotas?: Record<string, number>;
+  /** Usage quotas */
+  quotas?: Array<{ icon: string; slug: string; label: string; limit: number }>;
   /** Benefit bullet points */
   benefits?: string[];
   /** What the plan does NOT cover */

@@ -14,18 +14,6 @@ import type { Plan } from "@/lib/plan-types";
 import type { LicenseInfo } from "@/lib/license-types";
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatQuotaLabel(key: string): string {
-  if (/one.?on.?one/i.test(key)) return "1:1 Sessions";
-  return key
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
-    .replace(/^./, (c) => c.toUpperCase());
-}
-
-// ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
@@ -56,7 +44,7 @@ export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
   const intervalLabel = isFree ? "" : plan.interval === "year" ? "/yr" : "/mo";
 
   const hasSlaOrQuotas =
-    details.sla || (details.quotas && Object.keys(details.quotas).length > 0);
+    details.sla || (details.quotas && details.quotas.length > 0);
 
   // Subtitle: "Your plan since {date}" for active subscribers, description otherwise
   const planSince = isActivePlan && license.plan?.snapshotAt
@@ -165,23 +153,21 @@ export function PlanDetailClient({ plan, license }: PlanDetailClientProps) {
                 </div>
               )}
 
-              {details.sla &&
-                details.quotas &&
-                Object.keys(details.quotas).length > 0 && <Separator />}
+              {details.sla && details.quotas && details.quotas.length > 0 && <Separator />}
 
-              {details.quotas && Object.keys(details.quotas).length > 0 && (
+              {details.quotas && details.quotas.length > 0 && (
                 <div className="space-y-3">
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Monthly Quotas
                   </p>
                   <div className="space-y-2.5 text-sm">
-                    {Object.entries(details.quotas).map(([key, value]) => (
-                      <div key={key} className="flex justify-between">
+                    {details.quotas.map((quota) => (
+                      <div key={quota.slug} className="flex justify-between">
                         <span className="text-muted-foreground">
-                          {formatQuotaLabel(key)}
+                          {quota.label}
                         </span>
                         <span className="font-medium">
-                          {value === -1 ? "Unlimited" : `${value} / month`}
+                          {quota.limit === -1 ? "Unlimited" : `${quota.limit} / month`}
                         </span>
                       </div>
                     ))}

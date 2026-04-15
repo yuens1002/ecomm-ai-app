@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.100.7 - 2026-04-15
+
+### Fixed
+
+- **Plan detail quotas**: eliminated `[object Object] / month` by aligning `PlanDetails.quotas` type with the actual API shape (array of `{icon, slug, label, limit}` objects); renderer updated to use `quota.label` / `quota.limit`; removed dead `formatQuotaLabel` helper
+
 ## 0.100.6 - 2026-04-14
 
 ### Fixed
