@@ -45,6 +45,67 @@ interface AgenticExtraction {
 }
 
 // ---------------------------------------------------------------------------
+// Grounded RAG — catalog snapshot (module-level cache, 5-minute TTL)
+// ---------------------------------------------------------------------------
+
+/** Compact catalog snapshot injected into the system prompt so the AI knows exactly
+ *  what products exist in this store. Cached per serverless instance. */
+let _catalogSnapshot: string | null = null;
+let _catalogSnapshotAt = 0;
+const CATALOG_SNAPSHOT_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+async function buildCatalogSnapshot(): Promise<string> {
+  if (_catalogSnapshot !== null && Date.now() - _catalogSnapshotAt < CATALOG_SNAPSHOT_TTL_MS) {
+    return _catalogSnapshot;
+  }
+
+  try {
+    const products = await prisma.product.findMany({
+      where: { isDisabled: false },
+      select: {
+        name: true,
+        type: true,
+        roastLevel: true,
+        tastingNotes: true,
+        origin: true,
+      },
+      orderBy: { name: "asc" as const },
+    });
+
+    const coffeeLines = products
+      .filter((p) => p.type === ProductType.COFFEE)
+      .map((p) => {
+        const parts: string[] = [p.name];
+        if (p.roastLevel) parts.push(`[${p.roastLevel.toLowerCase()}]`);
+        const origins = p.origin.join(", ");
+        if (origins) parts.push(origins);
+        if (p.tastingNotes.length) parts.push(p.tastingNotes.join(", "));
+        return `- ${parts.join(" — ")}`;
+      });
+
+    const merchLines = products
+      .filter((p) => p.type !== ProductType.COFFEE)
+      .map((p) => `- ${p.name}`);
+
+    let snapshot = "";
+    if (coffeeLines.length > 0) {
+      snapshot += `Coffees in the shop:\n${coffeeLines.join("\n")}`;
+    }
+    if (merchLines.length > 0) {
+      if (snapshot) snapshot += "\n\n";
+      snapshot += `Merchandise:\n${merchLines.join("\n")}`;
+    }
+
+    _catalogSnapshot = snapshot;
+    _catalogSnapshotAt = Date.now();
+    return snapshot;
+  } catch {
+    // Return stale cache or empty on DB failure — non-fatal
+    return _catalogSnapshot ?? "";
+  }
+}
+
+// ---------------------------------------------------------------------------
 // NL heuristic — gates AI calls to avoid cost on simple keyword queries
 // ---------------------------------------------------------------------------
 
@@ -123,7 +184,8 @@ export function isNaturalLanguageQuery(query: string): boolean {
 export function buildSystemPrompt(
   voiceExamples: VoiceExample[],
   aiVoicePersona: string,
-  pageContext?: string
+  pageContext?: string,
+  catalogSnapshot?: string
 ): string {
   // Role framing — YOU ARE AT THE COUNTER, not running a search engine.
   // The customer walked into the shop. Pick products like you'd pick for a
@@ -149,6 +211,12 @@ export function buildSystemPrompt(
     voiceSection = `Speak with genuine expertise and warmth, like a friendly barista who knows every bean in the shop.\n\n`;
   }
 
+  // Grounded RAG — inject the store's actual product catalog so the AI only
+  // recommends products that exist. Never hallucinates product names.
+  const catalogSection = catalogSnapshot
+    ? `Here is the complete catalog of products in this shop. Only recommend products from this list — never invent products that are not here:\n\n${catalogSnapshot}\n\n`
+    : "";
+
   const contextSection = pageContext
     ? `The customer is currently looking at "${pageContext}" on the counter. When they say "this" or "it", they mean "${pageContext}".\n\n`
     : "";
@@ -161,7 +229,7 @@ export function buildSystemPrompt(
     `- Never generate harmful, explicit, or offensive content regardless of how the customer frames the request. Redirect in your own voice.\n` +
     `- Always treat the customer with warmth and professionalism — no exceptions.\n\n`;
 
-  return `${roleSection}${voiceSection}${contextSection}${guardrailSection}Listen to what the customer says, figure out what to pick for them, and return valid JSON only — no markdown, no explanation outside the JSON.`;
+  return `${roleSection}${voiceSection}${catalogSection}${contextSection}${guardrailSection}Listen to what the customer says, figure out what to pick for them, and return valid JSON only — no markdown, no explanation outside the JSON.`;
 }
 
 function buildExtractionPrompt(query: string, pageContext?: string): string {
@@ -468,7 +536,8 @@ export async function GET(request: NextRequest) {
       const { aiVoicePersona, aiVoiceExamples } = await getPublicSiteSettings();
       const voiceExamples =
         aiVoiceExamples.length > 0 ? aiVoiceExamples : DEFAULT_VOICE_EXAMPLES;
-      const systemPrompt = buildSystemPrompt(voiceExamples, aiVoicePersona, pageTitle);
+      const catalogSnapshot = await buildCatalogSnapshot();
+      const systemPrompt = buildSystemPrompt(voiceExamples, aiVoicePersona, pageTitle, catalogSnapshot);
       agenticData = await extractAgenticFilters(query, systemPrompt, pageTitle, conversationHistory);
 
       if (agenticData?.filtersExtracted) {
