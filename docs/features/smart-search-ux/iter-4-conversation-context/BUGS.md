@@ -82,7 +82,23 @@ Discovered during post-ship testing. Each bug needs its own AC/verification befo
 
 ---
 
-## BUG-4: Regression — vague query bypasses AI cadence (no acknowledgment, no follow-ups, 7+ results)
+## BUG-4: Regression — `isNaturalLanguageQuery` gates out conversational Counter queries → no AI cadence
+
+**Reported:** 2026-04-15
+**Type:** Regression — root cause confirmed
+
+**Query:** "what's good today?" (Counter, `ai=true`)
+**Root cause:** `isNaturalLanguageQuery()` at `route.ts:248-253` returns `false` for this query. The indicator regex only matches a narrow set of words (`for`, `like`, `something`, `want`, `need`, `smooth`, `fruity`, etc.). `what's`, `good`, `today` match none of them → agentic path skipped entirely → raw DB dump, no acknowledgment, no follow-ups.
+
+**Why this matters:** Any common conversational opener that doesn't contain one of ~18 hardcoded words bypasses AI completely. The heuristic was designed to avoid running AI on single-keyword search bar queries, but it's being applied to Counter traffic indiscriminately.
+
+**Correct fix direction:** The Counter always sends `ai=true`. When `ai=true` and AI is configured, the NL heuristic should not apply — Counter queries are conversational by definition and should always go through the agentic path. The gate should only apply to non-Counter search bar queries.
+
+**Impact:** Any vague/open-ended Counter query ("what's popular?", "surprise me", "anything good?", "what do you recommend?") currently hits this dead end. This is a meaningful degradation from the pre-iter-4 experience.
+
+---
+
+## BUG-2: Reset shows salutation instead of a passive "standing by" message
 
 **Reported:** 2026-04-15
 **Type:** Regression — scripted cadence broken
