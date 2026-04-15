@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { GET, isNaturalLanguageQuery, tokenizeNLQuery } from "../route";
 
 const productFindManyMock = jest.fn();
+const productCountMock = jest.fn();
 const userActivityCreateMock = jest.fn();
 const chatCompletionMock = jest.fn();
 const isAIConfiguredMock = jest.fn();
@@ -19,6 +20,7 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     product: {
       findMany: (...args: unknown[]) => productFindManyMock(...args),
+      count: (...args: unknown[]) => productCountMock(...args),
     },
     userActivity: {
       create: () => userActivityCreateMock(),
@@ -43,6 +45,7 @@ describe("GET /api/search", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
+    productCountMock.mockResolvedValue(1); // chips pass validation by default
     queryRawMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(false);
     getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });

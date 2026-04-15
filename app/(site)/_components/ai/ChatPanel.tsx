@@ -559,6 +559,18 @@ export function ChatPanel() {
     };
   }, [isOpen]);
 
+  // On close: if the customer never sent a message (only the AI greeting exists),
+  // clear so the next open shows the shorter salutation instead of replaying the greeting.
+  // Conversations with at least one user turn are preserved across open/close.
+  useEffect(() => {
+    if (isOpen) return;
+    const state = useChatPanelStore.getState();
+    const hasUserTurn = state.messages.some((m) => m.role === "user");
+    if (!hasUserTurn && state.messages.length > 0) {
+      clearMessages();
+    }
+  }, [isOpen, clearMessages]);
+
   const handleReset = () => {
     clearMessages();
     const surfaces = useChatPanelStore.getState().voiceSurfaces;

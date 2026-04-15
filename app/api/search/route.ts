@@ -252,6 +252,34 @@ export function isNaturalLanguageQuery(query: string): boolean {
   return nlIndicators.test(query);
 }
 
+/**
+ * Filter follow-up chips to only those that return at least 1 product.
+ * Uses full-text search first, falls back to name/description keyword match.
+ * Prevents chips that would produce zero results from reaching the client.
+ */
+async function validateFollowUps(chips: string[]): Promise<string[]> {
+  if (chips.length === 0) return [];
+  const results = await Promise.all(
+    chips.map(async (chip) => {
+      // Try FTS first — handles experiential terms via stemming
+      const ftsIds = await fullTextSearchIds(chip, 1);
+      if (ftsIds.length > 0) return chip;
+      // FTS miss — try direct keyword match on name/description
+      const count = await prisma.product.count({
+        where: {
+          isDisabled: false,
+          OR: [
+            { name: { contains: chip, mode: "insensitive" } },
+            { description: { contains: chip, mode: "insensitive" } },
+          ],
+        },
+      });
+      return count > 0 ? chip : null;
+    })
+  );
+  return results.filter((c): c is string => c !== null);
+}
+
 // ---------------------------------------------------------------------------
 // AI extraction step
 // ---------------------------------------------------------------------------
@@ -933,6 +961,13 @@ export async function GET(request: NextRequest) {
     // tell the user instead of silently showing dumb keyword results.
     const aiFailed = forceAI && !agenticData;
 
+    // Pre-validate follow-up chips — remove any that return 0 products so
+    // customers never click a chip and land on an empty results page.
+    const rawFollowUps = agenticData?.followUps ?? [];
+    const validatedFollowUps = rawFollowUps.length > 0
+      ? await validateFollowUps(rawFollowUps)
+      : rawFollowUps;
+
     return NextResponse.json({
       products: orderedProducts,
       query: searchQuery,
@@ -942,7 +977,7 @@ export async function GET(request: NextRequest) {
       explanation: agenticData?.explanation ?? null,
       acknowledgment: agenticData?.acknowledgment ?? null,
       followUpQuestion: agenticData?.followUpQuestion ?? null,
-      followUps: agenticData?.followUps ?? [],
+      followUps: validatedFollowUps,
       recommendedProductName: agenticData?.recommendedProductName ?? null,
       aiFailed,
       context: { sessionId, turnCount },
