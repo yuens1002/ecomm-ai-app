@@ -138,6 +138,20 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 
 ---
 
+## 2026-04-15 — Agent implements fixes immediately on reviewer observations
+
+**Gap:** When the user (reviewer) conversationally described problems during review ("never use categories for origin," "we need to be careful starting words in the AI's mouth"), the agent immediately implemented code fixes. This is wrong: the user's natural cadence is to offload observations as they arise — they can't hold too many in mind at once. Jumping to implementation without logging, diagnosing, and confirming means fixes can be applied without full context, introducing new problems (removing categories broke origin scoping before a schema-first approach was thought through).
+
+**Root cause:** No rule distinguished between user *directives* (implement this) and user *observations* (I notice this problem). The agent pattern-matched "problem described → implement fix" without considering that the reviewer may be surfacing an issue for discussion, not issuing a work order.
+
+**Fix applied to:**
+- `memory/feedback_reviewer_observation_cadence.md` (new) — Captures the rule and the why: user states observations immediately by habit; agent must log, explain causes, hold for direction before writing code.
+- `memory/MEMORY.md` — Pointer added to the new feedback file.
+
+**Prevented by:** Feedback memory file is linked from MEMORY.md. Future sessions that read it will know: reviewer observations → log + diagnose + hold, not → implement immediately.
+
+---
+
 ## 2026-04-15 — ROADMAP.md not updated as features shipped
 
 **Gap:** `docs/ROADMAP.md` fell multiple versions behind reality — Phase A (agentic search) was still listed as "Next" when it had shipped in v0.100.0, and the Shipped table ended at v0.98.4. The discrepancy wasn't noticed until a PM-mode session tried to use the roadmap as source of truth.
