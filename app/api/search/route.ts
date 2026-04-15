@@ -523,6 +523,11 @@ export async function GET(request: NextRequest) {
     const parsedTurnCount = parseInt(urlParams.get("turnCount") ?? "0", 10);
     const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
     const pageTitle = urlParams.get("pageTitle") ?? undefined;
+    const pageFrom = urlParams.get("from") ?? undefined;
+    // Extract category slug when on a category page (e.g. from=categories/central-america).
+    // Used to pre-scope the Prisma where clause before AI extraction runs — categories are
+    // schema-backed, the slug maps directly through the CategoriesOnProducts relation.
+    const categorySlug = pageFrom?.match(/^categories\/([^/]+)$/)?.[1];
 
     // Conversation history — last N turns sent by the client, capped at 5 turns (10 messages)
     let conversationHistory: Array<{ role: "user" | "assistant"; content: string }> = [];
@@ -871,6 +876,29 @@ export async function GET(request: NextRequest) {
     }
 
     // -------------------------------------------------------------------------
+    // Category page pre-scope — applied as a hard constraint after all AI
+    // extraction and keyword where-clause building. Ensures Counter queries on
+    // a category page never return out-of-category products regardless of what
+    // the AI extracted (origin="central america" matches nothing; the category
+    // relation is the source of truth). If the roast-pattern detector already
+    // set whereClause.categories, combine both with AND so neither is lost.
+    // -------------------------------------------------------------------------
+    if (categorySlug) {
+      const categoryFilter = { some: { category: { slug: categorySlug } } };
+      if (whereClause.categories) {
+        // Roast pattern set a categories filter — keep both with AND
+        whereClause.AND = [
+          ...(Array.isArray(whereClause.AND) ? whereClause.AND : []),
+          { categories: whereClause.categories },
+          { categories: categoryFilter },
+        ];
+        delete whereClause.categories;
+      } else {
+        whereClause.categories = categoryFilter;
+      }
+    }
+
+    // -------------------------------------------------------------------------
     // Track search activity
     // -------------------------------------------------------------------------
 
@@ -941,6 +969,26 @@ export async function GET(request: NextRequest) {
         const rankB = rankByIdMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
         return rankA - rankB;
       });
+    }
+
+    // App-side price sort — price_asc/price_desc are intentionally omitted from
+    // the Prisma orderBy sortMap (Prisma can't do nested aggregate orderBy through
+    // variants→purchaseOptions). Sort in JS after the query using min variant price.
+    // Applied before result reconciliation so the AI's named recommendation can
+    // still be promoted to position 1 after sorting.
+    const extractedSortBy = agenticData?.filtersExtracted?.sortBy;
+    if (extractedSortBy === "price_desc" || extractedSortBy === "price_asc") {
+      const getMinPrice = (p: (typeof orderedProducts)[0]): number => {
+        const prices = p.variants.flatMap((v) =>
+          v.purchaseOptions.map((po) => po.priceInCents)
+        );
+        return prices.length > 0 ? Math.min(...prices) : Infinity;
+      };
+      orderedProducts = [...orderedProducts].sort((a, b) =>
+        extractedSortBy === "price_desc"
+          ? getMinPrice(b) - getMinPrice(a)
+          : getMinPrice(a) - getMinPrice(b)
+      );
     }
 
     // Result reconciliation: when the AI names a specific product in the acknowledgment,
