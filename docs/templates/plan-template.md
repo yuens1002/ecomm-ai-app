@@ -41,6 +41,18 @@
 | AC-FN-1 | {behavior} | {Code review: file + trace path} | {pass condition} |
 | AC-FN-2 | {behavior} | {Code review: file + trace path} | {pass condition} |
 
+### Test Coverage
+
+> **Fixture-intent rule:** Every TST AC must test the full path from input to output — not just that mocked outputs are handled correctly.
+> - If the feature has a routing gate or conditional path, include a test that fires a real representative input string and asserts it reaches (or bypasses) the gate correctly
+> - For AI-path features: include at least 3 representative input fixtures (open-ended, vague, merch, etc.) — not only happy-path filter cases
+> - If a TST AC only asserts on mocked extraction output without verifying the routing path that reaches extraction, note it as a **coverage gap** and add a complementary routing-gate test
+
+| AC | What | How | Pass |
+|----|------|-----|------|
+| AC-TST-1 | {route/function} — {fixture input} | Test run: `npm run test:ci` | asserts {condition} when given `"{representative query}"` |
+| AC-TST-2 | {route/function} — {routing gate} | Test run: `npm run test:ci` | asserts gate correctly admits/rejects boundary inputs |
+
 ### Regression (verified by test suite + spot-check)
 
 | AC | What | How | Pass |

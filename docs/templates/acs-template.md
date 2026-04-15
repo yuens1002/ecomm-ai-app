@@ -44,6 +44,17 @@
 | AC-FN-1 | {behavior to verify} | {Code review: file path + what to trace} | {explicit pass condition} | | | |
 | AC-FN-2 | {behavior to verify} | {Code review: file path + what to trace} | {explicit pass condition} | | | |
 
+## Test Coverage Acceptance Criteria
+
+> **Fixture-intent rule:** Test fixtures must match the intent of the feature, not just the mocked outputs.
+> - If the feature has a routing gate or conditional path, test that gate directly with real-world input strings — not just "mock returns X, assert Y"
+> - For AI-path features: include at least 3 representative query fixtures that a real user would send (e.g. open-ended, vague, merch, stock question) — not just the happy-path filter case
+> - If any TST AC only asserts on mocked extraction output without testing the path that reaches extraction, flag it as **coverage gap** in the Agent column
+
+| AC | What | How | Pass | Agent | QC | Reviewer |
+|----|------|-----|------|-------|-----|----------|
+| AC-TST-1 | {route or function} — {specific fixture query or input} | Test run: `{command}` | `{test file}` asserts {exact condition} for input `"{fixture}"` | | | |
+
 ## Regression Acceptance Criteria
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
