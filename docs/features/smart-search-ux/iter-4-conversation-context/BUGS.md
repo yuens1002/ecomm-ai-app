@@ -47,6 +47,21 @@ Discovered during post-ship testing. Each bug needs its own AC/verification befo
 
 ---
 
+## OBS-3: AI hallucinates stock availability
+
+**Reported:** 2026-04-15
+**Type:** Hallucination / data grounding gap
+
+**Symptom:** User asked "do you have the italian roast in stock?" — AI responded "Oh, the Italian Roast! That's a classic. I'd say we do have that in stock right now." The AI has no knowledge of actual stock levels; it's guessing confidently.
+
+**Root cause:** The search/extraction pipeline does not pass stock data to the AI context. The AI is generating a response from pattern-matching the question, not from real inventory data.
+
+**Risk:** High — confident wrong answers about availability erode trust more than "I don't know."
+
+**To address:** Either (a) ground the AI on real `stockCount`/`isDisabled` data from the product results, so it can accurately say what's in stock, or (b) constrain the system prompt to redirect stock questions to the product page / never answer definitively. Should be part of a broader "what can the AI answer confidently vs. should deflect" design decision.
+
+---
+
 ## OBS-2: DEFAULT_VOICE_SURFACES are too opinionated for a multi-store default
 
 **Reported:** 2026-04-15
