@@ -2,7 +2,7 @@
 
 **Branch:** `feat/smart-search-ux`
 **Base:** `main`
-**Status:** Planning
+**Status:** Shipped (v0.100.0)
 **ACs doc:** `docs/plans/smart-search-ux-ACs.md`
 **Release:** minor (user-facing feature, new UX surface)
 
