@@ -89,13 +89,14 @@ function PanelContent() {
     updateLastMessage,
     setLoading,
     loadSurfaces,
+    sessionGreeted,
+    setSessionGreeted,
   } = useChatPanelStore();
   const pathname = usePathname();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const sessionId = useRef(`panel-${Date.now()}`);
-  const hasGreeted = useRef(false);
 
   const contextTitle = pageContext?.title ?? prettifyPathname(pathname);
 
@@ -126,16 +127,16 @@ function PanelContent() {
 
   // Add opening greeting once surfaces are loaded — deferred so we never flash TS defaults.
   // voiceSurfaces starts null; this effect fires once it transitions to non-null.
-  // On first open: shows full greeting (once per session).
-  // On re-opens with no conversation: shows salutation (short in-character connector).
+  // On first open this session (sessionGreeted=false): shows full context-aware greeting.
+  // On re-opens with no conversation (sessionGreeted=true): shows passive standby copy.
   useEffect(() => {
     if (!isOpen || voiceSurfaces === null) return;
     const state = useChatPanelStore.getState();
     if (state.messages.length > 0) return; // Conversation in progress — no greeting
 
-    if (!hasGreeted.current) {
-      // First open this session — show full greeting
-      hasGreeted.current = true;
+    if (!sessionGreeted) {
+      // First open this session — show full context-aware greeting
+      setSessionGreeted(true);
       addMessage({
         id: GREETING_ID,
         role: "assistant",
@@ -143,15 +144,15 @@ function PanelContent() {
         isLoading: false,
       });
     } else {
-      // Re-open with empty messages (prior conversation was reset or cleared)
+      // Already greeted this session — passive standby, no prompting question
       addMessage({
         id: GREETING_ID,
         role: "assistant",
-        content: voiceSurfaces.salutation,
+        content: voiceSurfaces.standby,
         isLoading: false,
       });
     }
-  }, [isOpen, voiceSurfaces, addMessage, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, voiceSurfaces, sessionGreeted, addMessage, setSessionGreeted, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -575,11 +576,11 @@ export function ChatPanel() {
     clearMessages();
     const surfaces = useChatPanelStore.getState().voiceSurfaces;
     if (!surfaces) return;
-    // Show salutation (short in-character connector) after reset — not the full greeting
+    // Post-reset: passive standby copy — customer was already greeted, no need to re-prompt
     addMessage({
       id: GREETING_ID,
       role: "assistant",
-      content: surfaces.salutation,
+      content: surfaces.standby,
       isLoading: false,
     });
   };
