@@ -121,7 +121,7 @@ Discovered during post-ship testing. Each bug needs its own AC/verification befo
 
 **Impact:** Any vague/open-ended Counter query ("what's popular?", "surprise me", "anything good?", "what do you recommend?") currently hits this dead end. This is a meaningful degradation from the pre-iter-4 experience.
 
-**Note:** The intent taxonomy (`product_discovery`, `recommendation`, `how_to`, `reorder`) is correctly designed and handles these cases — the problem is the gate prevents those queries from ever reaching intent classification. Vague queries are the ones that most need intent routing, yet the gate excludes them first.
+**Correction (post-investigation):** `ai=true` sets `forceAI` which bypasses the NL gate entirely (line 661: `forceAI || isNaturalLanguageQuery`). Both "what's good today?" and "what coffee would be good with this?" had `ai=true`. The second query worked perfectly — correct page context grounding, 3 curated results, full acknowledgment in owner voice. So the NL gate is NOT the cause for Counter traffic. Root cause of "what's good today?" producing 7 raw results with no acknowledgment is still unknown — likely in extraction behavior for fully open-ended queries with no extractable filters, or a rendering gap on the client side when acknowledgment comes back empty/null.
 
 ---
 
