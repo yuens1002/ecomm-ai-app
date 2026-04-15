@@ -19,7 +19,20 @@ Discovered during post-ship testing. Each bug needs its own AC/verification befo
 
 ---
 
-## BUG-2: Greeting repeats on re-open ("hi hi hi" style repetition)
+## BUG-2: Reset shows salutation instead of a passive "standing by" message
+
+**Reported:** 2026-04-15
+**Type:** UX / salutation design gap
+
+**Symptom:** After a conversation, clicking reset shows "Hey back! What can I help you find today?" — this is fine copy but it's still a salutation prompt that demands a response. After reset the customer has already been greeted; the AI should stand down and just be available ("Take your time — let me know if you need anything") rather than re-prompting.
+
+**Related to BUG-2 (hi hi hi):** If the panel is closed without a conversation, the close-clear effect fires and the next open re-triggers a salutation, which can stack with the greeting depending on effect timing. Both issues share the same root: the reset/re-open state machine doesn't distinguish "just reset after a conversation" from "blank open."
+
+**To address:** Add a third surface state — "standing by" — for post-reset. Passive, low-pressure, no question. Design decision: should this be a separate surface key (`standby`) or handled by making `salutation` ambient/non-prompting?
+
+---
+
+## BUG-2 (original): Greeting repeats on re-open ("hi hi hi" style repetition)
 
 **Reported:** 2026-04-15
 **Status:** Not fixed — to be addressed in follow-up
