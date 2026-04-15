@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import type { VoiceSurfaces } from "@/lib/ai/voice-surfaces";
 import { DEFAULT_VOICE_SURFACES } from "@/lib/ai/voice-surfaces";
+import type { VoiceSurfaces } from "@/lib/ai/voice-surfaces";
 
 export interface PageContext {
   icon: string;
@@ -90,9 +90,7 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
       const res = await fetch("/api/settings/voice-surfaces");
       if (res.ok) {
         const fetched = (await res.json()) as VoiceSurfaces;
-        // Merge with defaults so keys added after initial generation still have values
-        const surfaces = { ...DEFAULT_VOICE_SURFACES, ...fetched };
-        set({ voiceSurfaces: surfaces, surfacesLoaded: true });
+        set({ voiceSurfaces: fetched, surfacesLoaded: true });
       } else {
         set({ voiceSurfaces: DEFAULT_VOICE_SURFACES, surfacesLoaded: true });
       }
