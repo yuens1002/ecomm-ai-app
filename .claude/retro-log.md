@@ -135,3 +135,17 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 - `claude.md` — Added `docs/navigation/` to Critical Files section with explicit "Read before any admin nav change" instruction and warning about the Dashboard regression
 
 **Prevented by:** `docs/navigation/` is now listed in `claude.md` Critical Files. The route registry + `useHasActiveDescendant` pattern is the canonical solution documented there — any nav fix that reads this doc will find the right approach before writing code.
+
+---
+
+## 2026-04-15 — ROADMAP.md not updated as features shipped
+
+**Gap:** `docs/ROADMAP.md` fell multiple versions behind reality — Phase A (agentic search) was still listed as "Next" when it had shipped in v0.100.0, and the Shipped table ended at v0.98.4. The discrepancy wasn't noticed until a PM-mode session tried to use the roadmap as source of truth.
+
+**Root cause:** No step in the release workflow required updating ROADMAP.md. CHANGELOG.md and package.json had enforcement (they're part of the release checklist), but ROADMAP.md was convention-only with no enforced touchpoint.
+
+**Fix applied to:**
+- `.claude/commands/release.md` — Added ROADMAP.md update as Step 3 in the Pre-PR Checklist (Scenario A) and as Step 1 in Scenario B (tag creation). Both scenarios now explicitly require updating "Now", moving shipped items, and confirming Next is accurate before tagging.
+- `docs/ROADMAP.md` — Brought fully current: Now = v0.100.7, Shipped table covers v0.99.x–v0.100.7, Next = Iter 4 conversation context, Backlog = Phase B personalization. Convention section now includes "On every release: update the Now section, move shipped items to Shipped table."
+
+**Prevented by:** ROADMAP.md update is now a named, numbered step in the release skill — same weight as CHANGELOG.md and package.json. Both release scenarios require it before tagging.

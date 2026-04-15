@@ -6,34 +6,27 @@
 
 ---
 
-## Now — v0.99.x
+## Now — v0.100.7
 
-_Nothing in progress. v0.98.4 just shipped._
+_Patch release — plan detail quota label fix + plans page ACs spec closure. Clean state._
 
 ---
 
-## Next — Agentic Product Discovery
+## Next — Iter 4: Conversation Context & Domain Intelligence
 
-> **The claim:** Free-tier agentic product discovery — no other e-commerce platform ships this natively in 2026. Platform tier adds personalization on top.
-
-### Phase A — Free Tier (ships as one PR or two)
+> **Goal:** Make Counter conversationally aware and coffee-domain-smart. Each query builds on the last; the AI understands "approachable" and "gift for mom" as concrete product attributes.
 
 | # | Item | Notes |
 |---|------|-------|
-| A0 | Homepage hero swap | Video or image slides; remove floating AI-Barista widget |
-| A1 | Structured search JSON backbone | Evolve `/api/search` response shape |
-| A2 | NL filter extraction | Gemini Flash: query → intent + filters → explanation |
-| A3 | Conversational follow-ups | Session-scoped, stateless, no persistence |
+| 4a | Lazy voice surface init | GET generates + caches surfaces on first Counter open; no TS fallback flash |
+| 4b | Conversation history | Pass prior turns to AI extraction — follow-up queries narrow context |
+| 4c | Context-aware greeting + placeholder | Greeting updates on page nav; placeholder adapts to product type (coffee vs merch) |
+| 4d | Pre-validate follow-up chips | Filter chips that would return zero results before rendering |
+| 4e | Coffee domain knowledge | Roast/origin/brew/experiential mappings in system prompt |
+| 4f | Admin two-part textarea | Voice answer + AI-generated preview per Q&A block |
+| 4g | pgvector semantic search | Per-store toggle; embeddings on product save; vector + keyword fallback |
 
-**Spec:** [`docs/features/agentic-search/spec.md`](features/agentic-search/spec.md)
-
-### Phase B — Platform Tier (follows Phase A)
-
-| # | Item | Notes |
-|---|------|-------|
-| B1 | User context aggregation | `getUserPurchaseHistory`, `getUserRecentViews`, etc. |
-| B2 | Personalized search ranking | Inject user context into agentic search prompt |
-| B3 | "Recommended For You" | Authenticated carousel, homepage |
+**Spec:** [`docs/features/smart-search-ux/iter-4-conversation-context/plan.md`](features/smart-search-ux/iter-4-conversation-context/plan.md)
 
 ---
 
@@ -41,9 +34,11 @@ _Nothing in progress. v0.98.4 just shipped._
 
 | Priority | Feature | Spec / Notes |
 |----------|---------|--------------|
-| P1 | Reviews Tier 2 — AI Roast Master | `docs/internal/product-reviews-tier2.md` — depends on Phase B data |
-| P2 | A1: AI Assist Tests | `app/admin/(cms)/pages/[id]/ai-assist/` — unit + component tests |
-| P3 | Agentic search Phase B + Reviews Tier 2 integration | Platform search uses review utility scores |
+| P1 | Phase B1 — User context aggregation | `getUserPurchaseHistory`, `getUserRecentViews`, `getUserSearchHistory` |
+| P2 | Phase B2 — Personalized ranking | Inject user context into Counter prompt for authed users |
+| P3 | Phase B3 — "Recommended For You" carousel | Authenticated; falls back to trending for anon |
+| P4 | Reviews Tier 2 — AI Roast Master | `docs/internal/product-reviews-tier2.md` — depends on Phase B data |
+| P5 | Phase B4 — Reviews + search integration | Utility scores in agentic results (BLOCKED on Reviews Tier 2) |
 
 ---
 
@@ -51,6 +46,15 @@ _Nothing in progress. v0.98.4 just shipped._
 
 | Version | Feature |
 |---------|---------|
+| v0.100.7 | Fix — plan detail quota labels (`[object Object]` → correct label/limit) |
+| v0.100.6 | Fix — admin nav active state (Dashboard no longer highlights on every page) |
+| v0.100.5 | Fix — Counter keyboard retention, focus steal, viewport offset, voice surface defaults |
+| v0.100.4 | Fix — hero 16:9 mobile, theme switcher visibility, stepper border, product card aspect |
+| v0.100.3 | Feat — Counter UX overhaul: panel rename, voice surfaces, admin consolidation, cadence rules |
+| v0.100.2 | Fix — lazy-require pg/adapter-pg (Turbopack static analysis) |
+| v0.100.1 | Fix — search quality hotfix: AI clears keyword OR + pg full-text ranking |
+| v0.100.0 | Feat — Agentic Smart Search (Phase A + Phase 2): Counter panel, NL extraction, voice persona, Smart Search admin, salutation, response cadence, animated waiting indicator |
+| v0.99.x | Fixes — pg/ws adapter, Copilot review feedback, hook portability guards |
 | v0.98.4 | Repo cleanup — dev-tools removed, docs/internal tsconfig excluded |
 | v0.98.3 | Security — patched 17 npm vulnerabilities |
 | v0.98.2 | Platform — acceptedAt/acceptedVersions wiring + ticket reply thread |
@@ -86,8 +90,8 @@ _Nothing in progress. v0.98.4 just shipped._
 ## Convention
 
 - **Before starting a feature:** add it to Next or Backlog with a link to its spec
+- **On every release:** update the "Now" section, move shipped items to the Shipped table
 - **When planning a sprint:** ensure `docs/features/<name>/spec.md` exists and create `docs/plans/<name>-plan.md`
-- **When shipping:** move the item from Next/Backlog to Shipped, bump the version row
 - **`docs/plans/`** — per-sprint ACs and implementation plans (granular, created at sprint start)
 - **`docs/features/`** — durable feature specs (created when feature is first planned, updated as it evolves)
 - **`docs/internal/`** — gitignored, strategy/competitive/private notes
