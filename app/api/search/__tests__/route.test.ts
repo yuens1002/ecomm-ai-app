@@ -296,6 +296,190 @@ describe("tokenizeNLQuery", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Conversation context + intent routing (AC-TST-7 to TST-14)
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — conversation context + intent routing", () => {
+  const nlQuery = "something smooth and fruity for my morning"; // triggers isNaturalLanguageQuery
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({
+      aiVoicePersona: "",
+      aiVoiceExamples: [],
+      aiVoiceSurfaces: { salutation: "What are you after?" },
+    });
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        acknowledgment: "Sure, let me take a look.",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+  });
+
+  // AC-TST-7: history injected into chatCompletion messages
+  it("AC-TST-7: passes conversation history to chatCompletion messages", async () => {
+    const history = [
+      { role: "user", content: "show me light roast" },
+      { role: "assistant", content: "Here are some light roasts." },
+    ];
+    const url = new URL("http://localhost:3000/api/search");
+    url.searchParams.set("q", nlQuery);
+    url.searchParams.set("history", JSON.stringify(history));
+
+    await GET(new NextRequest(url.toString()));
+
+    const callArgs = chatCompletionMock.mock.calls[0][0];
+    const messages: Array<{ role: string; content: string }> = callArgs.messages;
+    const contents = messages.map((m) => m.content);
+    expect(contents.some((c) => c.includes("show me light roast"))).toBe(true);
+  });
+
+  // AC-TST-8: history capped at 5 turns (10 messages)
+  it("AC-TST-8: caps history at 10 messages when 7-turn history is passed", async () => {
+    // 7 turns = 14 messages — only last 10 should be passed through
+    const history = Array.from({ length: 14 }, (_, i) => ({
+      role: i % 2 === 0 ? "user" : "assistant",
+      content: `Message ${i}`,
+    }));
+    const url = new URL("http://localhost:3000/api/search");
+    url.searchParams.set("q", nlQuery);
+    url.searchParams.set("history", JSON.stringify(history));
+
+    await GET(new NextRequest(url.toString()));
+
+    const callArgs = chatCompletionMock.mock.calls[0][0];
+    const messages: Array<{ role: string }> = callArgs.messages;
+    // messages = [system, ...history_segment, user_query]
+    // history_segment should be ≤ 10 entries
+    const historySegment = messages.slice(1, -1); // exclude system and user
+    expect(historySegment.length).toBeLessThanOrEqual(10);
+  });
+
+  // AC-TST-9: how_to intent — no DB query, empty products
+  it("AC-TST-9: how_to intent returns empty products without querying DB", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "how_to",
+        filtersExtracted: {},
+        acknowledgment: "For a V60, you'd want a medium-fine grind.",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+
+    const request = new NextRequest(
+      `http://localhost:3000/api/search?q=${encodeURIComponent(nlQuery)}`
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(productFindManyMock).not.toHaveBeenCalled();
+    expect(data.products).toEqual([]);
+    expect(data.intent).toBe("how_to");
+  });
+
+  // AC-TST-10: reorder intent — in-character redirect, empty products
+  it("AC-TST-10: reorder intent returns empty products and acknowledgment containing 'account'", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "reorder",
+        filtersExtracted: {},
+        acknowledgment: "For your previous orders, head to your account page.",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+
+    const request = new NextRequest(
+      `http://localhost:3000/api/search?q=${encodeURIComponent(nlQuery)}`
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(productFindManyMock).not.toHaveBeenCalled();
+    expect(data.products).toEqual([]);
+    expect(data.intent).toBe("reorder");
+    expect((data.acknowledgment as string).toLowerCase()).toContain("account");
+  });
+
+  // AC-TST-11: merch query — no type: COFFEE, no categories filter
+  it("AC-TST-11: merch productType omits type:COFFEE and categories from DB query", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { productType: "merch" },
+        acknowledgment: "Let me see what gear we have.",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+    productFindManyMock.mockResolvedValue([]);
+
+    const request = new NextRequest(
+      `http://localhost:3000/api/search?q=${encodeURIComponent(nlQuery)}`
+    );
+    await GET(request);
+
+    const callArgs = productFindManyMock.mock.calls[0][0];
+    expect(callArgs.where.type).toBeUndefined();
+    expect(callArgs.where.categories).toBeUndefined();
+  });
+
+  // AC-TST-12: result reconciliation — recommendedProductName spliced to index 0
+  it("AC-TST-12: recommendedProductName product is at index 0 in response", async () => {
+    const products = [
+      { id: "p1", name: "Colombia Huila", slug: "colombia-huila", categories: [], variants: [], images: [] },
+      { id: "p2", name: "Ethiopia Yirgacheffe", slug: "ethiopia-yirgacheffe", categories: [], variants: [], images: [] },
+      { id: "p3", name: "Kenya AA", slug: "kenya-aa", categories: [], variants: [], images: [] },
+    ];
+    productFindManyMock.mockResolvedValue(products);
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        acknowledgment: "I'd go with the Ethiopia Yirgacheffe.",
+        recommendedProductName: "Ethiopia Yirgacheffe",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+
+    const request = new NextRequest(
+      `http://localhost:3000/api/search?q=${encodeURIComponent(nlQuery)}`
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.products[0].name).toBe("Ethiopia Yirgacheffe");
+  });
+
+  // AC-TST-14: salutation detection — isSalutation: true, empty products, salutation surface
+  it("AC-TST-14: q=hey&ai=true returns isSalutation:true with salutation acknowledgment", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=hey&ai=true"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.isSalutation).toBe(true);
+    expect(data.products).toEqual([]);
+    expect(data.acknowledgment).toBe("What are you after?");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Roast pattern detection
 // ---------------------------------------------------------------------------
 

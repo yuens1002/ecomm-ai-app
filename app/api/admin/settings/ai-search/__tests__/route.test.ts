@@ -142,4 +142,35 @@ describe("GET + PUT /api/admin/settings/ai-search", () => {
     const response = await PUT(putRequest({ aiVoicePersona: "some persona" }));
     expect(response.status).toBe(401);
   });
+
+  // AC-TST-5: cache bust — deletes ai_voice_surfaces when voiceExamples in payload and record exists
+  it("AC-TST-5: deletes ai_voice_surfaces when voiceExamples in payload and cached record exists", async () => {
+    siteSettingsFindUniqueMock.mockResolvedValue({
+      key: "ai_voice_surfaces",
+      value: JSON.stringify({}),
+    });
+    const examples = [{ question: "What's your top pick?", answer: "Ethiopian, hands down." }];
+
+    const response = await PUT(putRequest({ voiceExamples: examples }));
+
+    expect(response.status).toBe(200);
+    expect(siteSettingsDeleteMock).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { key: "ai_voice_surfaces" } })
+    );
+    // generateVoiceSurfaces should NOT be called — lazy init handles regen on next GET
+    expect(siteSettingsUpsertMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ where: { key: "ai_voice_surfaces" } })
+    );
+  });
+
+  // AC-TST-6: cache bust no-op — does not call delete when record does not exist
+  it("AC-TST-6: does not call delete when ai_voice_surfaces record does not exist", async () => {
+    siteSettingsFindUniqueMock.mockResolvedValue(null);
+    const examples = [{ question: "What's your top pick?", answer: "Ethiopian, hands down." }];
+
+    const response = await PUT(putRequest({ voiceExamples: examples }));
+
+    expect(response.status).toBe(200);
+    expect(siteSettingsDeleteMock).not.toHaveBeenCalled();
+  });
 });

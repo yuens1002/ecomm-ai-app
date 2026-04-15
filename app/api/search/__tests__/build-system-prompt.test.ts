@@ -104,4 +104,30 @@ describe("buildSystemPrompt — voice Q&A embedding", () => {
       expect(prompt).toContain("A laid-back roaster from Portland");
     });
   });
+
+  // AC-TST-13: domain knowledge section
+  describe("coffee domain knowledge (AC-TST-13)", () => {
+    let prompt: string;
+
+    beforeAll(() => {
+      prompt = buildSystemPrompt([], "");
+    });
+
+    it("contains origin-to-flavor mapping for Ethiopia", () => {
+      expect(prompt).toContain("Ethiopia");
+    });
+
+    it("contains origin-to-flavor mapping for Kenya", () => {
+      expect(prompt).toContain("Kenya");
+    });
+
+    it("contains experiential term mapping for 'approachable'", () => {
+      expect(prompt).toContain("approachable");
+    });
+
+    it("contains processing method signatures (washed, natural)", () => {
+      expect(prompt).toContain("washed");
+      expect(prompt).toContain("natural");
+    });
+  });
 });
