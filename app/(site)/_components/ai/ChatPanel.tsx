@@ -309,7 +309,6 @@ function PanelContent() {
                 handleSend();
               }
             }}
-            placeholder={voiceSurfaces?.placeholder ?? ""}
             className="text-sm h-9 rounded-full bg-muted/40 border-muted-foreground/20 focus-visible:bg-background pr-11"
           />
           <button

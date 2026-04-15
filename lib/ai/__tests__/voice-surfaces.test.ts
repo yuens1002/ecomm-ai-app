@@ -31,7 +31,6 @@ const MOCK_SURFACES_A = {
   aiFailed: "Sorry, I lost my train of thought — what were you after?",
   noResults: "Hmm, not sure we have that — tell me more about what you're after?",
   error: "Something went sideways on my end — give it another go?",
-  placeholder: "How do you take your coffee?",
 };
 
 const MOCK_SURFACES_B = {
@@ -43,7 +42,6 @@ const MOCK_SURFACES_B = {
   aiFailed: "Missed that — try again?",
   noResults: "Don't have it. Rephrase?",
   error: "Error. Retry.",
-  placeholder: "What do you want?",
 };
 
 describe("generateVoiceSurfaces — Q&A plumbing", () => {
@@ -85,12 +83,11 @@ describe("generateVoiceSurfaces — Q&A plumbing", () => {
       const result = await generateVoiceSurfaces(VOICE_SET_A);
 
       expect(result["greeting.home"]).toBe(MOCK_SURFACES_A["greeting.home"]);
-      expect(result.placeholder).toBe(MOCK_SURFACES_A.placeholder);
       expect(result.waiting).toBe(MOCK_SURFACES_A.waiting);
       expect(result.salutation).toBe(MOCK_SURFACES_A.salutation);
     });
 
-    it("includes all 9 surface keys in the result", async () => {
+    it("includes all 8 surface keys in the result", async () => {
       const result = await generateVoiceSurfaces(VOICE_SET_A);
       const keys = Object.keys(result);
 
@@ -102,7 +99,7 @@ describe("generateVoiceSurfaces — Q&A plumbing", () => {
       expect(keys).toContain("aiFailed");
       expect(keys).toContain("noResults");
       expect(keys).toContain("error");
-      expect(keys).toContain("placeholder");
+      expect(keys).not.toContain("placeholder");
     });
   });
 
@@ -139,7 +136,7 @@ describe("generateVoiceSurfaces — Q&A plumbing", () => {
       const result = await generateVoiceSurfaces(VOICE_SET_B);
 
       expect(result["greeting.home"]).toBe(MOCK_SURFACES_B["greeting.home"]);
-      expect(result.placeholder).toBe(MOCK_SURFACES_B.placeholder);
+      expect(result.waiting).toBe(MOCK_SURFACES_B.waiting);
     });
   });
 
@@ -167,7 +164,6 @@ describe("generateVoiceSurfaces — Q&A plumbing", () => {
       const result = await generateVoiceSurfaces(VOICE_SET_A);
 
       expect(result["greeting.home"]).toBe("Welcome!");
-      expect(result.placeholder).toBe(DEFAULT_VOICE_SURFACES.placeholder);
       expect(result.waiting).toBe(DEFAULT_VOICE_SURFACES.waiting);
     });
 

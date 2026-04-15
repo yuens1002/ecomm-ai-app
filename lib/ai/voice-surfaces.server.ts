@@ -39,15 +39,13 @@ export async function generateVoiceSurfaces(
   "salutation": "Your response to 'hey' or 'hello' — greet back and ask how you can help, in your words (1 sentence)",
   "aiFailed": "What you'd say if you blanked for a second — casual, ask them to repeat (1 sentence)",
   "noResults": "What you'd say when nothing matched — ask them to rephrase or tell you more (1-2 sentences)",
-  "error": "A quick recovery after a technical hiccup — casual, ask them to try again (1 sentence)",
-  "placeholder": "A short question or invitation for the chat input — 8-12 words, something you'd actually say at the counter"
+  "error": "A quick recovery after a technical hiccup — casual, ask them to try again (1 sentence)"
 }
 
 Rules:
 - Speak directly to the customer: use "you", "your" — never third person
 - Use the owner's actual vocabulary, rhythm, and personality from the Q&As above — not generic assistant language
-- The waiting filler should be 1-3 words max, lowercase
-- The placeholder should be a question, not a statement`,
+- The waiting filler should be 1-3 words max, lowercase`,
       },
     ],
     maxTokens: 1024,
@@ -95,10 +93,6 @@ Rules:
         typeof parsed.error === "string"
           ? parsed.error
           : DEFAULT_VOICE_SURFACES.error,
-      placeholder:
-        typeof parsed.placeholder === "string"
-          ? parsed.placeholder
-          : DEFAULT_VOICE_SURFACES.placeholder,
     };
   } catch {
     console.error(
