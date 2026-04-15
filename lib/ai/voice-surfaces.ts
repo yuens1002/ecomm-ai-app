@@ -31,15 +31,16 @@ export interface VoiceSurfaces {
 export type VoiceSurfaceKey = keyof VoiceSurfaces;
 
 /** Hardcoded fallback when no generated surfaces exist */
-// Neutral fallbacks — only used when AI is not configured and no surfaces have been generated.
-// In normal operation the lazy-init hydration replaces these with AI-generated owner voice copy.
 export const DEFAULT_VOICE_SURFACES: VoiceSurfaces = {
-  "greeting.home": "What are you looking for today?",
-  "greeting.product": "Want to know more about {product}?",
-  "greeting.category": "What are you looking for in {category}?",
-  waiting: "hmm",
-  salutation: "How can I help?",
-  aiFailed: "Sorry, can you try that again?",
-  noResults: "Nothing matched — can you tell me more about what you're after?",
-  error: "Something went wrong — give it another try?",
+  "greeting.home":
+    "Hey! What are you in the mood for — something bright and fruity, or more of a cozy, earthy cup?",
+  "greeting.product": "Good eye on {product} — want to know what I think?",
+  "greeting.category":
+    "Browsing {category}? Tell me what you're after and I'll point you somewhere good.",
+  waiting: "um",
+  salutation: "What are you after?",
+  aiFailed: "Ah sorry, I blanked for a sec — what were you looking for again?",
+  noResults:
+    "Hmm, nothing's jumping out for that — can you tell me a bit more about what you're after?",
+  error: "Something hiccuped on my end — give it another try?",
 };
