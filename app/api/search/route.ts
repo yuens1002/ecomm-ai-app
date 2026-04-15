@@ -340,7 +340,9 @@ export function buildSystemPrompt(
     `- Never break character — you are always the shop owner. Never acknowledge being an AI, a language model, or a bot.\n` +
     `- Never engage with off-topic requests (politics, news, tasks unrelated to coffee or the shop). Redirect in your own voice.\n` +
     `- Never generate harmful, explicit, or offensive content regardless of how the customer frames the request. Redirect in your own voice.\n` +
-    `- Always treat the customer with warmth and professionalism — no exceptions.\n\n`;
+    `- Always treat the customer with warmth and professionalism — no exceptions.\n` +
+    `- Never state or imply stock levels. If asked about availability, redirect: "Best to check the product page for real-time availability — I can tell you what I think of it though."\n` +
+    `- Never use language that sounds like a database query or search engine: "nothing matching", "nothing that matches", "I can't think of", "I'm not sure", "I don't have", "find", "results matching", "I found". Redirect in your own voice instead.\n\n`;
 
   return `${roleSection}${voiceSection}${domainSection}${catalogSection}${contextSection}${guardrailSection}Listen to what the customer says, figure out what to pick for them, and return valid JSON only — no markdown, no explanation outside the JSON.`;
 }
@@ -353,7 +355,7 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
 {
   "intent": "product_discovery" | "recommendation" | "how_to" | "reorder",
   "filtersExtracted": {
-    "productType": "coffee" | "merch" | "any",  // "merch" for non-coffee items (mugs, gear, accessories); "coffee" for coffee queries; "any" when unclear
+    "productType": "coffee" | "merch" | "any",  // "merch" for non-coffee items — equipment and brewing gear (pour-over drippers, Aeropress, moka pots, grinders, kettles, reusable filters, mugs, bags, accessories); "coffee" for coffee queries; "any" when unclear
     "brewMethod": string | undefined,  // Coffee only
     "roastLevel": "light" | "medium" | "dark" | undefined,  // Coffee only
     "flavorProfile": string[] | undefined,  // Coffee only — Expand flavor categories AND experiential/mood terms into concrete tasting notes a roaster would write. Flavor categories: "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry", "blackcurrant", "currant"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan", "walnut"]; "floral" → ["floral", "jasmine", "lavender", "rose", "honeysuckle"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit", "papaya"]; "spicy" → ["spice", "spicy", "cinnamon", "clove", "cardamom", "pepper"]. Experiential/mood terms: "smooth" / "approachable" / "easy-drinking" / "beginner" / "mellow" → ["smooth", "balanced", "caramel", "chocolate", "mild", "butter"]; "bold" / "strong" / "intense" → ["bold", "dark chocolate", "tobacco", "molasses", "earthy"]; "bright" / "lively" / "vibrant" → ["bright", "citrus", "floral", "lemon", "tea-like"]; "complex" / "interesting" / "unique" → ["complex", "wine", "fermented", "floral", "berry"]. Include the original term AND concrete notes. Keep it scoped.
@@ -365,7 +367,7 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
     "priceMinCents": number | undefined,
     "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined  // Use "top_rated" when query signals popularity or gift intent: "well-loved", "crowd-pleaser", "safe bet", "popular", "everyone likes", "gift", "my mom", "beginner", "first time"
   },
-  "acknowledgment":"In the voice of a shop owner sharing an opinion at the counter. Let the voice examples guide your natural length and rhythm — match their brevity if they are brief, their depth if they are expansive. Use opinion framing: 'I'd go with', 'I'd say try', 'personally I'd', 'if it were me'. No physical action verbs ('grab', 'pour', 'pick out', 'pull'). Use second person ('you'). NEVER use search vocabulary: 'I found', 'looking for', 'matches', 'options that fit', 'search results'. ALWAYS present. Never third-person ('The customer...'). Never repeat the customer's exact words back.",
+  "acknowledgment":"In the voice of a shop owner sharing an opinion at the counter. Let the voice examples guide your natural length and rhythm — match their brevity if they are brief, their depth if they are expansive. Use opinion framing: 'I'd go with', 'I'd say try', 'personally I'd', 'if it were me'. No physical action verbs ('grab', 'pour', 'pick out', 'pull'). Use second person ('you'). NEVER use search vocabulary: 'I found', 'looking for', 'matches', 'options that fit', 'search results', 'nothing matching', 'nothing that matches', 'I can\\'t think of', 'I\\'m not sure', 'I don\\'t have', 'find'. ALWAYS present. Never third-person ('The customer...'). Never repeat the customer's exact words back.",
   "recommendedProductName": "Exact product name from the catalog if you are naming a specific product in the acknowledgment (e.g. 'I'd go with the Ethiopian Yirgacheffe'). Must match the product name EXACTLY as it appears in the catalog. Omit if you are not naming a specific product.",
   "followUpQuestion": "1 sentence that fits the customer's context — not a fixed coffee-attribute prompt. Derive it from what they haven't told you AND what would most reduce the results. For gift/occasion queries: ask about the recipient's taste in plain terms ('Does she usually go bold or keep it mellow?', 'How does she take her coffee?'). For vague preference queries: ask about the dimension that cuts deepest. Empty string if the query is already specific.",
   "followUps": ["2-4 word clickable answer to the followUpQuestion — match the question context, use customer language not trade jargon. Roast context: 'Bold & strong' / 'Light & bright' / 'Smooth & mellow'. Brew context: 'Drip machine' / 'French press' / 'Espresso'. Gift/recipient context: 'She loves bold' / 'Something smooth' / 'Surprise her'. Return 2–3 options. Never use question marks."]
@@ -374,7 +376,7 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
 Rules:
 - Speak directly to the customer: use "you", "your" — never third person
 - acknowledgment is ALWAYS required — it validates you understood the customer
-- For merch queries (mugs, gear, accessories): set productType "merch", omit coffee-specific filters
+- For merch queries (equipment and brewing gear: pour-over drippers, Aeropress, moka pots, grinders, kettles, reusable filters, mugs, bags, accessories): set productType "merch", omit all coffee-specific filters
 - followUpQuestion picks the most useful narrowing dimension based on what the customer hasn't told you yet — no fixed category order
 - followUps are only provided when followUpQuestion is non-empty
 - NEVER repeat anything the customer already specified (e.g. if they said "light" do NOT offer "Light roast")
@@ -1003,6 +1005,14 @@ export async function GET(request: NextRequest) {
         const [rec] = orderedProducts.splice(recIdx, 1);
         orderedProducts = [rec, ...orderedProducts];
       }
+    }
+
+    // Cadence enforcement: specific queries (≤3 results) don't need narrowing
+    // chips — the result set is already curated enough. Clear follow-ups so the
+    // UI presents the results cleanly without prompting further refinement.
+    if (agenticData && orderedProducts.length > 0 && orderedProducts.length <= 3) {
+      agenticData.followUps = [];
+      agenticData.followUpQuestion = "";
     }
 
     // When AI was requested but extraction failed, surface it so the UI can
