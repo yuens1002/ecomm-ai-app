@@ -317,12 +317,12 @@
       "notes": "16/16 ACs verified. 3 FN + 2 UI + 8 TST + 3 REG. 1190 tests pass (100 suites), precheck clean. 0 iterations."
     },
     "feat/counter-iter5": {
-      "status": "planned",
+      "status": "pending",
       "acs_passed": 0,
       "acs_total": 44,
       "tasks": [],
       "acs_doc": "docs/features/smart-search-ux/iter-5-context-grounding/acs.md",
-      "notes": "Plan approved 2026-04-15. 11 UI + 16 FN + 12 TST + 5 REG ACs. Addressing BUG-2 through BUG-6, OBS-1/2/3, and testing gap from iter-4 post-ship testing. Integration test scaffold included."
+      "notes": "All 5 commits done. 1287 tests pass, precheck clean. 11 UI + 16 FN + 12 TST + 5 REG ACs. Awaiting /ac-verify sub-agent verification."
     },
     "feat/conversation-context": {
       "status": "verified",
