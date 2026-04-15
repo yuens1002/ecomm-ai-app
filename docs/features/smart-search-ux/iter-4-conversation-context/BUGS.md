@@ -146,6 +146,26 @@ Discovered during post-ship testing. Each bug needs its own AC/verification befo
 
 ---
 
+## BUG-6: Price sort signal missed + category page context not grounded → zero results
+
+**Reported:** 2026-04-15
+**Page context:** `/categories/central-america` (Central America category page)
+**Query:** "what's the most expensive coffee from central america?"
+**Expected:** Central American coffees sorted by `price_desc` — at least 1 result
+**Actual:** `noResults` surface fired — "Shoot, nothing quite matching that right now."
+
+**Two separate gaps:**
+
+1. **Price sort not extracted:** "most expensive" should map to `sortBy: "price_desc"`. If extraction missed this signal, results fall back to default ordering. But 0 results suggests a filter is the problem, not sort order alone.
+
+2. **Category page context not grounded into whereClause:** The page context (`pageTitle=Central America`) is passed to the system prompt and extraction, but it is NOT automatically applied as a whereClause filter. The AI must extract `origin: "Central America"` from the query and hope it matches a DB origin value. If the extraction uses a slightly different string (e.g. "central america" vs the DB enum value), the query returns 0. The catalog snapshot does not scope to the current category page — it's the full catalog.
+
+**Root cause direction:** Category page context should pre-scope the search (filter to products in that category) OR the catalog snapshot should indicate which products are visible on the current page. Neither happens today — the AI extracts freely and the DB query may not match any product origin/category.
+
+**To investigate:** What does extraction return for this query? Does `origin` get set? Does the DB have a "Central America" origin value that matches?
+
+---
+
 ## BUG-5: Greeting ignores page context — shows generic salutation on product/category pages
 
 **Reported:** 2026-04-15
