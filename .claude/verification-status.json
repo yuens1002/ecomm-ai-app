@@ -317,12 +317,12 @@
       "notes": "16/16 ACs verified. 3 FN + 2 UI + 8 TST + 3 REG. 1190 tests pass (100 suites), precheck clean. 0 iterations."
     },
     "feat/counter-iter5": {
-      "status": "pending",
-      "acs_passed": 0,
+      "status": "verified",
+      "acs_passed": 42,
       "acs_total": 44,
       "tasks": [],
       "acs_doc": "docs/features/smart-search-ux/iter-5-context-grounding/acs.md",
-      "notes": "All 5 commits done. 1287 tests pass, precheck clean. 11 UI + 16 FN + 12 TST + 5 REG ACs. Awaiting /ac-verify sub-agent verification."
+      "notes": "42/44 ACs verified. AC-FN-2 (validSortBy fix) → PASS post-fix. AC-UI-1 → PASS post-fix. AC-FN-1 SUPERSEDED (category pre-scope removed, schema-first origin approach). AC-UI-5 DEFERRED (data state — stored surfaces predate greeting.home fix; admin regenerate action required, not a code bug). All other 40 ACs confirmed PASS by sub-agent + QC. 2 post-plan commits: schema-first origin + catalog-driven AI (remove hardcoded regional lists). Tests: 1287 pass, precheck clean."
     },
     "feat/conversation-context": {
       "status": "verified",
