@@ -1,10 +1,18 @@
 /** @jest-environment node */
 /**
- * Unit tests for buildSystemPrompt — verifies that Q&A pairs from each
- * fixture set are embedded verbatim in the system prompt.
+ * Prompt regression tests for buildSystemPrompt / buildExtractionPrompt.
  *
- * These tests assert the plumbing (are the pairs present?), not AI output
- * (which is non-deterministic and tested elsewhere via persona-accuracy.test.ts).
+ * These are PROMPT STRUCTURE tests — they verify that key sections are present
+ * in the generated prompt text. They catch accidental deletions or refactors
+ * that remove guardrails, Q&A embeddings, or domain knowledge from the prompt.
+ *
+ * What these tests DO NOT tell you:
+ *   - Whether the AI actually obeys the guardrails
+ *   - Whether the acknowledgment is grounded in real products
+ *   - Whether merch classification or intent routing works correctly
+ *
+ * For behavioral assertions against real AI output, see:
+ *   integration/counter-cadence.integration.test.ts
  */
 
 // route.ts imports next/server and prisma — mock them out so we can import

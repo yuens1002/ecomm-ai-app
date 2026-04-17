@@ -191,6 +191,25 @@ Additionally: the extraction AI may not classify this as `productType: "merch"` 
 
 ---
 
+### OBS-11 — Origin extraction shape is inconsistent for single-country queries
+
+**Symptom:** Queries like "ethiopian coffee" produce inconsistent `origin` output from extraction. The AI sometimes returns a string `"Ethiopia"`, sometimes an array `["Ethiopia"]`, and sometimes a multi-element array or `undefined`. Tests expecting a predictable single-country shape fail intermittently.
+
+**Root cause:** The extraction prompt's `origin` field description doesn't specify whether to return a string or array for single-country queries. The JSON spec in `buildExtractionPrompt()` and the `FiltersExtracted` TypeScript type both allow `string | string[]`, but the AI makes an arbitrary choice per call. The Prisma query handles this with `has` (string) vs `hasSome` (array) — but only because the route has a runtime branch that inspects the type. This branch is fragile and relies on undocumented AI behavior.
+
+**Evidence:** Integration test "single country query → origin extracted (string or single-element array)" failed — "ethiopian coffee" returned neither a string nor a single-element array. The multi-country test ("central america") passed reliably.
+
+**Fix direction:** The extraction prompt should specify the shape contract explicitly:
+- Single country → always `string` (`"Ethiopia"`)
+- Multiple countries → always `string[]` (`["Guatemala", "Costa Rica"]`)
+- Never a single-element array
+
+This eliminates the runtime branch in the route and makes the behavior testable.
+
+Longer term: part of OBS-8 (Zod as single source of truth for `FiltersExtracted` — generates the prompt JSON spec from the schema, enforcing consistent types).
+
+---
+
 ## Priority & Dependencies
 
 | ID | Priority | Dependency |
@@ -205,6 +224,7 @@ Additionally: the extraction AI may not classify this as `productType: "merch"` 
 | GAP-10 | P2 — subsumed by BUG-1 fix | BUG-1 |
 | OBS-7 | P2 — tech debt, refactor only | None (but simplifies all other fixes) |
 | OBS-8 | P2 — prevents future drift | OBS-7 (natural to do together) |
+| OBS-11 | P2 — extraction contract inconsistency; fragile runtime branch | OBS-8 (Zod schema fixes this) |
 
 **Suggested sequencing for iter-6:**
 1. BUG-1 + GAP-10 (merch path, add `productKeywords` to extraction)
@@ -214,4 +234,4 @@ Additionally: the extraction AI may not classify this as `productType: "merch"` 
 5. OBS-6 (prompt hash invalidation)
 6. GAP-9 (Counter QA harness — build + first dry run)
 7. BUG-3 (chip progressive filtering — architectural, last because it affects client store)
-8. OBS-7 + OBS-8 (route.ts refactor + Zod — separate PR, no behavior change)
+8. OBS-7 + OBS-8 + OBS-11 (route.ts refactor + Zod + origin shape contract — separate PR, no behavior change)
