@@ -4,20 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { chatCompletion, isAIConfigured } from "@/lib/ai-client";
 import { getPublicSiteSettings } from "@/lib/data";
-import {
-  DEFAULT_VOICE_EXAMPLES,
-  type VoiceExample,
-} from "@/lib/ai/voice-examples";
+import { DEFAULT_VOICE_EXAMPLES, type VoiceExample } from "@/lib/ai/voice-examples";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type AgenticIntent =
-  | "product_discovery"
-  | "recommendation"
-  | "how_to"
-  | "reorder";
+type AgenticIntent = "product_discovery" | "recommendation" | "how_to" | "reorder";
 
 interface FiltersExtracted {
   // Phase A
@@ -139,9 +132,7 @@ async function buildCatalogSnapshot(): Promise<string> {
       intelligenceLines.push(`Top sellers this month: ${topSellers.join(", ")}`);
     }
 
-    const newArrivals = products
-      .filter((p) => p.createdAt >= thirtyDaysAgo)
-      .map((p) => p.name);
+    const newArrivals = products.filter((p) => p.createdAt >= thirtyDaysAgo).map((p) => p.name);
     if (newArrivals.length > 0) {
       intelligenceLines.push(`New arrivals: ${newArrivals.join(", ")}`);
     }
@@ -158,9 +149,7 @@ async function buildCatalogSnapshot(): Promise<string> {
     const LOW_STOCK_THRESHOLD = 5;
     const lowStock = products
       .filter((p) =>
-        p.variants.some(
-          (v) => v.stockQuantity > 0 && v.stockQuantity <= LOW_STOCK_THRESHOLD
-        )
+        p.variants.some((v) => v.stockQuantity > 0 && v.stockQuantity <= LOW_STOCK_THRESHOLD)
       )
       .map((p) => p.name);
     if (lowStock.length > 0) {
@@ -186,12 +175,57 @@ async function buildCatalogSnapshot(): Promise<string> {
 // ---------------------------------------------------------------------------
 
 const NL_STOP_WORDS = new Set([
-  "what", "whats", "is", "are", "good", "best", "great", "any",
-  "with", "for", "a", "an", "the", "and", "or", "but", "in", "on",
-  "at", "to", "of", "me", "my", "some", "something", "anything",
-  "that", "this", "which", "can", "i", "you", "us", "we", "do",
-  "does", "would", "like", "looking", "find", "help", "need", "want",
-  "show", "get", "give", "have", "over", "up", "out", "about",
+  "what",
+  "whats",
+  "is",
+  "are",
+  "good",
+  "best",
+  "great",
+  "any",
+  "with",
+  "for",
+  "a",
+  "an",
+  "the",
+  "and",
+  "or",
+  "but",
+  "in",
+  "on",
+  "at",
+  "to",
+  "of",
+  "me",
+  "my",
+  "some",
+  "something",
+  "anything",
+  "that",
+  "this",
+  "which",
+  "can",
+  "i",
+  "you",
+  "us",
+  "we",
+  "do",
+  "does",
+  "would",
+  "like",
+  "looking",
+  "find",
+  "help",
+  "need",
+  "want",
+  "show",
+  "get",
+  "give",
+  "have",
+  "over",
+  "up",
+  "out",
+  "about",
 ]);
 
 /** Strip stop words and punctuation — returns meaningful search tokens. */
@@ -209,10 +243,7 @@ export function tokenizeNLQuery(q: string): string[] {
  * Words appearing in many products (like "coffee" or "notes") automatically
  * score lower. Returns product IDs ordered by relevance.
  */
-async function fullTextSearchIds(
-  query: string,
-  limit = 50
-): Promise<string[]> {
+async function fullTextSearchIds(query: string, limit = 50): Promise<string[]> {
   const tokens = tokenizeNLQuery(query);
   if (tokens.length === 0) return [];
 
@@ -294,8 +325,7 @@ export function buildSystemPrompt(
   // Role framing — YOU ARE AT THE COUNTER, not running a search engine.
   // The customer walked into the shop. Pick products like you'd pick for a
   // regular, using your voice. Vocabulary of service, not of software.
-  const roleSection =
-    `You are the shop owner at the counter, helping a customer who just walked in. Pick coffees like you'd pick for a regular — share your honest opinion: "I'd go with", "I'd say try", "personally I'd", "if it were me". You are NOT a search engine, database, or list of results. Never say "I found", "I'm looking for", "search results", "matches", "options that fit". Never use physical action verbs: "grab", "pour", "pick out", "pull". Use opinion framing instead.\n\n`;
+  const roleSection = `You are the shop owner at the counter, helping a customer who just walked in. Pick coffees like you'd pick for a regular — share your honest opinion: "I'd go with", "I'd say try", "personally I'd", "if it were me". You are NOT a search engine, database, or list of results. Never say "I found", "I'm looking for", "search results", "matches", "options that fit". Never use physical action verbs: "grab", "pour", "pick out", "pull". Use opinion framing instead.\n\n`;
 
   let voiceSection: string;
 
@@ -404,7 +434,10 @@ async function extractAgenticFilters(
     });
 
     // Strip markdown code fences that some models (e.g. Gemini) add despite instructions
-    let stripped = result.text.trim().replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+    let stripped = result.text
+      .trim()
+      .replace(/^```(?:json)?\s*\n?/, "")
+      .replace(/\n?```\s*$/, "");
 
     // Attempt to repair truncated JSON (model hit token limit mid-response)
     if (result.finishReason === "length" || result.finishReason === "max_tokens") {
@@ -461,8 +494,7 @@ async function extractAgenticFilters(
 
     const filtersExtracted: FiltersExtracted = {
       productType,
-      brewMethod:
-        typeof rawFilters.brewMethod === "string" ? rawFilters.brewMethod : undefined,
+      brewMethod: typeof rawFilters.brewMethod === "string" ? rawFilters.brewMethod : undefined,
       roastLevel,
       flavorProfile: Array.isArray(rawFilters.flavorProfile)
         ? rawFilters.flavorProfile.filter((v) => typeof v === "string")
@@ -473,10 +505,8 @@ async function extractAgenticFilters(
           ? rawFilters.origin
           : undefined,
       isOrganic: typeof rawFilters.isOrganic === "boolean" ? rawFilters.isOrganic : undefined,
-      processing:
-        typeof rawFilters.processing === "string" ? rawFilters.processing : undefined,
-      variety:
-        typeof rawFilters.variety === "string" ? rawFilters.variety : undefined,
+      processing: typeof rawFilters.processing === "string" ? rawFilters.processing : undefined,
+      variety: typeof rawFilters.variety === "string" ? rawFilters.variety : undefined,
       priceMaxCents:
         typeof rawFilters.priceMaxCents === "number" && rawFilters.priceMaxCents > 0
           ? rawFilters.priceMaxCents
@@ -486,16 +516,13 @@ async function extractAgenticFilters(
           ? rawFilters.priceMinCents
           : undefined,
       sortBy:
-        typeof rawFilters.sortBy === "string" &&
-        validSortBy.includes(rawFilters.sortBy as SortBy)
+        typeof rawFilters.sortBy === "string" && validSortBy.includes(rawFilters.sortBy as SortBy)
           ? (rawFilters.sortBy as SortBy)
           : undefined,
     };
 
-    const acknowledgment =
-      typeof raw.acknowledgment === "string" ? raw.acknowledgment : "";
-    const followUpQuestion =
-      typeof raw.followUpQuestion === "string" ? raw.followUpQuestion : "";
+    const acknowledgment = typeof raw.acknowledgment === "string" ? raw.acknowledgment : "";
+    const followUpQuestion = typeof raw.followUpQuestion === "string" ? raw.followUpQuestion : "";
     // Backwards compat: fall back to legacy explanation field
     const explanation =
       acknowledgment || (typeof raw.explanation === "string" ? raw.explanation : "");
@@ -507,7 +534,15 @@ async function extractAgenticFilters(
         ? raw.recommendedProductName.trim()
         : undefined;
 
-    return { intent, filtersExtracted, explanation, acknowledgment, followUpQuestion, followUps, recommendedProductName };
+    return {
+      intent,
+      filtersExtracted,
+      explanation,
+      acknowledgment,
+      followUpQuestion,
+      followUps,
+      recommendedProductName,
+    };
   } catch (err) {
     // LLM failure is non-fatal — fall back to standard keyword search
     console.error("[agentic-search] AI extraction failed:", err);
@@ -569,9 +604,7 @@ export async function GET(request: NextRequest) {
 
       // Detect roast-level pattern — "light roast", "medium roast", "dark roast"
       // map to category filters rather than text search.
-      const roastPatternMatch = searchQuery.match(
-        /\b(light|medium|dark)\s*roast\b/i
-      );
+      const roastPatternMatch = searchQuery.match(/\b(light|medium|dark)\s*roast\b/i);
       if (roastPatternMatch && !roast) {
         const level = roastPatternMatch[1].toLowerCase();
         whereClause.categories = {
@@ -631,8 +664,13 @@ export async function GET(request: NextRequest) {
     // -------------------------------------------------------------------------
 
     if (query && forceAI) {
-      const trimmed = query.trim().toLowerCase().replace(/[^a-z\s]/g, "").trim();
-      const greetingPattern = /^(hey|hello|hi|howdy|yo|sup|whats up|hiya|good morning|good afternoon|good evening|greetings)$/i;
+      const trimmed = query
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z\s]/g, "")
+        .trim();
+      const greetingPattern =
+        /^(hey|hello|hi|howdy|yo|sup|whats up|hiya|good morning|good afternoon|good evening|greetings)$/i;
       if (greetingPattern.test(trimmed)) {
         const { aiVoiceSurfaces } = await getPublicSiteSettings();
         const salutation = aiVoiceSurfaces?.salutation;
@@ -662,17 +700,22 @@ export async function GET(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let orderBy: any = undefined;
 
-    if (
-      query &&
-      (forceAI || isNaturalLanguageQuery(query)) &&
-      (await isAIConfigured())
-    ) {
+    if (query && (forceAI || isNaturalLanguageQuery(query)) && (await isAIConfigured())) {
       const { aiVoicePersona, aiVoiceExamples } = await getPublicSiteSettings();
-      const voiceExamples =
-        aiVoiceExamples.length > 0 ? aiVoiceExamples : DEFAULT_VOICE_EXAMPLES;
+      const voiceExamples = aiVoiceExamples.length > 0 ? aiVoiceExamples : DEFAULT_VOICE_EXAMPLES;
       const catalogSnapshot = await buildCatalogSnapshot();
-      const systemPrompt = buildSystemPrompt(voiceExamples, aiVoicePersona, pageTitle, catalogSnapshot);
-      agenticData = await extractAgenticFilters(query, systemPrompt, pageTitle, conversationHistory);
+      const systemPrompt = buildSystemPrompt(
+        voiceExamples,
+        aiVoicePersona,
+        pageTitle,
+        catalogSnapshot
+      );
+      agenticData = await extractAgenticFilters(
+        query,
+        systemPrompt,
+        pageTitle,
+        conversationHistory
+      );
 
       if (agenticData?.filtersExtracted) {
         const {
@@ -961,9 +1004,7 @@ export async function GET(request: NextRequest) {
     const extractedSortBy = agenticData?.filtersExtracted?.sortBy;
     if (extractedSortBy === "price_desc" || extractedSortBy === "price_asc") {
       const getMinPrice = (p: (typeof orderedProducts)[0]): number => {
-        const prices = p.variants.flatMap((v) =>
-          v.purchaseOptions.map((po) => po.priceInCents)
-        );
+        const prices = p.variants.flatMap((v) => v.purchaseOptions.map((po) => po.priceInCents));
         return prices.length > 0 ? Math.min(...prices) : Infinity;
       };
       orderedProducts = [...orderedProducts].sort((a, b) =>
@@ -1002,9 +1043,8 @@ export async function GET(request: NextRequest) {
     // Pre-validate follow-up chips — remove any that return 0 products so
     // customers never click a chip and land on an empty results page.
     const rawFollowUps = agenticData?.followUps ?? [];
-    const validatedFollowUps = rawFollowUps.length > 0
-      ? await validateFollowUps(rawFollowUps)
-      : rawFollowUps;
+    const validatedFollowUps =
+      rawFollowUps.length > 0 ? await validateFollowUps(rawFollowUps) : rawFollowUps;
 
     return NextResponse.json({
       products: orderedProducts,
@@ -1022,9 +1062,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error searching products:", error);
-    return NextResponse.json(
-      { error: "Failed to search products" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to search products" }, { status: 500 });
   }
 }

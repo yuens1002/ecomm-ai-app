@@ -6,9 +6,9 @@
 
 ---
 
-## Now — v0.100.7
+## Now — v0.101.0
 
-_Patch release — plan detail quota label fix + plans page ACs spec closure. Clean state._
+_Minor release — Counter conversation context, session greeting awareness, catalog-driven origin filtering, cadence enforcement, voice surface quality hardening._
 
 ---
 
@@ -70,6 +70,7 @@ _Patch release — plan detail quota label fix + plans page ACs spec closure. Cl
 
 | Version | Feature |
 |---------|---------|
+| v0.101.0 | Feat — Counter conversation context: history, intent classification, session greeting, standby surface, catalog-driven origin, cadence enforcement, domain knowledge |
 | v0.100.7 | Fix — plan detail quota labels (`[object Object]` → correct label/limit) |
 | v0.100.6 | Fix — admin nav active state (Dashboard no longer highlights on every page) |
 | v0.100.5 | Fix — Counter keyboard retention, focus steal, viewport offset, voice surface defaults |
