@@ -264,7 +264,7 @@ export function SmartSearchSection() {
         ))}
       </div>
 
-      {/* Counter drawer — key resets the component on each "Test Counter" open so hasGreeted ref is fresh */}
+      {/* Counter drawer — key remounts on each "Test Counter" open to reset component-local state (sessionId, input) */}
       <ChatPanel key={testKey} />
     </div>
   );

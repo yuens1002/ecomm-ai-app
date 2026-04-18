@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
 import { useChatPanelStore, type ChatMessage, type ProductSummary } from "@/lib/store/chat-panel-store";
+import { DEFAULT_VOICE_SURFACES } from "@/lib/ai/voice-surfaces";
 
 // ---------------------------------------------------------------------------
 // Types matching the /api/search response shape
@@ -233,9 +234,9 @@ function PanelContent() {
       // (owner's voice) for recovery messages.
       let content = data.acknowledgment || data.explanation || "";
       if (!content && data.aiFailed) {
-        content = voiceSurfaces?.aiFailed ?? "";
+        content = voiceSurfaces?.aiFailed ?? DEFAULT_VOICE_SURFACES.aiFailed;
       } else if (!content && !hasProducts) {
-        content = voiceSurfaces?.noResults ?? "";
+        content = voiceSurfaces?.noResults ?? DEFAULT_VOICE_SURFACES.noResults;
       }
 
       updateLastMessage({
@@ -251,7 +252,7 @@ function PanelContent() {
     } catch {
       updateLastMessage({
         id: assistantMsgId,
-        content: voiceSurfaces?.error ?? "",
+        content: voiceSurfaces?.error ?? DEFAULT_VOICE_SURFACES.error,
         isLoading: false,
       });
     } finally {

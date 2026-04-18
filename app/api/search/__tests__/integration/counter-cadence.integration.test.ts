@@ -109,7 +109,8 @@ describe("Intent classification", () => {
    * EXPECTED FAILURE: currently returns product cards → iter-6 adds compare/recommend
    * intent routing that sets products: [] on the server.
    */
-  it("comparison query → products empty [OBS-4 — expected fail]", async () => {
+  // OBS-4: compare/recommend intent → products: [] (iter-6 adds routing)
+  it.failing("comparison query → products empty [OBS-4 — expected fail]", async () => {
     const data = await search({
       q: "which of these two would you pick for a beginner, Ethiopian or Colombian?",
       ai: "true",
@@ -133,7 +134,8 @@ describe("Extraction quality", () => {
    * won't match product names. products.length > 0 will fail until iter-6
    * adds productKeywords extraction.
    */
-  it("merch equipment query → productType:merch + products returned [BUG-1 — expected fail]", async () => {
+  // BUG-1: merch Prisma path uses raw NL string → no keyword match (iter-6 adds productKeywords)
+  it.failing("merch equipment query → productType:merch + products returned [BUG-1 — expected fail]", async () => {
     const data = await search({ q: "do you have a pour over coffee maker?", ai: "true" });
     const filters = data.filtersExtracted as Record<string, unknown> | null;
     // Step 1: extraction must classify as merch

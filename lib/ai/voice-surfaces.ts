@@ -39,7 +39,7 @@ export const DEFAULT_VOICE_SURFACES: VoiceSurfaces = {
   "greeting.category": "Browsing {category}?",
   waiting: "hmm",
   salutation: "What can I help with?",
-  standby: "I'm here — anything come to mind?",
+  standby: "I'm here if anything comes to mind.",
   aiFailed: "Sorry, I lost my train of thought — what were you after?",
   noResults: "Nothing's jumping out — can you tell me more?",
   error: "Something went sideways on my end — try again?",
