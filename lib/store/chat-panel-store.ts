@@ -35,8 +35,11 @@ interface ChatPanelState {
   messages: ChatMessage[];
   pageContext: PageContext | null;
   isLoading: boolean;
-  voiceSurfaces: VoiceSurfaces;
+  /** null while the initial lazy-init fetch is in flight; populated once loaded */
+  voiceSurfaces: VoiceSurfaces | null;
   surfacesLoaded: boolean;
+  /** true after the first greeting fires in this browser session */
+  sessionGreeted: boolean;
   // Actions
   open: () => void;
   close: () => void;
@@ -46,7 +49,10 @@ interface ChatPanelState {
   updateLastMessage: (updates: Partial<ChatMessage>) => void;
   setLoading: (loading: boolean) => void;
   clearMessages: () => void;
+  setSessionGreeted: (v: boolean) => void;
   loadSurfaces: () => Promise<void>;
+  /** Clears cached surfaces + messages so the next open re-fetches from the API */
+  resetSurfaces: () => void;
 }
 
 export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
@@ -54,8 +60,9 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
   messages: [],
   pageContext: null,
   isLoading: false,
-  voiceSurfaces: DEFAULT_VOICE_SURFACES,
+  voiceSurfaces: null,
   surfacesLoaded: false,
+  sessionGreeted: false,
 
   open: () => set({ isOpen: true }),
   close: () => set({ isOpen: false }),
@@ -78,6 +85,11 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
 
   clearMessages: () => set({ messages: [] }),
 
+  setSessionGreeted: (v) => set({ sessionGreeted: v }),
+
+  resetSurfaces: () =>
+    set({ surfacesLoaded: false, voiceSurfaces: null, messages: [], sessionGreeted: false }),
+
   loadSurfaces: async () => {
     if (get().surfacesLoaded) return;
     try {
@@ -87,10 +99,12 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
         // Merge with defaults so keys added after initial generation still have values
         const surfaces = { ...DEFAULT_VOICE_SURFACES, ...fetched };
         set({ voiceSurfaces: surfaces, surfacesLoaded: true });
+      } else {
+        set({ voiceSurfaces: DEFAULT_VOICE_SURFACES, surfacesLoaded: true });
       }
     } catch {
-      // Keep defaults on failure
-      set({ surfacesLoaded: true });
+      // Keep defaults on fetch failure so the UI is never stuck on null
+      set({ voiceSurfaces: DEFAULT_VOICE_SURFACES, surfacesLoaded: true });
     }
   },
 }));

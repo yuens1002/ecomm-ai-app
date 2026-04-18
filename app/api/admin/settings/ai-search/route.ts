@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
-import { DEFAULT_VOICE_EXAMPLES, type VoiceExample } from "@/lib/ai/voice-examples";
-import { generateVoiceSurfaces } from "@/lib/ai/voice-surfaces.server";
-import { isAIConfigured } from "@/lib/ai-client";
+import type { VoiceExample } from "@/lib/ai/voice-examples";
 
 export async function GET() {
   const { authorized, error } = await requireAdminApi();
@@ -133,31 +131,20 @@ export async function PUT(request: NextRequest) {
 
     await Promise.all(upserts);
 
-    // When voice examples change, regenerate surface strings in the background
-    let voiceSurfaces = null;
-    if (parsed.data.voiceExamples !== undefined && (await isAIConfigured())) {
-      try {
-        const examples =
-          parsed.data.voiceExamples.length > 0
-            ? parsed.data.voiceExamples
-            : DEFAULT_VOICE_EXAMPLES;
-        voiceSurfaces = await generateVoiceSurfaces(examples);
-        const surfacesJson = JSON.stringify(voiceSurfaces);
-        await prisma.siteSettings.upsert({
-          where: { key: "ai_voice_surfaces" },
-          update: { value: surfacesJson },
-          create: { key: "ai_voice_surfaces", value: surfacesJson },
-        });
-      } catch (err) {
-        console.error("Failed to generate voice surfaces:", err);
-        // Non-fatal — voice examples still saved
+    // When voice examples change, bust the cached surfaces so next Counter open
+    // re-initializes from the new examples (lazy init in GET /api/settings/voice-surfaces).
+    if (parsed.data.voiceExamples !== undefined) {
+      const existingSurfaces = await prisma.siteSettings.findUnique({
+        where: { key: "ai_voice_surfaces" },
+      });
+      if (existingSurfaces) {
+        await prisma.siteSettings.delete({ where: { key: "ai_voice_surfaces" } });
       }
     }
 
     return NextResponse.json({
       aiVoicePersona: parsed.data.aiVoicePersona,
       voiceExamples: parsed.data.voiceExamples,
-      voiceSurfaces,
     });
   } catch (err) {
     console.error("Error updating AI search settings:", err);

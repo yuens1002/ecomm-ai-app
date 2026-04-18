@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.100.8 - 2026-04-18
+
+### Added
+
+- **Counter conversation history**: Prior turns are passed to the extraction pipeline — follow-up queries narrow the previous context ("show me something darker" understands what "something" referred to)
+- **Counter intent classification**: `how_to` (e.g., "how do I brew a V60?") and `reorder` queries return zero products with an AI explanation; the Counter stays in character instead of showing an irrelevant product grid
+- **Counter `standby` voice surface**: Owner-configurable passive message shown on subsequent opens and after reset — distinct from the salutation so customers don't receive the same greeting on every open
+- **Session greeting awareness**: Counter tracks within the browser session whether it has already greeted — subsequent opens show the `standby` surface, not a repeated salutation
+- **Test Counter button**: Admin → AI Settings opens the Counter in a fresh state, loading the latest voice surfaces immediately after Q&A edits
+- **Integration test scaffold**: `npm run test:integration` fires real queries against the running dev server and verifies intent classification, acknowledgment quality, and cadence shape — excluded from `test:ci`
+
+### Changed
+
+- **Lazy voice surface init**: Surfaces are generated on first Counter open (GET request), not on app load — eliminates the TS-constant flash before owner copy loads
+- **Context-aware greeting**: Greeting references the current product or category on first open; homepage greeting is context-free
+- **Origin filtering — catalog-driven**: Regional queries ("Central America coffee") expand to the actual catalog origins the store carries, not a hardcoded country list
+- **Neutral default voice surfaces**: `DEFAULT_VOICE_SURFACES` is now generic placeholder copy — no store-specific phrases bleed into an unconfigured installation
+- **Cadence enforcement**: Server clears follow-up chips when `products.length ≤ 3` — specific queries don't prompt unnecessary narrowing
+- **Eager surface regeneration**: Q&A save triggers async surface regen so Test Counter opens with fresh copy immediately
+
+### Fixed
+
+- **Coffee domain knowledge**: Roast, origin, brew method, and experiential term mappings added to the system prompt — "approachable", "gift for mom", "bold" now reliably map to concrete product attributes
+- **System prompt guardrails**: Explicit bans on search-oriented language ("nothing matching", "I can't think of") and stock availability assertions added to the generation prompt
+- **Skeleton loader**: Counter panel shows a skeleton bubble while voice surfaces are loading rather than a blank message area
+- **App-side price sort**: `price_asc`/`price_desc` sort applied post-Prisma; results arrive correctly ordered
+- **Follow-up chip pre-validation**: Chips that would return zero results are filtered before rendering
+
+---
+
 ## 0.100.7 - 2026-04-15
 
 ### Fixed

@@ -6,44 +6,63 @@
 
 ---
 
-## Now — v0.99.x
+## Now — v0.100.8
 
-_Nothing in progress. v0.98.4 just shipped._
-
----
-
-## Next — Agentic Product Discovery
-
-> **The claim:** Free-tier agentic product discovery — no other e-commerce platform ships this natively in 2026. Platform tier adds personalization on top.
-
-### Phase A — Free Tier (ships as one PR or two)
-
-| # | Item | Notes |
-|---|------|-------|
-| A0 | Homepage hero swap | Video or image slides; remove floating AI-Barista widget |
-| A1 | Structured search JSON backbone | Evolve `/api/search` response shape |
-| A2 | NL filter extraction | Gemini Flash: query → intent + filters → explanation |
-| A3 | Conversational follow-ups | Session-scoped, stateless, no persistence |
-
-**Spec:** [`docs/features/agentic-search/spec.md`](features/agentic-search/spec.md)
-
-### Phase B — Platform Tier (follows Phase A)
-
-| # | Item | Notes |
-|---|------|-------|
-| B1 | User context aggregation | `getUserPurchaseHistory`, `getUserRecentViews`, etc. |
-| B2 | Personalized search ranking | Inject user context into agentic search prompt |
-| B3 | "Recommended For You" | Authenticated carousel, homepage |
+_Minor release — Counter conversation context, session greeting awareness, catalog-driven origin filtering, cadence enforcement, voice surface quality hardening._
 
 ---
 
-## Backlog — Prioritized
+## Next — Iter 6: Counter Quality & Architecture
+
+> **Goal:** Fix the P0 quality bugs found in iter-5 spot-check. Close the gap between "tests pass" and "Counter actually works." Lay the extraction architecture foundation for the scoring harness.
+>
+> **Bug source:** `docs/features/smart-search-ux/iter-6/BUGS.md`
+
+| # | Item | Bug |
+|---|------|-----|
+| 6a | Merch search — `productKeywords` extraction + keyword-based Prisma query | BUG-1, GAP-10 |
+| 6b | Compare/recommend intent → `products: []`, AI reasons instead of listing | OBS-4 |
+| 6c | Grounded truth — post-query acknowledgment constrained to actual results | BUG-2 |
+| 6d | Extraction prompt examples neutralized — remove verbatim example phrases | OBS-5 |
+| 6e | Prompt hash invalidation — auto-regen surfaces on prompt change | OBS-6 |
+| 6f | Origin extraction shape contract — single country → string, multi → array | OBS-11 |
+| 6g | Counter QA scoring harness — composite score, fixture dataset, run history | GAP-9 |
+| 6h | Chip progressive filtering — client-side result narrowing | BUG-3 |
+| 6i | `route.ts` SRP refactor + Zod `FiltersExtracted` schema | OBS-7, OBS-8 (separate PR) |
+
+**Spec:** [`docs/features/smart-search-ux/iter-6/plan.md`](features/smart-search-ux/iter-6/plan.md)
+
+---
+
+## Phase B — Counter Intelligence Foundation
+
+> **Goal:** Make the Counter model-agnostic and self-improvable. Establish the infrastructure that survives model generations: a ground truth dataset, a scoring harness, and a coffee knowledge layer that lives in the DB — not in prompt text.
+>
+> **Architecture:** Eval-driven prompt optimization with benchmark-gated deployment (Karpathy loop pattern adapted for NL-to-filter). A single composite score (0.0–1.0) gates every Counter change. New model version → re-run harness → score tells you if calibration is needed before going live.
+>
+> **Spec:** `docs/features/counter-intelligence/` (to be created)
+
+| # | Item | Notes |
+|---|------|-------|
+| B1 | Ground truth fixture dataset | 50+ scored fixtures in DB: `{ query, language, expected_intent, expected_products, expected_ranking, acknowledgment_rules }` — versioned, model-agnostic |
+| B2 | Composite scoring harness | `scripts/counter-qa-score.ts` — fires fixtures, scores deterministically (intent, product, cadence) + LLM-as-judge for acknowledgment only, logs `{model_id, run_at, composite_score, breakdown}` per run |
+| B3 | Benchmark gate | Counter change must score ≥ previous run before shipping. Calibration loop: modify → run → score → keep/discard → repeat |
+| B4 | Coffee knowledge basement → DB | Extract domain facts (origin→flavor, processing→cup character, varietal signatures) from hardcoded prompt text into `coffee_knowledge` table. Versionable, roaster-overridable, no deploy needed to update |
+| B5 | Multi-language fixture set | Language-tagged fixtures (`en`, `es`, `fr`) in ground truth dataset. System prompt instruction to respond in user's detected language. Score language-specific performance separately |
+| B6 | Model benchmark registry | Track composite scores per model version over time. `{model_id, run_at, score}` history makes model upgrades empirical — not guesswork |
+
+---
+
+## Backlog — Personalization
 
 | Priority | Feature | Spec / Notes |
 |----------|---------|--------------|
-| P1 | Reviews Tier 2 — AI Roast Master | `docs/internal/product-reviews-tier2.md` — depends on Phase B data |
-| P2 | A1: AI Assist Tests | `app/admin/(cms)/pages/[id]/ai-assist/` — unit + component tests |
-| P3 | Agentic search Phase B + Reviews Tier 2 integration | Platform search uses review utility scores |
+| P1 | Phase C1 — User context aggregation | `getUserPurchaseHistory`, `getUserRecentViews`, `getUserSearchHistory` |
+| P2 | Phase C2 — Personalized ranking | Inject user context into Counter prompt for authed users |
+| P3 | Phase C3 — "Recommended For You" carousel | Authenticated; falls back to trending for anon |
+| P4 | Reviews Tier 2 — AI Roast Master | `docs/internal/product-reviews-tier2.md` — depends on Phase C data |
+| P5 | Phase C4 — Reviews + search integration | Utility scores in agentic results (BLOCKED on Reviews Tier 2) |
+| P6 | Counter — service tier (platform premium) | Extend Counter beyond product discovery to service queries: order lookup, reorder from history, return initiation. Requires order data access + auth context. |
 
 ---
 
@@ -51,6 +70,16 @@ _Nothing in progress. v0.98.4 just shipped._
 
 | Version | Feature |
 |---------|---------|
+| v0.100.8 | Feat — Counter conversation context: history, intent classification, session greeting, standby surface, catalog-driven origin, cadence enforcement, domain knowledge |
+| v0.100.7 | Fix — plan detail quota labels (`[object Object]` → correct label/limit) |
+| v0.100.6 | Fix — admin nav active state (Dashboard no longer highlights on every page) |
+| v0.100.5 | Fix — Counter keyboard retention, focus steal, viewport offset, voice surface defaults |
+| v0.100.4 | Fix — hero 16:9 mobile, theme switcher visibility, stepper border, product card aspect |
+| v0.100.3 | Feat — Counter UX overhaul: panel rename, voice surfaces, admin consolidation, cadence rules |
+| v0.100.2 | Fix — lazy-require pg/adapter-pg (Turbopack static analysis) |
+| v0.100.1 | Fix — search quality hotfix: AI clears keyword OR + pg full-text ranking |
+| v0.100.0 | Feat — Agentic Smart Search (Phase A + Phase 2): Counter panel, NL extraction, voice persona, Smart Search admin, salutation, response cadence, animated waiting indicator |
+| v0.99.x | Fixes — pg/ws adapter, Copilot review feedback, hook portability guards |
 | v0.98.4 | Repo cleanup — dev-tools removed, docs/internal tsconfig excluded |
 | v0.98.3 | Security — patched 17 npm vulnerabilities |
 | v0.98.2 | Platform — acceptedAt/acceptedVersions wiring + ticket reply thread |
@@ -86,8 +115,8 @@ _Nothing in progress. v0.98.4 just shipped._
 ## Convention
 
 - **Before starting a feature:** add it to Next or Backlog with a link to its spec
+- **On every release:** update the "Now" section, move shipped items to the Shipped table
 - **When planning a sprint:** ensure `docs/features/<name>/spec.md` exists and create `docs/plans/<name>-plan.md`
-- **When shipping:** move the item from Next/Backlog to Shipped, bump the version row
 - **`docs/plans/`** — per-sprint ACs and implementation plans (granular, created at sprint start)
 - **`docs/features/`** — durable feature specs (created when feature is first planned, updated as it evolves)
 - **`docs/internal/`** — gitignored, strategy/competitive/private notes

@@ -32,22 +32,21 @@ export async function generateVoiceSurfaces(
         content: `Generate these UI surface strings in the owner's voice. Return valid JSON only — no markdown, no explanation.
 
 {
-  "greeting.home": "How you'd greet someone who just walked in — in your own words, as if you're behind the counter (1-2 sentences)",
+  "greeting.home": "How you'd greet someone naturally, in your own words — brief and open-ended. No 'welcome in', 'come on in', 'get started', 'step right up', or any phrase that implies a physical space or a service transaction. Just you, present and curious (1-2 sentences)",
   "greeting.product": "Your reaction when a customer is looking at {product} — natural, like you know the product (1 sentence)",
   "greeting.category": "A quick word when someone's browsing {category} — steer them a bit, in your voice (1 sentence)",
   "waiting": "A filler word or phrase you'd say while thinking — 1-3 words, lowercase (e.g. 'um', 'let me think', 'hmm')",
   "salutation": "Your response to 'hey' or 'hello' — greet back and ask how you can help, in your words (1 sentence)",
+  "standby": "What you'd say when the customer has already been greeted — passive, acknowledges you're available without prompting them. No question mark. No greeting. Just presence. Something like 'I'm here if anything comes to mind.' (1 sentence)",
   "aiFailed": "What you'd say if you blanked for a second — casual, ask them to repeat (1 sentence)",
   "noResults": "What you'd say when nothing matched — ask them to rephrase or tell you more (1-2 sentences)",
-  "error": "A quick recovery after a technical hiccup — casual, ask them to try again (1 sentence)",
-  "placeholder": "A short question or invitation for the chat input — 8-12 words, something you'd actually say at the counter"
+  "error": "A quick recovery after a technical hiccup — casual, ask them to try again (1 sentence)"
 }
 
 Rules:
 - Speak directly to the customer: use "you", "your" — never third person
 - Use the owner's actual vocabulary, rhythm, and personality from the Q&As above — not generic assistant language
-- The waiting filler should be 1-3 words max, lowercase
-- The placeholder should be a question, not a statement`,
+- The waiting filler should be 1-3 words max, lowercase`,
       },
     ],
     maxTokens: 1024,
@@ -83,6 +82,10 @@ Rules:
         typeof parsed.salutation === "string"
           ? parsed.salutation
           : DEFAULT_VOICE_SURFACES.salutation,
+      standby:
+        typeof parsed.standby === "string"
+          ? parsed.standby
+          : DEFAULT_VOICE_SURFACES.standby,
       aiFailed:
         typeof parsed.aiFailed === "string"
           ? parsed.aiFailed
@@ -95,10 +98,6 @@ Rules:
         typeof parsed.error === "string"
           ? parsed.error
           : DEFAULT_VOICE_SURFACES.error,
-      placeholder:
-        typeof parsed.placeholder === "string"
-          ? parsed.placeholder
-          : DEFAULT_VOICE_SURFACES.placeholder,
     };
   } catch {
     console.error(

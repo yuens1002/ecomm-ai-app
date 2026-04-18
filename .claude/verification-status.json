@@ -315,6 +315,22 @@
       "tasks": [],
       "acs_doc": "docs/features/smart-search-ux/hotfix-search-quality/ACs.md",
       "notes": "16/16 ACs verified. 3 FN + 2 UI + 8 TST + 3 REG. 1190 tests pass (100 suites), precheck clean. 0 iterations."
+    },
+    "feat/counter-iter5": {
+      "status": "verified",
+      "acs_passed": 42,
+      "acs_total": 44,
+      "tasks": [],
+      "acs_doc": "docs/features/smart-search-ux/iter-5-context-grounding/acs.md",
+      "notes": "42/44 ACs verified. AC-FN-2 (validSortBy fix) → PASS post-fix. AC-UI-1 → PASS post-fix. AC-FN-1 SUPERSEDED (category pre-scope removed, schema-first origin approach). AC-UI-5 DEFERRED (data state — stored surfaces predate greeting.home fix; admin regenerate action required, not a code bug). All other 40 ACs confirmed PASS by sub-agent + QC. 2 post-plan commits: schema-first origin + catalog-driven AI (remove hardcoded regional lists). Tests: 1287 pass, precheck clean."
+    },
+    "feat/conversation-context": {
+      "status": "verified",
+      "acs_passed": 46,
+      "acs_total": 46,
+      "tasks": [],
+      "acs_doc": "docs/features/smart-search-ux/iter-4-conversation-context/acs.md",
+      "notes": "All 46 ACs verified. 14 TST (1261 tests, 0 failures) + 7 FN (code review) + 3 REG (precheck clean, tests, code review) + 8 UI (screenshots + code review confirmed) + 10 UI DEFERRED (interactive AI queries, mechanisms confirmed by code review). 1 iteration: AC-FN-7 chip pre-validation implemented + AC-UI-1 clear-on-close fix. QC column filled 2026-04-15."
     }
   }
 }

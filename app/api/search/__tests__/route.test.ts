@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { GET, isNaturalLanguageQuery, tokenizeNLQuery } from "../route";
 
 const productFindManyMock = jest.fn();
+const productCountMock = jest.fn();
 const userActivityCreateMock = jest.fn();
 const chatCompletionMock = jest.fn();
 const isAIConfiguredMock = jest.fn();
@@ -19,6 +20,7 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     product: {
       findMany: (...args: unknown[]) => productFindManyMock(...args),
+      count: (...args: unknown[]) => productCountMock(...args),
     },
     userActivity: {
       create: () => userActivityCreateMock(),
@@ -43,6 +45,7 @@ describe("GET /api/search", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     productFindManyMock.mockResolvedValue([]);
+    productCountMock.mockResolvedValue(1); // chips pass validation by default
     queryRawMock.mockResolvedValue([]);
     isAIConfiguredMock.mockResolvedValue(false);
     getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
@@ -240,6 +243,229 @@ describe("GET /api/search", () => {
 });
 
 // ---------------------------------------------------------------------------
+// AC-TST-1: ai=true always reaches agentic path regardless of NL heuristic
+// ---------------------------------------------------------------------------
+
+describe("ai=true routing gate (AC-TST-1)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    productCountMock.mockResolvedValue(1);
+    queryRawMock.mockResolvedValue([]);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
+    isAIConfiguredMock.mockResolvedValue(true);
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        acknowledgment: "Let me see what I can find for you.",
+        followUps: ["Bold", "Light"],
+        followUpQuestion: "What roast level?",
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+  });
+
+  it("ai=true invokes extractAgenticFilters even for non-NL single-word query", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=xyz&ai=true"
+    );
+    await GET(request);
+    expect(chatCompletionMock).toHaveBeenCalled();
+  });
+
+  it("ai=false non-NL query skips agentic path even when AI is configured", async () => {
+    // AI is configured (from beforeEach) but ai=false + non-NL query → agentic path skipped
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=xyz&ai=false"
+    );
+    await GET(request);
+    expect(chatCompletionMock).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC-TST-2: Open-ended Counter query returns acknowledgment in response
+// ---------------------------------------------------------------------------
+
+describe("acknowledgment in agentic response (AC-TST-2)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    productCountMock.mockResolvedValue(1);
+    queryRawMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
+  });
+
+  it("returns acknowledgment non-null when extraction provides it", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        acknowledgment: "Here's what I'd try today.",
+        followUps: ["Bold", "Light"],
+        followUpQuestion: "How do you take your coffee?",
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=what+is+good+today&ai=true"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.acknowledgment).toBeTruthy();
+    expect(data.acknowledgment).toContain("today");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC-TST-3: Category slug from `from` param scopes Prisma where
+// ---------------------------------------------------------------------------
+
+// AC-TST-3: origin-based filtering — schema-first, not categories
+// (category pre-scope removed — origin[] field is reliable; categories are user-defined)
+describe("origin-based filtering — schema-first (AC-TST-3)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    productCountMock.mockResolvedValue(1);
+    queryRawMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
+  });
+
+  it("regional origin extraction uses hasSome for array origins", async () => {
+    // Simulate AI returning an array of countries for a regional query
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { origin: ["Guatemala", "Costa Rica", "Honduras"] },
+        acknowledgment: "Here are the Central American coffees.",
+        followUps: [],
+        followUpQuestion: "",
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=coffee+from+central+america&ai=true"
+    );
+    await GET(request);
+
+    expect(productFindManyMock).toHaveBeenCalled();
+    const callArgs = productFindManyMock.mock.calls[0][0];
+    // Array origin → hasSome operator on the String[] origin field
+    expect(callArgs.where).toMatchObject({
+      origin: { hasSome: ["Guatemala", "Costa Rica", "Honduras"] },
+    });
+  });
+
+  it("single-country origin extraction uses has", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { origin: "Ethiopia" },
+        acknowledgment: "Ethiopian coffees coming up.",
+        followUps: [],
+        followUpQuestion: "",
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=ethiopian+coffee&ai=true"
+    );
+    await GET(request);
+
+    const callArgs = productFindManyMock.mock.calls[0][0];
+    // Single string origin → has operator
+    expect(callArgs.where).toMatchObject({
+      origin: { has: "Ethiopia" },
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC-TST-4 + AC-TST-5: Cadence enforcement — followUps based on result count
+// ---------------------------------------------------------------------------
+
+describe("cadence enforcement — followUps (AC-TST-4, AC-TST-5)", () => {
+  const makeProducts = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `prod-${i}`,
+      name: `Coffee ${i}`,
+      slug: `coffee-${i}`,
+      categories: [],
+      variants: [{ id: `v-${i}`, purchaseOptions: [{ id: `po-${i}`, type: "ONE_TIME", priceInCents: 1500 }] }],
+      images: [],
+    }));
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
+    queryRawMock.mockResolvedValue([]);
+    productCountMock.mockResolvedValue(0); // chips fail validation → [] — proves cadence enforcement, not chip validator
+  });
+
+  it("AC-TST-4: ≤3 results zeroes followUps", async () => {
+    productFindManyMock.mockResolvedValue(makeProducts(2));
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        acknowledgment: "Here you go.",
+        followUps: ["Bold", "Light", "Smooth"],
+        followUpQuestion: "What roast?",
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=bolivian+single+origin&ai=true"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.products).toHaveLength(2);
+    expect(data.followUps).toEqual([]);
+  });
+
+  it("AC-TST-5: ≥4 results allows followUps through", async () => {
+    productFindManyMock.mockResolvedValue(makeProducts(5));
+    productCountMock.mockResolvedValue(5); // chips pass validation
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        acknowledgment: "Lots of good options.",
+        followUps: ["Bold", "Light", "Smooth"],
+        followUpQuestion: "What roast level?",
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=good+coffee&ai=true"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.products).toHaveLength(5);
+    expect(data.followUps.length).toBeGreaterThan(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // isNaturalLanguageQuery unit tests
 // ---------------------------------------------------------------------------
 
@@ -292,6 +518,190 @@ describe("tokenizeNLQuery", () => {
 
   it("returns empty array when all tokens are stop words", () => {
     expect(tokenizeNLQuery("what is that for me")).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Conversation context + intent routing (AC-TST-7 to TST-14)
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — conversation context + intent routing", () => {
+  const nlQuery = "something smooth and fruity for my morning"; // triggers isNaturalLanguageQuery
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({
+      aiVoicePersona: "",
+      aiVoiceExamples: [],
+      aiVoiceSurfaces: { salutation: "What are you after?" },
+    });
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        acknowledgment: "Sure, let me take a look.",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+  });
+
+  // AC-TST-7: history injected into chatCompletion messages
+  it("AC-TST-7: passes conversation history to chatCompletion messages", async () => {
+    const history = [
+      { role: "user", content: "show me light roast" },
+      { role: "assistant", content: "Here are some light roasts." },
+    ];
+    const url = new URL("http://localhost:3000/api/search");
+    url.searchParams.set("q", nlQuery);
+    url.searchParams.set("history", JSON.stringify(history));
+
+    await GET(new NextRequest(url.toString()));
+
+    const callArgs = chatCompletionMock.mock.calls[0][0];
+    const messages: Array<{ role: string; content: string }> = callArgs.messages;
+    const contents = messages.map((m) => m.content);
+    expect(contents.some((c) => c.includes("show me light roast"))).toBe(true);
+  });
+
+  // AC-TST-8: history capped at 5 turns (10 messages)
+  it("AC-TST-8: caps history at 10 messages when 7-turn history is passed", async () => {
+    // 7 turns = 14 messages — only last 10 should be passed through
+    const history = Array.from({ length: 14 }, (_, i) => ({
+      role: i % 2 === 0 ? "user" : "assistant",
+      content: `Message ${i}`,
+    }));
+    const url = new URL("http://localhost:3000/api/search");
+    url.searchParams.set("q", nlQuery);
+    url.searchParams.set("history", JSON.stringify(history));
+
+    await GET(new NextRequest(url.toString()));
+
+    const callArgs = chatCompletionMock.mock.calls[0][0];
+    const messages: Array<{ role: string }> = callArgs.messages;
+    // messages = [system, ...history_segment, user_query]
+    // history_segment should be ≤ 10 entries
+    const historySegment = messages.slice(1, -1); // exclude system and user
+    expect(historySegment.length).toBeLessThanOrEqual(10);
+  });
+
+  // AC-TST-9: how_to intent — no DB query, empty products
+  it("AC-TST-9: how_to intent returns empty products without querying DB", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "how_to",
+        filtersExtracted: {},
+        acknowledgment: "For a V60, you'd want a medium-fine grind.",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+
+    const request = new NextRequest(
+      `http://localhost:3000/api/search?q=${encodeURIComponent(nlQuery)}`
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(productFindManyMock).not.toHaveBeenCalled();
+    expect(data.products).toEqual([]);
+    expect(data.intent).toBe("how_to");
+  });
+
+  // AC-TST-10: reorder intent — in-character redirect, empty products
+  it("AC-TST-10: reorder intent returns empty products and acknowledgment containing 'account'", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "reorder",
+        filtersExtracted: {},
+        acknowledgment: "For your previous orders, head to your account page.",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+
+    const request = new NextRequest(
+      `http://localhost:3000/api/search?q=${encodeURIComponent(nlQuery)}`
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(productFindManyMock).not.toHaveBeenCalled();
+    expect(data.products).toEqual([]);
+    expect(data.intent).toBe("reorder");
+    expect((data.acknowledgment as string).toLowerCase()).toContain("account");
+  });
+
+  // AC-TST-11: merch query — no type: COFFEE, no categories filter
+  it("AC-TST-11: merch productType omits type:COFFEE and categories from DB query", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { productType: "merch" },
+        acknowledgment: "Let me see what gear we have.",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+    productFindManyMock.mockResolvedValue([]);
+
+    const request = new NextRequest(
+      `http://localhost:3000/api/search?q=${encodeURIComponent(nlQuery)}`
+    );
+    await GET(request);
+
+    const callArgs = productFindManyMock.mock.calls[0][0];
+    expect(callArgs.where.type).toBeUndefined();
+    expect(callArgs.where.categories).toBeUndefined();
+  });
+
+  // AC-TST-12: result reconciliation — recommendedProductName spliced to index 0
+  it("AC-TST-12: recommendedProductName product is at index 0 in response", async () => {
+    const products = [
+      { id: "p1", name: "Colombia Huila", slug: "colombia-huila", categories: [], variants: [], images: [] },
+      { id: "p2", name: "Ethiopia Yirgacheffe", slug: "ethiopia-yirgacheffe", categories: [], variants: [], images: [] },
+      { id: "p3", name: "Kenya AA", slug: "kenya-aa", categories: [], variants: [], images: [] },
+    ];
+    productFindManyMock.mockResolvedValue(products);
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: {},
+        acknowledgment: "I'd go with the Ethiopia Yirgacheffe.",
+        recommendedProductName: "Ethiopia Yirgacheffe",
+        followUpQuestion: "",
+        followUps: [],
+      }),
+      finishReason: "stop",
+    });
+
+    const request = new NextRequest(
+      `http://localhost:3000/api/search?q=${encodeURIComponent(nlQuery)}`
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.products[0].name).toBe("Ethiopia Yirgacheffe");
+  });
+
+  // AC-TST-14: salutation detection — isSalutation: true, empty products, salutation surface
+  it("AC-TST-14: q=hey&ai=true returns isSalutation:true with salutation acknowledgment", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=hey&ai=true"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.isSalutation).toBe(true);
+    expect(data.products).toEqual([]);
+    expect(data.acknowledgment).toBe("What are you after?");
   });
 });
 

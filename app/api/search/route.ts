@@ -4,27 +4,21 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { chatCompletion, isAIConfigured } from "@/lib/ai-client";
 import { getPublicSiteSettings } from "@/lib/data";
-import {
-  DEFAULT_VOICE_EXAMPLES,
-  type VoiceExample,
-} from "@/lib/ai/voice-examples";
+import { DEFAULT_VOICE_EXAMPLES, type VoiceExample } from "@/lib/ai/voice-examples";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type AgenticIntent =
-  | "product_discovery"
-  | "recommendation"
-  | "how_to"
-  | "reorder";
+type AgenticIntent = "product_discovery" | "recommendation" | "how_to" | "reorder";
 
 interface FiltersExtracted {
   // Phase A
   brewMethod?: string;
   roastLevel?: string;
   flavorProfile?: string[];
-  origin?: string;
+  /** Single country ("Ethiopia") or array for regional queries (["Guatemala", "Costa Rica"]) */
+  origin?: string | string[];
   // Extended
   isOrganic?: boolean;
   processing?: string;
@@ -32,6 +26,8 @@ interface FiltersExtracted {
   priceMaxCents?: number;
   priceMinCents?: number;
   sortBy?: "newest" | "price_asc" | "price_desc" | "top_rated";
+  /** "coffee" uses all flavor/roast filters; "merch" uses name/description only; "any" is unspecified */
+  productType?: "coffee" | "merch" | "any";
 }
 
 interface AgenticExtraction {
@@ -42,6 +38,136 @@ interface AgenticExtraction {
   acknowledgment: string;
   followUpQuestion: string;
   followUps: string[];
+  /** When the AI names a specific product, include the exact name for result reconciliation */
+  recommendedProductName?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Grounded RAG — catalog snapshot (module-level cache, 5-minute TTL)
+// ---------------------------------------------------------------------------
+
+/** Compact catalog snapshot + store intelligence injected into the system prompt.
+ *  Cached per serverless instance (5-minute TTL). */
+let _catalogSnapshot: string | null = null;
+let _catalogSnapshotAt = 0;
+const CATALOG_SNAPSHOT_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+async function buildCatalogSnapshot(): Promise<string> {
+  if (_catalogSnapshot !== null && Date.now() - _catalogSnapshotAt < CATALOG_SNAPSHOT_TTL_MS) {
+    return _catalogSnapshot;
+  }
+
+  try {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    // Parallel: catalog + top sellers
+    const [products, topSellerRows] = await Promise.all([
+      prisma.product.findMany({
+        where: { isDisabled: false },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          roastLevel: true,
+          tastingNotes: true,
+          origin: true,
+          createdAt: true,
+          variants: {
+            where: { isDisabled: false },
+            select: {
+              stockQuantity: true,
+              purchaseOptions: { select: { salePriceInCents: true } },
+            },
+          },
+        },
+        orderBy: { name: "asc" as const },
+      }),
+      // Top sellers: product IDs ranked by OrderItem count in last 30 days
+      prisma.$queryRaw<Array<{ productId: string }>>`
+        SELECT pv."productId"
+        FROM "OrderItem" oi
+        JOIN "PurchaseOption" po ON oi."purchaseOptionId" = po.id
+        JOIN "ProductVariant" pv ON po."variantId" = pv.id
+        JOIN "Order" o ON oi."orderId" = o.id
+        WHERE o."createdAt" >= ${thirtyDaysAgo}
+          AND o.status NOT IN ('CANCELLED', 'REFUNDED')
+        GROUP BY pv."productId"
+        ORDER BY COUNT(oi.id) DESC
+        LIMIT 3
+      `,
+    ]);
+
+    const topSellerIds = new Set(topSellerRows.map((r) => r.productId));
+
+    // Build catalog section
+    const coffeeLines = products
+      .filter((p) => p.type === ProductType.COFFEE)
+      .map((p) => {
+        const parts: string[] = [p.name];
+        if (p.roastLevel) parts.push(`[${p.roastLevel.toLowerCase()}]`);
+        const origins = p.origin.join(", ");
+        if (origins) parts.push(origins);
+        if (p.tastingNotes.length) parts.push(p.tastingNotes.join(", "));
+        return `- ${parts.join(" — ")}`;
+      });
+
+    const merchLines = products
+      .filter((p) => p.type !== ProductType.COFFEE)
+      .map((p) => `- ${p.name}`);
+
+    let snapshot = "";
+    if (coffeeLines.length > 0) {
+      snapshot += `Coffees in the shop:\n${coffeeLines.join("\n")}`;
+    }
+    if (merchLines.length > 0) {
+      if (snapshot) snapshot += "\n\n";
+      snapshot += `Merchandise:\n${merchLines.join("\n")}`;
+    }
+
+    // Build store intelligence section (~60-80 tokens)
+    const intelligenceLines: string[] = [];
+
+    const topSellers = products.filter((p) => topSellerIds.has(p.id)).map((p) => p.name);
+    if (topSellers.length > 0) {
+      intelligenceLines.push(`Top sellers this month: ${topSellers.join(", ")}`);
+    }
+
+    const newArrivals = products.filter((p) => p.createdAt >= thirtyDaysAgo).map((p) => p.name);
+    if (newArrivals.length > 0) {
+      intelligenceLines.push(`New arrivals: ${newArrivals.join(", ")}`);
+    }
+
+    const onSale = products
+      .filter((p) =>
+        p.variants.some((v) => v.purchaseOptions.some((po) => po.salePriceInCents !== null))
+      )
+      .map((p) => p.name);
+    if (onSale.length > 0) {
+      intelligenceLines.push(`On sale: ${onSale.join(", ")}`);
+    }
+
+    const LOW_STOCK_THRESHOLD = 5;
+    const lowStock = products
+      .filter((p) =>
+        p.variants.some((v) => v.stockQuantity > 0 && v.stockQuantity <= LOW_STOCK_THRESHOLD)
+      )
+      .map((p) => p.name);
+    if (lowStock.length > 0) {
+      intelligenceLines.push(`Low stock (mention urgency if relevant): ${lowStock.join(", ")}`);
+    }
+
+    if (intelligenceLines.length > 0) {
+      if (snapshot) snapshot += "\n\n";
+      snapshot += `Store signals:\n${intelligenceLines.join("\n")}`;
+    }
+
+    _catalogSnapshot = snapshot;
+    _catalogSnapshotAt = Date.now();
+    return snapshot;
+  } catch {
+    // Return stale cache or empty on DB failure — non-fatal
+    return _catalogSnapshot ?? "";
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -49,12 +175,57 @@ interface AgenticExtraction {
 // ---------------------------------------------------------------------------
 
 const NL_STOP_WORDS = new Set([
-  "what", "whats", "is", "are", "good", "best", "great", "any",
-  "with", "for", "a", "an", "the", "and", "or", "but", "in", "on",
-  "at", "to", "of", "me", "my", "some", "something", "anything",
-  "that", "this", "which", "can", "i", "you", "us", "we", "do",
-  "does", "would", "like", "looking", "find", "help", "need", "want",
-  "show", "get", "give", "have", "over", "up", "out", "about",
+  "what",
+  "whats",
+  "is",
+  "are",
+  "good",
+  "best",
+  "great",
+  "any",
+  "with",
+  "for",
+  "a",
+  "an",
+  "the",
+  "and",
+  "or",
+  "but",
+  "in",
+  "on",
+  "at",
+  "to",
+  "of",
+  "me",
+  "my",
+  "some",
+  "something",
+  "anything",
+  "that",
+  "this",
+  "which",
+  "can",
+  "i",
+  "you",
+  "us",
+  "we",
+  "do",
+  "does",
+  "would",
+  "like",
+  "looking",
+  "find",
+  "help",
+  "need",
+  "want",
+  "show",
+  "get",
+  "give",
+  "have",
+  "over",
+  "up",
+  "out",
+  "about",
 ]);
 
 /** Strip stop words and punctuation — returns meaningful search tokens. */
@@ -72,10 +243,7 @@ export function tokenizeNLQuery(q: string): string[] {
  * Words appearing in many products (like "coffee" or "notes") automatically
  * score lower. Returns product IDs ordered by relevance.
  */
-async function fullTextSearchIds(
-  query: string,
-  limit = 50
-): Promise<string[]> {
+async function fullTextSearchIds(query: string, limit = 50): Promise<string[]> {
   const tokens = tokenizeNLQuery(query);
   if (tokens.length === 0) return [];
 
@@ -116,6 +284,34 @@ export function isNaturalLanguageQuery(query: string): boolean {
   return nlIndicators.test(query);
 }
 
+/**
+ * Filter follow-up chips to only those that return at least 1 product.
+ * Uses full-text search first, falls back to name/description keyword match.
+ * Prevents chips that would produce zero results from reaching the client.
+ */
+async function validateFollowUps(chips: string[]): Promise<string[]> {
+  if (chips.length === 0) return [];
+  const results = await Promise.all(
+    chips.map(async (chip) => {
+      // Try FTS first — handles experiential terms via stemming
+      const ftsIds = await fullTextSearchIds(chip, 1);
+      if (ftsIds.length > 0) return chip;
+      // FTS miss — try direct keyword match on name/description
+      const count = await prisma.product.count({
+        where: {
+          isDisabled: false,
+          OR: [
+            { name: { contains: chip, mode: "insensitive" } },
+            { description: { contains: chip, mode: "insensitive" } },
+          ],
+        },
+      });
+      return count > 0 ? chip : null;
+    })
+  );
+  return results.filter((c): c is string => c !== null);
+}
+
 // ---------------------------------------------------------------------------
 // AI extraction step
 // ---------------------------------------------------------------------------
@@ -123,13 +319,13 @@ export function isNaturalLanguageQuery(query: string): boolean {
 export function buildSystemPrompt(
   voiceExamples: VoiceExample[],
   aiVoicePersona: string,
-  pageContext?: string
+  pageContext?: string,
+  catalogSnapshot?: string
 ): string {
   // Role framing — YOU ARE AT THE COUNTER, not running a search engine.
   // The customer walked into the shop. Pick products like you'd pick for a
   // regular, using your voice. Vocabulary of service, not of software.
-  const roleSection =
-    `You are the shop owner at the counter, helping a customer who just walked in. Pick coffees like you'd pick for a regular — share your honest opinion: "I'd go with", "I'd say try", "personally I'd", "if it were me". You are NOT a search engine, database, or list of results. Never say "I found", "I'm looking for", "search results", "matches", "options that fit". Never use physical action verbs: "grab", "pour", "pick out", "pull". Use opinion framing instead.\n\n`;
+  const roleSection = `You are the shop owner at the counter, helping a customer who just walked in. Pick coffees like you'd pick for a regular — share your honest opinion: "I'd go with", "I'd say try", "personally I'd", "if it were me". You are NOT a search engine, database, or list of results. Never say "I found", "I'm looking for", "search results", "matches", "options that fit". Never use physical action verbs: "grab", "pour", "pick out", "pull". Use opinion framing instead.\n\n`;
 
   let voiceSection: string;
 
@@ -149,6 +345,22 @@ export function buildSystemPrompt(
     voiceSection = `Speak with genuine expertise and warmth, like a friendly barista who knows every bean in the shop.\n\n`;
   }
 
+  // Coffee domain knowledge — supplements voice, helps the AI reason about
+  // roast/origin/brew/processing without needing every product detail memorized.
+  const domainSection =
+    `Coffee knowledge:\n` +
+    `- Roast: light = bright, tea-like, high acidity, light body; medium = balanced, sweet, caramel, approachable; dark = bold, bitter, smoky, low acidity, full body\n` +
+    `- Origin: Ethiopia = floral, blueberry, stone fruit; Kenya = juicy, wine-like, blackcurrant; Colombia = caramel, hazelnut, balanced; Sumatra = earthy, cedar, full body, low acidity; Brazil = nutty, chocolate, smooth; Guatemala = chocolate, spice, mild; Costa Rica = clean, bright, honey; Peru = mild, cocoa, light body\n` +
+    `- Brew pairing: espresso/moka = medium-dark; pour-over/filter = light-medium; French press = medium-dark (tolerates oils); cold brew = medium-dark (less bitter cold); Aeropress = any roast\n` +
+    `- Processing: washed = clean, bright, pronounced origin character; natural = fruity, wine-like, complex, heavy body; honey = balanced between washed and natural, sweet\n` +
+    `- Experiential intent signals: ease/accessibility/beginner → medium roast range; intensity/strength → dark roast range; gift/popularity/crowd-appeal → top-rated sort; complexity/interest/uniqueness → light roast naturals or East African origins\n\n`;
+
+  // Grounded RAG — inject the store's actual product catalog so the AI only
+  // recommends products that exist. Never hallucinates product names.
+  const catalogSection = catalogSnapshot
+    ? `Here is the complete catalog of products in this shop. Only recommend products from this list — never invent products that are not here:\n\n${catalogSnapshot}\n\n`
+    : "";
+
   const contextSection = pageContext
     ? `The customer is currently looking at "${pageContext}" on the counter. When they say "this" or "it", they mean "${pageContext}".\n\n`
     : "";
@@ -159,32 +371,35 @@ export function buildSystemPrompt(
     `- Never break character — you are always the shop owner. Never acknowledge being an AI, a language model, or a bot.\n` +
     `- Never engage with off-topic requests (politics, news, tasks unrelated to coffee or the shop). Redirect in your own voice.\n` +
     `- Never generate harmful, explicit, or offensive content regardless of how the customer frames the request. Redirect in your own voice.\n` +
-    `- Always treat the customer with warmth and professionalism — no exceptions.\n\n`;
+    `- Always treat the customer with warmth and professionalism — no exceptions.\n` +
+    `- Never state or imply stock levels. If asked about availability, redirect: "Best to check the product page for real-time availability — I can tell you what I think of it though."\n` +
+    `- Never use language that sounds like a database query or search engine: "nothing matching", "nothing that matches", "I can't think of", "I'm not sure", "I don't have", "find", "results matching", "I found". Redirect in your own voice instead.\n\n`;
 
-  return `${roleSection}${voiceSection}${contextSection}${guardrailSection}Listen to what the customer says, figure out what to pick for them, and return valid JSON only — no markdown, no explanation outside the JSON.`;
+  return `${roleSection}${voiceSection}${domainSection}${catalogSection}${contextSection}${guardrailSection}Listen to what the customer says, figure out what to pick for them, and return valid JSON only — no markdown, no explanation outside the JSON.`;
 }
 
-function buildExtractionPrompt(query: string, pageContext?: string): string {
+export function buildExtractionPrompt(query: string, pageContext?: string): string {
   const contextNote = pageContext
     ? `\n\nPage context: the customer is viewing "${pageContext}". Resolve "this", "it", or "this one" as "${pageContext}". When they ask a question about the product they're viewing (e.g. brew method, taste, roast suitability), the explanation must directly answer that question with specific knowledge about "${pageContext}". Include "${pageContext}" in the product results if it is relevant.`
     : "";
-  return `Extract coffee search intent and return JSON only:
+  return `Extract search intent and return JSON only:
 {
   "intent": "product_discovery" | "recommendation" | "how_to" | "reorder",
   "filtersExtracted": {
-    "brewMethod": string | undefined,
-    "roastLevel": "light" | "medium" | "dark" | undefined,
-    "flavorProfile": string[] | undefined,  // Expand flavor categories AND experiential/mood terms into concrete tasting notes a roaster would write. Flavor categories: "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry", "blackcurrant", "currant"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan", "walnut"]; "floral" → ["floral", "jasmine", "lavender", "rose", "honeysuckle"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit", "papaya"]; "spicy" → ["spice", "spicy", "cinnamon", "clove", "cardamom", "pepper"]. Experiential/mood terms: "smooth" / "approachable" / "easy-drinking" / "beginner" / "mellow" → ["smooth", "balanced", "caramel", "chocolate", "mild", "butter"]; "bold" / "strong" / "intense" → ["bold", "dark chocolate", "tobacco", "molasses", "earthy"]; "bright" / "lively" / "vibrant" → ["bright", "citrus", "floral", "lemon", "tea-like"]; "complex" / "interesting" / "unique" → ["complex", "wine", "fermented", "floral", "berry"]. Include the original term AND concrete notes. Keep it scoped.
-
-    "origin": string | undefined,
-    "isOrganic": true | false | undefined,
-    "processing": "washed" | "natural" | "honey" | "anaerobic" | string | undefined,
-    "variety": string | undefined,
+    "productType": "coffee" | "merch" | "any",  // "merch" for non-coffee items — equipment and brewing gear (pour-over drippers, Aeropress, moka pots, grinders, kettles, reusable filters, mugs, bags, accessories); "coffee" for coffee queries; "any" when unclear
+    "brewMethod": string | undefined,  // Coffee only
+    "roastLevel": "light" | "medium" | "dark" | undefined,  // Coffee only
+    "flavorProfile": string[] | undefined,  // Coffee only — Expand flavor categories AND experiential/mood terms into concrete tasting notes a roaster would write. Flavor categories: "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry", "blackcurrant", "currant"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan", "walnut"]; "floral" → ["floral", "jasmine", "lavender", "rose", "honeysuckle"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit", "papaya"]; "spicy" → ["spice", "spicy", "cinnamon", "clove", "cardamom", "pepper"]. Experiential/mood terms: "smooth" / "approachable" / "easy-drinking" / "beginner" / "mellow" → ["smooth", "balanced", "caramel", "chocolate", "mild", "butter"]; "bold" / "strong" / "intense" → ["bold", "dark chocolate", "tobacco", "molasses", "earthy"]; "bright" / "lively" / "vibrant" → ["bright", "citrus", "floral", "lemon", "tea-like"]; "complex" / "interesting" / "unique" → ["complex", "wine", "fermented", "floral", "berry"]. Include the original term AND concrete notes. Keep it scoped.
+    "origin": string | string[] | undefined,  // Coffee only. Use the exact origin values from the catalog. Single country: string. Regional/geographic term: return an array of the specific origin values from the catalog that belong to that region — only use what's in the catalog, never invent country names
+    "isOrganic": true | false | undefined,  // Coffee only
+    "processing": "washed" | "natural" | "honey" | "anaerobic" | string | undefined,  // Coffee only
+    "variety": string | undefined,  // Coffee only
     "priceMaxCents": number (cents, e.g. 3000 for "under $30") | undefined,
     "priceMinCents": number | undefined,
     "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined  // Use "top_rated" when query signals popularity or gift intent: "well-loved", "crowd-pleaser", "safe bet", "popular", "everyone likes", "gift", "my mom", "beginner", "first time"
   },
-  "acknowledgment":"In the voice of a shop owner sharing an opinion at the counter. Let the voice examples guide your natural length and rhythm — match their brevity if they are brief, their depth if they are expansive. Use opinion framing: 'I'd go with', 'I'd say try', 'personally I'd', 'if it were me'. No physical action verbs ('grab', 'pour', 'pick out', 'pull'). Use second person ('you'). NEVER use search vocabulary: 'I found', 'looking for', 'matches', 'options that fit', 'search results'. ALWAYS present. Never third-person ('The customer...'). Never repeat the customer's exact words back.",
+  "acknowledgment":"In the voice of a shop owner responding to what the customer wants to experience — not predicting what the results will contain. Do NOT name specific roast levels, origins, or tasting notes: you have not seen the actual products yet and will be wrong. Respond to the customer's mood, intent, or occasion instead. Let the voice examples guide your natural length and rhythm. No physical action verbs ('grab', 'pour', 'pick out', 'pull'). Use second person ('you'). NEVER use search vocabulary: 'I found', 'looking for', 'matches', 'options that fit', 'search results', 'nothing matching', 'nothing that matches', 'I can't think of', 'I'm not sure', 'I don't have', 'find'. ALWAYS present tense. Never third-person. Never repeat the customer's exact words back.",
+  "recommendedProductName": "Exact product name from the catalog if you are naming a specific product in the acknowledgment (e.g. 'I'd go with the Ethiopian Yirgacheffe'). Must match the product name EXACTLY as it appears in the catalog. Omit if you are not naming a specific product.",
   "followUpQuestion": "1 sentence that fits the customer's context — not a fixed coffee-attribute prompt. Derive it from what they haven't told you AND what would most reduce the results. For gift/occasion queries: ask about the recipient's taste in plain terms ('Does she usually go bold or keep it mellow?', 'How does she take her coffee?'). For vague preference queries: ask about the dimension that cuts deepest. Empty string if the query is already specific.",
   "followUps": ["2-4 word clickable answer to the followUpQuestion — match the question context, use customer language not trade jargon. Roast context: 'Bold & strong' / 'Light & bright' / 'Smooth & mellow'. Brew context: 'Drip machine' / 'French press' / 'Espresso'. Gift/recipient context: 'She loves bold' / 'Something smooth' / 'Surprise her'. Return 2–3 options. Never use question marks."]
 }
@@ -192,6 +407,7 @@ function buildExtractionPrompt(query: string, pageContext?: string): string {
 Rules:
 - Speak directly to the customer: use "you", "your" — never third person
 - acknowledgment is ALWAYS required — it validates you understood the customer
+- For merch queries (equipment and brewing gear: pour-over drippers, Aeropress, moka pots, grinders, kettles, reusable filters, mugs, bags, accessories): set productType "merch", omit all coffee-specific filters
 - followUpQuestion picks the most useful narrowing dimension based on what the customer hasn't told you yet — no fixed category order
 - followUps are only provided when followUpQuestion is non-empty
 - NEVER repeat anything the customer already specified (e.g. if they said "light" do NOT offer "Light roast")
@@ -203,12 +419,14 @@ Query: ${JSON.stringify(query)}${contextNote}`;
 async function extractAgenticFilters(
   query: string,
   systemPrompt: string,
-  pageContext?: string
+  pageContext?: string,
+  history: Array<{ role: "user" | "assistant"; content: string }> = []
 ): Promise<AgenticExtraction | null> {
   try {
     const result = await chatCompletion({
       messages: [
         { role: "system", content: systemPrompt },
+        ...history,
         { role: "user", content: buildExtractionPrompt(query, pageContext) },
       ],
       maxTokens: 1024,
@@ -216,7 +434,10 @@ async function extractAgenticFilters(
     });
 
     // Strip markdown code fences that some models (e.g. Gemini) add despite instructions
-    let stripped = result.text.trim().replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+    let stripped = result.text
+      .trim()
+      .replace(/^```(?:json)?\s*\n?/, "")
+      .replace(/\n?```\s*$/, "");
 
     // Attempt to repair truncated JSON (model hit token limit mid-response)
     if (result.finishReason === "length" || result.finishReason === "max_tokens") {
@@ -260,22 +481,32 @@ async function extractAgenticFilters(
         ? rawFilters.roastLevel.toLowerCase()
         : undefined;
 
-    const validSortBy = ["newest", "top_rated"] as const;
+    const validSortBy = ["newest", "top_rated", "price_asc", "price_desc"] as const;
     type SortBy = (typeof validSortBy)[number];
 
+    const validProductTypes = ["coffee", "merch", "any"] as const;
+    type ProductType_ = (typeof validProductTypes)[number];
+    const productType: FiltersExtracted["productType"] =
+      typeof rawFilters.productType === "string" &&
+      validProductTypes.includes(rawFilters.productType as ProductType_)
+        ? (rawFilters.productType as ProductType_)
+        : undefined;
+
     const filtersExtracted: FiltersExtracted = {
-      brewMethod:
-        typeof rawFilters.brewMethod === "string" ? rawFilters.brewMethod : undefined,
+      productType,
+      brewMethod: typeof rawFilters.brewMethod === "string" ? rawFilters.brewMethod : undefined,
       roastLevel,
       flavorProfile: Array.isArray(rawFilters.flavorProfile)
         ? rawFilters.flavorProfile.filter((v) => typeof v === "string")
         : undefined,
-      origin: typeof rawFilters.origin === "string" ? rawFilters.origin : undefined,
+      origin: Array.isArray(rawFilters.origin)
+        ? (rawFilters.origin as unknown[]).filter((v): v is string => typeof v === "string")
+        : typeof rawFilters.origin === "string"
+          ? rawFilters.origin
+          : undefined,
       isOrganic: typeof rawFilters.isOrganic === "boolean" ? rawFilters.isOrganic : undefined,
-      processing:
-        typeof rawFilters.processing === "string" ? rawFilters.processing : undefined,
-      variety:
-        typeof rawFilters.variety === "string" ? rawFilters.variety : undefined,
+      processing: typeof rawFilters.processing === "string" ? rawFilters.processing : undefined,
+      variety: typeof rawFilters.variety === "string" ? rawFilters.variety : undefined,
       priceMaxCents:
         typeof rawFilters.priceMaxCents === "number" && rawFilters.priceMaxCents > 0
           ? rawFilters.priceMaxCents
@@ -285,24 +516,33 @@ async function extractAgenticFilters(
           ? rawFilters.priceMinCents
           : undefined,
       sortBy:
-        typeof rawFilters.sortBy === "string" &&
-        validSortBy.includes(rawFilters.sortBy as SortBy)
+        typeof rawFilters.sortBy === "string" && validSortBy.includes(rawFilters.sortBy as SortBy)
           ? (rawFilters.sortBy as SortBy)
           : undefined,
     };
 
-    const acknowledgment =
-      typeof raw.acknowledgment === "string" ? raw.acknowledgment : "";
-    const followUpQuestion =
-      typeof raw.followUpQuestion === "string" ? raw.followUpQuestion : "";
+    const acknowledgment = typeof raw.acknowledgment === "string" ? raw.acknowledgment : "";
+    const followUpQuestion = typeof raw.followUpQuestion === "string" ? raw.followUpQuestion : "";
     // Backwards compat: fall back to legacy explanation field
     const explanation =
       acknowledgment || (typeof raw.explanation === "string" ? raw.explanation : "");
     const followUps = Array.isArray(raw.followUps)
       ? raw.followUps.filter((v) => typeof v === "string")
       : [];
+    const recommendedProductName =
+      typeof raw.recommendedProductName === "string" && raw.recommendedProductName.trim()
+        ? raw.recommendedProductName.trim()
+        : undefined;
 
-    return { intent, filtersExtracted, explanation, acknowledgment, followUpQuestion, followUps };
+    return {
+      intent,
+      filtersExtracted,
+      explanation,
+      acknowledgment,
+      followUpQuestion,
+      followUps,
+      recommendedProductName,
+    };
   } catch (err) {
     // LLM failure is non-fatal — fall back to standard keyword search
     console.error("[agentic-search] AI extraction failed:", err);
@@ -325,6 +565,29 @@ export async function GET(request: NextRequest) {
     const parsedTurnCount = parseInt(urlParams.get("turnCount") ?? "0", 10);
     const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
     const pageTitle = urlParams.get("pageTitle") ?? undefined;
+    // Conversation history — last N turns sent by the client, capped at 5 turns (10 messages)
+    let conversationHistory: Array<{ role: "user" | "assistant"; content: string }> = [];
+    const historyParam = urlParams.get("history");
+    if (historyParam) {
+      try {
+        const parsed = JSON.parse(historyParam) as unknown;
+        if (Array.isArray(parsed)) {
+          conversationHistory = (parsed as Array<Record<string, unknown>>)
+            .filter(
+              (h) =>
+                h &&
+                typeof h === "object" &&
+                (h.role === "user" || h.role === "assistant") &&
+                typeof h.content === "string" &&
+                h.content.length > 0
+            )
+            .map((h) => ({ role: h.role as "user" | "assistant", content: h.content as string }))
+            .slice(-10); // Cap at 5 turns (10 messages)
+        }
+      } catch {
+        // Ignore malformed history
+      }
+    }
 
     // Always restrict to coffee — merch queries not yet supported
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -341,9 +604,7 @@ export async function GET(request: NextRequest) {
 
       // Detect roast-level pattern — "light roast", "medium roast", "dark roast"
       // map to category filters rather than text search.
-      const roastPatternMatch = searchQuery.match(
-        /\b(light|medium|dark)\s*roast\b/i
-      );
+      const roastPatternMatch = searchQuery.match(/\b(light|medium|dark)\s*roast\b/i);
       if (roastPatternMatch && !roast) {
         const level = roastPatternMatch[1].toLowerCase();
         whereClause.categories = {
@@ -403,8 +664,13 @@ export async function GET(request: NextRequest) {
     // -------------------------------------------------------------------------
 
     if (query && forceAI) {
-      const trimmed = query.trim().toLowerCase().replace(/[^a-z\s]/g, "").trim();
-      const greetingPattern = /^(hey|hello|hi|howdy|yo|sup|whats up|hiya|good morning|good afternoon|good evening|greetings)$/i;
+      const trimmed = query
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z\s]/g, "")
+        .trim();
+      const greetingPattern =
+        /^(hey|hello|hi|howdy|yo|sup|whats up|hiya|good morning|good afternoon|good evening|greetings)$/i;
       if (greetingPattern.test(trimmed)) {
         const { aiVoiceSurfaces } = await getPublicSiteSettings();
         const salutation = aiVoiceSurfaces?.salutation;
@@ -434,16 +700,22 @@ export async function GET(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let orderBy: any = undefined;
 
-    if (
-      query &&
-      (forceAI || isNaturalLanguageQuery(query)) &&
-      (await isAIConfigured())
-    ) {
+    if (query && (forceAI || isNaturalLanguageQuery(query)) && (await isAIConfigured())) {
       const { aiVoicePersona, aiVoiceExamples } = await getPublicSiteSettings();
-      const voiceExamples =
-        aiVoiceExamples.length > 0 ? aiVoiceExamples : DEFAULT_VOICE_EXAMPLES;
-      const systemPrompt = buildSystemPrompt(voiceExamples, aiVoicePersona, pageTitle);
-      agenticData = await extractAgenticFilters(query, systemPrompt, pageTitle);
+      const voiceExamples = aiVoiceExamples.length > 0 ? aiVoiceExamples : DEFAULT_VOICE_EXAMPLES;
+      const catalogSnapshot = await buildCatalogSnapshot();
+      const systemPrompt = buildSystemPrompt(
+        voiceExamples,
+        aiVoicePersona,
+        pageTitle,
+        catalogSnapshot
+      );
+      agenticData = await extractAgenticFilters(
+        query,
+        systemPrompt,
+        pageTitle,
+        conversationHistory
+      );
 
       if (agenticData?.filtersExtracted) {
         const {
@@ -499,9 +771,13 @@ export async function GET(request: NextRequest) {
           };
         }
 
-        // Apply extracted origin only if no explicit origin param
+        // Apply extracted origin only if no explicit origin param.
+        // Array origins (regional queries like Central America → ["Guatemala", "Costa Rica"...])
+        // use hasSome; single-country strings use has.
         if (extractedOrigin && !origin) {
-          whereClause.origin = { has: extractedOrigin };
+          whereClause.origin = Array.isArray(extractedOrigin)
+            ? { hasSome: extractedOrigin }
+            : { has: extractedOrigin };
         }
 
         // BUG-2: Apply flavor profile — expand OR clause with case-insensitive description
@@ -561,23 +837,89 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // Lock to COFFEE type when any coffee-specific semantic filter was extracted.
-        // This prevents gear/accessories from matching generic words like "cup" or "coffee".
-        const hasCoffeeFilters = !!(
-          roastLevel ||
-          extractedOrigin ||
-          (flavorProfile && flavorProfile.length > 0) ||
-          isOrganic !== undefined ||
-          processing ||
-          variety
-        );
-        if (hasCoffeeFilters) {
-          whereClause.type = ProductType.COFFEE;
+        // Product-type-aware routing:
+        // - "merch" → skip all coffee-specific filters, search by name/description only
+        // - coffee filters present → lock to COFFEE type
+        // - default → COFFEE (maintains backwards compat for queries without productType)
+        if (agenticData.filtersExtracted.productType === "merch") {
+          // Merch query: remove coffee-type lock, use name/description search only
+          delete whereClause.type;
+          delete whereClause.categories;
+          delete whereClause.origin;
+          delete whereClause.OR;
+          delete whereClause.id;
+          ftsOrderedIds = [];
+          // Re-add name/description search for the merch query
+          if (query) {
+            whereClause.OR = [
+              { name: { contains: query, mode: "insensitive" as const } },
+              { description: { contains: query, mode: "insensitive" as const } },
+            ];
+          }
+        } else {
+          // Lock to COFFEE type when any coffee-specific semantic filter was extracted.
+          // This prevents gear/accessories from matching generic words like "cup" or "coffee".
+          const hasCoffeeFilters = !!(
+            roastLevel ||
+            extractedOrigin ||
+            (flavorProfile && flavorProfile.length > 0) ||
+            isOrganic !== undefined ||
+            processing ||
+            variety
+          );
+          if (hasCoffeeFilters) {
+            whereClause.type = ProductType.COFFEE;
+          }
         }
 
         // NOTE: The keyword OR clause is already cleared above (hasAnyFilter check)
         // and a fresh flavor-only OR is built from flavorProfile entries. No need
         // for a second deletion here.
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Intent classification — gate routing before DB query
+    // -------------------------------------------------------------------------
+
+    if (agenticData) {
+      if (agenticData.intent === "how_to") {
+        // Conversational/informational query — text-only response, no product search
+        return NextResponse.json({
+          products: [],
+          query: searchQuery,
+          count: 0,
+          intent: agenticData.intent,
+          filtersExtracted: null,
+          explanation: agenticData.explanation || null,
+          acknowledgment: agenticData.acknowledgment || null,
+          followUpQuestion: agenticData.followUpQuestion || null,
+          followUps: agenticData.followUps ?? [],
+          recommendedProductName: null,
+          aiFailed: false,
+          context: { sessionId, turnCount },
+        });
+      }
+
+      if (agenticData.intent === "reorder") {
+        // Service/reorder query — in-character redirect, no product search
+        const redirect =
+          agenticData.acknowledgment ||
+          "For orders and account stuff, you'd want to head to your account page — I'm really just here for the coffee.";
+        return NextResponse.json({
+          products: [],
+          query: searchQuery,
+          count: 0,
+          intent: agenticData.intent,
+          filtersExtracted: null,
+          explanation: redirect,
+          acknowledgment: redirect,
+          followUpQuestion: null,
+          followUps: [],
+          recommendedProductName: null,
+          aiFailed: false,
+          context: { sessionId, turnCount },
+        });
       }
     }
 
@@ -654,9 +996,55 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // App-side price sort — price_asc/price_desc are intentionally omitted from
+    // the Prisma orderBy sortMap (Prisma can't do nested aggregate orderBy through
+    // variants→purchaseOptions). Sort in JS after the query using min variant price.
+    // Applied before result reconciliation so the AI's named recommendation can
+    // still be promoted to position 1 after sorting.
+    const extractedSortBy = agenticData?.filtersExtracted?.sortBy;
+    if (extractedSortBy === "price_desc" || extractedSortBy === "price_asc") {
+      const getMinPrice = (p: (typeof orderedProducts)[0]): number => {
+        const prices = p.variants.flatMap((v) => v.purchaseOptions.map((po) => po.priceInCents));
+        return prices.length > 0 ? Math.min(...prices) : Infinity;
+      };
+      orderedProducts = [...orderedProducts].sort((a, b) =>
+        extractedSortBy === "price_desc"
+          ? getMinPrice(b) - getMinPrice(a)
+          : getMinPrice(a) - getMinPrice(b)
+      );
+    }
+
+    // Result reconciliation: when the AI names a specific product in the acknowledgment,
+    // promote that product to position 1. Ensures the AI's stated recommendation is
+    // always the first card the customer sees (grounded RAG proof).
+    const recommendedName = agenticData?.recommendedProductName;
+    if (recommendedName && orderedProducts.length > 1) {
+      const recIdx = orderedProducts.findIndex(
+        (p) => p.name.toLowerCase() === recommendedName.toLowerCase()
+      );
+      if (recIdx > 0) {
+        const [rec] = orderedProducts.splice(recIdx, 1);
+        orderedProducts = [rec, ...orderedProducts];
+      }
+    }
+
+    // Cadence enforcement: specific queries (≤3 results) don't need narrowing
+    // chips — the result set is already curated enough. Clear follow-ups so the
+    // UI presents the results cleanly without prompting further refinement.
+    if (agenticData && orderedProducts.length > 0 && orderedProducts.length <= 3) {
+      agenticData.followUps = [];
+      agenticData.followUpQuestion = "";
+    }
+
     // When AI was requested but extraction failed, surface it so the UI can
     // tell the user instead of silently showing dumb keyword results.
     const aiFailed = forceAI && !agenticData;
+
+    // Pre-validate follow-up chips — remove any that return 0 products so
+    // customers never click a chip and land on an empty results page.
+    const rawFollowUps = agenticData?.followUps ?? [];
+    const validatedFollowUps =
+      rawFollowUps.length > 0 ? await validateFollowUps(rawFollowUps) : rawFollowUps;
 
     return NextResponse.json({
       products: orderedProducts,
@@ -667,15 +1055,13 @@ export async function GET(request: NextRequest) {
       explanation: agenticData?.explanation ?? null,
       acknowledgment: agenticData?.acknowledgment ?? null,
       followUpQuestion: agenticData?.followUpQuestion ?? null,
-      followUps: agenticData?.followUps ?? [],
+      followUps: validatedFollowUps,
+      recommendedProductName: agenticData?.recommendedProductName ?? null,
       aiFailed,
       context: { sessionId, turnCount },
     });
   } catch (error) {
     console.error("Error searching products:", error);
-    return NextResponse.json(
-      { error: "Failed to search products" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to search products" }, { status: 500 });
   }
 }

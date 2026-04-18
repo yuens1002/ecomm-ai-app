@@ -1,10 +1,18 @@
 /** @jest-environment node */
 /**
- * Unit tests for buildSystemPrompt — verifies that Q&A pairs from each
- * fixture set are embedded verbatim in the system prompt.
+ * Prompt regression tests for buildSystemPrompt / buildExtractionPrompt.
  *
- * These tests assert the plumbing (are the pairs present?), not AI output
- * (which is non-deterministic and tested elsewhere via persona-accuracy.test.ts).
+ * These are PROMPT STRUCTURE tests — they verify that key sections are present
+ * in the generated prompt text. They catch accidental deletions or refactors
+ * that remove guardrails, Q&A embeddings, or domain knowledge from the prompt.
+ *
+ * What these tests DO NOT tell you:
+ *   - Whether the AI actually obeys the guardrails
+ *   - Whether the acknowledgment is grounded in real products
+ *   - Whether merch classification or intent routing works correctly
+ *
+ * For behavioral assertions against real AI output, see:
+ *   integration/counter-cadence.integration.test.ts
  */
 
 // route.ts imports next/server and prisma — mock them out so we can import
@@ -25,7 +33,7 @@ jest.mock("@/lib/data", () => ({
   getPublicSiteSettings: jest.fn(),
 }));
 
-import { buildSystemPrompt } from "../route";
+import { buildSystemPrompt, buildExtractionPrompt } from "../route";
 import { VOICE_SET_A } from "./fixtures/voice-set-a";
 import { VOICE_SET_B } from "./fixtures/voice-set-b";
 
@@ -102,6 +110,156 @@ describe("buildSystemPrompt — voice Q&A embedding", () => {
     it("uses persona string when provided without examples", () => {
       const prompt = buildSystemPrompt([], "A laid-back roaster from Portland");
       expect(prompt).toContain("A laid-back roaster from Portland");
+    });
+  });
+
+  // AC-TST-6: stock deflection guardrail
+  describe("stock deflection guardrail (AC-TST-6)", () => {
+    it("contains stock deflection rule", () => {
+      const prompt = buildSystemPrompt([], "");
+      expect(prompt.toLowerCase()).toContain("never state or imply stock");
+    });
+
+    it("instructs redirect to product page for availability questions", () => {
+      const prompt = buildSystemPrompt([], "");
+      expect(prompt.toLowerCase()).toContain("product page");
+    });
+  });
+
+  // AC-TST-7: banned search-oriented language
+  describe("banned search-oriented language (AC-TST-7)", () => {
+    let prompt: string;
+
+    beforeAll(() => {
+      prompt = buildSystemPrompt([], "");
+    });
+
+    it("bans 'nothing matching'", () => {
+      expect(prompt).toContain("nothing matching");
+    });
+
+    it("bans \"I can't think of\"", () => {
+      expect(prompt).toContain("I can't think of");
+    });
+
+    it("bans \"I'm not sure\"", () => {
+      expect(prompt).toContain("I'm not sure");
+    });
+
+    it("bans 'I don\\'t have'", () => {
+      expect(prompt).toContain("I don't have");
+    });
+
+    it("bans 'find'", () => {
+      expect(prompt).toContain("find");
+    });
+  });
+
+  // AC-TST-9: page context section
+  describe("page context section (AC-TST-9)", () => {
+    it("includes page context when provided", () => {
+      const prompt = buildSystemPrompt([], "", "Origami Air Dripper");
+      expect(prompt).toContain("Origami Air Dripper");
+    });
+
+    it("excludes context section when not provided", () => {
+      const prompt = buildSystemPrompt([], "");
+      expect(prompt).not.toContain("currently looking at");
+    });
+  });
+
+  // AC-TST-13: domain knowledge section
+  describe("coffee domain knowledge (AC-TST-13)", () => {
+    let prompt: string;
+
+    beforeAll(() => {
+      prompt = buildSystemPrompt([], "");
+    });
+
+    it("contains origin-to-flavor mapping for Ethiopia", () => {
+      expect(prompt).toContain("Ethiopia");
+    });
+
+    it("contains origin-to-flavor mapping for Kenya", () => {
+      expect(prompt).toContain("Kenya");
+    });
+
+    it("contains experiential term mapping for 'approachable'", () => {
+      expect(prompt).toContain("approachable");
+    });
+
+    it("contains processing method signatures (washed, natural)", () => {
+      expect(prompt).toContain("washed");
+      expect(prompt).toContain("natural");
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildExtractionPrompt
+// ---------------------------------------------------------------------------
+
+describe("buildExtractionPrompt", () => {
+  // AC-TST-7: banned search vocabulary in acknowledgment rules
+  describe("banned search vocabulary (AC-TST-7)", () => {
+    let prompt: string;
+
+    beforeAll(() => {
+      prompt = buildExtractionPrompt("test query");
+    });
+
+    it("bans 'nothing matching' in acknowledgment rules", () => {
+      expect(prompt).toContain("nothing matching");
+    });
+
+    it("bans \"I can't think of\" in acknowledgment rules", () => {
+      expect(prompt).toContain("I can't think of");
+    });
+
+    it("bans \"I'm not sure\" in acknowledgment rules", () => {
+      expect(prompt).toContain("I'm not sure");
+    });
+
+    it("bans 'I don\\'t have' in acknowledgment rules", () => {
+      expect(prompt).toContain("I don't have");
+    });
+  });
+
+  // AC-TST-8: merch equipment examples
+  describe("merch equipment examples (AC-TST-8)", () => {
+    let prompt: string;
+
+    beforeAll(() => {
+      prompt = buildExtractionPrompt("do you have a pour over coffee maker?");
+    });
+
+    it("productType merch description includes pour-over drippers", () => {
+      expect(prompt.toLowerCase()).toContain("pour-over");
+    });
+
+    it("productType merch description includes brewing gear", () => {
+      expect(prompt.toLowerCase()).toContain("brewing gear");
+    });
+
+    it("productType merch description includes Aeropress", () => {
+      expect(prompt.toLowerCase()).toContain("aeropress");
+    });
+
+    it("productType merch description includes grinders", () => {
+      expect(prompt.toLowerCase()).toContain("grinder");
+    });
+  });
+
+  // Page context injection
+  describe("page context injection", () => {
+    it("includes page context note when provided", () => {
+      const prompt = buildExtractionPrompt("how is this?", "Origami Air Dripper");
+      expect(prompt).toContain("Origami Air Dripper");
+    });
+
+    it("omits page context note when not provided", () => {
+      const prompt = buildExtractionPrompt("how is this?");
+      expect(prompt).not.toContain("Page context:");
     });
   });
 });

@@ -40,11 +40,12 @@ If on a feature branch with uncommitted or committed changes:
 
 If on main branch with no uncommitted changes:
 
-1. **Verify** package.json matches the version to tag
-2. If not, create a quick PR to sync package.json
-3. **Create git tag** pointing to current HEAD
-4. **Push tag** to origin
-5. Optionally **create GitHub Release** (if `--github-release` specified)
+1. **Update `docs/ROADMAP.md`** — set "Now" to the new version + one-line summary, move shipped features from Next/Backlog to Shipped table. If changes needed, create a docs-only PR (`git commit --no-verify -m "docs: update ROADMAP for vX.Y.Z"`) and merge it before tagging
+2. **Verify** package.json matches the version to tag
+3. If not, create a quick PR to sync package.json
+4. **Create git tag** pointing to current HEAD
+5. **Push tag** to origin
+6. Optionally **create GitHub Release** (if `--github-release` specified)
 
 ### Scenario C: Docs-Only Changes (No Version Needed)
 
@@ -86,8 +87,9 @@ Before creating the PR, ensure:
 
 1. [ ] CHANGELOG.md updated with new version section
 2. [ ] package.json version updated to match
-3. [ ] Changes committed with conventional commit message
-4. [ ] Branch pushed to origin
+3. [ ] `docs/ROADMAP.md` updated — "Now" section reflects current version, shipped features moved to Shipped table, Next section reflects actual upcoming work
+4. [ ] Changes committed with conventional commit message
+5. [ ] Branch pushed to origin
 
 ### Step 4: Watch, Merge, and Tag (continuation of Scenario A)
 

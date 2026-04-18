@@ -128,6 +128,8 @@ export default function SiteHeader({
   const pathname = usePathname();
   const togglePanel = useChatPanelStore((s) => s.toggle);
   const isPanelOpen = useChatPanelStore((s) => s.isOpen);
+  const COUNTER_HIDDEN_ROUTES = ["/account", "/orders", "/subscriptions"];
+  const isCounterHidden = COUNTER_HIDDEN_ROUTES.some((r) => pathname.startsWith(r));
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
@@ -273,7 +275,7 @@ export default function SiteHeader({
                           </span>
                         </Link>
                       </SheetClose>
-                      {aiConfigured ? (
+                      {aiConfigured && !isCounterHidden ? (
                         <SheetClose asChild>
                           <button
                             onClick={togglePanel}
@@ -548,7 +550,7 @@ export default function SiteHeader({
           {isClient ? (
             <>
               {/* Search - desktop only: SmartSearch when AI configured, keyword search otherwise */}
-              {aiConfigured ? (
+              {aiConfigured && !isCounterHidden ? (
                 <Button
                   variant="ghost"
                   size="icon"
