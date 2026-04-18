@@ -12,34 +12,57 @@ _Patch release — plan detail quota label fix + plans page ACs spec closure. Cl
 
 ---
 
-## Next — Iter 4: Conversation Context & Domain Intelligence
+## Next — Iter 6: Counter Quality & Architecture
 
-> **Goal:** Make Counter conversationally aware and coffee-domain-smart. Each query builds on the last; the AI understands "approachable" and "gift for mom" as concrete product attributes.
+> **Goal:** Fix the P0 quality bugs found in iter-5 spot-check. Close the gap between "tests pass" and "Counter actually works." Lay the extraction architecture foundation for the scoring harness.
+>
+> **Bug source:** `docs/features/smart-search-ux/iter-6/BUGS.md`
 
-| # | Item | Notes |
-|---|------|-------|
-| 4a | Lazy voice surface init | GET generates + caches surfaces on first Counter open; no TS fallback flash |
-| 4b | Conversation history | Pass prior turns to AI extraction — follow-up queries narrow context |
-| 4c | Context-aware greeting + placeholder | Greeting updates on page nav; placeholder adapts to product type (coffee vs merch) |
-| 4d | Pre-validate follow-up chips | Filter chips that would return zero results before rendering |
-| 4e | Coffee domain knowledge | Roast/origin/brew/experiential mappings in system prompt |
-| 4f | Admin two-part textarea | Voice answer + AI-generated preview per Q&A block |
-| 4g | pgvector semantic search | Per-store toggle; embeddings on product save; vector + keyword fallback |
+| # | Item | Bug |
+|---|------|-----|
+| 6a | Merch search — `productKeywords` extraction + keyword-based Prisma query | BUG-1, GAP-10 |
+| 6b | Compare/recommend intent → `products: []`, AI reasons instead of listing | OBS-4 |
+| 6c | Grounded truth — post-query acknowledgment constrained to actual results | BUG-2 |
+| 6d | Extraction prompt examples neutralized — remove verbatim example phrases | OBS-5 |
+| 6e | Prompt hash invalidation — auto-regen surfaces on prompt change | OBS-6 |
+| 6f | Origin extraction shape contract — single country → string, multi → array | OBS-11 |
+| 6g | Counter QA scoring harness — composite score, fixture dataset, run history | GAP-9 |
+| 6h | Chip progressive filtering — client-side result narrowing | BUG-3 |
+| 6i | `route.ts` SRP refactor + Zod `FiltersExtracted` schema | OBS-7, OBS-8 (separate PR) |
 
-**Spec:** [`docs/features/smart-search-ux/iter-4-conversation-context/plan.md`](features/smart-search-ux/iter-4-conversation-context/plan.md)
+**Spec:** [`docs/features/smart-search-ux/iter-6/plan.md`](features/smart-search-ux/iter-6/plan.md)
 
 ---
 
-## Backlog — Prioritized
+## Phase B — Counter Intelligence Foundation
+
+> **Goal:** Make the Counter model-agnostic and self-improvable. Establish the infrastructure that survives model generations: a ground truth dataset, a scoring harness, and a coffee knowledge layer that lives in the DB — not in prompt text.
+>
+> **Architecture:** Eval-driven prompt optimization with benchmark-gated deployment (Karpathy loop pattern adapted for NL-to-filter). A single composite score (0.0–1.0) gates every Counter change. New model version → re-run harness → score tells you if calibration is needed before going live.
+>
+> **Spec:** `docs/features/counter-intelligence/` (to be created)
+
+| # | Item | Notes |
+|---|------|-------|
+| B1 | Ground truth fixture dataset | 50+ scored fixtures in DB: `{ query, language, expected_intent, expected_products, expected_ranking, acknowledgment_rules }` — versioned, model-agnostic |
+| B2 | Composite scoring harness | `scripts/counter-qa-score.ts` — fires fixtures, scores deterministically (intent, product, cadence) + LLM-as-judge for acknowledgment only, logs `{model_id, run_at, composite_score, breakdown}` per run |
+| B3 | Benchmark gate | Counter change must score ≥ previous run before shipping. Calibration loop: modify → run → score → keep/discard → repeat |
+| B4 | Coffee knowledge basement → DB | Extract domain facts (origin→flavor, processing→cup character, varietal signatures) from hardcoded prompt text into `coffee_knowledge` table. Versionable, roaster-overridable, no deploy needed to update |
+| B5 | Multi-language fixture set | Language-tagged fixtures (`en`, `es`, `fr`) in ground truth dataset. System prompt instruction to respond in user's detected language. Score language-specific performance separately |
+| B6 | Model benchmark registry | Track composite scores per model version over time. `{model_id, run_at, score}` history makes model upgrades empirical — not guesswork |
+
+---
+
+## Backlog — Personalization
 
 | Priority | Feature | Spec / Notes |
 |----------|---------|--------------|
-| P1 | Phase B1 — User context aggregation | `getUserPurchaseHistory`, `getUserRecentViews`, `getUserSearchHistory` |
-| P2 | Phase B2 — Personalized ranking | Inject user context into Counter prompt for authed users |
-| P3 | Phase B3 — "Recommended For You" carousel | Authenticated; falls back to trending for anon |
-| P4 | Reviews Tier 2 — AI Roast Master | `docs/internal/product-reviews-tier2.md` — depends on Phase B data |
-| P5 | Phase B4 — Reviews + search integration | Utility scores in agentic results (BLOCKED on Reviews Tier 2) |
-| P6 | Counter — service tier (platform premium) | Extend Counter beyond product discovery to service queries: order lookup, reorder from history, return initiation. Requires order data access + auth context. Counter redirects these in-character until this ships. |
+| P1 | Phase C1 — User context aggregation | `getUserPurchaseHistory`, `getUserRecentViews`, `getUserSearchHistory` |
+| P2 | Phase C2 — Personalized ranking | Inject user context into Counter prompt for authed users |
+| P3 | Phase C3 — "Recommended For You" carousel | Authenticated; falls back to trending for anon |
+| P4 | Reviews Tier 2 — AI Roast Master | `docs/internal/product-reviews-tier2.md` — depends on Phase C data |
+| P5 | Phase C4 — Reviews + search integration | Utility scores in agentic results (BLOCKED on Reviews Tier 2) |
+| P6 | Counter — service tier (platform premium) | Extend Counter beyond product discovery to service queries: order lookup, reorder from history, return initiation. Requires order data access + auth context. |
 
 ---
 
