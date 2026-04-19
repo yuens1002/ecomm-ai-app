@@ -220,7 +220,14 @@ export async function GET(request: NextRequest) {
           delete whereClause.OR;
           delete whereClause.id;
           ftsOrderedIds = [];
-          if (query) {
+          const keywords = agenticData.filtersExtracted.productKeywords ?? [];
+          if (keywords.length > 0) {
+            whereClause.OR = keywords.flatMap((kw) => [
+              { name: { contains: kw, mode: "insensitive" as const } },
+              { description: { contains: kw, mode: "insensitive" as const } },
+            ]);
+          } else if (query) {
+            // Fallback to raw query if AI didn't extract keywords
             whereClause.OR = [
               { name: { contains: query, mode: "insensitive" as const } },
               { description: { contains: query, mode: "insensitive" as const } },
