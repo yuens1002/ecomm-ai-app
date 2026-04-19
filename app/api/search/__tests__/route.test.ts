@@ -1,7 +1,8 @@
 /** @jest-environment node */
 
 import { NextRequest } from "next/server";
-import { GET, isNaturalLanguageQuery, tokenizeNLQuery } from "../route";
+import { GET } from "../route";
+import { isNaturalLanguageQuery, tokenizeNLQuery } from "@/lib/ai/extraction";
 
 const productFindManyMock = jest.fn();
 const productCountMock = jest.fn();

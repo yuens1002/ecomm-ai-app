@@ -333,7 +333,7 @@
       "notes": "All 46 ACs verified. 14 TST (1261 tests, 0 failures) + 7 FN (code review) + 3 REG (precheck clean, tests, code review) + 8 UI (screenshots + code review confirmed) + 10 UI DEFERRED (interactive AI queries, mechanisms confirmed by code review). 1 iteration: AC-FN-7 chip pre-validation implemented + AC-UI-1 clear-on-close fix. QC column filled 2026-04-15."
     },
     "feat/counter-iter6": {
-      "status": "planning",
+      "status": "planned",
       "acs_passed": 0,
       "acs_total": 12,
       "tasks": [],

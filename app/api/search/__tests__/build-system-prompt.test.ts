@@ -33,7 +33,8 @@ jest.mock("@/lib/data", () => ({
   getPublicSiteSettings: jest.fn(),
 }));
 
-import { buildSystemPrompt, buildExtractionPrompt } from "../route";
+import { buildSystemPrompt } from "@/lib/ai/prompts";
+import { buildExtractionPrompt } from "@/lib/ai/extraction";
 import { VOICE_SET_A } from "./fixtures/voice-set-a";
 import { VOICE_SET_B } from "./fixtures/voice-set-b";
 
