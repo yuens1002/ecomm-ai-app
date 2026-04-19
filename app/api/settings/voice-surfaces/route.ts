@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_VOICE_SURFACES } from "@/lib/ai/voice-surfaces";
 import { DEFAULT_VOICE_EXAMPLES } from "@/lib/ai/voice-examples";
-import { generateVoiceSurfaces } from "@/lib/ai/voice-surfaces.server";
+import { generateVoiceSurfaces, SURFACE_PROMPT_HASH } from "@/lib/ai/voice-surfaces.server";
 import { isAIConfigured } from "@/lib/ai-client";
 
 /**
@@ -14,16 +14,23 @@ import { isAIConfigured } from "@/lib/ai-client";
  * generates surfaces from stored voice examples (or defaults) and caches the result.
  * Every subsequent open returns the cached value — no AI call per page load.
  * Cache is busted (deleted) by PUT /api/admin/settings/ai-search when examples change.
+ *
+ * Prompt hash invalidation: if the generation prompt template changed since the last
+ * surface generation (deploy-time code change), cached surfaces are auto-regenerated.
  */
 export async function GET() {
   try {
-    const [surfacesSetting, examplesSetting] = await Promise.all([
+    const [surfacesSetting, examplesSetting, hashSetting] = await Promise.all([
       prisma.siteSettings.findUnique({ where: { key: "ai_voice_surfaces" } }),
       prisma.siteSettings.findUnique({ where: { key: "ai_voice_examples" } }),
+      prisma.siteSettings.findUnique({ where: { key: "ai_voice_surface_prompt_hash" } }),
     ]);
 
-    // Cached path — return stored surfaces without an AI call
-    if (surfacesSetting?.value) {
+    const storedHash = hashSetting?.value ?? null;
+    const hashMismatch = storedHash !== SURFACE_PROMPT_HASH;
+
+    // Cached path — return stored surfaces if prompt hash matches
+    if (surfacesSetting?.value && !hashMismatch) {
       try {
         const surfaces = JSON.parse(surfacesSetting.value) as Record<string, string>;
         return NextResponse.json(surfaces);
@@ -32,7 +39,7 @@ export async function GET() {
       }
     }
 
-    // No surfaces cached — lazy init from examples if AI is available
+    // No surfaces cached, or prompt hash changed — (re)generate if AI is available
     if (await isAIConfigured()) {
       let examples = DEFAULT_VOICE_EXAMPLES;
       if (examplesSetting?.value) {
@@ -43,11 +50,18 @@ export async function GET() {
         }
       }
       const surfaces = await generateVoiceSurfaces(examples);
-      await prisma.siteSettings.upsert({
-        where: { key: "ai_voice_surfaces" },
-        update: { value: JSON.stringify(surfaces) },
-        create: { key: "ai_voice_surfaces", value: JSON.stringify(surfaces) },
-      });
+      await Promise.all([
+        prisma.siteSettings.upsert({
+          where: { key: "ai_voice_surfaces" },
+          update: { value: JSON.stringify(surfaces) },
+          create: { key: "ai_voice_surfaces", value: JSON.stringify(surfaces) },
+        }),
+        prisma.siteSettings.upsert({
+          where: { key: "ai_voice_surface_prompt_hash" },
+          update: { value: SURFACE_PROMPT_HASH },
+          create: { key: "ai_voice_surface_prompt_hash", value: SURFACE_PROMPT_HASH },
+        }),
+      ]);
       return NextResponse.json(surfaces);
     }
 
