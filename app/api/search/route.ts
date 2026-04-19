@@ -254,7 +254,7 @@ export async function GET(request: NextRequest) {
     // -------------------------------------------------------------------------
 
     if (agenticData) {
-      if (agenticData.intent === "how_to") {
+      if (agenticData.intent === "how_to" || agenticData.intent === "compare" || agenticData.intent === "recommend") {
         return NextResponse.json({
           products: [], query: searchQuery, count: 0,
           intent: agenticData.intent, filtersExtracted: null,
