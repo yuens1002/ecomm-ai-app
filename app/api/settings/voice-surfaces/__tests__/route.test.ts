@@ -21,8 +21,10 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
+const TEST_PROMPT_HASH = "test-prompt-hash";
 jest.mock("@/lib/ai/voice-surfaces.server", () => ({
   generateVoiceSurfaces: (...args: unknown[]) => generateVoiceSurfacesMock(...args),
+  SURFACE_PROMPT_HASH: TEST_PROMPT_HASH,
 }));
 
 jest.mock("@/lib/ai-client", () => ({
@@ -67,10 +69,11 @@ describe("GET /api/settings/voice-surfaces", () => {
   // AC-TST-2: cached path
   it("returns stored surfaces without calling generateVoiceSurfaces when cache exists", async () => {
     const cached = { ...DEFAULT_VOICE_SURFACES, "greeting.home": "Cached greeting!" };
-    // First findUnique (surfaces key) returns cached; second (examples key) returns null
+    // findUnique calls: surfaces, examples, hash — all via Promise.all
     siteSettingsFindUniqueMock
       .mockResolvedValueOnce({ key: "ai_voice_surfaces", value: JSON.stringify(cached) })
-      .mockResolvedValueOnce(null);
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ key: "ai_voice_surface_prompt_hash", value: TEST_PROMPT_HASH });
 
     const response = await GET();
     const data = await response.json();

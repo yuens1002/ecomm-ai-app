@@ -43,10 +43,10 @@ export type FiltersExtracted = z.infer<typeof FiltersExtractedSchema>;
 
 export const AgenticExtractionSchema = z.object({
   intent: AgenticIntentSchema,
-  filtersExtracted: FiltersExtractedSchema,
-  acknowledgment: z.string(),
-  followUpQuestion: z.string(),
-  followUps: z.array(z.string()),
+  filtersExtracted: FiltersExtractedSchema.default({}),
+  acknowledgment: z.string().default(""),
+  followUpQuestion: z.string().default(""),
+  followUps: z.array(z.string()).default([]),
   recommendedProductName: z.string().optional(),
 });
 export type AgenticExtraction = z.infer<typeof AgenticExtractionSchema>;
