@@ -333,12 +333,12 @@
       "notes": "All 46 ACs verified. 14 TST (1261 tests, 0 failures) + 7 FN (code review) + 3 REG (precheck clean, tests, code review) + 8 UI (screenshots + code review confirmed) + 10 UI DEFERRED (interactive AI queries, mechanisms confirmed by code review). 1 iteration: AC-FN-7 chip pre-validation implemented + AC-UI-1 clear-on-close fix. QC column filled 2026-04-15."
     },
     "feat/counter-iter6": {
-      "status": "implementing",
+      "status": "pending",
       "acs_passed": 0,
       "acs_total": 12,
       "tasks": [],
       "acs_doc": "docs/features/smart-search-ux/iter-6-architecture/acs.md",
-      "notes": "All code extracted. route.ts 401 lines (target ≤400). 1273 tests pass, precheck clean. Ready for verification."
+      "notes": "Implementation complete. route.ts 395 lines (≤400 target). 1273 tests pass, precheck clean. All FN ACs confirmed PASS by QC. UI and REG-3 ACs require manual browser verification."
     }
   }
 }
