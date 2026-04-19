@@ -91,6 +91,8 @@ function PanelContent() {
     loadSurfaces,
     sessionGreeted,
     setSessionGreeted,
+    setAllProducts,
+    filterByChip,
   } = useChatPanelStore();
   const pathname = usePathname();
   const [input, setInput] = useState("");
@@ -229,6 +231,9 @@ function PanelContent() {
       const products = data.aiFailed ? [] : (data.products ?? []).map(mapProduct);
       const hasProducts = products.length > 0;
 
+      // Store full result set for client-side chip filtering
+      if (hasProducts) setAllProducts(products);
+
       // Determine response content — never go silent. Uses voice surfaces
       // (owner's voice) for recovery messages.
       let content = data.acknowledgment || "";
@@ -290,7 +295,7 @@ function PanelContent() {
             <MessageBubble
               key={msg.id}
               msg={msg}
-              onChipClick={(chip) => void sendQuery(chip)}
+              onChipClick={filterByChip}
             />
           ))}
           <div ref={messagesEndRef} />
