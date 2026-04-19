@@ -339,6 +339,14 @@
       "tasks": [],
       "acs_doc": "docs/features/smart-search-ux/iter-6-architecture/acs.md",
       "notes": "12/12 ACs verified. 7 FN (code review, all PASS) + 3 TST (1273 tests, 0 failures) + 2 UI (browser: homepage fruity query → acknowledgment+products+cadence correct; product page → context-aware greeting fires) + 3 REG (precheck clean, tests pass, no behavioral regression). Route.ts 395 lines, all orchestration. 0 iterations needed."
+    },
+    "feat/counter-iter7": {
+      "status": "planned",
+      "acs_passed": 0,
+      "acs_total": 24,
+      "tasks": [],
+      "acs_doc": "docs/features/smart-search-ux/iter-7-contracts/acs.md",
+      "notes": "Plan approved. 24 ACs: 6 UI, 13 FN, 8 TST, 5 REG. Scope: Zod schema, merch fix, compare/recommend, prompt hash, chip filter, example neutralization + vague-query rule."
     }
   }
 }

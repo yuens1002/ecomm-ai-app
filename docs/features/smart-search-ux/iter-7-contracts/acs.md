@@ -2,6 +2,7 @@
 
 **Branch:** `feat/counter-iter7`
 **Commits:** 6
+**ACs:** 24 (6 UI, 13 FN, 8 TST, 5 REG)
 **Iterations:** 0
 
 ---
@@ -27,6 +28,7 @@
 | AC-UI-3 | Comparison query — no product cards | Interactive: ask "which is better for a beginner, Ethiopian or Colombian?" → screenshot | No product cards rendered; acknowledgment contains AI's reasoning | | | |
 | AC-UI-4 | Chip filter — narrows without full reload | Interactive: submit "something fruity" → wait for results → click a follow-up chip → screenshot | Result set narrows (count changes or cards change); no visible loading spinner from new API call | | | |
 | AC-UI-5 | Counter response after surface regen — fresh copy | Interactive: admin → AI Settings → change a Q&A → save → open Counter → screenshot | New greeting reflects updated Q&A; no "welcome in" or stale phrasing visible | | | |
+| AC-UI-6 | Vague query results are diverse | Interactive: Counter open, ask "what's good?" → screenshot | Results contain products from at least 2 different roast levels; not all one category | | | |
 
 ## Functional Acceptance Criteria
 
@@ -39,10 +41,12 @@
 | AC-FN-5 | `extractAgenticFilters` validates output with `FiltersExtractedSchema` | Code review: `lib/ai/extraction.ts` | Return value goes through `.safeParse()` or `.parse()`; malformed AI output returns null rather than silently passing invalid data | | | |
 | AC-FN-6 | `compare` and `recommend` intent → `products: []` in route response | Code review: `app/api/search/route.ts` | When `filtersExtracted.intent === "compare" \|\| "recommend"`, route skips Prisma query and returns `products: []` with `acknowledgment` | | | |
 | AC-FN-7 | `buildExtractionPrompt()` generates JSON spec from Zod schema | Code review: `lib/ai/extraction.ts` | JSON schema description in prompt is derived from (or consistent with) the Zod schema; no hardcoded duplicate spec | | | |
-| AC-FN-8 | Prompt hash stored alongside voice surfaces in DB | Code review: `prisma/schema.prisma` + `lib/ai/voice-surfaces.server.ts` | `Store` model has `voiceSurfacePromptHash String?`; hash stored on every surface generation | | | |
-| AC-FN-9 | Surface load compares prompt hash — triggers regen on mismatch | Code review: `lib/ai/voice-surfaces.server.ts` → load path | On `getSurfaces()`, current generation prompt hashed; if hash differs from stored hash, `generateVoiceSurfaces()` called before returning | | | |
+| AC-FN-8 | Prompt hash stored alongside voice surfaces in DB | Code review: `prisma/schema.prisma` + `lib/ai/voice-surfaces.server.ts` | `Store` model has `voiceSurfacePromptHash String?`; `hashPrompt()` from `lib/ai/hash.ts` used to compute hash; stored on every surface generation | | | |
+| AC-FN-9 | Surface load compares prompt hash — triggers regen on mismatch | Code review: `lib/ai/voice-surfaces.server.ts` → load path | On `getSurfaces()`, `hashPrompt()` from `lib/ai/hash.ts` used to hash current generation prompt; if hash differs from stored hash, `generateVoiceSurfaces()` called before returning | | | |
 | AC-FN-10 | Chip click applies client-side filter, no new API call | Code review: `lib/store/chat-panel-store.ts` + chip click handler | Store holds `allProducts: Product[]` from last search; chip click dispatches `filterProducts(chipLabel)` against `allProducts`; no `fetch` triggered | | | |
 | AC-FN-11 | Extraction prompt examples are structure-only (no phrasing, no named coffees) | Code review: `lib/ai/extraction.ts` → example Q&A section | No quoted flavor phrases, no shop names, no complete acknowledgment sentences with sensory language; examples show only JSON structure | | | |
+| AC-FN-12 | Extraction prompt vague-query rule — no narrow filters for open queries | Code review: `lib/ai/extraction.ts` → `buildExtractionPrompt()` rules section | Rule present: when query has no specific filter signals (roast, origin, flavor, brew, price), emit `sortBy: "top_rated"` and omit `roastLevel`/`flavorProfile`; no "beginner"/"smooth" inference from vague queries | | | |
+| AC-FN-13 | `hashPrompt()` reusable utility in `lib/ai/` | Code review: `lib/ai/hash.ts` | `hashPrompt(input: string): string` exported; uses `crypto.createHash("sha256")`; `voice-surfaces.server.ts` imports it (not inline crypto) | | | |
 
 ## Test Coverage Acceptance Criteria
 
@@ -55,6 +59,7 @@
 | AC-TST-5 | Origin shape — multi-element array passes | Test run: `npm run test:ci` | `FiltersExtractedSchema.parse({ origin: ["Guatemala", "Costa Rica"] })` succeeds | | | |
 | AC-TST-6 | Prompt hash invalidation — stale hash triggers regen | Test run: `npm run test:ci` | Unit test: mock DB returns surfaces with old hash; `getSurfaces()` detects mismatch → calls `generateVoiceSurfaces()` | | | |
 | AC-TST-7 | Extraction prompt contains no verbatim flavor phrases | Test run: `npm run test:ci` | `buildExtractionPrompt()` output does not contain `"approachable"`, `"we have a great selection"`, or any complete acknowledgment sentence in example section | | | |
+| AC-TST-8 | Vague query extraction — no narrow filters + top_rated | Test run: `npm run test:ci` | Mocked extraction for "what's good?" returns no `roastLevel`, no `flavorProfile`, `sortBy: "top_rated"` | | | |
 
 ## Regression Acceptance Criteria
 
