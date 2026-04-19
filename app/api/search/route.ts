@@ -101,7 +101,6 @@ export async function GET(request: NextRequest) {
         count: 0,
         intent: null,
         filtersExtracted: null,
-        explanation: null,
         acknowledgment: salutation ?? DEFAULT_VOICE_SURFACES.salutation,
         followUpQuestion: null,
         followUps: [],
@@ -212,6 +211,8 @@ export async function GET(request: NextRequest) {
           }
         }
 
+        // productType "merch" removes coffee-specific filters; "any" or unspecified falls through as coffee.
+        // See FiltersExtracted.productType in types/search.ts — iter-7 will add Zod validation here.
         if (agenticData.filtersExtracted.productType === "merch") {
           delete whereClause.type;
           delete whereClause.categories;
@@ -250,7 +251,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
           products: [], query: searchQuery, count: 0,
           intent: agenticData.intent, filtersExtracted: null,
-          explanation: agenticData.explanation || null, acknowledgment: agenticData.acknowledgment || null,
+          acknowledgment: agenticData.acknowledgment || null,
           followUpQuestion: agenticData.followUpQuestion || null, followUps: agenticData.followUps ?? [],
           recommendedProductName: null, aiFailed: false, context: { sessionId, turnCount },
         });
@@ -261,7 +262,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
           products: [], query: searchQuery, count: 0,
           intent: agenticData.intent, filtersExtracted: null,
-          explanation: redirect, acknowledgment: redirect,
+          acknowledgment: redirect,
           followUpQuestion: null, followUps: [], recommendedProductName: null,
           aiFailed: false, context: { sessionId, turnCount },
         });
@@ -380,7 +381,6 @@ export async function GET(request: NextRequest) {
       count: products.length,
       intent: agenticData?.intent ?? null,
       filtersExtracted: agenticData?.filtersExtracted ?? null,
-      explanation: agenticData?.explanation ?? null,
       acknowledgment: agenticData?.acknowledgment ?? null,
       followUpQuestion: agenticData?.followUpQuestion ?? null,
       followUps: validatedFollowUps,

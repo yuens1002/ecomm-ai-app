@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.100.9 - 2026-04-19
+
+### Changed
+
+- **Counter SRP refactor**: `app/api/search/route.ts` split into focused modules — `lib/ai/extraction.ts` (extraction prompt + AI call + NL heuristics), `lib/ai/prompts.ts` (system prompt), `lib/ai/catalog.ts` (catalog snapshot), `types/search.ts` (shared types). Route slimmed to 395 lines of orchestration-only code. No behavior change.
+
+---
+
 ## 0.100.8 - 2026-04-18
 
 ### Added

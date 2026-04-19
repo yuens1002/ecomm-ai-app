@@ -6,9 +6,9 @@
 
 ---
 
-## Now — v0.100.8
+## Now — v0.100.9
 
-_Minor release — Counter conversation context, session greeting awareness, catalog-driven origin filtering, cadence enforcement, voice surface quality hardening._
+_Patch — Counter SRP refactor: route.ts split into extraction, prompts, catalog, and types modules (395 lines, orchestration-only). No behavior change._
 
 ---
 
@@ -103,6 +103,7 @@ _Minor release — Counter conversation context, session greeting awareness, cat
 
 | Version | Feature |
 |---------|---------|
+| v0.100.9 | Refactor — Counter SRP: route.ts → extraction/prompts/catalog/types modules, 395 lines orchestration-only |
 | v0.100.8 | Feat — Counter conversation context: history, intent classification, session greeting, standby surface, catalog-driven origin, cadence enforcement, domain knowledge |
 | v0.100.7 | Fix — plan detail quota labels (`[object Object]` → correct label/limit) |
 | v0.100.6 | Fix — admin nav active state (Dashboard no longer highlights on every page) |

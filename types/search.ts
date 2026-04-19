@@ -4,7 +4,9 @@ export interface FiltersExtracted {
   brewMethod?: string;
   roastLevel?: string;
   flavorProfile?: string[];
-  /** Single country ("Ethiopia") or array for regional queries (["Guatemala", "Costa Rica"]) */
+  /** Single country ("Ethiopia") or array for regional queries (["Guatemala", "Costa Rica"]).
+   *  Runtime normalization in route handler (lines ~167-170) converts single strings to {has: ...}
+   *  and arrays to {hasSome: ...}. iter-7 Zod schema will enforce min-2 arrays. */
   origin?: string | string[];
   isOrganic?: boolean;
   processing?: string;
@@ -12,15 +14,15 @@ export interface FiltersExtracted {
   priceMaxCents?: number;
   priceMinCents?: number;
   sortBy?: "newest" | "price_asc" | "price_desc" | "top_rated";
-  /** "coffee" uses all flavor/roast filters; "merch" uses name/description only; "any" is unspecified */
+  /** "coffee" uses all flavor/roast filters; "merch" uses name/description only;
+   *  "any" means unspecified — treated as coffee in query construction (see route handler whereClause).
+   *  iter-7 will replace this with a Zod schema enforcing the union shape. */
   productType?: "coffee" | "merch" | "any";
 }
 
 export interface AgenticExtraction {
   intent: AgenticIntent;
   filtersExtracted: FiltersExtracted;
-  /** @deprecated Use acknowledgment instead — kept for backwards compat in response */
-  explanation: string;
   acknowledgment: string;
   followUpQuestion: string;
   followUps: string[];
@@ -45,7 +47,6 @@ export interface SearchResponse {
   count: number;
   intent: AgenticIntent | null;
   filtersExtracted: FiltersExtracted | null;
-  explanation: string | null;
   acknowledgment: string | null;
   followUpQuestion: string | null;
   followUps: string[];

@@ -274,8 +274,6 @@ export async function extractAgenticFilters(
 
     const acknowledgment = typeof raw.acknowledgment === "string" ? raw.acknowledgment : "";
     const followUpQuestion = typeof raw.followUpQuestion === "string" ? raw.followUpQuestion : "";
-    const explanation =
-      acknowledgment || (typeof raw.explanation === "string" ? raw.explanation : "");
     const followUps = Array.isArray(raw.followUps)
       ? raw.followUps.filter((v) => typeof v === "string")
       : [];
@@ -287,7 +285,6 @@ export async function extractAgenticFilters(
     return {
       intent,
       filtersExtracted,
-      explanation,
       acknowledgment,
       followUpQuestion,
       followUps,
