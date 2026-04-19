@@ -6,31 +6,64 @@
 
 ---
 
-## Now — v0.100.8
+## Now — v0.100.9
 
-_Minor release — Counter conversation context, session greeting awareness, catalog-driven origin filtering, cadence enforcement, voice surface quality hardening._
+_Patch — Counter SRP refactor: route.ts split into extraction, prompts, catalog, and types modules (395 lines, orchestration-only). No behavior change._
 
 ---
 
-## Next — Iter 6: Counter Quality & Architecture
+## Next — Iter 6: Counter Architecture — Route SRP Refactor
 
-> **Goal:** Fix the P0 quality bugs found in iter-5 spot-check. Close the gap between "tests pass" and "Counter actually works." Lay the extraction architecture foundation for the scoring harness.
+> **Goal:** Split `route.ts` (1000+ lines, 8+ responsibilities) into focused modules before behavior fixes land. Pure refactor — no behavior change. Foundation for iters 7 and 8.
 >
-> **Bug source:** `docs/features/smart-search-ux/iter-6/BUGS.md`
+> **Source:** `docs/features/smart-search-ux/iter-6-architecture/BUGS.md` (OBS-7, OBS-8 partial)
 
 | # | Item | Bug |
 |---|------|-----|
-| 6a | Merch search — `productKeywords` extraction + keyword-based Prisma query | BUG-1, GAP-10 |
-| 6b | Compare/recommend intent → `products: []`, AI reasons instead of listing | OBS-4 |
-| 6c | Grounded truth — post-query acknowledgment constrained to actual results | BUG-2 |
-| 6d | Extraction prompt examples neutralized — remove verbatim example phrases | OBS-5 |
-| 6e | Prompt hash invalidation — auto-regen surfaces on prompt change | OBS-6 |
-| 6f | Origin extraction shape contract — single country → string, multi → array | OBS-11 |
-| 6g | Counter QA scoring harness — composite score, fixture dataset, run history | GAP-9 |
-| 6h | Chip progressive filtering — client-side result narrowing | BUG-3 |
-| 6i | `route.ts` SRP refactor + Zod `FiltersExtracted` schema | OBS-7, OBS-8 (separate PR) |
+| 6a | Extract `FiltersExtracted` + `SearchResponse` types to `types/search.ts` | OBS-7 |
+| 6b | Extract `buildCatalogSnapshot` to `lib/ai/catalog.ts` | OBS-7 |
+| 6c | Extract `buildExtractionPrompt` + `extractAgenticFilters` to `lib/ai/extraction.ts` | OBS-7 |
+| 6d | Extract `buildSystemPrompt` to `lib/ai/prompts.ts` | OBS-7 |
+| 6e | Slim `route.ts` to orchestration-only (≤250 lines) | OBS-7 |
 
-**Spec:** [`docs/features/smart-search-ux/iter-6/plan.md`](features/smart-search-ux/iter-6/plan.md)
+**Spec:** [`docs/features/smart-search-ux/iter-6-architecture/plan.md`](features/smart-search-ux/iter-6-architecture/plan.md) · [`acs.md`](features/smart-search-ux/iter-6-architecture/acs.md)
+
+---
+
+## Next — Iter 7: Counter Foundation — Contracts, Schema & Behavior Correctness
+
+> **Goal:** Fix the P0/P1 behavioral gaps using the clean module structure from iter-6. Zod as single source of truth. Merch works. Compare/recommend intent correct. Surfaces auto-invalidate on prompt change. Chip filter is client-side.
+>
+> **Source:** `docs/features/smart-search-ux/iter-6-architecture/BUGS.md` (BUG-1, OBS-4, OBS-5, OBS-6, OBS-8, OBS-11, BUG-3, GAP-10)
+
+| # | Item | Bug |
+|---|------|-----|
+| 7a | Zod `FiltersExtractedSchema` — single source of truth; `origin` shape contract | OBS-8, OBS-11 |
+| 7b | Merch `productKeywords` extraction + keyword-based Prisma query | BUG-1, GAP-10 |
+| 7c | Compare/recommend intent → `products: []`, AI reasons instead of listing | OBS-4 |
+| 7d | Prompt hash invalidation — auto-regen surfaces on prompt change | OBS-6 |
+| 7e | Chip progressive filtering — client-side result narrowing | BUG-3 |
+| 7f | Extraction prompt examples neutralized — structure only, no phrasing | OBS-5 |
+
+**Spec:** [`docs/features/smart-search-ux/iter-7-contracts/plan.md`](features/smart-search-ux/iter-7-contracts/plan.md) · [`acs.md`](features/smart-search-ux/iter-7-contracts/acs.md)
+
+---
+
+## Next — Iter 8: Counter Intelligence — Evaluation Harness & Benchmark
+
+> **Goal:** Build the QA scoring harness that closes the gap between "tests pass" and "Counter actually works." Composite score (0.0–1.0) across deterministic, structural, and LLM-as-judge tiers. 20 fixtures. Benchmark gate blocks shipping on score regression.
+>
+> **Source:** `docs/features/smart-search-ux/iter-6-architecture/BUGS.md` (GAP-9)
+
+| # | Item | Bug |
+|---|------|-----|
+| 8a | `scripts/counter-qa.ts` — runner + fixture format + scorer scaffold | GAP-9 |
+| 8b | 20-fixture dataset across all intent types | GAP-9 |
+| 8c | Tier 1 (deterministic) + Tier 2 (structural) scoring — 85% of composite | GAP-9 |
+| 8d | Tier 3 (LLM-as-judge, two-model) scoring — 15% of composite | GAP-9 |
+| 8e | Run history log + benchmark gate (exit 1 on score regression) | GAP-9 |
+
+**Spec:** [`docs/features/smart-search-ux/iter-8-harness/plan.md`](features/smart-search-ux/iter-8-harness/plan.md) · [`acs.md`](features/smart-search-ux/iter-8-harness/acs.md)
 
 ---
 
@@ -70,6 +103,7 @@ _Minor release — Counter conversation context, session greeting awareness, cat
 
 | Version | Feature |
 |---------|---------|
+| v0.100.9 | Refactor — Counter SRP: route.ts → extraction/prompts/catalog/types modules, 395 lines orchestration-only |
 | v0.100.8 | Feat — Counter conversation context: history, intent classification, session greeting, standby surface, catalog-driven origin, cadence enforcement, domain knowledge |
 | v0.100.7 | Fix — plan detail quota labels (`[object Object]` → correct label/limit) |
 | v0.100.6 | Fix — admin nav active state (Dashboard no longer highlights on every page) |

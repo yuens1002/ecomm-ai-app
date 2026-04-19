@@ -50,7 +50,7 @@ interface SearchResponse {
   count: number;
   intent: string | null;
   filtersExtracted: Record<string, unknown> | null;
-  explanation: string | null;
+  acknowledgment: string | null;
   followUps: string[];
   context: { sessionId: string; turnCount: number };
 }
@@ -240,10 +240,10 @@ export default function SearchResults({ aiConfigured = false }: { aiConfigured?:
             )}
           </div>
 
-          {/* Agentic explanation */}
-          {results.explanation && (
+          {/* Agentic acknowledgment */}
+          {results.acknowledgment && (
             <p className="text-sm text-muted-foreground italic">
-              {results.explanation}
+              {results.acknowledgment}
             </p>
           )}
 

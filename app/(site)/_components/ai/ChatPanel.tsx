@@ -39,7 +39,6 @@ interface SearchProduct {
 
 interface SearchResponse {
   products: SearchProduct[];
-  explanation: string | null;
   acknowledgment: string | null;
   followUpQuestion: string | null;
   followUps: string[];
@@ -232,7 +231,7 @@ function PanelContent() {
 
       // Determine response content — never go silent. Uses voice surfaces
       // (owner's voice) for recovery messages.
-      let content = data.acknowledgment || data.explanation || "";
+      let content = data.acknowledgment || "";
       if (!content && data.aiFailed) {
         content = voiceSurfaces?.aiFailed ?? DEFAULT_VOICE_SURFACES.aiFailed;
       } else if (!content && !hasProducts) {

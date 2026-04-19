@@ -1,7 +1,8 @@
 /** @jest-environment node */
 
 import { NextRequest } from "next/server";
-import { GET, isNaturalLanguageQuery, tokenizeNLQuery } from "../route";
+import { GET } from "../route";
+import { isNaturalLanguageQuery, tokenizeNLQuery } from "@/lib/ai/extraction";
 
 const productFindManyMock = jest.fn();
 const productCountMock = jest.fn();
@@ -162,7 +163,7 @@ describe("GET /api/search", () => {
     expect(response.status).toBe(200);
     expect(data.intent).toBeNull();
     expect(data.filtersExtracted).toBeNull();
-    expect(data.explanation).toBeNull();
+    expect(data.acknowledgment).toBeNull();
     expect(data.followUps).toEqual([]);
     expect(data.context).toHaveProperty("sessionId");
     expect(data.context).toHaveProperty("turnCount");
@@ -187,7 +188,7 @@ describe("GET /api/search", () => {
       text: JSON.stringify({
         intent: "product_discovery",
         filtersExtracted: { roastLevel: "light", origin: "Ethiopia" },
-        explanation: "These light Ethiopian coffees match your morning V60 preference.",
+        acknowledgment: "These light Ethiopian coffees match your morning V60 preference.",
         followUps: ["Want single-origin only?", "Prefer fruity or floral?"],
       }),
       finishReason: "stop",
@@ -205,7 +206,7 @@ describe("GET /api/search", () => {
     expect(chatCompletionMock).toHaveBeenCalledTimes(1);
     expect(data.intent).toBe("product_discovery");
     expect(data.filtersExtracted).toEqual({ roastLevel: "light", origin: "Ethiopia" });
-    expect(data.explanation).toContain("Ethiopian");
+    expect(data.acknowledgment).toContain("Ethiopian");
     expect(data.followUps).toHaveLength(2);
   });
 
@@ -221,7 +222,7 @@ describe("GET /api/search", () => {
 
     expect(chatCompletionMock).not.toHaveBeenCalled();
     expect(data.intent).toBeNull();
-    expect(data.explanation).toBeNull();
+    expect(data.acknowledgment).toBeNull();
   });
 
   it("should fall back gracefully when AI call fails", async () => {
@@ -237,7 +238,7 @@ describe("GET /api/search", () => {
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data.explanation).toBeNull();
+    expect(data.acknowledgment).toBeNull();
     expect(data.followUps).toEqual([]);
   });
 });
@@ -745,7 +746,7 @@ describe("GET /api/search — ai=true override", () => {
     text: JSON.stringify({
       intent: "product_discovery",
       filtersExtracted: {},
-      explanation: "Showing all coffees.",
+      acknowledgment: "Showing all coffees.",
       followUps: ["Light roast", "Single origin"],
     }),
     finishReason: "stop",
@@ -790,7 +791,7 @@ describe("GET /api/search — voice persona injection (TST-1)", () => {
       text: JSON.stringify({
         intent: "product_discovery",
         filtersExtracted: {},
-        explanation: "Great picks.",
+        acknowledgment: "Great picks.",
         followUps: [],
       }),
       finishReason: "stop",
@@ -847,7 +848,7 @@ describe("GET /api/search — isOrganic filter (TST-3)", () => {
       text: JSON.stringify({
         intent: "product_discovery",
         filtersExtracted: { isOrganic: true },
-        explanation: "Organic coffees for you.",
+        acknowledgment: "Organic coffees for you.",
         followUps: [],
       }),
       finishReason: "stop",
@@ -882,7 +883,7 @@ describe("GET /api/search — priceMaxCents filter (TST-4)", () => {
       text: JSON.stringify({
         intent: "product_discovery",
         filtersExtracted: { priceMaxCents: 3000 },
-        explanation: "Coffees under $30.",
+        acknowledgment: "Coffees under $30.",
         followUps: [],
       }),
       finishReason: "stop",
@@ -926,7 +927,7 @@ describe("GET /api/search — type=COFFEE lock (BUG-1)", () => {
     text: JSON.stringify({
       intent: "product_discovery",
       filtersExtracted,
-      explanation: "Great picks.",
+      acknowledgment: "Great picks.",
       followUps: [],
     }),
     finishReason: "stop",
@@ -990,7 +991,7 @@ describe("GET /api/search — flavorProfile OR expansion (BUG-2)", () => {
       text: JSON.stringify({
         intent: "product_discovery",
         filtersExtracted: { flavorProfile: ["citrus"] },
-        explanation: "Bright citrus picks.",
+        acknowledgment: "Bright citrus picks.",
         followUps: [],
       }),
       finishReason: "stop",
@@ -1061,7 +1062,7 @@ describe("GET /api/search — OR clause cleared by hard DB filters (BUG-3)", () 
       text: JSON.stringify({
         intent: "product_discovery",
         filtersExtracted: { roastLevel: "light" },
-        explanation: "Light roasts for you.",
+        acknowledgment: "Light roasts for you.",
         followUps: [],
       }),
       finishReason: "stop",
@@ -1084,7 +1085,7 @@ describe("GET /api/search — OR clause cleared by hard DB filters (BUG-3)", () 
       text: JSON.stringify({
         intent: "product_discovery",
         filtersExtracted: { origin: "Ethiopia" },
-        explanation: "Ethiopian beauties.",
+        acknowledgment: "Ethiopian beauties.",
         followUps: [],
       }),
       finishReason: "stop",
@@ -1102,7 +1103,7 @@ describe("GET /api/search — OR clause cleared by hard DB filters (BUG-3)", () 
 });
 
 // ---------------------------------------------------------------------------
-// BUG-4 / BUG-5: Prompt quality — first-person explanation + 1 follow-up cap
+// BUG-4 / BUG-5: Prompt quality — first-person acknowledgment + 1 follow-up cap
 // ---------------------------------------------------------------------------
 
 describe("GET /api/search — prompt quality constraints (BUG-4, BUG-5)", () => {
@@ -1116,7 +1117,7 @@ describe("GET /api/search — prompt quality constraints (BUG-4, BUG-5)", () => 
       text: JSON.stringify({
         intent: "product_discovery",
         filtersExtracted: {},
-        explanation: "These are great picks.",
+        acknowledgment: "These are great picks.",
         followUps: [],
       }),
       finishReason: "stop",
@@ -1125,7 +1126,7 @@ describe("GET /api/search — prompt quality constraints (BUG-4, BUG-5)", () => 
   });
 
   // AC-TST-7
-  it("user prompt contains third-person prohibition for explanation (BUG-4)", async () => {
+  it("user prompt contains third-person prohibition for acknowledgment (BUG-4)", async () => {
     const request = new NextRequest(
       "http://localhost:3000/api/search?q=morning+coffee+with+citrus&ai=true"
     );
