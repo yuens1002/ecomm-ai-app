@@ -240,6 +240,13 @@ export default function SearchResults({ aiConfigured = false }: { aiConfigured?:
             )}
           </div>
 
+          {/* Agentic acknowledgment */}
+          {results.acknowledgment && (
+            <p className="text-sm text-muted-foreground italic">
+              {results.acknowledgment}
+            </p>
+          )}
+
           {/* Follow-up chips */}
           {results.followUps.length > 0 && (
             <div className="flex flex-wrap gap-2">

@@ -2,7 +2,7 @@
 
 **Branch:** `feat/counter-iter7`
 **Base:** `feat/counter-iter6` (after iter-6 merge)
-**Source:** `docs/features/smart-search-ux/iter-6/BUGS.md`
+**Source:** `docs/features/smart-search-ux/iter-6-architecture/BUGS.md`
 **Depends on:** Iter-6 (SRP refactor — modules must exist before behavior fixes land in them)
 
 ---
@@ -67,6 +67,7 @@ Additionally, OBS-5 (verbatim example bleed) had a partial fix in pre-PR patch �
 **File:** `types/search.ts`
 
 Replace `FiltersExtracted` TypeScript interface with:
+
 ```typescript
 export const FiltersExtractedSchema = z.object({
   intent: z.enum(["product_discovery", "how_to", "reorder", "compare", "recommend"]),
@@ -93,11 +94,13 @@ Read `route.ts` (post iter-6 refactor) to confirm all current fields are account
 **File:** `lib/ai/extraction.ts` + `app/api/search/route.ts`
 
 In `buildExtractionPrompt()`, update the merch description to instruct AI to populate `productKeywords`:
-```
+
+```json
 "productKeywords": ["pour over", "dripper", "V60"]  // keywords to search product names/descriptions — required when productType is "merch"
 ```
 
 In `route.ts` merch branch, replace:
+
 ```typescript
 // OLD: uses raw query string
 whereClause.OR = [{ name: { contains: query, mode: "insensitive" } }, ...]
@@ -113,6 +116,7 @@ whereClause.OR = (filtersExtracted.productKeywords ?? []).flatMap(kw => [
 **File:** `app/api/search/route.ts`
 
 After extraction, add:
+
 ```typescript
 if (["compare", "recommend"].includes(filtersExtracted.intent)) {
   return NextResponse.json({
@@ -124,6 +128,7 @@ if (["compare", "recommend"].includes(filtersExtracted.intent)) {
   });
 }
 ```
+
 Skip Prisma query entirely for these intents.
 
 ### Commit 4: Prompt hash
@@ -147,12 +152,14 @@ The chip-to-attribute mapping should be simple and exhaustive for the known chip
 **File:** `lib/ai/extraction.ts`
 
 Replace any example Q&A pair that contains:
+
 - Sensory adjectives ("approachable", "smooth", "mellow", "bright")
 - Named coffees or origins in the answer text
 - Complete acknowledgment sentences
 
 Replace with JSON-structure-only examples:
-```
+
+```text
 User: [example query]
 Extract: { "intent": "product_discovery", "roast": "medium", "productKeywords": [], "acknowledgment": "[voice response here]" }
 ```

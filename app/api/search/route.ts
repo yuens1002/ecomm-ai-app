@@ -104,6 +104,7 @@ export async function GET(request: NextRequest) {
         acknowledgment: salutation ?? DEFAULT_VOICE_SURFACES.salutation,
         followUpQuestion: null,
         followUps: [],
+        recommendedProductName: null,
         aiFailed: false,
         isSalutation: true,
         context: { sessionId, turnCount },

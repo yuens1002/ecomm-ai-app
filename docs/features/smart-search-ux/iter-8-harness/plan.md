@@ -2,7 +2,7 @@
 
 **Branch:** `feat/counter-iter8`
 **Base:** `feat/counter-iter7` (after iter-7 merge)
-**Source:** `docs/features/smart-search-ux/iter-6/BUGS.md` (GAP-9)
+**Source:** `docs/features/smart-search-ux/iter-6-architecture/BUGS.md` (GAP-9)
 **Depends on:** Iter-7 (Zod schema + merch fix must be in place before harness can meaningfully score them)
 
 ---
@@ -130,6 +130,7 @@ Runner fires `GET /api/search?q={query}&ai=true&from={pageFrom}` for each fixtur
 **File:** `scripts/counter-qa.ts` → `scoreFixture()` function
 
 Tier 1 (60%):
+
 - Intent match: `response.intent === fixture.expectedIntent` → 1.0 or 0.0 (hard check)
 - Product type: if `expectedProductType` set, all returned products must match → weighted
 - Acknowledgment non-null: `response.acknowledgment !== null && response.acknowledgment.length > 0`
@@ -137,6 +138,7 @@ Tier 1 (60%):
 - Cadence: `followUps.length === 0` when `products.length <= 3`
 
 Tier 2 (25%):
+
 - Products non-empty check: `products.length > 0` when `expectProducts === true`
 - Products empty check: `products.length === 0` when `expectProducts === false`
 - Merch type check: all products in merch response are equipment/non-coffee items
@@ -146,7 +148,8 @@ Tier 2 (25%):
 **File:** `scripts/counter-qa.ts` → `scoreSemantic()` function
 
 Call 2 fast models (e.g., Gemini Flash + Claude Haiku):
-```
+
+```text
 Prompt: "A customer said: "{query}". The Counter responded with: "{acknowledgment}". 
 Does this response appropriately address what the customer was asking for? 
 Score 1–10. Respond with just the number."

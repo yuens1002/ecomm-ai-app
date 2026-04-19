@@ -16,7 +16,7 @@ _Patch — Counter SRP refactor: route.ts split into extraction, prompts, catalo
 
 > **Goal:** Split `route.ts` (1000+ lines, 8+ responsibilities) into focused modules before behavior fixes land. Pure refactor — no behavior change. Foundation for iters 7 and 8.
 >
-> **Source:** `docs/features/smart-search-ux/iter-6/BUGS.md` (OBS-7, OBS-8 partial)
+> **Source:** `docs/features/smart-search-ux/iter-6-architecture/BUGS.md` (OBS-7, OBS-8 partial)
 
 | # | Item | Bug |
 |---|------|-----|
@@ -34,7 +34,7 @@ _Patch — Counter SRP refactor: route.ts split into extraction, prompts, catalo
 
 > **Goal:** Fix the P0/P1 behavioral gaps using the clean module structure from iter-6. Zod as single source of truth. Merch works. Compare/recommend intent correct. Surfaces auto-invalidate on prompt change. Chip filter is client-side.
 >
-> **Source:** `docs/features/smart-search-ux/iter-6/BUGS.md` (BUG-1, OBS-4, OBS-5, OBS-6, OBS-8, OBS-11, BUG-3, GAP-10)
+> **Source:** `docs/features/smart-search-ux/iter-6-architecture/BUGS.md` (BUG-1, OBS-4, OBS-5, OBS-6, OBS-8, OBS-11, BUG-3, GAP-10)
 
 | # | Item | Bug |
 |---|------|-----|
@@ -53,7 +53,7 @@ _Patch — Counter SRP refactor: route.ts split into extraction, prompts, catalo
 
 > **Goal:** Build the QA scoring harness that closes the gap between "tests pass" and "Counter actually works." Composite score (0.0–1.0) across deterministic, structural, and LLM-as-judge tiers. 20 fixtures. Benchmark gate blocks shipping on score regression.
 >
-> **Source:** `docs/features/smart-search-ux/iter-6/BUGS.md` (GAP-9)
+> **Source:** `docs/features/smart-search-ux/iter-6-architecture/BUGS.md` (GAP-9)
 
 | # | Item | Bug |
 |---|------|-----|

@@ -2,7 +2,7 @@
 
 **Branch:** `feat/counter-iter6`
 **Base:** `main`
-**Source:** `docs/features/smart-search-ux/iter-6/BUGS.md` (OBS-7, OBS-8 partial)
+**Source:** `docs/features/smart-search-ux/iter-6-architecture/BUGS.md` (OBS-7, OBS-8 partial)
 
 ---
 
@@ -14,7 +14,7 @@ This iteration is a **pure refactor** — no behavior change, no new features, n
 
 **Target module structure:**
 
-```
+```text
 lib/ai/
   extraction.ts       — buildExtractionPrompt(), extractAgenticFilters()
   prompts.ts          — buildSystemPrompt()
@@ -68,6 +68,7 @@ app/api/search/
 ### Pre-read required
 
 Before writing any code, read these files to understand current structure:
+
 - `app/api/search/route.ts` (full) — identify all function boundaries and data flow
 - `app/api/search/__tests__/route.test.ts` — understand which imports will need updating
 - `app/api/search/__tests__/build-system-prompt.test.ts` — same
@@ -118,7 +119,7 @@ After commits 1–4, `route.ts` should be reduced to: param parsing, auth/config
 | `app/api/search/__tests__/route.test.ts` | 3, 4 | Import paths updated |
 | `app/api/search/__tests__/build-system-prompt.test.ts` | 4 | Import path updated |
 | `app/api/search/__tests__/integration/counter-cadence.integration.test.ts` | 3 | Import paths updated if any |
-| `docs/features/smart-search-ux/iter-6/plan.md` | 0 | This plan |
+| `docs/features/smart-search-ux/iter-6-architecture/plan.md` | 0 | This plan |
 
 ---
 
