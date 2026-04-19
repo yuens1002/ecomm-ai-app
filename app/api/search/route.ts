@@ -212,8 +212,7 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // productType "merch" removes coffee-specific filters; "any" or unspecified falls through as coffee.
-        // See FiltersExtracted.productType in types/search.ts — iter-7 will add Zod validation here.
+        // productType "merch" removes coffee-specific filters; unspecified falls through as coffee.
         if (agenticData.filtersExtracted.productType === "merch") {
           delete whereClause.type;
           delete whereClause.categories;
