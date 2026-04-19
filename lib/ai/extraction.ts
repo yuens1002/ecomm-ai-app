@@ -300,3 +300,34 @@ export async function extractAgenticFilters(
 }
 
 export { validateFollowUps };
+
+const GREETING_PATTERN = /^(hey|hello|hi|howdy|yo|sup|whats up|hiya|good morning|good afternoon|good evening|greetings)$/i;
+
+export function isSalutation(query: string): boolean {
+  const trimmed = query.trim().toLowerCase().replace(/[^a-z\s]/g, "").trim();
+  return GREETING_PATTERN.test(trimmed);
+}
+
+export function parseConversationHistory(historyParam: string | null): Array<{
+  role: "user" | "assistant";
+  content: string;
+}> {
+  if (!historyParam) return [];
+  try {
+    const parsed = JSON.parse(historyParam) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return (parsed as Array<Record<string, unknown>>)
+      .filter(
+        (h) =>
+          h &&
+          typeof h === "object" &&
+          (h.role === "user" || h.role === "assistant") &&
+          typeof h.content === "string" &&
+          h.content.length > 0
+      )
+      .map((h) => ({ role: h.role as "user" | "assistant", content: h.content as string }))
+      .slice(-10);
+  } catch {
+    return [];
+  }
+}

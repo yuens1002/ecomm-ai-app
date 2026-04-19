@@ -11,6 +11,8 @@ import {
   extractAgenticFilters,
   fullTextSearchIds,
   isNaturalLanguageQuery,
+  isSalutation,
+  parseConversationHistory,
   validateFollowUps,
 } from "@/lib/ai/extraction";
 import type { AgenticExtraction } from "@/types/search";
@@ -30,28 +32,7 @@ export async function GET(request: NextRequest) {
     const parsedTurnCount = parseInt(urlParams.get("turnCount") ?? "0", 10);
     const turnCount = Number.isNaN(parsedTurnCount) ? 0 : parsedTurnCount;
     const pageTitle = urlParams.get("pageTitle") ?? undefined;
-    let conversationHistory: Array<{ role: "user" | "assistant"; content: string }> = [];
-    const historyParam = urlParams.get("history");
-    if (historyParam) {
-      try {
-        const parsed = JSON.parse(historyParam) as unknown;
-        if (Array.isArray(parsed)) {
-          conversationHistory = (parsed as Array<Record<string, unknown>>)
-            .filter(
-              (h) =>
-                h &&
-                typeof h === "object" &&
-                (h.role === "user" || h.role === "assistant") &&
-                typeof h.content === "string" &&
-                h.content.length > 0
-            )
-            .map((h) => ({ role: h.role as "user" | "assistant", content: h.content as string }))
-            .slice(-10);
-        }
-      } catch {
-        // Ignore malformed history
-      }
-    }
+    const conversationHistory = parseConversationHistory(urlParams.get("history"));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = { isDisabled: false, type: ProductType.COFFEE };
@@ -110,33 +91,24 @@ export async function GET(request: NextRequest) {
     // Salutation detection — greeting-only input returns surface string, no search
     // -------------------------------------------------------------------------
 
-    if (query && forceAI) {
-      const trimmed = query
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z\s]/g, "")
-        .trim();
-      const greetingPattern =
-        /^(hey|hello|hi|howdy|yo|sup|whats up|hiya|good morning|good afternoon|good evening|greetings)$/i;
-      if (greetingPattern.test(trimmed)) {
-        const { aiVoiceSurfaces } = await getPublicSiteSettings();
-        const salutation = aiVoiceSurfaces?.salutation;
-        const { DEFAULT_VOICE_SURFACES } = await import("@/lib/ai/voice-surfaces");
-        return NextResponse.json({
-          products: [],
-          query: searchQuery,
-          count: 0,
-          intent: null,
-          filtersExtracted: null,
-          explanation: null,
-          acknowledgment: salutation ?? DEFAULT_VOICE_SURFACES.salutation,
-          followUpQuestion: null,
-          followUps: [],
-          aiFailed: false,
-          isSalutation: true,
-          context: { sessionId, turnCount },
-        });
-      }
+    if (query && forceAI && isSalutation(query)) {
+      const { aiVoiceSurfaces } = await getPublicSiteSettings();
+      const salutation = aiVoiceSurfaces?.salutation;
+      const { DEFAULT_VOICE_SURFACES } = await import("@/lib/ai/voice-surfaces");
+      return NextResponse.json({
+        products: [],
+        query: searchQuery,
+        count: 0,
+        intent: null,
+        filtersExtracted: null,
+        explanation: null,
+        acknowledgment: salutation ?? DEFAULT_VOICE_SURFACES.salutation,
+        followUpQuestion: null,
+        followUps: [],
+        aiFailed: false,
+        isSalutation: true,
+        context: { sessionId, turnCount },
+      });
     }
 
     // -------------------------------------------------------------------------
@@ -276,38 +248,22 @@ export async function GET(request: NextRequest) {
     if (agenticData) {
       if (agenticData.intent === "how_to") {
         return NextResponse.json({
-          products: [],
-          query: searchQuery,
-          count: 0,
-          intent: agenticData.intent,
-          filtersExtracted: null,
-          explanation: agenticData.explanation || null,
-          acknowledgment: agenticData.acknowledgment || null,
-          followUpQuestion: agenticData.followUpQuestion || null,
-          followUps: agenticData.followUps ?? [],
-          recommendedProductName: null,
-          aiFailed: false,
-          context: { sessionId, turnCount },
+          products: [], query: searchQuery, count: 0,
+          intent: agenticData.intent, filtersExtracted: null,
+          explanation: agenticData.explanation || null, acknowledgment: agenticData.acknowledgment || null,
+          followUpQuestion: agenticData.followUpQuestion || null, followUps: agenticData.followUps ?? [],
+          recommendedProductName: null, aiFailed: false, context: { sessionId, turnCount },
         });
       }
 
       if (agenticData.intent === "reorder") {
-        const redirect =
-          agenticData.acknowledgment ||
-          "For orders and account stuff, you'd want to head to your account page — I'm really just here for the coffee.";
+        const redirect = agenticData.acknowledgment || "For orders and account stuff, you'd want to head to your account page — I'm really just here for the coffee.";
         return NextResponse.json({
-          products: [],
-          query: searchQuery,
-          count: 0,
-          intent: agenticData.intent,
-          filtersExtracted: null,
-          explanation: redirect,
-          acknowledgment: redirect,
-          followUpQuestion: null,
-          followUps: [],
-          recommendedProductName: null,
-          aiFailed: false,
-          context: { sessionId, turnCount },
+          products: [], query: searchQuery, count: 0,
+          intent: agenticData.intent, filtersExtracted: null,
+          explanation: redirect, acknowledgment: redirect,
+          followUpQuestion: null, followUps: [], recommendedProductName: null,
+          aiFailed: false, context: { sessionId, turnCount },
         });
       }
     }
