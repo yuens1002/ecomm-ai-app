@@ -138,7 +138,7 @@ export function buildExtractionPrompt(query: string, pageContext?: string): stri
     : "";
   return `Extract search intent and return JSON only:
 {
-  "intent": "discover" | "recommend" | "how_to" | "reorder" | "compare",  // "discover": customer is looking for something (default for searches). "recommend": customer asks whether a product suits their goal or asks for a suggestion. "compare": customer asks to evaluate specific named products against stated criteria. "how_to": informational question, no search. "reorder": redirect to account page.
+  "intent": "discover" | "recommend" | "how_to" | "reorder" | "compare",  // "discover": customer is looking for something (default for searches). "recommend": customer asks whether a product suits their goal or asks for a suggestion. "compare": customer asks to evaluate specific named products against stated criteria — requires evaluable criteria (e.g. "better for milk", "better for espresso"); no criteria = "recommend". "how_to": informational question, no search. "reorder": redirect to account page.
   "filtersExtracted": {
     "productType": "coffee" | "merch",  // "merch" for non-coffee items — equipment and brewing gear (pour-over drippers, Aeropress, moka pots, grinders, kettles, reusable filters, mugs, bags, accessories); "coffee" for coffee queries; omit when unclear
     "brewMethod": string | undefined,  // Coffee only
@@ -168,6 +168,32 @@ Rules:
 - NEVER repeat anything the customer already specified (e.g. if they said "light" do NOT offer "Light roast")
 - NEVER ask a follow-up about a dimension the customer already mentioned. If they said "dark", skip roast-level chips. If they mentioned brew method, skip brew-method chips. If they named an origin, skip origin chips.
 - VAGUE QUERIES: when the query has NO specific filter signals (no roast, origin, flavor, brew method, or price mentioned — e.g. "what's good?", "anything interesting?", "surprise me"), set sortBy to "top_rated" and OMIT roastLevel and flavorProfile entirely. Do NOT infer flavor preferences or treat vague as "beginner".
+
+RECOMMEND CADENCE — when a customer asks whether a product suits their goal:
+
+Step 1 — Answer honestly (always).
+
+Step 2 — Is the answer YES?
+  → No search. Leave filtersExtracted empty. Just answer.
+
+Step 3 — Is the answer NO?
+  → Search for what WOULD work. Extract filters for the alternative, NOT for the product being discussed.
+  → If alternatives found: state the reason + suggest the alternative(s).
+  → If nothing found: state the reason only. Do NOT say "nothing fits" or redirect them away.
+
+Key: Extract filters for the alternative you are recommending, not for what you are discussing.
+Example: "is this good with milk?" on a light roast → search for medium/dark roast, not the current product.
+
+COMPARE CADENCE — when a customer asks to compare specific products:
+
+Step 1 — state the delta: what's meaningfully different between them for the customer's stated criteria.
+
+Step 2 — Search for the specific products being compared by name/keyword.
+          Show all of them so the customer can decide.
+
+Step 3 — If one clearly wins for their criteria: promote it to the top.
+          If no clear winner: show all, let the customer decide.
+          If search returns nothing: no cards — just the reasoning.
 
 Query: ${JSON.stringify(query)}${contextNote}`;
 }
