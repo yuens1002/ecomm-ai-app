@@ -1,6 +1,7 @@
 import { chatCompletion } from "@/lib/ai-client";
 import { prisma } from "@/lib/prisma";
-import type { AgenticExtraction, AgenticIntent, FiltersExtracted } from "@/types/search";
+import { AgenticExtractionSchema } from "@/types/search";
+import type { AgenticExtraction } from "@/types/search";
 
 // ---------------------------------------------------------------------------
 // NL heuristic — gates AI calls to avoid cost on simple keyword queries
@@ -137,24 +138,25 @@ export function buildExtractionPrompt(query: string, pageContext?: string): stri
     : "";
   return `Extract search intent and return JSON only:
 {
-  "intent": "product_discovery" | "recommendation" | "how_to" | "reorder",
+  "intent": "product_discovery" | "recommendation" | "how_to" | "reorder" | "compare" | "recommend",  // "compare": customer asks to compare specific products — return reasoning, no product cards. "recommend": customer asks for a recommendation requiring reasoning — return reasoning, no product cards.
   "filtersExtracted": {
-    "productType": "coffee" | "merch" | "any",  // "merch" for non-coffee items — equipment and brewing gear (pour-over drippers, Aeropress, moka pots, grinders, kettles, reusable filters, mugs, bags, accessories); "coffee" for coffee queries; "any" when unclear
+    "productType": "coffee" | "merch",  // "merch" for non-coffee items — equipment and brewing gear (pour-over drippers, Aeropress, moka pots, grinders, kettles, reusable filters, mugs, bags, accessories); "coffee" for coffee queries; omit when unclear
     "brewMethod": string | undefined,  // Coffee only
     "roastLevel": "light" | "medium" | "dark" | undefined,  // Coffee only
-    "flavorProfile": string[] | undefined,  // Coffee only — Expand flavor categories AND experiential/mood terms into concrete tasting notes a roaster would write. Flavor categories: "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry", "blackcurrant", "currant"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan", "walnut"]; "floral" → ["floral", "jasmine", "lavender", "rose", "honeysuckle"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit", "papaya"]; "spicy" → ["spice", "spicy", "cinnamon", "clove", "cardamom", "pepper"]. Experiential/mood terms: "smooth" / "approachable" / "easy-drinking" / "beginner" / "mellow" → ["smooth", "balanced", "caramel", "chocolate", "mild", "butter"]; "bold" / "strong" / "intense" → ["bold", "dark chocolate", "tobacco", "molasses", "earthy"]; "bright" / "lively" / "vibrant" → ["bright", "citrus", "floral", "lemon", "tea-like"]; "complex" / "interesting" / "unique" → ["complex", "wine", "fermented", "floral", "berry"]. Include the original term AND concrete notes. Keep it scoped.
+    "flavorProfile": string[] | undefined,  // Coffee only — Expand flavor categories into concrete tasting notes. Categories: "citrus" → ["citrus", "lemon", "lime", "orange", "grapefruit", "bergamot"]; "berry" → ["berry", "blueberry", "blackberry", "raspberry", "strawberry"]; "chocolate" → ["chocolate", "cocoa", "cacao"]; "nutty" → ["nutty", "almond", "hazelnut", "cashew", "pecan"]; "floral" → ["floral", "jasmine", "lavender", "rose"]; "stone fruit" → ["stone fruit", "peach", "apricot", "plum"]; "tropical" → ["tropical", "mango", "pineapple", "passion fruit"]; "spicy" → ["spice", "cinnamon", "clove", "cardamom"]. Mood-to-notes: "smooth" / "easy-drinking" / "mellow" → ["smooth", "balanced", "caramel", "chocolate", "mild"]; "bold" / "strong" / "intense" → ["bold", "dark chocolate", "molasses", "earthy"]; "bright" / "lively" → ["bright", "citrus", "floral", "tea-like"]; "complex" / "unique" → ["complex", "wine", "fermented", "berry"]. Include original term AND concrete notes. Only populate when the customer explicitly mentions a flavor or mood — NEVER infer flavor preferences from vague queries.
     "origin": string | string[] | undefined,  // Coffee only. Use the exact origin values from the catalog. Single country: string. Regional/geographic term: return an array of the specific origin values from the catalog that belong to that region — only use what's in the catalog, never invent country names
     "isOrganic": true | false | undefined,  // Coffee only
     "processing": "washed" | "natural" | "honey" | "anaerobic" | string | undefined,  // Coffee only
     "variety": string | undefined,  // Coffee only
     "priceMaxCents": number (cents, e.g. 3000 for "under $30") | undefined,
     "priceMinCents": number | undefined,
-    "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined  // Use "top_rated" when query signals popularity or gift intent: "well-loved", "crowd-pleaser", "safe bet", "popular", "everyone likes", "gift", "my mom", "beginner", "first time"
+    "sortBy": "newest" | "price_asc" | "price_desc" | "top_rated" | undefined,  // Use "top_rated" when query signals popularity, gift intent, or is vague/open-ended: "well-loved", "crowd-pleaser", "popular", "everyone likes", "gift", "what's good", "anything interesting"
+    "productKeywords": string[] | undefined  // Keywords to search product names/descriptions. Required when productType is "merch" — extract the product concept into searchable terms (e.g. "pour over" → ["pour over", "dripper", "V60"])
   },
   "acknowledgment":"In the voice of a shop owner responding to what the customer wants to experience — not predicting what the results will contain. Do NOT name specific roast levels, origins, or tasting notes: you have not seen the actual products yet and will be wrong. Respond to the customer's mood, intent, or occasion instead. Let the voice examples guide your natural length and rhythm. No physical action verbs ('grab', 'pour', 'pick out', 'pull'). Use second person ('you'). NEVER use search vocabulary: 'I found', 'looking for', 'matches', 'options that fit', 'search results', 'nothing matching', 'nothing that matches', 'I can't think of', 'I'm not sure', 'I don't have', 'find'. ALWAYS present tense. Never third-person. Never repeat the customer's exact words back.",
   "recommendedProductName": "Exact product name from the catalog if you are naming a specific product in the acknowledgment (e.g. 'I'd go with the Ethiopian Yirgacheffe'). Must match the product name EXACTLY as it appears in the catalog. Omit if you are not naming a specific product.",
   "followUpQuestion": "1 sentence that fits the customer's context — not a fixed coffee-attribute prompt. Derive it from what they haven't told you AND what would most reduce the results. For gift/occasion queries: ask about the recipient's taste in plain terms ('Does she usually go bold or keep it mellow?', 'How does she take her coffee?'). For vague preference queries: ask about the dimension that cuts deepest. Empty string if the query is already specific.",
-  "followUps": ["2-4 word clickable answer to the followUpQuestion — match the question context, use customer language not trade jargon. Roast context: 'Bold & strong' / 'Light & bright' / 'Smooth & mellow'. Brew context: 'Drip machine' / 'French press' / 'Espresso'. Gift/recipient context: 'She loves bold' / 'Something smooth' / 'Surprise her'. Return 2–3 options. Never use question marks."]
+  "followUps": ["2-4 word clickable answer to the followUpQuestion — match the question context, use customer language not trade jargon. Return 2–3 options. Never use question marks."]
 }
 
 Rules:
@@ -165,6 +167,7 @@ Rules:
 - followUps are only provided when followUpQuestion is non-empty
 - NEVER repeat anything the customer already specified (e.g. if they said "light" do NOT offer "Light roast")
 - NEVER ask a follow-up about a dimension the customer already mentioned. If they said "dark", skip roast-level chips. If they mentioned brew method, skip brew-method chips. If they named an origin, skip origin chips.
+- VAGUE QUERIES: when the query has NO specific filter signals (no roast, origin, flavor, brew method, or price mentioned — e.g. "what's good?", "anything interesting?", "surprise me"), set sortBy to "top_rated" and OMIT roastLevel and flavorProfile entirely. Do NOT infer flavor preferences or treat vague as "beginner".
 
 Query: ${JSON.stringify(query)}${contextNote}`;
 }
@@ -209,87 +212,29 @@ export async function extractAgenticFilters(
 
     const raw = JSON.parse(stripped) as Record<string, unknown>;
 
-    const validIntents: AgenticIntent[] = [
-      "product_discovery",
-      "recommendation",
-      "how_to",
-      "reorder",
-    ];
-    const intent: AgenticIntent =
-      typeof raw.intent === "string" && validIntents.includes(raw.intent as AgenticIntent)
-        ? (raw.intent as AgenticIntent)
-        : "product_discovery";
+    // Preprocess before Zod validation — normalize edge cases from AI output
+    if (raw.filtersExtracted && typeof raw.filtersExtracted === "object") {
+      const filters = raw.filtersExtracted as Record<string, unknown>;
+      // "any" productType → undefined (schema only allows "coffee" | "merch")
+      if (filters.productType === "any") delete filters.productType;
+      // Single-element origin array → string (schema enforces min-2 for arrays)
+      if (Array.isArray(filters.origin) && filters.origin.length === 1) {
+        filters.origin = filters.origin[0];
+      }
+    }
+    // Trim recommendedProductName
+    if (typeof raw.recommendedProductName === "string") {
+      const trimmed = raw.recommendedProductName.trim();
+      raw.recommendedProductName = trimmed || undefined;
+    }
 
-    const rawFilters =
-      raw.filtersExtracted && typeof raw.filtersExtracted === "object"
-        ? (raw.filtersExtracted as Record<string, unknown>)
-        : {};
+    const parsed = AgenticExtractionSchema.safeParse(raw);
+    if (!parsed.success) {
+      console.error("[agentic-search] Zod validation failed:", parsed.error.issues);
+      return null;
+    }
 
-    const validRoastLevels = ["light", "medium", "dark"];
-    const roastLevel =
-      typeof rawFilters.roastLevel === "string" &&
-      validRoastLevels.includes(rawFilters.roastLevel.toLowerCase())
-        ? rawFilters.roastLevel.toLowerCase()
-        : undefined;
-
-    const validSortBy = ["newest", "top_rated", "price_asc", "price_desc"] as const;
-    type SortBy = (typeof validSortBy)[number];
-
-    const validProductTypes = ["coffee", "merch", "any"] as const;
-    type ProductType_ = (typeof validProductTypes)[number];
-    const productType: FiltersExtracted["productType"] =
-      typeof rawFilters.productType === "string" &&
-      validProductTypes.includes(rawFilters.productType as ProductType_)
-        ? (rawFilters.productType as ProductType_)
-        : undefined;
-
-    const filtersExtracted: FiltersExtracted = {
-      productType,
-      brewMethod: typeof rawFilters.brewMethod === "string" ? rawFilters.brewMethod : undefined,
-      roastLevel,
-      flavorProfile: Array.isArray(rawFilters.flavorProfile)
-        ? rawFilters.flavorProfile.filter((v) => typeof v === "string")
-        : undefined,
-      origin: Array.isArray(rawFilters.origin)
-        ? (rawFilters.origin as unknown[]).filter((v): v is string => typeof v === "string")
-        : typeof rawFilters.origin === "string"
-          ? rawFilters.origin
-          : undefined,
-      isOrganic: typeof rawFilters.isOrganic === "boolean" ? rawFilters.isOrganic : undefined,
-      processing: typeof rawFilters.processing === "string" ? rawFilters.processing : undefined,
-      variety: typeof rawFilters.variety === "string" ? rawFilters.variety : undefined,
-      priceMaxCents:
-        typeof rawFilters.priceMaxCents === "number" && rawFilters.priceMaxCents > 0
-          ? rawFilters.priceMaxCents
-          : undefined,
-      priceMinCents:
-        typeof rawFilters.priceMinCents === "number" && rawFilters.priceMinCents > 0
-          ? rawFilters.priceMinCents
-          : undefined,
-      sortBy:
-        typeof rawFilters.sortBy === "string" && validSortBy.includes(rawFilters.sortBy as SortBy)
-          ? (rawFilters.sortBy as SortBy)
-          : undefined,
-    };
-
-    const acknowledgment = typeof raw.acknowledgment === "string" ? raw.acknowledgment : "";
-    const followUpQuestion = typeof raw.followUpQuestion === "string" ? raw.followUpQuestion : "";
-    const followUps = Array.isArray(raw.followUps)
-      ? raw.followUps.filter((v) => typeof v === "string")
-      : [];
-    const recommendedProductName =
-      typeof raw.recommendedProductName === "string" && raw.recommendedProductName.trim()
-        ? raw.recommendedProductName.trim()
-        : undefined;
-
-    return {
-      intent,
-      filtersExtracted,
-      acknowledgment,
-      followUpQuestion,
-      followUps,
-      recommendedProductName,
-    };
+    return parsed.data;
   } catch (err) {
     console.error("[agentic-search] AI extraction failed:", err);
     return null;

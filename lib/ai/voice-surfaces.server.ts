@@ -6,30 +6,22 @@
 // ---------------------------------------------------------------------------
 
 import { chatCompletion } from "@/lib/ai-client";
+import { hashPrompt } from "./hash";
 import type { VoiceExample } from "./voice-examples";
 import { DEFAULT_VOICE_SURFACES } from "./voice-surfaces";
 import type { VoiceSurfaces } from "./voice-surfaces";
 
-/**
- * Generate surface strings from the owner's voice examples.
- * Called when voice examples are saved (admin PUT) or regenerated.
- */
-export async function generateVoiceSurfaces(
-  voiceExamples: VoiceExample[]
-): Promise<VoiceSurfaces> {
-  const examplePairs = voiceExamples
-    .map((e) => `Customer: "${e.question}"\nOwner: "${e.answer}"`)
-    .join("\n\n");
+// ---------------------------------------------------------------------------
+// Prompt template — hashed for deploy-time invalidation
+// ---------------------------------------------------------------------------
 
-  const result = await chatCompletion({
-    messages: [
-      {
-        role: "system",
-        content: `You are writing UI copy for a shop owner's chat assistant. The copy must sound exactly like this owner — use their vocabulary, sentence rhythm, and personality as shown in these Q&As:\n\n${examplePairs}\n\nDo NOT write polished or corporate copy. Write as if the owner is speaking directly to the customer.`,
-      },
-      {
-        role: "user",
-        content: `Generate these UI surface strings in the owner's voice. Return valid JSON only — no markdown, no explanation.
+const SURFACE_SYSTEM_TEMPLATE = `You are writing UI copy for a shop owner's chat assistant. The copy must sound exactly like this owner — use their vocabulary, sentence rhythm, and personality as shown in these Q&As:
+
+{EXAMPLES}
+
+Do NOT write polished or corporate copy. Write as if the owner is speaking directly to the customer.`;
+
+const SURFACE_USER_TEMPLATE = `Generate these UI surface strings in the owner's voice. Return valid JSON only — no markdown, no explanation.
 
 {
   "greeting.home": "How you'd greet someone naturally, in your own words — brief and open-ended. No 'welcome in', 'come on in', 'get started', 'step right up', or any phrase that implies a physical space or a service transaction. Just you, present and curious (1-2 sentences)",
@@ -46,7 +38,32 @@ export async function generateVoiceSurfaces(
 Rules:
 - Speak directly to the customer: use "you", "your" — never third person
 - Use the owner's actual vocabulary, rhythm, and personality from the Q&As above — not generic assistant language
-- The waiting filler should be 1-3 words max, lowercase`,
+- The waiting filler should be 1-3 words max, lowercase`;
+
+/** Hash of the generation prompt template (without examples).
+ *  Changes when we modify the instructions → triggers auto-regen on next load. */
+export const SURFACE_PROMPT_HASH = hashPrompt(SURFACE_SYSTEM_TEMPLATE + SURFACE_USER_TEMPLATE);
+
+/**
+ * Generate surface strings from the owner's voice examples.
+ * Called when voice examples are saved (admin PUT) or regenerated.
+ */
+export async function generateVoiceSurfaces(
+  voiceExamples: VoiceExample[]
+): Promise<VoiceSurfaces> {
+  const examplePairs = voiceExamples
+    .map((e) => `Customer: "${e.question}"\nOwner: "${e.answer}"`)
+    .join("\n\n");
+
+  const result = await chatCompletion({
+    messages: [
+      {
+        role: "system",
+        content: SURFACE_SYSTEM_TEMPLATE.replace("{EXAMPLES}", examplePairs),
+      },
+      {
+        role: "user",
+        content: SURFACE_USER_TEMPLATE,
       },
     ],
     maxTokens: 1024,

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/admin";
 import { DEFAULT_VOICE_EXAMPLES, type VoiceExample } from "@/lib/ai/voice-examples";
-import { generateVoiceSurfaces } from "@/lib/ai/voice-surfaces.server";
+import { generateVoiceSurfaces, SURFACE_PROMPT_HASH } from "@/lib/ai/voice-surfaces.server";
 import { isAIConfigured } from "@/lib/ai-client";
 
 export async function POST() {
@@ -37,11 +37,18 @@ export async function POST() {
     const surfaces = await generateVoiceSurfaces(examples);
     const json = JSON.stringify(surfaces);
 
-    await prisma.siteSettings.upsert({
-      where: { key: "ai_voice_surfaces" },
-      update: { value: json },
-      create: { key: "ai_voice_surfaces", value: json },
-    });
+    await Promise.all([
+      prisma.siteSettings.upsert({
+        where: { key: "ai_voice_surfaces" },
+        update: { value: json },
+        create: { key: "ai_voice_surfaces", value: json },
+      }),
+      prisma.siteSettings.upsert({
+        where: { key: "ai_voice_surface_prompt_hash" },
+        update: { value: SURFACE_PROMPT_HASH },
+        create: { key: "ai_voice_surface_prompt_hash", value: SURFACE_PROMPT_HASH },
+      }),
+    ]);
 
     return NextResponse.json({ voiceSurfaces: surfaces });
   } catch (err) {

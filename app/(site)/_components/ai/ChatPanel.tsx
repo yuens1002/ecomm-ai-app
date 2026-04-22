@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Loader2, ArrowUp, RotateCcw, FileText, MessageSquareDot } from "lucide-react";
+import { X, Loader2, ArrowUp, RotateCcw, FileText, MessageSquareDot, Copy, Check } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -91,6 +91,8 @@ function PanelContent() {
     loadSurfaces,
     sessionGreeted,
     setSessionGreeted,
+    setAllProducts,
+    filterByChip,
   } = useChatPanelStore();
   const pathname = usePathname();
   const [input, setInput] = useState("");
@@ -229,6 +231,9 @@ function PanelContent() {
       const products = data.aiFailed ? [] : (data.products ?? []).map(mapProduct);
       const hasProducts = products.length > 0;
 
+      // Store full result set for client-side chip filtering
+      if (hasProducts) setAllProducts(products);
+
       // Determine response content — never go silent. Uses voice surfaces
       // (owner's voice) for recovery messages.
       let content = data.acknowledgment || "";
@@ -290,7 +295,7 @@ function PanelContent() {
             <MessageBubble
               key={msg.id}
               msg={msg}
-              onChipClick={(chip) => void sendQuery(chip)}
+              onChipClick={filterByChip}
             />
           ))}
           <div ref={messagesEndRef} />
@@ -351,7 +356,18 @@ function MessageBubble({
   onChipClick: (chip: string) => void;
 }) {
   const [showAll, setShowAll] = useState(false);
+  const [copied, setCopied] = useState(false);
   const badgeRef = useRef<HTMLDivElement>(null);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(msg.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard unavailable or permission denied — no visual feedback
+    }
+  };
 
   const handleToggle = () => {
     setShowAll((s) => !s);
@@ -409,7 +425,19 @@ function MessageBubble({
       {hasContent && (
         <div className="flex items-start gap-2">
           <MessageSquareDot className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary/50" />
-          <p className="text-sm text-foreground/80 leading-relaxed">{msg.content}</p>
+          <div className="flex-1 min-w-0 space-y-1">
+            <p className="text-sm text-foreground/80 leading-relaxed">{msg.content}</p>
+            <button
+              type="button"
+              onClick={handleCopy}
+              aria-label={copied ? "Copied" : "Copy response"}
+              className="text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+            >
+              {copied
+                ? <Check className="h-3 w-3 text-green-500" />
+                : <Copy className="h-3 w-3" />}
+            </button>
+          </div>
         </div>
       )}
 

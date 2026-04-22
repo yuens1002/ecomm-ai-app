@@ -21,8 +21,10 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
+const TEST_PROMPT_HASH = "test-prompt-hash";
 jest.mock("@/lib/ai/voice-surfaces.server", () => ({
   generateVoiceSurfaces: (...args: unknown[]) => generateVoiceSurfacesMock(...args),
+  SURFACE_PROMPT_HASH: TEST_PROMPT_HASH,
 }));
 
 jest.mock("@/lib/ai-client", () => ({
@@ -67,10 +69,11 @@ describe("GET /api/settings/voice-surfaces", () => {
   // AC-TST-2: cached path
   it("returns stored surfaces without calling generateVoiceSurfaces when cache exists", async () => {
     const cached = { ...DEFAULT_VOICE_SURFACES, "greeting.home": "Cached greeting!" };
-    // First findUnique (surfaces key) returns cached; second (examples key) returns null
+    // findUnique calls: surfaces, examples, hash — all via Promise.all
     siteSettingsFindUniqueMock
       .mockResolvedValueOnce({ key: "ai_voice_surfaces", value: JSON.stringify(cached) })
-      .mockResolvedValueOnce(null);
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ key: "ai_voice_surface_prompt_hash", value: TEST_PROMPT_HASH });
 
     const response = await GET();
     const data = await response.json();
@@ -100,5 +103,23 @@ describe("GET /api/settings/voice-surfaces", () => {
     expect(data).toEqual(DEFAULT_VOICE_SURFACES);
     expect(siteSettingsUpsertMock).not.toHaveBeenCalled();
     expect(generateVoiceSurfacesMock).not.toHaveBeenCalled();
+  });
+
+  // Iter-7 AC-TST-6: prompt hash invalidation — stale hash triggers regen
+  it("regenerates surfaces when stored prompt hash differs from current hash", async () => {
+    const cached = { ...DEFAULT_VOICE_SURFACES, "greeting.home": "Stale greeting!" };
+    // Surfaces exist, examples null, hash is STALE (different from current)
+    siteSettingsFindUniqueMock
+      .mockResolvedValueOnce({ key: "ai_voice_surfaces", value: JSON.stringify(cached) })
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ key: "ai_voice_surface_prompt_hash", value: "old-stale-hash" });
+
+    const response = await GET();
+    const data = await response.json();
+
+    // Should have called generate because hash mismatch
+    expect(generateVoiceSurfacesMock).toHaveBeenCalledTimes(1);
+    // Should NOT return the stale cached greeting
+    expect(data["greeting.home"]).toBe(DEFAULT_VOICE_SURFACES["greeting.home"]);
   });
 });

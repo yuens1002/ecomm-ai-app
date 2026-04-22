@@ -1394,3 +1394,108 @@ describe("search relevance — AI extraction clears keyword OR (AC-TST-1–8)", 
     expect(callArgs?.where?.type).toBe("COFFEE");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Iter-7: AC-TST-1 — merch productKeywords drives Prisma OR clause
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — merch productKeywords (AC-TST-1)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
+  });
+
+  it("builds OR clause from productKeywords, not raw query string", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "product_discovery",
+        filtersExtracted: { productType: "merch", productKeywords: ["pour over", "dripper"] },
+        acknowledgment: "Let me check our gear.",
+        followUps: [],
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=do+you+have+a+pour+over+coffee+maker&ai=true"
+    );
+    await GET(request);
+
+    const call = productFindManyMock.mock.calls[0][0] as { where: Record<string, unknown> };
+    const or = call.where.OR as Array<Record<string, unknown>>;
+    // Should have 4 entries: 2 keywords × 2 fields (name + description)
+    expect(or).toHaveLength(4);
+    expect(or[0]).toEqual({ name: { contains: "pour over", mode: "insensitive" } });
+    expect(or[1]).toEqual({ description: { contains: "pour over", mode: "insensitive" } });
+    expect(or[2]).toEqual({ name: { contains: "dripper", mode: "insensitive" } });
+    expect(or[3]).toEqual({ description: { contains: "dripper", mode: "insensitive" } });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Iter-7: AC-TST-2 & AC-TST-3 — compare/recommend intent → products: []
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — compare/recommend intents (AC-TST-2, AC-TST-3)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
+  });
+
+  // AC-TST-2
+  it("compare intent returns products: [] and skips Prisma", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "compare",
+        filtersExtracted: {},
+        acknowledgment: "Ethiopian vs Colombian — here's how they differ.",
+        followUps: [],
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=which+is+better+Ethiopian+or+Colombian&ai=true"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.products).toEqual([]);
+    expect(data.intent).toBe("compare");
+    expect(data.acknowledgment).toBeTruthy();
+    expect(productFindManyMock).not.toHaveBeenCalled();
+  });
+
+  // AC-TST-3
+  it("recommend intent returns products: [] and skips Prisma", async () => {
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "recommend",
+        filtersExtracted: {},
+        acknowledgment: "For a beginner, I'd suggest starting with something smooth.",
+        followUps: [],
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=what+would+you+recommend+for+a+first+timer&ai=true"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.products).toEqual([]);
+    expect(data.intent).toBe("recommend");
+    expect(data.acknowledgment).toBeTruthy();
+    expect(productFindManyMock).not.toHaveBeenCalled();
+  });
+});

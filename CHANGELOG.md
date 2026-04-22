@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.100.10 - 2026-04-22
+
+### Added
+
+- **Counter copy button**: Clickable copy icon below AI responses — copies acknowledgment text to clipboard with 1.5s check feedback
+
+### Fixed
+
+- **Merch product search**: AI now extracts `productKeywords[]` from merch queries and drives Prisma OR clauses from those terms instead of raw NL query string — "do you have a pour over coffee maker?" now finds the Origami Air Dripper
+- **Compare/recommend intent**: When the AI extracts `compare` or `recommend` intent, the route returns AI reasoning only with no product cards — the extraction pipeline now recognises these intents
+- **Chip progressive filter**: Follow-up chip clicks apply a client-side filter against the current result set — no new API call, no loading spinner
+- **Voice surface staleness**: Prompt hash stored alongside voice surfaces; stale hash on load triggers automatic regeneration before serving
+
+### Improved
+
+- **Extraction contract**: `FiltersExtractedSchema` (Zod) is now the single source of truth — TypeScript type, prompt JSON spec, and runtime validation all derived from it
+- **Extraction prompt**: Examples neutralized (JSON structure only, no phrasing/flavour bleed); vague-query rule prevents narrow filter inference from open-ended queries
+
+---
+
 ## 0.100.9 - 2026-04-19
 
 ### Changed

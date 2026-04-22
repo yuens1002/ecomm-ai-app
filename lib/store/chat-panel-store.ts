@@ -40,6 +40,8 @@ interface ChatPanelState {
   surfacesLoaded: boolean;
   /** true after the first greeting fires in this browser session */
   sessionGreeted: boolean;
+  /** Full result set from the last search — used for client-side chip filtering */
+  allProducts: ProductSummary[];
   // Actions
   open: () => void;
   close: () => void;
@@ -53,6 +55,9 @@ interface ChatPanelState {
   loadSurfaces: () => Promise<void>;
   /** Clears cached surfaces + messages so the next open re-fetches from the API */
   resetSurfaces: () => void;
+  setAllProducts: (products: ProductSummary[]) => void;
+  /** Narrow the last assistant message's products by chip label — no API call */
+  filterByChip: (chip: string) => void;
 }
 
 export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
@@ -63,6 +68,7 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
   voiceSurfaces: null,
   surfacesLoaded: false,
   sessionGreeted: false,
+  allProducts: [],
 
   open: () => set({ isOpen: true }),
   close: () => set({ isOpen: false }),
@@ -88,7 +94,60 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
   setSessionGreeted: (v) => set({ sessionGreeted: v }),
 
   resetSurfaces: () =>
-    set({ surfacesLoaded: false, voiceSurfaces: null, messages: [], sessionGreeted: false }),
+    set({ surfacesLoaded: false, voiceSurfaces: null, messages: [], sessionGreeted: false, allProducts: [] }),
+
+  setAllProducts: (products) => set({ allProducts: products }),
+
+  filterByChip: (chip) => {
+    const { allProducts, messages } = get();
+    if (allProducts.length === 0) return;
+
+    const chipLower = chip.toLowerCase();
+
+    // Known roast-level mappings
+    const roastKeywords: Record<string, string[]> = {
+      bold: ["dark"], strong: ["dark"], intense: ["dark"],
+      light: ["light"], bright: ["light"], lively: ["light"],
+      smooth: ["medium", "light"], mellow: ["medium", "light"],
+      medium: ["medium"],
+    };
+
+    // Check if chip matches a known roast keyword
+    const matchedRoasts = new Set<string>();
+    for (const [keyword, roasts] of Object.entries(roastKeywords)) {
+      if (chipLower.includes(keyword)) {
+        roasts.forEach((r) => matchedRoasts.add(r));
+      }
+    }
+
+    let filtered: ProductSummary[];
+    if (matchedRoasts.size > 0) {
+      filtered = allProducts.filter(
+        (p) => p.roastLevel && matchedRoasts.has(p.roastLevel.toLowerCase())
+      );
+    } else {
+      // Fallback — text search across name, description, tasting notes
+      filtered = allProducts.filter((p) => {
+        const searchable = [p.name, p.description ?? "", ...p.tastingNotes]
+          .join(" ")
+          .toLowerCase();
+        return searchable.includes(chipLower);
+      });
+    }
+
+    // If filter produces 0 results, keep all products
+    if (filtered.length === 0) filtered = allProducts;
+
+    // Update last assistant message — narrow products, remove chips (one-shot)
+    const updatedMessages = messages.map((msg, i) => {
+      if (i === messages.length - 1 && msg.role === "assistant") {
+        return { ...msg, products: filtered, followUps: [], followUpQuestion: undefined };
+      }
+      return msg;
+    });
+
+    set({ messages: updatedMessages });
+  },
 
   loadSurfaces: async () => {
     if (get().surfacesLoaded) return;

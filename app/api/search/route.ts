@@ -212,8 +212,7 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // productType "merch" removes coffee-specific filters; "any" or unspecified falls through as coffee.
-        // See FiltersExtracted.productType in types/search.ts — iter-7 will add Zod validation here.
+        // productType "merch" removes coffee-specific filters; unspecified falls through as coffee.
         if (agenticData.filtersExtracted.productType === "merch") {
           delete whereClause.type;
           delete whereClause.categories;
@@ -221,7 +220,14 @@ export async function GET(request: NextRequest) {
           delete whereClause.OR;
           delete whereClause.id;
           ftsOrderedIds = [];
-          if (query) {
+          const keywords = agenticData.filtersExtracted.productKeywords ?? [];
+          if (keywords.length > 0) {
+            whereClause.OR = keywords.flatMap((kw) => [
+              { name: { contains: kw, mode: "insensitive" as const } },
+              { description: { contains: kw, mode: "insensitive" as const } },
+            ]);
+          } else if (query) {
+            // Fallback to raw query if AI didn't extract keywords
             whereClause.OR = [
               { name: { contains: query, mode: "insensitive" as const } },
               { description: { contains: query, mode: "insensitive" as const } },
@@ -248,7 +254,7 @@ export async function GET(request: NextRequest) {
     // -------------------------------------------------------------------------
 
     if (agenticData) {
-      if (agenticData.intent === "how_to") {
+      if (agenticData.intent === "how_to" || agenticData.intent === "compare" || agenticData.intent === "recommend") {
         return NextResponse.json({
           products: [], query: searchQuery, count: 0,
           intent: agenticData.intent, filtersExtracted: null,

@@ -1,34 +1,71 @@
-export type AgenticIntent = "product_discovery" | "recommendation" | "how_to" | "reorder";
+import { z } from "zod";
 
-export interface FiltersExtracted {
-  brewMethod?: string;
-  roastLevel?: string;
-  flavorProfile?: string[];
+// ---------------------------------------------------------------------------
+// Intent schema — single source of truth for valid intents
+// ---------------------------------------------------------------------------
+
+export const AgenticIntentSchema = z.enum([
+  "product_discovery",
+  "recommendation",
+  "how_to",
+  "reorder",
+  "compare",
+  "recommend",
+]);
+export type AgenticIntent = z.infer<typeof AgenticIntentSchema>;
+
+// ---------------------------------------------------------------------------
+// Filters extraction schema — Zod as single source of truth
+// ---------------------------------------------------------------------------
+
+export const RoastLevelSchema = z.preprocess((value) => {
+  if (typeof value !== "string") return value;
+  const normalized = value.trim().toLowerCase();
+  switch (normalized) {
+    case "light": case "light roast": return "light";
+    case "medium": case "medium roast": case "med": return "medium";
+    case "dark": case "dark roast": return "dark";
+    default: return normalized;
+  }
+}, z.enum(["light", "medium", "dark"]));
+export type RoastLevel = z.infer<typeof RoastLevelSchema>;
+
+export const FiltersExtractedSchema = z.object({
+  productType: z.enum(["coffee", "merch"]).optional(),
+  brewMethod: z.string().optional(),
+  roastLevel: RoastLevelSchema.optional(),
+  flavorProfile: z.array(z.string()).optional(),
   /** Single country ("Ethiopia") or array for regional queries (["Guatemala", "Costa Rica"]).
-   *  Runtime normalization in route handler (lines ~167-170) converts single strings to {has: ...}
-   *  and arrays to {hasSome: ...}. iter-7 Zod schema will enforce min-2 arrays. */
-  origin?: string | string[];
-  isOrganic?: boolean;
-  processing?: string;
-  variety?: string;
-  priceMaxCents?: number;
-  priceMinCents?: number;
-  sortBy?: "newest" | "price_asc" | "price_desc" | "top_rated";
-  /** "coffee" uses all flavor/roast filters; "merch" uses name/description only;
-   *  "any" means unspecified — treated as coffee in query construction (see route handler whereClause).
-   *  iter-7 will replace this with a Zod schema enforcing the union shape. */
-  productType?: "coffee" | "merch" | "any";
-}
+   *  Single-element arrays are invalid — AI should return a string for single countries. */
+  origin: z.union([z.string(), z.array(z.string()).min(2)]).optional(),
+  isOrganic: z.boolean().optional(),
+  processing: z.string().optional(),
+  variety: z.string().optional(),
+  priceMaxCents: z.number().positive().optional(),
+  priceMinCents: z.number().positive().optional(),
+  sortBy: z.enum(["newest", "top_rated", "price_asc", "price_desc"]).optional(),
+  /** Keywords for product name/description search — required for merch queries */
+  productKeywords: z.array(z.string()).optional(),
+});
+export type FiltersExtracted = z.infer<typeof FiltersExtractedSchema>;
 
-export interface AgenticExtraction {
-  intent: AgenticIntent;
-  filtersExtracted: FiltersExtracted;
-  acknowledgment: string;
-  followUpQuestion: string;
-  followUps: string[];
-  /** When the AI names a specific product, include the exact name for result reconciliation */
-  recommendedProductName?: string;
-}
+// ---------------------------------------------------------------------------
+// Full AI extraction output — wraps intent + filters + response text
+// ---------------------------------------------------------------------------
+
+export const AgenticExtractionSchema = z.object({
+  intent: AgenticIntentSchema,
+  filtersExtracted: FiltersExtractedSchema.default({}),
+  acknowledgment: z.string().default(""),
+  followUpQuestion: z.string().default(""),
+  followUps: z.array(z.string()).default([]),
+  recommendedProductName: z.string().optional(),
+});
+export type AgenticExtraction = z.infer<typeof AgenticExtractionSchema>;
+
+// ---------------------------------------------------------------------------
+// API types (not Zod — plain interfaces for route handler)
+// ---------------------------------------------------------------------------
 
 export interface SearchParams {
   query: string;
