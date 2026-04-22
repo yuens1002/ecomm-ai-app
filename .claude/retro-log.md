@@ -163,3 +163,38 @@ Running log of process lessons learned and applied. Each entry documents a gap d
 - `docs/ROADMAP.md` — Brought fully current: Now = v0.100.7, Shipped table covers v0.99.x–v0.100.7, Next = Iter 4 conversation context, Backlog = Phase B personalization. Convention section now includes "On every release: update the Now section, move shipped items to Shipped table."
 
 **Prevented by:** ROADMAP.md update is now a named, numbered step in the release skill — same weight as CHANGELOG.md and package.json. Both release scenarios require it before tagging.
+
+---
+
+## 2026-04-22 — Ad-hoc code changes implemented during review on plain behavioral observations
+
+**Gap:** During the iter-7 review walkthrough, the user stated "clicking on a chip does not show up as a user response." The agent immediately read source files and implemented a two-file code fix (`ChatPanel.tsx` + `chat-panel-store.ts`). The user had to say "we are getting ahead of ourselves" and then "pls do not fix my observation" before the changes were reverted. This happened after an existing feedback memory (`feedback_reviewer_observation_cadence.md`) already captured this rule — the memory file was not enough.
+
+**Root cause:** Two gaps:
+1. The feedback memory rule required signal words to trigger ("I notice X," "this seems wrong"). A plain behavioral statement — "clicking on a chip does not show up as a user response" — didn't pattern-match to "observation" because it sounds like a factual report, not a review comment.
+2. The rule existed only in a memory file (loaded on demand) but not in CLAUDE.md (always loaded). Memory files are easy to act against when a plausible action is available.
+
+**Fix applied to:**
+- `CLAUDE.md` — Added rule #11: "During review: never implement ad-hoc. ANY statement about current behavior is an observation, not a directive. Log → explain → hold."
+- `memory/feedback_reviewer_observation_cadence.md` — Strengthened: explicit that the trigger is ANY behavioral statement, no signal words required. Added the 2026-04-22 incident as a named example. Added "do not start reading implementation files to prepare a fix."
+
+**Prevented by:** Rule #11 is now in CLAUDE.md (always loaded). The feedback memory now names plain behavioral statements as observations and includes this incident as a concrete example.
+
+---
+
+## 2026-04-22 — Sub-agent deferred Interactive: UI ACs as "non-deterministic"; QC accepted without challenge
+
+**Gap:** During iter-7 verification, the sub-agent marked all 6 `Interactive:` UI ACs as DEFERRED with the reason "requires interactive AI query; non-deterministic." QC accepted these deferrals and passed them through. All 6 ACs ended up in the human reviewer's queue — but most of them (UI-1, UI-2, UI-3, UI-4, UI-6) have **structural** pass criteria that Puppeteer can verify regardless of AI response text: did product cards render, did zero cards render, was there no loading spinner. The fact that acknowledgment text varies doesn't mean the outcome is untestable.
+
+**Root cause:** Two gaps:
+
+1. **ac-verify.md doesn't define the "AI response is non-deterministic" deferral pattern as invalid.** Rule 11 says "How column is the contract" and Rule 4 says "never downgrade" — but the sub-agent found a semantic loophole: it treated the AI call itself as the thing that's non-deterministic, not the structural outcome. There's no rule that explicitly says "DEFERRED is not a valid result" or that draws the distinction between AI *content* (non-deterministic) and structural *outcome* (deterministic: cards rendered or they didn't).
+
+2. **QC didn't challenge DEFERRED on Interactive: ACs.** The QC step should ask: "can this AC be verified structurally without reading the AI's exact words?" For UI-1 (at least one card visible), UI-3 (zero cards rendered), and UI-4 (no spinner on chip click), the answer is clearly yes. The qc-validator.js enforces the 50% screenshot rule and evidence-method matching but has no check that rejects DEFERRED as an invalid Agent column value for Interactive: ACs — it only validates what evidence was provided, not whether DEFERRED was an acceptable choice.
+
+**Fix to apply:**
+
+- **ac-verify.md** — Add a rule: "DEFERRED is not a valid Agent column value. Interactive: ACs that involve AI queries must be verified structurally via Puppeteer — send the query, wait for the response, screenshot, and assert presence/absence of product cards, chips, or spinners. AI response *content* varies; structural *outcomes* (did cards render, did zero cards render) are deterministic. If the environment prevents running the query, mark BLOCKED with reason — not DEFERRED."
+- **QC step / verify-workflow.md** — Add a QC check: any UI AC with an `Interactive:` How method in the DEFERRED state in the Agent column is a QC failure. Challenge it: can the structural outcome be verified? If yes, send back to sub-agent or take over in main thread. Only accept BLOCKED (environment failure) or PASS/FAIL — never DEFERRED for Interactive: ACs.
+
+**Not yet applied** — logged for next retro cycle before iter-8 kickoff.

@@ -219,6 +219,7 @@ Env vars: see `.env.example`
 8. **Refactor opportunities** — flag deduplication/consolidation opportunities when found, don't silently do it
 9. **Keep docs in sync** — update `docs/` when architecture changes
 10. **Docs-only commits** — use `--no-verify` to skip Husky for `.md`/`.txt`-only changes
+11. **During review: never implement ad-hoc** — any statement about current behavior ("X doesn't work", "clicking Y doesn't...") is an observation, not a directive. Response: log it in memory, explain root cause, hold for explicit direction. Do not touch code until the user asks.
 
 ---
 
