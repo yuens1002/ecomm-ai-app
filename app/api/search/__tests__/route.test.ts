@@ -204,7 +204,7 @@ describe("GET /api/search", () => {
 
     expect(response.status).toBe(200);
     expect(chatCompletionMock).toHaveBeenCalledTimes(1);
-    expect(data.intent).toBe("product_discovery");
+    expect(data.intent).toBe("discover");
     expect(data.filtersExtracted).toEqual({ roastLevel: "light", origin: "Ethiopia" });
     expect(data.acknowledgment).toContain("Ethiopian");
     expect(data.followUps).toHaveLength(2);
@@ -420,8 +420,8 @@ describe("cadence enforcement — followUps (AC-TST-4, AC-TST-5)", () => {
     productFindManyMock.mockResolvedValue(makeProducts(2));
     chatCompletionMock.mockResolvedValue({
       text: JSON.stringify({
-        intent: "product_discovery",
-        filtersExtracted: {},
+        intent: "discover",
+        filtersExtracted: { origin: "Bolivia" },
         acknowledgment: "Here you go.",
         followUps: ["Bold", "Light", "Smooth"],
         followUpQuestion: "What roast?",
@@ -445,8 +445,8 @@ describe("cadence enforcement — followUps (AC-TST-4, AC-TST-5)", () => {
     productCountMock.mockResolvedValue(5); // chips pass validation
     chatCompletionMock.mockResolvedValue({
       text: JSON.stringify({
-        intent: "product_discovery",
-        filtersExtracted: {},
+        intent: "discover",
+        filtersExtracted: { roastLevel: "medium" },
         acknowledgment: "Lots of good options.",
         followUps: ["Bold", "Light", "Smooth"],
         followUpQuestion: "What roast level?",
@@ -673,8 +673,8 @@ describe("GET /api/search — conversation context + intent routing", () => {
     productFindManyMock.mockResolvedValue(products);
     chatCompletionMock.mockResolvedValue({
       text: JSON.stringify({
-        intent: "product_discovery",
-        filtersExtracted: {},
+        intent: "discover",
+        filtersExtracted: { roastLevel: "light" },
         acknowledgment: "I'd go with the Ethiopia Yirgacheffe.",
         recommendedProductName: "Ethiopia Yirgacheffe",
         followUpQuestion: "",
@@ -767,7 +767,7 @@ describe("GET /api/search — ai=true override", () => {
     const response = await GET(request);
     const data = await response.json();
     expect(chatCompletionMock).toHaveBeenCalledTimes(1);
-    expect(data.intent).toBe("product_discovery");
+    expect(data.intent).toBe("discover");
   });
 
   it("does not call AI for keyword query without ai=true", async () => {
@@ -948,10 +948,10 @@ describe("GET /api/search — type=COFFEE lock (BUG-1)", () => {
     expect(call.where.type).toBe("COFFEE");
   });
 
-  // AC-TST-2
-  it("always sets type=COFFEE even when AI extracts no coffee-specific filters", async () => {
+  // AC-TST-2: non-roast coffee filter still locks type=COFFEE
+  it("sets type=COFFEE when AI extracts sortBy only (no roast/origin)", async () => {
     baseSetup();
-    chatCompletionMock.mockResolvedValue(aiResponse({}));
+    chatCompletionMock.mockResolvedValue(aiResponse({ sortBy: "top_rated" }));
 
     const request = new NextRequest(
       "http://localhost:3000/api/search?q=morning+cup+with+citrus&ai=true"
@@ -1357,30 +1357,28 @@ describe("search relevance — AI extraction clears keyword OR (AC-TST-1–8)", 
     expect(callArgs?.where?.variants?.some?.purchaseOptions?.some?.priceInCents?.lte).toBe(2500);
   });
 
-  it("AC-TST-8: empty AI extraction falls back to keyword search", async () => {
-    // AI returns empty filters — keyword search should be preserved
+  it("AC-TST-8: empty AI extraction returns products: [] without DB query", async () => {
+    // AI succeeds but extracts no filters — opt-in gate returns early
     chatCompletionMock.mockResolvedValue({
       text: JSON.stringify({
-        intent: "product_discovery",
+        intent: "discover",
         filtersExtracted: {},
-        acknowledgment: "",
+        acknowledgment: "Let me see what you're after.",
         followUpQuestion: "",
         followUps: [],
       }),
       finishReason: "stop",
     });
 
-    // Full-text search returns some IDs
-    queryRawMock.mockResolvedValue([{ id: "prod-1" }, { id: "prod-2" }]);
-
     const request = new NextRequest(
       "http://localhost:3000/api/search?q=something+random&ai=true"
     );
-    await GET(request);
+    const response = await GET(request);
+    const data = await response.json();
 
-    const callArgs = productFindManyMock.mock.calls[0]?.[0];
-    // When AI extracts nothing, the full-text search IDs should be used
-    expect(callArgs?.where?.id?.in).toEqual(["prod-1", "prod-2"]);
+    expect(data.products).toEqual([]);
+    expect(productFindManyMock).not.toHaveBeenCalled();
+    expect(data.acknowledgment).toBeTruthy();
   });
 
   it("AC-FN-3: 'dark roast' — category filter applied, keyword OR not used", async () => {
@@ -1474,8 +1472,8 @@ describe("GET /api/search — compare/recommend intents (AC-TST-2, AC-TST-3)", (
     expect(productFindManyMock).not.toHaveBeenCalled();
   });
 
-  // AC-TST-3
-  it("recommend intent returns products: [] and skips Prisma", async () => {
+  // AC-TST-3 (iter-7b)
+  it("recommend intent + empty filtersExtracted returns products: [] without DB query", async () => {
     chatCompletionMock.mockResolvedValue({
       text: JSON.stringify({
         intent: "recommend",
@@ -1497,5 +1495,34 @@ describe("GET /api/search — compare/recommend intents (AC-TST-2, AC-TST-3)", (
     expect(data.intent).toBe("recommend");
     expect(data.acknowledgment).toBeTruthy();
     expect(productFindManyMock).not.toHaveBeenCalled();
+  });
+
+  // AC-TST-6 (iter-7b)
+  it("recommend intent + populated filtersExtracted executes DB query and returns products", async () => {
+    const mockProduct = {
+      id: "p1", name: "Colombia Huila", slug: "colombia-huila",
+      categories: [], variants: [{ id: "v1", purchaseOptions: [{ id: "po1", type: "ONE_TIME", priceInCents: 1800 }] }], images: [],
+    };
+    productFindManyMock.mockResolvedValue([mockProduct]);
+    chatCompletionMock.mockResolvedValue({
+      text: JSON.stringify({
+        intent: "recommend",
+        filtersExtracted: { roastLevel: "dark" },
+        acknowledgment: "For milk, you'll want a darker roast — the body stands up better.",
+        followUps: [],
+      }),
+      finishReason: "stop",
+      usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+    });
+
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=is+this+good+with+milk&ai=true"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(productFindManyMock).toHaveBeenCalled();
+    expect(data.intent).toBe("recommend");
+    expect(data.products.length).toBeGreaterThan(0);
   });
 });

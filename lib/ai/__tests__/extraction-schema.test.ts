@@ -5,10 +5,81 @@
  * AC-TST-5: Origin shape — multi-element array passes
  * AC-TST-7: Extraction prompt contains no verbatim flavor phrases
  * AC-TST-8: Vague query extraction — no narrow filters + top_rated
+ *
+ * Iter-7b schema + prompt tests
+ * AC-TST-1: Intent schema normalization — legacy values normalize to canonical
+ * AC-TST-2: buildExtractionPrompt contains recommend cadence teaching strings
+ * AC-TST-5: buildExtractionPrompt contains compare cadence + intent boundary strings
  */
 
-import { FiltersExtractedSchema, AgenticExtractionSchema } from "@/types/search";
+import { FiltersExtractedSchema, AgenticExtractionSchema, AgenticIntentSchema } from "@/types/search";
 import { buildExtractionPrompt } from "@/lib/ai/extraction";
+
+// ---------------------------------------------------------------------------
+// Iter-7b AC-TST-1: Intent schema normalization
+// ---------------------------------------------------------------------------
+
+describe("AgenticIntentSchema — legacy value normalization (iter-7b AC-TST-1)", () => {
+  it('normalizes "recommendation" to "recommend"', () => {
+    expect(AgenticIntentSchema.parse("recommendation")).toBe("recommend");
+  });
+
+  it('normalizes "product_discovery" to "discover"', () => {
+    expect(AgenticIntentSchema.parse("product_discovery")).toBe("discover");
+  });
+
+  it("accepts canonical verb-form values unchanged", () => {
+    expect(AgenticIntentSchema.parse("discover")).toBe("discover");
+    expect(AgenticIntentSchema.parse("recommend")).toBe("recommend");
+    expect(AgenticIntentSchema.parse("how_to")).toBe("how_to");
+    expect(AgenticIntentSchema.parse("reorder")).toBe("reorder");
+    expect(AgenticIntentSchema.parse("compare")).toBe("compare");
+  });
+
+  it("rejects unknown intent values", () => {
+    expect(() => AgenticIntentSchema.parse("unknown_intent")).toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Iter-7b AC-TST-2: buildExtractionPrompt contains recommend cadence strings
+// ---------------------------------------------------------------------------
+
+describe("buildExtractionPrompt — recommend cadence strings (iter-7b AC-TST-2)", () => {
+  const prompt = buildExtractionPrompt("test query");
+
+  it('contains "RECOMMEND CADENCE"', () => {
+    expect(prompt).toContain("RECOMMEND CADENCE");
+  });
+
+  it('contains "Is the answer YES"', () => {
+    expect(prompt).toContain("Is the answer YES");
+  });
+
+  it('contains "Extract filters for the alternative"', () => {
+    expect(prompt).toContain("Extract filters for the alternative");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Iter-7b AC-TST-5: buildExtractionPrompt contains compare cadence + intent boundary
+// ---------------------------------------------------------------------------
+
+describe("buildExtractionPrompt — compare cadence + intent boundary (iter-7b AC-TST-5)", () => {
+  const prompt = buildExtractionPrompt("test query");
+
+  it('contains "COMPARE CADENCE"', () => {
+    expect(prompt).toContain("COMPARE CADENCE");
+  });
+
+  it('contains "state the delta"', () => {
+    expect(prompt).toContain("state the delta");
+  });
+
+  it('contains "requires evaluable criteria"', () => {
+    expect(prompt).toContain("requires evaluable criteria");
+  });
+});
 
 // ---------------------------------------------------------------------------
 // AC-TST-4 & AC-TST-5: Origin shape validation
