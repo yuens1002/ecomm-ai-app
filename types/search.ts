@@ -4,14 +4,11 @@ import { z } from "zod";
 // Intent schema — single source of truth for valid intents
 // ---------------------------------------------------------------------------
 
-export const AgenticIntentSchema = z.enum([
-  "product_discovery",
-  "recommendation",
-  "how_to",
-  "reorder",
-  "compare",
-  "recommend",
-]);
+export const AgenticIntentSchema = z.preprocess((value) => {
+  if (value === "recommendation") return "recommend";
+  if (value === "product_discovery") return "discover";
+  return value;
+}, z.enum(["discover", "recommend", "how_to", "reorder", "compare"]));
 export type AgenticIntent = z.infer<typeof AgenticIntentSchema>;
 
 // ---------------------------------------------------------------------------

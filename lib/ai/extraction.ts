@@ -138,7 +138,7 @@ export function buildExtractionPrompt(query: string, pageContext?: string): stri
     : "";
   return `Extract search intent and return JSON only:
 {
-  "intent": "product_discovery" | "recommendation" | "how_to" | "reorder" | "compare" | "recommend",  // "compare": customer asks to compare specific products — return reasoning, no product cards. "recommend": customer asks for a recommendation requiring reasoning — return reasoning, no product cards.
+  "intent": "discover" | "recommend" | "how_to" | "reorder" | "compare",  // "discover": customer is looking for something (default for searches). "recommend": customer asks whether a product suits their goal or asks for a suggestion. "compare": customer asks to evaluate specific named products against stated criteria. "how_to": informational question, no search. "reorder": redirect to account page.
   "filtersExtracted": {
     "productType": "coffee" | "merch",  // "merch" for non-coffee items — equipment and brewing gear (pour-over drippers, Aeropress, moka pots, grinders, kettles, reusable filters, mugs, bags, accessories); "coffee" for coffee queries; omit when unclear
     "brewMethod": string | undefined,  // Coffee only

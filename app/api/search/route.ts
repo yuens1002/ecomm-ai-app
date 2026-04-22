@@ -250,20 +250,10 @@ export async function GET(request: NextRequest) {
     }
 
     // -------------------------------------------------------------------------
-    // Intent classification — gate routing before DB query
+    // Intent routing — reorder redirect, then opt-in DB gate
     // -------------------------------------------------------------------------
 
     if (agenticData) {
-      if (agenticData.intent === "how_to" || agenticData.intent === "compare" || agenticData.intent === "recommend") {
-        return NextResponse.json({
-          products: [], query: searchQuery, count: 0,
-          intent: agenticData.intent, filtersExtracted: null,
-          acknowledgment: agenticData.acknowledgment || null,
-          followUpQuestion: agenticData.followUpQuestion || null, followUps: agenticData.followUps ?? [],
-          recommendedProductName: null, aiFailed: false, context: { sessionId, turnCount },
-        });
-      }
-
       if (agenticData.intent === "reorder") {
         const redirect = agenticData.acknowledgment || "For orders and account stuff, you'd want to head to your account page — I'm really just here for the coffee.";
         return NextResponse.json({
@@ -271,6 +261,27 @@ export async function GET(request: NextRequest) {
           intent: agenticData.intent, filtersExtracted: null,
           acknowledgment: redirect,
           followUpQuestion: null, followUps: [], recommendedProductName: null,
+          aiFailed: false, context: { sessionId, turnCount },
+        });
+      }
+
+      // Run DB only when filtersExtracted has substantive content — the AI's
+      // extraction decision is the gate. how_to/reorder/unqualified recommend
+      // naturally produce empty filters and return no products without an explicit
+      // intent blocklist.
+      const hasFilters = agenticData.filtersExtracted &&
+        Object.values(agenticData.filtersExtracted).some(
+          (v) => v !== undefined && v !== null && (!Array.isArray(v) || v.length > 0)
+        );
+
+      if (!hasFilters) {
+        return NextResponse.json({
+          products: [], query: searchQuery, count: 0,
+          intent: agenticData.intent, filtersExtracted: null,
+          acknowledgment: agenticData.acknowledgment || null,
+          followUpQuestion: agenticData.followUpQuestion || null,
+          followUps: agenticData.followUps ?? [],
+          recommendedProductName: agenticData.recommendedProductName ?? null,
           aiFailed: false, context: { sessionId, turnCount },
         });
       }
