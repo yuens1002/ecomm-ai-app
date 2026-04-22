@@ -430,16 +430,18 @@ function MessageBubble({
           <MessageSquareDot className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary/50" />
           <div className="flex-1 min-w-0 space-y-1">
             <p className="text-sm text-foreground/80 leading-relaxed">{msg.content}</p>
-            <button
-              type="button"
-              onClick={handleCopy}
-              aria-label={copied ? "Copied" : "Copy response"}
-              className="text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-            >
-              {copied
-                ? <Check className="h-3 w-3 text-green-500" />
-                : <Copy className="h-3 w-3" />}
-            </button>
+            {msg.id !== GREETING_ID && (
+              <button
+                type="button"
+                onClick={handleCopy}
+                aria-label={copied ? "Copied" : "Copy response"}
+                className="text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+              >
+                {copied
+                  ? <Check className="h-3 w-3 text-green-500" />
+                  : <Copy className="h-3 w-3" />}
+              </button>
+            )}
           </div>
         </div>
       )}
