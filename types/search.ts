@@ -18,10 +18,22 @@ export type AgenticIntent = z.infer<typeof AgenticIntentSchema>;
 // Filters extraction schema — Zod as single source of truth
 // ---------------------------------------------------------------------------
 
+export const RoastLevelSchema = z.preprocess((value) => {
+  if (typeof value !== "string") return value;
+  const normalized = value.trim().toLowerCase();
+  switch (normalized) {
+    case "light": case "light roast": return "light";
+    case "medium": case "medium roast": case "med": return "medium";
+    case "dark": case "dark roast": return "dark";
+    default: return normalized;
+  }
+}, z.enum(["light", "medium", "dark"]));
+export type RoastLevel = z.infer<typeof RoastLevelSchema>;
+
 export const FiltersExtractedSchema = z.object({
   productType: z.enum(["coffee", "merch"]).optional(),
   brewMethod: z.string().optional(),
-  roastLevel: z.string().optional(),
+  roastLevel: RoastLevelSchema.optional(),
   flavorProfile: z.array(z.string()).optional(),
   /** Single country ("Ethiopia") or array for regional queries (["Guatemala", "Costa Rica"]).
    *  Single-element arrays are invalid — AI should return a string for single countries. */

@@ -9,7 +9,7 @@
 ### Fixed
 
 - **Merch product search**: AI now extracts `productKeywords[]` from merch queries and drives Prisma OR clauses from those terms instead of raw NL query string — "do you have a pour over coffee maker?" now finds the Origami Air Dripper
-- **Compare/recommend intent**: Queries like "which is better?" or "what do you recommend?" return AI reasoning only; product cards no longer surface for non-discovery intents
+- **Compare/recommend intent**: When the AI extracts `compare` or `recommend` intent, the route returns AI reasoning only with no product cards — the extraction pipeline now recognises these intents
 - **Chip progressive filter**: Follow-up chip clicks apply a client-side filter against the current result set — no new API call, no loading spinner
 - **Voice surface staleness**: Prompt hash stored alongside voice surfaces; stale hash on load triggers automatic regeneration before serving
 

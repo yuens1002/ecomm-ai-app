@@ -359,10 +359,14 @@ function MessageBubble({
   const [copied, setCopied] = useState(false);
   const badgeRef = useRef<HTMLDivElement>(null);
 
-  const handleCopy = () => {
-    void navigator.clipboard.writeText(msg.content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(msg.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard unavailable or permission denied — no visual feedback
+    }
   };
 
   const handleToggle = () => {
