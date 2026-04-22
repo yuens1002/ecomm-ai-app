@@ -295,7 +295,10 @@ function PanelContent() {
             <MessageBubble
               key={msg.id}
               msg={msg}
-              onChipClick={filterByChip}
+              onChipClick={(chip) => {
+                addMessage({ id: `u-chip-${Date.now()}`, role: "user", content: chip });
+                filterByChip(chip);
+              }}
             />
           ))}
           <div ref={messagesEndRef} />

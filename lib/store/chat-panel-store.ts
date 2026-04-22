@@ -138,9 +138,12 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
     // If filter produces 0 results, keep all products
     if (filtered.length === 0) filtered = allProducts;
 
-    // Update last assistant message — narrow products, remove chips (one-shot)
+    // Update last assistant message by role — handles trailing user bubbles
+    const lastAssistantIdx = messages.reduce((best, m, i) =>
+      m.role === "assistant" ? i : best, -1);
+
     const updatedMessages = messages.map((msg, i) => {
-      if (i === messages.length - 1 && msg.role === "assistant") {
+      if (i === lastAssistantIdx) {
         return { ...msg, products: filtered, followUps: [], followUpQuestion: undefined };
       }
       return msg;
