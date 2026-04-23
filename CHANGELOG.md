@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.100.11 - 2026-04-22
+
+### Fixed
+
+- **Intent schema cleanup**: Verb-form enum (`discover`, `recommend`, `how_to`, `reorder`, `compare`) with `.preprocess` normalization for legacy noun values — eliminates duplicate intent paths
+- **Recommend cadence**: AI now gives honest answer for "is this good with X?" before deciding whether to search; YES = no search, NO = search for alternatives (not the current product)
+- **Compare cadence**: AI states the delta, searches for named compared products, promotes a clear winner or shows all — falls back to recommend when no evaluable criteria exists
+- **Merch signal priority**: Physical equipment nouns (`grinder`, `scale`, `kettle`) override coffee descriptors for `productType: "merch"` extraction
+- **Chip click UX**: Chip click now adds a user message bubble before filtering, and `filterByChip` correctly targets the last assistant message by role (not index) to handle trailing user bubbles
+- **Copy button**: No longer appears on the greeting message — guarded by `GREETING_ID` check
+
 ## 0.100.10 - 2026-04-22
 
 ### Added
