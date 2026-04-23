@@ -103,6 +103,8 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
     if (allProducts.length === 0) return;
 
     const chipLower = chip.toLowerCase();
+    // Split into meaningful words (skip "and", "or", "the", etc.)
+    const chipWords = chipLower.split(/\s+/).filter((w) => w.length > 3);
 
     // Known roast-level mappings
     const roastKeywords: Record<string, string[]> = {
@@ -120,19 +122,25 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
       }
     }
 
+    const textMatch = (p: ProductSummary) => {
+      const searchable = [p.name, p.description ?? "", ...p.tastingNotes]
+        .join(" ")
+        .toLowerCase();
+      return chipWords.some((word) => searchable.includes(word));
+    };
+
     let filtered: ProductSummary[];
     if (matchedRoasts.size > 0) {
       filtered = allProducts.filter(
         (p) => p.roastLevel && matchedRoasts.has(p.roastLevel.toLowerCase())
       );
+      // Roast mapping produced nothing (chip describes flavor, not roast level) —
+      // fall through to word-level text search so "Bold and rich" still narrows results.
+      if (filtered.length === 0) {
+        filtered = allProducts.filter(textMatch);
+      }
     } else {
-      // Fallback — text search across name, description, tasting notes
-      filtered = allProducts.filter((p) => {
-        const searchable = [p.name, p.description ?? "", ...p.tastingNotes]
-          .join(" ")
-          .toLowerCase();
-        return searchable.includes(chipLower);
-      });
+      filtered = allProducts.filter(textMatch);
     }
 
     // If filter produces 0 results, keep all products

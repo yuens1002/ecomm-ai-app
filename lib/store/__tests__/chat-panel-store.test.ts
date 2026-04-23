@@ -7,7 +7,7 @@
 import { useChatPanelStore } from "@/lib/store/chat-panel-store";
 import type { ChatMessage, ProductSummary } from "@/lib/store/chat-panel-store";
 
-const makeProduct = (roastLevel: string, id = "p1"): ProductSummary => ({
+const makeProduct = (roastLevel: string, id = "p1", description: string | null = null): ProductSummary => ({
   id,
   name: `Coffee ${id}`,
   slug: `coffee-${id}`,
@@ -16,7 +16,7 @@ const makeProduct = (roastLevel: string, id = "p1"): ProductSummary => ({
   productType: "COFFEE",
   roastLevel,
   tastingNotes: [],
-  description: null,
+  description,
 });
 
 const darkProduct = makeProduct("dark", "p-dark");
@@ -111,5 +111,34 @@ describe("filterByChip — targets last assistant message by role (iter-7b AC-TS
     const updated = messages.find((m) => m.id === "assistant-1");
     // Fallback: all products returned
     expect(updated?.products).toHaveLength(2);
+  });
+
+  it("falls through to text search when roast keyword maps to an absent roast level", () => {
+    // "Bold and rich" → "bold" maps to "dark", but all products are medium-roast.
+    // Should fall through to word-level text search and match on "rich" in description.
+    const richMedium = makeProduct("medium", "p-medium", "Rich chocolate and caramel notes");
+    const plainMedium = makeProduct("medium", "p-plain", "Clean and bright");
+    const allProducts = [richMedium, plainMedium];
+
+    useChatPanelStore.setState({
+      messages: [
+        {
+          id: "assistant-1",
+          role: "assistant",
+          content: "Here are medium roasts that work well with milk.",
+          products: allProducts,
+        },
+      ],
+      allProducts,
+    });
+
+    useChatPanelStore.getState().filterByChip("Bold and rich");
+
+    const messages = useChatPanelStore.getState().messages;
+    const updated = messages.find((m) => m.id === "assistant-1");
+    // "bold" → dark → 0 results → falls through to text search
+    // "rich" matches richMedium.description → only that product returned
+    expect(updated?.products).toHaveLength(1);
+    expect(updated?.products?.[0].id).toBe("p-medium");
   });
 });
