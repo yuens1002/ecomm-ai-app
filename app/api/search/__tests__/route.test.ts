@@ -1526,3 +1526,44 @@ describe("GET /api/search — compare/recommend intents (AC-TST-2, AC-TST-3)", (
     expect(data.products.length).toBeGreaterThan(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// aiFailed guard — forceAI + null agenticData → products: [], no DB query
+// ---------------------------------------------------------------------------
+
+describe("GET /api/search — aiFailed guard (AC-FN-11)", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    productFindManyMock.mockResolvedValue([]);
+    queryRawMock.mockResolvedValue([]);
+    isAIConfiguredMock.mockResolvedValue(true);
+    getPublicSiteSettingsMock.mockResolvedValue({ aiVoicePersona: "", aiVoiceExamples: [] });
+    chatCompletionMock.mockResolvedValue(null);
+  });
+
+  it("forceAI + AI failure → products: [], aiFailed: true, no DB query", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=which+is+better+with+milk&ai=true"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.aiFailed).toBe(true);
+    expect(data.products).toEqual([]);
+    expect(data.intent).toBeNull();
+    expect(data.acknowledgment).toBeNull();
+    expect(productFindManyMock).not.toHaveBeenCalled();
+  });
+
+  it("no forceAI + AI failure → falls through to keyword search", async () => {
+    productFindManyMock.mockResolvedValue([]);
+    const request = new NextRequest(
+      "http://localhost:3000/api/search?q=ethiopia"
+    );
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(data.aiFailed).toBe(false);
+    expect(productFindManyMock).toHaveBeenCalled();
+  });
+});

@@ -306,6 +306,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // When running in AI mode (Counter) and AI was tried but failed entirely,
+    // don't serve raw keyword results — that breaks the cadence contract.
+    if (forceAI && !agenticData) {
+      return NextResponse.json({
+        products: [], query: searchQuery, count: 0,
+        intent: null, filtersExtracted: null,
+        acknowledgment: null, followUpQuestion: null,
+        followUps: [], recommendedProductName: null,
+        aiFailed: true, context: { sessionId, turnCount },
+      });
+    }
+
     // -------------------------------------------------------------------------
     // Track search activity
     // -------------------------------------------------------------------------
