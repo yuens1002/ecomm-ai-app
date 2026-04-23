@@ -349,12 +349,12 @@
       "notes": "23/24 ACs verified. 13 FN (code review) + 8 TST (1285 tests, 0 failures) + 2 REG (precheck clean, tests pass). 9 DEFERRED (6 UI + 3 REG — interactive AI queries). 1 iteration: TST tests added post-verification. AC-FN-8 deviation: SiteSettings KV instead of Store model field."
     },
     "feat/counter-iter7b-fixes": {
-      "status": "pending",
-      "acs_passed": 0,
+      "status": "partial",
+      "acs_passed": 22,
       "acs_total": 23,
       "tasks": [],
       "acs_doc": "docs/features/smart-search-ux/iter-7b-fixes/acs.md",
-      "notes": "Plan approved. 6 commits: intent schema cleanup, recommend+compare cadence, merch signal priority, chip user bubble, copy button guard, tests. 23 ACs (5 UI, 10 FN, 6 TST, 2 REG)."
+      "notes": "22/23 ACs verified. AC-UI-5 FAIL: compare cadence live AI adherence — generic products returned instead of named compared products. Code mechanism correct (AC-FN-7, AC-TST-5 PASS); gap is AI inference quality without few-shot examples. All other 22 ACs PASS. 1299 tests, precheck clean."
     }
   }
 }
