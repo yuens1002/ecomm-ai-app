@@ -7,7 +7,12 @@
 import { useChatPanelStore } from "@/lib/store/chat-panel-store";
 import type { ChatMessage, ProductSummary } from "@/lib/store/chat-panel-store";
 
-const makeProduct = (roastLevel: string, id = "p1", description: string | null = null): ProductSummary => ({
+const makeProduct = (
+  roastLevel: string,
+  id = "p1",
+  description: string | null = null,
+  tastingNotes: string[] = [],
+): ProductSummary => ({
   id,
   name: `Coffee ${id}`,
   slug: `coffee-${id}`,
@@ -15,7 +20,7 @@ const makeProduct = (roastLevel: string, id = "p1", description: string | null =
   categorySlug: null,
   productType: "COFFEE",
   roastLevel,
-  tastingNotes: [],
+  tastingNotes,
   description,
 });
 
@@ -67,8 +72,9 @@ describe("filterByChip — targets last assistant message by role (iter-7b AC-TS
     expect(userMsg?.products).toBeUndefined();
   });
 
-  it("clears followUps on the updated assistant message", () => {
-    const allProducts = [darkProduct];
+  it("clears followUps when the chip narrows the result set", () => {
+    // Need 2 products of different roast so "bold" actually narrows (dark only)
+    const allProducts = [darkProduct, lightProduct];
 
     useChatPanelStore.setState({
       messages: [
@@ -88,6 +94,31 @@ describe("filterByChip — targets last assistant message by role (iter-7b AC-TS
     const messages = useChatPanelStore.getState().messages;
     const updated = messages.find((m) => m.id === "assistant-1");
     expect(updated?.followUps).toEqual([]);
+  });
+
+  it("preserves followUps when chip does not narrow the result set", () => {
+    // "xyznonexistent" matches nothing → fallback = allProducts → same length → no update
+    const allProducts = [darkProduct, lightProduct];
+
+    useChatPanelStore.setState({
+      messages: [
+        {
+          id: "assistant-1",
+          role: "assistant",
+          content: "Results.",
+          products: allProducts,
+          followUps: ["Bold", "Light"],
+        },
+      ],
+      allProducts,
+    });
+
+    useChatPanelStore.getState().filterByChip("xyznonexistent");
+
+    const messages = useChatPanelStore.getState().messages;
+    const updated = messages.find((m) => m.id === "assistant-1");
+    // Chips must survive a non-narrowing chip click
+    expect(updated?.followUps).toEqual(["Bold", "Light"]);
   });
 
   it("falls back to full allProducts when chip matches nothing", () => {
@@ -130,6 +161,27 @@ describe("filterByChip — targets last assistant message by role (iter-7b AC-TS
     // Pour-over → light/medium; dark excluded
     expect(updated?.products?.every((p) => p.roastLevel !== "dark")).toBe(true);
     expect(updated?.products).toHaveLength(1);
+  });
+
+  it("'With milk' chip: stopword 'with' excluded, 'milk' matches tasting notes", () => {
+    // "With milk" → chipWords should be ["milk"] (stopword "with" removed)
+    // "milk" text-matches products with "Milk Chocolate" tasting note
+    const milkChocMedium = makeProduct("medium", "p-milk", null, ["Milk Chocolate", "Caramel"]);
+    const floralMedium = makeProduct("medium", "p-floral", null, ["Floral", "Citrus"]);
+    const allProducts = [milkChocMedium, floralMedium];
+
+    useChatPanelStore.setState({
+      messages: [{ id: "assistant-1", role: "assistant", content: "Results.", products: allProducts }],
+      allProducts,
+    });
+
+    useChatPanelStore.getState().filterByChip("With milk");
+
+    const messages = useChatPanelStore.getState().messages;
+    const updated = messages.find((m) => m.id === "assistant-1");
+    // Only the milk-chocolate product should survive — stopword "with" must not cause a false match
+    expect(updated?.products).toHaveLength(1);
+    expect(updated?.products?.[0].id).toBe("p-milk");
   });
 
   it("falls through to text search when roast keyword maps to an absent roast level", () => {

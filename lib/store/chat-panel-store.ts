@@ -103,8 +103,9 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
     if (allProducts.length === 0) return;
 
     const chipLower = chip.toLowerCase();
-    // Split into meaningful words (skip "and", "or", "the", etc.)
-    const chipWords = chipLower.split(/\s+/).filter((w) => w.length > 3);
+    // Split into meaningful content words — exclude stopwords that cause false text matches
+    const STOPWORDS = new Set(["and", "or", "the", "for", "with", "from", "into", "this", "that", "they", "than", "then", "when", "what", "some", "just", "like", "also", "have", "your", "more", "good", "best", "great"]);
+    const chipWords = chipLower.split(/\s+/).filter((w) => w.length > 2 && !STOPWORDS.has(w));
 
     // Brew method → suitable roast levels (pour-over/drip = light/medium; espresso/french press = medium/dark)
     const brewMethodRoasts: Record<string, string[]> = {
@@ -158,8 +159,11 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
       filtered = allProducts.filter(textMatch);
     }
 
-    // If filter produces 0 results, keep all products
+    // If filter produces 0 results, fall back to all products
     if (filtered.length === 0) filtered = allProducts;
+
+    // If no narrowing happened, leave the message unchanged (preserves chips)
+    if (filtered.length >= allProducts.length) return;
 
     // Update last assistant message by role — handles trailing user bubbles
     const lastAssistantIdx = messages.reduce((best, m, i) =>
