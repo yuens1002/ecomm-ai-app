@@ -269,10 +269,14 @@ export async function GET(request: NextRequest) {
       // extraction decision is the gate. how_to/reorder/unqualified recommend
       // naturally produce empty filters and return no products without an explicit
       // intent blocklist.
-      const hasFilters = agenticData.filtersExtracted &&
-        Object.values(agenticData.filtersExtracted).some(
-          (v) => v !== undefined && v !== null && (!Array.isArray(v) || v.length > 0)
-        );
+      const hasSubstantiveFilterValue = (value: unknown): boolean => {
+        if (value === undefined || value === null) return false;
+        if (typeof value === "string") return value.trim().length > 0;
+        if (Array.isArray(value)) return value.some(hasSubstantiveFilterValue);
+        return true;
+      };
+      const hasFilters = !!agenticData.filtersExtracted &&
+        Object.values(agenticData.filtersExtracted).some(hasSubstantiveFilterValue);
 
       if (!hasFilters) {
         return NextResponse.json({
