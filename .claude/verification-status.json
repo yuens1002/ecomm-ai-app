@@ -349,7 +349,7 @@
       "notes": "23/24 ACs verified. 13 FN (code review) + 8 TST (1285 tests, 0 failures) + 2 REG (precheck clean, tests pass). 9 DEFERRED (6 UI + 3 REG — interactive AI queries). 1 iteration: TST tests added post-verification. AC-FN-8 deviation: SiteSettings KV instead of Store model field."
     },
     "feat/counter-iter7b-fixes": {
-      "status": "planned",
+      "status": "pending",
       "acs_passed": 0,
       "acs_total": 23,
       "tasks": [],
