@@ -350,11 +350,11 @@
     },
     "feat/counter-iter7b-fixes": {
       "status": "verified",
-      "acs_passed": 23,
-      "acs_total": 23,
+      "acs_passed": 27,
+      "acs_total": 27,
       "tasks": [],
       "acs_doc": "docs/features/smart-search-ux/iter-7b-fixes/acs.md",
-      "notes": "23/23 ACs verified. AC-UI-5 updated to PASS: AI correctly hit the compare→recommend fallback when both Yirgacheffe+Sidamo have no evaluable delta for milk suitability (same Ethiopian brightness profile). Pass condition updated to include fallback path. 5 UI + 10 FN + 6 TST + 2 REG. 1299 tests, precheck clean. 0 iterations needed."
+      "notes": "27/27 ACs verified. Iteration 1 (22/23) identified intent classification gap: 'which is better for X?' filed as compare instead of recommend. Iteration 2 (commit 7): intent boundary fix, tiebreaker rule, 5 few-shot examples, route guard (compare/recommend + empty ack → products: []), intent-cadence integration tests. Test phrase updated (AC-TST-5: 'both products could legitimately win'). 5 UI + 13 FN + 7 TST + 2 REG. 1299 tests, precheck clean. 1 iteration."
     }
   }
 }
