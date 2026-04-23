@@ -106,7 +106,16 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
     // Split into meaningful words (skip "and", "or", "the", etc.)
     const chipWords = chipLower.split(/\s+/).filter((w) => w.length > 3);
 
-    // Known roast-level mappings
+    // Brew method → suitable roast levels (pour-over/drip = light/medium; espresso/french press = medium/dark)
+    const brewMethodRoasts: Record<string, string[]> = {
+      "pour-over": ["light", "medium"], "pour over": ["light", "medium"],
+      drip: ["light", "medium"], aeropress: ["light", "medium"],
+      espresso: ["medium", "dark"], "moka pot": ["medium", "dark"],
+      "french press": ["medium", "dark"], "french-press": ["medium", "dark"],
+      "cold brew": ["medium", "dark"],
+    };
+
+    // Roast-level keyword mappings
     const roastKeywords: Record<string, string[]> = {
       bold: ["dark"], strong: ["dark"], intense: ["dark"],
       light: ["light"], bright: ["light"], lively: ["light"],
@@ -114,11 +123,18 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
       medium: ["medium"],
     };
 
-    // Check if chip matches a known roast keyword
+    // Check brew method first (whole chip phrase match), then roast keywords
     const matchedRoasts = new Set<string>();
-    for (const [keyword, roasts] of Object.entries(roastKeywords)) {
-      if (chipLower.includes(keyword)) {
+    for (const [method, roasts] of Object.entries(brewMethodRoasts)) {
+      if (chipLower.includes(method)) {
         roasts.forEach((r) => matchedRoasts.add(r));
+      }
+    }
+    if (matchedRoasts.size === 0) {
+      for (const [keyword, roasts] of Object.entries(roastKeywords)) {
+        if (chipLower.includes(keyword)) {
+          roasts.forEach((r) => matchedRoasts.add(r));
+        }
       }
     }
 
@@ -134,8 +150,7 @@ export const useChatPanelStore = create<ChatPanelState>()((set, get) => ({
       filtered = allProducts.filter(
         (p) => p.roastLevel && matchedRoasts.has(p.roastLevel.toLowerCase())
       );
-      // Roast mapping produced nothing (chip describes flavor, not roast level) —
-      // fall through to word-level text search so "Bold and rich" still narrows results.
+      // Roast/brew mapping produced nothing — fall through to word-level text search.
       if (filtered.length === 0) {
         filtered = allProducts.filter(textMatch);
       }

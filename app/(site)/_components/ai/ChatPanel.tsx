@@ -92,6 +92,7 @@ function PanelContent() {
     sessionGreeted,
     setSessionGreeted,
     setAllProducts,
+    filterByChip,
   } = useChatPanelStore();
   const pathname = usePathname();
   const [input, setInput] = useState("");
@@ -295,7 +296,8 @@ function PanelContent() {
               key={msg.id}
               msg={msg}
               onChipClick={(chip) => {
-                sendQuery(chip);
+                addMessage({ id: `u-chip-${Date.now()}`, role: "user", content: chip });
+                filterByChip(chip);
               }}
             />
           ))}

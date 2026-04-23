@@ -113,6 +113,25 @@ describe("filterByChip — targets last assistant message by role (iter-7b AC-TS
     expect(updated?.products).toHaveLength(2);
   });
 
+  it("brew method chip filters by suitable roast level (pour-over → light/medium)", () => {
+    const mediumProduct = makeProduct("medium", "p-medium");
+    const darkProduct2 = makeProduct("dark", "p-dark2");
+    const allProducts = [mediumProduct, darkProduct2];
+
+    useChatPanelStore.setState({
+      messages: [{ id: "assistant-1", role: "assistant", content: "Results.", products: allProducts }],
+      allProducts,
+    });
+
+    useChatPanelStore.getState().filterByChip("Pour-over");
+
+    const messages = useChatPanelStore.getState().messages;
+    const updated = messages.find((m) => m.id === "assistant-1");
+    // Pour-over → light/medium; dark excluded
+    expect(updated?.products?.every((p) => p.roastLevel !== "dark")).toBe(true);
+    expect(updated?.products).toHaveLength(1);
+  });
+
   it("falls through to text search when roast keyword maps to an absent roast level", () => {
     // "Bold and rich" → "bold" maps to "dark", but all products are medium-roast.
     // Should fall through to word-level text search and match on "rich" in description.
