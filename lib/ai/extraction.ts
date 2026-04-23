@@ -138,7 +138,7 @@ export function buildExtractionPrompt(query: string, pageContext?: string): stri
     : "";
   return `Extract search intent and return JSON only:
 {
-  "intent": "discover" | "recommend" | "how_to" | "reorder" | "compare",  // "discover": customer is looking for something (default for searches). "recommend": customer asks whether a product suits their goal or asks for a suggestion. "compare": customer asks to evaluate specific named products against stated criteria — requires evaluable criteria (e.g. "better for milk", "better for espresso"); no criteria = "recommend". "how_to": informational question, no search. "reorder": redirect to account page.
+  "intent": "discover" | "recommend" | "how_to" | "reorder" | "compare",  // "discover": customer is looking for something (default for searches). "recommend": customer asks whether a product suits their goal OR asks which of two products they should use/get — "which is better with milk?", "which should I try?", "which is better for espresso?" all → recommend (customer wants a pick). "compare": customer wants both sides explained, no single winner expected — "what's the difference between X and Y?", "compare X and Y", "how do they differ?". Tiebreaker: if the question has a correct answer (one product clearly wins for the criterion), use recommend. "how_to": informational question, no search. "reorder": redirect to account page.
   "filtersExtracted": {
     "productType": "coffee" | "merch",  // Priority rule: if the query mentions a physical tool, device, or brewing equipment (dripper, grinder, kettle, moka pot, Aeropress, mug, filter, reusable cup), set productType to "merch" — even when the query also contains coffee descriptors like roast level or flavor. Otherwise: "coffee" for coffee queries; omit when unclear.
     "brewMethod": string | undefined,  // Coffee only
@@ -184,9 +184,10 @@ Step 3 — Is the answer NO?
 Key: Extract filters for the alternative you are recommending, not for what you are discussing.
 Example: "is this good with milk?" on a light roast → search for medium/dark roast, not the current product.
 
-COMPARE CADENCE — when a customer asks to compare specific products:
+COMPARE CADENCE — when a customer asks to compare specific products with no single correct answer:
+Note: "which is better for [use case]?" → recommend, not compare. Compare is for "what's the difference?" where both products could legitimately win.
 
-Step 1 — state the delta: what's meaningfully different between them for the customer's stated criteria.
+Step 1 — state the delta: what's meaningfully different between them.
 
 Step 2 — Search for the specific products being compared by name/keyword.
           Show all of them so the customer can decide.
@@ -194,6 +195,23 @@ Step 2 — Search for the specific products being compared by name/keyword.
 Step 3 — If one clearly wins for their criteria: promote it to the top.
           If no clear winner: show all, let the customer decide.
           If search returns nothing: no cards — just the reasoning.
+
+Examples:
+
+Q: "is a light roast good for espresso?"
+A: {"intent":"recommend","filtersExtracted":{"brewMethod":"espresso","roastLevel":"dark"},"acknowledgment":"Light roasts under espresso pressure tend to come out sour — the extraction really exposes any sharpness. For espresso you want something with more body and sweetness to balance it out.","followUpQuestion":"Do you usually pull it straight or add milk?","followUps":["Straight shot","With milk"]}
+
+Q: "which goes better with oat milk, a Colombian or a Kenyan?"
+A: {"intent":"recommend","filtersExtracted":{"roastLevel":"medium","flavorProfile":["chocolate","nutty","caramel","smooth"]},"acknowledgment":"Oat milk is creamy and a little sweet on its own — it does well with something that leans chocolatey and full-bodied. Between those two, the Colombian will give you more to lean into. For something that really sings with oat milk, here's what I'd try.","followUpQuestion":"","followUps":[]}
+
+Q: "what's the difference between washed and natural process coffees?"
+A: {"intent":"compare","filtersExtracted":{"productKeywords":["washed","natural"]},"acknowledgment":"Washed coffees strip the fruit before drying — you get a cleaner, brighter cup that shows off the bean itself. Natural-processed ones dry with the cherry on, which adds body and a winey, fruity complexity. Both are worth exploring.","followUpQuestion":"Do you lean more toward clean and bright, or fruity and complex?","followUps":["Clean and bright","Fruity and complex"]}
+
+Q: "how do I get a good bloom on a pour-over?"
+A: {"intent":"how_to","filtersExtracted":{},"acknowledgment":"Use about twice the weight of water to coffee — 30g water for 15g coffee — and let it sit 30 to 45 seconds before the main pour. The CO2 escaping is what you're after. Fresher roasts bloom more aggressively, which is usually a good sign.","followUpQuestion":"","followUps":[]}
+
+Q: "something cozy for a rainy afternoon"
+A: {"intent":"discover","filtersExtracted":{"sortBy":"top_rated","flavorProfile":["chocolate","caramel","nutty","spice"]},"acknowledgment":"A rainy afternoon calls for something that wraps around you — chocolatey, full-bodied, maybe a hint of warmth.","followUpQuestion":"Do you drink it black or with something in it?","followUps":["Black","With milk"]}
 
 Query: ${JSON.stringify(query)}${contextNote}`;
 }

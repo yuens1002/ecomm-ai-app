@@ -76,8 +76,8 @@ describe("buildExtractionPrompt — compare cadence + intent boundary (iter-7b A
     expect(prompt).toContain("state the delta");
   });
 
-  it('contains "requires evaluable criteria"', () => {
-    expect(prompt).toContain("requires evaluable criteria");
+  it('contains "both products could legitimately win"', () => {
+    expect(prompt).toContain("both products could legitimately win");
   });
 });
 

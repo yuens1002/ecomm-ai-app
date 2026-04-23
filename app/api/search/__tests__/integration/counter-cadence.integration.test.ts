@@ -21,6 +21,8 @@
 
 /** @jest-environment node */
 
+export {};
+
 const BASE_URL = process.env.INTEGRATION_BASE_URL ?? "http://localhost:3000";
 
 // ---------------------------------------------------------------------------

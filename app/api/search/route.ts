@@ -289,6 +289,21 @@ export async function GET(request: NextRequest) {
           aiFailed: false, context: { sessionId, turnCount },
         });
       }
+
+      // compare/recommend without an acknowledgment means the AI encoded its
+      // reasoning silently in filters without speaking. Block the DB — force
+      // products: [] so the UI doesn't show unexplained results.
+      const cadenceRequiresAck =
+        agenticData.intent === "compare" || agenticData.intent === "recommend";
+      if (cadenceRequiresAck && !agenticData.acknowledgment?.trim()) {
+        return NextResponse.json({
+          products: [], query: searchQuery, count: 0,
+          intent: agenticData.intent, filtersExtracted: null,
+          acknowledgment: null, followUpQuestion: null,
+          followUps: [], recommendedProductName: null,
+          aiFailed: false, context: { sessionId, turnCount },
+        });
+      }
     }
 
     // -------------------------------------------------------------------------
