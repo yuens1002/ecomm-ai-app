@@ -257,19 +257,32 @@ export async function extractAgenticFilters(
     const raw = JSON.parse(stripped) as Record<string, unknown>;
 
     // Preprocess before Zod validation — normalize edge cases from AI output
+
+    // Null → undefined for all optional top-level string/array fields
+    // (AI frequently returns null for omitted fields instead of omitting them)
+    for (const key of ["acknowledgment", "recommendedProductName", "followUpQuestion", "followUps"] as const) {
+      if (raw[key] === null) delete raw[key];
+    }
+    // Trim recommendedProductName whitespace
+    if (typeof raw.recommendedProductName === "string") {
+      const trimmed = raw.recommendedProductName.trim();
+      raw.recommendedProductName = trimmed || undefined;
+    }
+
     if (raw.filtersExtracted && typeof raw.filtersExtracted === "object") {
       const filters = raw.filtersExtracted as Record<string, unknown>;
+      // Null → undefined for all optional filter fields
+      for (const key of Object.keys(filters)) {
+        if (filters[key] === null) delete filters[key];
+      }
       // "any" productType → undefined (schema only allows "coffee" | "merch")
       if (filters.productType === "any") delete filters.productType;
       // Single-element origin array → string (schema enforces min-2 for arrays)
       if (Array.isArray(filters.origin) && filters.origin.length === 1) {
         filters.origin = filters.origin[0];
       }
-    }
-    // Trim recommendedProductName
-    if (typeof raw.recommendedProductName === "string") {
-      const trimmed = raw.recommendedProductName.trim();
-      raw.recommendedProductName = trimmed || undefined;
+    } else if (raw.filtersExtracted === null) {
+      delete raw.filtersExtracted;
     }
 
     const parsed = AgenticExtractionSchema.safeParse(raw);
