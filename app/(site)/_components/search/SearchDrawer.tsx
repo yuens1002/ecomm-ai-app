@@ -99,10 +99,17 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
               </p>
             )}
 
+            {/* Chips persist across empty / results / no-results states */}
+            {status !== "loading" && config.chips.length > 0 && (
+              <CuratedCategoryChips
+                heading={config.chipsHeading}
+                chips={config.chips}
+              />
+            )}
+
             {status !== "loading" && !hasQuery && (
               <EmptyState
-                chipsHeading={config.chipsHeading}
-                chips={config.chips}
+                hasChips={config.chips.length > 0}
                 curatedHeading={curatedHeading}
                 curatedProducts={config.curatedProducts}
               />
@@ -115,6 +122,7 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
                 onClose={close}
                 curatedHeading={curatedHeading}
                 curatedProducts={config.curatedProducts}
+                hasChips={config.chips.length > 0}
               />
             )}
           </div>
@@ -125,19 +133,17 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
 }
 
 function EmptyState({
-  chipsHeading,
-  chips,
+  hasChips,
   curatedHeading,
   curatedProducts,
 }: {
-  chipsHeading: string;
-  chips: SearchDrawerConfig["chips"];
+  hasChips: boolean;
   curatedHeading: string;
   curatedProducts: SearchDrawerConfig["curatedProducts"];
 }) {
   // First-time admin state: nothing configured. Show a hint instead of empty space.
-  // (Customers see the input but nothing else; not broken, just sparse.)
-  if (chips.length === 0 && curatedProducts.length === 0) {
+  // Chips are rendered separately above by the parent.
+  if (!hasChips && curatedProducts.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
         Type a product name, origin, or tasting note to search.
@@ -145,12 +151,7 @@ function EmptyState({
     );
   }
 
-  return (
-    <>
-      <CuratedCategoryChips heading={chipsHeading} chips={chips} />
-      <CuratedProducts heading={curatedHeading} products={curatedProducts} />
-    </>
-  );
+  return <CuratedProducts heading={curatedHeading} products={curatedProducts} />;
 }
 
 function LoadingSkeleton() {
@@ -186,16 +187,23 @@ function ResultsOrNoResults({
   onClose,
   curatedHeading,
   curatedProducts,
+  hasChips,
 }: {
   results: ReturnType<ReturnType<typeof useSearchIndex>["search"]>;
   query: string;
   onClose: () => void;
   curatedHeading: string;
   curatedProducts: SearchDrawerConfig["curatedProducts"];
+  hasChips: boolean;
 }) {
+  // Note: chips are rendered above by the parent and persist across states.
+  // Add top spacing here when chips are present so the section header doesn't
+  // bump up against the chip row.
+  const topSpacingClass = hasChips ? "mt-8" : "";
+
   if (results.length === 0) {
     return (
-      <div aria-live="polite">
+      <div aria-live="polite" className={topSpacingClass}>
         <p className="text-base mb-2">
           No results found for{" "}
           <span className="font-semibold">&ldquo;{query}&rdquo;</span>
@@ -211,7 +219,7 @@ function ResultsOrNoResults({
   }
 
   return (
-    <>
+    <div className={topSpacingClass}>
       <p
         className="text-sm text-muted-foreground mb-4"
         aria-live="polite"
@@ -260,6 +268,6 @@ function ResultsOrNoResults({
           </li>
         ))}
       </ul>
-    </>
+    </div>
   );
 }
