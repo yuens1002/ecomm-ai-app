@@ -63,8 +63,9 @@
 | AC-FN-13 | Chips heading text input validates length (Zod min 1 max 60) | Code review: `app/api/admin/search-drawer-settings/route.ts` PUT validation | Zod `z.string().min(1).max(60)` on `search_drawer_chips_heading`; empty string returns 400 | | | |
 | AC-FN-14 | Admin Search route registered per `docs/navigation/README.md` | Code review: `lib/navigation/route-registry.ts` (admin.settings.search entry) + `lib/config/admin-nav.ts` (Settings children, between Commerce and Shipping) | Route registry has `id: "admin.settings.search"`, `pathname: "/admin/settings/search"`, `parentId: "admin.settings"`, `isNavigable: true`; admin-nav has `{ label: "Search", href: "/admin/settings/search" }` in both occurrences | | | |
 | AC-FN-15 | Chips heading defaults to "Top Categories" when unset; curated section header derives from picked category's display name | Code review: `lib/site-settings.ts` `defaultSettings` + drawer rendering of curated section | When DB has no `search_drawer_chips_heading` row, settings object returns `"Top Categories"`; curated section heading = `category.name` from the picked category (no separate setting) | | | |
-| AC-FN-16 | Seed uses `upsert + update: {}` for the three search drawer settings (admin changes survive re-seed) | Code review: `prisma/seed/settings.ts` | Three new `prisma.siteSettings.upsert({ where, update: {}, create })` blocks for the three keys; `update: {}` means re-seed never overwrites admin changes | | | |
-| AC-FN-17 | Seed adds 5 missing demo categories with `upsert + update: {}` | Code review: `prisma/seed/categories.ts` | New entries for `fruity-floral`, `cold-brew-blends`, `drinkware`, `central-america`, `staff-picks` use the same pattern as existing categories — admin overrides preserved on re-seed | | | |
+| AC-FN-16 | Seed uses `upsert + update: { value }` for the three search drawer settings (reseed restores demo defaults) | Code review: `prisma/seed/settings.ts` | Three new `prisma.siteSettings.upsert({ where, update: { value: ... }, create })` blocks for the three keys; reseed overwrites whatever admin set, restoring the demo showcase | | | |
+| AC-FN-17 | Seed adds 5 missing demo categories with `upsert + update: {}` (admin catalog work preserved) | Code review: `prisma/seed/categories.ts` | New entries for `fruity-floral`, `cold-brew-blends`, `drinkware`, `central-america`, `staff-picks` use the existing categories-seed pattern — products attached and labels assigned by admin survive reseed | | | |
+| AC-FN-18 | `PUT /api/admin/search-drawer-settings` is not blocked by demo-mode guards | Code review: `app/api/admin/search-drawer-settings/route.ts` | Endpoint uses `requireAdminApi()` only; no `requireNotDemo()` (or equivalent demo-block helper) is invoked; demo build admins can write to these settings | | | |
 
 ## Test Coverage Acceptance Criteria
 
@@ -76,7 +77,8 @@
 | AC-TST-4 | Legacy `/api/search` returns empty when roast pattern + 0 FTS hits | Test: query "light roast xyz" with mocked FTS returning empty, assert response.products is empty (not full category) | Test passes | | | |
 | AC-TST-5 | Admin Zod schema test: rejects 7+ chip categories | Test: `app/api/admin/search-drawer-settings/__tests__/route.test.ts` — PUT with 7 categories returns 400 | Test passes | | | |
 | AC-TST-6 | Admin GET/PUT roundtrip persists all three settings | Test: `app/api/admin/search-drawer-settings/__tests__/route.test.ts` — PUT with valid payload, GET returns the same; heading validation rejects empty + >60 chars | Test passes | | | |
-| AC-TST-7 | Re-seed preserves admin-set search settings | Test or smoke: set heading to `"Browse"` via PUT, run seed script, GET → heading still `"Browse"` | Test passes; admin override survives `npm run seed` | | | |
+| AC-TST-7 | Reseed restores demo defaults for search settings | Test or smoke: set heading to `"Browse"` via PUT, run seed script, GET → heading is `"Top Categories"` (back to default) | Test passes; reseed overwrites admin change with seed default | | | |
+| AC-TST-8 | Reseed preserves admin's catalog work on the new categories | Test or smoke: attach products to `staff-picks` via Menu Builder, run seed script, query category products → still attached | Test passes; admin catalog edits survive reseed because categories use `update: {}` | | | |
 
 ## Regression Acceptance Criteria
 

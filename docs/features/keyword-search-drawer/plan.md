@@ -305,7 +305,15 @@ app/admin/settings/search/
 
 ## Demo configuration (prod demo app)
 
-Baked into `prisma/seed/settings.ts` as defaults. **Persists across re-seed** via the existing `upsert({ where, update: {}, create })` pattern — `update: {}` means admin changes via the Search settings UI survive any future `npm run seed` run. Demo build remains free to change them at any time.
+Baked into `prisma/seed/settings.ts` as authoritative defaults. **Reseed overwrites** the three search-drawer settings via `upsert({ where, update: { value }, create })` — same pattern as `app.weightUnit` / `app.locationType` in the existing seed. This keeps the demo showcase fresh on every refresh.
+
+**Demo lifecycle:**
+
+1. Seed runs → search settings reset to the demo defaults below
+2. Demo admin changes settings via the Search settings UI → writes persist to DB (no demo-mode guard blocks the mutation)
+3. Next reseed → demo defaults restored
+
+Demo admins can experiment freely between reseeds. Demo guests always see the curated showcase on a fresh deploy.
 
 | Setting | Seed default value | Storage key |
 |---|---|---|
@@ -317,7 +325,7 @@ Baked into `prisma/seed/settings.ts` as defaults. **Persists across re-seed** vi
 
 Of the 7 categories referenced (6 chips + 1 curated), only `Single Origin` and `Medium Roast` currently exist in `prisma/seed/categories.ts`. The remaining 5 — `Fruity & Floral`, `Cold Brew Blends`, `Drinkware`, `Central America`, and `Staff Picks` — must be added to the categories seed so a fresh `npm run seed` produces a fully-configured demo.
 
-**Slugs to add (also using `upsert + update: {}` so existing admin overrides survive):**
+**Slugs to add (using existing `upsert + update: {}` pattern so admin's catalog work survives reseed):**
 
 | Name | Slug | Notes |
 |---|---|---|
@@ -327,4 +335,10 @@ Of the 7 categories referenced (6 chips + 1 curated), only `Single Origin` and `
 | Central America | `central-america` | New origin category |
 | Staff Picks | `staff-picks` | Used as the curated category in search drawer |
 
+> **Note on the two patterns:** Search drawer settings reset on reseed (`update: { value }`) because they're showcase configuration. New categories follow the existing categories-seed pattern (`update: {}`) because admin catalog work — adding products, linking labels — is creative output the admin shouldn't lose on reseed. Same file, two different patterns, intentional.
+
 The seed adds the categories with no products attached — admin populates them via Menu Builder per existing workflow. Default `isVisible: true`; admin decides whether to add label associations to surface them in the storefront menu (per the discussion 2026-04-25, this is independent of search drawer use).
+
+### Demo-mode write gating
+
+The `PUT /api/admin/search-drawer-settings` endpoint must **not** be blocked by demo-mode guards. Search settings are an explicit exception to whatever read-only / sandboxed admin policies the demo build enforces elsewhere. Implementation: ensure the endpoint's auth middleware doesn't include `requireNotDemo()` (or whatever the project's demo-block helper is named) — only `requireAdminApi()`.
