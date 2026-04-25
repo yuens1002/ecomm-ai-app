@@ -102,6 +102,15 @@ export async function seedCategories(prisma: PrismaClient) {
     },
   });
 
+  // One-shot slug migration: align any pre-existing "Staff Picks" category
+  // (which may have been created with a non-canonical slug like "new-category"
+  // via admin UI) to the canonical slug "staff-picks" so the search drawer
+  // settings reference resolves. Idempotent: no-op once aligned.
+  await prisma.category.updateMany({
+    where: { name: "Staff Picks", slug: { not: "staff-picks" } },
+    data: { slug: "staff-picks" },
+  });
+
   const _catStaffPicks = await prisma.category.upsert({
     where: { slug: "staff-picks" },
     update: {},
