@@ -1,0 +1,174 @@
+/**
+ * @jest-environment jsdom
+ */
+
+import { renderHook, waitFor, act } from "@testing-library/react";
+import { useSearchIndex, type SearchProduct } from "../useSearchIndex";
+
+const FIXTURE_CATALOG: SearchProduct[] = [
+  {
+    id: "p1",
+    name: "Ethiopia Yirgacheffe",
+    slug: "ethiopia-yirgacheffe",
+    type: "COFFEE",
+    description: "Bright and floral.",
+    tastingNotes: ["Floral", "Citrus", "Bergamot"],
+    origin: ["Ethiopia"],
+    roastLevel: "LIGHT",
+    isFeatured: true,
+    primaryCategory: { name: "Light Roast", slug: "light-roast" },
+    primaryImage: null,
+    minPriceInCents: 2000,
+  },
+  {
+    id: "p2",
+    name: "Tanzania Peaberry",
+    slug: "tanzania-peaberry",
+    type: "COFFEE",
+    description: "Citrus and winey notes.",
+    tastingNotes: ["Black Currant", "Citrus", "Winey"],
+    origin: ["Tanzania"],
+    roastLevel: "MEDIUM",
+    isFeatured: false,
+    primaryCategory: { name: "Medium Roast", slug: "medium-roast" },
+    primaryImage: null,
+    minPriceInCents: 1800,
+  },
+  {
+    id: "p3",
+    name: "Origami Air Dripper",
+    slug: "origami-air-dripper",
+    type: "MERCH",
+    description: "Pour-over dripper.",
+    tastingNotes: [],
+    origin: [],
+    roastLevel: null,
+    isFeatured: false,
+    primaryCategory: { name: "Drinkware", slug: "drinkware" },
+    primaryImage: null,
+    minPriceInCents: 3500,
+  },
+  {
+    id: "p4",
+    name: "Aeropress",
+    slug: "aeropress",
+    type: "MERCH",
+    description: "Coffee press.",
+    tastingNotes: [],
+    origin: [],
+    roastLevel: null,
+    isFeatured: false,
+    primaryCategory: { name: "Brew Tools", slug: "brew-tools" },
+    primaryImage: null,
+    minPriceInCents: 4000,
+  },
+  {
+    id: "p5",
+    name: "Sumatra Mandheling",
+    slug: "sumatra-mandheling",
+    type: "COFFEE",
+    description: "Earthy with dark chocolate.",
+    tastingNotes: ["Earthy", "Cedar", "Dark Chocolate"],
+    origin: ["Sumatra"],
+    roastLevel: "DARK",
+    isFeatured: false,
+    primaryCategory: { name: "Dark Roast", slug: "dark-roast" },
+    primaryImage: null,
+    minPriceInCents: 1900,
+  },
+];
+
+const fetchMock = jest.fn();
+
+beforeEach(() => {
+  fetchMock.mockReset();
+  fetchMock.mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      products: FIXTURE_CATALOG,
+      generatedAt: new Date().toISOString(),
+    }),
+  });
+  global.fetch = fetchMock as unknown as typeof fetch;
+});
+
+describe("useSearchIndex", () => {
+  it("loads the index when enabled and exposes status transitions", async () => {
+    const { result } = renderHook(() => useSearchIndex(true));
+    expect(result.current.status).toBe("loading");
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(result.current.products).toHaveLength(5);
+  });
+
+  it("does NOT fetch when disabled", () => {
+    renderHook(() => useSearchIndex(false));
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns the merch dripper as a top result for 'air dripper'", async () => {
+    const { result } = renderHook(() => useSearchIndex(true));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    const results = result.current.search("air dripper");
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe("p3");
+    expect(results[0].type).toBe("MERCH");
+  });
+
+  it("matches typo 'Yirgachefe' fuzzy → Ethiopia Yirgacheffe", async () => {
+    const { result } = renderHook(() => useSearchIndex(true));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    const results = result.current.search("Yirgachefe");
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe("p1");
+  });
+
+  it("returns coffees with citrus tasting notes for 'citrus'", async () => {
+    const { result } = renderHook(() => useSearchIndex(true));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    const results = result.current.search("citrus");
+    const ids = results.map((r) => r.id);
+    expect(ids).toContain("p1");
+    expect(ids).toContain("p2");
+  });
+
+  it("returns empty array for blank query", async () => {
+    const { result } = renderHook(() => useSearchIndex(true));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    expect(result.current.search("")).toEqual([]);
+    expect(result.current.search("   ")).toEqual([]);
+  });
+
+  it("returns empty array when no products match", async () => {
+    const { result } = renderHook(() => useSearchIndex(true));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    expect(result.current.search("zzzzzzzz")).toEqual([]);
+  });
+
+  it("sets status to 'error' on fetch failure", async () => {
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({}),
+    });
+
+    const { result } = renderHook(() => useSearchIndex(true));
+    await waitFor(() => expect(result.current.status).toBe("error"));
+  });
+
+  it("refetch triggers a new index fetch", async () => {
+    const { result } = renderHook(() => useSearchIndex(true));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    act(() => result.current.refetch());
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+  });
+});
