@@ -356,12 +356,12 @@
       "notes": "Strip-only branch — no formal ACs. Removes Smart Search / Counter surface per docs/internal/smart-search/README.md. Verification = npm run precheck (0 errors) + npm run test:ci passes + manual confirmation that /api/search returns keyword results and no Counter UI remains in storefront/admin. SHIPPED in v0.101.0 (PR #342)."
     },
     "feat/keyword-search-drawer": {
-      "status": "pending",
-      "acs_passed": 0,
-      "acs_total": 55,
+      "status": "verified",
+      "acs_passed": 53,
+      "acs_total": 53,
       "tasks": [],
       "acs_doc": "docs/features/keyword-search-drawer/acs.md",
-      "notes": "Polished keyword search drawer (discovery-surface pattern). Client-side search via MiniSearch, admin-curated chips heading + chips + curated category, no facets/sort/pagination. Polish-over-features per direction 2026-04-25. 23 UI + 18 FN + 8 TST + 6 REG = 55 ACs. New admin Search settings page at /admin/settings/search registered per docs/navigation/README.md. Demo seed pattern: 3 SiteSettings use upsert + update:{ value } (reseed restores demo defaults — showcase reset); 5 new categories use upsert + update:{} (admin catalog work preserved). PUT endpoint exempt from demo-mode write guard so demo admin can experiment between reseeds. Design refs: .screenshots/keyword-search-drawer/. Plan + ACs at docs/features/keyword-search-drawer/."
+      "notes": "53/53 ACs verified. 23 UI + 18 FN + 6 TST + 6 REG. 9 implementation commits + 4 iteration fix commits. 2 iterations: iter-1 fixed AC-UI-9 chip route + AC-FN-5 analytics hook + seed data drift (categories must live in menu.ts CATEGORY_DEFS, not categories.ts); iter-2 added Staff Picks product attachments + chip persistence across drawer states. Tests: 101/101 suites, 1161/1161 tests pass. Precheck clean. Ready for human review (Reviewer column)."
     }
   }
 }
