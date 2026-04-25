@@ -5,6 +5,7 @@ import SiteFooter from "@/app/(site)/_components/layout/SiteFooter";
 import { SiteBannerProvider } from "@/app/(site)/_hooks/useSiteBanner";
 import { SiteBannerPortal } from "@/app/(site)/_components/layout/SiteBannerPortal";
 import { DemoBanner } from "@/app/(site)/_components/content/DemoBanner";
+import { SearchDrawer } from "@/app/(site)/_components/search/SearchDrawer";
 import { getStorefrontTheme } from "@/lib/config/app-settings";
 
 // Evaluated once at module load based on NEXT_PUBLIC_BUILD_VARIANT.
@@ -74,6 +75,9 @@ export default async function SiteLayout({
         </div>
 
       </div>
+
+      {/* Search drawer overlay (rendered as Radix Portal outside the flex layout) */}
+      <SearchDrawer />
     </SiteBannerProvider>
   );
 }
