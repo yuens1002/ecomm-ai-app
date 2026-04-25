@@ -356,7 +356,7 @@
       "notes": "Strip-only branch — no formal ACs. Removes Smart Search / Counter surface per docs/internal/smart-search/README.md. Verification = npm run precheck (0 errors) + npm run test:ci passes + manual confirmation that /api/search returns keyword results and no Counter UI remains in storefront/admin. SHIPPED in v0.101.0 (PR #342)."
     },
     "feat/keyword-search-drawer": {
-      "status": "planned",
+      "status": "implementing",
       "acs_passed": 0,
       "acs_total": 55,
       "tasks": [],
