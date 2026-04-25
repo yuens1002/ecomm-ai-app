@@ -469,5 +469,31 @@ export async function seedMenu(prisma: PrismaClient) {
     }
   }
 
+  // Staff Picks attachments — populate the search drawer's curated section.
+  // Reseed overwrites these (matching the search-drawer settings overwrite
+  // pattern) so the demo showcase stays fresh. 4 coffees + 2 merch = 6 items.
+  const staffPicksId = categoryMap.get("Staff Picks");
+  if (staffPicksId) {
+    // Clear existing attachments then re-attach
+    await prisma.categoriesOnProducts.deleteMany({
+      where: { categoryId: staffPicksId },
+    });
+
+    const coffeePicks = coffees.slice(0, 4);
+    const merchPicks = merch.slice(0, 2);
+    const picks = [
+      ...coffeePicks.map((p) => p.id),
+      ...merchPicks.map((p) => p.id),
+    ];
+
+    for (const productId of picks) {
+      // Use isPrimary: false so we don't override the product's primary
+      // category (which drives breadcrumb / canonical category display).
+      await prisma.categoriesOnProducts.create({
+        data: { productId, categoryId: staffPicksId, isPrimary: false },
+      });
+    }
+  }
+
   console.log("  ✓ Menu aligned with new structure");
 }
