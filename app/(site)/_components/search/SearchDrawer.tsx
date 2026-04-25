@@ -147,28 +147,41 @@ function ResultsOrNoResults({
 }) {
   if (results.length === 0) {
     return (
-      <>
+      <div aria-live="polite">
         <p className="text-base mb-2">
           No results found for{" "}
           <span className="font-semibold">&ldquo;{query}&rdquo;</span>
         </p>
-        <p className="text-sm text-muted-foreground mb-8">
-          In the meantime, check out our {curatedHeading.toLowerCase()}.
-        </p>
+        {curatedProducts.length > 0 && (
+          <p className="text-sm text-muted-foreground mb-8">
+            In the meantime, check out our {curatedHeading.toLowerCase()}.
+          </p>
+        )}
         <CuratedProducts heading={curatedHeading} products={curatedProducts} />
-      </>
+      </div>
     );
   }
 
   return (
     <>
-      <p className="text-sm text-muted-foreground mb-4">
+      <p
+        className="text-sm text-muted-foreground mb-4"
+        aria-live="polite"
+      >
         Results for{" "}
         <span className="font-medium">&ldquo;{query}&rdquo;</span>
       </p>
-      <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {results.map((p) => (
-          <li key={p.id}>
+      <ul
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        // Re-key the list on query change so fade-in animation re-fires
+        key={query}
+      >
+        {results.map((p, idx) => (
+          <li
+            key={p.id}
+            className="animate-in fade-in-0 duration-300"
+            style={{ animationDelay: `${idx * 30}ms`, animationFillMode: "both" }}
+          >
             <Link
               href={`/products/${p.slug}`}
               onClick={onClose}
