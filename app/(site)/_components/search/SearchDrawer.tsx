@@ -75,20 +75,29 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                aria-label="Search products"
+                aria-controls="search-drawer-results"
               />
             </div>
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6 md:py-8">
+          <div
+            id="search-drawer-results"
+            className="flex-1 overflow-y-auto px-4 py-6 md:px-6 md:py-8"
+            aria-busy={status === "loading"}
+          >
+            {status === "loading" && !hasQuery && (
+              <LoadingSkeleton />
+            )}
             {status === "error" && (
-              <p className="text-sm text-destructive mb-6">
+              <p className="text-sm text-destructive mb-6" role="alert">
                 Search is temporarily unavailable. You can still browse via the
                 categories below.
               </p>
             )}
 
-            {!hasQuery && (
+            {status !== "loading" && !hasQuery && (
               <EmptyState
                 chipsHeading={config.chipsHeading}
                 chips={config.chips}
@@ -124,11 +133,48 @@ function EmptyState({
   curatedHeading: string;
   curatedProducts: SearchDrawerConfig["curatedProducts"];
 }) {
+  // First-time admin state: nothing configured. Show a hint instead of empty space.
+  // (Customers see the input but nothing else; not broken, just sparse.)
+  if (chips.length === 0 && curatedProducts.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Type a product name, origin, or tasting note to search.
+      </p>
+    );
+  }
+
   return (
     <>
       <CuratedCategoryChips heading={chipsHeading} chips={chips} />
       <CuratedProducts heading={curatedHeading} products={curatedProducts} />
     </>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-8" aria-hidden="true">
+      <div>
+        <div className="h-5 w-32 bg-muted rounded animate-pulse mb-4" />
+        <div className="flex flex-wrap gap-2">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-9 w-24 bg-muted rounded-md animate-pulse" />
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="h-5 w-32 bg-muted rounded animate-pulse mb-4" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="space-y-2">
+              <div className="aspect-square bg-muted rounded-md animate-pulse" />
+              <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
+              <div className="h-3 w-1/4 bg-muted rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
