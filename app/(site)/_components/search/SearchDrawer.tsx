@@ -11,18 +11,27 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import type { SearchDrawerConfig } from "@/lib/data";
 import { useSearchDrawerStore } from "./store";
 import { useSearchIndex } from "./hooks/useSearchIndex";
+import { CuratedCategoryChips } from "./CuratedCategoryChips";
+import { CuratedProducts } from "./CuratedProducts";
 import { cn } from "@/lib/utils";
+
+interface SearchDrawerProps {
+  config: SearchDrawerConfig;
+}
 
 /**
  * Search drawer overlay. Fullscreen on mobile, top-anchored on desktop with
  * backdrop blur for "context underneath".
  *
- * As-you-type client-side search via MiniSearch (fuzzy + field-weighted).
- * Empty state / curated content wired in commit 4.
+ * Three states:
+ * - Empty (no query): chips + curated products
+ * - Results (query has matches): result cards
+ * - No-results (query, zero matches): "No results for X" + curated products
  */
-export function SearchDrawer() {
+export function SearchDrawer({ config }: SearchDrawerProps) {
   const isOpen = useSearchDrawerStore((s) => s.isOpen);
   const close = useSearchDrawerStore((s) => s.close);
   const [query, setQuery] = useState("");
@@ -31,11 +40,12 @@ export function SearchDrawer() {
   const results = search(query);
   const hasQuery = query.trim().length > 0;
 
+  const curatedHeading = config.curatedCategoryName ?? "Featured";
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
       <DialogContent
         className={cn(
-          // Reset shadcn Dialog defaults that center on screen
           "p-0 gap-0 max-w-none rounded-none border-0 sm:rounded-none",
           // Mobile: fullscreen
           "fixed inset-0 left-0 right-0 top-0 bottom-0 translate-x-0 translate-y-0 w-screen h-screen",
@@ -71,21 +81,30 @@ export function SearchDrawer() {
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6 md:py-8">
-            {status === "loading" && !hasQuery && (
-              <p className="text-sm text-muted-foreground">Loading…</p>
-            )}
             {status === "error" && (
-              <p className="text-sm text-destructive">
-                Search is temporarily unavailable. Try the category navigation.
+              <p className="text-sm text-destructive mb-6">
+                Search is temporarily unavailable. You can still browse via the
+                categories below.
               </p>
             )}
-            {status === "ready" && !hasQuery && (
-              <p className="text-sm text-muted-foreground">
-                Curated content wired in commit 4.
-              </p>
+
+            {!hasQuery && (
+              <EmptyState
+                chipsHeading={config.chipsHeading}
+                chips={config.chips}
+                curatedHeading={curatedHeading}
+                curatedProducts={config.curatedProducts}
+              />
             )}
-            {status === "ready" && hasQuery && (
-              <SearchResultsList results={results} query={query} onClose={close} />
+
+            {hasQuery && (
+              <ResultsOrNoResults
+                results={results}
+                query={query}
+                onClose={close}
+                curatedHeading={curatedHeading}
+                curatedProducts={config.curatedProducts}
+              />
             )}
           </div>
         </div>
@@ -94,27 +113,58 @@ export function SearchDrawer() {
   );
 }
 
-function SearchResultsList({
+function EmptyState({
+  chipsHeading,
+  chips,
+  curatedHeading,
+  curatedProducts,
+}: {
+  chipsHeading: string;
+  chips: SearchDrawerConfig["chips"];
+  curatedHeading: string;
+  curatedProducts: SearchDrawerConfig["curatedProducts"];
+}) {
+  return (
+    <>
+      <CuratedCategoryChips heading={chipsHeading} chips={chips} />
+      <CuratedProducts heading={curatedHeading} products={curatedProducts} />
+    </>
+  );
+}
+
+function ResultsOrNoResults({
   results,
   query,
   onClose,
+  curatedHeading,
+  curatedProducts,
 }: {
   results: ReturnType<ReturnType<typeof useSearchIndex>["search"]>;
   query: string;
   onClose: () => void;
+  curatedHeading: string;
+  curatedProducts: SearchDrawerConfig["curatedProducts"];
 }) {
   if (results.length === 0) {
     return (
-      <p className="text-base">
-        No results found for <span className="font-semibold">&ldquo;{query}&rdquo;</span>
-      </p>
+      <>
+        <p className="text-base mb-2">
+          No results found for{" "}
+          <span className="font-semibold">&ldquo;{query}&rdquo;</span>
+        </p>
+        <p className="text-sm text-muted-foreground mb-8">
+          In the meantime, check out our {curatedHeading.toLowerCase()}.
+        </p>
+        <CuratedProducts heading={curatedHeading} products={curatedProducts} />
+      </>
     );
   }
 
   return (
     <>
       <p className="text-sm text-muted-foreground mb-4">
-        Results for <span className="font-medium">&ldquo;{query}&rdquo;</span>
+        Results for{" "}
+        <span className="font-medium">&ldquo;{query}&rdquo;</span>
       </p>
       <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {results.map((p) => (

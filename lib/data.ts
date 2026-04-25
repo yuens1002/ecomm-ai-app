@@ -841,6 +841,178 @@ const publicSettingsKeys = [
   "homepage_hero_tagline",
 ] as const;
 
+// --- SEARCH DRAWER CONFIG ---
+
+const DEFAULT_SEARCH_DRAWER_CHIPS_HEADING = "Top Categories";
+const DEFAULT_SEARCH_DRAWER_CHIP_CATEGORIES: string[] = [
+  "single-origin",
+  "fruity-floral",
+  "medium-roast",
+  "cold-brew-blends",
+  "drinkware",
+  "central-america",
+];
+const DEFAULT_SEARCH_DRAWER_CURATED_CATEGORY = "staff-picks";
+const MAX_CHIPS = 6;
+const CURATED_PRODUCTS_LIMIT = 6;
+
+export interface SearchDrawerChip {
+  name: string;
+  slug: string;
+}
+
+export interface SearchDrawerCuratedProduct {
+  id: string;
+  name: string;
+  slug: string;
+  type: "COFFEE" | "MERCH";
+  primaryImage: { url: string; altText: string | null } | null;
+  primaryCategorySlug: string | null;
+  minPriceInCents: number | null;
+}
+
+export interface SearchDrawerConfig {
+  chipsHeading: string;
+  chips: SearchDrawerChip[];
+  curatedCategoryName: string | null;
+  curatedProducts: SearchDrawerCuratedProduct[];
+}
+
+function safeParseStringArray(value: string | undefined, fallback: string[]): string[] {
+  if (!value) return fallback;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (Array.isArray(parsed) && parsed.every((s) => typeof s === "string")) {
+      return parsed as string[];
+    }
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Fetches the search drawer configuration: heading + chip categories + curated
+ * products for the curated section. Resolves slugs to category names + products.
+ *
+ * Falls back to demo defaults if SiteSettings rows are missing (will be replaced
+ * by admin-set values once the seed lands and admin can override via UI).
+ */
+export async function getSearchDrawerConfig(): Promise<SearchDrawerConfig> {
+  try {
+    const settingsRows = await prisma.siteSettings.findMany({
+      where: {
+        key: {
+          in: [
+            "search_drawer_chips_heading",
+            "search_drawer_chip_categories",
+            "search_drawer_curated_category",
+          ],
+        },
+      },
+      select: { key: true, value: true },
+    });
+
+    const record = settingsRows.reduce<Record<string, string>>((acc, row) => {
+      acc[row.key] = row.value;
+      return acc;
+    }, {});
+
+    const chipsHeading =
+      record.search_drawer_chips_heading || DEFAULT_SEARCH_DRAWER_CHIPS_HEADING;
+    const chipSlugs = safeParseStringArray(
+      record.search_drawer_chip_categories,
+      DEFAULT_SEARCH_DRAWER_CHIP_CATEGORIES
+    ).slice(0, MAX_CHIPS);
+    const curatedSlug =
+      record.search_drawer_curated_category || DEFAULT_SEARCH_DRAWER_CURATED_CATEGORY;
+
+    // Resolve chip slugs → categories (preserve order from settings)
+    const chipCategoryRows =
+      chipSlugs.length > 0
+        ? await prisma.category.findMany({
+            where: { slug: { in: chipSlugs } },
+            select: { name: true, slug: true },
+          })
+        : [];
+    const chipMap = new Map(chipCategoryRows.map((c) => [c.slug, c]));
+    const chips: SearchDrawerChip[] = chipSlugs
+      .map((slug) => chipMap.get(slug))
+      .filter((c): c is SearchDrawerChip => c != null);
+
+    // Resolve curated slug → category + products
+    let curatedCategoryName: string | null = null;
+    let curatedProducts: SearchDrawerCuratedProduct[] = [];
+
+    if (curatedSlug) {
+      const curated = await prisma.category.findUnique({
+        where: { slug: curatedSlug },
+        select: { name: true },
+      });
+      curatedCategoryName = curated?.name ?? null;
+
+      if (curated) {
+        const productRows = await prisma.product.findMany({
+          where: {
+            isDisabled: false,
+            categories: { some: { category: { slug: curatedSlug } } },
+          },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            type: true,
+            categories: {
+              where: { isPrimary: true },
+              select: { category: { select: { slug: true } } },
+              take: 1,
+            },
+            variants: {
+              where: { isDisabled: false },
+              orderBy: { order: "asc" },
+              take: 1,
+              select: {
+                images: {
+                  select: { url: true, altText: true },
+                  orderBy: { order: "asc" },
+                  take: 1,
+                },
+                purchaseOptions: { select: { priceInCents: true } },
+              },
+            },
+          },
+          take: CURATED_PRODUCTS_LIMIT,
+        });
+
+        curatedProducts = productRows.map((p) => {
+          const allPrices = p.variants.flatMap((v) =>
+            v.purchaseOptions.map((po) => po.priceInCents)
+          );
+          return {
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            type: p.type,
+            primaryImage: p.variants[0]?.images[0] ?? null,
+            primaryCategorySlug: p.categories[0]?.category.slug ?? null,
+            minPriceInCents: allPrices.length > 0 ? Math.min(...allPrices) : null,
+          };
+        });
+      }
+    }
+
+    return { chipsHeading, chips, curatedCategoryName, curatedProducts };
+  } catch (error) {
+    console.error("getSearchDrawerConfig failed:", error);
+    return {
+      chipsHeading: DEFAULT_SEARCH_DRAWER_CHIPS_HEADING,
+      chips: [],
+      curatedCategoryName: null,
+      curatedProducts: [],
+    };
+  }
+}
+
 /**
  * Fetches public site settings directly from the database.
  * Server-side equivalent of the /api/settings/public endpoint.

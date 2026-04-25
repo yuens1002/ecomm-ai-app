@@ -7,6 +7,7 @@ import { SiteBannerPortal } from "@/app/(site)/_components/layout/SiteBannerPort
 import { DemoBanner } from "@/app/(site)/_components/content/DemoBanner";
 import { SearchDrawer } from "@/app/(site)/_components/search/SearchDrawer";
 import { getStorefrontTheme } from "@/lib/config/app-settings";
+import { getSearchDrawerConfig } from "@/lib/data";
 
 // Evaluated once at module load based on NEXT_PUBLIC_BUILD_VARIANT.
 // DemoBanner and its hooks never enter the React tree unless this is true.
@@ -42,7 +43,10 @@ export default async function SiteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const theme = await getStorefrontTheme();
+  const [theme, searchDrawerConfig] = await Promise.all([
+    getStorefrontTheme(),
+    getSearchDrawerConfig(),
+  ]);
   const fontsUrl =
     theme && theme !== "default" ? await getThemeFontsUrl(theme) : null;
 
@@ -77,7 +81,7 @@ export default async function SiteLayout({
       </div>
 
       {/* Search drawer overlay (rendered as Radix Portal outside the flex layout) */}
-      <SearchDrawer />
+      <SearchDrawer config={searchDrawerConfig} />
     </SiteBannerProvider>
   );
 }
