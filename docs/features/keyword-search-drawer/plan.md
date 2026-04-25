@@ -61,7 +61,7 @@ This iteration optimizes for **a polished UX flow and a polished admin section**
 | 4 | `feat: drawer empty state — chips + curated products` | static curation, no admin yet | Low |
 | 5 | `feat: drawer results + no-results states with fade-in` | tailwindcss-animate | Low |
 | 6 | `feat: admin Search settings page + nav entry` | new route `/admin/settings/search`, route registry + admin-nav | Low |
-| 7 | `feat: admin search drawer form + seed defaults (heading + chips + curated)` | Zod max-6, multi-select, single-select, save toast, `prisma/seed/settings.ts` upsert with `update: {}` | Medium |
+| 7 | `feat: admin search drawer form + seed defaults (heading + chips + curated)` | Zod max-6, reuse `CheckboxListContent`, single-select Combobox, save toast, `prisma/seed/settings.ts` upsert with `update: { value }` | Medium |
 | 8 | `fix: legacy /api/search drops COFFEE hardcode + honest no-results` | merch inclusion, no fall-through | Low |
 | 9 | `feat: a11y polish — aria-live + focus management + tests` | screen reader announcements | Low |
 
@@ -129,18 +129,18 @@ This iteration optimizes for **a polished UX flow and a polished admin section**
 
 | Aspect | Spec |
 |---|---|
-| Component | Multi-select dropdown — options from existing categories (any visibility, any source). Selection rendered as chips with delete (×) per chip. Shadcn doesn't ship a native `MultiSelect` component; implementation will consult shadcn-studio MCP and use Combobox + Command pattern (or community MultiSelect block) — picked during commit 7. |
+| Component | **Reuse existing `CheckboxListContent`** from `app/admin/product-menu/menu-builder/components/shared/CheckboxListContent.tsx` — same primitive that powers `AddCategoriesDropdown` / `AddProductsDropdown` in Menu Builder. Renders search input + "Added" section (selected) + "Available" section (unselected), all checkboxes. Visually consistent with the rest of admin. |
 | Label | "Top Categories" |
 | Helper text | "Up to 6 categories shown as quick-navigation chips at the top of the search drawer. Click order = display order." |
-| Behavior | "Add" affordance disabled when 6 are selected. Each selected chip has a × button to remove. Drag-to-reorder is **out of scope for v1** — display order = selection order. |
-| Validation | Zod `z.array(z.string()).max(6)` — server rejects >6 |
+| Behavior | When 6 are checked, items in the "Available" section render as `disabled` (parent computes per-item disabled state from current count); attempting to check a 7th is impossible from UI. Drag-to-reorder is **out of scope for v1** — display order = selection order. |
+| Validation | Zod `z.array(z.string()).max(6)` — server rejects >6 as a defense in depth |
 | Storage key | `search_drawer_chip_categories` |
 
 ### 3. Curated products category (single-select)
 
 | Aspect | Spec |
 |---|---|
-| Component | shadcn `Combobox` or `Select` — single-select, options from existing categories (any visibility) |
+| Component | shadcn `Combobox` (searchable single-select) — different interaction from Setting 2 because single-select doesn't fit a checkbox-list UX |
 | Label | "Curated products category" |
 | Helper text | "Products from this category appear in the curated section (empty state + no-results state). Pick any existing category — admin controls whether it also appears in the storefront menu via the Menu Builder's label assignments." |
 | Behavior | Searchable single-select with category name + slug visible. Optional "None" / clear selection. |
@@ -229,8 +229,8 @@ app/admin/settings/search/
 └── _components/
     ├── SearchSettingsForm.tsx           # parent form, wires save → PUT
     ├── ChipsHeadingField.tsx            # text input (setting 1)
-    ├── TopCategoriesMultiSelect.tsx     # multi-select with chip+delete UX (setting 2)
-    └── CuratedCategorySelect.tsx        # single-select combobox (setting 3)
+    ├── TopCategoriesMultiSelect.tsx     # wraps CheckboxListContent (setting 2); enforces max-6 via per-item disabled
+    └── CuratedCategorySelect.tsx        # shadcn Combobox single-select (setting 3)
 ```
 
 ---
