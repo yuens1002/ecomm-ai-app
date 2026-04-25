@@ -111,30 +111,6 @@ export async function getProductBySlug(productSlug?: string | null) {
 }
 
 /**
- * Fetches a lightweight list of all products for the AI.
- */
-export async function getProductsForAI() {
-  try {
-    const products = await prisma.product.findMany({
-      where: {
-        type: ProductType.COFFEE,
-        isDisabled: false,
-      },
-      select: {
-        name: true,
-        slug: true,
-        tastingNotes: true,
-        type: true,
-      },
-    });
-    return products;
-  } catch (error) {
-    console.error("Database Error:", error);
-    throw new Error("Failed to fetch products for AI.");
-  }
-}
-
-/**
  * Fetches related products based on roast level.
  */
 export async function getRelatedProducts(
@@ -863,10 +839,6 @@ const publicSettingsKeys = [
   "homepage_hero_video_poster_url",
   "homepage_hero_heading",
   "homepage_hero_tagline",
-  "ai_voice_persona",
-  "ai_voice_examples",
-  "ai_voice_surfaces",
-  "ai_smart_search_enabled",
 ] as const;
 
 /**
