@@ -12,10 +12,13 @@ export async function GET(request: NextRequest) {
     const origin = urlParams.get("origin");
     const sessionId = urlParams.get("sessionId") ?? "";
 
+    const PAGE_SIZE = 7;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = { isDisabled: false, type: ProductType.COFFEE };
     let searchQuery = "";
     let ftsOrderedIds: string[] = [];
+    let ftsTotalMatches = 0;
 
     if (query && query.trim().length > 0) {
       searchQuery = query.trim().toLowerCase();
@@ -34,15 +37,17 @@ export async function GET(request: NextRequest) {
         if (remainingQuery.length > 0) {
           const ftsIds = await fullTextSearchIds(remainingQuery);
           if (ftsIds.length > 0) {
-            whereClause.id = { in: ftsIds };
-            ftsOrderedIds = ftsIds;
+            ftsTotalMatches = ftsIds.length;
+            ftsOrderedIds = ftsIds.slice(0, PAGE_SIZE);
+            whereClause.id = { in: ftsOrderedIds };
           }
         }
       } else {
         const ftsIds = await fullTextSearchIds(searchQuery);
         if (ftsIds.length > 0) {
-          whereClause.id = { in: ftsIds };
-          ftsOrderedIds = ftsIds;
+          ftsTotalMatches = ftsIds.length;
+          ftsOrderedIds = ftsIds.slice(0, PAGE_SIZE);
+          whereClause.id = { in: ftsOrderedIds };
         } else {
           whereClause.OR = [
             { name: { contains: searchQuery, mode: "insensitive" } },
@@ -79,39 +84,46 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const products = await prisma.product.findMany({
-      where: whereClause,
-      include: {
-        categories: {
-          include: { category: { select: { name: true, slug: true } } },
-          where: { isPrimary: true },
-          take: 1,
-        },
-        variants: {
-          where: { isDisabled: false },
-          include: {
-            images: {
-              select: { url: true, altText: true },
-              orderBy: { order: "asc" as const },
-              take: 1,
-            },
-            purchaseOptions: {
-              select: {
-                id: true,
-                type: true,
-                priceInCents: true,
-                billingInterval: true,
-                billingIntervalCount: true,
+    // Total count: FTS path knows it from the ranked id list; fallback path counts at DB.
+    const isFtsPath = ftsOrderedIds.length > 0;
+    const [totalCount, products] = await Promise.all([
+      isFtsPath
+        ? Promise.resolve(ftsTotalMatches)
+        : prisma.product.count({ where: whereClause }),
+      prisma.product.findMany({
+        where: whereClause,
+        include: {
+          categories: {
+            include: { category: { select: { name: true, slug: true } } },
+            where: { isPrimary: true },
+            take: 1,
+          },
+          variants: {
+            where: { isDisabled: false },
+            include: {
+              images: {
+                select: { url: true, altText: true },
+                orderBy: { order: "asc" as const },
+                take: 1,
+              },
+              purchaseOptions: {
+                select: {
+                  id: true,
+                  type: true,
+                  priceInCents: true,
+                  billingInterval: true,
+                  billingIntervalCount: true,
+                },
               },
             },
           },
         },
-      },
-      take: 7,
-    });
+        ...(isFtsPath ? {} : { take: PAGE_SIZE }),
+      }),
+    ]);
 
     let orderedProducts = products;
-    if (ftsOrderedIds.length > 0) {
+    if (isFtsPath) {
       const rankByIdMap = new Map(ftsOrderedIds.map((id, idx) => [id, idx]));
       orderedProducts = [...products].sort((a, b) => {
         const rankA = rankByIdMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
@@ -123,7 +135,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       products: orderedProducts,
       query: searchQuery,
-      count: products.length,
+      count: totalCount,
+      returnedCount: orderedProducts.length,
       context: { sessionId },
     });
   } catch (error) {
