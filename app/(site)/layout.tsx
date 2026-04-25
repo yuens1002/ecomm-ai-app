@@ -6,9 +6,6 @@ import { SiteBannerProvider } from "@/app/(site)/_hooks/useSiteBanner";
 import { SiteBannerPortal } from "@/app/(site)/_components/layout/SiteBannerPortal";
 import { DemoBanner } from "@/app/(site)/_components/content/DemoBanner";
 import { getStorefrontTheme } from "@/lib/config/app-settings";
-import { isAIConfigured } from "@/lib/ai-client";
-import { getPublicSiteSettings } from "@/lib/data";
-import { ChatPanel } from "@/app/(site)/_components/ai/ChatPanel";
 
 // Evaluated once at module load based on NEXT_PUBLIC_BUILD_VARIANT.
 // DemoBanner and its hooks never enter the React tree unless this is true.
@@ -44,12 +41,7 @@ export default async function SiteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [theme, aiConfigured, siteSettings] = await Promise.all([
-    getStorefrontTheme(),
-    isAIConfigured(),
-    getPublicSiteSettings(),
-  ]);
-  const smartSearchActive = aiConfigured && siteSettings.smartSearchEnabled;
+  const theme = await getStorefrontTheme();
   const fontsUrl =
     theme && theme !== "default" ? await getThemeFontsUrl(theme) : null;
 
@@ -82,9 +74,6 @@ export default async function SiteLayout({
         </div>
 
       </div>
-
-      {/* Chat panel — rendered as portal overlay outside the flex layout */}
-      {smartSearchActive && <ChatPanel />}
     </SiteBannerProvider>
   );
 }

@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.101.0 - 2026-04-25
+
+### Removed
+
+- **Smart Search / Counter extracted to platform plugin**: The agentic search layer (Counter UI, NL extraction, voice examples, voice surfaces, intent classification, follow-up chips, conversational cadence) is no longer in the core ecomm-ai-app. The feature has been hard-paused in this repo and earmarked for a platform-developed plugin (opt-in, monetized) — see `docs/internal/smart-search/README.md` for the full archive, iteration history, root-cause analysis, and rebuild plan
+- **Affected surfaces**: deleted `lib/ai/`, `lib/store/chat-panel-store.ts`, `app/(site)/_components/ai/`, `app/admin/settings/ai/`, `app/api/admin/settings/ai-search/`, `app/api/settings/voice-surfaces/`, `app/api/recommend/`, `app/api/search/__tests__/`, `types/search.ts`, and the corresponding feature docs at `docs/features/smart-search-ux/` + `docs/features/agentic-search/`
+- **SiteSettings AI rows**: migration `20260425120000_drop_smart_search_settings` deletes `ai_voice_persona`, `ai_voice_examples`, `ai_voice_surfaces`, `ai_voice_surface_prompt_hash`, `ai_smart_search_enabled` keys
+
+### Changed
+
+- **`/api/search` is keyword-only**: agentic branch removed; route handler slimmed from 443 LOC to ~125 LOC; PostgreSQL `tsvector` + `ts_rank` ranking remains the foundation
+- **FTS utilities relocated**: `tokenize` + `fullTextSearchIds` moved from `lib/ai/extraction.ts` to `lib/search/full-text.ts` (no LLM dependency)
+- **Search page**: keyword-only UI, no Ask AI toggle, no Smart Search badge, no acknowledgment, no follow-up chips
+- **Site header**: Counter trigger replaced by `Search` icon linking to `/search` (mobile and desktop)
+- **Admin nav**: `Settings → AI` entry removed from both nav config and route registry
+
+### Why
+
+Per [`docs/internal/smart-search/README.md`](docs/internal/smart-search/README.md): rule accretion across 8 iterations made the feature structurally fragile (4 sources of truth for coffee domain knowledge, ~30% false-green tests, zero observability). Platform velocity now demands a polished keyword search as the first-class core experience. Eval-driven rebuild lives with the future plugin, not in this repo.
+
+---
+
 ## 0.100.10 - 2026-04-22
 
 ### Added
