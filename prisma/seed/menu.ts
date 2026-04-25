@@ -86,6 +86,8 @@ const CATEGORY_DEFS = [
     order: 40,
   },
   { name: "Micro Lot", slug: "micro-lot", label: "Collections", order: 41 },
+  { name: "Single Origin", slug: "single-origin", label: "Collections", order: 42 },
+  { name: "Staff Picks", slug: "staff-picks", label: "Collections", order: 43 },
   // Merch
   {
     name: "Drinkware",

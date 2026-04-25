@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import type { SearchDrawerConfig } from "@/lib/data";
 import { useSearchDrawerStore } from "./store";
 import { useSearchIndex } from "./hooks/useSearchIndex";
+import { useSearchAnalytics } from "./hooks/useSearchAnalytics";
 import { CuratedCategoryChips } from "./CuratedCategoryChips";
 import { CuratedProducts } from "./CuratedProducts";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,7 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
   const [query, setQuery] = useState("");
 
   const { status, search } = useSearchIndex(isOpen);
+  useSearchAnalytics(query, isOpen);
   const results = search(query);
   const hasQuery = query.trim().length > 0;
 

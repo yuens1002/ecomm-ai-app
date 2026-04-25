@@ -31,7 +31,7 @@ export function CuratedCategoryChips({
         {chips.map((chip) => (
           <li key={chip.slug}>
             <Link
-              href={`/categories/${chip.slug}`}
+              href={`/${chip.slug}`}
               onClick={close}
               className="inline-flex items-center px-4 py-2 rounded-md border bg-background hover:bg-accent transition-colors text-sm"
             >

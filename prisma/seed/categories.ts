@@ -61,64 +61,17 @@ export async function seedCategories(prisma: PrismaClient) {
     },
   });
 
-  // Search drawer demo categories — admin catalog work survives reseed (update: {})
-  const _catFruityFloral = await prisma.category.upsert({
-    where: { slug: "fruity-floral" },
-    update: {},
-    create: {
-      name: "Fruity & Floral",
-      slug: "fruity-floral",
-      order: 30,
-    },
-  });
-
-  const _catColdBrewBlends = await prisma.category.upsert({
-    where: { slug: "cold-brew-blends" },
-    update: {},
-    create: {
-      name: "Cold Brew Blends",
-      slug: "cold-brew-blends",
-      order: 31,
-    },
-  });
-
-  const _catDrinkware = await prisma.category.upsert({
-    where: { slug: "drinkware" },
-    update: {},
-    create: {
-      name: "Drinkware",
-      slug: "drinkware",
-      order: 32,
-    },
-  });
-
-  const _catCentralAmerica = await prisma.category.upsert({
-    where: { slug: "central-america" },
-    update: {},
-    create: {
-      name: "Central America",
-      slug: "central-america",
-      order: 33,
-    },
-  });
-
   // One-shot slug migration: align any pre-existing "Staff Picks" category
   // (which may have been created with a non-canonical slug like "new-category"
   // via admin UI) to the canonical slug "staff-picks" so the search drawer
-  // settings reference resolves. Idempotent: no-op once aligned.
+  // settings reference resolves and seedMenu's upsert by slug succeeds.
+  // Idempotent: no-op once aligned.
+  // The 6 demo chip categories + Staff Picks are then created/maintained by
+  // seedMenu (CATEGORY_DEFS in prisma/seed/menu.ts). Adding them here would
+  // be dead code since seedMenu deletes anything not in CATEGORY_DEFS.
   await prisma.category.updateMany({
     where: { name: "Staff Picks", slug: { not: "staff-picks" } },
     data: { slug: "staff-picks" },
-  });
-
-  const _catStaffPicks = await prisma.category.upsert({
-    where: { slug: "staff-picks" },
-    update: {},
-    create: {
-      name: "Staff Picks",
-      slug: "staff-picks",
-      order: 34,
-    },
   });
 
   // Roast Level Categories
