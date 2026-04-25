@@ -924,8 +924,12 @@ export async function getSearchDrawerConfig(): Promise<SearchDrawerConfig> {
       record.search_drawer_chip_categories,
       DEFAULT_SEARCH_DRAWER_CHIP_CATEGORIES
     ).slice(0, MAX_CHIPS);
+    // Curated: empty string sentinel = admin explicitly cleared (no curated section).
+    // Missing key = use default. Distinguishing requires checking if key was returned.
     const curatedSlug =
-      record.search_drawer_curated_category || DEFAULT_SEARCH_DRAWER_CURATED_CATEGORY;
+      "search_drawer_curated_category" in record
+        ? record.search_drawer_curated_category
+        : DEFAULT_SEARCH_DRAWER_CURATED_CATEGORY;
 
     // Resolve chip slugs → categories (preserve order from settings)
     const chipCategoryRows =

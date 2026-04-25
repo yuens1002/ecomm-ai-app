@@ -61,6 +61,57 @@ export async function seedCategories(prisma: PrismaClient) {
     },
   });
 
+  // Search drawer demo categories — admin catalog work survives reseed (update: {})
+  const _catFruityFloral = await prisma.category.upsert({
+    where: { slug: "fruity-floral" },
+    update: {},
+    create: {
+      name: "Fruity & Floral",
+      slug: "fruity-floral",
+      order: 30,
+    },
+  });
+
+  const _catColdBrewBlends = await prisma.category.upsert({
+    where: { slug: "cold-brew-blends" },
+    update: {},
+    create: {
+      name: "Cold Brew Blends",
+      slug: "cold-brew-blends",
+      order: 31,
+    },
+  });
+
+  const _catDrinkware = await prisma.category.upsert({
+    where: { slug: "drinkware" },
+    update: {},
+    create: {
+      name: "Drinkware",
+      slug: "drinkware",
+      order: 32,
+    },
+  });
+
+  const _catCentralAmerica = await prisma.category.upsert({
+    where: { slug: "central-america" },
+    update: {},
+    create: {
+      name: "Central America",
+      slug: "central-america",
+      order: 33,
+    },
+  });
+
+  const _catStaffPicks = await prisma.category.upsert({
+    where: { slug: "staff-picks" },
+    update: {},
+    create: {
+      name: "Staff Picks",
+      slug: "staff-picks",
+      order: 34,
+    },
+  });
+
   // Roast Level Categories
   const _catDark = await prisma.category.upsert({
     where: { slug: "dark-roast" },

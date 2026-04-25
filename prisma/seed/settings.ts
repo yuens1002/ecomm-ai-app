@@ -359,5 +359,35 @@ export async function seedSettings(prisma: PrismaClient) {
     });
   }
 
+  // Search drawer settings — RESEED OVERWRITES (update: { value }) so the
+  // demo showcase is restored on every refresh. Admin can still edit via
+  // /admin/settings/search and changes persist until the next reseed.
+  // Same pattern as app.weightUnit / app.locationType.
+  await prisma.siteSettings.upsert({
+    where: { key: "search_drawer_chips_heading" },
+    update: { value: "Top Categories" },
+    create: { key: "search_drawer_chips_heading", value: "Top Categories" },
+  });
+
+  const demoChipCategories = JSON.stringify([
+    "single-origin",
+    "fruity-floral",
+    "medium-roast",
+    "cold-brew-blends",
+    "drinkware",
+    "central-america",
+  ]);
+  await prisma.siteSettings.upsert({
+    where: { key: "search_drawer_chip_categories" },
+    update: { value: demoChipCategories },
+    create: { key: "search_drawer_chip_categories", value: demoChipCategories },
+  });
+
+  await prisma.siteSettings.upsert({
+    where: { key: "search_drawer_curated_category" },
+    update: { value: "staff-picks" },
+    create: { key: "search_drawer_curated_category", value: "staff-picks" },
+  });
+
   console.log("  ✅ Site settings created");
 }
