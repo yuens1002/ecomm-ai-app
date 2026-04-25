@@ -29,16 +29,20 @@
 | AC-UI-7 | "air dripper" returns the Origami Air Dripper merch as top result | Interactive: type "air dripper" → screenshot | Origami Air Dripper appears in top 3; no purely-coffee spurious matches dominate | | | |
 | AC-UI-8 | Fuzzy match: "Yirgachefe" (1 typo) returns Ethiopia Yirgacheffe | Interactive: type "Yirgachefe" → screenshot | Ethiopia Yirgacheffe appears in top results despite typo | | | |
 | AC-UI-9 | Chip click navigates to category page | Interactive: click any chip → screenshot landing | Navigates to `/categories/{slug}`; drawer closes |  | | |
-| AC-UI-10 | Admin form: "Search drawer chips" multi-picker + "Search drawer curated products" single-picker | Screenshot: admin settings page section | Both fields render; multi-picker shows existing categories; single-picker shows existing categories | | | |
-| AC-UI-11 | Admin form: 6-chip cap UX | Interactive: select 6 categories, attempt 7th → screenshot | Add affordance disabled at 6; "6 / 6 selected" hint visible | | | |
-| AC-UI-12 | Hidden category (`isVisible: false`) appears in admin pickers and renders in drawer | Exercise: create hidden category, set as curated, refresh storefront → screenshot drawer | Hidden category's products show in curated section | | | |
-| AC-UI-13 | Drawer open/close animation is smooth (slide + fade, ≤200ms) | Interactive: open + close drawer → screenshot mid-animation | Drawer slides into view from top (or fades), no jank, no layout shift on open | | | |
-| AC-UI-14 | Initial loading skeleton while index fetches | Screenshot: drawer first-open before `/api/search/index` resolves | Skeleton shows for chip row + curated products grid; replaced by real content within 1s on warm cache | | | |
-| AC-UI-15 | Error state when index fetch fails | Exercise: simulate 500 from `/api/search/index` → screenshot | Friendly message ("Search is temporarily unavailable") replaces the curated grid; chips still navigable as fallback | | | |
-| AC-UI-16 | Microcopy is clean and non-AI ("Search products...", not "Ask anything…") | Code review + screenshot: drawer input placeholder | Placeholder reads `Search products…` (or admin-configurable equivalent); no agentic-era language anywhere | | | |
-| AC-UI-17 | Admin "Save" feedback (toast on success, error on failure) | Interactive: change settings, click Save → screenshot toast | Sonner toast confirms save; error toast on validation failure (e.g. >6 categories) | | | |
-| AC-UI-18 | First-time empty admin state — drawer when no settings configured | Screenshot: drawer with `searchDrawerChipCategories: []` and `searchDrawerCuratedCategory: null` | Empty state hint: "Configure search drawer in admin settings →" link to admin (only visible to admin users); for customers, drawer renders with input only, no broken sections | | | |
-| AC-UI-19 | Drawer body has consistent visual rhythm (spacing, hierarchy, typography) | Screenshot: full drawer at desktop and mobile | Headers (`Top Categories`, `Most Popular` / curated heading) use same hierarchy; spacing matches admin UI conventions (`space-y-12` major, `space-y-6` minor per CLAUDE.md) | | | |
+| AC-UI-10 | Admin nav has "Search" item under Settings (between Commerce and Shipping) | Screenshot: admin sidebar Settings group expanded | Item visible in correct order; clicking navigates to `/admin/settings/search`; active-state highlighting works (per `docs/navigation/README.md`) | | | |
+| AC-UI-11 | Admin Search page renders three fields: heading input, top-categories multi-select, curated category single-select | Screenshot: `/admin/settings/search` desktop | All three fields render with labels and helper text; matches CLAUDE.md admin conventions (flat card, `space-y-12`, `max-w-[72ch]` inputs) | | | |
+| AC-UI-12 | Curated section heading text input | Interactive: type a custom heading (e.g. "Staff Picks"), Save → reopen drawer → screenshot drawer header | Heading in drawer reflects the input value (replaces default "Most Popular"); empty value rejected with inline error | | | |
+| AC-UI-13 | Top Categories multi-select with chip-and-delete UX | Interactive: open multi-select, pick 3 categories → screenshot showing chips render with × delete buttons inline | Each selected category appears as a chip; × removes it from selection | | | |
+| AC-UI-14 | Top Categories: 6-cap UX | Interactive: select 6 categories, attempt 7th → screenshot | Add affordance disabled at 6; "6 / 6 selected" hint visible; selecting 7th is impossible from UI | | | |
+| AC-UI-15 | Curated category single-select dropdown | Interactive: open dropdown → screenshot showing existing categories (including hidden `isVisible: false` ones) | Dropdown is searchable; both visible and hidden categories listed; can be set to "None" / cleared | | | |
+| AC-UI-16 | Any existing category can be used as curated, regardless of menu visibility | Exercise: create category without label association (won't appear in menu), set as curated, refresh storefront → screenshot drawer | Category's products show in curated section even though category is not in menu; categories with label associations also work | | | |
+| AC-UI-17 | Drawer open/close animation is smooth (slide + fade, ≤200ms) | Interactive: open + close drawer → screenshot mid-animation | Drawer slides into view from top (or fades), no jank, no layout shift on open | | | |
+| AC-UI-18 | Initial loading skeleton while index fetches | Screenshot: drawer first-open before `/api/search/index` resolves | Skeleton shows for chip row + curated products grid; replaced by real content within 1s on warm cache | | | |
+| AC-UI-19 | Error state when index fetch fails | Exercise: simulate 500 from `/api/search/index` → screenshot | Friendly message ("Search is temporarily unavailable") replaces the curated grid; chips still navigable as fallback | | | |
+| AC-UI-20 | Microcopy is clean and non-AI ("Search products...", not "Ask anything…") | Code review + screenshot: drawer input placeholder | Placeholder reads `Search products…` (or admin-configurable equivalent); no agentic-era language anywhere | | | |
+| AC-UI-21 | Admin "Save" feedback (toast on success, error on failure) | Interactive: change settings, click Save → screenshot toast | Sonner toast confirms save; error toast on validation failure (e.g. >6 categories) | | | |
+| AC-UI-22 | First-time empty admin state — drawer when no settings configured | Screenshot: drawer with `searchDrawerChipCategories: []` and `searchDrawerCuratedCategory: null` | Empty state hint: "Configure search drawer in admin settings →" link to admin (only visible to admin users); for customers, drawer renders with input only, no broken sections | | | |
+| AC-UI-23 | Drawer body matches design references (`general-layout.png`, `mobike.png`) | Screenshot comparison: drawer at desktop + mobile | Headers, spacing, chip wrapping, section hierarchy match the design references; matches CLAUDE.md admin UI conventions where applicable (`space-y-12` major, `space-y-6` minor) | | | |
 
 ## Functional Acceptance Criteria
 
@@ -53,10 +57,12 @@
 | AC-FN-7 | Admin Zod schema rejects >6 chip categories | Code review: `app/api/admin/search-drawer-settings/route.ts` PUT validation | Zod `.array(z.string()).max(6)` returns 400 with >6 items | | | |
 | AC-FN-8 | Legacy `/api/search` includes merch (no `type: COFFEE` hardcode) | Code review: `app/api/search/route.ts:18` | Initial whereClause has no `type` filter; `roast` URL param still scopes to coffee categories | | | |
 | AC-FN-9 | Legacy `/api/search` returns honest no-results when query has FTS-zero in roast pattern | Code review: `app/api/search/route.ts` roast-pattern branch | When `remainingQuery.length > 0` but `ftsIds.length === 0`, return empty results — not the entire roast category | | | |
-| AC-FN-10 | Category page returns 404 when `isVisible: false` | Code review: `app/categories/[categorySlug]/page.tsx` | `notFound()` called if category exists but `isVisible: false` | | | |
-| AC-FN-11 | Drawer empty + no-results states reuse same `CuratedProducts` component | Code review: component imports | Single source of truth for the products section | | | |
-| AC-FN-12 | aria-live region announces results count or no-results message | Code review: `SearchResults.tsx` / `SearchNoResults.tsx` | Container has `aria-live="polite"` and content updates on query change | | | |
-| AC-FN-13 | Drawer focus management: autofocus input on open, Escape closes, return focus to trigger | Code review: `SearchDrawer.tsx` | Radix Dialog defaults satisfy this; `autoFocus` on input | | | |
+| AC-FN-10 | Drawer empty + no-results states reuse same `CuratedProducts` component | Code review: component imports | Single source of truth for the products section | | | |
+| AC-FN-11 | aria-live region announces results count or no-results message | Code review: `SearchResults.tsx` / `SearchNoResults.tsx` | Container has `aria-live="polite"` and content updates on query change | | | |
+| AC-FN-12 | Drawer focus management: autofocus input on open, Escape closes, return focus to trigger | Code review: `SearchDrawer.tsx` | Radix Dialog defaults satisfy this; `autoFocus` on input | | | |
+| AC-FN-13 | Heading text input validates length (Zod min 1 max 60) | Code review: `app/api/admin/search-drawer-settings/route.ts` PUT validation | Zod `z.string().min(1).max(60)` on `search_drawer_curated_heading`; empty string returns 400 | | | |
+| AC-FN-14 | Admin Search route registered per `docs/navigation/README.md` | Code review: `lib/navigation/route-registry.ts` (admin.settings.search entry) + `lib/config/admin-nav.ts` (Settings children, between Commerce and Shipping) | Route registry has `id: "admin.settings.search"`, `pathname: "/admin/settings/search"`, `parentId: "admin.settings"`, `isNavigable: true`; admin-nav has `{ label: "Search", href: "/admin/settings/search" }` in both occurrences | | | |
+| AC-FN-15 | Curated heading defaults to "Most Popular" when unset | Code review: `lib/site-settings.ts` `defaultSettings` + `mapSettingsRecord` | When DB has no `search_drawer_curated_heading` row, settings object returns `"Most Popular"` | | | |
 
 ## Test Coverage Acceptance Criteria
 
@@ -67,7 +73,7 @@
 | AC-TST-3 | Legacy `/api/search` returns merch when query matches | Test: `app/api/search/__tests__/route.test.ts` — query "dripper", mocked Prisma returns mixed types, assert merch in results | Test passes | | | |
 | AC-TST-4 | Legacy `/api/search` returns empty when roast pattern + 0 FTS hits | Test: query "light roast xyz" with mocked FTS returning empty, assert response.products is empty (not full category) | Test passes | | | |
 | AC-TST-5 | Admin Zod schema test: rejects 7+ chip categories | Test: `app/api/admin/search-drawer-settings/__tests__/route.test.ts` — PUT with 7 categories returns 400 | Test passes | | | |
-| AC-TST-6 | Category page 404 guard test | Test: `app/categories/[categorySlug]/__tests__/page.test.ts` (or integration) — invisible category returns 404 | Test passes | | | |
+| AC-TST-6 | Admin GET/PUT roundtrip persists all three settings | Test: `app/api/admin/search-drawer-settings/__tests__/route.test.ts` — PUT with valid payload, GET returns the same; heading validation rejects empty + >60 chars | Test passes | | | |
 
 ## Regression Acceptance Criteria
 

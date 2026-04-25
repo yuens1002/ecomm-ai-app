@@ -15,7 +15,9 @@ The Smart Search / Counter strip ([v0.101.0](../../../CHANGELOG.md), PR #342) re
 - No discovery surface — `/search` is a blank page until you type
 - Server-side FTS adds network latency to every keystroke if we ever wanted real-time UX
 
-This iteration delivers a **first-class polished keyword search** as an in-app drawer, modeled on the Blue Bottle pattern (search input + curated chips + curated products). It uses **client-side search** (in-browser index) for sub-millisecond as-you-type results and is intentionally architected as a **discovery surface with a mode-switch slot** — when the platform plugin lands, an "Ask the Counter" tab can be added without renovating the surface.
+This iteration delivers a **first-class polished keyword search** as an in-app drawer following the discovery-surface pattern (search input + curated chips + curated products). It uses **client-side search** (in-browser index) for sub-millisecond as-you-type results and is intentionally architected as a **discovery surface with a mode-switch slot** — when the platform plugin lands, an "Ask the Counter" tab can be added without renovating the surface.
+
+**Design references:** `.screenshots/keyword-search-drawer/general-layout.png` (desktop) + `mobike.png` (mobile) — illustrate the layout, spacing, chip wrapping, section hierarchy. Implementation matches the structure shown there; brand styling is our own.
 
 Scope-disciplined per the iter-1→7b lesson: many things considered (facets, sort, pagination, GIN index, `pg_trgm`, search history, view toggle) — explicitly dropped to ship one tight branch.
 
@@ -58,9 +60,9 @@ This iteration optimizes for **a polished UX flow and a polished admin section**
 | 3 | `feat: integrate MiniSearch client-side index in drawer` | as-you-type, fuzzy, field-weighted | Medium |
 | 4 | `feat: drawer empty state — chips + curated products` | static curation, no admin yet | Low |
 | 5 | `feat: drawer results + no-results states with fade-in` | tailwindcss-animate | Low |
-| 6 | `feat: admin search drawer settings (chip categories + curated category)` | Zod max-6, multi-picker, single-picker | Medium |
-| 7 | `fix: legacy /api/search drops COFFEE hardcode + honest no-results` | merch inclusion, no fall-through | Low |
-| 8 | `feat: 404 guard on category pages with isVisible: false` | direct-URL access | Low |
+| 6 | `feat: admin Search settings page + nav entry` | new route `/admin/settings/search`, route registry + admin-nav | Low |
+| 7 | `feat: admin search drawer form (heading + chip categories + curated category)` | Zod max-6, multi-select, single-select, save toast | Medium |
+| 8 | `fix: legacy /api/search drops COFFEE hardcode + honest no-results` | merch inclusion, no fall-through | Low |
 | 9 | `feat: a11y polish — aria-live + focus management + tests` | screen reader announcements | Low |
 
 ---
@@ -84,10 +86,71 @@ This iteration optimizes for **a polished UX flow and a polished admin section**
 
 | Key | Type (parsed) | Default | Purpose |
 |---|---|---|---|
+| `search_drawer_curated_heading` | `string` | `"Most Popular"` | Section heading shown above curated products grid |
 | `search_drawer_chip_categories` | `string[]` (max 6) | `[]` | Top Categories chip row |
 | `search_drawer_curated_category` | `string \| null` | `null` | Single category for curated products section |
 
 **No new tables, no migrations on data, no Prisma schema change.**
+
+---
+
+## Admin UI
+
+**Location:** new admin page at `/admin/settings/search` (registered in `lib/navigation/route-registry.ts` per [`docs/navigation/README.md`](../../navigation/README.md), and surfaced as a nav child of `admin.settings` in `lib/config/admin-nav.ts`). Sits between **Commerce** and **Shipping** in the settings nav order.
+
+**Page layout:** single section, follows CLAUDE.md admin conventions (flat `rounded-lg border p-6` cards, `space-y-12` between major sections, `max-w-[72ch]` on inputs and text).
+
+**Three form fields, in order:**
+
+### 1. Curated section heading
+
+| Aspect | Spec |
+|---|---|
+| Component | shadcn `Input` (text) |
+| Label | "Curated section heading" |
+| Helper text | "Shown above the products grid in the search drawer. Default: 'Most Popular'." |
+| Default value | `"Most Popular"` |
+| Validation | Zod `z.string().min(1).max(60)` — non-empty, reasonable length |
+| Storage key | `search_drawer_curated_heading` |
+
+### 2. Top Categories (multi-select, max 6)
+
+| Aspect | Spec |
+|---|---|
+| Component | Multi-select dropdown — options from existing categories (any visibility, any source). Selection rendered as chips with delete (×) per chip. Shadcn doesn't ship a native `MultiSelect` component; implementation will consult shadcn-studio MCP and use Combobox + Command pattern (or community MultiSelect block) — picked during commit 7. |
+| Label | "Top Categories" |
+| Helper text | "Up to 6 categories shown as quick-navigation chips at the top of the search drawer. Click order = display order." |
+| Behavior | "Add" affordance disabled when 6 are selected. Each selected chip has a × button to remove. Drag-to-reorder is **out of scope for v1** — display order = selection order. |
+| Validation | Zod `z.array(z.string()).max(6)` — server rejects >6 |
+| Storage key | `search_drawer_chip_categories` |
+
+### 3. Curated products category (single-select)
+
+| Aspect | Spec |
+|---|---|
+| Component | shadcn `Combobox` or `Select` — single-select, options from existing categories (any visibility) |
+| Label | "Curated products category" |
+| Helper text | "Products from this category appear in the curated section (empty state + no-results state). Pick any existing category — admin controls whether it also appears in the storefront menu via the Menu Builder's label assignments." |
+| Behavior | Searchable single-select with category name + slug visible. Optional "None" / clear selection. |
+| Validation | Zod `z.string().nullable()` |
+| Storage key | `search_drawer_curated_category` |
+
+**Save behavior:**
+
+- Single "Save" button at the bottom of the form (per CLAUDE.md: `flex flex-col` + `mt-auto pt-5`, never `w-full`)
+- On success: Sonner `toast.success("Search settings saved")`
+- On validation error: Sonner `toast.error(<message>)` + inline field error
+- Optimistic UI not required — wait for server response before showing toast
+- Disabled state on Save while in-flight; spinner inside button
+
+**Empty form state (first-time):**
+
+When all three settings are at default (no chip categories selected, no curated category set):
+
+- Heading field shows default `"Most Popular"`
+- Chip multi-select shows empty placeholder ("Select up to 6 categories…")
+- Curated single-select shows empty placeholder ("Select a category…")
+- Helper banner at top: "The search drawer will work with defaults until you configure these settings. The curated products section will be empty until a category is selected."
 
 ---
 
@@ -128,7 +191,7 @@ Returns the catalog index for client-side search. Cacheable.
 
 ### New: `GET /api/admin/search-drawer-settings` + `PUT /api/admin/search-drawer-settings`
 
-Read + write the two `SiteSettings` keys. Admin-gated.
+Read + write the three `SiteSettings` keys (heading, chip categories, curated category). Admin-gated. Zod validation on PUT enforces the 6-chip cap and heading length.
 
 ---
 
@@ -149,8 +212,13 @@ app/(site)/_components/search/
 ```
 
 ```text
-app/admin/settings/storefront/
-└── _components/SearchDrawerSection.tsx  # admin form (or extend existing)
+app/admin/settings/search/
+├── page.tsx                             # admin Search settings page
+└── _components/
+    ├── SearchSettingsForm.tsx           # parent form, wires save → PUT
+    ├── CuratedHeadingField.tsx          # text input
+    ├── TopCategoriesMultiSelect.tsx     # multi-select with chip+delete UX
+    └── CuratedCategorySelect.tsx        # single-select combobox
 ```
 
 ---
@@ -193,13 +261,14 @@ app/admin/settings/storefront/
    - Mobile (<768px): drawer is fullscreen
    - Desktop (≥768px): drawer is top-anchored with backdrop blur
 4. **Manual admin UX walk:**
-   - Open admin search drawer settings
-   - Try to add a 7th chip category — UI prevents it
-   - Pick a hidden category (`isVisible: false`) — appears in drawer
-   - Save → settings persist; drawer reflects on next open
-5. **Direct URL access to hidden category:** navigate to `/categories/{hidden-slug}` → 404
-6. **Legacy route check:** `/api/search?q=air+dripper` returns merch (not just coffee)
-7. **No console errors / no LLM API calls during typical browse session**
+   - Navigate to **Settings → Search** in admin nav (item appears between Commerce and Shipping)
+   - Edit the **Curated section heading** field; verify it updates the drawer's "Most Popular" heading
+   - Open the **Top Categories** multi-select; pick 6 categories; verify chips render with × delete buttons; verify the add affordance disables at 6
+   - Open the **Curated products category** single-select; verify hidden categories (`isVisible: false`) appear as options; pick one
+   - Click **Save** → toast confirms; reopen drawer to see settings reflected
+   - Refresh admin page → form re-populates with saved values
+5. **Legacy route check:** `/api/search?q=air+dripper` returns merch (not just coffee)
+6. **No console errors / no LLM API calls during typical browse session**
 
 ---
 
@@ -210,11 +279,12 @@ app/admin/settings/storefront/
 | `app/(site)/_components/search/SearchDrawer.tsx` and siblings | New — drawer shell + content |
 | `app/api/search/index/route.ts` | New — catalog index endpoint |
 | `app/api/search/route.ts` | Modify — drop COFFEE hardcode, fix no-results |
-| `app/api/admin/search-drawer-settings/route.ts` | New — admin GET/PUT |
-| `app/admin/settings/storefront/page.tsx` (or similar) | Add `SearchDrawerSection` |
+| `app/api/admin/search-drawer-settings/route.ts` | New — admin GET/PUT, Zod validation |
+| `app/admin/settings/search/page.tsx` + `_components/` | New — admin Search settings page (heading + chip multi-select + curated single-select) |
+| `lib/navigation/route-registry.ts` | Add `admin.settings.search` route entry per `docs/navigation/README.md` |
+| `lib/config/admin-nav.ts` | Add `{ label: "Search", href: "/admin/settings/search" }` between Commerce and Shipping (both occurrences in the file) |
 | `app/(site)/_components/layout/SiteHeader.tsx` | Replace `/search` link with drawer trigger |
 | `app/(site)/_components/layout/SiteHeaderWrapper.tsx` | Pass curation settings to header (or fetch in drawer directly) |
-| `app/categories/[categorySlug]/page.tsx` | Add `isVisible: false` 404 guard |
 | `lib/data.ts` | Add `getSearchIndex()` data fetcher |
-| `lib/site-settings.ts` | Add `searchDrawerChipCategories` + `searchDrawerCuratedCategory` to `SiteSettings` shape |
+| `lib/site-settings.ts` | Add `searchDrawerCuratedHeading` + `searchDrawerChipCategories` + `searchDrawerCuratedCategory` to `SiteSettings` shape |
 | `package.json` | Add `minisearch` dependency |
