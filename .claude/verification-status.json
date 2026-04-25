@@ -358,10 +358,10 @@
     "feat/keyword-search-drawer": {
       "status": "planned",
       "acs_passed": 0,
-      "acs_total": 50,
+      "acs_total": 53,
       "tasks": [],
       "acs_doc": "docs/features/keyword-search-drawer/acs.md",
-      "notes": "Polished keyword search drawer (discovery-surface pattern). Client-side search via MiniSearch, admin-curated heading + chips + curated category, no facets/sort/pagination. Polish-over-features per direction 2026-04-25. 23 UI + 15 FN + 6 TST + 6 REG = 50 ACs. New admin Search settings page at /admin/settings/search registered per docs/navigation/README.md. Curated category is a regular product category (no special hidden treatment). Design refs: .screenshots/keyword-search-drawer/. Plan + ACs at docs/features/keyword-search-drawer/."
+      "notes": "Polished keyword search drawer (discovery-surface pattern). Client-side search via MiniSearch, admin-curated chips heading + chips + curated category, no facets/sort/pagination. Polish-over-features per direction 2026-04-25. 23 UI + 17 FN + 7 TST + 6 REG = 53 ACs. New admin Search settings page at /admin/settings/search registered per docs/navigation/README.md. Demo seed: 5 new categories (fruity-floral, cold-brew-blends, drinkware, central-america, staff-picks) + 3 search-drawer SiteSettings rows, all using upsert + update: {} pattern so admin changes survive re-seed. Design refs: .screenshots/keyword-search-drawer/. Plan + ACs at docs/features/keyword-search-drawer/."
     }
   }
 }

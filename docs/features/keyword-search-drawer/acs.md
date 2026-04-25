@@ -31,7 +31,7 @@
 | AC-UI-9 | Chip click navigates to category page | Interactive: click any chip → screenshot landing | Navigates to `/categories/{slug}`; drawer closes |  | | |
 | AC-UI-10 | Admin nav has "Search" item under Settings (between Commerce and Shipping) | Screenshot: admin sidebar Settings group expanded | Item visible in correct order; clicking navigates to `/admin/settings/search`; active-state highlighting works (per `docs/navigation/README.md`) | | | |
 | AC-UI-11 | Admin Search page renders three fields: heading input, top-categories multi-select, curated category single-select | Screenshot: `/admin/settings/search` desktop | All three fields render with labels and helper text; matches CLAUDE.md admin conventions (flat card, `space-y-12`, `max-w-[72ch]` inputs) | | | |
-| AC-UI-12 | Curated section heading text input | Interactive: type a custom heading (e.g. "Staff Picks"), Save → reopen drawer → screenshot drawer header | Heading in drawer reflects the input value (replaces default "Most Popular"); empty value rejected with inline error | | | |
+| AC-UI-12 | Chips section heading text input | Interactive: type a custom heading (e.g. "Browse"), Save → reopen drawer → screenshot drawer header above chips | Heading shown above the chip row reflects the input value (replaces default "Top Categories"); empty value rejected with inline error | | | |
 | AC-UI-13 | Top Categories multi-select with chip-and-delete UX | Interactive: open multi-select, pick 3 categories → screenshot showing chips render with × delete buttons inline | Each selected category appears as a chip; × removes it from selection | | | |
 | AC-UI-14 | Top Categories: 6-cap UX | Interactive: select 6 categories, attempt 7th → screenshot | Add affordance disabled at 6; "6 / 6 selected" hint visible; selecting 7th is impossible from UI | | | |
 | AC-UI-15 | Curated category single-select dropdown | Interactive: open dropdown → screenshot showing existing categories (including hidden `isVisible: false` ones) | Dropdown is searchable; both visible and hidden categories listed; can be set to "None" / cleared | | | |
@@ -42,7 +42,7 @@
 | AC-UI-20 | Microcopy is clean and non-AI ("Search products...", not "Ask anything…") | Code review + screenshot: drawer input placeholder | Placeholder reads `Search products…` (or admin-configurable equivalent); no agentic-era language anywhere | | | |
 | AC-UI-21 | Admin "Save" feedback (toast on success, error on failure) | Interactive: change settings, click Save → screenshot toast | Sonner toast confirms save; error toast on validation failure (e.g. >6 categories) | | | |
 | AC-UI-22 | First-time empty admin state — drawer when no settings configured | Screenshot: drawer with `searchDrawerChipCategories: []` and `searchDrawerCuratedCategory: null` | Empty state hint: "Configure search drawer in admin settings →" link to admin (only visible to admin users); for customers, drawer renders with input only, no broken sections | | | |
-| AC-UI-23 | Drawer body matches design references (`general-layout.png`, `mobike.png`) | Screenshot comparison: drawer at desktop + mobile | Headers, spacing, chip wrapping, section hierarchy match the design references; matches CLAUDE.md admin UI conventions where applicable (`space-y-12` major, `space-y-6` minor) | | | |
+| AC-UI-23 | Drawer body matches design references (`.screenshots/keyword-search-drawer/general-layout.png` desktop, `mobike.png` mobile) | Screenshot comparison: drawer at desktop + mobile | Headers, spacing, chip wrapping, section hierarchy match the design references; matches CLAUDE.md admin UI conventions where applicable (`space-y-12` major, `space-y-6` minor) | | | |
 
 ## Functional Acceptance Criteria
 
@@ -60,9 +60,11 @@
 | AC-FN-10 | Drawer empty + no-results states reuse same `CuratedProducts` component | Code review: component imports | Single source of truth for the products section | | | |
 | AC-FN-11 | aria-live region announces results count or no-results message | Code review: `SearchResults.tsx` / `SearchNoResults.tsx` | Container has `aria-live="polite"` and content updates on query change | | | |
 | AC-FN-12 | Drawer focus management: autofocus input on open, Escape closes, return focus to trigger | Code review: `SearchDrawer.tsx` | Radix Dialog defaults satisfy this; `autoFocus` on input | | | |
-| AC-FN-13 | Heading text input validates length (Zod min 1 max 60) | Code review: `app/api/admin/search-drawer-settings/route.ts` PUT validation | Zod `z.string().min(1).max(60)` on `search_drawer_curated_heading`; empty string returns 400 | | | |
+| AC-FN-13 | Chips heading text input validates length (Zod min 1 max 60) | Code review: `app/api/admin/search-drawer-settings/route.ts` PUT validation | Zod `z.string().min(1).max(60)` on `search_drawer_chips_heading`; empty string returns 400 | | | |
 | AC-FN-14 | Admin Search route registered per `docs/navigation/README.md` | Code review: `lib/navigation/route-registry.ts` (admin.settings.search entry) + `lib/config/admin-nav.ts` (Settings children, between Commerce and Shipping) | Route registry has `id: "admin.settings.search"`, `pathname: "/admin/settings/search"`, `parentId: "admin.settings"`, `isNavigable: true`; admin-nav has `{ label: "Search", href: "/admin/settings/search" }` in both occurrences | | | |
-| AC-FN-15 | Curated heading defaults to "Most Popular" when unset | Code review: `lib/site-settings.ts` `defaultSettings` + `mapSettingsRecord` | When DB has no `search_drawer_curated_heading` row, settings object returns `"Most Popular"` | | | |
+| AC-FN-15 | Chips heading defaults to "Top Categories" when unset; curated section header derives from picked category's display name | Code review: `lib/site-settings.ts` `defaultSettings` + drawer rendering of curated section | When DB has no `search_drawer_chips_heading` row, settings object returns `"Top Categories"`; curated section heading = `category.name` from the picked category (no separate setting) | | | |
+| AC-FN-16 | Seed uses `upsert + update: {}` for the three search drawer settings (admin changes survive re-seed) | Code review: `prisma/seed/settings.ts` | Three new `prisma.siteSettings.upsert({ where, update: {}, create })` blocks for the three keys; `update: {}` means re-seed never overwrites admin changes | | | |
+| AC-FN-17 | Seed adds 5 missing demo categories with `upsert + update: {}` | Code review: `prisma/seed/categories.ts` | New entries for `fruity-floral`, `cold-brew-blends`, `drinkware`, `central-america`, `staff-picks` use the same pattern as existing categories — admin overrides preserved on re-seed | | | |
 
 ## Test Coverage Acceptance Criteria
 
@@ -74,6 +76,7 @@
 | AC-TST-4 | Legacy `/api/search` returns empty when roast pattern + 0 FTS hits | Test: query "light roast xyz" with mocked FTS returning empty, assert response.products is empty (not full category) | Test passes | | | |
 | AC-TST-5 | Admin Zod schema test: rejects 7+ chip categories | Test: `app/api/admin/search-drawer-settings/__tests__/route.test.ts` — PUT with 7 categories returns 400 | Test passes | | | |
 | AC-TST-6 | Admin GET/PUT roundtrip persists all three settings | Test: `app/api/admin/search-drawer-settings/__tests__/route.test.ts` — PUT with valid payload, GET returns the same; heading validation rejects empty + >60 chars | Test passes | | | |
+| AC-TST-7 | Re-seed preserves admin-set search settings | Test or smoke: set heading to `"Browse"` via PUT, run seed script, GET → heading still `"Browse"` | Test passes; admin override survives `npm run seed` | | | |
 
 ## Regression Acceptance Criteria
 

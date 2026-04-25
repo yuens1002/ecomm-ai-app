@@ -61,7 +61,7 @@ This iteration optimizes for **a polished UX flow and a polished admin section**
 | 4 | `feat: drawer empty state — chips + curated products` | static curation, no admin yet | Low |
 | 5 | `feat: drawer results + no-results states with fade-in` | tailwindcss-animate | Low |
 | 6 | `feat: admin Search settings page + nav entry` | new route `/admin/settings/search`, route registry + admin-nav | Low |
-| 7 | `feat: admin search drawer form (heading + chip categories + curated category)` | Zod max-6, multi-select, single-select, save toast | Medium |
+| 7 | `feat: admin search drawer form + seed defaults (heading + chips + curated)` | Zod max-6, multi-select, single-select, save toast, `prisma/seed/settings.ts` upsert with `update: {}` | Medium |
 | 8 | `fix: legacy /api/search drops COFFEE hardcode + honest no-results` | merch inclusion, no fall-through | Low |
 | 9 | `feat: a11y polish — aria-live + focus management + tests` | screen reader announcements | Low |
 
@@ -86,9 +86,9 @@ This iteration optimizes for **a polished UX flow and a polished admin section**
 
 | Key | Type (parsed) | Default | Purpose |
 |---|---|---|---|
-| `search_drawer_curated_heading` | `string` | `"Most Popular"` | Section heading shown above curated products grid |
-| `search_drawer_chip_categories` | `string[]` (max 6) | `[]` | Top Categories chip row |
-| `search_drawer_curated_category` | `string \| null` | `null` | Single category for curated products section |
+| `search_drawer_chips_heading` | `string` | `"Top Categories"` | Heading shown above the chip row |
+| `search_drawer_chip_categories` | `string[]` (max 6) | `[]` | The categories rendered as chips below the heading |
+| `search_drawer_curated_category` | `string \| null` | `null` | Single category for curated products section. Section header is derived from the picked category's display name (e.g. "Staff Picks") — no separate setting. |
 
 **No new tables, no migrations on data, no Prisma schema change.**
 
@@ -100,18 +100,30 @@ This iteration optimizes for **a polished UX flow and a polished admin section**
 
 **Page layout:** single section, follows CLAUDE.md admin conventions (flat `rounded-lg border p-6` cards, `space-y-12` between major sections, `max-w-[72ch]` on inputs and text).
 
-**Three form fields, in order:**
+**Three form fields, in order. The form drives one consolidated section in the drawer:**
 
-### 1. Curated section heading
+```text
+[Search input]
+
+{chips_heading}                      ← Setting 1 (text input, default "Top Categories")
+[chip] [chip] [chip] [chip] [chip] [chip]   ← Setting 2 (max 6 categories)
+
+{curated_category.name}              ← Setting 3 (display name of picked category, e.g. "Staff Picks")
+[product card] [product card] [product card]
+```
+
+### 1. Chips section heading
 
 | Aspect | Spec |
 |---|---|
 | Component | shadcn `Input` (text) |
-| Label | "Curated section heading" |
-| Helper text | "Shown above the products grid in the search drawer. Default: 'Most Popular'." |
-| Default value | `"Most Popular"` |
+| Label | "Section heading" |
+| Helper text | "Shown above the chip row in the search drawer. Default: 'Top Categories'." |
+| Default value | `"Top Categories"` |
 | Validation | Zod `z.string().min(1).max(60)` — non-empty, reasonable length |
-| Storage key | `search_drawer_curated_heading` |
+| Storage key | `search_drawer_chips_heading` |
+
+> **Note:** The curated products section uses the picked category's display name as its heading — no separate input. If admin picks the category "Staff Picks", the products section displays "Staff Picks" above the grid.
 
 ### 2. Top Categories (multi-select, max 6)
 
@@ -216,9 +228,9 @@ app/admin/settings/search/
 ├── page.tsx                             # admin Search settings page
 └── _components/
     ├── SearchSettingsForm.tsx           # parent form, wires save → PUT
-    ├── CuratedHeadingField.tsx          # text input
-    ├── TopCategoriesMultiSelect.tsx     # multi-select with chip+delete UX
-    └── CuratedCategorySelect.tsx        # single-select combobox
+    ├── ChipsHeadingField.tsx            # text input (setting 1)
+    ├── TopCategoriesMultiSelect.tsx     # multi-select with chip+delete UX (setting 2)
+    └── CuratedCategorySelect.tsx        # single-select combobox (setting 3)
 ```
 
 ---
@@ -228,7 +240,7 @@ app/admin/settings/search/
 (Full ACs in [`acs.md`](acs.md). Summary below.)
 
 - **UI:** drawer fullscreen on mobile, top-anchored on desktop with backdrop blur; empty/results/no-results states render correctly; admin form enforces 6-chip cap visually; chips + curated products visible on storefront
-- **FN:** client-side search runs every keystroke (sub-ms); admin Zod max-6 enforced server-side; merch returned by both drawer and legacy `/api/search`; honest no-results on legacy route; category 404 guard; UserActivity debounced
+- **FN:** client-side search runs every keystroke (sub-ms); admin Zod max-6 enforced server-side; merch returned by both drawer and legacy `/api/search`; honest no-results on legacy route; UserActivity debounced
 - **TST:** MiniSearch search returns expected fuzzy + field-weighted results for fixture catalog; new `/api/search/index` endpoint returns valid shape; legacy route merch fix + no-results fix have tests
 - **REG:** precheck clean; full Jest suite passes; storefront homepage unchanged; existing `/search?q=` route still works
 
@@ -286,5 +298,33 @@ app/admin/settings/search/
 | `app/(site)/_components/layout/SiteHeader.tsx` | Replace `/search` link with drawer trigger |
 | `app/(site)/_components/layout/SiteHeaderWrapper.tsx` | Pass curation settings to header (or fetch in drawer directly) |
 | `lib/data.ts` | Add `getSearchIndex()` data fetcher |
-| `lib/site-settings.ts` | Add `searchDrawerCuratedHeading` + `searchDrawerChipCategories` + `searchDrawerCuratedCategory` to `SiteSettings` shape |
+| `lib/site-settings.ts` | Add `searchDrawerChipsHeading` + `searchDrawerChipCategories` + `searchDrawerCuratedCategory` to `SiteSettings` shape |
 | `package.json` | Add `minisearch` dependency |
+
+---
+
+## Demo configuration (prod demo app)
+
+Baked into `prisma/seed/settings.ts` as defaults. **Persists across re-seed** via the existing `upsert({ where, update: {}, create })` pattern — `update: {}` means admin changes via the Search settings UI survive any future `npm run seed` run. Demo build remains free to change them at any time.
+
+| Setting | Seed default value | Storage key |
+|---|---|---|
+| **Chips section heading** | `Top Categories` | `search_drawer_chips_heading` |
+| **Top Categories** (slugs in order) | `["single-origin", "fruity-floral", "medium-roast", "cold-brew-blends", "drinkware", "central-america"]` | `search_drawer_chip_categories` |
+| **Curated products category** | `staff-picks` | `search_drawer_curated_category` |
+
+### Category prerequisites
+
+Of the 7 categories referenced (6 chips + 1 curated), only `Single Origin` and `Medium Roast` currently exist in `prisma/seed/categories.ts`. The remaining 5 — `Fruity & Floral`, `Cold Brew Blends`, `Drinkware`, `Central America`, and `Staff Picks` — must be added to the categories seed so a fresh `npm run seed` produces a fully-configured demo.
+
+**Slugs to add (also using `upsert + update: {}` so existing admin overrides survive):**
+
+| Name | Slug | Notes |
+|---|---|---|
+| Fruity & Floral | `fruity-floral` | New category; admin associates with relevant coffees |
+| Cold Brew Blends | `cold-brew-blends` | New category |
+| Drinkware | `drinkware` | New merch category |
+| Central America | `central-america` | New origin category |
+| Staff Picks | `staff-picks` | Used as the curated category in search drawer |
+
+The seed adds the categories with no products attached — admin populates them via Menu Builder per existing workflow. Default `isVisible: true`; admin decides whether to add label associations to surface them in the storefront menu (per the discussion 2026-04-25, this is independent of search drawer use).
