@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { Search, X, MoveRight } from "lucide-react";
 import { ProductType } from "@prisma/client";
 import { RoastLevelBar } from "@/app/(site)/_components/product/RoastLevelBar";
@@ -47,6 +48,20 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
   useSearchAnalytics(query, isOpen);
   const results = search(query);
   const hasQuery = query.trim().length > 0;
+
+  // Auto-close on navigation. Without this, clicking any link inside the
+  // drawer (search result, curated card, chip) navigates but the drawer
+  // stays open over the destination, making the click feel like a no-op.
+  // Closing on pathname change keeps every Link inside the drawer working
+  // without each one needing its own onClick={close}.
+  const pathname = usePathname();
+  const prevPathnameRef = useRef(pathname);
+  useEffect(() => {
+    if (prevPathnameRef.current !== pathname && isOpen) {
+      close();
+    }
+    prevPathnameRef.current = pathname;
+  }, [pathname, isOpen, close]);
 
   const curatedHeading = config.curatedCategoryName ?? "Featured";
 
