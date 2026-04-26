@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Search, X, MoveRight } from "lucide-react";
 import { ProductType } from "@prisma/client";
+import { RoastLevelBar } from "@/app/(site)/_components/product/RoastLevelBar";
 import {
   Drawer,
   DrawerContent,
@@ -314,11 +315,11 @@ function ResultsOrNoResults({
 }
 
 /**
- * Compact horizontal mini-card for search results — image + name + a single
- * secondary line. Coffee shows roast level + tasting notes; merch shows the
- * description. Distinct from the full ProductCard used for curated /
- * chip-filtered grids — search results favor density so users can scan many
- * matches quickly without opening cards.
+ * Compact horizontal mini-card for search results — image + name + secondary
+ * lines. Coffee shows the RoastLevelBar (matches ProductCard's treatment) and
+ * tasting notes in italic; merch shows the description (line-clamp-2). Both
+ * variants share the same outer dimensions — the image (64px) sets the row
+ * height, and the text container fills the same space regardless of type.
  */
 function SearchResultCard({ product: p }: { product: SearchProduct }) {
   const isCoffee = p.type === ProductType.COFFEE;
@@ -328,12 +329,6 @@ function SearchResultCard({ product: p }: { product: SearchProduct }) {
     getPlaceholderImage(p.name, 200, isCoffee ? "beans" : "culture");
   const altText =
     firstImage?.altText ?? (isCoffee ? `A bag of ${p.name} coffee` : p.name);
-
-  const secondaryLine = isCoffee
-    ? [p.roastLevel, p.tastingNotes.slice(0, 3).join(", ")]
-        .filter(Boolean)
-        .join(" — ")
-    : (p.description ?? "");
 
   return (
     <Link
@@ -350,12 +345,18 @@ function SearchResultCard({ product: p }: { product: SearchProduct }) {
         />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-medium truncate">{p.name}</p>
-        {secondaryLine && (
-          <p
-            className={`text-xs text-muted-foreground ${isCoffee ? "truncate" : "line-clamp-2"}`}
-          >
-            {secondaryLine}
+        <p className="text-sm font-medium truncate">{p.name}</p>
+        {isCoffee && p.roastLevel && (
+          <RoastLevelBar roastLevel={p.roastLevel} className="pt-1" />
+        )}
+        {isCoffee && p.tastingNotes.length > 0 && (
+          <p className="italic text-xs text-muted-foreground truncate pt-0.5">
+            {p.tastingNotes.join(", ")}
+          </p>
+        )}
+        {!isCoffee && p.description && (
+          <p className="text-xs text-muted-foreground line-clamp-2 pt-1">
+            {p.description}
           </p>
         )}
       </div>
