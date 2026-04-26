@@ -39,9 +39,11 @@ export function CuratedCategoryChips({
                 onClick={() => onChipClick(chip.slug)}
                 aria-pressed={isActive}
                 className={cn(
-                  "inline-flex items-center px-4 py-2 rounded-md text-sm font-medium bg-secondary text-secondary-foreground transition-opacity",
+                  "inline-flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  isActive ? "opacity-100" : "opacity-60 hover:opacity-80"
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground opacity-60 hover:opacity-80"
                 )}
               >
                 {chip.name}
