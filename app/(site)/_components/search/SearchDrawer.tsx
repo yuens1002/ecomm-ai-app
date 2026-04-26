@@ -117,7 +117,20 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
           Search for coffee, brewing equipment, and more.
         </DrawerDescription>
 
-        <div className="flex flex-col h-full overflow-hidden">
+        <div
+          className="flex flex-col h-full overflow-hidden"
+          // Event-delegated close-on-link-click. The pathname-effect above
+          // closes the drawer on route change — but a link to the SAME
+          // route (e.g. user is on /products/foo, opens search, taps foo)
+          // doesn't change pathname, so the effect doesn't fire and the
+          // drawer hangs over a non-navigation. Closing on any anchor click
+          // inside the drawer body covers the same-route case (and is
+          // idempotent with the pathname effect for cross-route clicks).
+          onClick={(e) => {
+            const anchor = (e.target as HTMLElement).closest("a[href]");
+            if (anchor) close();
+          }}
+        >
           {/* Search input row — no border-bottom; close anchor on the right edge */}
           <div className="flex items-center gap-3 px-4 py-3 md:px-6 md:py-4">
             <div className="relative flex-1">
