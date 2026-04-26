@@ -426,6 +426,17 @@ export async function seedMenu(prisma: PrismaClient) {
   for (const coffee of coffees) {
     const targets = new Set<string>();
 
+    // Primary category (added FIRST → wins `isPrimary: true` in the createMany
+    // map below). Mirrors prisma/seed/products.ts intent:
+    //   - Blends (Espresso / Filter-Drip / Cold Brew) → that blend category
+    //   - All other coffees → "Single Origin"
+    // Roast / taste / region / micro-lot stay as secondary attachments so they
+    // still surface on category pages, but are NOT primary — that ensures the
+    // search drawer's chip filter (which uses the primary category) finds
+    // products under origin / collection chips, not just roast chips.
+    const blendCat = mapBlendCategory(coffee.name, coffee.description);
+    targets.add(blendCat ?? "Single Origin");
+
     const roastLevel =
       coffee.roastLevel ?? detectRoastLevel(coffee.name, coffee.description);
     targets.add(
@@ -441,8 +452,6 @@ export async function seedMenu(prisma: PrismaClient) {
       coffee.description ?? "",
     ]).forEach((c) => targets.add(c));
     mapRegions(coffee.origin ?? []).forEach((c) => targets.add(c));
-    const blendCat = mapBlendCategory(coffee.name, coffee.description);
-    if (blendCat) targets.add(blendCat);
     if (
       `${coffee.name} ${coffee.description ?? ""}`
         .toLowerCase()
