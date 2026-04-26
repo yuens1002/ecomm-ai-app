@@ -149,17 +149,22 @@ export default function SiteHeader({
   }, [pathname]);
 
   // Track whether the menu was open at the moment the search drawer opened,
-  // so we can reopen the menu when the user dismisses search without
-  // navigating. Also track the search drawer's open state to detect the
-  // close transition.
+  // and the pathname AT THAT MOMENT, so we can reopen the menu when the
+  // user dismisses search without navigating. Capturing `pathnameAtOpen`
+  // separately (instead of comparing to `prevPathnameForMenuRef`) avoids a
+  // race with the pathname-effect above which updates that ref before this
+  // effect runs — without the separate ref, "navigated" would always
+  // evaluate false and we'd incorrectly reopen the menu after the user
+  // tapped a search result.
   const searchDrawerOpen = useSearchDrawerStore((s) => s.isOpen);
   const menuWasOpenWhenSearchOpenedRef = useRef(false);
+  const pathnameAtSearchOpenRef = useRef(pathname);
   const prevSearchOpenRef = useRef(searchDrawerOpen);
   useEffect(() => {
     const justClosed = prevSearchOpenRef.current && !searchDrawerOpen;
     prevSearchOpenRef.current = searchDrawerOpen;
     if (!justClosed) return;
-    const navigated = pathname !== prevPathnameForMenuRef.current;
+    const navigated = pathname !== pathnameAtSearchOpenRef.current;
     if (menuWasOpenWhenSearchOpenedRef.current && !navigated) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsMobileMenuOpen(true);
@@ -168,6 +173,7 @@ export default function SiteHeader({
   }, [searchDrawerOpen, pathname]);
 
   const handleMobileSearchOpen = () => {
+    pathnameAtSearchOpenRef.current = pathname;
     if (isMobileMenuOpen) {
       menuWasOpenWhenSearchOpenedRef.current = true;
       setIsMobileMenuOpen(false);
