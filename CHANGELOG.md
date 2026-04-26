@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.102.4 - 2026-04-26
+
+### Fixed
+
+- **Mobile: search drawer opens on top of the menu (instead of replacing it), keyboard stays up** — v0.102.2 closed the menu Sheet *before* opening the search drawer. Two side-effects: (a) Radix Sheet's close-auto-focus reclaimed focus from the search drawer's autoFocus Input on mobile, retracting the keyboard immediately after it appeared, and (b) closing the search drawer (without navigating) left the user with no menu to return to. v0.102.4 leaves the menu Sheet mounted under the search drawer; both share the same close-on-pathname-change pattern. Closing search via × now returns to the menu the user was browsing; tapping a result closes both via the navigation effect.
+
+### Changed
+
+- **Mobile menu Sheet closes on navigation via pathname effect** — same shape as the search drawer's effect, removes the need for individual `<SheetClose>` wraps on every nav link.
+
+---
+
 ## 0.102.3 - 2026-04-26
 
 ### Changed

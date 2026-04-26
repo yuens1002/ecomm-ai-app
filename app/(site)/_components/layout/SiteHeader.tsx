@@ -127,12 +127,26 @@ export default function SiteHeader({
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  // Controlled mobile menu Sheet state — lifted so the SearchTrigger inside
-  // can close the menu *before* opening the search drawer (otherwise both
-  // overlays mount stacked and tapping a search result leaves the menu
-  // hanging behind the destination page). Desktop uses NavigationMenu, not
-  // Sheet, so this is mobile-only.
+  // Controlled mobile menu Sheet state. Two reasons to lift it out of the
+  // Sheet: (1) the search drawer can open ON TOP of the menu so closing
+  // search returns the user to where they were browsing, and (2) we close
+  // the menu programmatically on pathname change (next effect below) so
+  // every Link inside just works without each one wrapped in <SheetClose>.
+  // Desktop uses NavigationMenu, not Sheet — this is mobile-only.
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Close the mobile menu on any route change. Mirrors the same pattern in
+  // SearchDrawer — together they ensure both overlays dismiss after a
+  // navigation triggered from inside either one.
+  const prevPathnameForMenuRef = useRef(pathname);
+  useEffect(() => {
+    if (prevPathnameForMenuRef.current !== pathname) {
+      prevPathnameForMenuRef.current = pathname;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsMobileMenuOpen(false);
+    }
+  }, [pathname]);
+
   const lastScrollY = useRef(0);
   const { settings } = useSiteSettings();
   const { visible: visiblePages, overflow: overflowPages } = useNavOverflow(
@@ -275,14 +289,12 @@ export default function SiteHeader({
                           </span>
                         </Link>
                       </SheetClose>
-                      {/* Close the menu Sheet before the search drawer opens
-                          so the two overlays don't stack — otherwise tapping
-                          a search result navigates but the menu hangs behind
-                          the destination page. */}
-                      <SearchTrigger
-                        variant="mobile-sheet"
-                        onBeforeOpen={() => setIsMobileMenuOpen(false)}
-                      />
+                      {/* Search opens ON TOP of the menu Sheet — both stay
+                          mounted. Closing the search drawer (without
+                          navigating) returns the user to the menu they
+                          were browsing. The pathname-effect above closes
+                          the menu when search navigates somewhere. */}
+                      <SearchTrigger variant="mobile-sheet" />
                       <SheetClose asChild>
                         <Link
                           href="/orders"
