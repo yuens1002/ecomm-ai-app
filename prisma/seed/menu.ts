@@ -5,13 +5,38 @@ import {
   RoastLevel,
 } from "@prisma/client";
 
-const LABEL_DEFS = [
+const LABEL_DEFS: {
+  name: string;
+  icon: string;
+  isVisible?: boolean;
+  // Optional explicit category slugs (in display order). Used by labels that
+  // attach existing categories — e.g. the search-drawer-only "Top Categories"
+  // label below — without owning those categories' canonical menu slot.
+  attachedSlugs?: string[];
+}[] = [
   { name: "By Roast Level", icon: "Rainbow" },
   { name: "By Taste Profile", icon: "Grape" },
   { name: "Origins", icon: "Earth" },
   { name: "Blends", icon: "Blend" },
   { name: "Collections", icon: "Combine" },
   { name: "Merch", icon: "Star" },
+  // Hidden label that drives the search drawer's chip row. The search drawer
+  // reads CategoryLabel by id without filtering on isVisible, so this label
+  // does NOT appear in the product menu nav but its categories DO appear as
+  // chips in the search drawer.
+  {
+    name: "Top Categories",
+    icon: "Sparkles",
+    isVisible: false,
+    attachedSlugs: [
+      "single-origin",
+      "fruity-floral",
+      "medium-roast",
+      "cold-brew-blends",
+      "drinkware",
+      "central-america",
+    ],
+  },
 ];
 
 const CATEGORY_DEFS = [
@@ -271,11 +296,12 @@ export async function seedMenu(prisma: PrismaClient) {
   const labels = new Map<string, string>();
   const allowedLabelNames = new Set(LABEL_DEFS.map((l) => l.name));
   for (let i = 0; i < LABEL_DEFS.length; i += 1) {
-    const { name, icon } = LABEL_DEFS[i];
+    const { name, icon, isVisible } = LABEL_DEFS[i];
+    const visible = isVisible ?? true;
     const label = await prisma.categoryLabel.upsert({
       where: { name },
-      update: { order: i + 1, icon, isVisible: true },
-      create: { name, order: i + 1, icon, isVisible: true },
+      update: { order: i + 1, icon, isVisible: visible },
+      create: { name, order: i + 1, icon, isVisible: visible },
     });
     labels.set(name, label.id);
   }
@@ -348,9 +374,38 @@ export async function seedMenu(prisma: PrismaClient) {
   // Refresh map after deletions
   const categoryMap = new Map<string, string>();
   const freshCategories = await prisma.category.findMany({
-    select: { id: true, name: true },
+    select: { id: true, name: true, slug: true },
   });
-  freshCategories.forEach((c) => categoryMap.set(c.name, c.id));
+  const slugToId = new Map<string, string>();
+  freshCategories.forEach((c) => {
+    categoryMap.set(c.name, c.id);
+    slugToId.set(c.slug, c.id);
+  });
+
+  // Multi-label attachments: labels with `attachedSlugs` reference categories
+  // that already live under a different canonical label. Used by hidden labels
+  // (e.g. "Top Categories" for the search drawer) to surface existing
+  // categories without claiming them in the product menu nav.
+  for (const def of LABEL_DEFS) {
+    if (!def.attachedSlugs || def.attachedSlugs.length === 0) continue;
+    const labelId = labels.get(def.name);
+    if (!labelId) continue;
+    for (let i = 0; i < def.attachedSlugs.length; i += 1) {
+      const slug = def.attachedSlugs[i];
+      const categoryId = slugToId.get(slug);
+      if (!categoryId) {
+        console.warn(
+          `  ⚠ "${def.name}" references missing category slug "${slug}"`
+        );
+        continue;
+      }
+      await prisma.categoryLabelCategory.upsert({
+        where: { labelId_categoryId: { labelId, categoryId } },
+        update: { order: i },
+        create: { labelId, categoryId, order: i },
+      });
+    }
+  }
 
   // Assign categories to coffee products
   const coffees = await prisma.product.findMany({
@@ -494,6 +549,24 @@ export async function seedMenu(prisma: PrismaClient) {
       });
     }
   }
+
+  // Search drawer settings — RESEED OVERWRITES (update: { value }) so the
+  // demo showcase is restored on every refresh. Admin can still edit via
+  // /admin/settings/search and changes persist until the next reseed.
+  // Same pattern as app.weightUnit / app.locationType.
+  const topCategoriesLabelId = labels.get("Top Categories");
+  if (topCategoriesLabelId) {
+    await prisma.siteSettings.upsert({
+      where: { key: "search_drawer_chip_label" },
+      update: { value: topCategoriesLabelId },
+      create: { key: "search_drawer_chip_label", value: topCategoriesLabelId },
+    });
+  }
+  await prisma.siteSettings.upsert({
+    where: { key: "search_drawer_curated_category" },
+    update: { value: "staff-picks" },
+    create: { key: "search_drawer_curated_category", value: "staff-picks" },
+  });
 
   console.log("  ✓ Menu aligned with new structure");
 }
