@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { Search, X, MoveRight } from "lucide-react";
+import { ProductType } from "@prisma/client";
 import {
   Drawer,
   DrawerContent,
@@ -10,9 +13,9 @@ import {
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import type { SearchDrawerConfig } from "@/lib/data";
-import ProductCard from "@/app/(site)/_components/product/ProductCard";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
 import { useSearchDrawerStore } from "./store";
-import { useSearchIndex } from "./hooks/useSearchIndex";
+import { useSearchIndex, type SearchProduct } from "./hooks/useSearchIndex";
 import { useSearchAnalytics } from "./hooks/useSearchAnalytics";
 import { CuratedCategoryChips } from "./CuratedCategoryChips";
 import { CuratedProducts } from "./CuratedProducts";
@@ -127,7 +130,7 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
             <button
               type="button"
               onClick={close}
-              className="flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex items-center justify-center text-foreground hover:text-primary transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Close search"
             >
               <MoveRight className="h-5 w-5" />
@@ -292,7 +295,7 @@ function ResultsOrNoResults({
         <span className="font-medium">&ldquo;{query}&rdquo;</span>
       </p>
       <ul
-        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4"
+        className="flex flex-col gap-2"
         // Re-key the list on query change so fade-in animation re-fires
         key={query}
       >
@@ -302,10 +305,60 @@ function ResultsOrNoResults({
             className="animate-in fade-in-0 duration-300"
             style={{ animationDelay: `${idx * 30}ms`, animationFillMode: "both" }}
           >
-            <ProductCard product={p} />
+            <SearchResultCard product={p} />
           </li>
         ))}
       </ul>
     </div>
+  );
+}
+
+/**
+ * Compact horizontal mini-card for search results — image + name + a single
+ * secondary line. Coffee shows roast level + tasting notes; merch shows the
+ * description. Distinct from the full ProductCard used for curated /
+ * chip-filtered grids — search results favor density so users can scan many
+ * matches quickly without opening cards.
+ */
+function SearchResultCard({ product: p }: { product: SearchProduct }) {
+  const isCoffee = p.type === ProductType.COFFEE;
+  const firstImage = p.variants[0]?.images[0];
+  const imageUrl =
+    firstImage?.url ??
+    getPlaceholderImage(p.name, 200, isCoffee ? "beans" : "culture");
+  const altText =
+    firstImage?.altText ?? (isCoffee ? `A bag of ${p.name} coffee` : p.name);
+
+  const secondaryLine = isCoffee
+    ? [p.roastLevel, p.tastingNotes.slice(0, 3).join(", ")]
+        .filter(Boolean)
+        .join(" — ")
+    : (p.description ?? "");
+
+  return (
+    <Link
+      href={`/products/${p.slug}`}
+      className="flex items-center gap-3 p-3 rounded-lg border hover:shadow-md transition-shadow"
+    >
+      <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-muted">
+        <Image
+          src={imageUrl}
+          alt={altText}
+          fill
+          sizes="64px"
+          className="object-cover"
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium truncate">{p.name}</p>
+        {secondaryLine && (
+          <p
+            className={`text-xs text-muted-foreground ${isCoffee ? "truncate" : "line-clamp-2"}`}
+          >
+            {secondaryLine}
+          </p>
+        )}
+      </div>
+    </Link>
   );
 }
