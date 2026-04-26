@@ -82,7 +82,7 @@ export function useSearchIndex(enabled: boolean): UseSearchIndexResult {
         "tastingNotes",
         "description",
         "origin",
-        "primaryCategoryName",
+        "categoryNames",
       ],
       // Store only the id — full product objects come from state.products by
       // id lookup (avoids serializing the heavier shape into MiniSearch's index).
@@ -90,8 +90,13 @@ export function useSearchIndex(enabled: boolean): UseSearchIndexResult {
       extractField: (doc, fieldName) => {
         if (fieldName === "tastingNotes") return doc.tastingNotes.join(" ");
         if (fieldName === "origin") return doc.origin.join(" ");
-        if (fieldName === "primaryCategoryName") {
-          return doc.categories[0]?.category.name ?? "";
+        // Match against ALL attached categories (primary + secondary) so
+        // queries like "medium" find every Medium Roast product, not just
+        // the few whose primary category happens to be Medium Roast.
+        // /api/search/index already loads all categories for the chip filter;
+        // this just completes their use in the search index too.
+        if (fieldName === "categoryNames") {
+          return doc.categories.map((c) => c.category.name).join(" ");
         }
         const value = (doc as unknown as Record<string, unknown>)[fieldName];
         return typeof value === "string" ? value : "";
@@ -100,7 +105,7 @@ export function useSearchIndex(enabled: boolean): UseSearchIndexResult {
         boost: {
           name: 4,
           tastingNotes: 2,
-          primaryCategoryName: 2,
+          categoryNames: 2,
           origin: 1.5,
           description: 1,
         },

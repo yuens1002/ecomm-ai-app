@@ -171,6 +171,46 @@ describe("useSearchIndex", () => {
     await waitFor(() => expect(result.current.status).toBe("error"));
   });
 
+  it("matches against ALL attached category names, not just primary", async () => {
+    // Build a fixture where Medium Roast is a SECONDARY attachment (not the
+    // first/primary category). Searching "medium" should still find it.
+    const product = fixture({
+      id: "p-multi",
+      name: "Breakfast Blend",
+      slug: "breakfast-blend",
+      type: "COFFEE",
+      description: "Smooth and balanced.",
+      tastingNotes: ["Honey", "Almond"],
+      origin: ["Colombia"],
+      categoryName: "Filter/Drip Blends",
+      categorySlug: "filter-drip-blends",
+    });
+    // Override the fixture to add Medium Roast as a secondary category.
+    const productWithMulti = {
+      ...product,
+      categories: [
+        { category: { name: "Filter/Drip Blends", slug: "filter-drip-blends" } },
+        { category: { name: "Medium Roast", slug: "medium-roast" } },
+      ],
+    } as unknown as SearchProduct;
+
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        products: [productWithMulti],
+        generatedAt: new Date().toISOString(),
+      }),
+    });
+
+    const { result } = renderHook(() => useSearchIndex(true));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    const results = result.current.search("medium");
+    expect(results.length).toBe(1);
+    expect(results[0].id).toBe("p-multi");
+  });
+
   it("refetch triggers a new index fetch", async () => {
     const { result } = renderHook(() => useSearchIndex(true));
     await waitFor(() => expect(result.current.status).toBe("ready"));
