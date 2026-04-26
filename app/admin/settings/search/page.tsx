@@ -2,62 +2,63 @@ import { prisma } from "@/lib/prisma";
 import { PageTitle } from "@/app/admin/_components/forms/PageTitle";
 import { SearchSettingsForm } from "./_components/SearchSettingsForm";
 
-const KEY_HEADING = "search_drawer_chips_heading";
-const KEY_CHIP_CATEGORIES = "search_drawer_chip_categories";
+const KEY_CHIP_LABEL = "search_drawer_chip_label";
 const KEY_CURATED_CATEGORY = "search_drawer_curated_category";
 
-const DEFAULT_HEADING = "Top Categories";
-
 interface InitialSettings {
-  chipsHeading: string;
-  chipCategories: string[];
-  curatedCategory: string | null;
+  chipLabelId: string | null;
+  curatedCategorySlug: string | null;
 }
 
 async function getInitialSettings(): Promise<InitialSettings> {
   const rows = await prisma.siteSettings.findMany({
-    where: {
-      key: { in: [KEY_HEADING, KEY_CHIP_CATEGORIES, KEY_CURATED_CATEGORY] },
-    },
+    where: { key: { in: [KEY_CHIP_LABEL, KEY_CURATED_CATEGORY] } },
     select: { key: true, value: true },
   });
-
   const map = rows.reduce<Record<string, string>>((acc, row) => {
     acc[row.key] = row.value;
     return acc;
   }, {});
-
-  let chipCategories: string[] = [];
-  if (map[KEY_CHIP_CATEGORIES]) {
-    try {
-      const parsed = JSON.parse(map[KEY_CHIP_CATEGORIES]) as unknown;
-      if (Array.isArray(parsed) && parsed.every((s) => typeof s === "string")) {
-        chipCategories = parsed as string[];
-      }
-    } catch {
-      // ignore
-    }
-  }
-
   return {
-    chipsHeading: map[KEY_HEADING] || DEFAULT_HEADING,
-    chipCategories,
-    curatedCategory: map[KEY_CURATED_CATEGORY] || null,
+    chipLabelId: map[KEY_CHIP_LABEL] || null,
+    curatedCategorySlug:
+      KEY_CURATED_CATEGORY in map ? map[KEY_CURATED_CATEGORY] : null,
   };
+}
+
+async function getLabelOptions() {
+  return prisma.categoryLabel.findMany({
+    select: {
+      id: true,
+      name: true,
+      isVisible: true,
+      categories: {
+        orderBy: { order: "asc" },
+        select: { category: { select: { name: true, slug: true } } },
+      },
+    },
+    orderBy: { order: "asc" },
+  });
 }
 
 async function getCategoryOptions() {
   return prisma.category.findMany({
     select: { id: true, name: true, slug: true },
-    orderBy: { name: "asc" },
+    orderBy: { order: "asc" },
   });
 }
 
 export default async function SearchSettingsPage() {
-  const [settings, categories] = await Promise.all([
+  const [settings, labels, categories] = await Promise.all([
     getInitialSettings(),
+    getLabelOptions(),
     getCategoryOptions(),
   ]);
+
+  // Defaults: 1st label by order, 1st category by order. The form treats null
+  // as "use the default" and shows that default selected from the start.
+  const defaultLabelId = labels[0]?.id ?? null;
+  const defaultCategorySlug = categories[0]?.slug ?? null;
 
   return (
     <div className="space-y-8">
@@ -66,7 +67,13 @@ export default async function SearchSettingsPage() {
         subtitle="Configure the search drawer's discovery surface — chip row and curated products section."
       />
 
-      <SearchSettingsForm initialSettings={settings} categories={categories} />
+      <SearchSettingsForm
+        initialSettings={settings}
+        labels={labels}
+        categories={categories}
+        defaultLabelId={defaultLabelId}
+        defaultCategorySlug={defaultCategorySlug}
+      />
     </div>
   );
 }

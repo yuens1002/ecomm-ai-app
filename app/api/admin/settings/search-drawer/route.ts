@@ -3,23 +3,24 @@ import { z } from "zod";
 import { requireAdminApi } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 
-const KEY_HEADING = "search_drawer_chips_heading";
-const KEY_CHIP_CATEGORIES = "search_drawer_chip_categories";
+const KEY_CHIP_LABEL = "search_drawer_chip_label";
 const KEY_CURATED_CATEGORY = "search_drawer_curated_category";
 
-const DEFAULT_HEADING = "Top Categories";
-
-const settingsSchema = z.object({
-  chipsHeading: z
-    .string()
-    .trim()
-    .min(1, "Heading is required")
-    .max(60, "Heading must be 60 characters or fewer"),
-  chipCategories: z
-    .array(z.string().min(1))
-    .max(6, "You can select up to 6 categories"),
-  curatedCategory: z.string().nullable(),
-});
+/**
+ * v2 schema: partial update — admin form auto-saves only the changed field.
+ * - chipLabelId: CategoryLabel.id, must be non-empty when present.
+ * - curatedCategorySlug: Category.slug. Empty string is the "explicitly cleared"
+ *   sentinel (no curated section).
+ */
+const settingsSchema = z
+  .object({
+    chipLabelId: z.string().min(1, "Chip label id is required").optional(),
+    curatedCategorySlug: z.string().optional(),
+  })
+  .refine(
+    (v) => v.chipLabelId !== undefined || v.curatedCategorySlug !== undefined,
+    { message: "At least one field must be provided" }
+  );
 
 export async function GET() {
   const authResult = await requireAdminApi();
@@ -29,7 +30,7 @@ export async function GET() {
 
   try {
     const rows = await prisma.siteSettings.findMany({
-      where: { key: { in: [KEY_HEADING, KEY_CHIP_CATEGORIES, KEY_CURATED_CATEGORY] } },
+      where: { key: { in: [KEY_CHIP_LABEL, KEY_CURATED_CATEGORY] } },
       select: { key: true, value: true },
     });
 
@@ -38,22 +39,10 @@ export async function GET() {
       return acc;
     }, {});
 
-    let chipCategories: string[] = [];
-    if (map[KEY_CHIP_CATEGORIES]) {
-      try {
-        const parsed = JSON.parse(map[KEY_CHIP_CATEGORIES]) as unknown;
-        if (Array.isArray(parsed) && parsed.every((s) => typeof s === "string")) {
-          chipCategories = parsed as string[];
-        }
-      } catch {
-        // ignore — return empty
-      }
-    }
-
     return NextResponse.json({
-      chipsHeading: map[KEY_HEADING] || DEFAULT_HEADING,
-      chipCategories,
-      curatedCategory: map[KEY_CURATED_CATEGORY] || null,
+      chipLabelId: map[KEY_CHIP_LABEL] || null,
+      curatedCategorySlug:
+        KEY_CURATED_CATEGORY in map ? map[KEY_CURATED_CATEGORY] : null,
     });
   } catch (error) {
     console.error("Failed to fetch search drawer settings:", error);
@@ -83,32 +72,45 @@ export async function PUT(request: Request) {
       );
     }
 
-    const { chipsHeading, chipCategories, curatedCategory } = parsed.data;
-    const chipCategoriesJson = JSON.stringify(chipCategories);
+    const { chipLabelId, curatedCategorySlug } = parsed.data;
 
-    await Promise.all([
-      prisma.siteSettings.upsert({
-        where: { key: KEY_HEADING },
-        update: { value: chipsHeading },
-        create: { key: KEY_HEADING, value: chipsHeading },
-      }),
-      prisma.siteSettings.upsert({
-        where: { key: KEY_CHIP_CATEGORIES },
-        update: { value: chipCategoriesJson },
-        create: { key: KEY_CHIP_CATEGORIES, value: chipCategoriesJson },
-      }),
-      // Allow clearing the curated category by storing empty string sentinel.
-      prisma.siteSettings.upsert({
-        where: { key: KEY_CURATED_CATEGORY },
-        update: { value: curatedCategory ?? "" },
-        create: { key: KEY_CURATED_CATEGORY, value: curatedCategory ?? "" },
-      }),
-    ]);
+    const ops = [] as Promise<unknown>[];
+    if (chipLabelId !== undefined) {
+      ops.push(
+        prisma.siteSettings.upsert({
+          where: { key: KEY_CHIP_LABEL },
+          update: { value: chipLabelId },
+          create: { key: KEY_CHIP_LABEL, value: chipLabelId },
+        })
+      );
+    }
+    if (curatedCategorySlug !== undefined) {
+      ops.push(
+        prisma.siteSettings.upsert({
+          where: { key: KEY_CURATED_CATEGORY },
+          update: { value: curatedCategorySlug },
+          create: { key: KEY_CURATED_CATEGORY, value: curatedCategorySlug },
+        })
+      );
+    }
+
+    await Promise.all(ops);
+
+    // Return the canonical state from DB so the client confirms its optimistic
+    // value matches what was persisted.
+    const rows = await prisma.siteSettings.findMany({
+      where: { key: { in: [KEY_CHIP_LABEL, KEY_CURATED_CATEGORY] } },
+      select: { key: true, value: true },
+    });
+    const map = rows.reduce<Record<string, string>>((acc, row) => {
+      acc[row.key] = row.value;
+      return acc;
+    }, {});
 
     return NextResponse.json({
-      chipsHeading,
-      chipCategories,
-      curatedCategory,
+      chipLabelId: map[KEY_CHIP_LABEL] || null,
+      curatedCategorySlug:
+        KEY_CURATED_CATEGORY in map ? map[KEY_CURATED_CATEGORY] : null,
     });
   } catch (error) {
     console.error("Failed to update search drawer settings:", error);
