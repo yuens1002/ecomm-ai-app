@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search } from "lucide-react";
+import { Search, X, MoveRight } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -59,21 +59,39 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
         </DrawerDescription>
 
         <div className="flex flex-col h-full overflow-hidden">
-          {/* Search input row */}
-          <div className="flex items-center gap-3 px-4 py-3 md:px-6 md:py-4 border-b">
+          {/* Search input row — no border-bottom; close anchor on the right edge */}
+          <div className="flex items-center gap-3 px-4 py-3 md:px-6 md:py-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 type="text"
                 placeholder="Search products…"
-                className="pl-10 h-11 text-base"
+                className="pl-10 pr-10 h-11 text-base"
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 aria-label="Search products"
                 aria-controls="search-drawer-results"
               />
+              {hasQuery && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
+            <button
+              type="button"
+              onClick={close}
+              className="flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Close search"
+            >
+              <MoveRight className="h-5 w-5" />
+            </button>
           </div>
 
           {/* Body */}
