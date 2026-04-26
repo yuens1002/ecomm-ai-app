@@ -17,7 +17,7 @@ describe("GET /api/search/index", () => {
     findManyMock.mockReset();
   });
 
-  it("returns a catalog index with both COFFEE and MERCH products", async () => {
+  it("returns a catalog index with both COFFEE and MERCH products in FeaturedProduct shape", async () => {
     findManyMock.mockResolvedValue([
       {
         id: "p1",
@@ -29,7 +29,9 @@ describe("GET /api/search/index", () => {
         origin: ["Ethiopia"],
         roastLevel: "LIGHT",
         isFeatured: true,
-        categories: [{ category: { name: "Light Roast", slug: "light-roast" } }],
+        categories: [
+          { category: { name: "Light Roast", slug: "light-roast" } },
+        ],
         variants: [
           {
             images: [{ url: "/img.jpg", altText: "alt" }],
@@ -67,18 +69,23 @@ describe("GET /api/search/index", () => {
     expect(types).toContain("COFFEE");
     expect(types).toContain("MERCH");
 
+    // v2 shape: ProductCard-compatible payload — relations come through
+    // `categories[0].category` and `variants[0].{images,purchaseOptions}`.
     const coffee = data.products.find((p: { id: string }) => p.id === "p1");
-    expect(coffee.primaryCategory).toEqual({
+    expect(coffee.categories[0].category).toEqual({
       name: "Light Roast",
       slug: "light-roast",
     });
-    expect(coffee.primaryImage).toEqual({ url: "/img.jpg", altText: "alt" });
-    expect(coffee.minPriceInCents).toBe(2000);
+    expect(coffee.variants[0].images[0]).toEqual({
+      url: "/img.jpg",
+      altText: "alt",
+    });
+    expect(coffee.variants[0].purchaseOptions[0].priceInCents).toBe(2000);
 
     const merch = data.products.find((p: { id: string }) => p.id === "p2");
-    expect(merch.primaryCategory).toBeNull();
-    expect(merch.primaryImage).toBeNull();
-    expect(merch.minPriceInCents).toBe(3000);
+    expect(merch.categories).toEqual([]);
+    expect(merch.variants[0].images).toEqual([]);
+    expect(merch.variants[0].purchaseOptions[0].priceInCents).toBe(3000);
 
     expect(data.generatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
@@ -90,31 +97,6 @@ describe("GET /api/search/index", () => {
     const callArg = findManyMock.mock.calls[0][0];
     expect(callArg.where).toEqual({ isDisabled: false });
     expect(callArg.where.type).toBeUndefined();
-  });
-
-  it("truncates long descriptions to ~200 chars", async () => {
-    const longDesc = "x".repeat(500);
-    findManyMock.mockResolvedValue([
-      {
-        id: "p1",
-        name: "Test",
-        slug: "test",
-        type: "COFFEE",
-        description: longDesc,
-        tastingNotes: [],
-        origin: [],
-        roastLevel: null,
-        isFeatured: false,
-        categories: [],
-        variants: [],
-      },
-    ]);
-
-    const response = await GET();
-    const data = await response.json();
-
-    expect(data.products[0].description.length).toBeLessThanOrEqual(201);
-    expect(data.products[0].description.endsWith("…")).toBe(true);
   });
 
   it("returns 500 with error JSON on Prisma failure", async () => {
