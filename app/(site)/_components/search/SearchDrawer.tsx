@@ -5,11 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { Search } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import type { SearchDrawerConfig } from "@/lib/data";
 import { useSearchDrawerStore } from "./store";
@@ -17,15 +17,14 @@ import { useSearchIndex } from "./hooks/useSearchIndex";
 import { useSearchAnalytics } from "./hooks/useSearchAnalytics";
 import { CuratedCategoryChips } from "./CuratedCategoryChips";
 import { CuratedProducts } from "./CuratedProducts";
-import { cn } from "@/lib/utils";
 
 interface SearchDrawerProps {
   config: SearchDrawerConfig;
 }
 
 /**
- * Search drawer overlay. Fullscreen on mobile, top-anchored on desktop with
- * backdrop blur for "context underneath".
+ * Search drawer overlay. Right-anchored slide-in (vaul), full-height. Same
+ * shell shape as the cart drawer for visual consistency.
  *
  * Three states:
  * - Empty (no query): chips + curated products
@@ -45,27 +44,21 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
   const curatedHeading = config.curatedCategoryName ?? "Featured";
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
-      <DialogContent
-        className={cn(
-          "p-0 gap-0 max-w-none rounded-none border-0 sm:rounded-none",
-          // Mobile: fullscreen
-          "fixed inset-0 left-0 right-0 top-0 bottom-0 translate-x-0 translate-y-0 w-screen h-screen",
-          // Desktop: top-anchored, max-w-4xl, max-h-[80vh], rounded bottom
-          "md:left-1/2 md:right-auto md:top-0 md:bottom-auto md:-translate-x-1/2 md:translate-y-0",
-          "md:w-full md:max-w-4xl md:max-h-[80vh] md:rounded-b-xl md:border md:shadow-lg",
-          "data-[state=open]:animate-in data-[state=closed]:animate-out",
-          "data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
-          "md:data-[state=open]:slide-in-from-top-4 md:data-[state=closed]:slide-out-to-top-4",
-          "duration-200"
-        )}
+    <Drawer
+      open={isOpen}
+      onOpenChange={(open) => !open && close()}
+      direction="right"
+      shouldScaleBackground={false}
+    >
+      <DrawerContent
+        className="right-0 top-0 bottom-0 h-screen w-full md:w-[80vw] rounded-none border-l p-0 gap-0"
       >
-        <DialogTitle className="sr-only">Search products</DialogTitle>
-        <DialogDescription className="sr-only">
+        <DrawerTitle className="sr-only">Search products</DrawerTitle>
+        <DrawerDescription className="sr-only">
           Search for coffee, brewing equipment, and more.
-        </DialogDescription>
+        </DrawerDescription>
 
-        <div className="flex flex-col h-full md:max-h-[80vh] overflow-hidden">
+        <div className="flex flex-col h-full overflow-hidden">
           {/* Search input row */}
           <div className="flex items-center gap-3 px-4 py-3 md:px-6 md:py-4 border-b">
             <div className="relative flex-1">
@@ -127,8 +120,8 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }
 
