@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -42,7 +42,11 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
   const close = useSearchDrawerStore((s) => s.close);
   const activeChipSlug = useSearchDrawerStore((s) => s.activeChipSlug);
   const setActiveChipSlug = useSearchDrawerStore((s) => s.setActiveChipSlug);
-  const [query, setQuery] = useState("");
+  // `query` lives in the store so it clears synchronously when the drawer
+  // closes — local component state would persist across open/close cycles
+  // and surface a stale query when the user reopens the drawer.
+  const query = useSearchDrawerStore((s) => s.query);
+  const setQuery = useSearchDrawerStore((s) => s.setQuery);
 
   const { status, products, search } = useSearchIndex(isOpen);
   useSearchAnalytics(query, isOpen);
