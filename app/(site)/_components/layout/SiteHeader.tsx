@@ -32,7 +32,8 @@ import {
 import { useNavOverflow } from "@/hooks/useNavOverflow";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
-import { ChevronDown, CircleUserRound, FileText, Home, LogIn, LogOut, Menu, MoreHorizontal, PackageSearch, Search, User } from "lucide-react";
+import { ChevronDown, CircleUserRound, FileText, Home, LogIn, LogOut, Menu, MoreHorizontal, PackageSearch, User } from "lucide-react";
+import { SearchTrigger } from "@/app/(site)/_components/search/SearchTrigger";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -269,15 +270,7 @@ export default function SiteHeader({
                         </Link>
                       </SheetClose>
                       <SheetClose asChild>
-                        <Link
-                          href="/search"
-                          className="inline-flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md text-foreground hover:text-primary hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        >
-                          <Search className="w-5 h-5" />
-                          <span className="text-[10px] uppercase tracking-wide font-medium">
-                            Search
-                          </span>
-                        </Link>
+                        <SearchTrigger variant="mobile-sheet" />
                       </SheetClose>
                       <SheetClose asChild>
                         <Link
@@ -524,12 +517,8 @@ export default function SiteHeader({
           {isClient ? (
             <>
               {/* Search - desktop only */}
-              <Button variant="ghost" size="icon" asChild className="hidden md:flex">
-                <Link href="/search">
-                  <Search className="h-5 w-5" />
-                  <span className="sr-only">Search products</span>
-                </Link>
-              </Button>
+              <SearchTrigger />
+
 
               {/* Account - desktop only */}
               <div className="hidden md:flex">

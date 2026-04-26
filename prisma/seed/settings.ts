@@ -359,5 +359,9 @@ export async function seedSettings(prisma: PrismaClient) {
     });
   }
 
+  // Search drawer settings: chip label + curated category are seeded inside
+  // seedMenu (after the "Top Categories" CategoryLabel and Staff Picks Category
+  // exist) so the chip_label key can store the real label id.
+
   console.log("  ✅ Site settings created");
 }

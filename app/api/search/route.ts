@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ProductType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { fullTextSearchIds } from "@/lib/search/full-text";
@@ -14,11 +13,18 @@ export async function GET(request: NextRequest) {
 
     const PAGE_SIZE = 7;
 
+    // Note: NO type filter — keyword search now includes both COFFEE and MERCH.
+    // Roast / origin URL params still narrow the result (roast → coffee
+    // category; origin → product.origin array), but type is unconstrained
+    // unless the URL explicitly asks for one (which today it doesn't).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const whereClause: any = { isDisabled: false, type: ProductType.COFFEE };
+    const whereClause: any = { isDisabled: false };
     let searchQuery = "";
     let ftsOrderedIds: string[] = [];
     let ftsTotalMatches = 0;
+    // Honest no-results: when query has tokens but FTS returns zero, we should
+    // return empty — not fall through to "all products in this roast category".
+    let queryProducedZeroMatches = false;
 
     if (query && query.trim().length > 0) {
       searchQuery = query.trim().toLowerCase();
@@ -40,6 +46,10 @@ export async function GET(request: NextRequest) {
             ftsTotalMatches = ftsIds.length;
             ftsOrderedIds = ftsIds.slice(0, PAGE_SIZE);
             whereClause.id = { in: ftsOrderedIds };
+          } else {
+            // Honest no-results: query had tokens but matched nothing within
+            // this roast category. Don't return all products in the category.
+            queryProducedZeroMatches = true;
           }
         }
       } else {
@@ -49,9 +59,11 @@ export async function GET(request: NextRequest) {
           ftsOrderedIds = ftsIds.slice(0, PAGE_SIZE);
           whereClause.id = { in: ftsOrderedIds };
         } else {
+          // Fall back to a name contains match. The previous "origin hasSome
+          // [query]" clause was effectively dead code (origins are discrete
+          // strings; free-text query rarely matches one) so it's removed.
           whereClause.OR = [
             { name: { contains: searchQuery, mode: "insensitive" } },
-            { origin: { hasSome: [searchQuery] } },
           ];
         }
       }
@@ -82,6 +94,17 @@ export async function GET(request: NextRequest) {
       } catch (error) {
         console.error("Failed to track search activity:", error);
       }
+    }
+
+    // Honest no-results short circuit — return empty before the DB query
+    if (queryProducedZeroMatches) {
+      return NextResponse.json({
+        products: [],
+        query: searchQuery,
+        count: 0,
+        returnedCount: 0,
+        context: { sessionId },
+      });
     }
 
     // Total count: FTS path knows it from the ranked id list; fallback path counts at DB.

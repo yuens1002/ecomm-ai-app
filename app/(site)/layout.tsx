@@ -1,11 +1,25 @@
 import fs from "fs/promises";
 import path from "path";
+import { unstable_cache } from "next/cache";
 import SiteHeaderWrapper from "@/app/(site)/_components/layout/SiteHeaderWrapper";
 import SiteFooter from "@/app/(site)/_components/layout/SiteFooter";
 import { SiteBannerProvider } from "@/app/(site)/_hooks/useSiteBanner";
 import { SiteBannerPortal } from "@/app/(site)/_components/layout/SiteBannerPortal";
 import { DemoBanner } from "@/app/(site)/_components/content/DemoBanner";
+import { SearchDrawer } from "@/app/(site)/_components/search/SearchDrawer";
 import { getStorefrontTheme } from "@/lib/config/app-settings";
+import { getSearchDrawerConfig } from "@/lib/data";
+
+// Cached wrapper for getSearchDrawerConfig — the layout runs on every site
+// page render, but the drawer config (chip label + curated products) only
+// changes when an admin edits /admin/settings/search. Cache for 60s by
+// default; the admin PUT route calls revalidateTag("search-drawer-config")
+// to invalidate immediately on save.
+const getCachedSearchDrawerConfig = unstable_cache(
+  () => getSearchDrawerConfig(),
+  ["search-drawer-config"],
+  { revalidate: 60, tags: ["search-drawer-config"] }
+);
 
 // Evaluated once at module load based on NEXT_PUBLIC_BUILD_VARIANT.
 // DemoBanner and its hooks never enter the React tree unless this is true.
@@ -41,7 +55,10 @@ export default async function SiteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const theme = await getStorefrontTheme();
+  const [theme, searchDrawerConfig] = await Promise.all([
+    getStorefrontTheme(),
+    getCachedSearchDrawerConfig(),
+  ]);
   const fontsUrl =
     theme && theme !== "default" ? await getThemeFontsUrl(theme) : null;
 
@@ -74,6 +91,9 @@ export default async function SiteLayout({
         </div>
 
       </div>
+
+      {/* Search drawer overlay (rendered as Radix Portal outside the flex layout) */}
+      <SearchDrawer config={searchDrawerConfig} />
     </SiteBannerProvider>
   );
 }
