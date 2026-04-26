@@ -34,6 +34,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
 import { ChevronDown, CircleUserRound, FileText, Home, LogIn, LogOut, Menu, MoreHorizontal, PackageSearch, User } from "lucide-react";
 import { SearchTrigger } from "@/app/(site)/_components/search/SearchTrigger";
+import { useSearchDrawerStore } from "@/app/(site)/_components/search/store";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -127,17 +128,17 @@ export default function SiteHeader({
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  // Controlled mobile menu Sheet state. Two reasons to lift it out of the
-  // Sheet: (1) the search drawer can open ON TOP of the menu so closing
-  // search returns the user to where they were browsing, and (2) we close
-  // the menu programmatically on pathname change (next effect below) so
-  // every Link inside just works without each one wrapped in <SheetClose>.
+  // Controlled mobile menu Sheet state. Lifted out of the Sheet so we can
+  // (a) close it BEFORE opening the search drawer (avoids two competing
+  // focus traps that retract the on-screen keyboard on mobile) and
+  // (b) reopen it after the user closes the search drawer WITHOUT
+  // navigating — so the natural "tap Search → change my mind → back to the
+  // menu" flow works.
   // Desktop uses NavigationMenu, not Sheet — this is mobile-only.
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Close the mobile menu on any route change. Mirrors the same pattern in
-  // SearchDrawer — together they ensure both overlays dismiss after a
-  // navigation triggered from inside either one.
+  // Close the mobile menu on any route change. Removes the need for an
+  // individual <SheetClose> wrap on every nav link.
   const prevPathnameForMenuRef = useRef(pathname);
   useEffect(() => {
     if (prevPathnameForMenuRef.current !== pathname) {
@@ -146,6 +147,32 @@ export default function SiteHeader({
       setIsMobileMenuOpen(false);
     }
   }, [pathname]);
+
+  // Track whether the menu was open at the moment the search drawer opened,
+  // so we can reopen the menu when the user dismisses search without
+  // navigating. Also track the search drawer's open state to detect the
+  // close transition.
+  const searchDrawerOpen = useSearchDrawerStore((s) => s.isOpen);
+  const menuWasOpenWhenSearchOpenedRef = useRef(false);
+  const prevSearchOpenRef = useRef(searchDrawerOpen);
+  useEffect(() => {
+    const justClosed = prevSearchOpenRef.current && !searchDrawerOpen;
+    prevSearchOpenRef.current = searchDrawerOpen;
+    if (!justClosed) return;
+    const navigated = pathname !== prevPathnameForMenuRef.current;
+    if (menuWasOpenWhenSearchOpenedRef.current && !navigated) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsMobileMenuOpen(true);
+    }
+    menuWasOpenWhenSearchOpenedRef.current = false;
+  }, [searchDrawerOpen, pathname]);
+
+  const handleMobileSearchOpen = () => {
+    if (isMobileMenuOpen) {
+      menuWasOpenWhenSearchOpenedRef.current = true;
+      setIsMobileMenuOpen(false);
+    }
+  };
 
   const lastScrollY = useRef(0);
   const { settings } = useSiteSettings();
@@ -264,6 +291,12 @@ export default function SiteHeader({
                 <SheetContent
                   side="left"
                   className="w-full sm:w-[320px] bg-background p-0 flex flex-col"
+                  // Don't return focus to the hamburger trigger when the
+                  // Sheet closes — Radix's default fights with the search
+                  // drawer's autoFocus Input on mobile (the keyboard pops up
+                  // and immediately retracts). The next pathname's content
+                  // will own focus once navigation lands.
+                  onCloseAutoFocus={(e) => e.preventDefault()}
                 >
                   <div className="px-4 pt-6 pb-1">
                     <div className="flex items-center justify-between mb-1">
@@ -289,12 +322,15 @@ export default function SiteHeader({
                           </span>
                         </Link>
                       </SheetClose>
-                      {/* Search opens ON TOP of the menu Sheet — both stay
-                          mounted. Closing the search drawer (without
-                          navigating) returns the user to the menu they
-                          were browsing. The pathname-effect above closes
-                          the menu when search navigates somewhere. */}
-                      <SearchTrigger variant="mobile-sheet" />
+                      {/* Close the menu Sheet BEFORE opening the search
+                          drawer (avoids the dual-focus-trap that retracts
+                          the keyboard on mobile). If search closes without
+                          navigation, the effect above reopens the menu so
+                          the user lands back where they started browsing. */}
+                      <SearchTrigger
+                        variant="mobile-sheet"
+                        onBeforeOpen={handleMobileSearchOpen}
+                      />
                       <SheetClose asChild>
                         <Link
                           href="/orders"

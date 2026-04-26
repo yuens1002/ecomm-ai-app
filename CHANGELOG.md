@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- **Mobile: search drawer opens on top of the menu (instead of replacing it), keyboard stays up** — v0.102.2 closed the menu Sheet *before* opening the search drawer. Two side-effects: (a) Radix Sheet's close-auto-focus reclaimed focus from the search drawer's autoFocus Input on mobile, retracting the keyboard immediately after it appeared, and (b) closing the search drawer (without navigating) left the user with no menu to return to. v0.102.4 leaves the menu Sheet mounted under the search drawer; both share the same close-on-pathname-change pattern. Closing search via × now returns to the menu the user was browsing; tapping a result closes both via the navigation effect.
+- **Mobile: search drawer keyboard stays up, menu reopens after closing search without navigating** — v0.102.2 closed the menu Sheet *before* opening the search drawer. Two side-effects: (a) Radix Sheet's close-auto-focus reclaimed focus from the search drawer's autoFocus Input on mobile, retracting the keyboard immediately after it appeared, and (b) closing the search drawer (without navigating) left the user with no menu to return to. v0.102.4 keeps the close-before-open mechanism (the dual-focus-trap was unavoidable when both overlays mounted simultaneously) and adds two fixes: (1) `onCloseAutoFocus={preventDefault}` on the menu SheetContent so the closing Sheet doesn't yank focus back to the hamburger trigger; (2) reopen the menu Sheet automatically when the search drawer closes WITHOUT a pathname change — so "tap Search → change my mind → back to the menu" works naturally.
 
 ### Changed
 
