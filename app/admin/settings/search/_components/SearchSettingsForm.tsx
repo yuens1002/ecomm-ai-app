@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Label } from "@/components/ui/label";
 import { LabelSelect } from "./LabelSelect";
@@ -32,9 +32,14 @@ interface SearchSettingsFormProps {
   defaultCategorySlug: string | null;
 }
 
+/** Per-field transient error indicator displayed under the dropdown. */
+const ERROR_VISIBLE_MS = 4000;
+
 /**
  * Two-section admin form with no Save button. Each change auto-saves via
- * partial PUT; on failure, the field silently rolls back to its prior value.
+ * partial PUT; on failure, the field silently rolls back to its prior value
+ * AND surfaces an inline error hint for ~4s so the admin sees their change
+ * didn't persist.
  *
  * Initial display shows the persisted value if any, otherwise the platform
  * default (1st label / category by `order`). Empty-string curated value is
@@ -59,9 +64,27 @@ export function SearchSettingsForm({
   const [curatedSlug, setCuratedSlug] = useState<string | null>(
     initialCuratedSlug
   );
+  // Per-field error timestamps. Set on rollback, auto-cleared after
+  // ERROR_VISIBLE_MS via the effect below; cleared immediately on a
+  // subsequent successful save so the indicator goes away once the admin
+  // recovers.
+  const [labelErrorAt, setLabelErrorAt] = useState<number | null>(null);
+  const [curatedErrorAt, setCuratedErrorAt] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!labelErrorAt) return;
+    const timer = setTimeout(() => setLabelErrorAt(null), ERROR_VISIBLE_MS);
+    return () => clearTimeout(timer);
+  }, [labelErrorAt]);
+  useEffect(() => {
+    if (!curatedErrorAt) return;
+    const timer = setTimeout(() => setCuratedErrorAt(null), ERROR_VISIBLE_MS);
+    return () => clearTimeout(timer);
+  }, [curatedErrorAt]);
 
   async function autoSave(
     body: { chipLabelId?: string; curatedCategorySlug?: string },
+    onSuccess: () => void,
     rollback: () => void
   ) {
     try {
@@ -70,7 +93,11 @@ export function SearchSettingsForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) rollback();
+      if (!res.ok) {
+        rollback();
+        return;
+      }
+      onSuccess();
     } catch {
       rollback();
     }
@@ -83,17 +110,27 @@ export function SearchSettingsForm({
   function handleLabelChange(id: string) {
     const prev = chipLabelId;
     setChipLabelId(id); // optimistic
-    void autoSave({ chipLabelId: id }, () => {
-      setChipLabelId((current) => (current === id ? prev : current));
-    });
+    void autoSave(
+      { chipLabelId: id },
+      () => setLabelErrorAt(null),
+      () => {
+        setChipLabelId((current) => (current === id ? prev : current));
+        setLabelErrorAt(Date.now());
+      }
+    );
   }
 
   function handleCuratedChange(slug: string | null) {
     const prev = curatedSlug;
     setCuratedSlug(slug);
-    void autoSave({ curatedCategorySlug: slug ?? "" }, () => {
-      setCuratedSlug((current) => (current === slug ? prev : current));
-    });
+    void autoSave(
+      { curatedCategorySlug: slug ?? "" },
+      () => setCuratedErrorAt(null),
+      () => {
+        setCuratedSlug((current) => (current === slug ? prev : current));
+        setCuratedErrorAt(Date.now());
+      }
+    );
   }
 
   return (
@@ -119,11 +156,22 @@ export function SearchSettingsForm({
             to use search chips.
           </p>
         ) : (
-          <LabelSelect
-            labels={labels}
-            selectedId={chipLabelId}
-            onChange={handleLabelChange}
-          />
+          <>
+            <LabelSelect
+              labels={labels}
+              selectedId={chipLabelId}
+              onChange={handleLabelChange}
+            />
+            {labelErrorAt && (
+              <p
+                className="text-xs text-destructive"
+                role="status"
+                aria-live="polite"
+              >
+                Couldn&apos;t save — try again.
+              </p>
+            )}
+          </>
         )}
       </div>
 
@@ -148,11 +196,22 @@ export function SearchSettingsForm({
             .
           </p>
         ) : (
-          <CuratedCategorySelect
-            categories={categories}
-            selectedSlug={curatedSlug}
-            onChange={handleCuratedChange}
-          />
+          <>
+            <CuratedCategorySelect
+              categories={categories}
+              selectedSlug={curatedSlug}
+              onChange={handleCuratedChange}
+            />
+            {curatedErrorAt && (
+              <p
+                className="text-xs text-destructive"
+                role="status"
+                aria-live="polite"
+              >
+                Couldn&apos;t save — try again.
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>
