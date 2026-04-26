@@ -1,8 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { Search, X, MoveRight } from "lucide-react";
 import {
   Drawer,
@@ -11,9 +9,10 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
-import type { SearchDrawerConfig, SearchDrawerCuratedProduct } from "@/lib/data";
+import type { SearchDrawerConfig } from "@/lib/data";
+import ProductCard from "@/app/(site)/_components/product/ProductCard";
 import { useSearchDrawerStore } from "./store";
-import { useSearchIndex, type SearchProduct } from "./hooks/useSearchIndex";
+import { useSearchIndex } from "./hooks/useSearchIndex";
 import { useSearchAnalytics } from "./hooks/useSearchAnalytics";
 import { CuratedCategoryChips } from "./CuratedCategoryChips";
 import { CuratedProducts } from "./CuratedProducts";
@@ -68,11 +67,11 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
 
   // Filter the already-loaded MiniSearch index for the active chip's category.
   // No network round trip — products are in memory once the index has loaded.
-  const activeChipProducts = useMemo<SearchDrawerCuratedProduct[]>(() => {
+  const activeChipProducts = useMemo(() => {
     if (!activeChipSlug) return [];
-    return products
-      .filter((p) => p.primaryCategory?.slug === activeChipSlug)
-      .map(productToCurated);
+    return products.filter(
+      (p) => p.categories[0]?.category.slug === activeChipSlug
+    );
   }, [products, activeChipSlug]);
   const activeChipName =
     activeChipSlug != null
@@ -183,7 +182,6 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
               <ResultsOrNoResults
                 results={results}
                 query={query}
-                onClose={close}
                 curatedHeading={curatedHeading}
                 curatedProducts={config.curatedProducts}
                 hasChips={config.chips.length > 0}
@@ -194,23 +192,6 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
       </DrawerContent>
     </Drawer>
   );
-}
-
-/**
- * Adapt a SearchProduct (from the MiniSearch index) to the
- * SearchDrawerCuratedProduct shape so it can render through the same card
- * pipeline as curated products.
- */
-function productToCurated(p: SearchProduct): SearchDrawerCuratedProduct {
-  return {
-    id: p.id,
-    name: p.name,
-    slug: p.slug,
-    type: p.type,
-    primaryImage: p.primaryImage,
-    primaryCategorySlug: p.primaryCategory?.slug ?? null,
-    minPriceInCents: p.minPriceInCents,
-  };
 }
 
 function EmptyState({
@@ -265,14 +246,12 @@ function LoadingSkeleton() {
 function ResultsOrNoResults({
   results,
   query,
-  onClose,
   curatedHeading,
   curatedProducts,
   hasChips,
 }: {
   results: ReturnType<ReturnType<typeof useSearchIndex>["search"]>;
   query: string;
-  onClose: () => void;
   curatedHeading: string;
   curatedProducts: SearchDrawerConfig["curatedProducts"];
   hasChips: boolean;
@@ -309,7 +288,7 @@ function ResultsOrNoResults({
         <span className="font-medium">&ldquo;{query}&rdquo;</span>
       </p>
       <ul
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4"
         // Re-key the list on query change so fade-in animation re-fires
         key={query}
       >
@@ -319,33 +298,7 @@ function ResultsOrNoResults({
             className="animate-in fade-in-0 duration-300"
             style={{ animationDelay: `${idx * 30}ms`, animationFillMode: "both" }}
           >
-            <Link
-              href={`/products/${p.slug}`}
-              onClick={onClose}
-              className="flex items-center gap-3 p-3 rounded-lg border hover:shadow-md transition-shadow"
-            >
-              {p.primaryImage ? (
-                <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-muted">
-                  <Image
-                    src={p.primaryImage.url}
-                    alt={p.primaryImage.altText ?? p.name}
-                    fill
-                    sizes="64px"
-                    className="object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="w-16 h-16 flex-shrink-0 rounded-md bg-muted" />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{p.name}</p>
-                {p.tastingNotes.length > 0 && (
-                  <p className="text-xs text-muted-foreground truncate">
-                    {p.tastingNotes.slice(0, 3).join(", ")}
-                  </p>
-                )}
-              </div>
-            </Link>
+            <ProductCard product={p} />
           </li>
         ))}
       </ul>

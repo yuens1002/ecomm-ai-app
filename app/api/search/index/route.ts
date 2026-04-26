@@ -4,77 +4,47 @@ import { prisma } from "@/lib/prisma";
 /**
  * Returns the catalog index for client-side search (consumed by the search drawer).
  * Includes both COFFEE and MERCH products. Cached briefly via Cache-Control headers.
+ *
+ * The shape matches FeaturedProduct (productCardIncludes) so the drawer can render
+ * each result through the canonical `<ProductCard product={p} />` component.
  */
 export async function GET() {
   try {
     const products = await prisma.product.findMany({
       where: { isDisabled: false },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        type: true,
-        description: true,
-        tastingNotes: true,
-        origin: true,
-        roastLevel: true,
-        isFeatured: true,
-        categories: {
-          where: { isPrimary: true },
-          select: {
-            category: { select: { name: true, slug: true } },
-          },
-          take: 1,
-        },
+      include: {
         variants: {
           where: { isDisabled: false },
           orderBy: { order: "asc" },
-          take: 1,
-          select: {
+          include: {
             images: {
-              select: { url: true, altText: true },
               orderBy: { order: "asc" },
               take: 1,
             },
             purchaseOptions: {
-              select: { priceInCents: true },
+              where: { type: "ONE_TIME" },
+              orderBy: { priceInCents: "asc" },
+              take: 1,
+            },
+          },
+        },
+        categories: {
+          where: { isPrimary: true },
+          include: {
+            category: {
+              select: {
+                slug: true,
+                name: true,
+              },
             },
           },
         },
       },
     });
 
-    const indexed = products.map((p) => {
-      const primaryCategory = p.categories[0]?.category ?? null;
-      const firstImage = p.variants[0]?.images[0] ?? null;
-      const allPrices = p.variants.flatMap((v) =>
-        v.purchaseOptions.map((po) => po.priceInCents)
-      );
-      const minPriceInCents = allPrices.length > 0 ? Math.min(...allPrices) : null;
-      const description =
-        p.description && p.description.length > 200
-          ? p.description.slice(0, 200) + "…"
-          : p.description;
-
-      return {
-        id: p.id,
-        name: p.name,
-        slug: p.slug,
-        type: p.type,
-        description,
-        tastingNotes: p.tastingNotes,
-        origin: p.origin,
-        roastLevel: p.roastLevel,
-        isFeatured: p.isFeatured,
-        primaryCategory,
-        primaryImage: firstImage,
-        minPriceInCents,
-      };
-    });
-
     return NextResponse.json(
       {
-        products: indexed,
+        products,
         generatedAt: new Date().toISOString(),
       },
       {

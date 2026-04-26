@@ -24,13 +24,16 @@ const productCardIncludes = {
       },
     },
   },
-  // This is the key: always fetch the primary category for linking
+  // This is the key: always fetch the primary category for linking.
+  // `name` is also selected so the search drawer's MiniSearch index can
+  // boost matches against primary-category names without an extra query.
   categories: {
     where: { isPrimary: true },
     include: {
       category: {
         select: {
           slug: true,
+          name: true,
         },
       },
     },
@@ -852,15 +855,14 @@ export interface SearchDrawerChip {
   slug: string;
 }
 
-export interface SearchDrawerCuratedProduct {
-  id: string;
-  name: string;
-  slug: string;
-  type: "COFFEE" | "MERCH";
-  primaryImage: { url: string; altText: string | null } | null;
-  primaryCategorySlug: string | null;
-  minPriceInCents: number | null;
-}
+/**
+ * Curated products for the search drawer share the ProductCard payload shape
+ * (FeaturedProduct) so they can render through the canonical
+ * `<ProductCard product={p} />` component without an adapter layer.
+ */
+export type SearchDrawerCuratedProduct = Awaited<
+  ReturnType<typeof getFeaturedProducts>
+>[number];
 
 export interface SearchDrawerConfig {
   chipsHeading: string;
@@ -966,51 +968,13 @@ export async function getSearchDrawerConfig(): Promise<SearchDrawerConfig> {
 
       if (curated) {
         curatedCategoryName = curated.name;
-        const productRows = await prisma.product.findMany({
+        curatedProducts = await prisma.product.findMany({
           where: {
             isDisabled: false,
             categories: { some: { category: { slug: curated.slug } } },
           },
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            type: true,
-            categories: {
-              where: { isPrimary: true },
-              select: { category: { select: { slug: true } } },
-              take: 1,
-            },
-            variants: {
-              where: { isDisabled: false },
-              orderBy: { order: "asc" },
-              take: 1,
-              select: {
-                images: {
-                  select: { url: true, altText: true },
-                  orderBy: { order: "asc" },
-                  take: 1,
-                },
-                purchaseOptions: { select: { priceInCents: true } },
-              },
-            },
-          },
+          include: productCardIncludes,
           take: CURATED_PRODUCTS_LIMIT,
-        });
-
-        curatedProducts = productRows.map((p) => {
-          const allPrices = p.variants.flatMap((v) =>
-            v.purchaseOptions.map((po) => po.priceInCents)
-          );
-          return {
-            id: p.id,
-            name: p.name,
-            slug: p.slug,
-            type: p.type,
-            primaryImage: p.variants[0]?.images[0] ?? null,
-            primaryCategorySlug: p.categories[0]?.category.slug ?? null,
-            minPriceInCents: allPrices.length > 0 ? Math.min(...allPrices) : null,
-          };
         });
       }
     }

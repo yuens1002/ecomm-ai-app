@@ -2,23 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import MiniSearch from "minisearch";
+import type { SearchDrawerCuratedProduct } from "@/lib/data";
 
-export type SearchProductType = "COFFEE" | "MERCH";
-
-export interface SearchProduct {
-  id: string;
-  name: string;
-  slug: string;
-  type: SearchProductType;
-  description: string | null;
-  tastingNotes: string[];
-  origin: string[];
-  roastLevel: string | null;
-  isFeatured: boolean;
-  primaryCategory: { name: string; slug: string } | null;
-  primaryImage: { url: string; altText: string | null } | null;
-  minPriceInCents: number | null;
-}
+/**
+ * SearchProduct mirrors the FeaturedProduct shape (productCardIncludes) so
+ * results can render directly through `<ProductCard product={p} />` without
+ * an adapter layer.
+ */
+export type SearchProduct = SearchDrawerCuratedProduct;
 
 interface IndexResponse {
   products: SearchProduct[];
@@ -86,26 +77,22 @@ export function useSearchIndex(enabled: boolean): UseSearchIndexResult {
     if (state.status !== "ready") return null;
     const ms = new MiniSearch<SearchProduct>({
       idField: "id",
-      fields: ["name", "tastingNotes", "description", "origin", "primaryCategoryName"],
-      storeFields: [
-        "id",
+      fields: [
         "name",
-        "slug",
-        "type",
-        "description",
         "tastingNotes",
+        "description",
         "origin",
-        "roastLevel",
-        "isFeatured",
-        "primaryCategory",
-        "primaryImage",
-        "minPriceInCents",
+        "primaryCategoryName",
       ],
+      // Store only the id — full product objects come from state.products by
+      // id lookup (avoids serializing the heavier shape into MiniSearch's index).
+      storeFields: ["id"],
       extractField: (doc, fieldName) => {
         if (fieldName === "tastingNotes") return doc.tastingNotes.join(" ");
         if (fieldName === "origin") return doc.origin.join(" ");
-        if (fieldName === "primaryCategoryName")
-          return doc.primaryCategory?.name ?? "";
+        if (fieldName === "primaryCategoryName") {
+          return doc.categories[0]?.category.name ?? "";
+        }
         const value = (doc as unknown as Record<string, unknown>)[fieldName];
         return typeof value === "string" ? value : "";
       },

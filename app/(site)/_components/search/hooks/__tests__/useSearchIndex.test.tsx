@@ -5,8 +5,32 @@
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useSearchIndex, type SearchProduct } from "../useSearchIndex";
 
+/**
+ * Test fixtures only need the fields the hook actually reads (id, name, type,
+ * description, tastingNotes, origin, categories[0].category.name). The full
+ * FeaturedProduct shape is heavy and not exercised here, so we cast through
+ * unknown to keep the fixtures readable.
+ */
+function fixture(
+  partial: Pick<
+    SearchProduct,
+    "id" | "name" | "slug" | "type" | "description" | "tastingNotes" | "origin"
+  > & { categoryName: string; categorySlug: string }
+): SearchProduct {
+  const { categoryName, categorySlug, ...rest } = partial;
+  return {
+    ...rest,
+    categories: [
+      {
+        category: { name: categoryName, slug: categorySlug },
+      },
+    ],
+    variants: [],
+  } as unknown as SearchProduct;
+}
+
 const FIXTURE_CATALOG: SearchProduct[] = [
-  {
+  fixture({
     id: "p1",
     name: "Ethiopia Yirgacheffe",
     slug: "ethiopia-yirgacheffe",
@@ -14,13 +38,10 @@ const FIXTURE_CATALOG: SearchProduct[] = [
     description: "Bright and floral.",
     tastingNotes: ["Floral", "Citrus", "Bergamot"],
     origin: ["Ethiopia"],
-    roastLevel: "LIGHT",
-    isFeatured: true,
-    primaryCategory: { name: "Light Roast", slug: "light-roast" },
-    primaryImage: null,
-    minPriceInCents: 2000,
-  },
-  {
+    categoryName: "Light Roast",
+    categorySlug: "light-roast",
+  }),
+  fixture({
     id: "p2",
     name: "Tanzania Peaberry",
     slug: "tanzania-peaberry",
@@ -28,13 +49,10 @@ const FIXTURE_CATALOG: SearchProduct[] = [
     description: "Citrus and winey notes.",
     tastingNotes: ["Black Currant", "Citrus", "Winey"],
     origin: ["Tanzania"],
-    roastLevel: "MEDIUM",
-    isFeatured: false,
-    primaryCategory: { name: "Medium Roast", slug: "medium-roast" },
-    primaryImage: null,
-    minPriceInCents: 1800,
-  },
-  {
+    categoryName: "Medium Roast",
+    categorySlug: "medium-roast",
+  }),
+  fixture({
     id: "p3",
     name: "Origami Air Dripper",
     slug: "origami-air-dripper",
@@ -42,13 +60,10 @@ const FIXTURE_CATALOG: SearchProduct[] = [
     description: "Pour-over dripper.",
     tastingNotes: [],
     origin: [],
-    roastLevel: null,
-    isFeatured: false,
-    primaryCategory: { name: "Drinkware", slug: "drinkware" },
-    primaryImage: null,
-    minPriceInCents: 3500,
-  },
-  {
+    categoryName: "Drinkware",
+    categorySlug: "drinkware",
+  }),
+  fixture({
     id: "p4",
     name: "Aeropress",
     slug: "aeropress",
@@ -56,13 +71,10 @@ const FIXTURE_CATALOG: SearchProduct[] = [
     description: "Coffee press.",
     tastingNotes: [],
     origin: [],
-    roastLevel: null,
-    isFeatured: false,
-    primaryCategory: { name: "Brew Tools", slug: "brew-tools" },
-    primaryImage: null,
-    minPriceInCents: 4000,
-  },
-  {
+    categoryName: "Brew Tools",
+    categorySlug: "brew-tools",
+  }),
+  fixture({
     id: "p5",
     name: "Sumatra Mandheling",
     slug: "sumatra-mandheling",
@@ -70,12 +82,9 @@ const FIXTURE_CATALOG: SearchProduct[] = [
     description: "Earthy with dark chocolate.",
     tastingNotes: ["Earthy", "Cedar", "Dark Chocolate"],
     origin: ["Sumatra"],
-    roastLevel: "DARK",
-    isFeatured: false,
-    primaryCategory: { name: "Dark Roast", slug: "dark-roast" },
-    primaryImage: null,
-    minPriceInCents: 1900,
-  },
+    categoryName: "Dark Roast",
+    categorySlug: "dark-roast",
+  }),
 ];
 
 const fetchMock = jest.fn();

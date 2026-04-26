@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
 import type { SearchDrawerCuratedProduct } from "@/lib/data";
-import { useSearchDrawerStore } from "./store";
+import ProductCard from "@/app/(site)/_components/product/ProductCard";
 
 interface CuratedProductsProps {
   heading: string;
@@ -11,13 +9,13 @@ interface CuratedProductsProps {
 }
 
 /**
- * Renders the curated products section in the search drawer.
- * Heading is the picked category's display name (no separate setting).
- * Used in both empty state and zero-results state.
+ * Renders the curated products section in the search drawer using the
+ * canonical ProductCard component (matches storefront cards visually,
+ * fixes blank-image edge cases via getPlaceholderImage in ProductCard).
+ *
+ * Used in three states: empty, no-results fallback, and chip-active filtered.
  */
 export function CuratedProducts({ heading, products }: CuratedProductsProps) {
-  const close = useSearchDrawerStore((s) => s.close);
-
   if (products.length === 0) return null;
 
   return (
@@ -31,29 +29,7 @@ export function CuratedProducts({ heading, products }: CuratedProductsProps) {
       <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4">
         {products.map((p) => (
           <li key={p.id}>
-            <Link
-              href={`/products/${p.slug}`}
-              onClick={close}
-              className="block group"
-            >
-              <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-2">
-                {p.primaryImage ? (
-                  <Image
-                    src={p.primaryImage.url}
-                    alt={p.primaryImage.altText ?? p.name}
-                    fill
-                    sizes="(max-width: 640px) 50vw, 33vw"
-                    className="object-cover group-hover:scale-105 transition-transform"
-                  />
-                ) : null}
-              </div>
-              <p className="text-sm font-medium line-clamp-2">{p.name}</p>
-              {p.minPriceInCents != null && (
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  ${(p.minPriceInCents / 100).toFixed(2)}
-                </p>
-              )}
-            </Link>
+            <ProductCard product={p} />
           </li>
         ))}
       </ul>
