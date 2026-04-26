@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.103.0 - 2026-04-26
+
+### Added
+
+- **`<Chip>` + `<ChipPreview>` UI components** ([components/ui/chip.tsx](components/ui/chip.tsx)) — codifies the chip design language as a reusable `cva`-based component (mirrors the existing Badge pattern). Variants: `active` (bg-primary), `inactive` (bg-secondary opacity-60 hover-80), `preview` (read-only, no hover). Sizes: `nav` (text-sm rounded-md) for search-drawer-scale chips, `filter` (text-xs rounded-full) for filter-pill-scale. `aria-pressed` derived automatically from `variant === "active"` with explicit-prop override. 11 component tests.
+- **`docs/architecture/PERFORMANCE-DECISIONS.md`** — new architecture doc capturing the deferred-perf decisions (search-index payload at scale; layout-time `getSearchDrawerConfig` query graph). Each entry has Decision / Context / Trade-offs / Revisit triggers / Correct mitigation. Replaces the perf entries in the post-launch nitpicks queue with a durable, search-friendly home.
+- **Search drawer chip-active load animates with staggered fade-in** — chip-click product grid now uses the same `animate-in fade-in-0 duration-300` + 30ms-per-index stagger as the typed-search results list. Re-keyed on the active chip slug so the animation re-fires on each chip change.
+- **Admin auto-save error indicator** — `/admin/settings/search` now surfaces a transient "Couldn't save — try again" hint under the dropdown when a PUT fails and the field rolls back. Auto-clears after 4s or on the next successful save. `role="status"` + `aria-live="polite"`.
+
+### Fixed
+
+- **Search drawer closes on link click even when the route is unchanged** — the `usePathname()` effect (v0.102.1) didn't fire when a link inside the drawer pointed to the user's current path (e.g. user on `/products/foo`, opens search, taps Foo). Adds an event-delegated `onClick` on the drawer body that closes whenever any anchor inside is clicked, regardless of where it routes. Belt-and-suspenders with the existing pathname effect. 6 unit tests.
+- **Search drawer typed query clears on close (#7)** — `query` was component-local state and persisted across drawer open/close cycles, surfacing a stale query when the user reopened. Moved into the Zustand store; `close()` and the closing branch of `toggle()` now clear all three: `isOpen`, `activeChipSlug`, `query`.
+
+### Changed
+
+- **Storefront search drawer chips + admin LabelSelect preview migrated to `<Chip>` / `<ChipPreview>`** — visually identical output, but the inline className strings are gone. Review brew-method pills deliberately NOT migrated (they use bg-secondary opacity-100 for active rather than bg-primary; would need a future "subtle-active" variant).
+- **`SearchDrawer.tsx` event-delegated drawer body** — the body's outer `<div>` now carries the close-on-anchor-click handler. No regressions to the input row, chip row, or scrollable body.
+
+---
+
 ## 0.102.4 - 2026-04-26
 
 ### Fixed
