@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Label } from "@/components/ui/label";
 import { LabelSelect } from "./LabelSelect";
 import { CuratedCategorySelect } from "./CuratedCategorySelect";
@@ -100,11 +101,24 @@ export function SearchSettingsForm({
             categories.
           </p>
         </div>
-        <LabelSelect
-          labels={labels}
-          selectedId={chipLabelId}
-          onChange={handleLabelChange}
-        />
+        {labels.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No labels yet —{" "}
+            <Link
+              href="/admin/product-menu"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              create one in Menu Builder
+            </Link>{" "}
+            to use search chips.
+          </p>
+        ) : (
+          <LabelSelect
+            labels={labels}
+            selectedId={chipLabelId}
+            onChange={handleLabelChange}
+          />
+        )}
       </div>
 
       {/* Section 2: Curated products */}
@@ -116,11 +130,24 @@ export function SearchSettingsForm({
             is found.
           </p>
         </div>
-        <CuratedCategorySelect
-          categories={categories}
-          selectedSlug={curatedSlug}
-          onChange={handleCuratedChange}
-        />
+        {categories.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No categories yet —{" "}
+            <Link
+              href="/admin/product-menu"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              create one in Menu Builder
+            </Link>
+            .
+          </p>
+        ) : (
+          <CuratedCategorySelect
+            categories={categories}
+            selectedSlug={curatedSlug}
+            onChange={handleCuratedChange}
+          />
+        )}
       </div>
     </div>
   );
