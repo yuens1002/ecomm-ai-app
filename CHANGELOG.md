@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.102.1 - 2026-04-26
+
+### Fixed
+
+- **Search drawer auto-closes on navigation** — clicking a search result, curated card, or chip-active card was navigating to the product page but leaving the drawer overlay up over the destination, making the click feel unresponsive. Added a `usePathname()` effect to close the drawer on any pathname change, so every Link inside (current and future) just works without each one needing an explicit `onClick={close}`.
+
+---
+
 ## 0.102.0 - 2026-04-26
 
 ### Added
