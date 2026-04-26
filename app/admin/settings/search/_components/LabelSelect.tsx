@@ -92,16 +92,15 @@ export function LabelSelect({
         </PopoverContent>
       </Popover>
 
-      {/* Read-only chip preview */}
+      {/* Read-only chip preview — matches the storefront chip's inactive state
+          (bg-secondary at 60% opacity) so admin sees exactly what visitors will
+          see before any chip is clicked. */}
       {selected && selected.categories.length > 0 && (
-        <ul
-          className="flex flex-wrap gap-2 opacity-70"
-          aria-label="Chip preview"
-        >
+        <ul className="flex flex-wrap gap-2" aria-label="Chip preview">
           {selected.categories.map((c) => (
             <li
               key={c.category.slug}
-              className="inline-flex items-center px-4 py-2 rounded-md border bg-background text-sm"
+              className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium bg-secondary text-secondary-foreground opacity-60"
             >
               {c.category.name}
             </li>
