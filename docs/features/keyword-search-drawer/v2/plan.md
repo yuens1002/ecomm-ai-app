@@ -55,7 +55,7 @@ New for v2:
 | 1 | `feat: data model — search drawer settings switch to label-based + Prisma migration` | Medium |
 | 2 | `feat: server — getSearchDrawerConfig fetches by label id + curated default by order` | Low |
 | 3 | `feat: switch drawer primitive to shadcn Drawer (vaul, direction="right", responsive widths)` | Medium |
-| 4 | `feat: drawer header redesign — chevron-right anchor btn, no divider, input reset` | Low |
+| 4 | `feat: drawer header redesign — move-right anchor btn, no divider, input reset` | Low |
 | 5 | `feat: chip click in-body filtering (active chip state + category products)` | Medium |
 | 6 | `feat: reuse ProductCard for curated + category products + fix images` | Low–Medium |
 | 7 | `feat: admin form — label single-select + read-only chip preview + auto-save` | Medium |
@@ -183,7 +183,7 @@ Attached categories: the 6 demo slugs from v1 (`single-origin`, `fruity-floral`,
 
 - Search `Input` on the left (autofocus), placeholder "Search products…"
 - × icon button at right end of input — clears query (only visible when query non-empty)
-- Chevron-right `>` close button on the right edge of the drawer, **vertically centered with the input row**, replaces the X close
+- `MoveRight` arrow (→) close button on the right edge of the drawer, **vertically centered with the input row**, replaces the X close
 - No `border-bottom` divider
 
 ### State machine
@@ -258,7 +258,7 @@ End-to-end checks after the strip:
 2. `npm run test:ci` — all green (existing 1161 + new tests)
 3. **Manual storefront walk:**
    - Click search icon in header → drawer slides in from right at 80% width on desktop, 100% on mobile
-   - Drawer header shows search input + chevron `>` close anchor on right edge, vertically centered with input
+   - Drawer header shows search input + `MoveRight` arrow (→) close anchor on right edge, vertically centered with input
    - Empty state shows "Top Categories" heading + 6 chips + "Staff Picks" heading + 6 product cards (with images!)
    - Type "ethiopia" → results render in body, chips persist
    - Click × on input → query clears, empty state returns
