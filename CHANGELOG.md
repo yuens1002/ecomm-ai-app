@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.102.0 - 2026-04-26
+
+### Added
+
+- **Keyword search drawer (v2)**: right-anchored slide-in (vaul) drawer triggered from the storefront header. Loads the catalog index once per session and runs MiniSearch (fuzzy, field-weighted: name 4× > category names + tasting notes 2× > origin 1.5× > description 1×). Three body states (empty / chip-active / results / no-results) all share a persistent chip row. Chips drive an in-drawer category filter — no navigation, no URL change. Curated, chip-active, and no-results-fallback grids render through the canonical `<ProductCard>`; search results use a denser horizontal mini-card (image + name + RoastLevelBar + tasting notes for coffee, image + name + description for merch).
+- **Admin Search Settings** at `/admin/settings/search`: two auto-saving sections — chip Label single-select (drives the storefront chip row from a `CategoryLabel`) + Curated Category single-select. Reads-only chip preview below the Label dropdown matches storefront chip styling at 60% opacity. No Save button — every change PUTs immediately and silently rolls back on failure.
+- **Hidden "Top Categories" CategoryLabel** in seed: `isVisible: false` so it never appears in the product menu nav, but the search drawer reads labels by id without a visibility filter so its 6 attached categories (single-origin, fruity-floral, medium-roast, cold-brew-blends, drinkware, central-america) drive the chip row.
+
+### Changed
+
+- **`productCardIncludes` extended**: category include now selects `name` in addition to `slug` so the search index can boost matches against category names without an extra query. Additive — no consumer regression.
+- **Coffee primary category**: `prisma/seed/menu.ts` now assigns Single Origin (or the matching Blend variant) as `isPrimary: true` on every coffee, mirroring the data intent in `prisma/seed/products.ts`. Roast Level / Taste / Region attachments stay as secondary. Restores `/single-origin` storefront category page (was empty before — 0 attachments) and aligns with the search drawer's chip filter.
+- **Drawer chip filter matches any attached category**: filter uses `categories.some((c) => c.category.slug === activeChipSlug)` instead of primary-only. `/api/search/index` loads all categories (sorted `isPrimary desc` so `categories[0]` still resolves to primary for ProductCard URL routing). Adds ~6 KB to the single search-index fetch — cached 60s + SWR 300s. All 6 demo chips have results: single-origin (24), fruity-floral (22), medium-roast (22), cold-brew-blends (1), drinkware (4), central-america (10).
+- **Search index searches all attached category names**: `useSearchIndex` extracts `categories.map((c) => c.category.name).join(" ")` for the search field (renamed `primaryCategoryName` → `categoryNames`). Typing "medium" now finds every Medium Roast coffee, not just the few whose primary happens to be Medium Roast.
+- **Chip theming unified**: all chip surfaces (storefront search drawer, admin LabelSelect preview, review brew-method pills) share the same theming language — `bg-secondary` at 60% opacity for inactive (hover 80%), `bg-primary` for active (search drawer only). Pills/chips no longer render with a hairline near-white border; the secondary-color tint provides visual definition.
+- **`@gitattributes`**: forces LF on `*.sql` to prevent Windows CRLF from breaking Prisma's recorded migration checksums.
+
+### Removed
+
+- **Deprecated SiteSettings rows** dropped via migration `20260425200000_search_drawer_v2_label_based`: `search_drawer_chips_heading`, `search_drawer_chip_categories`. Replaced by single key `search_drawer_chip_label` (stores `CategoryLabel.id`).
+- **`TopCategoriesMultiSelect.tsx`** deleted — replaced by `LabelSelect.tsx`.
+
+### Fixed
+
+- **Drift**: re-syncs `Order.refundedAmountInCents` to `NOT NULL DEFAULT 0` (matches schema; column had been left nullable by an earlier hand-edited migration).
+- **Backup script**: `scripts/backup-database.ts` referenced a non-existent `productImage` model; updated to the actual schema (added `variantImage`, `passwordResetToken`, `telemetryEvent`, `review`, `reviewVote`, `reviewEmailLog`).
+
+---
+
 ## 0.101.0 - 2026-04-25
 
 ### Removed
