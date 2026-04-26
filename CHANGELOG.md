@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.102.3 - 2026-04-26
+
+### Changed
+
+- **Seed taste-category assignment is more discriminating** — `prisma/seed/menu.ts` `findTasteCategories` now matches against `tastingNotes` only (was matching both notes AND description, which produced ~86% overlap between Fruity & Floral and Medium Roast because marketing copy uses fruit/spice/cocoa words liberally). Adds basic coffee-domain gating: Fruity & Floral excluded from DARK roasts (caramelization suppresses bright top notes) and Spicy & Earthy excluded from LIGHT roasts (those notes need MEDIUM+ development). After reseed, F&F ∩ Medium Roast overlap drops to ~77%; further reduction requires actual tasting-note diversification in seed data (deferred).
+
+---
+
 ## 0.102.2 - 2026-04-26
 
 ### Fixed

@@ -447,10 +447,23 @@ export async function seedMenu(prisma: PrismaClient) {
           : "Medium Roast"
     );
 
-    findTasteCategories([
-      ...(coffee.tastingNotes ?? []),
-      coffee.description ?? "",
-    ]).forEach((c) => targets.add(c));
+    // Taste categories — match against tastingNotes ONLY (not description).
+    // Marketing copy in descriptions uses fruit/spice/cocoa words liberally
+    // even for coffees that don't actually taste that way, which produced ~86%
+    // overlap between Fruity & Floral and Medium Roast in the demo catalog.
+    // tastingNotes are explicit cupping signals — using only those produces
+    // distinct, cuppable categories.
+    //
+    // Roast-aware gating layered on top mirrors basic coffee domain knowledge:
+    // - Fruity & Floral acidity rarely survives DARK roasts (caramelization
+    //   suppresses the bright top notes).
+    // - Spicy & Earthy notes typically need MEDIUM+ roast development to
+    //   emerge — LIGHT roasts retain green/grassy character instead.
+    for (const cat of findTasteCategories(coffee.tastingNotes ?? [])) {
+      if (cat === "Fruity & Floral" && roastLevel === RoastLevel.DARK) continue;
+      if (cat === "Spicy & Earthy" && roastLevel === RoastLevel.LIGHT) continue;
+      targets.add(cat);
+    }
     mapRegions(coffee.origin ?? []).forEach((c) => targets.add(c));
     if (
       `${coffee.name} ${coffee.description ?? ""}`
