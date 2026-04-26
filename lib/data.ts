@@ -843,16 +843,7 @@ const publicSettingsKeys = [
 
 // --- SEARCH DRAWER CONFIG ---
 
-const DEFAULT_SEARCH_DRAWER_CHIPS_HEADING = "Top Categories";
-const DEFAULT_SEARCH_DRAWER_CHIP_CATEGORIES: string[] = [
-  "single-origin",
-  "fruity-floral",
-  "medium-roast",
-  "cold-brew-blends",
-  "drinkware",
-  "central-america",
-];
-const DEFAULT_SEARCH_DRAWER_CURATED_CATEGORY = "staff-picks";
+const FALLBACK_SEARCH_DRAWER_CHIPS_HEADING = "Top Categories";
 const MAX_CHIPS = 6;
 const CURATED_PRODUCTS_LIMIT = 6;
 
@@ -878,36 +869,26 @@ export interface SearchDrawerConfig {
   curatedProducts: SearchDrawerCuratedProduct[];
 }
 
-function safeParseStringArray(value: string | undefined, fallback: string[]): string[] {
-  if (!value) return fallback;
-  try {
-    const parsed = JSON.parse(value) as unknown;
-    if (Array.isArray(parsed) && parsed.every((s) => typeof s === "string")) {
-      return parsed as string[];
-    }
-    return fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 /**
- * Fetches the search drawer configuration: heading + chip categories + curated
- * products for the curated section. Resolves slugs to category names + products.
+ * Fetches the search drawer configuration:
  *
- * Falls back to demo defaults if SiteSettings rows are missing (will be replaced
- * by admin-set values once the seed lands and admin can override via UI).
+ * - chipsHeading: name of the admin-selected CategoryLabel (drives chip row heading)
+ * - chips: categories under that label, ordered by CategoryLabelCategory.order asc
+ * - curatedCategoryName + curatedProducts: products under the admin-selected
+ *   curated Category (default fallback section / shown when no search results)
+ *
+ * Defaults: when the chip-label setting is missing or points to a deleted label,
+ * falls back to the 1st CategoryLabel by `order` (any visibility — hidden labels
+ * work for search even though they're hidden from product menu nav). When the
+ * curated-category setting is missing or points to a deleted category, falls
+ * back to the 1st Category by `order`.
  */
 export async function getSearchDrawerConfig(): Promise<SearchDrawerConfig> {
   try {
     const settingsRows = await prisma.siteSettings.findMany({
       where: {
         key: {
-          in: [
-            "search_drawer_chips_heading",
-            "search_drawer_chip_categories",
-            "search_drawer_curated_category",
-          ],
+          in: ["search_drawer_chip_label", "search_drawer_curated_category"],
         },
       },
       select: { key: true, value: true },
@@ -918,48 +899,77 @@ export async function getSearchDrawerConfig(): Promise<SearchDrawerConfig> {
       return acc;
     }, {});
 
-    const chipsHeading =
-      record.search_drawer_chips_heading || DEFAULT_SEARCH_DRAWER_CHIPS_HEADING;
-    const chipSlugs = safeParseStringArray(
-      record.search_drawer_chip_categories,
-      DEFAULT_SEARCH_DRAWER_CHIP_CATEGORIES
-    ).slice(0, MAX_CHIPS);
-    // Curated: empty string sentinel = admin explicitly cleared (no curated section).
-    // Missing key = use default. Distinguishing requires checking if key was returned.
-    const curatedSlug =
-      "search_drawer_curated_category" in record
-        ? record.search_drawer_curated_category
-        : DEFAULT_SEARCH_DRAWER_CURATED_CATEGORY;
+    // --- Chip label resolution ---
+    // Admin setting stores CategoryLabel.id. Hidden labels (isVisible: false)
+    // are valid here — search drawer reads them anyway.
+    const chipLabelId = record.search_drawer_chip_label || null;
+    let label = chipLabelId
+      ? await prisma.categoryLabel.findUnique({
+          where: { id: chipLabelId },
+          select: {
+            name: true,
+            categories: {
+              orderBy: { order: "asc" },
+              take: MAX_CHIPS,
+              select: { category: { select: { name: true, slug: true } } },
+            },
+          },
+        })
+      : null;
 
-    // Resolve chip slugs → categories (preserve order from settings)
-    const chipCategoryRows =
-      chipSlugs.length > 0
-        ? await prisma.category.findMany({
-            where: { slug: { in: chipSlugs } },
-            select: { name: true, slug: true },
-          })
-        : [];
-    const chipMap = new Map(chipCategoryRows.map((c) => [c.slug, c]));
-    const chips: SearchDrawerChip[] = chipSlugs
-      .map((slug) => chipMap.get(slug))
-      .filter((c): c is SearchDrawerChip => c != null);
+    // Fallback: setting missing or pointing at a deleted label → 1st by order.
+    if (!label) {
+      label = await prisma.categoryLabel.findFirst({
+        orderBy: { order: "asc" },
+        select: {
+          name: true,
+          categories: {
+            orderBy: { order: "asc" },
+            take: MAX_CHIPS,
+            select: { category: { select: { name: true, slug: true } } },
+          },
+        },
+      });
+    }
 
-    // Resolve curated slug → category + products
+    const chipsHeading = label?.name ?? FALLBACK_SEARCH_DRAWER_CHIPS_HEADING;
+    const chips: SearchDrawerChip[] =
+      label?.categories.map((c) => ({
+        name: c.category.name,
+        slug: c.category.slug,
+      })) ?? [];
+
+    // --- Curated category resolution ---
+    // Empty string sentinel = admin explicitly cleared (no curated section).
+    // Missing key OR slug pointing at a deleted category = fallback to 1st by order.
+    const hasCuratedKey = "search_drawer_curated_category" in record;
+    const curatedSlugSetting = record.search_drawer_curated_category;
+    const curatedExplicitlyCleared = hasCuratedKey && curatedSlugSetting === "";
+
     let curatedCategoryName: string | null = null;
     let curatedProducts: SearchDrawerCuratedProduct[] = [];
 
-    if (curatedSlug) {
-      const curated = await prisma.category.findUnique({
-        where: { slug: curatedSlug },
-        select: { name: true },
-      });
-      curatedCategoryName = curated?.name ?? null;
+    if (!curatedExplicitlyCleared) {
+      let curated = curatedSlugSetting
+        ? await prisma.category.findUnique({
+            where: { slug: curatedSlugSetting },
+            select: { name: true, slug: true },
+          })
+        : null;
+
+      if (!curated) {
+        curated = await prisma.category.findFirst({
+          orderBy: { order: "asc" },
+          select: { name: true, slug: true },
+        });
+      }
 
       if (curated) {
+        curatedCategoryName = curated.name;
         const productRows = await prisma.product.findMany({
           where: {
             isDisabled: false,
-            categories: { some: { category: { slug: curatedSlug } } },
+            categories: { some: { category: { slug: curated.slug } } },
           },
           select: {
             id: true,
@@ -1009,7 +1019,7 @@ export async function getSearchDrawerConfig(): Promise<SearchDrawerConfig> {
   } catch (error) {
     console.error("getSearchDrawerConfig failed:", error);
     return {
-      chipsHeading: DEFAULT_SEARCH_DRAWER_CHIPS_HEADING,
+      chipsHeading: FALLBACK_SEARCH_DRAWER_CHIPS_HEADING,
       chips: [],
       curatedCategoryName: null,
       curatedProducts: [],
