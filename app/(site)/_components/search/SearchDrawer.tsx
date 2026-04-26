@@ -295,7 +295,7 @@ function ResultsOrNoResults({
         <span className="font-medium">&ldquo;{query}&rdquo;</span>
       </p>
       <ul
-        className="flex flex-col gap-2"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
         // Re-key the list on query change so fade-in animation re-fires
         key={query}
       >
