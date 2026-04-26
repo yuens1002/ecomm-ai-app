@@ -5,8 +5,14 @@ import { prisma } from "@/lib/prisma";
  * Returns the catalog index for client-side search (consumed by the search drawer).
  * Includes both COFFEE and MERCH products. Cached briefly via Cache-Control headers.
  *
- * The shape matches FeaturedProduct (productCardIncludes) so the drawer can render
- * each result through the canonical `<ProductCard product={p} />` component.
+ * Shape mirrors FeaturedProduct (productCardIncludes) so the drawer can render
+ * each result through the canonical `<ProductCard product={p} />`. The one
+ * deliberate divergence from productCardIncludes: `categories` is loaded WITHOUT
+ * the `isPrimary: true` filter so the drawer's chip filter can match any
+ * attached category (Roast, Taste, Region) — not only the primary. Categories
+ * are sorted `isPrimary: desc` so `categories[0]` remains the primary, keeping
+ * ProductCard's URL routing canonical. Adds ~6 KB to this single fetch; other
+ * surfaces using productCardIncludes are unaffected.
  */
 export async function GET() {
   try {
@@ -29,7 +35,7 @@ export async function GET() {
           },
         },
         categories: {
-          where: { isPrimary: true },
+          orderBy: { isPrimary: "desc" },
           include: {
             category: {
               select: {

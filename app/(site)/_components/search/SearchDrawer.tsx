@@ -67,10 +67,14 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
 
   // Filter the already-loaded MiniSearch index for the active chip's category.
   // No network round trip — products are in memory once the index has loaded.
+  // `.some()` matches any attached category (primary or secondary) so a chip
+  // for "Medium Roast" or "Central America" works even when those aren't the
+  // product's primary category. The /api/search/index endpoint loads ALL
+  // category attachments specifically for this filter.
   const activeChipProducts = useMemo(() => {
     if (!activeChipSlug) return [];
-    return products.filter(
-      (p) => p.categories[0]?.category.slug === activeChipSlug
+    return products.filter((p) =>
+      p.categories.some((c) => c.category.slug === activeChipSlug)
     );
   }, [products, activeChipSlug]);
   const activeChipName =

@@ -99,6 +99,16 @@ describe("GET /api/search/index", () => {
     expect(callArg.where.type).toBeUndefined();
   });
 
+  it("loads ALL category attachments (no isPrimary filter) so the chip filter can match secondary categories", async () => {
+    findManyMock.mockResolvedValue([]);
+    await GET();
+
+    const callArg = findManyMock.mock.calls[0][0];
+    expect(callArg.include.categories.where).toBeUndefined();
+    // Sorted so `categories[0]` is still the primary (keeps ProductCard URL routing canonical).
+    expect(callArg.include.categories.orderBy).toEqual({ isPrimary: "desc" });
+  });
+
   it("returns 500 with error JSON on Prisma failure", async () => {
     findManyMock.mockRejectedValue(new Error("DB down"));
     const response = await GET();
