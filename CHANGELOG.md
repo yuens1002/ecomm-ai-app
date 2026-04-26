@@ -15,7 +15,7 @@
 - **Drawer chip filter matches any attached category**: filter uses `categories.some((c) => c.category.slug === activeChipSlug)` instead of primary-only. `/api/search/index` loads all categories (sorted `isPrimary desc` so `categories[0]` still resolves to primary for ProductCard URL routing). Adds ~6 KB to the single search-index fetch — cached 60s + SWR 300s. All 6 demo chips have results: single-origin (24), fruity-floral (22), medium-roast (22), cold-brew-blends (1), drinkware (4), central-america (10).
 - **Search index searches all attached category names**: `useSearchIndex` extracts `categories.map((c) => c.category.name).join(" ")` for the search field (renamed `primaryCategoryName` → `categoryNames`). Typing "medium" now finds every Medium Roast coffee, not just the few whose primary happens to be Medium Roast.
 - **Chip theming unified**: all chip surfaces (storefront search drawer, admin LabelSelect preview, review brew-method pills) share the same theming language — `bg-secondary` at 60% opacity for inactive (hover 80%), `bg-primary` for active (search drawer only). Pills/chips no longer render with a hairline near-white border; the secondary-color tint provides visual definition.
-- **`@gitattributes`**: forces LF on `*.sql` to prevent Windows CRLF from breaking Prisma's recorded migration checksums.
+- **`.gitattributes`**: forces LF on `*.sql` to prevent Windows CRLF from breaking Prisma's recorded migration checksums.
 
 ### Removed
 

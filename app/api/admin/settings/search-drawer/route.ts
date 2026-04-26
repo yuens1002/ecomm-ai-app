@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { requireAdminApi } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
@@ -95,6 +96,12 @@ export async function PUT(request: Request) {
     }
 
     await Promise.all(ops);
+
+    // Invalidate the cached storefront drawer config so the change reaches
+    // visitors on their next page load (the layout's getCachedSearchDrawerConfig
+    // is tagged with this name). Next 16 requires a cacheLife profile;
+    // "default" triggers an immediate revalidation on the next request.
+    revalidateTag("search-drawer-config", "default");
 
     // Return the canonical state from DB so the client confirms its optimistic
     // value matches what was persisted.

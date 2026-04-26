@@ -6,6 +6,10 @@ const requireAdminApiMock = jest.fn();
 const findManyMock = jest.fn();
 const upsertMock = jest.fn();
 
+jest.mock("next/cache", () => ({
+  revalidateTag: jest.fn(),
+}));
+
 jest.mock("@/lib/admin", () => ({
   requireAdminApi: () => requireAdminApiMock(),
 }));

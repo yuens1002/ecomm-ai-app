@@ -76,18 +76,24 @@ export function SearchSettingsForm({
     }
   }
 
+  // Race-safe rollback: only revert to `prev` if the field still holds the
+  // optimistic value we set. If the user fired a newer change before this
+  // request resolved, leave their newer value alone — preserve user intent
+  // over a failed earlier write.
   function handleLabelChange(id: string) {
     const prev = chipLabelId;
     setChipLabelId(id); // optimistic
-    void autoSave({ chipLabelId: id }, () => setChipLabelId(prev));
+    void autoSave({ chipLabelId: id }, () => {
+      setChipLabelId((current) => (current === id ? prev : current));
+    });
   }
 
   function handleCuratedChange(slug: string | null) {
     const prev = curatedSlug;
     setCuratedSlug(slug);
-    void autoSave({ curatedCategorySlug: slug ?? "" }, () =>
-      setCuratedSlug(prev)
-    );
+    void autoSave({ curatedCategorySlug: slug ?? "" }, () => {
+      setCuratedSlug((current) => (current === slug ? prev : current));
+    });
   }
 
   return (
