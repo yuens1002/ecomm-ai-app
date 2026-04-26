@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Search, X, MoveRight } from "lucide-react";
@@ -11,9 +11,9 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
-import type { SearchDrawerConfig } from "@/lib/data";
+import type { SearchDrawerConfig, SearchDrawerCuratedProduct } from "@/lib/data";
 import { useSearchDrawerStore } from "./store";
-import { useSearchIndex } from "./hooks/useSearchIndex";
+import { useSearchIndex, type SearchProduct } from "./hooks/useSearchIndex";
 import { useSearchAnalytics } from "./hooks/useSearchAnalytics";
 import { CuratedCategoryChips } from "./CuratedCategoryChips";
 import { CuratedProducts } from "./CuratedProducts";
@@ -26,22 +26,59 @@ interface SearchDrawerProps {
  * Search drawer overlay. Right-anchored slide-in (vaul), full-height. Same
  * shell shape as the cart drawer for visual consistency.
  *
- * Three states:
- * - Empty (no query): chips + curated products
- * - Results (query has matches): result cards
- * - No-results (query, zero matches): "No results for X" + curated products
+ * Body states (mutually exclusive — last action wins between chip + query):
+ * - Empty: no query, no chip → chips + curated products
+ * - Chip active: chip clicked, no query → chips (active highlighted) + that
+ *   category's products
+ * - Results: query typed → chips + result cards
+ * - No-results: query, zero matches → chips + "No results" + curated fallback
  */
 export function SearchDrawer({ config }: SearchDrawerProps) {
   const isOpen = useSearchDrawerStore((s) => s.isOpen);
   const close = useSearchDrawerStore((s) => s.close);
+  const activeChipSlug = useSearchDrawerStore((s) => s.activeChipSlug);
+  const setActiveChipSlug = useSearchDrawerStore((s) => s.setActiveChipSlug);
   const [query, setQuery] = useState("");
 
-  const { status, search } = useSearchIndex(isOpen);
+  const { status, products, search } = useSearchIndex(isOpen);
   useSearchAnalytics(query, isOpen);
   const results = search(query);
   const hasQuery = query.trim().length > 0;
 
   const curatedHeading = config.curatedCategoryName ?? "Featured";
+
+  // Chip and query are mutually exclusive: typing clears the active chip,
+  // clicking a chip clears the typed query. Clicking the active chip again
+  // toggles it off (returns to empty state).
+  const handleChipClick = (slug: string) => {
+    if (activeChipSlug === slug) {
+      setActiveChipSlug(null);
+      return;
+    }
+    setActiveChipSlug(slug);
+    setQuery("");
+  };
+
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    if (value && activeChipSlug) {
+      setActiveChipSlug(null);
+    }
+  };
+
+  // Filter the already-loaded MiniSearch index for the active chip's category.
+  // No network round trip — products are in memory once the index has loaded.
+  const activeChipProducts = useMemo<SearchDrawerCuratedProduct[]>(() => {
+    if (!activeChipSlug) return [];
+    return products
+      .filter((p) => p.primaryCategory?.slug === activeChipSlug)
+      .map(productToCurated);
+  }, [products, activeChipSlug]);
+  const activeChipName =
+    activeChipSlug != null
+      ? config.chips.find((c) => c.slug === activeChipSlug)?.name ?? ""
+      : "";
+  const showChipResults = activeChipSlug != null && !hasQuery;
 
   return (
     <Drawer
@@ -69,7 +106,7 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
                 className="pl-10 pr-10 h-11 text-base"
                 autoFocus
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => handleQueryChange(e.target.value)}
                 aria-label="Search products"
                 aria-controls="search-drawer-results"
               />
@@ -110,15 +147,31 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
               </p>
             )}
 
-            {/* Chips persist across empty / results / no-results states */}
+            {/* Chips persist across empty / results / no-results / chip-active states */}
             {status !== "loading" && config.chips.length > 0 && (
               <CuratedCategoryChips
                 heading={config.chipsHeading}
                 chips={config.chips}
+                activeChipSlug={activeChipSlug}
+                onChipClick={handleChipClick}
               />
             )}
 
-            {status !== "loading" && !hasQuery && (
+            {status !== "loading" && showChipResults && (
+              <div className={config.chips.length > 0 ? "mt-8" : ""}>
+                <CuratedProducts
+                  heading={activeChipName}
+                  products={activeChipProducts}
+                />
+                {activeChipProducts.length === 0 && (
+                  <p className="text-sm text-muted-foreground" aria-live="polite">
+                    No products in this category yet.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {status !== "loading" && !hasQuery && !showChipResults && (
               <EmptyState
                 hasChips={config.chips.length > 0}
                 curatedHeading={curatedHeading}
@@ -141,6 +194,23 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
       </DrawerContent>
     </Drawer>
   );
+}
+
+/**
+ * Adapt a SearchProduct (from the MiniSearch index) to the
+ * SearchDrawerCuratedProduct shape so it can render through the same card
+ * pipeline as curated products.
+ */
+function productToCurated(p: SearchProduct): SearchDrawerCuratedProduct {
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    type: p.type,
+    primaryImage: p.primaryImage,
+    primaryCategorySlug: p.primaryCategory?.slug ?? null,
+    minPriceInCents: p.minPriceInCents,
+  };
 }
 
 function EmptyState({

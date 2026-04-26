@@ -1,22 +1,24 @@
 "use client";
 
-import Link from "next/link";
 import type { SearchDrawerChip } from "@/lib/data";
-import { useSearchDrawerStore } from "./store";
+import { cn } from "@/lib/utils";
 
 /**
- * Renders the chip row in the search drawer's empty state.
- * Each chip links to its category page; clicking closes the drawer.
+ * Chip row in the search drawer. Clicking a chip filters the drawer body
+ * in-place to that category's products (the parent owns the active state).
+ * Clicking the active chip again deselects it.
  */
 export function CuratedCategoryChips({
   heading,
   chips,
+  activeChipSlug,
+  onChipClick,
 }: {
   heading: string;
   chips: SearchDrawerChip[];
+  activeChipSlug: string | null;
+  onChipClick: (slug: string) => void;
 }) {
-  const close = useSearchDrawerStore((s) => s.close);
-
   if (chips.length === 0) return null;
 
   return (
@@ -28,17 +30,27 @@ export function CuratedCategoryChips({
         {heading}
       </h2>
       <ul className="flex flex-wrap gap-2">
-        {chips.map((chip) => (
-          <li key={chip.slug}>
-            <Link
-              href={`/${chip.slug}`}
-              onClick={close}
-              className="inline-flex items-center px-4 py-2 rounded-md border bg-background hover:bg-accent transition-colors text-sm"
-            >
-              {chip.name}
-            </Link>
-          </li>
-        ))}
+        {chips.map((chip) => {
+          const isActive = activeChipSlug === chip.slug;
+          return (
+            <li key={chip.slug}>
+              <button
+                type="button"
+                onClick={() => onChipClick(chip.slug)}
+                aria-pressed={isActive}
+                className={cn(
+                  "inline-flex items-center px-4 py-2 rounded-md border text-sm transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  isActive
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-background hover:bg-accent"
+                )}
+              >
+                {chip.name}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
