@@ -6,6 +6,17 @@ import ProductCard from "@/app/(site)/_components/product/ProductCard";
 interface CuratedProductsProps {
   heading: string;
   products: SearchDrawerCuratedProduct[];
+  /**
+   * When true, each card animates in with a 30ms-per-index stagger —
+   * matches the search-results list animation in SearchDrawer. Used by
+   * the chip-active state where products change on every chip click;
+   * the static curated section + no-results fallback don't pass this
+   * (those grids don't change so re-keying them on every render would
+   * be visual noise). The `staggerKey` is used as React key so the
+   * animation re-fires when the active chip changes.
+   */
+  staggered?: boolean;
+  staggerKey?: string;
 }
 
 /**
@@ -15,7 +26,12 @@ interface CuratedProductsProps {
  *
  * Used in three states: empty, no-results fallback, and chip-active filtered.
  */
-export function CuratedProducts({ heading, products }: CuratedProductsProps) {
+export function CuratedProducts({
+  heading,
+  products,
+  staggered,
+  staggerKey,
+}: CuratedProductsProps) {
   if (products.length === 0) return null;
 
   return (
@@ -26,9 +42,26 @@ export function CuratedProducts({ heading, products }: CuratedProductsProps) {
       >
         {heading}
       </h2>
-      <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4">
-        {products.map((p) => (
-          <li key={p.id}>
+      <ul
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4"
+        // Re-key on staggerKey so the entrance animation re-fires every
+        // time the active chip changes (rather than just appending new
+        // items to a long-lived list).
+        key={staggered ? staggerKey : undefined}
+      >
+        {products.map((p, idx) => (
+          <li
+            key={p.id}
+            className={staggered ? "animate-in fade-in-0 duration-300" : undefined}
+            style={
+              staggered
+                ? {
+                    animationDelay: `${idx * 30}ms`,
+                    animationFillMode: "both",
+                  }
+                : undefined
+            }
+          >
             <ProductCard product={p} />
           </li>
         ))}

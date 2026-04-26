@@ -201,6 +201,8 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
                 <CuratedProducts
                   heading={activeChipName}
                   products={activeChipProducts}
+                  staggered
+                  staggerKey={activeChipSlug ?? undefined}
                 />
                 {activeChipProducts.length === 0 && (
                   <p className="text-sm text-muted-foreground" aria-live="polite">
