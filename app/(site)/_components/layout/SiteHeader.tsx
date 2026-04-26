@@ -127,6 +127,12 @@ export default function SiteHeader({
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  // Controlled mobile menu Sheet state — lifted so the SearchTrigger inside
+  // can close the menu *before* opening the search drawer (otherwise both
+  // overlays mount stacked and tapping a search result leaves the menu
+  // hanging behind the destination page). Desktop uses NavigationMenu, not
+  // Sheet, so this is mobile-only.
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const lastScrollY = useRef(0);
   const { settings } = useSiteSettings();
   const { visible: visiblePages, overflow: overflowPages } = useNavOverflow(
@@ -230,7 +236,7 @@ export default function SiteHeader({
           {isClient && (
             <>
               {/* Mobile hamburger */}
-              <Sheet>
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild className="md:hidden">
                   <Button
                     variant="outline"
@@ -269,9 +275,14 @@ export default function SiteHeader({
                           </span>
                         </Link>
                       </SheetClose>
-                      <SheetClose asChild>
-                        <SearchTrigger variant="mobile-sheet" />
-                      </SheetClose>
+                      {/* Close the menu Sheet before the search drawer opens
+                          so the two overlays don't stack — otherwise tapping
+                          a search result navigates but the menu hangs behind
+                          the destination page. */}
+                      <SearchTrigger
+                        variant="mobile-sheet"
+                        onBeforeOpen={() => setIsMobileMenuOpen(false)}
+                      />
                       <SheetClose asChild>
                         <Link
                           href="/orders"

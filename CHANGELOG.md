@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.102.2 - 2026-04-26
+
+### Fixed
+
+- **Mobile menu Sheet closes before opening the search drawer** — on mobile, tapping the Search item inside the hamburger menu was leaving the menu Sheet open behind the search drawer. Tapping a search result then navigated, search drawer auto-closed (per v0.102.1), but the menu Sheet stayed mounted over the destination. `SearchTrigger` now accepts an optional `onBeforeOpen` callback that runs synchronously before the search drawer opens; the mobile-menu wiring passes a closer for the menu Sheet so the two overlays no longer stack. Desktop is unaffected (it uses `NavigationMenu`, not Sheet).
+
+---
+
 ## 0.102.1 - 2026-04-26
 
 ### Fixed
