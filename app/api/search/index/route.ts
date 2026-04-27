@@ -46,6 +46,10 @@ export async function GET() {
           },
         },
       },
+      // Featured first, then alphabetical. Mirrors getProductsByCategorySlug
+      // in lib/data.ts so the storefront category page and the search drawer's
+      // chip filter present the same products in the same order.
+      orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
     });
 
     return NextResponse.json(

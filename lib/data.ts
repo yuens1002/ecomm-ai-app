@@ -242,6 +242,10 @@ export async function getProductsByCategorySlug(categorySlug: string) {
         isDisabled: false,
       },
       include: productCardIncludes, // <-- USE COMMON INCLUDE
+      // Featured first, then alphabetical. Same orderBy is mirrored on
+      // the search drawer's /api/search/index endpoint so the category
+      // page and the chip filter present products in the same order.
+      orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
     });
     return products;
   } catch (error) {

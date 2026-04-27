@@ -109,6 +109,20 @@ describe("GET /api/search/index", () => {
     expect(callArg.include.categories.orderBy).toEqual({ isPrimary: "desc" });
   });
 
+  it("orders products by isFeatured desc, then name asc — mirrors getProductsByCategorySlug", async () => {
+    findManyMock.mockResolvedValue([]);
+    await GET();
+
+    const callArg = findManyMock.mock.calls[0][0];
+    // Same orderBy must be set on lib/data.ts getProductsByCategorySlug so
+    // the storefront category page and the search drawer's chip filter
+    // present products in the same order.
+    expect(callArg.orderBy).toEqual([
+      { isFeatured: "desc" },
+      { name: "asc" },
+    ]);
+  });
+
   it("returns 500 with error JSON on Prisma failure", async () => {
     findManyMock.mockRejectedValue(new Error("DB down"));
     const response = await GET();
