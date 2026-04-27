@@ -88,17 +88,18 @@ export default async function ProductPage({
     notFound();
   }
 
-  // Fetch related products from the display category (follows user's journey)
-  const relatedProducts = await getRelatedProducts(
-    product.id,
-    displayCategory.slug
-  );
+  // The three remaining fetches all depend only on `product` + `displayCategory`
+  // (already resolved above) and are independent of each other — run in parallel
+  // so the user pays one round-trip's latency instead of three sequential ones.
+  // - relatedProducts: same category, follows the user's journey
+  // - addOns: per-product
+  // - categoryProducts: siblings in the same category for the breadcrumb dropdown
+  const [relatedProducts, addOns, categoryProducts] = await Promise.all([
+    getRelatedProducts(product.id, displayCategory.slug),
+    getProductAddOns(product.id),
+    getProductsByCategorySlug(displayCategory.slug),
+  ]);
 
-  // Fetch add-ons for this product
-  const addOns = await getProductAddOns(product.id);
-
-  // Fetch sibling products in the same category (for breadcrumb dropdown)
-  const categoryProducts = await getProductsByCategorySlug(displayCategory.slug);
   const siblingProducts = categoryProducts
     .filter((p) => p.id !== product.id)
     .map((p) => ({ name: p.name, slug: p.slug }));
