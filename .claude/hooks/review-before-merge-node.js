@@ -23,8 +23,12 @@
 //   Resolution requires explicit GraphQL `resolveReviewThread` calls.
 //   Bypass: ack file (.claude/.copilot-ack-{pr}.json) skips this gate too.
 //
-// Error policy: API failures BLOCK the merge (fail-closed). If the hook can't
-// verify Copilot's review status, it's safer to block than to silently allow.
+// Error policy: Gates 1 and 2 are fail-closed on API/CLI verification errors.
+// Gate 3 has a narrower fail-open exception: if its GraphQL fetch fails at the
+// transport / parsing layer, the hook allows the merge rather than blocking on
+// an indeterminate thread-resolution check (Gate 2 has already passed by that
+// point — feedback is presumed addressed). Keep this comment in sync with the
+// enforcement logic below if either gate's failure mode changes.
 //
 // Exit 0 = allow, Exit 2 = block (stderr shown to model)
 
@@ -76,9 +80,12 @@ function main(input) {
 
   // Only intercept `gh pr merge` when it appears at a shell-command position —
   // start-of-string, or after a shell operator (`;`, `&&`, `||`, `|`, newline,
-  // open paren). This prevents false matches when the literal text "gh pr merge"
-  // appears inside a heredoc / quoted string (e.g. inside a commit message body).
-  if (!/(^|[\n;&|(]\s*)gh\s+pr\s+merge\b/i.test(command)) {
+  // open paren) — and tolerate optional shell whitespace after that boundary.
+  // This prevents false matches when the literal text "gh pr merge" appears
+  // inside a heredoc / quoted string (e.g. inside a commit message body
+  // referencing the command by name), while still catching leading-whitespace
+  // variants such as `  gh pr merge`.
+  if (!/(?:^|[\n;&|(])\s*gh\s+pr\s+merge\b/i.test(command)) {
     process.exit(0);
   }
 
@@ -250,26 +257,43 @@ function main(input) {
   // commit timestamps. Gate 2's "newer commit" heuristic lets feedback
   // through but doesn't close threads in the UI — so Gate 3 enforces
   // explicit resolution via the GraphQL `resolveReviewThread` mutation.
-  let unresolvedThreads = [];
+  // Paginate through all review threads (GraphQL caps at 100 per page).
+  // Without pagination, PRs with >100 threads would skip checks for any
+  // thread past the first page — an unresolved thread on page 2 would
+  // silently allow merge.
+  const unresolvedThreads = [];
   try {
     const owner = repo.split("/")[0];
     const name = repo.split("/")[1];
-    const graphqlQuery = `query { repository(owner: \"${owner}\", name: \"${name}\") { pullRequest(number: ${prNumber}) { reviewThreads(first: 100) { nodes { id isResolved comments(first: 1) { nodes { author { login } path body } } } } } } }`;
-    const rawThreads = exec(
-      `gh api graphql -f query='${graphqlQuery.replace(/'/g, "'\\''")}'`,
-      projectDir
-    );
-    const parsed = rawThreads ? JSON.parse(rawThreads) : null;
-    const nodes =
-      parsed?.data?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
-    unresolvedThreads = nodes
-      .filter((t) => !t.isResolved)
-      .map((t) => ({
-        id: t.id,
-        path: t.comments?.nodes?.[0]?.path || "",
-        body: t.comments?.nodes?.[0]?.body || "",
-        author: t.comments?.nodes?.[0]?.author?.login || "",
-      }));
+    let hasNextPage = true;
+    let endCursor = null;
+
+    while (hasNextPage) {
+      const afterClause = endCursor ? `, after: \"${endCursor}\"` : "";
+      const graphqlQuery = `query { repository(owner: \"${owner}\", name: \"${name}\") { pullRequest(number: ${prNumber}) { reviewThreads(first: 100${afterClause}) { nodes { id isResolved comments(first: 1) { nodes { author { login } path body } } } pageInfo { hasNextPage endCursor } } } } }`;
+      const rawThreads = exec(
+        `gh api graphql -f query='${graphqlQuery.replace(/'/g, "'\\''")}'`,
+        projectDir
+      );
+      const parsed = rawThreads ? JSON.parse(rawThreads) : null;
+      const reviewThreads =
+        parsed?.data?.repository?.pullRequest?.reviewThreads ?? {};
+      const nodes = reviewThreads.nodes ?? [];
+
+      unresolvedThreads.push(
+        ...nodes
+          .filter((t) => !t.isResolved)
+          .map((t) => ({
+            id: t.id,
+            path: t.comments?.nodes?.[0]?.path || "",
+            body: t.comments?.nodes?.[0]?.body || "",
+            author: t.comments?.nodes?.[0]?.author?.login || "",
+          }))
+      );
+
+      hasNextPage = reviewThreads.pageInfo?.hasNextPage ?? false;
+      endCursor = reviewThreads.pageInfo?.endCursor ?? null;
+    }
   } catch {
     // GraphQL failure — fall back to Gate 2 result and allow merge.
     // We've already passed Gate 2 (newer commit exists), so don't

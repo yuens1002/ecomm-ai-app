@@ -53,10 +53,12 @@ function main(input) {
 
   // Only intercept `gh pr create` when it appears at a shell-command position —
   // start-of-string, or after a shell operator (`;`, `&&`, `||`, `|`, newline,
-  // open paren). This prevents false matches when the literal text "gh pr create"
-  // appears inside a heredoc / quoted string (e.g. inside a commit message body
-  // referencing the command by name).
-  if (!/(^|[\n;&|(]\s*)gh\s+pr\s+create\b/i.test(command)) {
+  // open paren) — and tolerate optional shell whitespace after that boundary.
+  // This prevents false matches when the literal text "gh pr create" appears
+  // inside a heredoc / quoted string (e.g. inside a commit message body
+  // referencing the command by name), while still catching leading-whitespace
+  // variants such as `  gh pr create`.
+  if (!/(?:^|[\n;&|(])\s*gh\s+pr\s+create\b/i.test(command)) {
     process.exit(0);
   }
 
