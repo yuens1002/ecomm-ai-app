@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { PRODUCT_LIST_ORDER_BY } from "@/lib/catalog-sort";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -46,10 +47,11 @@ export async function GET() {
           },
         },
       },
-      // Featured first, then alphabetical. Mirrors getProductsByCategorySlug
-      // in lib/data.ts so the storefront category page and the search drawer's
-      // chip filter present the same products in the same order.
-      orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+      // Mirrors getProductsByCategorySlug in lib/data.ts so the storefront
+      // category page and the search drawer's chip filter present the same
+      // products in the same order. Shared via PRODUCT_LIST_ORDER_BY in
+      // lib/catalog-sort.ts.
+      orderBy: PRODUCT_LIST_ORDER_BY,
     });
 
     return NextResponse.json(

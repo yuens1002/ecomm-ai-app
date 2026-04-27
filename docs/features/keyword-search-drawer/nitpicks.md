@@ -77,7 +77,7 @@ Instead of a single ranked grid of mini-cards, present typed-search and chip-fil
 
 ### 10. Storefront chip order doesn't match Menu Builder category list order 🟢 Shipped — v0.103.1
 
-Extracted a one-line helper at `lib/cache/revalidate-search-drawer.ts` and wired it into every successful mutation in `app/admin/product-menu/actions/labels.ts` (12 actions) and `app/admin/product-menu/actions/categories.ts` (6 actions). On any successful mutation, the storefront `search-drawer-config` cache tag is fired so the next site render rebuilds. Cost is zero when the chip-label isn't the one being mutated — invalidating an already-fresh tag is a no-op.
+Extracted a one-line helper at `lib/cache/revalidate-search-drawer.ts` and wired it into every successful mutation in `app/admin/product-menu/actions/labels.ts` (12 actions) and `app/admin/product-menu/actions/categories.ts` (6 actions). On any successful mutation, the storefront `search-drawer-config` cache tag is marked stale so the next site render rebuilds. Acceptable overhead for low-frequency admin writes; we don't gate on whether the chip-label was touched.
 
 ### 11. Mobile menu Sheet doesn't close on same-pathname link click 🟢 Shipped — v0.103.0 (PR #348)
 

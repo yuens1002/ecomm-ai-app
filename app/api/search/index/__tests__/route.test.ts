@@ -1,5 +1,6 @@
 /** @jest-environment node */
 
+import { PRODUCT_LIST_ORDER_BY } from "@/lib/catalog-sort";
 import { GET } from "../route";
 
 const findManyMock = jest.fn();
@@ -109,18 +110,17 @@ describe("GET /api/search/index", () => {
     expect(callArg.include.categories.orderBy).toEqual({ isPrimary: "desc" });
   });
 
-  it("orders products by isFeatured desc, then name asc — mirrors getProductsByCategorySlug", async () => {
+  it("uses the shared PRODUCT_LIST_ORDER_BY constant — mirrors getProductsByCategorySlug", async () => {
     findManyMock.mockResolvedValue([]);
     await GET();
 
     const callArg = findManyMock.mock.calls[0][0];
-    // Same orderBy must be set on lib/data.ts getProductsByCategorySlug so
-    // the storefront category page and the search drawer's chip filter
-    // present products in the same order.
-    expect(callArg.orderBy).toEqual([
-      { isFeatured: "desc" },
-      { name: "asc" },
-    ]);
+    // The route imports PRODUCT_LIST_ORDER_BY from lib/catalog-sort, the
+    // same module getProductsByCategorySlug imports it from. Asserting
+    // referential equality (not just shape) guarantees the storefront
+    // category page and the chip filter cannot drift apart — any change
+    // to one surface flows through the shared constant.
+    expect(callArg.orderBy).toBe(PRODUCT_LIST_ORDER_BY);
   });
 
   it("returns 500 with error JSON on Prisma failure", async () => {

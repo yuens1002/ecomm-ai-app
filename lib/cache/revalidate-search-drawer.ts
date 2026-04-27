@@ -12,9 +12,12 @@ import { revalidateTag } from "next/cache";
  *   - CategoryLabelCategory rows (chip ordering / attach / detach)
  *   - Category rows (name change shows up in chip text)
  *
- * Cost when the chip-label isn't the one being mutated: a no-op tag
- * invalidation that resolves on the next cache miss anyway. Safe to
- * fire indiscriminately.
+ * Even when the specific mutation does not materially change the
+ * rendered search-drawer config, this still marks the tag stale and
+ * causes the next request to rebuild the tagged cache. That overhead
+ * is typically low because this is intended for low-frequency admin
+ * writes, so it remains reasonable to call from every relevant
+ * mutation rather than gating on whether the chip-label was touched.
  *
  * Next 16 requires a cacheLife profile; "default" triggers an
  * immediate revalidation on the next request — same call shape used
