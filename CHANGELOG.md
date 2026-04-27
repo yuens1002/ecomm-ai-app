@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.103.2 - 2026-04-27
+
+### Performance
+
+- **Product page parallelizes related/addons/category-siblings fetches** — `app/(site)/products/[slug]/page.tsx` previously fired four DB queries sequentially (`getProductBySlug` → `getRelatedProducts` → `getProductAddOns` → `getProductsByCategorySlug`). The last three only depend on results from the first and are independent of each other, so series-mode meant ~3× round-trip latency for no benefit. Wrapped in `Promise.all`, fanning them out concurrently. On a typical ~80 ms per-query setup that's a ~250 ms reduction on every product navigation — large enough to make the result→product transition from the search drawer feel instant. No behavior change beyond timing; same data flows through `ProductClientPage`.
+
+---
+
 ## 0.103.1 - 2026-04-27
 
 ### Fixed
