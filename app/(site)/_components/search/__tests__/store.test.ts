@@ -8,7 +8,11 @@ import { useSearchDrawerStore } from "../store";
  * assertions.
  */
 function resetStore() {
-  useSearchDrawerStore.setState({ isOpen: false, activeChipSlug: null });
+  useSearchDrawerStore.setState({
+    isOpen: false,
+    activeChipSlug: null,
+    query: "",
+  });
 }
 
 describe("useSearchDrawerStore", () => {
@@ -16,10 +20,11 @@ describe("useSearchDrawerStore", () => {
     resetStore();
   });
 
-  it("initial state: closed, no active chip", () => {
-    const { isOpen, activeChipSlug } = useSearchDrawerStore.getState();
+  it("initial state: closed, no active chip, empty query", () => {
+    const { isOpen, activeChipSlug, query } = useSearchDrawerStore.getState();
     expect(isOpen).toBe(false);
     expect(activeChipSlug).toBeNull();
+    expect(query).toBe("");
   });
 
   it("open() opens the drawer", () => {
@@ -39,13 +44,28 @@ describe("useSearchDrawerStore", () => {
     expect(useSearchDrawerStore.getState().activeChipSlug).toBeNull();
   });
 
-  it("close() closes the drawer AND clears active chip", () => {
+  it("close() closes the drawer AND clears active chip + query", () => {
     useSearchDrawerStore.getState().open();
     useSearchDrawerStore.getState().setActiveChipSlug("drinkware");
+    useSearchDrawerStore.getState().setQuery("ethiopia");
     useSearchDrawerStore.getState().close();
-    const { isOpen, activeChipSlug } = useSearchDrawerStore.getState();
+    const { isOpen, activeChipSlug, query } = useSearchDrawerStore.getState();
     expect(isOpen).toBe(false);
     expect(activeChipSlug).toBeNull();
+    expect(query).toBe("");
+  });
+
+  it("setQuery(text) updates the query", () => {
+    useSearchDrawerStore.getState().setQuery("ethiopia");
+    expect(useSearchDrawerStore.getState().query).toBe("ethiopia");
+  });
+
+  it("reopening the drawer after typing surfaces an empty query (close-clears-query)", () => {
+    useSearchDrawerStore.getState().open();
+    useSearchDrawerStore.getState().setQuery("ethiopia");
+    useSearchDrawerStore.getState().close();
+    useSearchDrawerStore.getState().open();
+    expect(useSearchDrawerStore.getState().query).toBe("");
   });
 
   it("toggle() opens when closed (preserves no-chip)", () => {
@@ -54,13 +74,15 @@ describe("useSearchDrawerStore", () => {
     expect(useSearchDrawerStore.getState().activeChipSlug).toBeNull();
   });
 
-  it("toggle() closes when open AND clears active chip", () => {
+  it("toggle() closes when open AND clears active chip + query", () => {
     useSearchDrawerStore.getState().open();
     useSearchDrawerStore.getState().setActiveChipSlug("medium-roast");
+    useSearchDrawerStore.getState().setQuery("kenya");
     useSearchDrawerStore.getState().toggle();
-    const { isOpen, activeChipSlug } = useSearchDrawerStore.getState();
+    const { isOpen, activeChipSlug, query } = useSearchDrawerStore.getState();
     expect(isOpen).toBe(false);
     expect(activeChipSlug).toBeNull();
+    expect(query).toBe("");
   });
 });
 

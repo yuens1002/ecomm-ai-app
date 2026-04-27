@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
 import { Search, X, MoveRight } from "lucide-react";
 import { ProductType } from "@prisma/client";
 import { RoastLevelBar } from "@/app/(site)/_components/product/RoastLevelBar";
@@ -42,26 +41,16 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
   const close = useSearchDrawerStore((s) => s.close);
   const activeChipSlug = useSearchDrawerStore((s) => s.activeChipSlug);
   const setActiveChipSlug = useSearchDrawerStore((s) => s.setActiveChipSlug);
-  const [query, setQuery] = useState("");
+  // `query` lives in the store so it clears synchronously when the drawer
+  // closes — local component state would persist across open/close cycles
+  // and surface a stale query when the user reopens the drawer.
+  const query = useSearchDrawerStore((s) => s.query);
+  const setQuery = useSearchDrawerStore((s) => s.setQuery);
 
   const { status, products, search } = useSearchIndex(isOpen);
   useSearchAnalytics(query, isOpen);
   const results = search(query);
   const hasQuery = query.trim().length > 0;
-
-  // Auto-close on navigation. Without this, clicking any link inside the
-  // drawer (search result, curated card, chip) navigates but the drawer
-  // stays open over the destination, making the click feel like a no-op.
-  // Closing on pathname change keeps every Link inside the drawer working
-  // without each one needing its own onClick={close}.
-  const pathname = usePathname();
-  const prevPathnameRef = useRef(pathname);
-  useEffect(() => {
-    if (prevPathnameRef.current !== pathname && isOpen) {
-      close();
-    }
-    prevPathnameRef.current = pathname;
-  }, [pathname, isOpen, close]);
 
   const curatedHeading = config.curatedCategoryName ?? "Featured";
 
@@ -117,7 +106,18 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
           Search for coffee, brewing equipment, and more.
         </DrawerDescription>
 
-        <div className="flex flex-col h-full overflow-hidden">
+        <div
+          className="flex flex-col h-full overflow-hidden"
+          // Event-delegated close-on-link-click — closes the drawer
+          // whenever a link inside the body is clicked (search result,
+          // curated card, chip-active card). Works for cross-route AND
+          // same-route navigations (the latter wouldn't trigger a
+          // pathname-based close, since pathname doesn't change).
+          onClick={(e) => {
+            const anchor = (e.target as HTMLElement).closest("a[href]");
+            if (anchor) close();
+          }}
+        >
           {/* Search input row — no border-bottom; close anchor on the right edge */}
           <div className="flex items-center gap-3 px-4 py-3 md:px-6 md:py-4">
             <div className="relative flex-1">
@@ -184,6 +184,8 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
                 <CuratedProducts
                   heading={activeChipName}
                   products={activeChipProducts}
+                  staggered
+                  staggerKey={activeChipSlug ?? undefined}
                 />
                 {activeChipProducts.length === 0 && (
                   <p className="text-sm text-muted-foreground" aria-live="polite">
