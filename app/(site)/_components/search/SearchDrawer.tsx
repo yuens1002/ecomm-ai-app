@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
 import { Search, X, MoveRight } from "lucide-react";
 import { ProductType } from "@prisma/client";
 import { RoastLevelBar } from "@/app/(site)/_components/product/RoastLevelBar";
@@ -52,20 +51,6 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
   useSearchAnalytics(query, isOpen);
   const results = search(query);
   const hasQuery = query.trim().length > 0;
-
-  // Auto-close on navigation. Without this, clicking any link inside the
-  // drawer (search result, curated card, chip) navigates but the drawer
-  // stays open over the destination, making the click feel like a no-op.
-  // Closing on pathname change keeps every Link inside the drawer working
-  // without each one needing its own onClick={close}.
-  const pathname = usePathname();
-  const prevPathnameRef = useRef(pathname);
-  useEffect(() => {
-    if (prevPathnameRef.current !== pathname && isOpen) {
-      close();
-    }
-    prevPathnameRef.current = pathname;
-  }, [pathname, isOpen, close]);
 
   const curatedHeading = config.curatedCategoryName ?? "Featured";
 
@@ -123,13 +108,11 @@ export function SearchDrawer({ config }: SearchDrawerProps) {
 
         <div
           className="flex flex-col h-full overflow-hidden"
-          // Event-delegated close-on-link-click. The pathname-effect above
-          // closes the drawer on route change — but a link to the SAME
-          // route (e.g. user is on /products/foo, opens search, taps foo)
-          // doesn't change pathname, so the effect doesn't fire and the
-          // drawer hangs over a non-navigation. Closing on any anchor click
-          // inside the drawer body covers the same-route case (and is
-          // idempotent with the pathname effect for cross-route clicks).
+          // Event-delegated close-on-link-click — closes the drawer
+          // whenever a link inside the body is clicked (search result,
+          // curated card, chip-active card). Works for cross-route AND
+          // same-route navigations (the latter wouldn't trigger a
+          // pathname-based close, since pathname doesn't change).
           onClick={(e) => {
             const anchor = (e.target as HTMLElement).closest("a[href]");
             if (anchor) close();

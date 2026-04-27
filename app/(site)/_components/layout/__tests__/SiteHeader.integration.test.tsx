@@ -119,17 +119,20 @@ describe("SiteHeader - Category Menu Integration", () => {
     });
   });
 
-  describe("Mobile menu — close on pathname change", () => {
+  describe("Mobile menu — close on link click (event delegation)", () => {
     beforeEach(() => {
       mockPathname = "/";
     });
 
-    it("closes the mobile Sheet when pathname changes (simulated navigation)", async () => {
-      // Force mobile viewport so the hamburger trigger renders. Radix's
-      // SheetTrigger has md:hidden so it's always in the DOM in jsdom — the
-      // viewport class is purely for the user-facing visual gate.
-      mockPathname = "/";
-      const { rerender } = render(
+    it("closes the mobile Sheet when any anchor inside is clicked", async () => {
+      // The pathname-effect-based close was removed in favor of an
+      // event-delegated onClick handler on SheetContent. This covers both
+      // cross-route navigations AND same-pathname clicks (the Next router
+      // doesn't re-fire usePathname when the destination equals current).
+      // Unit-level coverage of the handler itself lives in
+      // menu-close-on-link-click.test.tsx; this test asserts the handler
+      // is wired into the rendered SheetContent.
+      render(
         <SiteHeader
           categoryGroups={mockCategoryGroups}
           user={null}
@@ -137,31 +140,26 @@ describe("SiteHeader - Category Menu Integration", () => {
         />
       );
 
-      // SiteHeader gates the Sheet on an isClient flag (set in useEffect),
-      // so wait for the post-mount render before the trigger appears.
-      // The hamburger button has an sr-only "Open menu" label.
       const trigger = await screen.findByRole("button", { name: /open menu/i });
       await act(async () => {
         fireEvent.click(trigger);
       });
 
-      // SheetContent renders the "Menu" SheetTitle when open.
       expect(await screen.findByText("Menu")).toBeInTheDocument();
 
-      // Simulate navigation by mutating the mock and forcing a rerender.
-      mockPathname = "/single-origin";
+      // SheetContent renders into a Radix portal at document.body, so query
+      // through screen (which roots at document) rather than the test
+      // container. The Home link is rendered unconditionally inside the
+      // mobile menu.
+      const homeAnchors = screen.getAllByRole("link", { name: /home/i });
+      const homeAnchor = homeAnchors.find(
+        (a) => a.getAttribute("href") === "/"
+      );
+      expect(homeAnchor).toBeTruthy();
       await act(async () => {
-        rerender(
-          <SiteHeader
-            categoryGroups={mockCategoryGroups}
-            user={null}
-            pages={[]}
-          />
-        );
+        fireEvent.click(homeAnchor!);
       });
 
-      // The pathname-effect should have closed the Sheet → "Menu" title is
-      // unmounted from the DOM (Radix unmounts SheetContent when closed).
       await waitFor(() => {
         expect(screen.queryByText("Menu")).not.toBeInTheDocument();
       });

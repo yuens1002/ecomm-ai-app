@@ -34,7 +34,6 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
 import { ChevronDown, CircleUserRound, FileText, Home, LogIn, LogOut, Menu, MoreHorizontal, PackageSearch, User } from "lucide-react";
 import { SearchTrigger } from "@/app/(site)/_components/search/SearchTrigger";
-import { useSearchDrawerStore } from "@/app/(site)/_components/search/store";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -128,54 +127,24 @@ export default function SiteHeader({
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  // Controlled mobile menu Sheet state. Lifted out of the Sheet so we can
-  // (a) close it BEFORE opening the search drawer (avoids two competing
-  // focus traps that retract the on-screen keyboard on mobile) and
-  // (b) reopen it after the user closes the search drawer WITHOUT
-  // navigating — so the natural "tap Search → change my mind → back to the
-  // menu" flow works.
+  // Controlled mobile menu Sheet state — lifted out of the Sheet so the
+  // SearchTrigger inside can synchronously close the menu before opening
+  // the search drawer (otherwise both overlays would mount stacked and
+  // their focus traps would compete on mobile).
   // Desktop uses NavigationMenu, not Sheet — this is mobile-only.
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Close the mobile menu on any route change. Removes the need for an
-  // individual <SheetClose> wrap on every nav link.
-  const prevPathnameForMenuRef = useRef(pathname);
-  useEffect(() => {
-    if (prevPathnameForMenuRef.current !== pathname) {
-      prevPathnameForMenuRef.current = pathname;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsMobileMenuOpen(false);
-    }
-  }, [pathname]);
-
-  // Track whether the menu was open at the moment the search drawer opened,
-  // and the pathname AT THAT MOMENT, so we can reopen the menu when the
-  // user dismisses search without navigating. Capturing `pathnameAtOpen`
-  // separately (instead of comparing to `prevPathnameForMenuRef`) avoids a
-  // race with the pathname-effect above which updates that ref before this
-  // effect runs — without the separate ref, "navigated" would always
-  // evaluate false and we'd incorrectly reopen the menu after the user
-  // tapped a search result.
-  const searchDrawerOpen = useSearchDrawerStore((s) => s.isOpen);
-  const menuWasOpenWhenSearchOpenedRef = useRef(false);
-  const pathnameAtSearchOpenRef = useRef(pathname);
-  const prevSearchOpenRef = useRef(searchDrawerOpen);
-  useEffect(() => {
-    const justClosed = prevSearchOpenRef.current && !searchDrawerOpen;
-    prevSearchOpenRef.current = searchDrawerOpen;
-    if (!justClosed) return;
-    const navigated = pathname !== pathnameAtSearchOpenRef.current;
-    if (menuWasOpenWhenSearchOpenedRef.current && !navigated) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsMobileMenuOpen(true);
-    }
-    menuWasOpenWhenSearchOpenedRef.current = false;
-  }, [searchDrawerOpen, pathname]);
-
+  // Close the menu before opening the search drawer. Synchronous handler,
+  // no effects: the user's tap drives both transitions in one render.
+  // Note: we deliberately do NOT reopen the menu when the search drawer
+  // closes — if the user dismisses search via × they retap the hamburger.
+  // The previous "reopen on dismissal" UX required tracking close-cause
+  // across stores via a flag + effect, which mis-fired on same-pathname
+  // navigation (drawer closes via link click, no pathname change → the
+  // effect couldn't tell "navigated" from "dismissed" → menu would reopen
+  // over the destination). Simpler architecture wins.
   const handleMobileSearchOpen = () => {
-    pathnameAtSearchOpenRef.current = pathname;
     if (isMobileMenuOpen) {
-      menuWasOpenWhenSearchOpenedRef.current = true;
       setIsMobileMenuOpen(false);
     }
   };
@@ -303,6 +272,16 @@ export default function SiteHeader({
                   // and immediately retracts). The next pathname's content
                   // will own focus once navigation lands.
                   onCloseAutoFocus={(e) => e.preventDefault()}
+                  // Event-delegated close-on-link-click (mirrors the search
+                  // drawer's pattern in SearchDrawer.tsx). Closes the menu
+                  // synchronously on any anchor click inside, covering both
+                  // cross-route and same-route navigations without needing
+                  // a usePathname() effect.
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("a[href]")) {
+                      setIsMobileMenuOpen(false);
+                    }
+                  }}
                 >
                   <div className="px-4 pt-6 pb-1">
                     <div className="flex items-center justify-between mb-1">
