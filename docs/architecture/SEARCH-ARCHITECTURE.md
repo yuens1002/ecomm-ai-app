@@ -2,7 +2,7 @@
 
 > **Last Updated:** 2026-04-27
 > **Status:** Production
-> **Version:** 0.103.0+
+> **Version:** 0.103.2+
 > **Target catalog size:** small-to-mid storefronts (≤ ~200 products)
 
 ## Overview
@@ -32,7 +32,7 @@ Both surfaces include MERCH alongside COFFEE (the COFFEE-only hardcode was remov
 
 ### Data flow
 
-```
+```text
 storefront layout render
   └── getCachedSearchDrawerConfig()         [unstable_cache, 60s TTL, tag: "search-drawer-config"]
         └── getSearchDrawerConfig()         [lib/data.ts:888]
@@ -44,7 +44,7 @@ storefront layout render
 storefront drawer first open
   └── useSearchIndex()                      [app/(site)/_components/search/hooks/useSearchIndex.ts]
         └── GET /api/search/index           [Cache-Control: public, max-age=60, SWR=300]
-              └── findMany(enabled products) [productCardIncludes shape, no orderBy yet — see #12]
+              └── findMany(enabled products) [productCardIncludes shape, orderBy: PRODUCT_LIST_ORDER_BY]
         └── new MiniSearch({ ... }).addAll(products)
 
 every keystroke
@@ -77,6 +77,14 @@ onClick={(e) => {
 ```
 
 This deliberately replaces a `usePathname()` effect because pathname-based close doesn't fire when the destination route equals the current route — so a user already on `/products/foo` clicking the foo result in the drawer would otherwise leave the drawer / menu stranded over a non-navigation. Event delegation closes synchronously regardless. (See PR #348, commits `430cfac` and the mobile-menu mirror.)
+
+### Result-to-product navigation
+
+A drawer result click → product page is the only navigation path the drawer creates (chips filter in-drawer, no nav). The destination — [`app/(site)/products/[slug]/page.tsx`](../../app/(site)/products/[slug]/page.tsx) — runs four DB queries: `getProductBySlug` (sequential, drives breadcrumb logic) followed by `getRelatedProducts` + `getProductAddOns` + `getProductsByCategorySlug`.
+
+The latter three only depend on the product + display category resolved by the first, and are independent of each other, so they fan out via `Promise.all` rather than running in series. On a typical ~80 ms per-query setup that's a ~250 ms reduction on every product navigation — large enough that the result→product transition feels instant on warm caches and the gap is barely perceptible on cold caches. (Shipped v0.103.2.)
+
+The page itself uses `revalidate = 3600` ISR; first hit per product per Vercel edge node per hour is the cold path, subsequent hits within that window are cached HTML.
 
 ---
 
@@ -116,7 +124,7 @@ The admin PUT route calls `revalidateTag("search-drawer-config", "default")` so 
 
 This architecture is **deliberately tuned for small-to-mid catalogs (≤ ~200 enabled products).** The single-fetch full-catalog model is the load-bearing assumption — everything downstream (0 ms keystroke search, fuzzy + field-weighted ranking, no FTS round-trip per character) follows from it.
 
-The two scale-dependent risk areas below were reviewed during the v0.103.0 polish pass and **explicitly deferred** as out-of-scope for the target use case. They are documented here so a future revisit inherits the reasoning rather than the absence of a fix.
+The three scale-dependent risk areas below were reviewed during the v0.103.0 / v0.103.2 polish pass and **explicitly deferred** as out-of-scope for the target use case. They are documented here so a future revisit inherits the reasoning rather than the absence of a fix.
 
 ### Deferred — `/api/search/index` returns the full enabled catalog
 
@@ -145,6 +153,18 @@ The two scale-dependent risk areas below were reviewed during the v0.103.0 polis
   - Admin saves cause noticeable cache stampede (multiple visitors arrive within the same revalidation window), OR
   - Curated-products payload grows materially
 - **Correct mitigation when triggered** — Move `curatedProducts` out of `getSearchDrawerConfig` into a dedicated endpoint (e.g. `/api/search-drawer/curated`) fetched client-side on first drawer open, with its own cache tag. Drawer renders chips immediately (config payload shrinks to chip metadata + setting refs), curated grid renders after the round-trip with a skeleton in place.
+
+### Deferred — link prefetch on visible search results
+
+- **Decision** — Don't add Next.js Link prefetch (`prefetch={true}`) on result `<Link>`s in the drawer body. Rely on the v0.103.2 query parallelization for the result→product transition feel.
+- **Why this is fine for the target** — After the parallelization, cold-cache product page loads feel near-instant on the demo. With small catalog + low traffic, paying the latency once per actual click is preferable to prefetching every visible result.
+- **What prefetch would buy at scale** — Warming the destination route's RSC payload before the user clicks, so the click → render is instantaneous even on cold ISR caches. Useful when the destination has heavier-than-`Promise.all` data fetching, or when users browse rapidly and the pre-warm consistently lands.
+- **What it costs** — Each prefetch is a real HTTP request that runs the destination's data path. A drawer with 10 visible results × every drawer-open + filter session = 10 prefetched product pages even if the user clicks zero or one. At 200+ products with real traffic that's meaningful Vercel function invocations, DB load, and mobile data for users on metered connections — paid for results that go unviewed.
+- **Revisit triggers**
+  - Catalog grows to a scale where ISR cold-cache misses dominate the perceived navigation latency, OR
+  - Real-user telemetry shows the result→product transition is the slowest interaction in the drawer, OR
+  - We're on a usage tier where prefetch invocations are cheap and the latency fix is worth the bandwidth
+- **Correct mitigation when triggered** — Hover/focus prefetch via `useRouter().prefetch()` on `onMouseEnter` / `onFocus`, with `prefetch={false}` on the `<Link>`. Pays one prefetch per *near-click* (intent-driven) rather than one per *visible result* (viewport-driven). Mobile clients without hover skip the prefetch entirely and fall back to the click-only cold path — acceptable trade-off given the cost shape.
 
 ---
 
