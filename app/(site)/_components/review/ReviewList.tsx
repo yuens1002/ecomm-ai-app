@@ -158,7 +158,7 @@ export function ReviewList({ productId, onDistributionLoad }: ReviewListProps) {
             (high-contrast, nav-scale chips); these filter pills use
             bg-secondary at opacity-100 for active vs opacity-60 inactive
             (subtle, filter-scale). A migration would need a "subtle-active"
-            variant on Chip — see PERFORMANCE-DECISIONS-style follow-up. */}
+            variant on Chip. */}
         {Object.keys(brewMethodCounts).length > 0 && (
           <div className="flex items-center gap-1 flex-wrap">
             <button
