@@ -81,9 +81,9 @@ This deliberately replaces a `usePathname()` effect because pathname-based close
 
 ### Result-to-product navigation
 
-A drawer result click → product page is the only navigation path the drawer creates (chips filter in-drawer, no nav). The destination — [`app/(site)/products/[slug]/page.tsx`](../../app/(site)/products/[slug]/page.tsx) — runs four DB queries: `getProductBySlug` (sequential, drives breadcrumb logic) followed by `getRelatedProducts` + `getProductAddOns` + `getProductsByCategorySlug`.
+A drawer result click → product page is the only navigation path the drawer creates (chips filter in-drawer, no nav). The destination — [`app/(site)/products/[slug]/page.tsx`](../../app/(site)/products/[slug]/page.tsx) — runs four top-level fetch steps on the cold path: `getProductBySlug` first (sequential, drives breadcrumb logic), then `getRelatedProducts`, `getProductAddOns`, and `getProductsByCategorySlug` fan out. Note that `getProductAddOns` itself is not a single round-trip — it does an add-on links query plus a `SiteSettings` lookup via `getWeightUnit()` — so the cold path includes five DB reads in total.
 
-The latter three only depend on the product + display category resolved by the first, and are independent of each other, so they fan out via `Promise.all` rather than running in series. On a typical ~80 ms per-query setup that's a ~250 ms reduction on every product navigation — large enough that the result→product transition feels instant on warm caches and the gap is barely perceptible on cold caches. (Shipped v0.103.2.)
+Those downstream loaders only depend on the product + display category resolved by the first, and are otherwise independent, so the page fans them out via `Promise.all` rather than running the top-level loaders in series. Total page latency reduces to roughly the slowest top-level fetch — large enough that the result→product transition feels instant on warm caches and the gap is barely perceptible on cold caches. (Shipped v0.103.2.)
 
 The page itself uses `revalidate = 3600` ISR; first hit per product per Vercel edge node per hour is the cold path, subsequent hits within that window are cached HTML.
 
@@ -102,7 +102,7 @@ The form auto-saves per field (debounced PUT to `/api/admin/settings/search-draw
 
 The admin PUT route calls `revalidateTag("search-drawer-config", "default")` so the storefront's server-side cache picks up the change on its next request. Menu Builder mutations that touch CategoryLabel / CategoryLabelCategory / Category rows also fire the same tag (via [`lib/cache/revalidate-search-drawer.ts`](../../lib/cache/revalidate-search-drawer.ts), shipped v0.103.1).
 
-> **Caveat — admin edits don't appear in already-open storefront tabs without a hard refresh.** When admin saves a chip-label or curated-category change, `revalidateTag("search-drawer-config")` busts the *server* cache. But any storefront tab already open holds the prior layout's RSC payload (in the browser HTTP cache + Next's client-side Router Cache), so a normal reload often serves the stale response. A hard refresh (Cmd/Ctrl + Shift + R) reliably shows the new data. Same behavior in dev and prod. Worth surfacing to admins so they don't read a stale chip row as "the save didn't work." Tracked as nitpick #13 in [`docs/features/keyword-search-drawer/nitpicks.md`](../features/keyword-search-drawer/nitpicks.md).
+> **Caveat — admin edits don't appear in already-open storefront tabs without a hard refresh.** When admin saves a chip-label or curated-category change, `revalidateTag("search-drawer-config", "default")` busts the *server* cache. But any storefront tab already open holds the prior layout's RSC payload (in the browser HTTP cache + Next's client-side Router Cache), so a normal reload often serves the stale response. A hard refresh (Cmd/Ctrl + Shift + R) reliably shows the new data. Same behavior in dev and prod. Worth surfacing to admins so they don't read a stale chip row as "the save didn't work." Tracked as nitpick #13 in [`docs/features/keyword-search-drawer/nitpicks.md`](../features/keyword-search-drawer/nitpicks.md).
 
 ---
 

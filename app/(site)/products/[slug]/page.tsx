@@ -88,9 +88,12 @@ export default async function ProductPage({
     notFound();
   }
 
-  // The three remaining fetches all depend only on `product` + `displayCategory`
-  // (already resolved above) and are independent of each other — run in parallel
-  // so the user pays one round-trip's latency instead of three sequential ones.
+  // The three remaining top-level fetches all depend only on `product` +
+  // `displayCategory` (already resolved above) and are independent of each
+  // other, so start them together to reduce total latency to roughly the
+  // slowest top-level fetch — even if an individual helper still performs
+  // some sequential work internally (e.g. getProductAddOns reads SiteSettings
+  // for the weight unit on top of the add-on links).
   // - relatedProducts: same category, follows the user's journey
   // - addOns: per-product
   // - categoryProducts: siblings in the same category for the breadcrumb dropdown
