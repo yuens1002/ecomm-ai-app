@@ -1,4 +1,5 @@
 import { ProductType } from "@prisma/client";
+import { PRODUCT_LIST_ORDER_BY } from "./catalog-sort";
 import { prisma } from "./prisma";
 import {
   type SiteSettings,
@@ -242,6 +243,10 @@ export async function getProductsByCategorySlug(categorySlug: string) {
         isDisabled: false,
       },
       include: productCardIncludes, // <-- USE COMMON INCLUDE
+      // Same orderBy as the search drawer's /api/search/index endpoint so
+      // the category page and the chip filter present products in the
+      // same order. Shared via PRODUCT_LIST_ORDER_BY in lib/catalog-sort.ts.
+      orderBy: PRODUCT_LIST_ORDER_BY,
     });
     return products;
   } catch (error) {

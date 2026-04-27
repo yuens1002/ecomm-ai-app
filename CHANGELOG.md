@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.103.1 - 2026-04-27
+
+### Fixed
+
+- **Menu Builder mutations now invalidate the search-drawer-config cache (#10)** — when admin reordered, renamed, attached, or detached categories under the chip-label via Menu Builder, the storefront drawer chips would lag for up to 60 s due to the `unstable_cache` TTL on `getCachedSearchDrawerConfig`. Only the admin Search Settings PUT route fired `revalidateTag` — the ~18 Menu Builder mutation actions did not. Extracted a one-line helper at `lib/cache/revalidate-search-drawer.ts` and wired it into every successful mutation across `app/admin/product-menu/actions/labels.ts` and `app/admin/product-menu/actions/categories.ts`. Even when a mutation doesn't touch the chip-label, the tag is still marked stale and the next request rebuilds the tagged cache — that overhead is acceptable for low-frequency admin writes, so we call it from every relevant mutation rather than gating on whether the chip-label was touched.
+- **Consistent product order on category page + search index (#12)** — `/single-origin` and the Single Origin chip filter showed the same total count of products but in a different order above the fold. Cause: neither query had an explicit `orderBy`, so both fell back to Prisma's implementation-defined default which differed between contexts. Both `lib/data.ts` `getProductsByCategorySlug` and `app/api/search/index/route.ts` now sort by `[{ isFeatured: "desc" }, { name: "asc" }]` — featured first, then alphabetical. Test asserts the contract on the search-index route so the two surfaces don't drift.
+
+---
+
 ## 0.103.0 - 2026-04-26
 
 ### Added
