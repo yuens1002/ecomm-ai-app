@@ -86,3 +86,17 @@ Mirrored the search-drawer pattern: event-delegated `onClick` handler on `SheetC
 ### 12. Same-category, different product order between search drawer chip and storefront category page 🟢 Shipped — v0.103.1
 
 Both `lib/data.ts` `getProductsByCategorySlug` and `app/api/search/index/route.ts` now sort by `[{ isFeatured: "desc" }, { name: "asc" }]`. A test on the search-index route asserts the contract so the two surfaces don't drift.
+
+### 13. Admin edits don't appear in already-open storefront tabs without hard refresh 🟡 Open
+
+When admin saves a chip-label or curated-category change, `revalidateTag("search-drawer-config")` busts the *server* cache, but any storefront tab already open holds the prior layout's RSC payload via the browser HTTP cache + Next's client-side Router Cache. A regular reload (F5) often serves the stale response; only a hard refresh (Cmd/Ctrl + Shift + R) reliably shows the new data. Same behavior in dev and prod.
+
+**Why it matters:** Admins editing in one tab and previewing the storefront in another can read a stale chip row as "the save didn't work" and re-trigger the save unnecessarily. Not a correctness bug — the data DID save — but a real UX gotcha for self-service admins.
+
+**Possible mitigations when revisited:**
+
+- **"View storefront" link in the admin save toast** that opens the storefront with a cache-bust query param (e.g. `?_=<timestamp>`) to force a fresh fetch. Smallest scope; doesn't help admins who keep an existing tab open.
+- **`router.refresh()` triggered via a `BroadcastChannel("search-drawer-config")`** message posted from the admin save and listened for in the storefront layout. Refreshes any open storefront tabs in the same browser. Mid-scope; same-browser only.
+- **Server-Sent Events / websocket** from the admin save endpoint, broadcast to clients subscribed to a "search-drawer-config" channel — same idea but works across browsers/devices. Largest scope; only worth it if real shops have multi-device admin workflows.
+
+**Revisit signal:** real-shop admin reports of "I saved but the chip didn't update," or admin UX testing surfacing this as a friction point.

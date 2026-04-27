@@ -2,7 +2,7 @@
 
 > **Last Updated:** 2026-04-27
 > **Status:** Production
-> **Version:** 0.103.0+
+> **Version:** 0.103.2+
 > **Target catalog size:** small-to-mid storefronts (≤ ~200 products)
 
 ## Overview
@@ -32,19 +32,20 @@ Both surfaces include MERCH alongside COFFEE (the COFFEE-only hardcode was remov
 
 ### Data flow
 
-```
+```text
 storefront layout render
   └── getCachedSearchDrawerConfig()         [unstable_cache, 60s TTL, tag: "search-drawer-config"]
-        └── getSearchDrawerConfig()         [lib/data.ts:888]
-              ├── chip-label categories     [orderBy: { CategoryLabelCategory.order } ]
-              ├── chips heading             [SiteSettings: search_drawer_chips_heading]
-              ├── curated category          [SiteSettings: search_drawer_curated_category]
-              └── curated products          [findMany with productCardIncludes, take: 6]
+        └── getSearchDrawerConfig()         [lib/data.ts:893]
+              ├── chip-label                [SiteSettings: search_drawer_chip_label → CategoryLabel.id]
+              │     └── categories          [orderBy: { CategoryLabelCategory.order }, take: MAX_CHIPS = 6]
+              ├── chips heading             [from CategoryLabel.name; fallback: "Top Categories"]
+              ├── curated category          [SiteSettings: search_drawer_curated_category → Category.slug]
+              └── curated products          [findMany with productCardIncludes, take: CURATED_PRODUCTS_LIMIT = 6]
 
 storefront drawer first open
   └── useSearchIndex()                      [app/(site)/_components/search/hooks/useSearchIndex.ts]
         └── GET /api/search/index           [Cache-Control: public, max-age=60, SWR=300]
-              └── findMany(enabled products) [productCardIncludes shape, no orderBy yet — see #12]
+              └── findMany(enabled products) [productCardIncludes shape, orderBy: PRODUCT_LIST_ORDER_BY]
         └── new MiniSearch({ ... }).addAll(products)
 
 every keystroke
@@ -78,23 +79,30 @@ onClick={(e) => {
 
 This deliberately replaces a `usePathname()` effect because pathname-based close doesn't fire when the destination route equals the current route — so a user already on `/products/foo` clicking the foo result in the drawer would otherwise leave the drawer / menu stranded over a non-navigation. Event delegation closes synchronously regardless. (See PR #348, commits `430cfac` and the mobile-menu mirror.)
 
+### Result-to-product navigation
+
+A drawer result click → product page is the only navigation path the drawer creates (chips filter in-drawer, no nav). The destination — [`app/(site)/products/[slug]/page.tsx`](../../app/(site)/products/[slug]/page.tsx) — runs four top-level fetch steps on the cold path: `getProductBySlug` first (sequential, drives breadcrumb logic), then `getRelatedProducts`, `getProductAddOns`, and `getProductsByCategorySlug` fan out. Note that `getProductAddOns` itself is not a single round-trip — it does an add-on links query plus a `SiteSettings` lookup via `getWeightUnit()` — so the cold path includes five DB reads in total.
+
+Those downstream loaders only depend on the product + display category resolved by the first, and are otherwise independent, so the page fans them out via `Promise.all` rather than running the top-level loaders in series. Total page latency reduces to roughly the slowest top-level fetch — large enough that the result→product transition feels instant on warm caches and the gap is barely perceptible on cold caches. (Shipped v0.103.2.)
+
+The page itself uses `revalidate = 3600` ISR; first hit per product per Vercel edge node per hour is the cold path, subsequent hits within that window are cached HTML.
+
 ---
 
 ## Admin surface
 
-[`/admin/settings/search`](../../app/admin/settings/search/page.tsx) writes three `SiteSettings` keys:
+[`/admin/settings/search`](../../app/admin/settings/search/page.tsx) writes two `SiteSettings` keys (down from three in v1 — the v2 refactor consolidated heading + chip categories into a single CategoryLabel reference):
 
-| Key | Type | Purpose |
+| Key | Type (parsed) | Purpose |
 |---|---|---|
-| `search_drawer_chips_heading` | string | Heading above the chip row (default `"Top Categories"`) |
-| `search_drawer_chip_categories` | string (joined) | Up to 6 category slugs surfaced as chips (display order = the saved order) |
-| `search_drawer_curated_category` | string | Single category whose products fill the curated section + no-results fallback |
+| `search_drawer_chip_label` | string (CategoryLabel.id) | The label whose attached categories render as the chip row. **The chip-row heading is derived from `CategoryLabel.name`** — there is no separate "heading" key. Hidden labels (`isVisible: false`) are valid here; the search drawer reads them by id without filtering on visibility, cleanly separating "label exists for product menu" from "label exists for search curation." |
+| `search_drawer_curated_category` | string (Category.slug) | The category whose products populate the curated section + no-results fallback |
 
 The form auto-saves per field (debounced PUT to `/api/admin/settings/search-drawer`) and rolls back on failure with an inline "Couldn't save — try again" hint that auto-clears after 4 s or on the next successful save.
 
-The admin PUT route calls `revalidateTag("search-drawer-config", "default")` so the storefront sees changes within one request, not after the 60 s cache window.
+The admin PUT route calls `revalidateTag("search-drawer-config", "default")` so the storefront's server-side cache picks up the change on its next request. Menu Builder mutations that touch CategoryLabel / CategoryLabelCategory / Category rows also fire the same tag (via [`lib/cache/revalidate-search-drawer.ts`](../../lib/cache/revalidate-search-drawer.ts), shipped v0.103.1).
 
-> **Known gap (#10 in the nitpicks queue):** Menu Builder server actions that mutate `CategoryLabelCategory` (the join table that determines chip ordering) currently don't `revalidateTag` the search-drawer config — so chip order edits made in Menu Builder can be stale on the storefront for up to 60 s. Tracked in [`docs/features/keyword-search-drawer/nitpicks.md`](../features/keyword-search-drawer/nitpicks.md).
+> **Caveat — admin edits don't appear in already-open storefront tabs without a hard refresh.** When admin saves a chip-label or curated-category change, `revalidateTag("search-drawer-config", "default")` busts the *server* cache. But any storefront tab already open holds the prior layout's RSC payload (in the browser HTTP cache + Next's client-side Router Cache), so a normal reload often serves the stale response. A hard refresh (Cmd/Ctrl + Shift + R) reliably shows the new data. Same behavior in dev and prod. Worth surfacing to admins so they don't read a stale chip row as "the save didn't work." Tracked as nitpick #13 in [`docs/features/keyword-search-drawer/nitpicks.md`](../features/keyword-search-drawer/nitpicks.md).
 
 ---
 
@@ -116,7 +124,7 @@ The admin PUT route calls `revalidateTag("search-drawer-config", "default")` so 
 
 This architecture is **deliberately tuned for small-to-mid catalogs (≤ ~200 enabled products).** The single-fetch full-catalog model is the load-bearing assumption — everything downstream (0 ms keystroke search, fuzzy + field-weighted ranking, no FTS round-trip per character) follows from it.
 
-The two scale-dependent risk areas below were reviewed during the v0.103.0 polish pass and **explicitly deferred** as out-of-scope for the target use case. They are documented here so a future revisit inherits the reasoning rather than the absence of a fix.
+The three scale-dependent risk areas below were reviewed during the v0.103.0 / v0.103.2 polish pass and **explicitly deferred** as out-of-scope for the target use case. They are documented here so a future revisit inherits the reasoning rather than the absence of a fix.
 
 ### Deferred — `/api/search/index` returns the full enabled catalog
 
@@ -146,6 +154,18 @@ The two scale-dependent risk areas below were reviewed during the v0.103.0 polis
   - Curated-products payload grows materially
 - **Correct mitigation when triggered** — Move `curatedProducts` out of `getSearchDrawerConfig` into a dedicated endpoint (e.g. `/api/search-drawer/curated`) fetched client-side on first drawer open, with its own cache tag. Drawer renders chips immediately (config payload shrinks to chip metadata + setting refs), curated grid renders after the round-trip with a skeleton in place.
 
+### Deferred — link prefetch on visible search results
+
+- **Decision** — Don't add Next.js Link prefetch (`prefetch={true}`) on result `<Link>`s in the drawer body. Rely on the v0.103.2 query parallelization for the result→product transition feel.
+- **Why this is fine for the target** — After the parallelization, cold-cache product page loads feel near-instant on the demo. With small catalog + low traffic, paying the latency once per actual click is preferable to prefetching every visible result.
+- **What prefetch would buy at scale** — Warming the destination route's RSC payload before the user clicks, so the click → render is instantaneous even on cold ISR caches. Useful when the destination has heavier-than-`Promise.all` data fetching, or when users browse rapidly and the pre-warm consistently lands.
+- **What it costs** — Each prefetch is a real HTTP request that runs the destination's data path. A drawer with 10 visible results × every drawer-open + filter session = 10 prefetched product pages even if the user clicks zero or one. At 200+ products with real traffic that's meaningful Vercel function invocations, DB load, and mobile data for users on metered connections — paid for results that go unviewed.
+- **Revisit triggers**
+  - Catalog grows to a scale where ISR cold-cache misses dominate the perceived navigation latency, OR
+  - Real-user telemetry shows the result→product transition is the slowest interaction in the drawer, OR
+  - We're on a usage tier where prefetch invocations are cheap and the latency fix is worth the bandwidth
+- **Correct mitigation when triggered** — Hover/focus prefetch via `useRouter().prefetch()` on `onMouseEnter` / `onFocus`, with `prefetch={false}` on the `<Link>`. Pays one prefetch per *near-click* (intent-driven) rather than one per *visible result* (viewport-driven). Mobile clients without hover skip the prefetch entirely and fall back to the click-only cold path — acceptable trade-off given the cost shape.
+
 ---
 
 ## Critical files
@@ -160,7 +180,8 @@ The two scale-dependent risk areas below were reviewed during the v0.103.0 polis
 | [`app/api/search/index/route.ts`](../../app/api/search/index/route.ts) | Returns the full enabled catalog for the client index |
 | [`app/api/search/route.ts`](../../app/api/search/route.ts) | Legacy server-side FTS for `/search?q=` URL |
 | [`app/(site)/layout.tsx`](../../app/(site)/layout.tsx) | `unstable_cache`-wrapped `getSearchDrawerConfig` reader |
-| [`lib/data.ts`](../../lib/data.ts) (`getSearchDrawerConfig`, ~L888) | Reads chip-label categories + settings + curated products |
+| [`lib/data.ts`](../../lib/data.ts) (`getSearchDrawerConfig`, ~L893) | Reads chip-label categories + settings + curated products |
+| [`lib/cache/revalidate-search-drawer.ts`](../../lib/cache/revalidate-search-drawer.ts) | One-line helper called from admin Menu Builder mutations to fire `revalidateTag("search-drawer-config")` |
 | [`app/admin/settings/search/page.tsx`](../../app/admin/settings/search/page.tsx) + `_components/` | Admin form, auto-save with rollback indicator |
 | [`app/api/admin/settings/search-drawer/route.ts`](../../app/api/admin/settings/search-drawer/route.ts) | PUT handler, `revalidateTag("search-drawer-config")` on save |
 
