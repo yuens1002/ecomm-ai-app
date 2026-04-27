@@ -35,11 +35,12 @@ Both surfaces include MERCH alongside COFFEE (the COFFEE-only hardcode was remov
 ```text
 storefront layout render
   └── getCachedSearchDrawerConfig()         [unstable_cache, 60s TTL, tag: "search-drawer-config"]
-        └── getSearchDrawerConfig()         [lib/data.ts:888]
-              ├── chip-label categories     [orderBy: { CategoryLabelCategory.order } ]
-              ├── chips heading             [SiteSettings: search_drawer_chips_heading]
-              ├── curated category          [SiteSettings: search_drawer_curated_category]
-              └── curated products          [findMany with productCardIncludes, take: 6]
+        └── getSearchDrawerConfig()         [lib/data.ts:893]
+              ├── chip-label                [SiteSettings: search_drawer_chip_label → CategoryLabel.id]
+              │     └── categories          [orderBy: { CategoryLabelCategory.order }, take: MAX_CHIPS = 6]
+              ├── chips heading             [from CategoryLabel.name; fallback: "Top Categories"]
+              ├── curated category          [SiteSettings: search_drawer_curated_category → Category.slug]
+              └── curated products          [findMany with productCardIncludes, take: CURATED_PRODUCTS_LIMIT = 6]
 
 storefront drawer first open
   └── useSearchIndex()                      [app/(site)/_components/search/hooks/useSearchIndex.ts]
@@ -90,19 +91,18 @@ The page itself uses `revalidate = 3600` ISR; first hit per product per Vercel e
 
 ## Admin surface
 
-[`/admin/settings/search`](../../app/admin/settings/search/page.tsx) writes three `SiteSettings` keys:
+[`/admin/settings/search`](../../app/admin/settings/search/page.tsx) writes two `SiteSettings` keys (down from three in v1 — the v2 refactor consolidated heading + chip categories into a single CategoryLabel reference):
 
-| Key | Type | Purpose |
+| Key | Type (parsed) | Purpose |
 |---|---|---|
-| `search_drawer_chips_heading` | string | Heading above the chip row (default `"Top Categories"`) |
-| `search_drawer_chip_categories` | string (joined) | Up to 6 category slugs surfaced as chips (display order = the saved order) |
-| `search_drawer_curated_category` | string | Single category whose products fill the curated section + no-results fallback |
+| `search_drawer_chip_label` | string (CategoryLabel.id) | The label whose attached categories render as the chip row. **The chip-row heading is derived from `CategoryLabel.name`** — there is no separate "heading" key. Hidden labels (`isVisible: false`) are valid here; the search drawer reads them by id without filtering on visibility, cleanly separating "label exists for product menu" from "label exists for search curation." |
+| `search_drawer_curated_category` | string (Category.slug) | The category whose products populate the curated section + no-results fallback |
 
 The form auto-saves per field (debounced PUT to `/api/admin/settings/search-drawer`) and rolls back on failure with an inline "Couldn't save — try again" hint that auto-clears after 4 s or on the next successful save.
 
-The admin PUT route calls `revalidateTag("search-drawer-config", "default")` so the storefront sees changes within one request, not after the 60 s cache window.
+The admin PUT route calls `revalidateTag("search-drawer-config", "default")` so the storefront's server-side cache picks up the change on its next request. Menu Builder mutations that touch CategoryLabel / CategoryLabelCategory / Category rows also fire the same tag (via [`lib/cache/revalidate-search-drawer.ts`](../../lib/cache/revalidate-search-drawer.ts), shipped v0.103.1).
 
-> **Known gap (#10 in the nitpicks queue):** Menu Builder server actions that mutate `CategoryLabelCategory` (the join table that determines chip ordering) currently don't `revalidateTag` the search-drawer config — so chip order edits made in Menu Builder can be stale on the storefront for up to 60 s. Tracked in [`docs/features/keyword-search-drawer/nitpicks.md`](../features/keyword-search-drawer/nitpicks.md).
+> **Caveat — admin edits don't appear in already-open storefront tabs without a hard refresh.** When admin saves a chip-label or curated-category change, `revalidateTag("search-drawer-config")` busts the *server* cache. But any storefront tab already open holds the prior layout's RSC payload (in the browser HTTP cache + Next's client-side Router Cache), so a normal reload often serves the stale response. A hard refresh (Cmd/Ctrl + Shift + R) reliably shows the new data. Same behavior in dev and prod. Worth surfacing to admins so they don't read a stale chip row as "the save didn't work." Tracked as nitpick #13 in [`docs/features/keyword-search-drawer/nitpicks.md`](../features/keyword-search-drawer/nitpicks.md).
 
 ---
 
@@ -180,7 +180,8 @@ The three scale-dependent risk areas below were reviewed during the v0.103.0 / v
 | [`app/api/search/index/route.ts`](../../app/api/search/index/route.ts) | Returns the full enabled catalog for the client index |
 | [`app/api/search/route.ts`](../../app/api/search/route.ts) | Legacy server-side FTS for `/search?q=` URL |
 | [`app/(site)/layout.tsx`](../../app/(site)/layout.tsx) | `unstable_cache`-wrapped `getSearchDrawerConfig` reader |
-| [`lib/data.ts`](../../lib/data.ts) (`getSearchDrawerConfig`, ~L888) | Reads chip-label categories + settings + curated products |
+| [`lib/data.ts`](../../lib/data.ts) (`getSearchDrawerConfig`, ~L893) | Reads chip-label categories + settings + curated products |
+| [`lib/cache/revalidate-search-drawer.ts`](../../lib/cache/revalidate-search-drawer.ts) | One-line helper called from admin Menu Builder mutations to fire `revalidateTag("search-drawer-config")` |
 | [`app/admin/settings/search/page.tsx`](../../app/admin/settings/search/page.tsx) + `_components/` | Admin form, auto-save with rollback indicator |
 | [`app/api/admin/settings/search-drawer/route.ts`](../../app/api/admin/settings/search-drawer/route.ts) | PUT handler, `revalidateTag("search-drawer-config")` on save |
 
