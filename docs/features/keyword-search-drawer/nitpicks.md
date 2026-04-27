@@ -34,6 +34,7 @@ Reuses the homepage `<ScrollReveal>` component (same pattern `<FeaturedProducts>
 [`useSearchIndex.ts`](../../../app/\(site\)/_components/search/hooks/useSearchIndex.ts) caps results at `SEARCH_LIMIT = 10`. As the catalog grows past the demo's 30-ish products, the cap will hide relevant matches AND the initial paint will load all 10 mini-card images at once.
 
 **Approach when revisited:**
+
 - Bump `SEARCH_LIMIT` (e.g. 30 or remove cap)
 - Render first 7 results immediately
 - `<button>Show {N - 7} more</button>` reveals the rest in place (or paginate per-7)
@@ -64,6 +65,7 @@ Instead of a single ranked grid of mini-cards, present typed-search and chip-fil
 **Example:** Type "ethiopia" → result set includes 5 coffees that collectively touch Africa, Single Origin, Light Roast, Fruity & Floral. Render: "Africa" carousel + "Single Origin" carousel + "Light Roast" carousel + "Fruity & Floral" carousel, each with its products. Each product appears under every category it's attached to (a coffee can show in multiple carousels).
 
 **UX questions for the patch:**
+
 - Max categories to show?
 - Sort order of category sections (by product count? by `category.order`? by relevance to query)?
 - Dedup signal — if every category contains the same 5 products, do we collapse into one section?
@@ -73,30 +75,14 @@ Instead of a single ranked grid of mini-cards, present typed-search and chip-fil
 
 **Revisit signal:** catalog and category coverage grow to the point where a single ranked grid feels reductive, or user research surfaces "I want to browse by dimension" as a need.
 
-### 10. Storefront chip order doesn't match Menu Builder category list order 🟡 Open
+### 10. Storefront chip order doesn't match Menu Builder category list order 🟢 Shipped — v0.103.1
 
-When admin reorders / adds / removes categories under the chip-label via Menu Builder, the storefront drawer chips don't reflect the change for up to 60 s.
-
-**Cause:** [`app/(site)/layout.tsx`](../../../app/\(site\)/layout.tsx)'s `getCachedSearchDrawerConfig` is wrapped in `unstable_cache(... tags: ["search-drawer-config"], revalidate: 60)`. The admin **Search Settings** PUT route invalidates the tag, but **Menu Builder** server actions that mutate `CategoryLabelCategory` (in `app/admin/product-menu/actions/...`) do NOT call `revalidateTag("search-drawer-config")`. Both surfaces query with the same `orderBy: { order: "asc" }` on the join table — so the ordering logic is fine; only the cache-invalidation surface is incomplete.
-
-**Fix:** in any Menu Builder action that writes to `CategoryLabelCategory` for a label currently referenced by `search_drawer_chip_label`, also fire `revalidateTag("search-drawer-config")`. Keep the SiteSettings lookup cheap (read once at action entry).
-
-**Planned for:** v0.103.1 patch (separate from PR #348).
+Extracted a one-line helper at `lib/cache/revalidate-search-drawer.ts` and wired it into every successful mutation in `app/admin/product-menu/actions/labels.ts` (12 actions) and `app/admin/product-menu/actions/categories.ts` (6 actions). On any successful mutation, the storefront `search-drawer-config` cache tag is fired so the next site render rebuilds. Cost is zero when the chip-label isn't the one being mutated — invalidating an already-fresh tag is a no-op.
 
 ### 11. Mobile menu Sheet doesn't close on same-pathname link click 🟢 Shipped — v0.103.0 (PR #348)
 
 Mirrored the search-drawer pattern: event-delegated `onClick` handler on `SheetContent` that calls `setIsMobileMenuOpen(false)` whenever any anchor inside is clicked. That delegated click handling is the close mechanism now, covering both same-pathname and cross-route link clicks. The reopen-menu-after-search-dismissed feature was removed in the same pass — its dependence on a pathname-change signal made it mis-fire on same-pathname navigations.
 
-### 12. Same-category, different product order between search drawer chip and storefront category page 🟡 Open
+### 12. Same-category, different product order between search drawer chip and storefront category page 🟢 Shipped — v0.103.1
 
-Confirmed via user comparison (same TOTAL count of products on `/single-origin` and the Single Origin chip filter, but different ordering visible above the fold).
-
-**Cause:** neither query has an explicit `orderBy`, both fall back to Prisma's implementation-defined default which can differ between contexts.
-
-**Surfaces:**
-- [`lib/data.ts`](../../../lib/data.ts) `getProductsByCategorySlug` has `where: { categories: { some: { category: { slug } } } }` with no `orderBy`
-- [`app/api/search/index/route.ts`](../../../app/api/search/index/route.ts) has `where: { isDisabled: false }` with no `orderBy` on the outer `findMany`
-
-**Fix:** add the same explicit `orderBy` to both — recommend `[{ isFeatured: "desc" }, { name: "asc" }]` (featured first, then alphabetical).
-
-**Planned for:** v0.103.1 patch (separate from PR #348).
+Both `lib/data.ts` `getProductsByCategorySlug` and `app/api/search/index/route.ts` now sort by `[{ isFeatured: "desc" }, { name: "asc" }]`. A test on the search-index route asserts the contract so the two surfaces don't drift.
