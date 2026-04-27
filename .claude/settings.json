@@ -144,6 +144,11 @@
           },
           {
             "type": "command",
+            "command": "if [ -f .claude/hooks/pre-pr-via-release-node.js ]; then node .claude/hooks/pre-pr-via-release-node.js; else exit 0; fi",
+            "timeout": 10
+          },
+          {
+            "type": "command",
             "command": "if [ -f .claude/hooks/pre-migrate-backup-node.js ]; then node .claude/hooks/pre-migrate-backup-node.js; else exit 0; fi",
             "timeout": 10
           }

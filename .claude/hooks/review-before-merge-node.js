@@ -16,8 +16,19 @@
 //     b. New commits pushed AFTER the Copilot review (feedback addressed)
 //     c. Ack file exists: .claude/.copilot-ack-{pr}.json (reviewed, no changes needed)
 //
-// Error policy: API failures BLOCK the merge (fail-closed). If the hook can't
-// verify Copilot's review status, it's safer to block than to silently allow.
+// Gate 3 — Resolve every standing review thread:
+//   Blocks if any review thread on the PR remains unresolved (isResolved == false).
+//   This is independent of Gate 2's "newer commit" heuristic — replying to a
+//   comment OR pushing a fix doesn't mark a thread resolved in the GitHub UI.
+//   Resolution requires explicit GraphQL `resolveReviewThread` calls.
+//   Bypass: ack file (.claude/.copilot-ack-{pr}.json) skips this gate too.
+//
+// Error policy: Gates 1 and 2 are fail-closed on API/CLI verification errors.
+// Gate 3 has a narrower fail-open exception: if its GraphQL fetch fails at the
+// transport / parsing layer, the hook allows the merge rather than blocking on
+// an indeterminate thread-resolution check (Gate 2 has already passed by that
+// point — feedback is presumed addressed). Keep this comment in sync with the
+// enforcement logic below if either gate's failure mode changes.
 //
 // Exit 0 = allow, Exit 2 = block (stderr shown to model)
 
@@ -67,8 +78,14 @@ function main(input) {
     process.exit(0);
   }
 
-  // Only intercept gh pr merge commands
-  if (!/gh\s+pr\s+merge/i.test(command)) {
+  // Only intercept `gh pr merge` when it appears at a shell-command position —
+  // start-of-string, or after a shell operator (`;`, `&&`, `||`, `|`, newline,
+  // open paren) — and tolerate optional shell whitespace after that boundary.
+  // This prevents false matches when the literal text "gh pr merge" appears
+  // inside a heredoc / quoted string (e.g. inside a commit message body
+  // referencing the command by name), while still catching leading-whitespace
+  // variants such as `  gh pr merge`.
+  if (!/(?:^|[\n;&|(])\s*gh\s+pr\s+merge\b/i.test(command)) {
     process.exit(0);
   }
 
@@ -197,6 +214,7 @@ function main(input) {
   }
 
   // Check if commits were pushed after the Copilot review (feedback addressed)
+  let gate2Passed = false;
   try {
     const rawReviewsForTime = exec(
       `gh api --paginate repos/${repo}/pulls/${prNumber}/reviews`,
@@ -223,14 +241,93 @@ function main(input) {
       lastCommitTime &&
       new Date(lastCommitTime) > new Date(reviewTime)
     ) {
-      // Newer commits exist — feedback was addressed
-      process.exit(0);
+      gate2Passed = true; // Newer commits exist — feedback presumed addressed
     }
   } catch {
-    // Timestamp comparison failed — fall through to block (fail-closed)
+    // Timestamp comparison failed — leave gate2Passed false (fail-closed)
   }
 
-  // Block: Copilot left unaddressed comments
+  if (!gate2Passed) {
+    denyForUnaddressedComments(prNumber, comments);
+  }
+
+  // ── Gate 3: All review threads resolved ──────────────────────────────
+  //
+  // GitHub's review-thread state is independent of comment replies and
+  // commit timestamps. Gate 2's "newer commit" heuristic lets feedback
+  // through but doesn't close threads in the UI — so Gate 3 enforces
+  // explicit resolution via the GraphQL `resolveReviewThread` mutation.
+  // Paginate through all review threads (GraphQL caps at 100 per page).
+  // Without pagination, PRs with >100 threads would skip checks for any
+  // thread past the first page — an unresolved thread on page 2 would
+  // silently allow merge.
+  const unresolvedThreads = [];
+  try {
+    const owner = repo.split("/")[0];
+    const name = repo.split("/")[1];
+    let hasNextPage = true;
+    let endCursor = null;
+
+    while (hasNextPage) {
+      const afterClause = endCursor ? `, after: \"${endCursor}\"` : "";
+      const graphqlQuery = `query { repository(owner: \"${owner}\", name: \"${name}\") { pullRequest(number: ${prNumber}) { reviewThreads(first: 100${afterClause}) { nodes { id isResolved comments(first: 1) { nodes { author { login } path body } } } pageInfo { hasNextPage endCursor } } } } }`;
+      const rawThreads = exec(
+        `gh api graphql -f query='${graphqlQuery.replace(/'/g, "'\\''")}'`,
+        projectDir
+      );
+      const parsed = rawThreads ? JSON.parse(rawThreads) : null;
+      const reviewThreads =
+        parsed?.data?.repository?.pullRequest?.reviewThreads ?? {};
+      const nodes = reviewThreads.nodes ?? [];
+
+      unresolvedThreads.push(
+        ...nodes
+          .filter((t) => !t.isResolved)
+          .map((t) => ({
+            id: t.id,
+            path: t.comments?.nodes?.[0]?.path || "",
+            body: t.comments?.nodes?.[0]?.body || "",
+            author: t.comments?.nodes?.[0]?.author?.login || "",
+          }))
+      );
+
+      hasNextPage = reviewThreads.pageInfo?.hasNextPage ?? false;
+      endCursor = reviewThreads.pageInfo?.endCursor ?? null;
+    }
+  } catch {
+    // GraphQL failure — fall back to Gate 2 result and allow merge.
+    // We've already passed Gate 2 (newer commit exists), so don't
+    // fail-closed on a transient API issue.
+    process.exit(0);
+  }
+
+  if (unresolvedThreads.length === 0) {
+    process.exit(0); // All threads resolved — allow merge
+  }
+
+  // Block: unresolved review threads remain
+  let msg = `BLOCKED: PR #${prNumber} has ${unresolvedThreads.length} unresolved review thread(s).\n\n`;
+
+  unresolvedThreads.forEach((t, i) => {
+    const body = t.body.length > 200 ? t.body.slice(0, 197) + "..." : t.body;
+    msg += `${i + 1}. [${t.author} on ${t.path}]\n`;
+    msg += `   ${body.replace(/\n/g, "\n   ")}\n`;
+    msg += `   Thread id: ${t.id}\n\n`;
+  });
+
+  msg += "── How to proceed ──\n";
+  msg += "Resolve each thread via the GraphQL `resolveReviewThread` mutation:\n\n";
+  msg +=
+    "  gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: \"<THREAD_ID>\"}) { thread { isResolved } } }'\n\n";
+  msg += "A reply alone (or a newer commit) does NOT mark a thread resolved.\n";
+  msg += "After resolving all threads, retry the merge.\n";
+
+  deny(msg);
+}
+
+// (Gate 2's original "all comments unaddressed" branch lives below; kept
+// here as a fall-through for the case where there's no newer commit.)
+function denyForUnaddressedComments(prNumber, comments) {
   let msg = `BLOCKED: Copilot left ${comments.length} review comment(s) on PR #${prNumber} that have not been addressed.\n\n`;
 
   comments.forEach((c, i) => {
@@ -244,7 +341,7 @@ function main(input) {
   msg += "1. Evaluate each comment — make code changes where warranted\n";
   msg += "2. Push changes (new commits after the review auto-clear this gate)\n";
   msg += "3. If NO code changes are needed after review, acknowledge:\n";
-  msg += `   Write { "reviewed": true } to .claude/.copilot-ack-${prNumber}.json\n`;
+  msg += `   Write { \"reviewed\": true } to .claude/.copilot-ack-${prNumber}.json\n`;
   msg += "4. Retry the merge\n";
 
   deny(msg);
