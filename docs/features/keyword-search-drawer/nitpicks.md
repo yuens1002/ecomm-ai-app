@@ -45,9 +45,9 @@ Reuses the homepage `<ScrollReveal>` component (same pattern `<FeaturedProducts>
 
 [`app/api/search/index/route.ts`](../../../app/api/search/index/route.ts) returns every enabled product with no upper limit. Acceptable at the ≤ 200 product target given the 60 s cache + 300 s SWR. Full analysis + revisit triggers + correct mitigation in [`SEARCH-ARCHITECTURE.md`](../../architecture/SEARCH-ARCHITECTURE.md#deferred--apisearchindex-returns-the-full-enabled-catalog).
 
-### 6. `getSearchDrawerConfig` runs uncached on every site page render ⚪ Deferred — out of scope at target scale
+### 6. `getSearchDrawerConfig` still sits on the site page render path ⚪ Deferred — out of scope at target scale
 
-Wrapped in `unstable_cache` with 60 s TTL + tag-based invalidation in PR #343. Splitting curated-products into a client-triggered endpoint is overkill at the target scale. Full analysis + revisit triggers + correct mitigation in [`SEARCH-ARCHITECTURE.md`](../../architecture/SEARCH-ARCHITECTURE.md#deferred--getsearchdrawerconfig-underlying-query-graph-not-yet-split).
+`getSearchDrawerConfig` is called during site layout/page rendering, but its underlying work was wrapped in `unstable_cache` in PR #343 with a 60 s TTL plus tag-based invalidation, so it usually serves cached data and only re-executes on cache miss / revalidation. Splitting curated-products into a client-triggered endpoint is overkill at the target scale. Full analysis + revisit triggers + correct mitigation in [`SEARCH-ARCHITECTURE.md`](../../architecture/SEARCH-ARCHITECTURE.md#deferred--getsearchdrawerconfig-underlying-query-graph-not-yet-split).
 
 ### 7. Drawer query state not cleared on close 🟢 Shipped — v0.103.0 (PR #348)
 
@@ -85,7 +85,7 @@ When admin reorders / adds / removes categories under the chip-label via Menu Bu
 
 ### 11. Mobile menu Sheet doesn't close on same-pathname link click 🟢 Shipped — v0.103.0 (PR #348)
 
-Mirrored the search-drawer pattern: event-delegated `onClick` handler on `SheetContent` that calls `setIsMobileMenuOpen(false)` whenever any anchor inside is clicked. Belt-and-suspenders with the existing pathname effect (idempotent for cross-route, sole closer for same-route). The reopen-menu-after-search-dismissed feature was removed in the same pass — its dependence on a pathname-change signal made it mis-fire on same-pathname navigations.
+Mirrored the search-drawer pattern: event-delegated `onClick` handler on `SheetContent` that calls `setIsMobileMenuOpen(false)` whenever any anchor inside is clicked. That delegated click handling is the close mechanism now, covering both same-pathname and cross-route link clicks. The reopen-menu-after-search-dismissed feature was removed in the same pass — its dependence on a pathname-change signal made it mis-fire on same-pathname navigations.
 
 ### 12. Same-category, different product order between search drawer chip and storefront category page 🟡 Open
 
