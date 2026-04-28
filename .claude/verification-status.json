@@ -1,6 +1,14 @@
 {
   "_comment": "Tracks verification status per branch. Updated by verify-workflow / ui-verify skills.",
   "branches": {
+    "feat/hosted-store-s2": {
+      "status": "planned",
+      "acs_passed": 0,
+      "acs_total": 50,
+      "tasks": [],
+      "acs_doc": "docs/features/hosted-store/iter-1-trial-ui/ACs.md",
+      "notes": "Iter-1 Hosted Store Trial UI. Plan-mode plan approved 2026-04-28 at ~/.claude/plans/i-cant-seem-to-robust-pumpkin.md. ~50 ACs (35 UI + 10 FN + 5 TST + 5 REG). Pre-launch — no live customers. Public doc-stance: UI-only; data/sync specifics in platform companion doc."
+    },
     "feat/counter-ux": {
       "status": "verified",
       "acs_passed": 21,
