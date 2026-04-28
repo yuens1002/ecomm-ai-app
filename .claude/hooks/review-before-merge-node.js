@@ -316,10 +316,18 @@ function main(input) {
       hasNextPage = reviewThreads.pageInfo?.hasNextPage ?? false;
       endCursor = reviewThreads.pageInfo?.endCursor ?? null;
     }
-  } catch {
+  } catch (err) {
     // GraphQL failure — fall back to Gate 2 result and allow merge.
     // We've already passed Gate 2 (newer commit exists, or no comments to
-    // address) so don't fail-closed on a transient API issue.
+    // address) so don't fail-closed on a transient API issue. Emit a
+    // stderr warning so the caller has audit of the indeterminate state
+    // even though merge proceeds.
+    const reason = err && err.message ? err.message : String(err);
+    process.stderr.write(
+      `WARN: Gate 3 (review thread resolution) check skipped — ${reason}\n` +
+        "Merge proceeding because Gate 2 has already passed; thread state is\n" +
+        "unverified for this run. Re-run after the API is reachable to confirm.\n"
+    );
     process.exit(0);
   }
 
