@@ -64,14 +64,25 @@ function main(input) {
 
   const projectDir = path.resolve(__dirname, "..", "..");
 
-  // Read the latest commit subject on the current HEAD
+  // Read the latest commit subject on the current HEAD. Fail closed if git
+  // state can't be verified — letting PR creation proceed in exactly the
+  // scenarios where enforcement is most needed (misconfigured repo,
+  // unexpected cwd, missing git binary) would defeat the structural
+  // guarantee this hook provides.
   let lastSubject = "";
   try {
     lastSubject = exec("git log -1 --format=%s", projectDir);
   } catch {
-    // If we can't read git state, fail open — better to let the user proceed
-    // than to block on an unrelated environment issue.
-    process.exit(0);
+    deny(
+      "BLOCKED: `gh pr create` is gated to the `/release` flow, but this hook\n" +
+        "could not verify the latest git commit because `git log` failed.\n\n" +
+        `Expected to read git state from:\n  ${projectDir}\n\n` +
+        "Fix your git/working-directory state, then try again:\n" +
+        "1. Make sure this directory is the intended repository checkout and\n" +
+        "   contains valid `.git` metadata.\n" +
+        "2. Make sure `git` is installed and available in PATH for this hook.\n" +
+        "3. Re-run the `/release <patch|minor|major>` flow from the repository.\n"
+    );
   }
 
   if (VERSION_BUMP_RE.test(lastSubject)) {

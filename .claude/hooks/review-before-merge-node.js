@@ -209,53 +209,58 @@ function main(input) {
     );
   }
 
-  if (comments.length === 0) {
-    process.exit(0); // Copilot reviewed but left no inline comments — allow
-  }
+  // Gate 2 only applies when Copilot left inline comments. With zero comments
+  // there's nothing to "address" via newer commits, so we skip Gate 2 entirely
+  // and fall through to Gate 3 — which still needs to run because human
+  // reviewers (or earlier Copilot review-thread comments) may have unresolved
+  // threads independent of inline-comment state.
+  if (comments.length > 0) {
+    // Check if commits were pushed after the Copilot review (feedback addressed)
+    let gate2Passed = false;
+    try {
+      const rawReviewsForTime = exec(
+        `gh api --paginate repos/${repo}/pulls/${prNumber}/reviews`,
+        projectDir
+      );
+      const reviewsForTime = rawReviewsForTime ? JSON.parse(rawReviewsForTime) : [];
+      const copilotTimes = reviewsForTime
+        .filter((r) => /copilot/i.test(r.user?.login || ""))
+        .map((r) => r.submitted_at)
+        .sort();
+      const reviewTime = copilotTimes[copilotTimes.length - 1];
 
-  // Check if commits were pushed after the Copilot review (feedback addressed)
-  let gate2Passed = false;
-  try {
-    const rawReviewsForTime = exec(
-      `gh api --paginate repos/${repo}/pulls/${prNumber}/reviews`,
-      projectDir
-    );
-    const reviewsForTime = rawReviewsForTime ? JSON.parse(rawReviewsForTime) : [];
-    const copilotTimes = reviewsForTime
-      .filter((r) => /copilot/i.test(r.user?.login || ""))
-      .map((r) => r.submitted_at)
-      .sort();
-    const reviewTime = copilotTimes[copilotTimes.length - 1];
+      const rawCommits = exec(
+        `gh api --paginate repos/${repo}/pulls/${prNumber}/commits`,
+        projectDir
+      );
+      const commits = rawCommits ? JSON.parse(rawCommits) : [];
+      const lastCommitTime = commits.length > 0
+        ? commits[commits.length - 1].commit?.committer?.date
+        : null;
 
-    const rawCommits = exec(
-      `gh api --paginate repos/${repo}/pulls/${prNumber}/commits`,
-      projectDir
-    );
-    const commits = rawCommits ? JSON.parse(rawCommits) : [];
-    const lastCommitTime = commits.length > 0
-      ? commits[commits.length - 1].commit?.committer?.date
-      : null;
-
-    if (
-      reviewTime &&
-      lastCommitTime &&
-      new Date(lastCommitTime) > new Date(reviewTime)
-    ) {
-      gate2Passed = true; // Newer commits exist — feedback presumed addressed
+      if (
+        reviewTime &&
+        lastCommitTime &&
+        new Date(lastCommitTime) > new Date(reviewTime)
+      ) {
+        gate2Passed = true; // Newer commits exist — feedback presumed addressed
+      }
+    } catch {
+      // Timestamp comparison failed — leave gate2Passed false (fail-closed)
     }
-  } catch {
-    // Timestamp comparison failed — leave gate2Passed false (fail-closed)
-  }
 
-  if (!gate2Passed) {
-    denyForUnaddressedComments(prNumber, comments);
+    if (!gate2Passed) {
+      denyForUnaddressedComments(prNumber, comments);
+    }
   }
 
   // ── Gate 3: All review threads resolved ──────────────────────────────
   //
-  // GitHub's review-thread state is independent of comment replies and
-  // commit timestamps. Gate 2's "newer commit" heuristic lets feedback
-  // through but doesn't close threads in the UI — so Gate 3 enforces
+  // Runs independently of Gate 2 — a PR can have zero Copilot inline comments
+  // but still have unresolved threads from human reviewers or earlier Copilot
+  // review summaries. GitHub's review-thread state is independent of comment
+  // replies and commit timestamps. Gate 2's "newer commit" heuristic lets
+  // feedback through but doesn't close threads in the UI — so Gate 3 enforces
   // explicit resolution via the GraphQL `resolveReviewThread` mutation.
   // Paginate through all review threads (GraphQL caps at 100 per page).
   // Without pagination, PRs with >100 threads would skip checks for any
@@ -276,8 +281,25 @@ function main(input) {
         projectDir
       );
       const parsed = rawThreads ? JSON.parse(rawThreads) : null;
-      const reviewThreads =
-        parsed?.data?.repository?.pullRequest?.reviewThreads ?? {};
+
+      // GraphQL can return HTTP 200 with an `errors` payload and no `data`.
+      // Treating that as "no threads" would silently allow merges even
+      // though the thread-resolution check was indeterminate. Throw so the
+      // outer catch falls through to fail-open (Gate 2 has already passed
+      // by the time we reach this code).
+      if (Array.isArray(parsed?.errors) && parsed.errors.length > 0) {
+        throw new Error(
+          `GraphQL reviewThreads query returned errors: ${parsed.errors
+            .map((e) => e?.message || "Unknown GraphQL error")
+            .join("; ")}`
+        );
+      }
+      const reviewThreads = parsed?.data?.repository?.pullRequest?.reviewThreads;
+      if (!reviewThreads) {
+        throw new Error(
+          "GraphQL reviewThreads query did not return the expected data shape."
+        );
+      }
       const nodes = reviewThreads.nodes ?? [];
 
       unresolvedThreads.push(
@@ -296,8 +318,8 @@ function main(input) {
     }
   } catch {
     // GraphQL failure — fall back to Gate 2 result and allow merge.
-    // We've already passed Gate 2 (newer commit exists), so don't
-    // fail-closed on a transient API issue.
+    // We've already passed Gate 2 (newer commit exists, or no comments to
+    // address) so don't fail-closed on a transient API issue.
     process.exit(0);
   }
 
