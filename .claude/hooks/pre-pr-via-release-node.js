@@ -5,10 +5,12 @@
 // caller is going through the `/release` flow rather than opening a PR
 // directly from `/commit`, `/review`, or an ad-hoc bash command.
 //
-// The signal: the latest commit on the current branch must match
-// `bump version to X.Y.Z`. That commit is the unique fingerprint produced
-// by `/release` Step 5 (commit version bump). If the latest commit does NOT
-// match that shape, the caller hasn't run `/release` and we block.
+// The signal: the latest commit on the current branch must match a canonical
+// `/release` fingerprint:
+//   - `bump version to X.Y.Z`  — produced by the normal release Phase A
+//   - `docs-only release`      — produced by `/release --docs-only`
+// If the latest commit does NOT match either shape, the caller hasn't run
+// `/release` and we block.
 //
 // Why a structural gate beats a memory/skill rule:
 //   - Skills can read their own instructions in isolation and miss
@@ -24,10 +26,13 @@ const path = require("path");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { execSync } = require("child_process");
 
-// Matches the canonical `/release` version-bump commit. Tolerates a trailing
-// suffix (e.g. `(#123)` from squash-merge replays) so we don't over-block
-// after a release that re-runs against main.
-const VERSION_BUMP_RE = /^bump version to \d+\.\d+\.\d+\b/i;
+// Matches the canonical `/release` HEAD commit fingerprints. Normal releases
+// create a `bump version to X.Y.Z` commit; `/release --docs-only` creates a
+// `docs-only release` empty marker commit. Tolerates a trailing suffix (e.g.
+// `(#123)` from squash-merge replays) so we don't over-block after a release
+// that re-runs against main.
+const RELEASE_FINGERPRINT_RE =
+  /^(?:bump version to \d+\.\d+\.\d+\b|docs-only release\b)/i;
 
 function deny(reason) {
   process.stderr.write(reason);
@@ -85,7 +90,7 @@ function main(input) {
     );
   }
 
-  if (VERSION_BUMP_RE.test(lastSubject)) {
+  if (RELEASE_FINGERPRINT_RE.test(lastSubject)) {
     // `/release` produced this commit; PR creation is authorized.
     process.exit(0);
   }
@@ -93,13 +98,17 @@ function main(input) {
   deny(
     "BLOCKED: `gh pr create` is gated to the `/release` flow.\n\n" +
       `The latest commit on this branch is:\n  ${lastSubject}\n\n` +
-      "It must be a `bump version to X.Y.Z` commit (the `/release` skill's\n" +
-      "version-bump fingerprint). Do not open a PR directly from `/commit`,\n" +
-      "`/review`, or an ad-hoc bash invocation.\n\n" +
+      "It must match a `/release` fingerprint:\n" +
+      "  - `bump version to X.Y.Z`  (normal release)\n" +
+      "  - `docs-only release`      (the --docs-only path)\n\n" +
+      "Do not open a PR directly from `/commit`, `/review`, or an ad-hoc bash\n" +
+      "invocation.\n\n" +
       "── How to proceed ──\n" +
       "1. Run `/release <patch|minor|major>` — it bumps package.json, updates\n" +
       "   CHANGELOG.md, commits the bump, and creates the PR.\n" +
-      "2. If you have an exceptional reason to bypass (e.g. recovering from a\n" +
+      "2. Or `/release --docs-only` for documentation-only changes (creates a\n" +
+      "   `docs-only release` empty marker commit, no version bump).\n" +
+      "3. If you have an exceptional reason to bypass (e.g. recovering from a\n" +
       "   crashed release flow), check with the user before forcing it.\n"
   );
 }
