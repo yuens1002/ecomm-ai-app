@@ -6,8 +6,8 @@
       "acs_passed": 0,
       "acs_total": 50,
       "tasks": [],
-      "acs_doc": "docs/features/hosted-store/iter-1-trial-ui/ACs.md",
-      "notes": "Iter-1 Hosted Store Trial UI. Plan-mode plan approved 2026-04-28 at ~/.claude/plans/i-cant-seem-to-robust-pumpkin.md. ~50 ACs (35 UI + 10 FN + 5 TST + 5 REG). Pre-launch — no live customers. Public doc-stance: UI-only; data/sync specifics in platform companion doc."
+      "acs_doc": "docs/features/hosted-store/trial-ui/ACs.md",
+      "notes": "Hosted Store Trial UI body of work. Plan-mode plan at ~/.claude/plans/i-cant-seem-to-robust-pumpkin.md. ~50 ACs (35 UI + 10 FN + 5 TST + 5 REG). Pre-launch — no live customers. Public doc-stance: UI-only; data/sync/platform internals owned by platform Session 2 companion doc."
     },
     "feat/counter-ux": {
       "status": "verified",

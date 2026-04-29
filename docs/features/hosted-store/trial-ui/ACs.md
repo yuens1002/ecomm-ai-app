@@ -1,4 +1,4 @@
-# Hosted Store — Iteration 1: Trial UI · ACs
+# Hosted Store — Trial UI · ACs
 
 **Branch:** `feat/hosted-store-s2`
 **Plan:** [`plan.md`](plan.md)
@@ -18,13 +18,13 @@ This is the public open-source ACs doc — verification accountability for the U
 | **QC** | Main thread agent | After reading sub-agent report — confirms or overrides |
 | **Reviewer** | Human (reviewer) | During manual review — final approval per AC |
 
-Screenshots saved to `.screenshots/hosted-store-iter-1/` (gitignored).
+Screenshots saved to `.screenshots/hosted-store-trial-ui/` (gitignored).
 
 ---
 
 ## Test fixture setups
 
-UI ACs use one of six fixture lifecycle states. Each runs against a mock platform on `localhost:3001` returning the trial-status JSON shape (shape owned by platform — see platform-side iter-1 doc).
+UI ACs use one of six fixture lifecycle states. Each runs against a mock platform on `localhost:3001` returning the trial-status JSON shape (shape owned by platform — see platform Session 2 doc).
 
 **Setup A — Self-hosted (Community current):** no `HOSTED_TRIAL_ID`, no Priority Support active.
 
@@ -89,10 +89,10 @@ Mock returns trial-status with `status: ACTIVE`, `cardAdded: false`, days remain
 
 | AC | What | How | Pass | Agent | QC | Reviewer |
 |----|------|-----|------|-------|----|----------|
-| AC-UI-15 | Trial card actions layout (no-card, Setup C) | Screenshot: Trial card bottom row | Bottom-left: "Cancel" text-link + [Details] button. Bottom-right: [Add Billing] primary button enabled | | | |
-| AC-UI-16 | Add Billing CTA disabled when card-added (Setup D) | Screenshot: Setup D Trial card actions row | [Add Billing] button visibly disabled with explanatory tooltip on hover; "Cancel" + [Details] still available | | | |
+| AC-UI-15 | Trial card actions layout (no-card, Setup C) | Screenshot: Trial card bottom row | Bottom-left: "Cancel" text-link only (no Details — Trial has no detail page). Bottom-right: [Add Billing] primary button enabled | | | |
+| AC-UI-16 | Add Billing CTA disabled when card-added (Setup D) | Screenshot: Setup D Trial card actions row | [Add Billing] button visibly disabled with explanatory tooltip on hover; "Cancel" still available | | | |
 | AC-UI-17 | Add Billing CTA opens `PLATFORM_EXTEND_URL` in new tab (Setup C) | Interactive: click [Add Billing] | Browser opens `PLATFORM_EXTEND_URL` value in new tab | | | |
-| AC-UI-18 | Details button opens House Blend Trial detail page | Interactive: click [Details] on Trial card | Navigates to `/admin/support/plans/house-blend-trial` (or whatever the trial slug resolves to); detail page renders without errors | | | |
+| AC-UI-18 | Trial card has no Details button | Code review: TrialPlanCard render | No `Details` action element in the trial card's actions area; only Cancel text-link + Add Billing button | | | |
 
 ### House Blend card — during trial (`none` state)
 
@@ -146,7 +146,7 @@ Mock returns trial-status with `status: ACTIVE`, `cardAdded: false`, days remain
 | AC-FN-4 | Trial card visibility rule | Code review: `PlanPageClient.tsx` | Trial card render is conditional on `trialStatus?.status === "ACTIVE" \|\| "EXPIRED"`; hidden for CONVERTED and null status | | | |
 | AC-FN-5 | Add Billing disabled state binds to card-added | Code review: TrialPlanCard | Disabled prop / className wired to the platform-reported card-added state | | | |
 | AC-FN-6 | Subscribe Now and Manage billing call existing platform endpoints | Code review: TrialPlanCard / HostedPlanCard | Subscribe Now opens `PLATFORM_SUBSCRIBE_URL`; Manage billing fires `POST ${PLATFORM_API_URL}/api/billing/portal` with `Authorization: Bearer ${LICENSE_KEY}` and opens returned `url` | | | |
-| AC-FN-7 | Cancel modal reason capture submits to platform | Code review: CancelTrialDialog | Form submission posts reason + optional textarea content to platform endpoint; failure surfaces a toast and keeps modal open. (No-card variant in iter-1 may stub the platform call — endpoint ships in iter-2) | | | |
+| AC-FN-7 | Cancel modal reason capture submits to platform | Code review: CancelTrialDialog | Form submission posts reason + optional textarea content to platform endpoint; failure surfaces a toast and keeps modal open. (No-card variant may stub the platform call — endpoint ships in platform Session 3) | | | |
 | AC-FN-8 | Export endpoint returns ZIP with correct headers | Interactive: `curl -I http://localhost:4000/api/admin/export` (logged in) | `Content-Type: application/zip` and `Content-Disposition: attachment; filename="*.zip"` | | | |
 | AC-FN-9 | Export ZIP includes data + media + manifest | Interactive: `curl -o /tmp/x.zip http://localhost:4000/api/admin/export && unzip -l /tmp/x.zip` | At minimum: `data/products.json`, `data/orders.json`, `data/users.json`, `data/siteSettings.json`, `media/` directory, `manifest.json` | | | |
 | AC-FN-10 | Export endpoint requires admin auth | Interactive: `curl http://localhost:4000/api/admin/export` (no session) | 401 or 403; no ZIP body | | | |

@@ -1,9 +1,9 @@
-# Hosted Store — Iteration 1: Trial UI
+# Hosted Store — Trial UI
 
 **Branch:** `feat/hosted-store-s2`
 **Base:** `main`
 **Worktree:** `c:\Users\yuens\dev\hosted-store-s2`
-**Companion (private platform doc):** `artisan-roast-platform/docs/products/hosted/features/hosted-store/iter-1-store-data-and-sync/plan.md` — owns lifecycle architecture, license/status data shapes, sync mechanisms, the cancel-reason DB table, and email notification specs
+**Platform companion:** `artisan-roast-platform/docs/products/hosted/features/hosted-store/session-2/` — Session 2 of the platform feature plan owns the data contract, sync mechanisms, plan-detail content for the House Blend page, the cancel-reason DB table, and email notification specs. The platform-side feature plan also holds the cross-repo dependency graph for the full launch (Sessions 1–5).
 
 ---
 
@@ -26,9 +26,9 @@ This iteration adds the **trial-side UI**:
 - A **Cancel modal** with reason capture
 - A **Download Your Data** ZIP export on the License & Privacy → Data Privacy tab
 
-**The full feature ships as a single product release.** None of iter-1 / iter-2 / iter-3 / iter-4 ships to live customers in isolation; all four merge before the launch flag (`NEXT_PUBLIC_HOUSE_BLEND_OPEN=true`) flips. That means iter-1 is purely UI/presentational scaffolding to account for backend functions across the iterations — no customer-experience concerns apply to broken-in-isolation paths.
+**The full feature ships as a single product release.** Trial UI ships only when all platform sessions in the launch dependency graph (held in the platform's `feature-plan.md`) merge and the E2E lifecycle suite passes. That means this work is purely UI/presentational scaffolding to account for backend functions across the launch sessions — no customer-experience concerns apply to broken-in-isolation paths.
 
-**Explicitly out of scope here:** the post-conversion `/admin/settings/hosting` page (custom domain, billing config). That's iter-3.
+**Explicitly out of scope here:** the post-conversion `/admin/settings/hosting` page (custom domain, billing config). That work is documented in [`../hosting-settings/plan.md`](../hosting-settings/plan.md) and depends on platform Session 3 endpoints landing.
 
 ---
 
@@ -57,9 +57,9 @@ Filtering is declarative: each plan entry in the catalog gets a `visibility: "se
 
 ---
 
-## UI state inventory (every state iter-1 must render)
+## UI state inventory (every state Trial UI must render)
 
-This is the iter-1 verification target — every row gets screenshot-verified at desktop + mobile breakpoints. Screenshots saved to `.screenshots/hosted-store-iter-1/`.
+This is the Trial UI verification target — every row gets screenshot-verified at desktop + mobile breakpoints. Screenshots saved to `.screenshots/hosted-store-trial-ui/`.
 
 > **Stance:** Generalized state inventory; specific data shapes / pricing strings / quotas are owned by the platform and pulled at render time.
 
@@ -69,11 +69,11 @@ This is the iter-1 verification target — every row gets screenshot-verified at
 | 1b | Self-hosted (Priority Support active) | Community | `inactive` | Lapsed-style badge, no current actions |
 | 2a | Self-hosted (Priority Support not subscribed) | Priority Support | `none` | Pricing + benefits + [Subscribe] |
 | 2b | Self-hosted (Priority Support active) | Priority Support | `active` | "Active" badge, renewal date, support pools status bar, [Manage] |
-| 3 | Trial · active · no-card | House Blend Trial | `active` | Clock icon, "Active Trial" badge, trial-days status bar (out of 14), tagline, 4 benefit bullets, [Details] left, [Add Billing] right enabled, "Cancel" left text-link |
+| 3 | Trial · active · no-card | House Blend Trial | `active` | Clock icon, "Active Trial" badge, trial-days status bar (out of 14), tagline, 4 benefit bullets, [Add Billing] right enabled, "Cancel" left text-link (no Details — Trial has no detail page) |
 | 4 | Trial · active · no-card | House Blend | `none` | "House Blend" name, tagline + benefit copy from gated marketing, sale label, [Details] left, [Subscribe Now] right |
-| 5 | Trial · active · card-added | House Blend Trial | `active` (variant) | Clock icon, "Extended Trial" badge, trial-days status bar (out of 30 — variable per billing status), [Details], [Add Billing] **disabled + tooltip**, "Cancel" |
+| 5 | Trial · active · card-added | House Blend Trial | `active` (variant) | Clock icon, "Extended Trial" badge, trial-days status bar (out of 30 — variable per billing status), [Add Billing] **disabled + tooltip**, "Cancel" |
 | 6 | Trial · active · card-added | House Blend | `none` | Same as state 4 — [Subscribe Now] always visible |
-| 7 | Trial · expired (grace) | House Blend Trial | `active` (variant) | Clock icon, "Expired" badge, trial-days status bar at 0, copy noting deprovisioning date, [Details], [Add Billing] enabled, "Cancel" |
+| 7 | Trial · expired (grace) | House Blend Trial | `active` (variant) | Clock icon, "Expired" badge, trial-days status bar at 0, copy noting deprovisioning date, [Add Billing] enabled, "Cancel" |
 | 8 | Trial · expired (grace) | House Blend | `none` | Same as state 4 |
 | 9 | Hosted Paid · converted from trial | House Blend Trial | hidden | Card NOT in DOM (visibility rule) |
 | 10 | Hosted Paid · converted from trial | House Blend | `active` | CheckCircle2 icon, "Active" badge, renewal date, Priority Tickets status bar, [Details], [Manage billing] |
@@ -104,9 +104,8 @@ States 11–15 are not lifecycle states but distinct UI surfaces requiring verif
   - "You own your trial data — download a ZIP anytime during the trial"
   - "100% feature parity from day 1 — subscribe anytime to assign a custom domain"
   - "Cancel anytime during your trial — no contract, no commitment"
-- **Actions** (matching the existing Priority Support plan-detail pattern):
+- **Actions** (Trial card has no detail page — the House Blend card next to it owns the [Details] affordance for plan content. Trial card has only Cancel + Add Billing):
   - **Left bottom (text link):** `"Cancel"` — opens Cancel modal. Rendered as a text link / ghost button, not a primary button — minor affordance
-  - **Left bottom (button):** `Details` — opens the House Blend Trial plan detail page (the platform owns the spec/copy that populates the page; pattern matches the existing `/admin/support/plans/[slug]` detail page)
   - **Right bottom (primary button):** `Add Billing` — opens `PLATFORM_EXTEND_URL` Stripe Payment Link in new tab. **Disabled when card has been added** with tooltip indicating billing is already on file
 
 ---
@@ -115,11 +114,11 @@ States 11–15 are not lifecycle states but distinct UI surfaces requiring verif
 
 - **Card primitive:** existing PlanCard `none` state (default border, price shown — both sourced from platform plan spec)
 - **Plan name:** `"House Blend"` (display label; matches marketing brand)
-- **Tagline + benefits list:** pulled from the **gated** `HouseBlendCard()` in `artisan-roast-platform/components/pricing-section.tsx` (the live form variant when `NEXT_PUBLIC_HOUSE_BLEND_OPEN === "true"`, not the static "Coming Soon" placeholder). Long-term: marketing copy exposed through a platform plan-spec endpoint that this card fetches; iter-1 may hand-sync via shared constants
+- **Tagline + benefits list:** pulled from the **gated** `HouseBlendCard()` in `artisan-roast-platform/components/pricing-section.tsx` (the live form variant when `NEXT_PUBLIC_HOUSE_BLEND_OPEN === "true"`, not the static "Coming Soon" placeholder). Long-term: marketing copy exposed through a platform plan-spec endpoint that this card fetches; this work may hand-sync via shared constants
 - **Important:** the benefits list should explicitly include **"5 priority support tickets, 48-hr SLA"** — marketing copy may not list this and it's a real benefit customers should see on the in-store card
 - **Actions:**
   - **Left bottom (button):** `Details` — opens the House Blend plan detail page at `/admin/support/plans/house-blend` (existing PlanDetailClient pattern; spec/copy populated from the platform's plan record)
-  - **Right bottom (primary button):** `Subscribe Now` — matches the action-oriented CTA copy used across all admin plan cards (Priority Support, etc.). Admin context is "what action do I take?", which differs from the marketing context's coffee-themed sales patch. Opens `PLATFORM_SUBSCRIBE_URL` Stripe Payment Link in new tab. Always present regardless of card-added state. *(Double-subscription risk when card-added is a platform iter-2 concern — `convert-now` endpoint resolves it.)*
+  - **Right bottom (primary button):** `Subscribe Now` — matches the action-oriented CTA copy used across all admin plan cards (Priority Support, etc.). Admin context is "what action do I take?", which differs from the marketing context's coffee-themed sales patch. Opens `PLATFORM_SUBSCRIBE_URL` Stripe Payment Link in new tab. Always present regardless of card-added state. *(Double-subscription risk when card-added is resolved by the platform Session 3 `convert-now` endpoint.)*
 
 ---
 
@@ -133,7 +132,7 @@ States 11–15 are not lifecycle states but distinct UI surfaces requiring verif
   - **Left bottom (button):** `Details` — same plan detail page as during-trial; populated from platform plan record
   - **Right bottom (primary button):** `Manage billing` — calls existing `POST /api/billing/portal` (license-key Bearer auth), opens returned Stripe Portal URL in new tab
 
-*Sync mechanism — how the store learns about state transitions from Stripe checkout / Portal cancellation / usage-pool updates: see platform-side iter-1 doc. Store is a pure consumer of platform-reported state via license-validate poll (`revalidate: 60`).*
+*Sync mechanism — how the store learns about state transitions from Stripe checkout / Portal cancellation / usage-pool updates: see platform Session 2 doc. Store is a pure consumer of platform-reported state via license-validate poll (`revalidate: 60`).*
 
 ---
 
@@ -142,11 +141,11 @@ States 11–15 are not lifecycle states but distinct UI surfaces requiring verif
 > Cancel reason capture is a real product feature. Reasons are written to a platform-side DB table (schema lives in platform doc). Customer-facing UI is identical regardless of trial / paid-subscription state.
 
 - **All cancel flows include reason capture:**
-  - **Reason dropdown** with curated options — final list locked in iter-1 implementation against platform copy (likely: "Too expensive", "Missing features", "Switching to another platform", "Don't need it anymore", "Other")
+  - **Reason dropdown** with curated options — final list locked in implementation against platform copy (likely: "Too expensive", "Missing features", "Switching to another platform", "Don't need it anymore", "Other")
   - **"Other" reveals a textarea** for free-form input (max ~500 chars)
   - Reason submitted on confirm; modal closes after platform write succeeds (or with toast if it fails)
 - **Variants** (same UX shape, different downstream effect):
-  - **Trial · no card:** UI mock for v1 — reason captured client-side, real cancel endpoint ships iter-2
+  - **Trial · no card:** UI mock for v1 — reason captured client-side, real cancel endpoint ships in platform Session 3
   - **Trial · card-added:** Reason captured, "Continue to Stripe" button calls existing `POST /api/billing/portal` and opens returned Stripe Portal URL in new tab
   - **Hosted Paid (Manage Billing → cancel intent):** Same reason-capture UX before redirect to Stripe Portal
 
@@ -194,7 +193,7 @@ Visible to all users (not gated on `IS_HOSTED`) on `/admin/support/terms` → Da
 
 | # | Message | Risk |
 | --- | --- | --- |
-| 0 | `docs: add hosted-store iter-1 plan + ACs` | — |
+| 0 | `docs: add hosted-store trial-ui plan + ACs` | — |
 | 1 | `feat(hosted): IS_HOSTED detection + trial status fetcher` | Low |
 | 2 | `feat(hosted): House Blend Trial + House Blend plan entries in plans catalog` | Low |
 | 3 | `feat(hosted): plans page filters by IS_HOSTED + maps trial status to PlanCard config` | Medium |
@@ -218,11 +217,11 @@ Per [`ACs.md`](ACs.md). Pre-flight:
 
 ## Out of scope (deferred)
 
-- `/admin/settings/hosting` page — iter-3
-- Custom domain configuration — iter-3
-- Real cancel-no-card endpoint — iter-2 (UI mock ships in this iteration)
+- `/admin/settings/hosting` page — see [`../hosting-settings/plan.md`](../hosting-settings/plan.md)
+- Custom domain configuration — see hosting-settings plan
+- Real cancel-no-card endpoint — platform Session 3 (UI mock ships in this iteration)
 - Migration from self-hosted to hosted — Phase 4 (separate feature)
-- Email notification specifics — platform-side, iter-1 platform doc owns
+- Email notification specifics — platform Session 2 doc owns
 - Server-side persistence of UI dismissals — pre-launch, no live customers
 - Banner in admin shell — dropped (cards on plans page provide visibility)
 - Post-cancellation reinstatement window — parked for research, see plan-mode plan
