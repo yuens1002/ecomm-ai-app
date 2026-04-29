@@ -3,7 +3,12 @@
 **Branch:** `feat/hosted-store-s2`
 **Base:** `main`
 **Worktree:** `c:\Users\yuens\dev\hosted-store-s2`
-**Platform companion:** `artisan-roast-platform/docs/products/hosted/features/hosted-store/session-2/` — Session 2 of the platform feature plan owns the data contract, sync mechanisms, plan-detail content for the House Blend page, the cancel-reason DB table, and email notification specs. The platform-side feature plan also holds the cross-repo dependency graph for the full launch (Sessions 1–5).
+**Platform-side context:** the cross-repo roadmap for the hosted launch lives at `artisan-roast-platform/docs/products/hosted/product.md` (Features TOC). Specific platform features this work consumes:
+
+- `extended-trial-lifecycle` *(shipped)* — env-var injection, trial-status endpoint, Stripe Payment Links
+- `trial-conversion` *(planned)* — `convert-now` endpoint that the in-store `Subscribe Now` CTA swaps to once shipped
+- `trial-cancellation` *(planned)* — `cancel` endpoint + `CancellationReason` DB that the in-store Cancel modal writes to
+- House Blend plan-detail content lives in platform `prisma/seed.ts`; exposed via existing `GET /api/plans` and consumed via `lib/plans.ts` here
 
 ---
 
@@ -28,7 +33,7 @@ This iteration adds the **trial-side UI**:
 
 **The full feature ships as a single product release.** Trial UI ships only when all platform sessions in the launch dependency graph (held in the platform's `feature-plan.md`) merge and the E2E lifecycle suite passes. That means this work is purely UI/presentational scaffolding to account for backend functions across the launch sessions — no customer-experience concerns apply to broken-in-isolation paths.
 
-**Explicitly out of scope here:** the post-conversion `/admin/settings/hosting` page (custom domain, billing config). That work is documented in [`../hosting-settings/plan.md`](../hosting-settings/plan.md) and depends on platform Session 3 endpoints landing.
+**Explicitly out of scope here:** the post-conversion `/admin/settings/hosting` page (custom domain, billing config). That work is documented in [`../hosting-settings/plan.md`](../hosting-settings/plan.md) and depends on the platform `custom-domains` + `billing-portal` features landing.
 
 ---
 
@@ -118,7 +123,7 @@ States 11–15 are not lifecycle states but distinct UI surfaces requiring verif
 - **Important:** the benefits list should explicitly include **"5 priority support tickets, 48-hr SLA"** — marketing copy may not list this and it's a real benefit customers should see on the in-store card
 - **Actions:**
   - **Left bottom (button):** `Details` — opens the House Blend plan detail page at `/admin/support/plans/house-blend` (existing PlanDetailClient pattern; spec/copy populated from the platform's plan record)
-  - **Right bottom (primary button):** `Subscribe Now` — matches the action-oriented CTA copy used across all admin plan cards (Priority Support, etc.). Admin context is "what action do I take?", which differs from the marketing context's coffee-themed sales patch. Opens `PLATFORM_SUBSCRIBE_URL` Stripe Payment Link in new tab. Always present regardless of card-added state. *(Double-subscription risk when card-added is resolved by the platform Session 3 `convert-now` endpoint.)*
+  - **Right bottom (primary button):** `Subscribe Now` — matches the action-oriented CTA copy used across all admin plan cards (Priority Support, etc.). Admin context is "what action do I take?", which differs from the marketing context's coffee-themed sales patch. Opens `PLATFORM_SUBSCRIBE_URL` Stripe Payment Link in new tab. Always present regardless of card-added state. *(Double-subscription risk when card-added is resolved by the platform `trial-conversion` feature's `convert-now` endpoint.)*
 
 ---
 
@@ -132,7 +137,7 @@ States 11–15 are not lifecycle states but distinct UI surfaces requiring verif
   - **Left bottom (button):** `Details` — same plan detail page as during-trial; populated from platform plan record
   - **Right bottom (primary button):** `Manage billing` — calls existing `POST /api/billing/portal` (license-key Bearer auth), opens returned Stripe Portal URL in new tab
 
-*Sync mechanism — how the store learns about state transitions from Stripe checkout / Portal cancellation / usage-pool updates: see platform Session 2 doc. Store is a pure consumer of platform-reported state via license-validate poll (`revalidate: 60`).*
+*Sync mechanism — how the store learns about state transitions from Stripe checkout / Portal cancellation / usage-pool updates: see platform `trial-conversion` and `trial-cancellation` feature plans. Store is a pure consumer of platform-reported state via license-validate poll (`revalidate: 60`).*
 
 ---
 
@@ -145,7 +150,7 @@ States 11–15 are not lifecycle states but distinct UI surfaces requiring verif
   - **"Other" reveals a textarea** for free-form input (max ~500 chars)
   - Reason submitted on confirm; modal closes after platform write succeeds (or with toast if it fails)
 - **Variants** (same UX shape, different downstream effect):
-  - **Trial · no card:** UI mock for v1 — reason captured client-side, real cancel endpoint ships in platform Session 3
+  - **Trial · no card:** UI mock for v1 — reason captured client-side, real cancel endpoint ships in platform `trial-cancellation` feature
   - **Trial · card-added:** Reason captured, "Continue to Stripe" button calls existing `POST /api/billing/portal` and opens returned Stripe Portal URL in new tab
   - **Hosted Paid (Manage Billing → cancel intent):** Same reason-capture UX before redirect to Stripe Portal
 
@@ -219,9 +224,9 @@ Per [`ACs.md`](ACs.md). Pre-flight:
 
 - `/admin/settings/hosting` page — see [`../hosting-settings/plan.md`](../hosting-settings/plan.md)
 - Custom domain configuration — see hosting-settings plan
-- Real cancel-no-card endpoint — platform Session 3 (UI mock ships in this iteration)
+- Real cancel-no-card endpoint — platform `trial-cancellation` feature (UI mock ships in this iteration)
 - Migration from self-hosted to hosted — Phase 4 (separate feature)
-- Email notification specifics — platform Session 2 doc owns
+- Email notification specifics — platform-side; see relevant platform features under `artisan-roast-platform/docs/products/hosted/features/`
 - Server-side persistence of UI dismissals — pre-launch, no live customers
 - Banner in admin shell — dropped (cards on plans page provide visibility)
 - Post-cancellation reinstatement window — parked for research, see plan-mode plan

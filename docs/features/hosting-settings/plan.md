@@ -1,17 +1,17 @@
 # Hosted Store — Hosting Settings
 
 **Branch:** TBD — proposed `feat/hosting-settings-page`
-**Base:** `main` (after Trial UI ships and platform Session 3 endpoints land)
+**Base:** `main` (after Trial UI ships and platform `custom-domains` + `billing-portal` features land)
 **Status:** Scoped, not started
-**Platform companion:** `artisan-roast-platform/docs/products/hosted/features/hosted-store/session-4/` — Session 4 of the platform feature plan covers cross-repo coordination for the Hosting Settings page
+**Platform features consumed:** `custom-domains` (domain CRUD + verify), `billing-portal` (trial-id-authed Stripe Portal session). See `artisan-roast-platform/docs/products/hosted/product.md` for the cross-repo roadmap.
 
-> **Doc stance:** Public open-source repo — UI-states-only. Data shapes (domain CRUD response shapes, billing-portal session shapes, license states) live in private platform docs. The store ships as a pure consumer of platform-reported state.
+> **Doc stance:** Public open-source repo — UI-states-only. Data shapes (domain CRUD response shapes, billing-portal session shapes, license states) live in platform feature plans. The store ships as a pure consumer of platform-reported state.
 
 **Visibility gate:** Hosting Settings page only visible when `IS_HOSTED && status === "CONVERTED"`. Hidden during trial (cancel flows happen on the plans page Trial card; see [`../trial-ui/plan.md`](../trial-ui/plan.md)). Hidden on self-hosted.
 
-**Cancel-during-trial:** owned by the trial-ui body of work (Trial card → Cancel modal → reason capture → Stripe Portal or platform cancel endpoint).
+**Cancel-during-trial:** owned by the trial-ui body of work (Trial card → Cancel modal → reason capture → Stripe Portal or platform `trial-cancellation` endpoint).
 **Subscription management on Hosting Settings:** Stripe Portal redirect — no native cancel button duplicated here.
-**Domain CRUD + DNS/SSL polling:** depend on platform Session 3 endpoints landing first.
+**Domain CRUD + DNS/SSL polling:** depend on platform `custom-domains` feature landing first.
 
 ---
 
@@ -67,8 +67,8 @@ Trial users (`status: ACTIVE | EXPIRED`) do **not** see the page or its nav entr
 ```
 
 - `Plan` and `Active` status come from `getTrialStatus()` (extended in the trial-ui body of work)
-- `Next charge {date}` from extended status response (Stripe subscription `current_period_end`) — confirm field exists in platform Session 3 response
-- "Manage billing" button calls `POST /api/trial/hosted/[id]/billing-portal` (platform Session 3), opens returned URL in new tab
+- `Next charge {date}` from extended status response (Stripe subscription `current_period_end`) — confirm field exists in platform `billing-portal` feature's response shape
+- "Manage billing" button calls the trial-id-authed billing-portal endpoint (platform `billing-portal` feature), opens returned URL in new tab
 
 ### 2. Custom Domain
 
@@ -151,7 +151,7 @@ Polling cadence (Pending state only): every 30s; pause when tab is backgrounded;
 
 ## API surface (called from store)
 
-All endpoints from platform Session 3:
+Endpoints (consumed from platform features `custom-domains` + `billing-portal`):
 
 - `GET /api/trial/hosted/[id]/domain` — current domain
 - `POST /api/trial/hosted/[id]/domain` — add domain
@@ -200,17 +200,17 @@ All endpoints from platform Session 3:
 
 ## Open questions for review
 
-1. **Stripe Portal return URL** — where does the customer land after closing the Portal? Back to `/admin/settings/hosting`? Configured in platform Session 3.
+1. **Stripe Portal return URL** — where does the customer land after closing the Portal? Back to `/admin/settings/hosting`? Configured in platform `billing-portal` feature.
 2. **Domain change while pending** — current proposal blocks it (force DELETE first). Alternative: allow PUT to cancel pending and start new. Operationally simpler if blocked; UX-friendly if allowed. Confirm.
 3. **In-store cancel UI** — recommended deferral; v1 = redirect to Stripe Portal. Confirm.
-4. **Status polling cadence** — 30s while pending. Could be 15s for more responsive UX, 60s for less platform load. Tied to platform Session 3's verify endpoint cache TTL.
+4. **Status polling cadence** — 30s while pending. Could be 15s for more responsive UX, 60s for less platform load. Tied to platform `custom-domains` verify endpoint cache TTL.
 5. **First-time hint** — when a customer first lands on Hosting Settings post-conversion, should there be a one-time helper banner ("You're now on a paid plan — configure your custom domain here")? Polish item, deferrable.
 
 ---
 
 ## ACs
 
-Plan only at this stage — ACs are written when this body of work moves to active implementation (post Trial UI ship, post platform Session 3 endpoints).
+Plan only at this stage — ACs are written when this body of work moves to active implementation (post Trial UI ship, post platform `custom-domains` + `billing-portal` features shipping).
 
 ---
 

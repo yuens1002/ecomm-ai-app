@@ -24,7 +24,7 @@ Screenshots saved to `.screenshots/hosted-store-trial-ui/` (gitignored).
 
 ## Test fixture setups
 
-UI ACs use one of six fixture lifecycle states. Each runs against a mock platform on `localhost:3001` returning the trial-status JSON shape (shape owned by platform — see platform Session 2 doc).
+UI ACs use one of six fixture lifecycle states. Each runs against a mock platform on `localhost:3001` returning the trial-status JSON shape (shape owned by platform — see `artisan-roast-platform/docs/products/hosted/features/extended-trial-lifecycle/` for the endpoint contract).
 
 **Setup A — Self-hosted (Community current):** no `HOSTED_TRIAL_ID`, no Priority Support active.
 
@@ -146,7 +146,7 @@ Mock returns trial-status with `status: ACTIVE`, `cardAdded: false`, days remain
 | AC-FN-4 | Trial card visibility rule | Code review: `PlanPageClient.tsx` | Trial card render is conditional on `trialStatus?.status === "ACTIVE" \|\| "EXPIRED"`; hidden for CONVERTED and null status | | | |
 | AC-FN-5 | Add Billing disabled state binds to card-added | Code review: TrialPlanCard | Disabled prop / className wired to the platform-reported card-added state | | | |
 | AC-FN-6 | Subscribe Now and Manage billing call existing platform endpoints | Code review: TrialPlanCard / HostedPlanCard | Subscribe Now opens `PLATFORM_SUBSCRIBE_URL`; Manage billing fires `POST ${PLATFORM_API_URL}/api/billing/portal` with `Authorization: Bearer ${LICENSE_KEY}` and opens returned `url` | | | |
-| AC-FN-7 | Cancel modal reason capture submits to platform | Code review: CancelTrialDialog | Form submission posts reason + optional textarea content to platform endpoint; failure surfaces a toast and keeps modal open. (No-card variant may stub the platform call — endpoint ships in platform Session 3) | | | |
+| AC-FN-7 | Cancel modal reason capture submits to platform | Code review: CancelTrialDialog | Form submission posts reason + optional textarea content to platform endpoint; failure surfaces a toast and keeps modal open. (No-card variant may stub the platform call — endpoint ships in platform `trial-cancellation` feature) | | | |
 | AC-FN-8 | Export endpoint returns ZIP with correct headers | Interactive: `curl -I http://localhost:4000/api/admin/export` (logged in) | `Content-Type: application/zip` and `Content-Disposition: attachment; filename="*.zip"` | | | |
 | AC-FN-9 | Export ZIP includes data + media + manifest | Interactive: `curl -o /tmp/x.zip http://localhost:4000/api/admin/export && unzip -l /tmp/x.zip` | At minimum: `data/products.json`, `data/orders.json`, `data/users.json`, `data/siteSettings.json`, `media/` directory, `manifest.json` | | | |
 | AC-FN-10 | Export endpoint requires admin auth | Interactive: `curl http://localhost:4000/api/admin/export` (no session) | 401 or 403; no ZIP body | | | |
