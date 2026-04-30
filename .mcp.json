@@ -2,7 +2,7 @@
   "mcpServers": {
     "artisan-roast-sdk": {
       "type": "http",
-      "url": "https://artisan-roast-sdk-production.up.railway.app/mcp"
+      "url": "https://sdk.artisanroast.app/mcp"
     }
   }
 }
