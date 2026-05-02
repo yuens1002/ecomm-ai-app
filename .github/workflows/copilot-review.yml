@@ -1,0 +1,33 @@
+name: Re-request Copilot review on push
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - master
+
+jobs:
+  copilot-review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Re-request Copilot review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --head "$GITHUB_REF_NAME" \
+            --state open \
+            --json number \
+            -q '.[0].number // empty')
+          if [ -n "$PR" ]; then
+            gh api "repos/$GITHUB_REPOSITORY/pulls/$PR/requested_reviewers" \
+              -X POST \
+              -f "reviewers[]=copilot" \
+            && echo "Re-requested Copilot review on PR #$PR" \
+            || echo "Warning: could not re-request review (Copilot may not be enabled on this repo)"
+          else
+            echo "No open PR for branch $GITHUB_REF_NAME — skipping"
+          fi
