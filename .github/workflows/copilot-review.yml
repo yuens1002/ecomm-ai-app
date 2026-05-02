@@ -5,6 +5,12 @@ on:
     branches-ignore:
       - main
       - master
+    tags-ignore:
+      - '**'
+
+concurrency:
+  group: copilot-review-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   copilot-review:
@@ -23,11 +29,20 @@ jobs:
             --json number \
             -q '.[0].number // empty')
           if [ -n "$PR" ]; then
-            gh api "repos/$GITHUB_REPOSITORY/pulls/$PR/requested_reviewers" \
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
               -X POST \
-              -f "reviewers[]=copilot" \
-            && echo "Re-requested Copilot review on PR #$PR" \
-            || echo "Warning: could not re-request review (Copilot may not be enabled on this repo)"
+              -H "Authorization: token $GH_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{"reviewers":["copilot"]}' \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR/requested_reviewers")
+            if [ "$STATUS" = "201" ]; then
+              echo "Re-requested Copilot review on PR #$PR"
+            elif [ "$STATUS" = "422" ]; then
+              echo "Copilot review already requested on PR #$PR — skipping"
+            else
+              echo "ERROR: unexpected status $STATUS when requesting Copilot review on PR #$PR" >&2
+              exit 1
+            fi
           else
             echo "No open PR for branch $GITHUB_REF_NAME — skipping"
           fi
