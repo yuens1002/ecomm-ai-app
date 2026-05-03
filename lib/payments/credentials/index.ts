@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { encrypt, decrypt } from "./encryption";
+import {
+  encryptWithKey,
+  decryptWithKey,
+  getOrCreateEncryptionKey,
+} from "./encryption";
 
 export interface StripeCredentials {
   secretKey: string;
@@ -18,12 +22,14 @@ export async function loadStripeCredentials(): Promise<StripeCredentials | null>
 
   if (!row || !row.secretKey) return null;
 
+  const key = await getOrCreateEncryptionKey();
+
   let secretKey: string;
   try {
-    secretKey = decrypt(row.secretKey);
+    secretKey = decryptWithKey(row.secretKey, key);
   } catch (err) {
     console.error(
-      "[payments] Failed to decrypt Stripe secretKey — credentials encrypted with a different key:",
+      "[payments] Failed to decrypt Stripe secretKey — credentials may have been encrypted with a different key:",
       err
     );
     return null;
@@ -32,12 +38,9 @@ export async function loadStripeCredentials(): Promise<StripeCredentials | null>
   let webhookSecret: string | null = null;
   if (row.webhookSecret) {
     try {
-      webhookSecret = decrypt(row.webhookSecret);
+      webhookSecret = decryptWithKey(row.webhookSecret, key);
     } catch (err) {
-      console.error(
-        "[payments] Failed to decrypt Stripe webhookSecret:",
-        err
-      );
+      console.error("[payments] Failed to decrypt Stripe webhookSecret:", err);
     }
   }
 
@@ -64,16 +67,17 @@ export interface SaveStripeCredentialsInput {
 export async function saveStripeCredentials(
   input: SaveStripeCredentialsInput
 ): Promise<void> {
+  const key = await getOrCreateEncryptionKey();
   const data: Record<string, unknown> = {
     updatedAt: new Date(),
     lastValidatedAt: new Date(),
   };
 
   if (input.secretKey !== undefined) {
-    data.secretKey = encrypt(input.secretKey);
+    data.secretKey = encryptWithKey(input.secretKey, key);
   }
   if (input.webhookSecret !== undefined) {
-    data.webhookSecret = encrypt(input.webhookSecret);
+    data.webhookSecret = encryptWithKey(input.webhookSecret, key);
   }
   if (input.publishableKey !== undefined) {
     data.publishableKey = input.publishableKey;
@@ -133,7 +137,8 @@ export async function getStripeConfigStatus(): Promise<{
   let decryptionError = false;
   if (row.secretKey) {
     try {
-      decrypt(row.secretKey);
+      const key = await getOrCreateEncryptionKey();
+      decryptWithKey(row.secretKey, key);
     } catch {
       decryptionError = true;
     }

@@ -9,7 +9,6 @@ import {
   clearStripeCredentials,
   getStripeConfigStatus,
 } from "@/lib/payments/credentials";
-import { isEncryptionKeySet } from "@/lib/payments/credentials/encryption";
 
 function maskApiKey(key: string): string {
   if (!key || key.length <= 4) return key ? "••••" : "";
@@ -34,23 +33,6 @@ function checkModeMismatch(
   return null;
 }
 
-// POST (validate-only) uses strict regex — keys must be real Stripe format
-const StripeValidateSchema = z.object({
-  secretKey: z
-    .string()
-    .regex(/^(sk|rk)_(test|live)_[A-Za-z0-9]+$/, "Invalid secret key format")
-    .optional(),
-  publishableKey: z
-    .string()
-    .regex(/^pk_(test|live)_[A-Za-z0-9]+$/, "Invalid publishable key format")
-    .optional(),
-  webhookSecret: z
-    .string()
-    .regex(/^whsec_[A-Za-z0-9]+$/, "Invalid webhook secret format")
-    .optional(),
-});
-
-// PUT (save) allows masked placeholders (•••• prefix) — mask-drop preprocessing handles them
 const StripeUpdateSchema = z.object({
   secretKey: z.string().optional(),
   publishableKey: z.string().optional(),
@@ -76,8 +58,7 @@ async function validateWithStripe(secretKey: string): Promise<{
       accountId: account.id,
       accountName:
         (account as unknown as { settings?: { dashboard?: { display_name?: string } } })
-          .settings?.dashboard?.display_name ??
-        account.id,
+          .settings?.dashboard?.display_name ?? account.id,
       country: account.country ?? undefined,
       currency: account.default_currency ?? undefined,
     };
@@ -95,7 +76,6 @@ export async function GET() {
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
-    const encryptionKeySet = isEncryptionKeySet();
     const envSecretSet = !!process.env.STRIPE_SECRET_KEY;
     const envWebhookSet = !!process.env.STRIPE_WEBHOOK_SECRET;
     const envPublishableSet = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
@@ -113,7 +93,6 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      encryptionKeySet,
       envSecretSet,
       envWebhookSet,
       envPublishableSet,
@@ -140,75 +119,11 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const auth = await requireAdminApi();
-    if (!auth.authorized) {
-      return NextResponse.json({ error: auth.error }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const parsed = StripeValidateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Invalid request", details: parsed.error.flatten() },
-        { status: 400 }
-      );
-    }
-
-    const { secretKey, publishableKey } = parsed.data;
-
-    if (!secretKey) {
-      return NextResponse.json(
-        { error: "Secret key is required for validation" },
-        { status: 400 }
-      );
-    }
-
-    if (publishableKey) {
-      const mismatch = checkModeMismatch(secretKey, publishableKey);
-      if (mismatch) {
-        return NextResponse.json({ error: mismatch }, { status: 400 });
-      }
-    }
-
-    const validation = await validateWithStripe(secretKey);
-    if (!validation.ok) {
-      return NextResponse.json({ error: validation.error }, { status: 400 });
-    }
-
-    return NextResponse.json({
-      valid: true,
-      accountId: validation.accountId,
-      accountName: validation.accountName,
-      country: validation.country,
-      currency: validation.currency,
-      isTestMode: detectMode(secretKey) === "test",
-    });
-  } catch (error) {
-    console.error("Error validating Stripe credentials:", error);
-    return NextResponse.json(
-      { error: "Failed to validate Stripe credentials" },
-      { status: 500 }
-    );
-  }
-}
-
 export async function PUT(request: NextRequest) {
   try {
     const auth = await requireAdminApi();
     if (!auth.authorized) {
       return NextResponse.json({ error: auth.error }, { status: 401 });
-    }
-
-    if (!isEncryptionKeySet()) {
-      return NextResponse.json(
-        {
-          error:
-            "PAYMENT_CREDENTIALS_ENCRYPTION_KEY is not set. Generate one with: openssl rand -hex 32",
-        },
-        { status: 503 }
-      );
     }
 
     const body = await request.json();
@@ -234,7 +149,6 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Re-validate server-side if a new secret key was provided
     let accountMeta: {
       accountId?: string;
       accountName?: string;
@@ -244,7 +158,10 @@ export async function PUT(request: NextRequest) {
     if (secretKey) {
       const validation = await validateWithStripe(secretKey);
       if (!validation.ok) {
-        return NextResponse.json({ error: validation.error }, { status: 400 });
+        return NextResponse.json(
+          { error: "Invalid API key(s) entered, try again." },
+          { status: 400 }
+        );
       }
       accountMeta = {
         accountId: validation.accountId,

@@ -1,8 +1,10 @@
-import { encrypt, decrypt, isEncryptionKeySet } from "../encryption";
+import { encryptWithKey, decryptWithKey, isEncryptionKeySet } from "../encryption";
 
-const VALID_KEY = "a".repeat(64); // 64 hex chars = 32 bytes
+const KEY_HEX = "a".repeat(64); // 64 hex chars = 32 bytes
+const testKey = Buffer.from(KEY_HEX, "hex");
+const otherKey = Buffer.from("b".repeat(64), "hex");
 
-function withKey(key: string | undefined, fn: () => void) {
+function withEnvKey(key: string | undefined, fn: () => void) {
   const original = process.env.PAYMENT_CREDENTIALS_ENCRYPTION_KEY;
   if (key === undefined) {
     delete process.env.PAYMENT_CREDENTIALS_ENCRYPTION_KEY;
@@ -20,98 +22,66 @@ function withKey(key: string | undefined, fn: () => void) {
   }
 }
 
-describe("encrypt / decrypt", () => {
+describe("encryptWithKey / decryptWithKey", () => {
   it("round-trips a plaintext string", () => {
-    withKey(VALID_KEY, () => {
-      const plaintext = "sk_test_abc123";
-      const envelope = encrypt(plaintext);
-      expect(decrypt(envelope)).toBe(plaintext);
-    });
+    const plaintext = "sk_test_abc123";
+    const envelope = encryptWithKey(plaintext, testKey);
+    expect(decryptWithKey(envelope, testKey)).toBe(plaintext);
   });
 
   it("produces a versioned v1 envelope", () => {
-    withKey(VALID_KEY, () => {
-      const envelope = encrypt("hello");
-      expect(envelope).toMatch(/^v1:[A-Za-z0-9+/=]+:[A-Za-z0-9+/=]+:[A-Za-z0-9+/=]+$/);
-    });
+    const envelope = encryptWithKey("hello", testKey);
+    expect(envelope).toMatch(/^v1:[A-Za-z0-9+/=]+:[A-Za-z0-9+/=]+:[A-Za-z0-9+/=]+$/);
   });
 
   it("generates unique ciphertext each call (random IV)", () => {
-    withKey(VALID_KEY, () => {
-      const a = encrypt("same");
-      const b = encrypt("same");
-      expect(a).not.toBe(b);
-      expect(decrypt(a)).toBe("same");
-      expect(decrypt(b)).toBe("same");
-    });
+    const a = encryptWithKey("same", testKey);
+    const b = encryptWithKey("same", testKey);
+    expect(a).not.toBe(b);
+    expect(decryptWithKey(a, testKey)).toBe("same");
+    expect(decryptWithKey(b, testKey)).toBe("same");
   });
 
   it("throws on tampered ciphertext", () => {
-    withKey(VALID_KEY, () => {
-      const envelope = encrypt("secret");
-      const parts = envelope.split(":");
-      // Corrupt the ciphertext segment
-      parts[3] = Buffer.from("tampered").toString("base64");
-      expect(() => decrypt(parts.join(":"))).toThrow();
-    });
+    const envelope = encryptWithKey("secret", testKey);
+    const parts = envelope.split(":");
+    parts[3] = Buffer.from("tampered").toString("base64");
+    expect(() => decryptWithKey(parts.join(":"), testKey)).toThrow();
   });
 
   it("throws on tampered auth tag", () => {
-    withKey(VALID_KEY, () => {
-      const envelope = encrypt("secret");
-      const parts = envelope.split(":");
-      parts[2] = Buffer.from("badtag000000000000").toString("base64");
-      expect(() => decrypt(parts.join(":"))).toThrow();
-    });
+    const envelope = encryptWithKey("secret", testKey);
+    const parts = envelope.split(":");
+    parts[2] = Buffer.from("badtag000000000000").toString("base64");
+    expect(() => decryptWithKey(parts.join(":"), testKey)).toThrow();
   });
 
   it("throws when decrypting with the wrong key", () => {
-    withKey(VALID_KEY, () => {
-      const envelope = encrypt("secret");
-      withKey("b".repeat(64), () => {
-        expect(() => decrypt(envelope)).toThrow();
-      });
-    });
+    const envelope = encryptWithKey("secret", testKey);
+    expect(() => decryptWithKey(envelope, otherKey)).toThrow();
   });
 
   it("throws on malformed envelope (missing parts)", () => {
-    withKey(VALID_KEY, () => {
-      expect(() => decrypt("v1:onlytwoparts")).toThrow(
-        "Invalid encryption envelope"
-      );
-    });
+    expect(() => decryptWithKey("v1:onlytwoparts", testKey)).toThrow(
+      "Invalid encryption envelope"
+    );
   });
 
   it("throws on unknown version prefix", () => {
-    withKey(VALID_KEY, () => {
-      const envelope = encrypt("x").replace(/^v1:/, "v2:");
-      expect(() => decrypt(envelope)).toThrow("Unsupported encryption version");
-    });
-  });
-
-  it("throws when encryption key is not set", () => {
-    withKey(undefined, () => {
-      expect(() => encrypt("test")).toThrow("PAYMENT_CREDENTIALS_ENCRYPTION_KEY");
-      expect(() => decrypt("v1:a:b:c")).toThrow("PAYMENT_CREDENTIALS_ENCRYPTION_KEY");
-    });
-  });
-
-  it("throws when encryption key has wrong length", () => {
-    withKey("tooshort", () => {
-      expect(() => encrypt("test")).toThrow("32 bytes");
-    });
+    const envelope = encryptWithKey("x", testKey).replace(/^v1:/, "v2:");
+    expect(() => decryptWithKey(envelope, testKey)).toThrow("Unsupported encryption version");
   });
 });
 
 describe("isEncryptionKeySet", () => {
   it("returns true when key is set", () => {
-    withKey(VALID_KEY, () => {
+    withEnvKey(KEY_HEX, () => {
       expect(isEncryptionKeySet()).toBe(true);
     });
   });
 
   it("returns false when key is absent", () => {
-    withKey(undefined, () => {
+    withEnvKey(undefined, () => {
       expect(isEncryptionKeySet()).toBe(false);
     });
   });

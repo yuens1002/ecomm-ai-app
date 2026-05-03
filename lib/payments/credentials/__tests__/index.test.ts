@@ -5,7 +5,7 @@ import {
   getStripeConfigStatus,
 } from "../index";
 
-const VALID_KEY = "a".repeat(64);
+const TEST_KEY = Buffer.from("a".repeat(64), "hex");
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
@@ -18,15 +18,17 @@ jest.mock("@/lib/prisma", () => ({
 }));
 
 jest.mock("../encryption", () => ({
-  encrypt: jest.fn((v: string) => `encrypted:${v}`),
-  decrypt: jest.fn((v: string) => {
+  getOrCreateEncryptionKey: jest.fn().mockResolvedValue(Buffer.from("a".repeat(64), "hex")),
+  encryptWithKey: jest.fn((v: string) => `encrypted:${v}`),
+  decryptWithKey: jest.fn((v: string) => {
     if (v.startsWith("encrypted:")) return v.replace("encrypted:", "");
     throw new Error("bad ciphertext");
   }),
+  isEncryptionKeySet: jest.fn().mockReturnValue(true),
 }));
 
 import { prisma } from "@/lib/prisma";
-import { encrypt, decrypt } from "../encryption";
+import { encryptWithKey, decryptWithKey } from "../encryption";
 
 const mockFindUnique = prisma.paymentProcessorConfig
   .findUnique as jest.MockedFunction<
@@ -39,8 +41,12 @@ const mockDeleteMany =
   prisma.paymentProcessorConfig.deleteMany as jest.MockedFunction<
     typeof prisma.paymentProcessorConfig.deleteMany
   >;
-const mockEncrypt = encrypt as jest.MockedFunction<typeof encrypt>;
-const mockDecrypt = decrypt as jest.MockedFunction<typeof decrypt>;
+const mockEncryptWith = encryptWithKey as jest.MockedFunction<typeof encryptWithKey>;
+const mockDecryptWith = decryptWithKey as jest.MockedFunction<typeof decryptWithKey>;
+
+// suppress unused variable warning
+void mockDecryptWith;
+void TEST_KEY;
 
 function makeRow(overrides: Record<string, unknown> = {}) {
   return {
@@ -62,11 +68,6 @@ function makeRow(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  process.env.PAYMENT_CREDENTIALS_ENCRYPTION_KEY = VALID_KEY;
-});
-
-afterEach(() => {
-  delete process.env.PAYMENT_CREDENTIALS_ENCRYPTION_KEY;
 });
 
 describe("loadStripeCredentials", () => {
@@ -115,8 +116,8 @@ describe("saveStripeCredentials", () => {
       webhookSecret: "whsec_new",
       publishableKey: "pk_test_new",
     });
-    expect(mockEncrypt).toHaveBeenCalledWith("sk_test_new");
-    expect(mockEncrypt).toHaveBeenCalledWith("whsec_new");
+    expect(mockEncryptWith).toHaveBeenCalledWith("sk_test_new", expect.any(Buffer));
+    expect(mockEncryptWith).toHaveBeenCalledWith("whsec_new", expect.any(Buffer));
     const upsertCall = mockUpsert.mock.calls[0][0];
     expect(upsertCall.create.secretKey).toBe("encrypted:sk_test_new");
     expect(upsertCall.create.webhookSecret).toBe("encrypted:whsec_new");
@@ -126,7 +127,7 @@ describe("saveStripeCredentials", () => {
   it("does NOT encrypt publishableKey", async () => {
     mockUpsert.mockResolvedValue(makeRow() as never);
     await saveStripeCredentials({ publishableKey: "pk_test_plain" });
-    expect(mockEncrypt).not.toHaveBeenCalled();
+    expect(mockEncryptWith).not.toHaveBeenCalled();
     const upsertCall = mockUpsert.mock.calls[0][0];
     expect(upsertCall.update.publishableKey).toBe("pk_test_plain");
   });
@@ -161,12 +162,10 @@ describe("getStripeConfigStatus", () => {
   });
 
   it("flags decryptionError when stored secretKey can't be decrypted", async () => {
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     mockFindUnique.mockResolvedValue(
       makeRow({ secretKey: "bad-ciphertext" }) as never
     );
     const status = await getStripeConfigStatus();
     expect(status.decryptionError).toBe(true);
-    consoleSpy.mockRestore();
   });
 });

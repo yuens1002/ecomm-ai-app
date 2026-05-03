@@ -20,8 +20,22 @@ export default function CommerceSettingsPage() {
       />
 
       <SettingsSection
-        title="Stripe Payments & Coupons"
-        description="Configure your Stripe API credentials and promotion code behavior. The same Stripe account powers both."
+        title="Stripe Payment"
+        description={
+          <>
+            Configure your API credentials from{" "}
+            <a
+              href="https://dashboard.stripe.com/apikeys"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-0.5"
+            >
+              Stripe
+              <ExternalLink className="h-3 w-3 ml-0.5" />
+            </a>{" "}
+            to enable payments.
+          </>
+        }
       >
         <StripeCredentialsForm />
       </SettingsSection>
