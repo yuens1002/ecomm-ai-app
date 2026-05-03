@@ -130,8 +130,8 @@ describe("getStripeWebhookSecret()", () => {
     });
   });
 
-  it("falls back to DB when env is unset", async () => {
-    await withEnv({ STRIPE_WEBHOOK_SECRET: undefined }, async () => {
+  it("falls back to DB when both env keys are unset", async () => {
+    await withEnv({ STRIPE_SECRET_KEY: undefined, STRIPE_WEBHOOK_SECRET: undefined }, async () => {
       mockLoadCreds.mockResolvedValue({
         secretKey: "sk_test_db",
         publishableKey: null,
@@ -146,8 +146,25 @@ describe("getStripeWebhookSecret()", () => {
     });
   });
 
+  it("does not fall back to DB when STRIPE_SECRET_KEY env is set (source coherence)", async () => {
+    await withEnv({ STRIPE_SECRET_KEY: "sk_test_env", STRIPE_WEBHOOK_SECRET: undefined }, async () => {
+      mockLoadCreds.mockResolvedValue({
+        secretKey: "sk_test_db",
+        publishableKey: null,
+        webhookSecret: "whsec_db",
+        accountId: null,
+        accountName: null,
+        isTestMode: true,
+        lastValidatedAt: null,
+      });
+      const secret = await getStripeWebhookSecret();
+      expect(secret).toBeNull();
+      expect(mockLoadCreds).not.toHaveBeenCalled();
+    });
+  });
+
   it("returns null when neither env nor DB has webhook secret", async () => {
-    await withEnv({ STRIPE_WEBHOOK_SECRET: undefined }, async () => {
+    await withEnv({ STRIPE_SECRET_KEY: undefined, STRIPE_WEBHOOK_SECRET: undefined }, async () => {
       mockLoadCreds.mockResolvedValue(null);
       const secret = await getStripeWebhookSecret();
       expect(secret).toBeNull();
