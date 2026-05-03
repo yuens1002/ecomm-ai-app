@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { WeightUnitOption } from "@/lib/weight-unit";
+import { StripeCredentialsForm } from "./_components/StripeCredentialsForm";
 
 export default function CommerceSettingsPage() {
   return (
@@ -17,6 +18,13 @@ export default function CommerceSettingsPage() {
         title="Commerce Settings"
         subtitle="Configure product display and commerce-related settings"
       />
+
+      <SettingsSection
+        title="Stripe Payments & Coupons"
+        description="Configure your Stripe API credentials and promotion code behavior. The same Stripe account powers both."
+      >
+        <StripeCredentialsForm />
+      </SettingsSection>
 
       <SettingsSection
         title="Promotion Codes"
