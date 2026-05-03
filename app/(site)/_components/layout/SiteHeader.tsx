@@ -107,6 +107,7 @@ interface SiteHeaderProps {
   productMenuIcon?: string;
   productMenuText?: string;
   storeName?: string;
+  stripeConfigured?: boolean;
 }
 
 /**
@@ -122,6 +123,7 @@ export default function SiteHeader({
   productMenuIcon = "ShoppingBag",
   productMenuText = "Shop",
   storeName: serverStoreName,
+  stripeConfigured = false,
 }: SiteHeaderProps) {
   const pathname = usePathname();
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
@@ -579,7 +581,7 @@ export default function SiteHeader({
               </div>
 
               {/* Cart - always visible */}
-              <ShoppingCart />
+              <ShoppingCart stripeConfigured={stripeConfigured} />
             </>
           ) : null}
         </div>
