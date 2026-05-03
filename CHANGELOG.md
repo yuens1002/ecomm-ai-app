@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.104.0 - 2026-05-03
+
+### Added
+
+- **Stripe credentials admin UI** — admins can now paste their Stripe secret key, publishable key, and webhook secret directly in **Settings → Commerce → Stripe Payment**. The backend validates keys against the Stripe API before saving, encrypts the secret key and webhook secret with AES-256-GCM, and auto-generates an encryption key to the database on first use (no environment variables required for initial setup). After saving, the store is payment-ready without a redeploy.
+- **Runtime Stripe configuration gate** — the checkout button and the admin Orders page payment banner now reflect the actual saved credential state at request time (server-side DB check) instead of a build-time `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` check. Customers see the checkout button immediately after the admin saves keys; no Vercel redeploy needed.
+- **Stripe account details surface** — after saving valid keys, the Commerce settings page displays the connected Stripe account name, account ID, mode (Test / Live), and last-verified timestamp.
+- **Mode detection on secret key field** — the secret key input shows a live Test Mode / Live Mode badge as the admin types, catching key-mode mismatches before submission.
+
+---
+
 ## 0.103.2 - 2026-04-27
 
 ### Performance
