@@ -53,6 +53,7 @@ function FieldIcon({ state }: { state: IconState }) {
 export function StripeCredentialsForm() {
   const [config, setConfig] = useState<StripeConfigResponse | null>(null);
   const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [secretKey, setSecretKey] = useState("");
   const [publishableKey, setPublishableKey] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
@@ -80,7 +81,11 @@ export function StripeCredentialsForm() {
         setSecretDirty(false);
         setPubDirty(false);
         setWebhookDirty(false);
+      } else {
+        setFetchError(true);
       }
+    } catch {
+      setFetchError(true);
     } finally {
       setFetching(false);
     }
@@ -170,8 +175,17 @@ export function StripeCredentialsForm() {
     );
   }
 
-  const { db } = config!;
-  const noKeysConfigured = !db.hasRow;
+  if (fetchError || !config) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-destructive">
+        <AlertCircle className="h-4 w-4 shrink-0" />
+        Could not load Stripe configuration. Refresh to try again.
+      </div>
+    );
+  }
+
+  const { db } = config;
+  const noKeysConfigured = !db.hasRow && !config.envSecretSet;
 
   return (
     <div className="space-y-6">

@@ -62,6 +62,7 @@ export interface SaveStripeCredentialsInput {
   accountId?: string;
   accountName?: string;
   isTestMode?: boolean;
+  lastValidatedAt?: Date;
 }
 
 export async function saveStripeCredentials(
@@ -70,7 +71,7 @@ export async function saveStripeCredentials(
   const key = await getOrCreateEncryptionKey();
   const data: Record<string, unknown> = {
     updatedAt: new Date(),
-    lastValidatedAt: new Date(),
+    ...(input.lastValidatedAt !== undefined && { lastValidatedAt: input.lastValidatedAt }),
   };
 
   if (input.secretKey !== undefined) {

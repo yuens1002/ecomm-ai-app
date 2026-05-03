@@ -31,10 +31,12 @@ export async function getOrCreateEncryptionKey(): Promise<Buffer> {
   if (setting) return parseKey(setting.value);
 
   const generated = randomBytes(32).toString("hex");
-  await prisma.siteSettings.create({
-    data: { key: SETTINGS_KEY, value: generated },
+  const result = await prisma.siteSettings.upsert({
+    where: { key: SETTINGS_KEY },
+    update: {},
+    create: { key: SETTINGS_KEY, value: generated },
   });
-  return parseKey(generated);
+  return parseKey(result.value);
 }
 
 export function encryptWithKey(plaintext: string, key: Buffer): string {

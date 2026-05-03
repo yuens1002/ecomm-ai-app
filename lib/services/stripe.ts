@@ -43,10 +43,16 @@ export function resetStripeClient(): void {
 /**
  * Returns the Stripe webhook secret.
  * Resolution order: env (STRIPE_WEBHOOK_SECRET) → DB → null
+ *
+ * If STRIPE_SECRET_KEY is present in env we assume the entire Stripe
+ * configuration lives in env; we do NOT fall back to a DB-stored webhook
+ * secret that may belong to a different account.
  */
 export async function getStripeWebhookSecret(): Promise<string | null> {
   const envSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (envSecret) return envSecret;
+
+  if (process.env.STRIPE_SECRET_KEY) return null;
 
   const dbCreds = await loadStripeCredentials();
   return dbCreds?.webhookSecret ?? null;

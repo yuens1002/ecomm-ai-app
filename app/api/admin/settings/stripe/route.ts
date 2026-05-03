@@ -142,10 +142,25 @@ export async function PUT(request: NextRequest) {
     if (secretKey?.startsWith("••")) secretKey = undefined;
     if (webhookSecret?.startsWith("••")) webhookSecret = undefined;
 
-    if (publishableKey && secretKey) {
-      const mismatch = checkModeMismatch(secretKey, publishableKey);
-      if (mismatch) {
-        return NextResponse.json({ error: mismatch }, { status: 400 });
+    // Validate webhook secret format
+    if (webhookSecret && !webhookSecret.startsWith("whsec_")) {
+      return NextResponse.json(
+        { error: "Invalid webhook secret format (expected whsec_…)" },
+        { status: 400 }
+      );
+    }
+
+    // Mode mismatch check — loads existing secretKey from DB when only
+    // publishableKey is being updated so we can compare modes.
+    if (publishableKey) {
+      const secretKeyForMismatch =
+        secretKey ??
+        (await loadStripeCredentials().then((c) => c?.secretKey ?? null));
+      if (secretKeyForMismatch) {
+        const mismatch = checkModeMismatch(secretKeyForMismatch, publishableKey);
+        if (mismatch) {
+          return NextResponse.json({ error: mismatch }, { status: 400 });
+        }
       }
     }
 
@@ -153,6 +168,7 @@ export async function PUT(request: NextRequest) {
       accountId?: string;
       accountName?: string;
       isTestMode?: boolean;
+      lastValidatedAt?: Date;
     } = {};
 
     if (secretKey) {
@@ -167,6 +183,7 @@ export async function PUT(request: NextRequest) {
         accountId: validation.accountId,
         accountName: validation.accountName,
         isTestMode: detectMode(secretKey) === "test",
+        lastValidatedAt: new Date(),
       };
     }
 

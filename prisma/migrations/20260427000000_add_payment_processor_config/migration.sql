@@ -18,6 +18,3 @@ CREATE TABLE "PaymentProcessorConfig" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "PaymentProcessorConfig_processor_key" ON "PaymentProcessorConfig"("processor");
-
--- CreateIndex
-CREATE INDEX "PaymentProcessorConfig_processor_idx" ON "PaymentProcessorConfig"("processor");
