@@ -149,7 +149,13 @@ export async function PUT(request: NextRequest) {
 
     const GENERIC_ERROR = "Something went wrong, one or more keys may be incorrect.";
 
-    // Webhook format check
+    // Format checks — reject unrecognized key shapes before any DB/API work
+    if (secretKey && !/^sk_(test|live)_/.test(secretKey)) {
+      return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
+    }
+    if (publishableKey && !/^pk_(test|live)_/.test(publishableKey)) {
+      return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
+    }
     if (webhookSecret && !webhookSecret.startsWith("whsec_")) {
       return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
     }
