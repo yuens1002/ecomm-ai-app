@@ -140,7 +140,7 @@ describe("PUT /api/admin/settings/stripe (validate + save)", () => {
     expect(res.status).toBe(401);
   });
 
-  it("returns 400 on test/live mismatch BEFORE calling Stripe", async () => {
+  it("returns 400 on test/live mode mismatch before calling Stripe", async () => {
     authorized();
     const res = await PUT(
       makeRequest("PUT", {
@@ -150,7 +150,7 @@ describe("PUT /api/admin/settings/stripe (validate + save)", () => {
     );
     expect(res.status).toBe(400);
     const data = await res.json();
-    expect(data.error).toContain("mismatch");
+    expect(data.error).toBe("Something went wrong, one or more keys may be incorrect.");
     expect(mockRetrieve).not.toHaveBeenCalled();
     expect(mockSaveCreds).not.toHaveBeenCalled();
   });
@@ -207,6 +207,164 @@ describe("PUT /api/admin/settings/stripe (validate + save)", () => {
       })
     );
     expect(mockReset).toHaveBeenCalled();
+  });
+});
+
+describe("PUT — short-circuit (no actual changes)", () => {
+  it("returns 200 without saving when payload has no fields", async () => {
+    authorized();
+    const res = await PUT(makeRequest("PUT", {}));
+    expect(res.status).toBe(200);
+    expect(mockSaveCreds).not.toHaveBeenCalled();
+    expect(mockRetrieve).not.toHaveBeenCalled();
+  });
+
+  it("returns 200 without saving when all submitted values are masked placeholders", async () => {
+    authorized();
+    const res = await PUT(
+      makeRequest("PUT", { secretKey: "••••••••1234", webhookSecret: "••••••••abcd" })
+    );
+    expect(res.status).toBe(200);
+    expect(mockSaveCreds).not.toHaveBeenCalled();
+    expect(mockRetrieve).not.toHaveBeenCalled();
+  });
+});
+
+describe("PUT — format validation", () => {
+  const GENERIC = "Something went wrong, one or more keys may be incorrect.";
+
+  it("rejects invalid secret key format before Stripe call", async () => {
+    authorized();
+    const res = await PUT(makeRequest("PUT", { secretKey: "not_a_valid_key" }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: GENERIC });
+    expect(mockRetrieve).not.toHaveBeenCalled();
+    expect(mockSaveCreds).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid publishable key format (regression: freeform text was accepted)", async () => {
+    authorized();
+    const res = await PUT(makeRequest("PUT", { publishableKey: "df fdfe" }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: GENERIC });
+    expect(mockSaveCreds).not.toHaveBeenCalled();
+  });
+
+  it("rejects publishable key missing pk_ prefix", async () => {
+    authorized();
+    const res = await PUT(makeRequest("PUT", { publishableKey: "sk_test_wrong_type" }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: GENERIC });
+    expect(mockSaveCreds).not.toHaveBeenCalled();
+  });
+
+  it("rejects webhook secret not starting with whsec_", async () => {
+    authorized();
+    const res = await PUT(makeRequest("PUT", { webhookSecret: "not_a_whsec_value" }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: GENERIC });
+    expect(mockSaveCreds).not.toHaveBeenCalled();
+  });
+
+  it("accepts valid key shapes (sk_test_, pk_test_, whsec_)", async () => {
+    authorized();
+    mockRetrieve.mockResolvedValue({
+      id: "acct_123",
+      settings: { dashboard: { display_name: "Test" } },
+    });
+    mockSaveCreds.mockResolvedValue(undefined);
+    const res = await PUT(
+      makeRequest("PUT", {
+        secretKey: "sk_test_valid123",
+        publishableKey: "pk_test_valid123",
+        webhookSecret: "whsec_valid",
+      })
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it("accepts live mode keys (sk_live_, pk_live_)", async () => {
+    authorized();
+    mockRetrieve.mockResolvedValue({
+      id: "acct_live",
+      settings: { dashboard: { display_name: "Live Account" } },
+    });
+    mockSaveCreds.mockResolvedValue(undefined);
+    const res = await PUT(
+      makeRequest("PUT", {
+        secretKey: "sk_live_valid123",
+        publishableKey: "pk_live_valid123",
+      })
+    );
+    expect(res.status).toBe(200);
+  });
+});
+
+describe("PUT — effective-set mode validation", () => {
+  const GENERIC = "Something went wrong, one or more keys may be incorrect.";
+
+  it("catches mismatch when pub key changes against existing DB secret key", async () => {
+    authorized();
+    mockLoadCreds.mockResolvedValue({
+      secretKey: "sk_live_existing123",
+      publishableKey: null,
+      webhookSecret: null,
+      accountId: null,
+      accountName: null,
+      isTestMode: false,
+      lastValidatedAt: null,
+    });
+    const res = await PUT(makeRequest("PUT", { publishableKey: "pk_test_new123" }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: GENERIC });
+    expect(mockRetrieve).not.toHaveBeenCalled();
+    expect(mockSaveCreds).not.toHaveBeenCalled();
+  });
+
+  it("catches mismatch when secret key changes against existing DB pub key", async () => {
+    // Simulates: previously saved live keys, user now submits a test secret key
+    authorized();
+    mockLoadCreds.mockResolvedValue({
+      secretKey: "sk_live_oldkey123",
+      publishableKey: "pk_live_existing123",
+      webhookSecret: null,
+      accountId: null,
+      accountName: null,
+      isTestMode: false,
+      lastValidatedAt: null,
+    });
+    const res = await PUT(makeRequest("PUT", { secretKey: "sk_test_new123" }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: GENERIC });
+    expect(mockRetrieve).not.toHaveBeenCalled();
+    expect(mockSaveCreds).not.toHaveBeenCalled();
+  });
+
+  it("saves without Stripe API call when only pub key changes and modes match", async () => {
+    authorized();
+    mockLoadCreds.mockResolvedValue({
+      secretKey: "sk_test_existing123",
+      publishableKey: "pk_test_old",
+      webhookSecret: null,
+      accountId: null,
+      accountName: null,
+      isTestMode: true,
+      lastValidatedAt: null,
+    });
+    mockSaveCreds.mockResolvedValue(undefined);
+    const res = await PUT(makeRequest("PUT", { publishableKey: "pk_test_new123" }));
+    expect(res.status).toBe(200);
+    expect(mockRetrieve).not.toHaveBeenCalled();
+    expect(mockSaveCreds).toHaveBeenCalledWith({ publishableKey: "pk_test_new123" });
+  });
+
+  it("saves without Stripe API call when only webhook secret changes", async () => {
+    authorized();
+    mockSaveCreds.mockResolvedValue(undefined);
+    const res = await PUT(makeRequest("PUT", { webhookSecret: "whsec_new_value" }));
+    expect(res.status).toBe(200);
+    expect(mockRetrieve).not.toHaveBeenCalled();
+    expect(mockSaveCreds).toHaveBeenCalledWith({ webhookSecret: "whsec_new_value" });
   });
 });
 
