@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, Circle, XCircle } from "lucide-react";
+import { Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, Circle, XCircle, Save as SaveIcon } from "lucide-react";
+import { IS_DEMO } from "@/lib/demo";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +62,9 @@ export function StripeCredentialsForm() {
   const [secretDirty, setSecretDirty] = useState(false);
   const [pubDirty, setPubDirty] = useState(false);
   const [webhookDirty, setWebhookDirty] = useState(false);
+  const [secretRequiredError, setSecretRequiredError] = useState(false);
+  const [pubRequiredError, setPubRequiredError] = useState(false);
+  const [webhookRequiredError, setWebhookRequiredError] = useState(false);
   const [secretVisible, setSecretVisible] = useState(false);
   const [webhookVisible, setWebhookVisible] = useState(false);
   const [saveStep, setSaveStep] = useState<SaveStep>("idle");
@@ -99,22 +104,28 @@ export function StripeCredentialsForm() {
   const isLiveMode = (key: string) => /^(sk|pk|rk)_live_/.test(key);
   const secretMode = isTestMode(secretKey) ? "test" : isLiveMode(secretKey) ? "live" : null;
 
+  const { toast } = useToast();
   const isBusy = saveStep === "verifying" || saveStep === "saving";
-  const isDev = process.env.NODE_ENV === "development";
-
-  const simulateSave = async () => {
-    setError(null);
-    setSaveStep("verifying");
-    setStepLabel("Verifying with Stripe…");
-    await new Promise((r) => setTimeout(r, 2000));
-    setSaveStep("saving");
-    setStepLabel("Saving credentials…");
-    await new Promise((r) => setTimeout(r, 1500));
-    setSaveStep("done");
-    setTimeout(() => setSaveStep("idle"), 3000);
-  };
 
   const handleSave = async () => {
+    if (IS_DEMO) {
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      return;
+    }
+
+    // Required field validation — only flag fields with no value and no existing DB key
+    const db = config!.db;
+    const missingSecret = !secretKey && !db.hasSecretKey;
+    const missingPub = !publishableKey && !db.publishableKey;
+    const missingWebhook = !webhookSecret && !db.hasWebhookSecret;
+
+    if (missingSecret || missingPub || missingWebhook) {
+      setSecretRequiredError(missingSecret);
+      setPubRequiredError(missingPub);
+      setWebhookRequiredError(missingWebhook);
+      return;
+    }
+
     setError(null);
     setSaveStep("verifying");
     setStepLabel("Verifying with Stripe…");
@@ -148,6 +159,10 @@ export function StripeCredentialsForm() {
 
   const handleClear = async () => {
     setShowClearModal(false);
+    if (IS_DEMO) {
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      return;
+    }
     setClearing(true);
     setError(null);
     try {
@@ -187,6 +202,18 @@ export function StripeCredentialsForm() {
   const { db } = config;
   const noKeysConfigured = !db.hasRow && !config.envSecretSet;
 
+  const modeBadge = secretMode ? (
+    <span
+      className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+        secretMode === "test"
+          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+          : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
+      }`}
+    >
+      {secretMode === "test" ? "Test Mode" : "Live Mode"}
+    </span>
+  ) : undefined;
+
   return (
     <div className="space-y-6">
       {/* Banner: only shown when no keys are saved */}
@@ -203,19 +230,16 @@ export function StripeCredentialsForm() {
       <div className="space-y-4">
         {/* Secret Key */}
         <div className="space-y-2">
-          <Label htmlFor="stripe-secret-key">
-            Secret Key
-            {secretMode === "test" && (
-              <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 font-medium">
-                Test Mode
-              </span>
-            )}
-            {secretMode === "live" && (
-              <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 font-medium">
-                Live Mode
-              </span>
-            )}
-          </Label>
+          <FormHeading
+            htmlFor="stripe-secret-key"
+            label="Secret Key"
+            required
+            isDirty={secretDirty}
+            dirtyDelay={0}
+            statusMessage={secretRequiredError ? "Required field" : undefined}
+            statusType="required"
+            action={modeBadge}
+          />
           <div className="flex items-center gap-2">
             <div className="relative w-full max-w-[72ch]">
               <Input
@@ -226,6 +250,7 @@ export function StripeCredentialsForm() {
                 onChange={(e) => {
                   setSecretKey(e.target.value);
                   setSecretDirty(true);
+                  setSecretRequiredError(false);
                   setError(null);
                   setSaveStep("idle");
                 }}
@@ -247,7 +272,15 @@ export function StripeCredentialsForm() {
 
         {/* Publishable Key */}
         <div className="space-y-2">
-          <Label htmlFor="stripe-publishable-key">Publishable Key</Label>
+          <FormHeading
+            htmlFor="stripe-publishable-key"
+            label="Publishable Key"
+            required
+            isDirty={pubDirty}
+            dirtyDelay={0}
+            statusMessage={pubRequiredError ? "Required field" : undefined}
+            statusType="required"
+          />
           <div className="flex items-center gap-2">
             <div className="relative w-full max-w-[72ch]">
               <Input
@@ -258,6 +291,7 @@ export function StripeCredentialsForm() {
                 onChange={(e) => {
                   setPublishableKey(e.target.value);
                   setPubDirty(true);
+                  setPubRequiredError(false);
                   setError(null);
                   setSaveStep("idle");
                 }}
@@ -270,7 +304,15 @@ export function StripeCredentialsForm() {
 
         {/* Webhook Secret */}
         <div className="space-y-2">
-          <Label htmlFor="stripe-webhook-secret">Webhook Secret</Label>
+          <FormHeading
+            htmlFor="stripe-webhook-secret"
+            label="Webhook Secret"
+            required
+            isDirty={webhookDirty}
+            dirtyDelay={0}
+            statusMessage={webhookRequiredError ? "Required field" : undefined}
+            statusType="required"
+          />
           <div className="flex items-center gap-2">
             <div className="relative w-full max-w-[72ch]">
               <Input
@@ -281,6 +323,7 @@ export function StripeCredentialsForm() {
                 onChange={(e) => {
                   setWebhookSecret(e.target.value);
                   setWebhookDirty(true);
+                  setWebhookRequiredError(false);
                   setError(null);
                   setSaveStep("idle");
                 }}
@@ -305,13 +348,12 @@ export function StripeCredentialsForm() {
 
         {/* Save button + inline status */}
         <div className="flex items-center gap-3 w-full max-w-[72ch]">
-          {isDev && (
-            <Button variant="outline" size="sm" onClick={simulateSave} disabled={isBusy} className="text-xs text-muted-foreground">
-              Simulate
-            </Button>
-          )}
           <Button onClick={handleSave} disabled={isBusy}>
-            {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isBusy ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <SaveIcon className="mr-2 h-4 w-4" />
+            )}
             {isBusy ? "Saving" : "Save"}
           </Button>
           <span className="ml-auto text-sm text-right">
