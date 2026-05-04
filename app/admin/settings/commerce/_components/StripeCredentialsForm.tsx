@@ -41,8 +41,9 @@ type IconState = "none" | "muted" | "green" | "error";
 function resolveIconState(value: string, dirty: boolean, saveStep: SaveStep): IconState {
   if (!value) return "none";
   if (saveStep === "error") return "error";
-  if (!dirty || saveStep === "done") return "green"; // pre-populated from DB or just verified
-  return "muted";
+  if (saveStep === "done") return "green";
+  if (dirty) return "muted";
+  return "none";
 }
 
 function FieldIcon({ state }: { state: IconState }) {
