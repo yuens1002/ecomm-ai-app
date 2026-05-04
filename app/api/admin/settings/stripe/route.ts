@@ -138,29 +138,38 @@ export async function PUT(request: NextRequest) {
     let { secretKey, webhookSecret } = parsed.data;
     const { publishableKey } = parsed.data;
 
-    // Don't overwrite stored values with masked placeholders
+    // Strip masked placeholders — unchanged sensitive fields become undefined
     if (secretKey?.startsWith("••")) secretKey = undefined;
     if (webhookSecret?.startsWith("••")) webhookSecret = undefined;
 
-    // Validate webhook secret format
-    if (webhookSecret && !webhookSecret.startsWith("whsec_")) {
-      return NextResponse.json(
-        { error: "Invalid webhook secret format (expected whsec_…)" },
-        { status: 400 }
-      );
+    // Short-circuit: client sent only unchanged values
+    if (!secretKey && !publishableKey && !webhookSecret) {
+      return NextResponse.json({ success: true });
     }
 
-    // Mode mismatch check — loads existing secretKey from DB when only
-    // publishableKey is being updated so we can compare modes.
-    if (publishableKey) {
-      const secretKeyForMismatch =
-        secretKey ??
-        (await loadStripeCredentials().then((c) => c?.secretKey ?? null));
-      if (secretKeyForMismatch) {
-        const mismatch = checkModeMismatch(secretKeyForMismatch, publishableKey);
-        if (mismatch) {
-          return NextResponse.json({ error: mismatch }, { status: 400 });
-        }
+    const GENERIC_ERROR = "Something went wrong, one or more keys may be incorrect.";
+
+    // Webhook format check
+    if (webhookSecret && !webhookSecret.startsWith("whsec_")) {
+      return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
+    }
+
+    // Determine effective secret + publishable key for consistency check.
+    // If only one of the pair changed, load the other from DB.
+    let effectiveSecretKey = secretKey;
+    let effectivePublishableKey = publishableKey;
+    if (secretKey !== undefined || publishableKey !== undefined) {
+      if (!effectiveSecretKey || !effectivePublishableKey) {
+        const existing = await loadStripeCredentials();
+        effectiveSecretKey ??= existing?.secretKey ?? undefined;
+        effectivePublishableKey ??= existing?.publishableKey ?? undefined;
+      }
+    }
+
+    // Mode consistency check across the effective set
+    if (effectiveSecretKey && effectivePublishableKey) {
+      if (checkModeMismatch(effectiveSecretKey, effectivePublishableKey)) {
+        return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
       }
     }
 
@@ -174,10 +183,7 @@ export async function PUT(request: NextRequest) {
     if (secretKey) {
       const validation = await validateWithStripe(secretKey);
       if (!validation.ok) {
-        return NextResponse.json(
-          { error: "Invalid API key(s) entered, try again." },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
       }
       accountMeta = {
         accountId: validation.accountId,

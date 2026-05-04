@@ -109,6 +109,8 @@ export function StripeCredentialsForm() {
   const isBusy = saveStep === "verifying" || saveStep === "saving";
 
   const handleSave = async () => {
+    // Capture which fields changed before resetting dirty state
+    const changed = { secret: secretDirty, pub: pubDirty, webhook: webhookDirty };
     setSecretDirty(false);
     setPubDirty(false);
     setWebhookDirty(false);
@@ -138,10 +140,11 @@ export function StripeCredentialsForm() {
       const res = await fetch("/api/admin/settings/stripe", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        // Only send fields the user actually changed; server skips unchanged fields
         body: JSON.stringify({
-          secretKey: secretKey || undefined,
-          publishableKey: publishableKey || undefined,
-          webhookSecret: webhookSecret || undefined,
+          ...(changed.secret && { secretKey }),
+          ...(changed.pub && { publishableKey }),
+          ...(changed.webhook && { webhookSecret }),
         }),
       });
       const data = await res.json();
