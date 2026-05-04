@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 import { z } from "zod";
 import Stripe from "stripe";
 import { requireAdminApi } from "@/lib/admin";
@@ -53,6 +55,11 @@ async function validateWithStripe(secretKey: string): Promise<{
       typescript: true,
     });
     const account = await stripe.accounts.retrieve();
+    // charges_enabled reflects live-mode onboarding status; skip for test mode
+    // (test charge below verifies payment capability for test keys)
+    if (detectMode(secretKey) !== "test" && !account.charges_enabled) {
+      return { ok: false, error: "charges_disabled" };
+    }
     return {
       ok: true,
       accountId: account.id,
@@ -66,6 +73,56 @@ async function validateWithStripe(secretKey: string): Promise<{
     const message =
       err instanceof Error ? err.message : "Stripe validation failed";
     return { ok: false, error: message };
+  }
+}
+
+async function runTestCharge(secretKey: string): Promise<{ ok: boolean }> {
+  try {
+    const stripe = new Stripe(secretKey, {
+      apiVersion: "2026-01-28.clover",
+      typescript: true,
+    });
+    const pi = await stripe.paymentIntents.create({
+      amount: 100,
+      currency: "usd",
+      payment_method: "pm_card_visa",
+      payment_method_types: ["card"],
+      confirm: true,
+      capture_method: "manual",
+    });
+    await stripe.paymentIntents.cancel(pi.id);
+    return { ok: true };
+  } catch {
+    return { ok: false };
+  }
+}
+
+async function verifyPublishableKey(
+  effectiveSecretKey: string,
+  effectivePublishableKey: string
+): Promise<boolean> {
+  const stripe = new Stripe(effectiveSecretKey, {
+    apiVersion: "2026-01-28.clover",
+    typescript: true,
+  });
+  let piId: string | undefined;
+  try {
+    const pi = await stripe.paymentIntents.create({ amount: 50, currency: "usd" });
+    piId = pi.id;
+    if (!pi.client_secret) return false;
+    const res = await fetch(
+      `https://api.stripe.com/v1/payment_intents/${pi.id}?client_secret=${encodeURIComponent(pi.client_secret)}`,
+      { headers: { Authorization: `Bearer ${effectivePublishableKey}` } }
+    );
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    if (piId) {
+      try {
+        await stripe.paymentIntents.cancel(piId);
+      } catch {}
+    }
   }
 }
 
@@ -135,32 +192,50 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    let { secretKey, webhookSecret } = parsed.data;
-    const { publishableKey } = parsed.data;
+    let { secretKey, publishableKey, webhookSecret } = parsed.data;
 
-    // Don't overwrite stored values with masked placeholders
+    // Strip masked placeholders — unchanged sensitive fields become undefined
     if (secretKey?.startsWith("••")) secretKey = undefined;
     if (webhookSecret?.startsWith("••")) webhookSecret = undefined;
+    // Normalize empty strings — treat as "not provided"
+    if (secretKey === "") secretKey = undefined;
+    if (publishableKey === "") publishableKey = undefined;
+    if (webhookSecret === "") webhookSecret = undefined;
 
-    // Validate webhook secret format
-    if (webhookSecret && !webhookSecret.startsWith("whsec_")) {
-      return NextResponse.json(
-        { error: "Invalid webhook secret format (expected whsec_…)" },
-        { status: 400 }
-      );
+    // Short-circuit: client sent only unchanged values
+    if (!secretKey && !publishableKey && !webhookSecret) {
+      return NextResponse.json({ success: true });
     }
 
-    // Mode mismatch check — loads existing secretKey from DB when only
-    // publishableKey is being updated so we can compare modes.
-    if (publishableKey) {
-      const secretKeyForMismatch =
-        secretKey ??
-        (await loadStripeCredentials().then((c) => c?.secretKey ?? null));
-      if (secretKeyForMismatch) {
-        const mismatch = checkModeMismatch(secretKeyForMismatch, publishableKey);
-        if (mismatch) {
-          return NextResponse.json({ error: mismatch }, { status: 400 });
-        }
+    const GENERIC_ERROR = "Something went wrong, one or more keys may be incorrect.";
+
+    // Format checks — reject unrecognized key shapes before any DB/API work
+    if (secretKey && !/^sk_(test|live)_/.test(secretKey)) {
+      return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
+    }
+    if (publishableKey && !/^pk_(test|live)_/.test(publishableKey)) {
+      return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
+    }
+    if (webhookSecret && !webhookSecret.startsWith("whsec_")) {
+      return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
+    }
+
+    // Determine effective secret + publishable key for consistency check.
+    // If only one of the pair changed, load the other from DB.
+    let effectiveSecretKey = secretKey;
+    let effectivePublishableKey = publishableKey;
+    if (secretKey !== undefined || publishableKey !== undefined) {
+      if (!effectiveSecretKey || !effectivePublishableKey) {
+        const existing = await loadStripeCredentials();
+        effectiveSecretKey ??= existing?.secretKey ?? undefined;
+        effectivePublishableKey ??= existing?.publishableKey ?? undefined;
+      }
+    }
+
+    // Mode consistency check across the effective set
+    if (effectiveSecretKey && effectivePublishableKey) {
+      if (checkModeMismatch(effectiveSecretKey, effectivePublishableKey)) {
+        return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
       }
     }
 
@@ -174,17 +249,37 @@ export async function PUT(request: NextRequest) {
     if (secretKey) {
       const validation = await validateWithStripe(secretKey);
       if (!validation.ok) {
-        return NextResponse.json(
-          { error: "Invalid API key(s) entered, try again." },
-          { status: 400 }
-        );
+        const error =
+          validation.error === "charges_disabled"
+            ? "This Stripe account is not enabled to accept payments. Complete your Stripe onboarding before connecting."
+            : GENERIC_ERROR;
+        return NextResponse.json({ error }, { status: 400 });
       }
+
+      if (detectMode(secretKey) === "test") {
+        const testCharge = await runTestCharge(secretKey);
+        if (!testCharge.ok) {
+          return NextResponse.json(
+            { error: "Something went wrong. Check your Stripe account settings." },
+            { status: 400 }
+          );
+        }
+      }
+
       accountMeta = {
         accountId: validation.accountId,
         accountName: validation.accountName,
         isTestMode: detectMode(secretKey) === "test",
         lastValidatedAt: new Date(),
       };
+    }
+
+    // Verify the publishable key belongs to the same Stripe account as the secret key
+    if (effectiveSecretKey && effectivePublishableKey) {
+      const pubKeyValid = await verifyPublishableKey(effectiveSecretKey, effectivePublishableKey);
+      if (!pubKeyValid) {
+        return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
+      }
     }
 
     await saveStripeCredentials({
@@ -201,6 +296,59 @@ export async function PUT(request: NextRequest) {
     console.error("Error saving Stripe credentials:", error);
     return NextResponse.json(
       { error: "Failed to save Stripe credentials" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST() {
+  try {
+    const auth = await requireAdminApi();
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
+    const creds = await loadStripeCredentials();
+    if (!creds?.secretKey) {
+      return NextResponse.json(
+        { error: "No Stripe credentials configured." },
+        { status: 400 }
+      );
+    }
+
+    const GENERIC_ERROR = "Something went wrong, one or more keys may be incorrect.";
+
+    const validation = await validateWithStripe(creds.secretKey);
+    if (!validation.ok) {
+      const error =
+        validation.error === "charges_disabled"
+          ? "This Stripe account is not enabled to accept payments. Complete your Stripe onboarding before connecting."
+          : GENERIC_ERROR;
+      return NextResponse.json({ error }, { status: 400 });
+    }
+
+    if (detectMode(creds.secretKey) === "test") {
+      const testCharge = await runTestCharge(creds.secretKey);
+      if (!testCharge.ok) {
+        return NextResponse.json(
+          { error: "Something went wrong. Check your Stripe account settings." },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (creds.publishableKey) {
+      const pubKeyOk = await verifyPublishableKey(creds.secretKey, creds.publishableKey);
+      if (!pubKeyOk) {
+        return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error verifying Stripe credentials:", error);
+    return NextResponse.json(
+      { error: "Failed to verify Stripe credentials" },
       { status: 500 }
     );
   }

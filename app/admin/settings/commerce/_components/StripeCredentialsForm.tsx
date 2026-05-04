@@ -1,18 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, Circle, XCircle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, Circle, XCircle, Save as SaveIcon, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { IS_DEMO } from "@/lib/demo";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { FormHeading } from "@/components/ui/forms/FormHeading";
 
 interface StripeConfigResponse {
   envSecretSet: boolean;
@@ -34,13 +28,21 @@ interface StripeConfigResponse {
 }
 
 type SaveStep = "idle" | "verifying" | "saving" | "done" | "error";
+type VerifyStep = "idle" | "verifying" | "verified" | "error";
 type IconState = "none" | "muted" | "green" | "error";
 
-function resolveIconState(value: string, dirty: boolean, saveStep: SaveStep): IconState {
+function resolveIconState(
+  value: string,
+  dirty: boolean,
+  saveStep: SaveStep,
+  isVerifiedFromDb: boolean
+): IconState {
   if (!value) return "none";
   if (saveStep === "error") return "error";
-  if (!dirty || saveStep === "done") return "green"; // pre-populated from DB or just verified
-  return "muted";
+  if (saveStep === "done") return "green";
+  if (dirty) return "muted";
+  if (isVerifiedFromDb) return "green";
+  return "none";
 }
 
 function FieldIcon({ state }: { state: IconState }) {
@@ -61,26 +63,34 @@ export function StripeCredentialsForm() {
   const [pubDirty, setPubDirty] = useState(false);
   const [webhookDirty, setWebhookDirty] = useState(false);
   const [secretVisible, setSecretVisible] = useState(false);
+  const [secretFocused, setSecretFocused] = useState(false);
   const [webhookVisible, setWebhookVisible] = useState(false);
+  const [webhookFocused, setWebhookFocused] = useState(false);
+  const [secretRequiredError, setSecretRequiredError] = useState(false);
+  const [pubRequiredError, setPubRequiredError] = useState(false);
+  const [webhookRequiredError, setWebhookRequiredError] = useState(false);
   const [saveStep, setSaveStep] = useState<SaveStep>("idle");
   const [stepLabel, setStepLabel] = useState("");
-  const [clearing, setClearing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showClearModal, setShowClearModal] = useState(false);
+  const [verifyStep, setVerifyStep] = useState<VerifyStep>("idle");
+  const [verifyError, setVerifyError] = useState<string | null>(null);
 
   const fetchConfig = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/settings/stripe");
+      const res = await fetch("/api/admin/settings/stripe", { cache: "no-store" });
       if (res.ok) {
         const data: StripeConfigResponse = await res.json();
         setConfig(data);
         if (data.db.secretKeyMasked) setSecretKey(data.db.secretKeyMasked);
         if (data.db.webhookSecretMasked) setWebhookSecret(data.db.webhookSecretMasked);
         if (data.db.publishableKey) setPublishableKey(data.db.publishableKey);
-        // Reset dirty: these values came from DB and are already verified
         setSecretDirty(false);
         setPubDirty(false);
         setWebhookDirty(false);
+        setSecretVisible(false);
+        setWebhookVisible(false);
+        setVerifyStep("idle");
+        setVerifyError(null);
       } else {
         setFetchError(true);
       }
@@ -99,22 +109,33 @@ export function StripeCredentialsForm() {
   const isLiveMode = (key: string) => /^(sk|pk|rk)_live_/.test(key);
   const secretMode = isTestMode(secretKey) ? "test" : isLiveMode(secretKey) ? "live" : null;
 
+  const { toast } = useToast();
   const isBusy = saveStep === "verifying" || saveStep === "saving";
-  const isDev = process.env.NODE_ENV === "development";
-
-  const simulateSave = async () => {
-    setError(null);
-    setSaveStep("verifying");
-    setStepLabel("Verifying with Stripe…");
-    await new Promise((r) => setTimeout(r, 2000));
-    setSaveStep("saving");
-    setStepLabel("Saving credentials…");
-    await new Promise((r) => setTimeout(r, 1500));
-    setSaveStep("done");
-    setTimeout(() => setSaveStep("idle"), 3000);
-  };
 
   const handleSave = async () => {
+    const changed = { secret: secretDirty, pub: pubDirty, webhook: webhookDirty };
+
+    if (IS_DEMO) {
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      return;
+    }
+
+    const db = config!.db;
+    const missingSecret = !secretKey && !db.hasSecretKey;
+    const missingPub = !publishableKey && !db.publishableKey;
+    const missingWebhook = !webhookSecret && !db.hasWebhookSecret;
+
+    if (missingSecret || missingPub || missingWebhook) {
+      setSecretRequiredError(missingSecret);
+      setPubRequiredError(missingPub);
+      setWebhookRequiredError(missingWebhook);
+      return;
+    }
+
+    // Clear dirty flags only after passing validation — early returns above must not wipe them
+    setSecretDirty(false);
+    setPubDirty(false);
+    setWebhookDirty(false);
     setError(null);
     setSaveStep("verifying");
     setStepLabel("Verifying with Stripe…");
@@ -123,13 +144,16 @@ export function StripeCredentialsForm() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          secretKey: secretKey || undefined,
-          publishableKey: publishableKey || undefined,
-          webhookSecret: webhookSecret || undefined,
+          ...(changed.secret && { secretKey }),
+          ...(changed.pub && { publishableKey }),
+          ...(changed.webhook && { webhookSecret }),
         }),
       });
       const data = await res.json();
       if (!res.ok) {
+        if (changed.secret) setSecretDirty(true);
+        if (changed.pub) setPubDirty(true);
+        if (changed.webhook) setWebhookDirty(true);
         setSaveStep("error");
         setError(data.error ?? "Could not save credentials. Please try again.");
         return;
@@ -146,24 +170,46 @@ export function StripeCredentialsForm() {
     }
   };
 
-  const handleClear = async () => {
-    setShowClearModal(false);
-    setClearing(true);
+  const handleUndo = () => {
+    if (!config?.db.hasRow) return;
+    const { db } = config;
+    setSecretKey(db.secretKeyMasked ?? "");
+    setPublishableKey(db.publishableKey ?? "");
+    setWebhookSecret(db.webhookSecretMasked ?? "");
+    setSecretDirty(false);
+    setPubDirty(false);
+    setWebhookDirty(false);
+    setSecretVisible(false);
+    setWebhookVisible(false);
+    setSecretRequiredError(false);
+    setPubRequiredError(false);
+    setWebhookRequiredError(false);
     setError(null);
+    setSaveStep("idle");
+    setVerifyStep("idle");
+    setVerifyError(null);
+  };
+
+  const handleVerify = async () => {
+    if (IS_DEMO) {
+      toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
+      return;
+    }
+    setVerifyStep("verifying");
+    setVerifyError(null);
     try {
-      const res = await fetch("/api/admin/settings/stripe", { method: "DELETE" });
+      const res = await fetch("/api/admin/settings/stripe", { method: "POST" });
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? "Disconnect failed");
-        return;
+        setVerifyStep("error");
+        setVerifyError(data.error ?? "Verification failed. Please try again.");
+      } else {
+        setVerifyStep("verified");
+        setTimeout(() => setVerifyStep("idle"), 4000);
       }
-      setSecretKey("");
-      setPublishableKey("");
-      setWebhookSecret("");
-      setSaveStep("idle");
-      await fetchConfig();
-    } finally {
-      setClearing(false);
+    } catch {
+      setVerifyStep("error");
+      setVerifyError("Could not connect to server. Please try again.");
     }
   };
 
@@ -187,11 +233,23 @@ export function StripeCredentialsForm() {
   const { db } = config;
   const noKeysConfigured = !db.hasRow && !config.envSecretSet;
 
+  const modeBadge = secretMode ? (
+    <span
+      className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+        secretMode === "test"
+          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+          : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
+      }`}
+    >
+      {secretMode === "test" ? "Test Mode" : "Live Mode"}
+    </span>
+  ) : undefined;
+
   return (
-    <div className="space-y-6">
-      {/* Banner: only shown when no keys are saved */}
+    // Single max-w constraint — all child elements inherit the same 72ch column
+    <div className="space-y-6 w-full max-w-[72ch]">
       {noKeysConfigured && (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-800 p-4 w-full max-w-[72ch]">
+        <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-800 p-4">
           <div className="flex items-center gap-2 text-sm text-yellow-700 dark:text-yellow-400">
             <AlertCircle className="h-4 w-4 shrink-0" />
             Stripe is not connected — the store cannot accept payments until you add the API keys below.
@@ -199,121 +257,179 @@ export function StripeCredentialsForm() {
         </div>
       )}
 
-      {/* Credentials form */}
       <div className="space-y-4">
         {/* Secret Key */}
         <div className="space-y-2">
-          <Label htmlFor="stripe-secret-key">
-            Secret Key
-            {secretMode === "test" && (
-              <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 font-medium">
-                Test Mode
-              </span>
-            )}
-            {secretMode === "live" && (
-              <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 font-medium">
-                Live Mode
-              </span>
-            )}
-          </Label>
+          <FormHeading
+            htmlFor="stripe-secret-key"
+            label="Secret Key"
+            required
+            isDirty={secretDirty}
+            statusMessage={secretRequiredError ? "Required field" : undefined}
+            statusType="required"
+            action={modeBadge}
+          />
           <div className="flex items-center gap-2">
-            <div className="relative w-full max-w-[72ch]">
+            <div className="relative flex-1">
               <Input
                 id="stripe-secret-key"
-                type={secretVisible ? "text" : "password"}
+                type={secretFocused || secretDirty || secretVisible ? "text" : "password"}
                 placeholder={db.hasSecretKey ? "Re-enter to change" : "sk_test_… or sk_live_…"}
                 value={secretKey}
+                onFocus={() => {
+                  setSecretFocused(true);
+                  if (!secretDirty && secretKey.startsWith("•")) setSecretKey("");
+                }}
+                onBlur={() => {
+                  setSecretFocused(false);
+                  if (!secretDirty && config?.db.secretKeyMasked) setSecretKey(config.db.secretKeyMasked);
+                }}
                 onChange={(e) => {
                   setSecretKey(e.target.value);
                   setSecretDirty(true);
+                  setSecretRequiredError(false);
                   setError(null);
                   setSaveStep("idle");
+                  setVerifyStep("idle");
+                  setVerifyError(null);
                 }}
                 disabled={isBusy}
-                className="pr-10"
+                className={`w-full${!secretDirty && !secretFocused && secretKey ? " pr-10" : ""}`}
               />
-              <button
-                type="button"
-                onClick={() => setSecretVisible((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label={secretVisible ? "Hide secret key" : "Show secret key"}
-              >
-                {secretVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+              {!secretDirty && !secretFocused && secretKey && (
+                <button
+                  type="button"
+                  onClick={() => setSecretVisible((v) => !v)}
+                  disabled={isBusy}
+                  aria-label={secretVisible ? "Hide secret key" : "Show secret key"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                >
+                  {secretVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              )}
             </div>
-            <FieldIcon state={resolveIconState(secretKey, secretDirty, saveStep)} />
+            <FieldIcon state={resolveIconState(secretKey, secretDirty, saveStep, !secretDirty && db.hasSecretKey)} />
           </div>
         </div>
 
         {/* Publishable Key */}
         <div className="space-y-2">
-          <Label htmlFor="stripe-publishable-key">Publishable Key</Label>
+          <FormHeading
+            htmlFor="stripe-publishable-key"
+            label="Publishable Key"
+            required
+            isDirty={pubDirty}
+            statusMessage={pubRequiredError ? "Required field" : undefined}
+            statusType="required"
+          />
           <div className="flex items-center gap-2">
-            <div className="relative w-full max-w-[72ch]">
-              <Input
-                id="stripe-publishable-key"
-                type="text"
-                placeholder="pk_test_… or pk_live_…"
-                value={publishableKey}
-                onChange={(e) => {
-                  setPublishableKey(e.target.value);
-                  setPubDirty(true);
-                  setError(null);
-                  setSaveStep("idle");
-                }}
-                disabled={isBusy}
-              />
-            </div>
-            <FieldIcon state={resolveIconState(publishableKey, pubDirty, saveStep)} />
+            <Input
+              id="stripe-publishable-key"
+              type="text"
+              placeholder="pk_test_… or pk_live_…"
+              value={publishableKey}
+              onChange={(e) => {
+                setPublishableKey(e.target.value);
+                setPubDirty(true);
+                setPubRequiredError(false);
+                setError(null);
+                setSaveStep("idle");
+                setVerifyStep("idle");
+                setVerifyError(null);
+              }}
+              disabled={isBusy}
+              className="flex-1"
+            />
+            <FieldIcon state={resolveIconState(publishableKey, pubDirty, saveStep, !pubDirty && !!db.publishableKey)} />
           </div>
         </div>
 
         {/* Webhook Secret */}
         <div className="space-y-2">
-          <Label htmlFor="stripe-webhook-secret">Webhook Secret</Label>
+          <FormHeading
+            htmlFor="stripe-webhook-secret"
+            label="Webhook Secret"
+            required
+            isDirty={webhookDirty}
+            statusMessage={webhookRequiredError ? "Required field" : undefined}
+            statusType="required"
+          />
           <div className="flex items-center gap-2">
-            <div className="relative w-full max-w-[72ch]">
+            <div className="relative flex-1">
               <Input
                 id="stripe-webhook-secret"
-                type={webhookVisible ? "text" : "password"}
+                type={webhookFocused || webhookDirty || webhookVisible ? "text" : "password"}
                 placeholder={db.hasWebhookSecret ? "Re-enter to change" : "whsec_…"}
                 value={webhookSecret}
+                onFocus={() => {
+                  setWebhookFocused(true);
+                  if (!webhookDirty && webhookSecret.startsWith("•")) setWebhookSecret("");
+                }}
+                onBlur={() => {
+                  setWebhookFocused(false);
+                  if (!webhookDirty && config?.db.webhookSecretMasked) setWebhookSecret(config.db.webhookSecretMasked);
+                }}
                 onChange={(e) => {
                   setWebhookSecret(e.target.value);
                   setWebhookDirty(true);
+                  setWebhookRequiredError(false);
                   setError(null);
                   setSaveStep("idle");
+                  setVerifyStep("idle");
+                  setVerifyError(null);
                 }}
                 disabled={isBusy}
-                className="pr-10"
+                className={`w-full${!webhookDirty && !webhookFocused && webhookSecret ? " pr-10" : ""}`}
               />
-              <button
-                type="button"
-                onClick={() => setWebhookVisible((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label={webhookVisible ? "Hide webhook secret" : "Show webhook secret"}
-              >
-                {webhookVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+              {!webhookDirty && !webhookFocused && webhookSecret && (
+                <button
+                  type="button"
+                  onClick={() => setWebhookVisible((v) => !v)}
+                  disabled={isBusy}
+                  aria-label={webhookVisible ? "Hide webhook secret" : "Show webhook secret"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                >
+                  {webhookVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              )}
             </div>
-            <FieldIcon state={resolveIconState(webhookSecret, webhookDirty, saveStep)} />
+            <FieldIcon state={resolveIconState(webhookSecret, webhookDirty, saveStep, !webhookDirty && db.hasWebhookSecret)} />
           </div>
           <p className="text-xs text-muted-foreground">
             Required to receive order confirmations from Stripe.
           </p>
         </div>
 
-        {/* Save button + inline status */}
-        <div className="flex items-center gap-3 w-full max-w-[72ch]">
-          {isDev && (
-            <Button variant="outline" size="sm" onClick={simulateSave} disabled={isBusy} className="text-xs text-muted-foreground">
-              Simulate
+        {/* Action button + inline status */}
+        <div className="flex items-center gap-3">
+          {db.hasRow && db.hasSecretKey && (
+            <Button
+              variant="outline"
+              onClick={handleVerify}
+              disabled={isBusy || verifyStep === "verifying" || saveStep === "error" || secretDirty || pubDirty || webhookDirty}
+            >
+              {verifyStep === "verifying" ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="mr-2 h-4 w-4" />
+              )}
+              {verifyStep === "verifying" ? "Verifying" : "Verify"}
             </Button>
           )}
-          <Button onClick={handleSave} disabled={isBusy}>
-            {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isBusy ? "Saving" : "Save"}
-          </Button>
+          {saveStep === "error" && db.hasRow && db.hasSecretKey ? (
+            <Button variant="outline" onClick={handleUndo} disabled={isBusy}>
+              Undo Changes
+            </Button>
+          ) : (
+            <Button onClick={handleSave} disabled={isBusy}>
+              {isBusy ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <SaveIcon className="mr-2 h-4 w-4" />
+              )}
+              {isBusy ? "Saving" : "Save"}
+            </Button>
+          )}
           <span className="ml-auto text-sm text-right">
             {isBusy && (
               <span className="flex flex-col items-end text-muted-foreground">
@@ -321,94 +437,36 @@ export function StripeCredentialsForm() {
                 <span className="text-xs">This may take a few seconds — hang tight.</span>
               </span>
             )}
-            {saveStep === "done" && (
+            {!isBusy && saveStep === "done" && (
               <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="h-4 w-4" />
                 Saved successfully.
               </span>
             )}
-            {saveStep === "error" && error && (
+            {!isBusy && saveStep === "error" && error && (
               <span className="flex items-center gap-1.5 text-destructive">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 {error}
               </span>
             )}
+            {!isBusy && saveStep === "idle" && verifyStep === "verifying" && (
+              <span className="text-muted-foreground">Verifying connectivity…</span>
+            )}
+            {!isBusy && saveStep === "idle" && verifyStep === "verified" && (
+              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-4 w-4" />
+                All checks passed.
+              </span>
+            )}
+            {!isBusy && saveStep === "idle" && verifyStep === "error" && verifyError && (
+              <span className="flex items-center gap-1.5 text-destructive">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {verifyError}
+              </span>
+            )}
           </span>
         </div>
       </div>
-
-      {/* Active configuration details */}
-      {db.hasRow && (
-        <div className="rounded-lg border p-4 space-y-3">
-          <p className="text-sm font-medium">Active configuration</p>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm max-w-md">
-            {db.accountName && (
-              <>
-                <dt className="text-muted-foreground">Account</dt>
-                <dd>{db.accountName}</dd>
-              </>
-            )}
-            {db.accountId && (
-              <>
-                <dt className="text-muted-foreground">Account ID</dt>
-                <dd className="font-mono text-xs">{db.accountId}</dd>
-              </>
-            )}
-            {db.isTestMode !== null && (
-              <>
-                <dt className="text-muted-foreground">Mode</dt>
-                <dd>
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                      db.isTestMode
-                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                        : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
-                    }`}
-                  >
-                    {db.isTestMode ? "Test Mode" : "Live Mode"}
-                  </span>
-                </dd>
-              </>
-            )}
-            {db.lastValidatedAt && (
-              <>
-                <dt className="text-muted-foreground">Last verified</dt>
-                <dd>{new Date(db.lastValidatedAt).toLocaleString()}</dd>
-              </>
-            )}
-          </dl>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setShowClearModal(true)}
-            disabled={clearing || isBusy}
-          >
-            {clearing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Disconnect Stripe
-          </Button>
-        </div>
-      )}
-
-      {/* Disconnect confirm modal */}
-      <Dialog open={showClearModal} onOpenChange={setShowClearModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Disconnect Stripe?</DialogTitle>
-            <DialogDescription>
-              This will remove your saved Stripe keys. Payments will stop working until you add new keys.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowClearModal(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleClear} disabled={clearing}>
-              {clearing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Disconnect
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

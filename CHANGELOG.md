@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.105.0 - 2026-05-04
+
+### Added
+
+- **Stripe publishable key cross-account verification** — the backend now verifies that the publishable key belongs to the same Stripe account as the secret key before saving. Implementation creates an unconfirmed PaymentIntent with the secret key, then retrieves it using the publishable key as Bearer auth against the Stripe API (Stripe returns 4xx for mismatched accounts). The PI is always cancelled in a `finally` block. Prevents a class of misconfiguration that was previously silent.
+- **Verify button on Stripe credentials form** — secondary button in the form footer that re-runs the full validation chain (secret key → charges_enabled → test charge → publishable key cross-account check) against the currently stored credentials without saving. Useful for diagnosing payment failures when all keys appear correct. Disabled while any field has unsaved changes, during a save, or after a save error.
+- **Undo Changes recovery button** — appears after a failed save when the DB has a previously-validated state. Clicking Undo restores all three fields to their DB values, clears the error, and resets field icons to green — one-click escape from a bad edit without a page reload.
+
+### Fixed
+
+- **`charges_enabled` false positive on test accounts** — the Stripe account validation check rejected valid test keys because `charges_enabled` is a live-mode onboarding flag and may be `false` on test accounts that fully support test charges. Guard now skipped for `sk_test_*` keys; test-mode payment capability is verified instead by creating and immediately cancelling a test PaymentIntent with `pm_card_visa`.
+- **Required field validation before save** — saving with no DB row and one or more empty fields now shows per-field "Required field" hints instead of silently sending a partial payload. Errors clear as the admin types.
+- **Field icon state** — green checkmarks on initial load now only appear when a field's value matches the DB-stored state. Icons switch to a muted circle on edit (unsaved) and to a red indicator on save failure.
+- **Dirty field tracking on PUT** — the save payload now contains only fields the admin actually changed. Masked placeholder values (`••••••••1234`) are treated as unchanged and omitted from the PUT body, preventing accidental overwrites of the existing encrypted values.
+
+---
+
 ## 0.104.0 - 2026-05-03
 
 ### Added
