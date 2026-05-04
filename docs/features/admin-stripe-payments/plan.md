@@ -398,3 +398,86 @@ After implementation:
 - **Frontend `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` runtime swap** — build-time inlined; UI surfaces the caveat but doesn't fix
 - **Encryption-key rotation tooling** — defer until needed; recovery path is "admin re-enters keys" via the same form
 - **Stripe account creation flow** — admin creates account at dashboard.stripe.com themselves; we link, we don't embed
+
+---
+
+## Post-MVP Iteration — Validation Hardening + UX Polish
+
+After the initial 7-commit implementation shipped, manual testing surfaced validation gaps and UX friction points that required follow-up work before the PR could open. This section documents what changed and why — the original plan above reflects the intended design; this section reflects what actually shipped.
+
+### Design pivots from original plan
+
+| Original plan | What actually shipped | Why it changed |
+|---|---|---|
+| `POST` = validate-only (no save); confirmation modal; `PUT` = save | No modal — single-step `PUT` validates+saves inline; `POST` repurposed as re-verify-stored-credentials (powers Verify button) | The confirmation modal added round-trip friction without preventing errors. The validation chain on `PUT` is the confirmation step. `POST` is more useful as a read-only diagnostic re-verify tool for the "everything looks green but payments fail" scenario |
+| Zod schema enforces key format with regex | Zod schema is permissive (`z.string().optional()`); format checks done imperatively after mask-drop, before any API call | Masked placeholder values (`••••••••1234`) don't match the regex; permissive schema + manual imperative checks avoids pre-filtering the mask-drop logic and is easier to reason about |
+| `stripe.accounts.retrieve()` called on `POST` and re-called on `PUT` | `accounts.retrieve()` called only on `PUT` (when a new secretKey is provided); `POST` calls the same chain against stored credentials | Eliminates the two-step client flow; server always re-validates before persisting |
+| `charges_enabled` checked for all key modes | `charges_enabled` guard skipped for test-mode keys | `charges_enabled` is a live-mode onboarding flag. Test accounts can have it `false` while fully supporting test charges. Guard without the mode check produced false-positive "account not enabled" errors for valid test keys |
+| Inline validation chain: mismatch → `accounts.retrieve()` → save | Extended chain: mismatch → `accounts.retrieve()` → `charges_enabled` (live only) → `runTestCharge()` (test only) → `verifyPublishableKey()` → save | Each step caught a real-world failure mode that the simpler chain missed |
+
+### Actual validation chain (PUT)
+
+Every `PUT` runs this chain when a new `secretKey` is in the payload:
+
+```text
+1. Mask-drop  — fields starting with "••" are stripped (admin didn't change them)
+2. Short-circuit — if no field changed, return 200 immediately (server handles empty body)
+3. Format check — /^sk_(test|live)_/ / /^pk_(test|live)_/ / /^whsec_/ before any API work
+4. Effective-set resolution — if only one of the secret/publishable pair is in the payload,
+   load the other from DB so the consistency check has both values
+5. Mode mismatch — hard-block if effectiveSecretKey mode ≠ effectivePublishableKey mode
+6. stripe.accounts.retrieve() — confirms the secret key is valid + active
+7. charges_enabled (live-mode only) — skipped for sk_test_* keys (false-positive fix)
+8. runTestCharge() (test-mode only) — creates + immediately cancels a test PaymentIntent
+   to verify payment capability independently of charges_enabled
+9. verifyPublishableKey() — creates an unconfirmed PI with the secret key, then retrieves
+   it via Stripe's API with the publishable key as Bearer auth; a different-account key
+   returns 4xx
+10. saveStripeCredentials() + resetStripeClient()
+```
+
+Steps 4–9 all return the same generic `GENERIC_ERROR` message on failure to avoid leaking which check failed or exposing key fragments.
+
+### Publishable key cross-account verification (step 9)
+
+Original plan had no mechanism for verifying the publishable key belongs to the same Stripe account as the secret key. Client-side Stripe.js verification would require a two-phase save with server-side session storage of pending credentials. The server-side approach chosen:
+
+1. Create an unconfirmed `PaymentIntent` using the secret key (`amount: 50`, no `confirm: true`)
+2. Retrieve it via `GET /v1/payment_intents/{id}?client_secret={cs}` with the publishable key as `Bearer` auth
+3. Stripe returns 4xx if the keys are from different accounts — return `false`
+4. Always cancel the PI in a `finally` block regardless of outcome
+5. `verifyPublishableKey` uses `effectiveSecretKey`/`effectivePublishableKey` so it always validates the post-update pair, even when only one of the pair was submitted
+
+### UX additions not in original plan
+
+**Inline field icons** — each field displays a contextual icon next to it:
+
+- `text-emerald-500` checkmark: field value matches the DB-stored state (clean/verified)
+- `text-muted-foreground/30` circle: field is dirty (typed, not yet saved)
+- `text-destructive` X: previous save errored on this field
+
+**Dirty field tracking** — `PUT` body contains only the fields the admin actually changed. Masked placeholder values (`••` prefix) are stripped before the body is assembled, so an unchanged sensitive field sends nothing — the server preserves the existing encrypted value rather than overwriting it.
+
+**Required field validation** — when `db.hasRow` is false (no saved keys), all three fields are required before Save can proceed. Client-side validation fires on the save attempt and shows "Required field" inline. Errors clear as the admin types.
+
+**Undo Changes button** — appears after a failed save, but only when `db.hasSecretKey === true` (there is a previously-validated state to revert to). Clicking Undo:
+
+1. Restores all three field values to their DB state (masked for secret/webhook, plaintext for publishable)
+2. Clears the inline error
+3. Hides the Undo button itself
+4. Resets field icons to green (verified state)
+
+Rationale: when a save fails because the admin typed a bad key, there's a known-good state in the DB. Undo provides a one-click escape hatch without requiring a page reload.
+
+**Verify button** — secondary/outline button left of Save, visible when `db.hasRow && db.hasSecretKey`. Calls `POST /api/admin/settings/stripe` which re-runs the full validation chain against the stored credentials (read-only — no `saveStripeCredentials` call). Useful for diagnosing payment failures when all settings look correct. Disabled when:
+
+- Any field is dirty (unsaved form state would make "All checks passed" misleading)
+- A save operation is in progress
+- The previous save errored (fields may be in an inconsistent state)
+
+### Additional tests added
+
+| File | Coverage added beyond original commit schedule |
+|---|---|
+| `app/api/admin/settings/stripe/__tests__/route.test.ts` | Publishable key cross-account mismatch → 400; `charges_enabled` check updated to use live-mode key (test for the false-positive fix); 7-test `POST` describe block: 401, no creds stored, bad secret key, `charges_enabled` disabled on live (not test), test charge failure, wrong pub-key account, all-pass + no DB writes |
+| `app/admin/settings/commerce/_components/__tests__/StripeCredentialsForm.test.tsx` | Required field validation (3 tests); field icon state (3 tests); dirty field tracking — `PUT` body shape assertions (3 tests); Undo Changes button lifecycle (6 tests: not shown initially, not shown while editing, appears after failed save with DB state, not shown without valid DB secret, click restores values + clears error, not shown after successful save) |
