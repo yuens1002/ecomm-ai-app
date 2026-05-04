@@ -108,6 +108,10 @@ export function StripeCredentialsForm() {
   const isBusy = saveStep === "verifying" || saveStep === "saving";
 
   const handleSave = async () => {
+    setSecretDirty(false);
+    setPubDirty(false);
+    setWebhookDirty(false);
+
     if (IS_DEMO) {
       toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
       return;
@@ -235,7 +239,7 @@ export function StripeCredentialsForm() {
             label="Secret Key"
             required
             isDirty={secretDirty}
-            dirtyDelay={0}
+
             statusMessage={secretRequiredError ? "Required field" : undefined}
             statusType="required"
             action={modeBadge}
@@ -277,7 +281,7 @@ export function StripeCredentialsForm() {
             label="Publishable Key"
             required
             isDirty={pubDirty}
-            dirtyDelay={0}
+
             statusMessage={pubRequiredError ? "Required field" : undefined}
             statusType="required"
           />
@@ -309,7 +313,7 @@ export function StripeCredentialsForm() {
             label="Webhook Secret"
             required
             isDirty={webhookDirty}
-            dirtyDelay={0}
+
             statusMessage={webhookRequiredError ? "Required field" : undefined}
             statusType="required"
           />
