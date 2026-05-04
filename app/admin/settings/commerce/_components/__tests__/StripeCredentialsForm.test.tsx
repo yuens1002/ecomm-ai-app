@@ -190,35 +190,6 @@ describe("dirty field tracking — PUT body contains only changed fields", () =>
     });
   });
 
-  it("sends an empty body when no fields were changed (server short-circuits)", async () => {
-    // With DB values loaded, the button is "Undo Changes" — clicking "Save" requires
-    // making a field dirty first, then undoing, which resets dirty but leaves fields
-    // at DB values. The save body is then empty.
-    mockFetch
-      .mockResolvedValueOnce(savedConfigResponse())
-      .mockResolvedValueOnce(successResponse())
-      .mockResolvedValueOnce(savedConfigResponse());
-
-    render(<StripeCredentialsForm />);
-    await waitFor(() =>
-      expect(screen.queryByText("Loading Stripe configuration…")).not.toBeInTheDocument()
-    );
-
-    // Dirty a field to get Save button, then undo to clear dirty while keeping
-    // the underlying values at DB-level, but note: with no DB row the Save button
-    // is always present. Use empty config for this scenario.
-    // Alternatively: type then undo to confirm empty body.
-    fireEvent.change(getInputById("stripe-publishable-key"), {
-      target: { value: "pk_test_changed" },
-    });
-    // Undo restores and clears dirty — but now button is "Undo Changes" again.
-    // This test instead verifies the API call body directly.
-    // Re-approach: use an empty db scenario and click Save with no changes.
-    // (The component always shows Save when no DB row.)
-    // Already covered by the "short-circuit on server" contract; skip this variant.
-    // The key insight is tested via route.test.ts (server rejects empty body cleanly).
-  });
-
   it("sends all three fields when all three are changed", async () => {
     const { container } = await renderAndLoad();
 

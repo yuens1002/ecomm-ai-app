@@ -108,8 +108,8 @@ async function verifyPublishableKey(
   let piId: string | undefined;
   try {
     const pi = await stripe.paymentIntents.create({ amount: 50, currency: "usd" });
-    if (!pi.client_secret) return false;
     piId = pi.id;
+    if (!pi.client_secret) return false;
     const res = await fetch(
       `https://api.stripe.com/v1/payment_intents/${pi.id}?client_secret=${encodeURIComponent(pi.client_secret)}`,
       { headers: { Authorization: `Bearer ${effectivePublishableKey}` } }
@@ -192,12 +192,15 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    let { secretKey, webhookSecret } = parsed.data;
-    const { publishableKey } = parsed.data;
+    let { secretKey, publishableKey, webhookSecret } = parsed.data;
 
     // Strip masked placeholders — unchanged sensitive fields become undefined
     if (secretKey?.startsWith("••")) secretKey = undefined;
     if (webhookSecret?.startsWith("••")) webhookSecret = undefined;
+    // Normalize empty strings — treat as "not provided"
+    if (secretKey === "") secretKey = undefined;
+    if (publishableKey === "") publishableKey = undefined;
+    if (webhookSecret === "") webhookSecret = undefined;
 
     // Short-circuit: client sent only unchanged values
     if (!secretKey && !publishableKey && !webhookSecret) {

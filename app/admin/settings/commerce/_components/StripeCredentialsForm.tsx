@@ -114,9 +114,6 @@ export function StripeCredentialsForm() {
 
   const handleSave = async () => {
     const changed = { secret: secretDirty, pub: pubDirty, webhook: webhookDirty };
-    setSecretDirty(false);
-    setPubDirty(false);
-    setWebhookDirty(false);
 
     if (IS_DEMO) {
       toast({ title: "Changes are disabled in demo mode.", variant: "demo" });
@@ -135,6 +132,10 @@ export function StripeCredentialsForm() {
       return;
     }
 
+    // Clear dirty flags only after passing validation — early returns above must not wipe them
+    setSecretDirty(false);
+    setPubDirty(false);
+    setWebhookDirty(false);
     setError(null);
     setSaveStep("verifying");
     setStepLabel("Verifying with Stripe…");
@@ -300,7 +301,7 @@ export function StripeCredentialsForm() {
                   type="button"
                   onClick={() => setSecretVisible((v) => !v)}
                   disabled={isBusy}
-                  tabIndex={-1}
+                  aria-label={secretVisible ? "Hide secret key" : "Show secret key"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
                 >
                   {secretVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -385,7 +386,7 @@ export function StripeCredentialsForm() {
                   type="button"
                   onClick={() => setWebhookVisible((v) => !v)}
                   disabled={isBusy}
-                  tabIndex={-1}
+                  aria-label={webhookVisible ? "Hide webhook secret" : "Show webhook secret"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
                 >
                   {webhookVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
